@@ -345,6 +345,43 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearTrackImagesMenuItemActionPerformed"/>
               </Events>
             </MenuItem>
+            <Menu class="javax.swing.JMenu" name="logMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Log"/>
+              </Properties>
+              <SubComponents>
+                <MenuItem class="javax.swing.JMenuItem" name="setLogFileMenuItem">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Set Log File"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="setLogFileMenuItemActionPerformed"/>
+                  </Events>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="activateLoggingMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                      <Connection code="PropertyUtils.get(PropertyUtils.LOG_ACTIVATED, true)" type="code"/>
+                    </Property>
+                    <Property name="text" type="java.lang.String" value="Activate Logging"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="activateLoggingMenuItemActionPerformed"/>
+                  </Events>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="appendToFileMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                      <Connection code="PropertyUtils.get(PropertyUtils.LOG_APPEND, false)" type="code"/>
+                    </Property>
+                    <Property name="text" type="java.lang.String" value="Append to File"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="appendToFileMenuItemActionPerformed"/>
+                  </Events>
+                </MenuItem>
+              </SubComponents>
+            </Menu>
           </SubComponents>
         </Menu>
       </SubComponents>
@@ -586,6 +623,7 @@
               <SubComponents>
                 <Component class="javax.swing.JTextPane" name="console">
                   <Properties>
+                    <Property name="editable" type="boolean" value="false"/>
                     <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                       <Border info="null"/>
                     </Property>
@@ -595,7 +633,7 @@
                     <Property name="opaque" type="boolean" value="false"/>
                   </Properties>
                   <AuxValues>
-                    <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="&#xa;JPopupMenu consoleMenu = new JPopupMenu();&#xa;Action copy = new DefaultEditorKit.CopyAction();&#xa;copy.putValue(Action.NAME, &quot;Copy&quot;);&#xa;copy.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(&quot;control C&quot;));&#xa;consoleMenu.add( copy );&#xa;Action selectAll = new TextAction(&quot;Select All&quot;) {&#xa;    @Override public void actionPerformed(ActionEvent e) {&#xa;        JTextComponent component = getFocusedComponent();&#xa;        component.selectAll();&#xa;        component.requestFocusInWindow();&#xa;    }&#xa;};&#xa;consoleMenu.add( selectAll );&#xa;console.setComponentPopupMenu( consoleMenu );&#xa;"/>
+                    <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="JPopupMenu consoleMenu = new JPopupMenu();&#xa;Action copy = new DefaultEditorKit.CopyAction();&#xa;copy.putValue(Action.NAME, &quot;Copy&quot;);&#xa;copy.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(&quot;control C&quot;));&#xa;consoleMenu.add( copy );&#xa;Action selectAll = new TextAction(&quot;Select All&quot;) {&#xa;    @Override public void actionPerformed(ActionEvent e) {&#xa;        JTextComponent component = getFocusedComponent();&#xa;        component.selectAll();&#xa;        component.requestFocusInWindow();&#xa;    }&#xa;};&#xa;consoleMenu.add( selectAll );&#xa;Action clear = new TextAction(&quot;Clear&quot;) {&#xa;    @Override public void actionPerformed(ActionEvent e) {&#xa;        JTextComponent component = getFocusedComponent();&#xa;        component.setText(null);&#xa;        component.requestFocusInWindow();&#xa;    }&#xa;};&#xa;consoleMenu.add( clear );&#xa;console.setComponentPopupMenu( consoleMenu );"/>
                   </AuxValues>
                 </Component>
               </SubComponents>

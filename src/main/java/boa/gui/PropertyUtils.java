@@ -37,6 +37,9 @@ import java.util.logging.Logger;
  */
 public class PropertyUtils {
     private static Properties props;
+    public final static String LOG_FILE = "log_file";
+    public final static String LOG_ACTIVATED = "log_activated";
+    public final static String LOG_APPEND = "log_append";
     public final static String MONGO_BIN_PATH = "mongo_bin_path";
     public final static String LAST_SELECTED_EXPERIMENT = "last_selected_xp";
     public final static String EXPORT_FORMAT = "export_format";

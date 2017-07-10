@@ -166,7 +166,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     //Object Tree related attributes
     boolean reloadObjectTrees=false;
-    
+    String logFile;
     // structure-related attributes
     //StructureObjectTreeGenerator objectTreeGenerator;
     DefaultListModel<String> structureModel;
@@ -207,6 +207,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
+        setLogFile(PropertyUtils.get(PropertyUtils.LOG_FILE));
         // format button
         this.bsonFormatMenuItem.setSelected(true);
         this.jsonFormatMenuItem.setSelected(false);
@@ -968,6 +969,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         clearMemoryMenuItem = new javax.swing.JMenuItem();
         clearPPImageMenuItem = new javax.swing.JMenuItem();
         clearTrackImagesMenuItem = new javax.swing.JMenuItem();
+        logMenu = new javax.swing.JMenu();
+        setLogFileMenuItem = new javax.swing.JMenuItem();
+        activateLoggingMenuItem = new javax.swing.JCheckBoxMenuItem();
+        appendToFileMenuItem = new javax.swing.JCheckBoxMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
@@ -1010,10 +1015,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         consoleJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Console:"));
 
+        console.setEditable(false);
         console.setBorder(null);
         console.setFont(new java.awt.Font("TeXGyreCursor", 0, 12)); // NOI18N
         console.setOpaque(false);
-
         JPopupMenu consoleMenu = new JPopupMenu();
         Action copy = new DefaultEditorKit.CopyAction();
         copy.putValue(Action.NAME, "Copy");
@@ -1027,6 +1032,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         };
         consoleMenu.add( selectAll );
+        Action clear = new TextAction("Clear") {
+            @Override public void actionPerformed(ActionEvent e) {
+                JTextComponent component = getFocusedComponent();
+                component.setText(null);
+                component.requestFocusInWindow();
+            }
+        };
+        consoleMenu.add( clear );
         console.setComponentPopupMenu( consoleMenu );
         consoleJSP.setViewportView(console);
 
@@ -1684,6 +1697,36 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         miscMenu.add(clearTrackImagesMenuItem);
 
+        logMenu.setText("Log");
+
+        setLogFileMenuItem.setText("Set Log File");
+        setLogFileMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                setLogFileMenuItemActionPerformed(evt);
+            }
+        });
+        logMenu.add(setLogFileMenuItem);
+
+        activateLoggingMenuItem.setSelected(PropertyUtils.get(PropertyUtils.LOG_ACTIVATED, true));
+        activateLoggingMenuItem.setText("Activate Logging");
+        activateLoggingMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                activateLoggingMenuItemActionPerformed(evt);
+            }
+        });
+        logMenu.add(activateLoggingMenuItem);
+
+        appendToFileMenuItem.setSelected(PropertyUtils.get(PropertyUtils.LOG_APPEND, false));
+        appendToFileMenuItem.setText("Append to File");
+        appendToFileMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                appendToFileMenuItemActionPerformed(evt);
+            }
+        });
+        logMenu.add(appendToFileMenuItem);
+
+        miscMenu.add(logMenu);
+
         mainMenu.add(miscMenu);
 
         setJMenuBar(mainMenu);
@@ -1696,7 +1739,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tabs, javax.swing.GroupLayout.DEFAULT_SIZE, 842, Short.MAX_VALUE)
+            .addComponent(tabs)
         );
 
         pack();
@@ -2180,10 +2223,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             t = new Task(dbName);
             if (extract && t.getDB()!=null) {
                 int[] selectedStructures = ArrayUtil.generateIntegerArray(t.getDB().getExperiment().getStructureCount());
-                for (int sIdx : selectedStructures) t.addExtractMeasurementDir(null, sIdx);
+                for (int sIdx : selectedStructures) t.addExtractMeasurementDir(t.getDB().getDir(), sIdx);
             }
         } else return null;
         t.setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages);
+        if (logFile!=null && activateLoggingMenuItem.isSelected()) {
+            log("Setting log file:" +logFile);
+            t.setLogFile(logFile);
+        }
         return t;
     }
     private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
@@ -2252,32 +2299,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }//GEN-LAST:event_deleteMeasurementsCheckBoxActionPerformed
 
     private void runActionAllXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runActionAllXPMenuItemActionPerformed
-        
-        boolean preProcess=false;
-        boolean reRunPreProcess=false;
-        boolean segmentAndTrack = false;
-        boolean trackOnly = false;
-        boolean runMeasurements=false;
-        boolean generateTrackImage = false;
-        boolean extract = false;
-        for (int i : this.runActionList.getSelectedIndices()) {
-            if (i==0) preProcess=true;
-            if (i==1) reRunPreProcess=!preProcess;
-            if (i==2) segmentAndTrack=true;
-            if (i==3) trackOnly = !segmentAndTrack;
-            if (i==4) generateTrackImage=true;
-            if (i==5) runMeasurements=true;
-            if (i==6) extract = true;
-        }
         List<String> xps = this.getSelectedExperiments();
         List<Task> tasks = new ArrayList<>(xps.size());
-        for (String xp : xps) {
-            Task t = new Task(xp).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImage);
-            if (extract) for (int sIdx =0; sIdx< t.getDB().getExperiment().getStructureCount(); ++sIdx) t.addExtractMeasurementDir(new File(t.getDB().getExperiment().getOutputDirectory()).getParent(), sIdx);
-            tasks.add(t);
-        }
+        for (String xp : xps) tasks.add(getCurrentJob(xp));
         Task.executeTasks(tasks, this);
-        
     }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
 
     private void closeAllWindowsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeAllWindowsMenuItemActionPerformed
@@ -2634,7 +2659,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     for (String s : jobsS) {
                         JSONObject o = JSONUtils.parse(s);
                         if (o==null) log("Error: could not parse task: "+s);
-                        else jobs.add(new Task().fromJSON(o));
+                        else {
+                            Task t = new Task().fromJSON(o);
+                            jobs.add(t);
+                            if (logFile!=null && activateLoggingMenuItem.isSelected()) t.setLogFile(logFile);
+                        }
                     }
                     Task.executeTasks(jobs, GUI.getInstance());
                 }
@@ -2699,6 +2728,27 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             menu.show(this.hostName, evt.getX(), evt.getY());
         }
     }//GEN-LAST:event_hostNameMousePressed
+    private void setLogFile(String path) {
+        this.logFile=path;
+        if (path==null) this.setLogFileMenuItem.setText("Set Log File");
+        else this.setLogFileMenuItem.setText("Set Log File (current: "+path+")");
+        if (!this.appendToFileMenuItem.isSelected() && new File(path).exists()) new File(path).delete();
+    }
+    private void setLogFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setLogFileMenuItemActionPerformed
+        File f = Utils.chooseFile("Save Log As...", hostName.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, jLabel1);
+        if (f==null) return;
+        if (f.isDirectory()) return;
+        setLogFile(f.getAbsolutePath());
+        PropertyUtils.set(PropertyUtils.LOG_FILE, f.getAbsolutePath());
+    }//GEN-LAST:event_setLogFileMenuItemActionPerformed
+
+    private void activateLoggingMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_activateLoggingMenuItemActionPerformed
+        PropertyUtils.set(PropertyUtils.LOG_ACTIVATED, this.activateLoggingMenuItem.isSelected());
+    }//GEN-LAST:event_activateLoggingMenuItemActionPerformed
+
+    private void appendToFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_appendToFileMenuItemActionPerformed
+        PropertyUtils.set(PropertyUtils.LOG_APPEND, this.activateLoggingMenuItem.isSelected());
+    }//GEN-LAST:event_appendToFileMenuItemActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2862,6 +2912,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JScrollPane actionPoolJSP;
     private javax.swing.JList actionPoolList;
     private javax.swing.JScrollPane actionStructureJSP;
+    private javax.swing.JCheckBoxMenuItem activateLoggingMenuItem;
+    private javax.swing.JCheckBoxMenuItem appendToFileMenuItem;
     private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
     private javax.swing.JMenuItem clearMemoryMenuItem;
     private javax.swing.JMenuItem clearPPImageMenuItem;
@@ -2909,6 +2961,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JButton linkObjectsButton;
     private javax.swing.JMenu localDBMenu;
     private javax.swing.JRadioButtonMenuItem localFileSystemDatabaseRadioButton;
+    private javax.swing.JMenu logMenu;
     private javax.swing.JMenuBar mainMenu;
     private javax.swing.JButton manualSegmentButton;
     private javax.swing.JButton mergeObjectsButton;
@@ -2933,6 +2986,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JScrollPane selectionJSP;
     private javax.swing.JList selectionList;
     private javax.swing.JPanel selectionPanel;
+    private javax.swing.JMenuItem setLogFileMenuItem;
     private javax.swing.JMenuItem setMongoBinDirectoryMenu;
     private javax.swing.JMenuItem setSelectedExperimentMenuItem;
     private javax.swing.JButton splitObjectsButton;

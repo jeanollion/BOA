@@ -32,7 +32,10 @@ import dataStructure.objects.MasterDAOFactory;
 import ij.IJ;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,6 +46,8 @@ import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.SwingWorker;
 import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
@@ -51,6 +56,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import utils.ArrayUtil;
+import utils.FileIO;
 import utils.JSONUtils;
 import utils.Pair;
 import utils.Utils;
@@ -69,7 +75,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         MasterDAO db;
         int[] taskCounter;
         UserInterface ui;
-        
+        File logFile;
+        FileWriter logWriter;
         public JSONObject toJSON() {
             JSONObject res=  new JSONObject();
             res.put("dbName", dbName); 
@@ -305,22 +312,35 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         public void setSubtaskNumber(int[] taskCounter) {
             this.taskCounter=taskCounter;
         }
+        public void setLogFile(String path) {
+            this.logFile= new File(path);
+        }
         public void runTask() {
             if (ui!=null) ui.setRunning(true);
+            if (false && this.logFile!=null) {
+                try {
+                    FileWriter fw = new FileWriter(logFile, true);
+                    this.logWriter=fw;
+                    //this.logWriter= new BufferedWriter(fw);
+                } catch (IOException ex) {
+                    logger.warn("Could not initialize log: {}", logFile.getAbsolutePath());
+                    logWriter=null;
+                }
+            }
             publish("Run task: "+this.toString());
-            publish("init db...");
             initDB();
-            publish("clering cache...");
             db.clearCache();
-            publish("db cache cleared...");
             ImageWindowManagerFactory.getImageManager().flush();
             publishMemoryUsage("Before processing");
             if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
             if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
-            publish("deleting objects...");
+            
             boolean needToDeleteObjects = preProcess || segmentAndTrack;
             boolean deleteAll =  needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && positions.size()==db.getExperiment().getPositionCount();
-            if (deleteAll) db.deleteAllObjects();
+            if (deleteAll) {
+                publish("deleting objects...");
+                db.deleteAllObjects();
+            }
             boolean deleteAllField = needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && !deleteAll;
             logger.info("Run task: db: {} preProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, need to delete objects: {}, delete all: {}, delete all by field: {}", dbName, preProcess, segmentAndTrack, trackOnly, measurements, needToDeleteObjects, deleteAll, deleteAllField);
             
@@ -443,6 +463,26 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     protected void process(List<String> strings) {
         if (ui!=null) for (String s : strings) ui.setMessage(s);
         for (String s : strings) logger.info(s);
+        if (logFile!=null) {
+            FileWriter fw = null;
+            try {
+                fw = new FileWriter(logFile,true);
+                for (String s: strings) {
+                    fw.write(Utils.getFormattedTime()+": "+s+"\n");
+                    //logWriter.newLine();
+                }
+            } catch (IOException ex) {
+                logger.warn("Could no write to file: "+logFile.getAbsolutePath(), ex);
+            } finally {
+                if (fw!=null) {
+                    try {
+                        fw.close();
+                    } catch (IOException ex) {
+                        logger.warn("Could close writer: "+logFile.getAbsolutePath(), ex);
+                    }
+                }
+            }
+        }
     }
     @Override 
     public void done() {
@@ -454,8 +494,17 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         this.printErrors();
         this.publish("------------------");
         if (ui!=null) ui.setRunning(false);
+        if (this.logWriter!=null) {
+            try {
+                logWriter.close();
+                logWriter=null;
+            } catch (IOException ex) {
+                logger.debug("could not close log file: "+ logFile.getAbsolutePath(), ex);
+            }
+        }
     }
-
+    
+    // Progress Callback
     @Override
     public void incrementTaskNumber(int subtask) {
         if (taskCounter!=null) this.taskCounter[1]+=subtask;
