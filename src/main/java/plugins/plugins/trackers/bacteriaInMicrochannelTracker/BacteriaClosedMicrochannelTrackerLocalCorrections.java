@@ -172,6 +172,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.cumCostLimit.setValue(cumulativeCostLimit);
         return this;
     }
+    public BacteriaClosedMicrochannelTrackerLocalCorrections setThresholdParameters(int method, double adaptativeCoefficient, int frameHalfWindow, int yHalfWindow) {
+        this.thresholdMethod.setSelectedIndex(method);
+        this.adaptativeCoefficient.setValue(adaptativeCoefficient);
+        this.frameHalfWindow.setValue(frameHalfWindow);
+        this.yHalfWindow.setValue(yHalfWindow);
+        return this;
+    }
     
     @Override public Parameter[] getParameters() {
         return parameters;

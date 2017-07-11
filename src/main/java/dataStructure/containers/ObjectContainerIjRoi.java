@@ -114,7 +114,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
     public void relabelObject(int newIdx) {
     }
     @Override
-    public void initFromJSON(JSONObject json) {
+    public void initFromJSON(Map json) {
         super.initFromJSON(json);
         if (json.containsKey("roi")) {
             roiZ = new ArrayList<>(1);

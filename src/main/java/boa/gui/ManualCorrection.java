@@ -614,7 +614,7 @@ public class ManualCorrection {
     }
     public static void deleteObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay) {
         String fieldName = StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
-        ObjectDAO dao = db.getDao(fieldName);
+        ObjectDAO dao = db!=null ? db.getDao(fieldName) : null;
         Map<Integer, List<StructureObject>> objectsByStructureIdx = StructureObjectUtils.splitByStructureIdx(objects);
         for (int structureIdx : objectsByStructureIdx.keySet()) {
             List<StructureObject> toDelete = objectsByStructureIdx.get(structureIdx);
@@ -625,27 +625,19 @@ public class ManualCorrection {
             }
             Set<StructureObject> parents = StructureObjectUtils.getParents(toDelete);
             for (StructureObject p : parents) p.relabelChildren(structureIdx, modifiedObjects); // relabel
-            Set<StructureObject> parentTH = StructureObjectUtils.getParentTrackHeads(toDelete);
-            logger.info("Deleting {} objects, from {} parents", toDelete.size(), parents.size());
-            dao.delete(toDelete, true, true, true);
-            modifiedObjects.removeAll(toDelete); // avoid storing deleted objects!!!
-            dao.store(modifiedObjects, true);
+            Set<StructureObject> parentTH = updateDisplay ? StructureObjectUtils.getParentTrackHeads(toDelete) : null;
+            if (dao!=null) {
+                logger.info("Deleting {} objects, from {} parents", toDelete.size(), parents.size());
+                dao.delete(toDelete, true, true, true);
+                modifiedObjects.removeAll(toDelete); // avoid storing deleted objects!!!
+                dao.store(modifiedObjects, true);
+            }
             if (updateDisplay) {
                 //Update selection on opened image
                 //ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
                 ImageWindowManagerFactory.getImageManager().removeObjects(toDelete, true);
                 List<StructureObject> selTh = ImageWindowManagerFactory.getImageManager().getSelectedLabileTrackHeads(null);
-                //Update object tree
-                /*for (StructureObject s : parents) {
-                    if (GUI.getInstance().objectTreeGenerator.getObjectNode(s)==null) {
-                        //logger.error("Node not found for parent object: {}", s);
-                    }
-                    else {
-                        StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(s).getStructureNode(structureIdx);
-                        node.createChildren();
-                        GUI.getInstance().objectTreeGenerator.reload(node);
-                    }
-                }*/
+                
                 //Update all opened images & objectImageInteraction
                 for (StructureObject p : parentTH) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
                 ImageWindowManagerFactory.getImageManager().displayTracks(null, null, StructureObjectUtils.getTracks(selTh, true), true);

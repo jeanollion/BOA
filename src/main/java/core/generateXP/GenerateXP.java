@@ -510,9 +510,9 @@ public class GenerateXP {
             else mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D())));
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(
-                            new BacteriaClosedMicrochannelTrackerLocalCorrections(
-                            ).setSegmenter(new BacteriaTrans()
-                            ).setCostParameters(1.5, 3)
+                            new BacteriaClosedMicrochannelTrackerLocalCorrections()
+                            .setSegmenter(new BacteriaTrans())
+                            .setCostParameters(1.5, 3).setThresholdParameters(2, 1, 10, 30)
                     )
             );
         }

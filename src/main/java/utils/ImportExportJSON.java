@@ -65,7 +65,7 @@ public class ImportExportJSON {
         allObjects.removeIf(o -> o.getMeasurements().getValues().isEmpty());
         writer.write(dao.getPositionName()+File.separator+"measurements.txt", allObjects, o -> serialize(o.getMeasurements()));
     }
-    public static void writeImages(ZipWriter writer, ObjectDAO dao) {
+    public static void writePreProcessedImages(ZipWriter writer, ObjectDAO dao) {
         int ch = dao.getExperiment().getChannelImageCount();
         int fr = dao.getExperiment().getPosition(dao.getPositionName()).getTimePointNumber(false);
         String dir = dao.getPositionName()+File.separator+"Images"+File.separator;
@@ -134,7 +134,7 @@ public class ImportExportJSON {
             logger.info("Exporting: {}/{}", ++count, positions.size());
             ObjectDAO oDAO = dao.getDao(p);
             writeObjects(w, oDAO);
-            if (images) writeImages(w, oDAO);
+            if (images) writePreProcessedImages(w, oDAO);
         }
         logger.info("Exporting position done!");
     }

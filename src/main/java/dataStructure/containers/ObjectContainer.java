@@ -22,6 +22,7 @@ import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
+import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -52,7 +53,7 @@ public abstract class ObjectContainer {
     public abstract void updateObject();
     public abstract void deleteObject();
     public abstract void relabelObject(int newIdx);
-    public void initFromJSON(JSONObject json) {
+    public void initFromJSON(Map json) {
         JSONArray bds =  (JSONArray)json.get("bounds");
         this.bounds=new BoundingBox();
         bounds.setxMin((int)bds.get(0));
@@ -79,7 +80,7 @@ public abstract class ObjectContainer {
         return res;
     }
     protected ObjectContainer() {}
-    public static ObjectContainer createFromJSON(StructureObject o, JSONObject json) {
+    public static ObjectContainer createFromJSON(StructureObject o, Map json) {
         ObjectContainer res;
         if (json.containsKey("x")) res = new ObjectContainerVoxels();
         else if (json.containsKey("roi")||json.containsKey("roiZ")) res = new ObjectContainerIjRoi();

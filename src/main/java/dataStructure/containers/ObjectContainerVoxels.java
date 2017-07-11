@@ -25,6 +25,7 @@ import de.caluga.morphium.annotations.Embedded;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import utils.JSONUtils;
@@ -124,7 +125,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
         return res;
     }
     @Override 
-    public void initFromJSON(JSONObject json) {
+    public void initFromJSON(Map json) {
         if (!json.containsKey("x") || !json.containsKey("y")) throw new IllegalArgumentException("JSON object do no contain x & y values");
         JSONArray xJ = (JSONArray)json.get("x");
         JSONArray yJ = (JSONArray)json.get("y");

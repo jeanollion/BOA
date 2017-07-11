@@ -35,6 +35,7 @@ import plugins.ProcessingScheme;
 import plugins.Segmenter;
 import plugins.Tracker;
 import plugins.TrackerSegmenter;
+import utils.MultipleException;
 import utils.Pair;
 
 /**
@@ -86,14 +87,15 @@ public class SegmentAndTrack implements ProcessingScheme {
             return Collections.EMPTY_LIST;
         }
         //logger.debug("segmentAndTrack: # prefilters: {}", preFilters.getChildCount());
-        List<Pair<String, Exception>> l = Collections.EMPTY_LIST;
+        List<Pair<String, Exception>> l = new ArrayList<>();
         try {
             TrackerSegmenter t = tracker.instanciatePlugin();
             if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
             t.segmentAndTrack(structureIdx, parentTrack, preFilters, postFilters);
-            trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
+            trackPostFilters.filter(structureIdx, parentTrack, executor); 
+        } catch (MultipleException me) {
+            l.addAll(me.getExceptions());
         } catch (Exception ex) {
-            l = new ArrayList<>(1);
             l.add(new Pair(parentTrack.get(0).toString(), ex));
         }
         return l;
@@ -109,14 +111,15 @@ public class SegmentAndTrack implements ProcessingScheme {
             for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks(true, true);
         }
         
-        List<Pair<String, Exception>> l = Collections.EMPTY_LIST;
+        List<Pair<String, Exception>> l = new ArrayList<>();
         try {
             TrackerSegmenter t = tracker.instanciatePlugin();
             if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
             t.track(structureIdx, parentTrack);
             trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
+        } catch (MultipleException me) {
+            l.addAll(me.getExceptions());
         } catch (Exception ex) {
-            l = new ArrayList<>(1);
             l.add(new Pair(parentTrack.get(0).toString(), ex));
         }
         

@@ -15,16 +15,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins;
+package utils;
 
-import dataStructure.objects.StructureObject;
+import java.util.ArrayList;
 import java.util.List;
-import utils.Pair;
 
 /**
  *
  * @author jollion
  */
-public interface TrackPostFilter extends Plugin {
-    public void filter(int structureIdx, List<StructureObject> parentTrack) throws Exception;
+public class MultipleException extends RuntimeException {
+    final List<Pair<String, Exception>> exceptions;
+    public MultipleException(List<Pair<String, Exception>> exceptions) {
+        this.exceptions=exceptions;
+    }
+    public MultipleException() {
+        this.exceptions=new ArrayList<>();
+    }
+    public List<Pair<String, Exception>> getExceptions() {
+        return exceptions;
+    }
 }

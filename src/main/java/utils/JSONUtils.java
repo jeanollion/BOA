@@ -85,13 +85,13 @@ public class JSONUtils {
         }
         return res;
     }
-    public static Map<String, Object> toMap(JSONObject map) {
+    public static Map<String, Object> toMap(Map map) {
         HashMap<String, Object> res= new HashMap<>(map.size());
         for (Object o : map.entrySet()) {
             String key = (String)((Entry)o).getKey();
             Object value = ((Entry)o).getValue();
-            if (o instanceof JSONArray) {
-                JSONArray array = (JSONArray)value;
+            if (o instanceof List) {
+                List array = (List)value;
                 if (!array.isEmpty() && array.get(0) instanceof Integer) map.put(key, fromIntArray(array));
                 else map.put(key, fromDoubleArray(array));
             } else map.put(key, value);
@@ -100,7 +100,7 @@ public class JSONUtils {
     }
     
     
-    public static double[] fromDoubleArray(JSONArray array) {
+    public static double[] fromDoubleArray(List array) {
         double[] res = new double[array.size()];
         for (int i = 0; i<res.length; ++i) res[i]=((Number)array.get(i)).doubleValue();
         return res;
@@ -115,7 +115,7 @@ public class JSONUtils {
         for (Object o : array) res.add(((Number)o).intValue());
         return res;
     }
-    public static int[] fromIntArray(JSONArray array) {
+    public static int[] fromIntArray(List array) {
         int[] res = new int[array.size()];
         for (int i = 0; i<res.length; ++i) res[i]=((Number)array.get(i)).intValue();
         return res;

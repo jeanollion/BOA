@@ -50,18 +50,18 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class DBMapObjectDAO implements ObjectDAO {
+public class DBMapObjectDAO2 implements ObjectDAO {
     public static final Logger logger = LoggerFactory.getLogger(DBMapObjectDAO.class);
     final DBMapMasterDAO mDAO;
     final String positionName;
     //List<StructureObject> rootCache;
     final HashMapGetCreate<Pair<ObjectId, Integer>, Map<ObjectId, StructureObject>> cache = new HashMapGetCreate<>(new HashMapGetCreate.MapFactory()); // parent trackHead id -> id cache
     final HashMapGetCreate<Pair<ObjectId, Integer>, Boolean> allObjectsRetrievedInCache = new HashMapGetCreate<>(p -> false);
-    final Map<Pair<ObjectId, Integer>, HTreeMap<String, String>> dbMaps = new HashMap<>();
+    final Map<Pair<ObjectId, Integer>, HTreeMap<String, Map>> dbMaps = new HashMap<>();
     final String dir;
     final Map<Integer, DB> dbS = new HashMap<>();
-    final Map<Integer, Pair<DB, HTreeMap<String, String>>> measurementdbS = new HashMap<>();
-    public DBMapObjectDAO(DBMapMasterDAO mDAO, String positionName, String dir) {
+    final Map<Integer, Pair<DB, HTreeMap<String, Map>>> measurementdbS = new HashMap<>();
+    public DBMapObjectDAO2(DBMapMasterDAO mDAO, String positionName, String dir) {
         this.mDAO=mDAO;
         this.positionName=positionName;
         this.dir = dir+File.separator+positionName+File.separator+"segmented_objects"+File.separator;
@@ -105,7 +105,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         return res;
     }
     protected HTreeMap<String, String> getDBMap(Pair<ObjectId, Integer> key) {
-        HTreeMap<String, String> res = this.dbMaps.get(key);
+        HTreeMap<String, Map> res = this.dbMaps.get(key);
         if (res==null) {
             synchronized(dbMaps) {
                 if (dbMaps.containsKey(key)) res=dbMaps.get(key);
@@ -143,20 +143,15 @@ public class DBMapObjectDAO implements ObjectDAO {
                 } else {
                     long t0 = System.currentTimeMillis();
                     Collection<String> allStrings = getValues(dbm);
-                    try {
-                        allStrings.size();
-                        long t1 = System.currentTimeMillis();
-                        for (String s : allStrings) {
-                            StructureObject o = JSONUtils.parse(StructureObject.class, s);
-                            o.dao=this;
-                            objectMap.put(o.id, o);
-                        }
-                        long t2 = System.currentTimeMillis();
-                        logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
-                    } catch(Exception e) {
-                        logger.error("Corrupted DATA for structure: {}, parent: {}", key.value, key.key);
+                    //allStrings.size();
+                    long t1 = System.currentTimeMillis();
+                    for (String s : allStrings) {
+                        StructureObject o = JSONUtils.parse(StructureObject.class, s);
+                        o.dao=this;
+                        objectMap.put(o.id, o);
                     }
-                    
+                    long t2 = System.currentTimeMillis();
+                    logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
                 }
                 allObjectsRetrievedInCache.put(key, true);
                 // set prev, next & trackHead
@@ -258,7 +253,7 @@ public class DBMapObjectDAO implements ObjectDAO {
 
     @Override
     public void deleteChildren(StructureObject parent, int structureIdx) {
-        List<StructureObject> children = DBMapObjectDAO.this.getChildren(parent, structureIdx);
+        List<StructureObject> children = this.getChildren(parent, structureIdx);
         if (!children.isEmpty()) {
             Pair<ObjectId, Integer> key = new Pair(parent.getTrackHeadId(), structureIdx);
             Map<ObjectId, StructureObject> cacheMap = cache.get(key);

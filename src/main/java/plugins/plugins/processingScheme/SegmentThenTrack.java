@@ -37,6 +37,7 @@ import plugins.ProcessingScheme;
 import plugins.Segmenter;
 import plugins.TrackPostFilter;
 import plugins.Tracker;
+import utils.MultipleException;
 import utils.Pair;
 import utils.ThreadRunner;
 
@@ -116,8 +117,10 @@ public class SegmentThenTrack implements ProcessingScheme {
         res.addAll(l2);
         try {
             trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
-        } catch(Exception e) {
-            res.add(new Pair(parentTrack.get(0).toString(), e));
+        }catch (MultipleException me) {
+            l.addAll(me.getExceptions());
+        } catch (Exception ex) {
+            l.add(new Pair(parentTrack.get(0).toString(), ex));
         }
         return res;
     }

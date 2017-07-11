@@ -149,6 +149,7 @@ public class DBMapMasterDAO implements MasterDAO {
     
     public void compact() {
         for (String s : getExperiment().getPositionsAsString()) {
+            GUI.log("Compacting position: "+s);
             getDao(s).compactDBs(true);
         }
         if (getSelectionDAO()!=null) getSelectionDAO().compact(true);
@@ -181,6 +182,7 @@ public class DBMapMasterDAO implements MasterDAO {
         File out = outS!=null ? new File(outS) : null;
         if (out==null || !out.exists() || !out.isDirectory()) { // look for default output dir and set it up if exists
             out = new File(configDir + File.separator + "Output");
+            out.mkdirs();
             if (out.isDirectory()) {
                 if (image) xp.setOutputImageDirectory(out.getAbsolutePath());
                 else xp.setOutputDirectory(out.getAbsolutePath());

@@ -104,7 +104,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 dir = (String)data.get("dir");
                 if (!new File(dir).exists()) dir=null;
             }
-            if (dir==null) searchForLocalDir(dbName);
+            if (dir==null) dir = searchForLocalDir(dbName);
             this.preProcess = (Boolean)data.getOrDefault("preProcess", false);
             this.segmentAndTrack = (Boolean)data.getOrDefault("segmentAndTrack", false);
             this.trackOnly = (Boolean)data.getOrDefault("trackOnly", false);
@@ -155,7 +155,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this();
             this.dbName=dbName;
             if (dir!=null && !"".equals(dir)) this.dir=dir;
-            else searchForLocalDir(dbName);
+            else this.dir = searchForLocalDir(dbName);
         }
         public Task setDBName(String dbName) {
             if (dbName!=null && dbName.equals(this.dbName)) return this;

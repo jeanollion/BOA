@@ -27,6 +27,7 @@ import image.ImageProperties;
 import image.ImageWriter;
 import image.ObjectFactory;
 import static image.ObjectFactory.getBounds;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -125,7 +126,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (getExperiment()==null) return Double.NaN;
         MicroscopyField f = getExperiment().getPosition(getPositionName());
         int z = (int)Math.round(getObject().getBounds().getZMean());
-        double res  = f.getInputImages()==null ? Double.NaN : f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
+        double res  = f.getInputImages()==null || isRoot() ? Double.NaN : f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
         //double res = Double.NaN; // for old xp TODO change
         if (Double.isNaN(res)) res = timePoint * f.getFrameDuration();
         return res;
@@ -1006,7 +1007,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return obj1;
     }
     
-    public StructureObject(JSONObject json) {
+    public StructureObject(Map json) {
         
         id = new ObjectId((String)json.get("id"));
         parentId = new ObjectId((String)json.get("parent_id"));
@@ -1020,9 +1021,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         trackHeadId = new ObjectId((String)json.get("track_head_id"));
         isTrackHead = (Boolean)json.get("is_track_head");
         
-        if (json.containsKey("attributes")) attributes = JSONUtils.toMap((JSONObject)json.get("attributes"));
+        if (json.containsKey("attributes")) attributes = JSONUtils.toMap((Map)json.get("attributes"));
         if (json.containsKey("object")) {
-            JSONObject objectJ = (JSONObject)json.get("object");
+            Map objectJ = (Map)json.get("object");
             objectContainer = ObjectContainer.createFromJSON(this, objectJ);
         }
     }

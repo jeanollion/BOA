@@ -465,6 +465,7 @@ public class Utils {
     }
     
     public static File seach(String path, String fileName, int recLevels) {
+        if (path==null) return null;
         File f= new File(path);
         if (!f.exists()) return null;
         if (f.isDirectory()) return search(new ArrayList<File>(1){{add(f);}}, fileName, recLevels, 0);

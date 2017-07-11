@@ -99,11 +99,13 @@ public class DBUtil {
         String defPath = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
         String d = null;
         if (defPath!=null) d = searchLocalDirForDB(dbName, defPath);
+        //logger.debug("searching db: {} in path: {}, res: {}", dbName, defPath, d );
         if (d==null) {
             for (String path : PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH)) {
                 if (path.equals(defPath)) continue;
                 d = searchLocalDirForDB(dbName, path);
-                if (d!=null) break;
+                //logger.debug("searching db: {} in path: {}, res: {}", dbName, path, d );
+                if (d!=null) return d;
             }
         }
         return d;

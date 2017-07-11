@@ -2339,6 +2339,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             unsetXP();
             for (String xp : getSelectedExperiments()) {
                 DBMapMasterDAO dao = (DBMapMasterDAO)MasterDAOFactory.createDAO(xp, this.getHostNameOrDir(xp));
+                GUI.log("Compacting Experiment: "+xp);
                 dao.compact();
                 dao.clearCache();
             }

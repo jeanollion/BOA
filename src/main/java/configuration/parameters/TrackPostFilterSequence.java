@@ -28,6 +28,8 @@ import plugins.MultiThreaded;
 import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.TrackPostFilter;
+import utils.MultipleException;
+import utils.Pair;
 import utils.Utils;
 
 /**
@@ -40,11 +42,20 @@ public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter
         super(name, "Track Post-Filter", TrackPostFilter.class);
     }
     
-    public void filter(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {
+    public void filter(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) throws MultipleException {
+        if (parentTrack.isEmpty()) return;
+        MultipleException e = new MultipleException();
         for (TrackPostFilter p : this.get()) {
             if (p instanceof MultiThreaded) ((MultiThreaded)p).setExecutor(executor);
-            p.filter(structureIdx, parentTrack);
+            try {
+                p.filter(structureIdx, parentTrack);
+            } catch (MultipleException me) {
+                e.getExceptions().addAll(me.getExceptions());
+            } catch (Exception ee) {
+                e.getExceptions().add(new Pair(parentTrack.get(0).toString(), ee));
+            }
         }
+        if (!e.getExceptions().isEmpty()) throw e;
     }
     @Override public TrackPostFilterSequence add(TrackPostFilter... instances) {
         super.add(instances);
