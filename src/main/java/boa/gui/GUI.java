@@ -2732,7 +2732,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         this.logFile=path;
         if (path==null) this.setLogFileMenuItem.setText("Set Log File");
         else this.setLogFileMenuItem.setText("Set Log File (current: "+path+")");
-        if (!this.appendToFileMenuItem.isSelected() && new File(path).exists()) new File(path).delete();
+        if (path!=null && !this.appendToFileMenuItem.isSelected() && new File(path).exists()) new File(path).delete();
     }
     private void setLogFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setLogFileMenuItemActionPerformed
         File f = Utils.chooseFile("Save Log As...", hostName.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, jLabel1);
