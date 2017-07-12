@@ -18,7 +18,9 @@
 package dataStructure.objects;
 
 import dataStructure.configuration.Experiment;
+import java.io.EOFException;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -142,8 +144,10 @@ public class DBMapObjectDAO implements ObjectDAO {
                     logger.debug("#{} (already: {}) objects from structure: {}, time {}", objectMap.size(), alreadyInCache.size(), key.value, t1-t0);
                 } else {
                     long t0 = System.currentTimeMillis();
-                    Collection<String> allStrings = getValues(dbm);
+                    
                     try {
+                        
+                        Collection<String> allStrings = getValues(dbm);
                         allStrings.size();
                         long t1 = System.currentTimeMillis();
                         for (String s : allStrings) {
