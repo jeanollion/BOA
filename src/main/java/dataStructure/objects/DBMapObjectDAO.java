@@ -20,6 +20,7 @@ package dataStructure.objects;
 import dataStructure.configuration.Experiment;
 import java.io.EOFException;
 import java.io.File;
+import java.io.IOError;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -144,9 +145,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                     logger.debug("#{} (already: {}) objects from structure: {}, time {}", objectMap.size(), alreadyInCache.size(), key.value, t1-t0);
                 } else {
                     long t0 = System.currentTimeMillis();
-                    
                     try {
-                        
                         Collection<String> allStrings = getValues(dbm);
                         allStrings.size();
                         long t1 = System.currentTimeMillis();
@@ -157,8 +156,8 @@ public class DBMapObjectDAO implements ObjectDAO {
                         }
                         long t2 = System.currentTimeMillis();
                         logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
-                    } catch(Exception e) {
-                        logger.error("Corrupted DATA for structure: {}, parent: {}", key.value, key.key);
+                    } catch(IOError e) {
+                        logger.error("Corrupted DATA for structure: "+key.value+" parent: "+key.key, e);
                     }
                     
                 }
@@ -614,11 +613,17 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public Measurements getMeasurements(StructureObject o) {
         Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(o.getStructureIdx());
-        String mS = mDB.value.get(o.getId().toHexString());
-        if (mS==null) return null;
-        Measurements m = JSONUtils.parse(Measurements.class, mS);
-        m.positionName=this.positionName;
-        return m;
+        try {
+            String mS = mDB.value.get(o.getId().toHexString());
+            if (mS==null) return null;
+            Measurements m = JSONUtils.parse(Measurements.class, mS);
+            m.positionName=this.positionName;
+            return m;
+        } catch (IOError e) {
+            
+        }
+        return null;
+        
     }
     
     public void retrieveMeasurements(Collection<StructureObject> objects) {
