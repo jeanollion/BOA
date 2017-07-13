@@ -68,12 +68,12 @@ public class TestParameterSensitivity {
             //add(new double[]{3, 10});
             //add(new double[]{5, 5});
             //add(new double[]{5, 10});
-            add(new double[]{1.1, 2.5});
-            add(new double[]{1.2, 2.5});
-            add(new double[]{1.3, 2.5});
-            add(new double[]{1.1, 3});
+            //add(new double[]{1.1, 2.5});
+            //add(new double[]{1.2, 2.5});
+            //add(new double[]{1.3, 2.5});
+            //add(new double[]{1.1, 3});
             add(new double[]{1.2, 3});
-            add(new double[]{1.3, 3});
+            //add(new double[]{1.3, 3});
         }};
         for (double[] p : allParams) runTest(p, dbName, dir);
         //runTest(allParams.get(0), dbName, dir);
