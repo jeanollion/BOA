@@ -21,6 +21,7 @@ import dataStructure.objects.Voxel;
 import dataStructure.objects.Voxel;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
+import java.io.Serializable;
 
 /**
  *
@@ -30,7 +31,7 @@ import de.caluga.morphium.annotations.Transient;
 public class BoundingBox {
 
     int xMin, xMax, yMin, yMax, zMin, zMax;
-    @Transient int count;
+    @Transient transient int count;
     public BoundingBox(){
         xMin=Integer.MAX_VALUE;
         yMin=Integer.MAX_VALUE;

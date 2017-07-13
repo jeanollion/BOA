@@ -56,26 +56,26 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     //structure-related attributes
     @Id protected ObjectId id;
     protected ObjectId parentId;
-    @Transient protected StructureObject parent;
+    @Transient protected transient StructureObject parent;
     protected int structureIdx;
     protected int idx;
-    @Transient protected final SmallArray<List<StructureObject>> childrenSM=new SmallArray<List<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
-    @Transient protected ObjectDAO dao;
+    @Transient protected transient final SmallArray<List<StructureObject>> childrenSM=new SmallArray<List<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
+    @Transient protected transient ObjectDAO dao;
     
     // track-related attributes
     protected int timePoint;
-    @Transient protected StructureObject previous, next; 
+    @Transient protected transient StructureObject previous, next; 
     ObjectId nextId, previousId;
     ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId ? useful for getTrackHeads
-    @Transient protected StructureObject trackHead;
+    @Transient protected transient StructureObject trackHead;
     protected boolean isTrackHead=true;
     protected Map<String, Object> attributes;
     // object- and images-related attributes
-    @Transient private Object3D object;
-    @Transient private boolean objectModified=false;
+    @Transient private transient Object3D object;
+    @Transient private transient boolean objectModified=false;
     protected ObjectContainer objectContainer;
-    @Transient protected SmallArray<Image> rawImagesC=new SmallArray<>();
-    @Transient protected SmallArray<Image> trackImagesC=new SmallArray<>();
+    @Transient protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
+    @Transient protected transient SmallArray<Image> trackImagesC=new SmallArray<>();
     //@Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     // measurement-related attributes
@@ -1024,7 +1024,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (json.containsKey("attributes")) attributes = JSONUtils.toMap((Map)json.get("attributes"));
         if (json.containsKey("object")) {
             Map objectJ = (Map)json.get("object");
-            objectContainer = ObjectContainer.createFromJSON(this, objectJ);
+            objectContainer = ObjectContainer.createFromMap(this, objectJ);
         }
     }
     

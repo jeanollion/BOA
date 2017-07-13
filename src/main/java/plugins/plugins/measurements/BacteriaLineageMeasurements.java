@@ -92,7 +92,7 @@ public class BacteriaLineageMeasurements implements Measurement {
             currentParent = currentParent.getNext();
             bacteria = currentParent.getChildren(bIdx);
             for (StructureObject o : bacteria) {
-                if (o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
+                if (o.isTrackHead() || o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
                 else {
                     List<StructureObject> sib = siblings.getAndCreateIfNecessary(o.getPrevious());
                     if (sib.size()==1 && Boolean.FALSE.equals(o.getPrevious().getAttribute("TruncatedDivision", false))) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));

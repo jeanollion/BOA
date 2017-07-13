@@ -37,7 +37,7 @@ public abstract class ObjectContainer {
     @Transient public static int MAX_VOX_2D = 1900000; //(1 vox =8B)
     @Transient public static final int MAX_VOX_3D_EMB = 20;
     @Transient public static final int MAX_VOX_2D_EMB = 30;
-    @Transient protected StructureObject structureObject;
+    @Transient protected transient StructureObject structureObject;
     BoundingBox bounds;
     
     public ObjectContainer(StructureObject structureObject) {
@@ -80,7 +80,7 @@ public abstract class ObjectContainer {
         return res;
     }
     protected ObjectContainer() {}
-    public static ObjectContainer createFromJSON(StructureObject o, Map json) {
+    public static ObjectContainer createFromMap(StructureObject o, Map json) {
         ObjectContainer res;
         if (json.containsKey("x")) res = new ObjectContainerVoxels();
         else if (json.containsKey("roi")||json.containsKey("roiZ")) res = new ObjectContainerIjRoi();
