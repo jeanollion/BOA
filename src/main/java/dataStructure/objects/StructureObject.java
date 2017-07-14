@@ -1028,14 +1028,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     
-    // morphium-related methods
-    /*@PreStore public void preStore() {
-        logger.debug("prestore run for object: {}", this);
-        //createObjectContainer();
-    }*/
-    
-    public void callLazyLoading(){} // for lazy-loading listener
-    
     public StructureObject(){}
     
     @PostLoad

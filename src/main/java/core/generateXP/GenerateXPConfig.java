@@ -31,7 +31,7 @@ import utils.JSONUtils;
  */
 public class GenerateXPConfig {
     public static void main(String[] args) {
-        String path = "/home/jollion/Fiji.app/plugins/BOA";
+        String path = "/home/jollion/Documents/Fiji.app/plugins/BOA";
         Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, true, 0, 0, Double.NaN, null);
         exportXP(path, xpFluo, false);
         

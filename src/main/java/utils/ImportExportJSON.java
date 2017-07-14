@@ -17,6 +17,7 @@
  */
 package utils;
 
+import boa.gui.GUI;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.ImageDAO;
 import dataStructure.objects.DBMapObjectDAO;
@@ -159,6 +160,26 @@ public class ImportExportJSON {
             }
         }
         return null;
+    }
+    public static void importConfigurationFromFile(String path, MasterDAO dao, boolean structures, boolean preProcessingTemplate) {
+        File f = new File(path);
+        if (f.getName().endsWith(".txt")) {
+            List<Experiment> xp = FileIO.readFromFile(path, o->JSONUtils.parse(Experiment.class, o));
+            if (xp.size()==1) {
+                Experiment source = xp.get(0);
+                if (source.getStructureCount()!=dao.getExperiment().getStructureCount()) {
+                    GUI.log("Source has: "+source.getStructureCount()+" instead of "+dao.getExperiment().getStructureCount());
+                    return;
+                }
+                // set structures
+                dao.getExperiment().getStructures().setContentFrom(source.getStructures());
+                // set preprocessing template
+                dao.getExperiment().getPreProcessingTemplate().setContentFrom(source.getPreProcessingTemplate());
+                dao.updateExperiment();
+                logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
+            }
+            
+        }
     }
     public static void importFromFile(String path, MasterDAO dao, boolean config, boolean selections, boolean objects) {
         File f = new File(path);

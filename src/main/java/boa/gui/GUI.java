@@ -2182,14 +2182,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             setDBConnection(dbName, getCurrentHostNameOrDir());
             PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, outputFile.getAbsolutePath());
         }*/
-        String outDir = db.getExperiment().getOutputDirectory();
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File f = Utils.chooseFile("Select exported file", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
         int response = JOptionPane.showConfirmDialog(this, "This will erase configutation on current xp", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (response != JOptionPane.YES_OPTION) return;
-        ImportExportJSON.importFromFile(f.getAbsolutePath(), db, true, false, false);
-        db.getExperiment().setOutputDirectory(outDir);
+        ImportExportJSON.importConfigurationFromFile(f.getAbsolutePath(), db, true, true);
         db.updateExperiment();
         updateConfigurationTree();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
