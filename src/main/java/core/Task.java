@@ -412,7 +412,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
         String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structures, "_", "", "_")+".csv";
         publish("extracting measurements from structures: "+Utils.toStringArray(structures));
-        publish("measurements will be extracted to: {}", file);
+        publish("measurements will be extracted to: "+ file);
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structures);
         logger.debug("keys: {}", keys);
         DataExtractor.extractMeasurementObjects(db, file, getPositionNames(), keys);
