@@ -33,7 +33,6 @@ import plugins.Segmenter;
 import plugins.UseThreshold;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.thresholders.Percentage;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.adaptativeThresholdHalfWindow;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
 import utils.ArrayUtil;

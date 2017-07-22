@@ -86,27 +86,17 @@ public class ConditionalParameter extends SimpleContainerParameter {
             action.setConditionalParameter(null);
             action.setContentFrom(otherC.action);
             action.setConditionalParameter(this);
-            HashMap<String, List<Parameter>> oldParam = parameters;
-            parameters=new HashMap<String, List<Parameter>>(otherC.parameters.size());
             String currentAction = otherC.currentValue;
             List<Parameter> currentParameters = currentAction==null? null : otherC.getParameters(currentAction);
             for (Entry<String, List<Parameter>> e : otherC.parameters.entrySet()) {
                 if (e.getKey().equals(currentAction)) continue; // current action at the end, in case that parameters are used 
-                List<Parameter> oldArray = oldParam.get(e.getKey());
-                if (ParameterUtils.setContent(oldArray, e.getValue())) parameters.put(e.getKey(), oldArray);
-                else this.parameters.put(e.getKey(), ParameterUtils.duplicateList(e.getValue()));
+                ParameterUtils.setContent(parameters.get(e.getKey()), e.getValue());
             }
-            if (otherC.defaultParameters!=null) {
-                if (this.defaultParameters!=null && this.defaultParameters.size()==otherC.defaultParameters.size()) ParameterUtils.setContent(defaultParameters, otherC.defaultParameters);
-                else this.defaultParameters = ParameterUtils.duplicateList(otherC.defaultParameters);
+            if (otherC.defaultParameters!=null && defaultParameters!=null) {
+                ParameterUtils.setContent(defaultParameters, otherC.defaultParameters);
             } else this.defaultParameters=null;
             if (currentAction!=null && currentParameters!=null) { // set current action @ the end
-                List<Parameter> oldArray = oldParam.get(currentAction);
-                if (ParameterUtils.setContent(oldArray, currentParameters)) {
-                    parameters.put(currentAction, oldArray);
-                    logger.debug("cond param, action: {} was duplicated", currentAction);
-                }
-                else this.parameters.put(currentAction, ParameterUtils.duplicateList(currentParameters));
+                ParameterUtils.setContent(parameters.get(currentAction), currentParameters);
             }
             setActionValue(action.getValue());
         } else throw new IllegalArgumentException("wrong parameter type");

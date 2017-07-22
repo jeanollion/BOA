@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -90,6 +91,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BoundedNumberParameter adaptativeCoefficient = new BoundedNumberParameter("Adaptative coefficient", 2, 1, 0, 1);
     BoundedNumberParameter frameHalfWindow = new BoundedNumberParameter("Adaptative by Frame: half-window", 1, 10, 1, null);
     BoundedNumberParameter yHalfWindow = new BoundedNumberParameter("Adaptative by Y: half-window", 1, 30, 10, null);
+    BoundedNumberParameter contrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.06, 0.01, 0.2);
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod);
     
     Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold, thresholdCond};
@@ -135,10 +137,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     public static int verboseLevelLimit=1;
     
     // hidden parameters! 
-    // segmentation thld
-    final static boolean adaptativeThreshold= true;
-    final static int adaptativeThresholdHalfWindow = 10;
-    final static double contrastThreshold = 0.06;
     // sizeIncrement -> adaptative SI
     final static int sizeIncrementFrameNumber = 7; // number of frames for sizeIncrement computation
     final static double significativeSIErrorThld = 0.3; // size increment difference > to this value lead to an error
@@ -158,8 +156,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {
-        thresholdCond.setActionParameters("Adaptative By Frame", new Parameter[]{adaptativeCoefficient, frameHalfWindow});
-        thresholdCond.setActionParameters("Adaptative By Frame and Y", new Parameter[]{adaptativeCoefficient, frameHalfWindow, yHalfWindow});
+        thresholdCond.setActionParameters("Adaptative By Frame", new Parameter[]{contrastThreshold, adaptativeCoefficient, frameHalfWindow});
+        thresholdCond.setActionParameters("Adaptative By Frame and Y", new Parameter[]{contrastThreshold, adaptativeCoefficient, frameHalfWindow, yHalfWindow});
     }
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections setSegmenter(SegmenterSplitAndMerge seg) {
@@ -224,11 +222,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
         };
         if (Double.isNaN(debugThreshold) && this.thresholdMethod.getSelectedIndex()>0 && getSegmenter() instanceof UseThreshold) {
-            List<Image> planes = new ArrayList<>();
-            for (int t = 0; t<parentsByF.size(); ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parentsByF.get(t)));
+            List<Image> planes = new ArrayList<>(parentsByF.size());
+            Set<Integer> s =  new TreeSet(parentsByF.keySet());
+            for (int t : s) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parentsByF.get(t)));
             //threshold = new ThresholdHisto(planes);
             logger.debug("adaptative: coeff: {}, hwf: {}, hwy: {}", adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
-            threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
+            threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue()); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
             threshold.setAdaptativeThreshold(adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue()); // global threshold not relevant for cell range computation if some channel are void
             int[] fr = getFrameRangeContainingCells(so); // will use the global threshold
             if (debug) logger.debug("frame range: {}", fr);
@@ -330,13 +329,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         int inc = this.parentsByF.size()<100 ? 1 : 10;
         int minF = Collections.min(parentsByF.keySet());
         int maxF = Collections.max(parentsByF.keySet());
+        final int minFF=minF;
+        final int maxFF = maxF;
         while (minF<maxF && hasNoObjects(so, minF)) minF+=inc;
         if (minF>=maxF) return null;
-        if (inc>1) while (minF>0 && !hasNoObjects(so, minF-1)) minF--; // backward 
+        if (inc>1) while (minF>minFF && !hasNoObjects(so, minF-1)) minF--; // backward 
         
         while (maxF>minF && hasNoObjects(so, maxF)) maxF-=inc;
         if (maxF<=minF) return null;
-        if (inc>1) while (maxF<parentsByF.size()-1 && !hasNoObjects(so, maxF+1)) maxF++; // forward 
+        if (inc>1) while (maxF<maxFF-1 && !hasNoObjects(so, maxF+1)) maxF++; // forward 
         
         return new int[]{minF, maxF};
     }
@@ -643,6 +644,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         Image res = inputImages!=null ? inputImages.get(timePoint) : null;
         if (res==null) {
             StructureObject parent = this.parentsByF.get(timePoint);
+            if (parent==null) return null;
             res = preFilters.filter(parent.getRawImage(structureIdx), parent);
             if (inputImages!=null) inputImages.put(timePoint, res);
         }
