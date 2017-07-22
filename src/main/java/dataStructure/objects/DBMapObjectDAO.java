@@ -122,14 +122,13 @@ public class DBMapObjectDAO implements ObjectDAO {
         return res;
     }
     protected Map<ObjectId, StructureObject> getChildren(Pair<ObjectId, Integer> key) {
-        if (cache.containsKey(key) && allObjectsRetrievedInCache.getAndCreateIfNecessary(key)) return cache.get(key);
+        if (cache.containsKey(key) && allObjectsRetrievedInCache.getOrDefault(key, false)) return cache.get(key);
         else {
             synchronized(this) {
-                if (cache.containsKey(key) && allObjectsRetrievedInCache.getAndCreateIfNecessary(key)) return cache.get(key);
-                boolean cacheAlreadyPresent = cache.containsKey(key);
+                if (cache.containsKey(key) && allObjectsRetrievedInCache.getOrDefault(key, false)) return cache.get(key);
                 Map<ObjectId, StructureObject> objectMap = cache.getAndCreateIfNecessary(key);
                 HTreeMap<String, String> dbm = getDBMap(key);
-                if (cacheAlreadyPresent) {
+                if (!objectMap.isEmpty()) {
                     long t0 = System.currentTimeMillis();
                     Set<String> alreadyInCache = new HashSet<>(objectMap.size());
                     for (ObjectId id : objectMap.keySet()) alreadyInCache.add(id.toHexString());
@@ -156,8 +155,10 @@ public class DBMapObjectDAO implements ObjectDAO {
                         }
                         long t2 = System.currentTimeMillis();
                         logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
-                    } catch(IOError e) {
+                    } catch(IOError|AssertionError|Exception e) {
                         logger.error("Corrupted DATA for structure: "+key.value+" parent: "+key.key, e);
+                        allObjectsRetrievedInCache.put(key, true);
+                        return new HashMap<>();
                     }
                     
                 }
