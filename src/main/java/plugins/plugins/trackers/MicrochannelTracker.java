@@ -110,8 +110,6 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         if (ok) tmi.removeCrossingLinksFromGraph(meanWidth/4); 
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false); // second GC for crossing links!
         tmi.setTrackLinks(map);
-        //fillGaps(structureIdx, parentTrack);
-        
     }
     
     @Override
@@ -152,6 +150,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         // tracking
         //if (debug) logger.debug("mc2: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         track(structureIdx, parentTrack);
+        fillGaps(structureIdx, parentTrack);
         //if (debug) logger.debug("mc3: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         // compute mean of Y-shifts & width for each microchannel and modify objects
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
@@ -159,7 +158,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         List<StructureObject> toRemove = new ArrayList<>();
         for (List<StructureObject> track : allTracks.values()) { // compute median shift on the whole track + mean width
             if (track.isEmpty()) continue;
-            if (!debug && track.size()<this.minTrackLength.getValue().intValue()) toRemove.addAll(track);
+            if (track.size()<this.minTrackLength.getValue().intValue()) toRemove.addAll(track);
             List<Integer> shifts = new ArrayList<>(track.size());
             List<Double> widths = new ArrayList<>(track.size());
             for (StructureObject o : track) {
@@ -256,7 +255,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                         int ySize = Math.round((prev.getBounds().getSizeY()+next.getBounds().getSizeY())/2);
                         int zSize = Math.round((prev.getBounds().getSizeZ()+next.getBounds().getSizeZ())/2);
                         int startFrame = prev.getFrame()+1;
-                        if (debug) logger.debug("mc close gap between: {}&{}, delta off set: [{};{};{}], size:[{};{};{}], prev:{}, next:{}", prev.getFrame(), next.getFrame(), deltaOffX, deltaOffY, deltaOffZ, xSize, ySize, zSize, prev.getBounds(), next.getBounds());
+                        if (debug) logger.debug("mc close gap between: {}&{}, delta offset: [{};{};{}], size:[{};{};{}], prev:{}, next:{}", prev.getFrame(), next.getFrame(), deltaOffX, deltaOffY, deltaOffZ, xSize, ySize, zSize, prev.getBounds(), next.getBounds());
                         if (debug) logger.debug("references: {}", localReference.size());
                         StructureObject gcPrev = prev;
                         for (int f = startFrame; f<next.getFrame(); ++f) { 
@@ -267,7 +266,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                             int offY = deltaOffY + ref.getBounds().getyMin();
                             int offZ = deltaOffZ + ref.getBounds().getzMin();
                             
-                            BlankMask m = new BlankMask("", xSize, ySize, zSize, offX, offY, offZ, ref.getScaleXY(), ref.getScaleZ());
+                            BlankMask m = new BlankMask("", xSize, ySize+offY>=parent.getBounds().getSizeY()?parent.getBounds().getSizeY()-offY:ySize, zSize, offX, offY, offZ, ref.getScaleXY(), ref.getScaleZ());
                             BoundingBox bds = m.getBoundingBox();
                             int maxIntersect = parent.getChildren(structureIdx).stream().mapToInt(o->o.getBounds().getIntersection(bds).getSizeXYZ()).max().getAsInt();
                             if (!bds.isIncluded(parent.getBounds()) || maxIntersect>0) {
