@@ -150,7 +150,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         // tracking
         //if (debug) logger.debug("mc2: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         track(structureIdx, parentTrack);
-        fillGaps(structureIdx, parentTrack);
+        fillGaps(structureIdx, parentTrack, true);
         //if (debug) logger.debug("mc3: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         // compute mean of Y-shifts & width for each microchannel and modify objects
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
@@ -158,7 +158,11 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         List<StructureObject> toRemove = new ArrayList<>();
         for (List<StructureObject> track : allTracks.values()) { // compute median shift on the whole track + mean width
             if (track.isEmpty()) continue;
-            if (track.size()<this.minTrackLength.getValue().intValue()) toRemove.addAll(track);
+            if (track.size()<this.minTrackLength.getValue().intValue()) {
+                toRemove.addAll(track);
+                continue;
+            }
+            
             List<Integer> shifts = new ArrayList<>(track.size());
             List<Double> widths = new ArrayList<>(track.size());
             for (StructureObject o : track) {
@@ -230,7 +234,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         }
     }
 
-    private static void fillGaps(int structureIdx, List<StructureObject> parentTrack) {
+    private static void fillGaps(int structureIdx, List<StructureObject> parentTrack, boolean allowUnfilledGaps) {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         Map<Integer, StructureObject> reference = null; //getOneElementOfSize(allTracks, parentTrack.size()); // local reference with minimal MSD
         int minParentFrame = parentTrack.get(0).getFrame();
@@ -242,9 +246,12 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                 if (next.getFrame()>prev.getFrame()+1) {
                     if (debug) logger.debug("gap: {}->{}", prev, next);
                     Map<Integer, StructureObject> localReference = reference==null? getReference(allTracks,prev.getFrame(), next.getFrame()) : reference;
-                    if (localReference==null) {
-                        prev.resetTrackLinks(false, true);
-                        next.resetTrackLinks(true, false, true, null);
+                    if (localReference==null) { // case no object detected in frame -> no reference. allow unfilled gaps ? 
+                        if (allowUnfilledGaps) continue;
+                        else {
+                            prev.resetTrackLinks(false, true);
+                            next.resetTrackLinks(true, false, true, null);
+                        }
                     } else {
                         StructureObject refPrev=localReference.get(prev.getFrame());
                         StructureObject refNext=localReference.get(next.getFrame());
