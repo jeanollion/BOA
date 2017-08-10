@@ -18,9 +18,9 @@
 package processing;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import ij.ImagePlus;
 import image.IJImageWrapper;
@@ -36,7 +36,7 @@ public class TestSkeletonize {
     public static void main(String[] args) {
         String dbName = "boa_fluo160501";
         int fieldNumber= 0, timePoint=0, mc=0, b=1;
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO = new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);

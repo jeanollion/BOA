@@ -18,8 +18,9 @@
 package DataStructureVerifications;
 
 import static TestUtils.Utils.logger;
+import core.Task;
 import dataStructure.configuration.MicroscopyField;
-import dataStructure.objects.MorphiumMasterDAO;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import java.util.List;
@@ -33,7 +34,7 @@ public class NoMeasurementError {
         String dbName = "boa_fluo160428";
         int fIdx = 0;
         int structureIdx = 2;
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fIdx);
         ObjectDAO dao = db.getDao(f.getName());
         checkMeasurements(dao, structureIdx);

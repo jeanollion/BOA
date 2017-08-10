@@ -243,7 +243,7 @@ public class BasicObjectDAO implements ObjectDAO {
     }
 
     @Override
-    public StructureObject getById(ObjectId parentTrackHeadId, int structureIdx, int frame, ObjectId id) {
+    public StructureObject getById(String parentTrackHeadId, int structureIdx, int frame, String id) {
         if (frame>=0) {
             for (StructureObject o : this.getRoot(frame).getChildren(structureIdx)) if (o.id.equals(id)) return o;
             return null;

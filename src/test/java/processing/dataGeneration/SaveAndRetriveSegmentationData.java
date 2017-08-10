@@ -21,11 +21,10 @@ import static TestUtils.Utils.logger;
 import boa.gui.GUI;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import dataStructure.objects.MorphiumMasterDAO;
-import dataStructure.objects.MorphiumObjectDAO;
+import core.Task;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import dataStructure.objects.Voxel;
@@ -103,8 +102,8 @@ public class SaveAndRetriveSegmentationData {
     }
     
     public static HashMap<Image, Overlay> getImagesWithOverlay(String dbName, String baseFileName, int fieldIdx, int structureIdx, int[] roiStructureIdx, int[] trackStructureIdx) {
-        MorphiumMasterDAO m = new MorphiumMasterDAO(dbName);
-        MorphiumObjectDAO dao = m.getDao(m.getExperiment().getPosition(fieldIdx).getName());
+        MasterDAO m = new Task(dbName).getDB();
+        ObjectDAO dao = m.getDao(m.getExperiment().getPosition(fieldIdx).getName());
         StructureObject root = dao.getRoot(0);
         List<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
         logger.debug("{} MC founds", mcTH.size());
@@ -141,8 +140,8 @@ public class SaveAndRetriveSegmentationData {
     }
     
     public static ArrayList<ArrayList<Object3D>> getObjectsMC(String dbName, int fieldIdx, int structureIdx) {
-        MorphiumMasterDAO m = new MorphiumMasterDAO(dbName);
-        MorphiumObjectDAO dao = m.getDao(m.getExperiment().getPosition(fieldIdx).getName());
+        MasterDAO m = new Task(dbName).getDB();
+        ObjectDAO dao = m.getDao(m.getExperiment().getPosition(fieldIdx).getName());
         StructureObject root = dao.getRoot(0);
         List<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
         ArrayList<ArrayList<Object3D>> res = new ArrayList<ArrayList<Object3D>>();

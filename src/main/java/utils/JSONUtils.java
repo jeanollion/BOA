@@ -23,6 +23,10 @@ import com.mongodb.DBObject;
 import com.mongodb.DBRef;
 import com.mongodb.util.JSONParseException;
 import configuration.parameters.PostLoadable;
+import dataStructure.objects.Measurements;
+import dataStructure.objects.MeasurementsLegacy;
+import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectLegacy;
 import de.caluga.morphium.AnnotationAndReflectionHelper;
 import de.caluga.morphium.BinarySerializedObject;
 import de.caluga.morphium.PartiallyUpdateable;
@@ -64,16 +68,17 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.LoggerFactory;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 import sun.reflect.ReflectionFactory;
-import static utils.MorphiumUtils.logger;
 
 /**
  *
  * @author jollion
  */
 public class JSONUtils {
+    public final static org.slf4j.Logger logger = LoggerFactory.getLogger(JSONUtils.class);
     public static JSONObject toJSONObject(Map<String, Object> map) {
         JSONObject res=  new JSONObject();
         for (Map.Entry<String, Object> e : map.entrySet()) {
@@ -87,18 +92,29 @@ public class JSONUtils {
     }
     public static Map<String, Object> toMap(Map map) {
         HashMap<String, Object> res= new HashMap<>(map.size());
-        for (Object o : map.entrySet()) {
-            String key = (String)((Entry)o).getKey();
-            Object value = ((Entry)o).getValue();
-            if (o instanceof List) {
+        for (Object e : map.entrySet()) {
+            String key = (String)((Entry)e).getKey();
+            Object value = ((Entry)e).getValue();
+            if (value instanceof List) {
                 List array = (List)value;
-                if (!array.isEmpty() && array.get(0) instanceof Integer) map.put(key, fromIntArray(array));
-                else map.put(key, fromDoubleArray(array));
-            } else map.put(key, value);
+                if (!array.isEmpty() && (array.get(0) instanceof Integer || array.get(0) instanceof Long)) res.put(key, fromIntArray(array));
+                else res.put(key, fromDoubleArray(array));
+            } else res.put(key, value);
         }
         return res;
     }
-    
+    public static Map<String, Object> toValueMap(Map jsonMap) {
+        List<String> keys = new ArrayList<>(jsonMap.keySet());
+        for (String k : keys) {
+            Object v = jsonMap.get(k);
+            if (v instanceof List) {
+                List array = (List)v;
+                if (!array.isEmpty() && (array.get(0) instanceof Integer || array.get(0) instanceof Long)) jsonMap.put(k, fromIntArray(array));
+                else jsonMap.put(k, fromDoubleArray(array));
+            } 
+        }
+        return (Map<String, Object>)jsonMap;
+    }
     
     public static double[] fromDoubleArray(List array) {
         double[] res = new double[array.size()];
@@ -136,6 +152,8 @@ public class JSONUtils {
         return res;
     }
     public static String serialize(Object o) {
+        if (o instanceof StructureObject) return ((StructureObject)o).toJSON().toJSONString();
+        else if (o instanceof Measurements) return ((Measurements)o).toJSON().toJSONString();
         DBObject oMarsh = marshall(o);
         return com.mongodb.util.JSON.serialize(oMarsh);
     }
@@ -144,29 +162,47 @@ public class JSONUtils {
             Object res= new JSONParser().parse(s);
             return (JSONObject)res;
         } catch (ParseException ex) {
-            logger.debug("Could not parse: "+s, ex);
+            logger.trace("Could not parse: "+s, ex);
             return null;
         }
     }
     public static <T> T parse(Class<T> clazz, String s) {
-        try {
+        
+            if (StructureObject.class.equals(clazz)) {
+                JSONObject o = parse(s);
+                if (o!=null && o.containsKey("sIdx")) return (T)new StructureObject(o);
+                else {
+                    DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
+                    StructureObjectLegacy res = unmarshall(StructureObjectLegacy.class, oParse);
+                    return (T)res.getStructureObject();
+                }
+            } else if (Measurements.class.equals(clazz)) {
+                JSONObject o = parse(s);
+                if (o!=null && o.containsKey("sIdx")) return (T)new Measurements(o);
+                else {
+                    DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
+                    MeasurementsLegacy res = unmarshall(MeasurementsLegacy.class, oParse);
+                    return (T)res.getMeasurements();
+                }
+            } else {
             //s = s.replace("Infinity", "NaN");
-            DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
-            T res = unmarshall(clazz, oParse);
-            if (res instanceof PostLoadable) ((PostLoadable)res).postLoad();
-            return res;
-        } catch (JSONParseException e) {
-            
-            logger.error("Parse Exception", e);
-            String message = e.getMessage();
-            int idx = message.length()-2;
-            while (idx>0 && message.charAt(idx)==' ') --idx;
-            int idx2 = message.length()-idx;
-            
-            logger.debug("message length: {}, idx:{}/{}", message.length(), idx, idx2);
-            logger.error("problem at: " + message.substring(idx2-10, idx2+10));
-            logger.error("contect: " + message.substring(idx2-200, idx2+200));
-        }
+                try {
+                    DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
+                    T res = unmarshall(clazz, oParse);
+                    if (res instanceof PostLoadable) ((PostLoadable)res).postLoad();
+                    return res;
+                }
+                catch (JSONParseException e) {
+                    logger.error("Parse Exception", e);
+                    String message = e.getMessage();
+                    int idx = message.length()-2;
+                    while (idx>0 && message.charAt(idx)==' ') --idx;
+                    int idx2 = message.length()-idx;
+                    logger.debug("message length: {}, idx:{}/{}", message.length(), idx, idx2);
+                    logger.error("problem at: " + message.substring(idx2-10, idx2+10));
+                    logger.error("contect: " + message.substring(idx2-200, idx2+200));
+            }
+        } 
         return null;
     }
     

@@ -6,16 +6,6 @@ import configuration.parameters.PostLoadable;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.ObjectContainer;
-import de.caluga.morphium.MorphiumAccessVetoException;
-import de.caluga.morphium.annotations.Entity;
-import de.caluga.morphium.annotations.Id;
-import de.caluga.morphium.annotations.Index;
-import de.caluga.morphium.annotations.Reference;
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.caching.Cache;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
-import de.caluga.morphium.annotations.lifecycle.PreStore;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -24,65 +14,56 @@ import image.ImageInteger;
 import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageProperties;
-import image.ImageWriter;
-import image.ObjectFactory;
-import static image.ObjectFactory.getBounds;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import measurement.MeasurementKey;
-import org.bson.types.ObjectId;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.ObjectSplitter;
 import processing.ImageFeatures;
+import utils.Id;
 import utils.JSONUtils;
 import utils.Pair;
 import utils.SmallArray;
 import utils.Utils;
 
-@Lifecycle
-@Entity
-@Index(value={"structure_idx, parent_id"})
+
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject>, PostLoadable {
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
-    @Id protected ObjectId id;
-    protected ObjectId parentId;
-    @Transient protected transient StructureObject parent;
+    protected String id;
+    protected String parentId;
+    protected transient StructureObject parent;
     protected int structureIdx;
     protected int idx;
-    @Transient protected transient final SmallArray<List<StructureObject>> childrenSM=new SmallArray<List<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
-    @Transient protected transient ObjectDAO dao;
+    protected transient final SmallArray<List<StructureObject>> childrenSM=new SmallArray<List<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
+    protected transient ObjectDAO dao;
     
     // track-related attributes
     protected int timePoint;
-    @Transient protected transient StructureObject previous, next; 
-    ObjectId nextId, previousId;
-    ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId ? useful for getTrackHeads
-    @Transient protected transient StructureObject trackHead;
+    protected transient StructureObject previous, next; 
+    String nextId, previousId;
+    String parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId ? useful for getTrackHeads
+    protected transient StructureObject trackHead;
     protected boolean isTrackHead=true;
     protected Map<String, Object> attributes;
     // object- and images-related attributes
-    @Transient private transient Object3D object;
-    @Transient private transient boolean objectModified=false;
+    private transient Object3D object;
+    private transient boolean objectModified=false;
     protected ObjectContainer objectContainer;
-    @Transient protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
-    @Transient protected transient SmallArray<Image> trackImagesC=new SmallArray<>();
+    protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
+    protected transient SmallArray<Image> trackImagesC=new SmallArray<>();
     //@Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     // measurement-related attributes
-    @Transient Measurements measurements;
+    Measurements measurements;
     
     public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent) {
-        this.id= new ObjectId();
+        this.id= Id.get().toHexString();
         this.timePoint = timePoint;
         this.object=object;
         if (object!=null) this.object.label=idx+1;
@@ -101,7 +82,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @param mask
      */
     public StructureObject(int timePoint, BlankMask mask, ObjectDAO dao) {
-        this.id= new ObjectId();
+        this.id= Id.get().toHexString();
         this.timePoint=timePoint;
         if (mask!=null) this.object=new Object3D(mask, 1);
         this.structureIdx = -1;
@@ -116,7 +97,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     // structure-related methods
     public ObjectDAO getDAO() {return dao;}
-    public ObjectId getId() {return id;}
+    public String getId() {return id;}
     public String getPositionName() {return dao==null? "?":dao.getPositionName();}
     public int getPositionIdx() {return dao==null?-1 : getExperiment().getPosition(getPositionName()).getIndex();}
     public int getStructureIdx() {return structureIdx;}
@@ -233,7 +214,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     int commonParentIdx = getExperiment().getFirstCommonParentStructureIdx(this.structureIdx, structureIdx);
                     StructureObject commonParent = this.getParent(commonParentIdx);
                     List<StructureObject> candidates = commonParent.getChildren(structureIdx);
-                    //if (this.timePoint==0) logger.debug("structure: {}, child: {}, commonParentIdx: {}, object: {}, path: {}, candidates: {}", this.structureIdx, structureIdx, commonParentIdx, commonParent, getExperiment().getPathToStructure(commonParentIdx, structureIdx), candidates.size());
+                    //if (this.frame==0) logger.debug("structure: {}, child: {}, commonParentIdx: {}, object: {}, path: {}, candidates: {}", this.structureIdx, structureIdx, commonParentIdx, commonParent, getExperiment().getPathToStructure(commonParentIdx, structureIdx), candidates.size());
                     return StructureObjectUtils.getIncludedObjects(candidates, this);
                 } else return StructureObjectUtils.getAllObjects(this, path);
             }
@@ -447,7 +428,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return trackHead;
     }
     
-    public ObjectId getTrackHeadId() {
+    public String getTrackHeadId() {
         if (trackHeadId==null) {
             getTrackHead();
             if (trackHead!=null) trackHeadId = trackHead.id;
@@ -455,7 +436,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return trackHeadId;
     }
     
-    public ObjectId getParentTrackHeadId() {
+    public String getParentTrackHeadId() {
         if (parentTrackHeadId==null) {
             if (getParent()!=null) {
                 parentTrackHeadId = parent.getTrackHeadId();
@@ -587,7 +568,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public List<StructureObject> getDivisionSiblings(boolean includeCurrentObject) {
         ArrayList<StructureObject> res=null;
         List<StructureObject> siblings = getSiblings();
-        //logger.trace("get div siblings: timePoint: {}, number of siblings: {}", this.getTimePoint(), siblings.size());
+        //logger.trace("get div siblings: frame: {}, number of siblings: {}", this.getTimePoint(), siblings.size());
         if (this.getPrevious()!=null) {
             for (StructureObject o : siblings) {
                 if (o!=this) {
@@ -839,12 +820,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 res =  getExperiment().getImageDAO().openPreProcessedImage(channelIdx, getMicroscopyField().singleFrame(structureIdx) ? 0 : timePoint, getPositionName(), bounds);
                 if (res==null) throw new RuntimeException("No image found for object: "+this+" structure: "+structureIdx);
                 res.setCalibration(getScaleXY(), getScaleZ());
-                //if (this.timePoint==0) logger.debug("open from: {} within bounds: {}, resultBounds: {}", this, bounds, res.getBoundingBox());
+                //if (this.frame==0) logger.debug("open from: {} within bounds: {}, resultBounds: {}", this, bounds, res.getBoundingBox());
             }
         } 
         else {
             res = rawImagesC.get(channelIdx).crop(bounds);
-            //if (this.timePoint==0) logger.debug("crom from: {} within bounds: {}, input bounds: {}, resultBounds: {}", this, bounds, rawImagesC.get(channelIdx).getBoundingBox(), res.getBoundingBox());
+            //if (this.frame==0) logger.debug("crom from: {} within bounds: {}, input bounds: {}, resultBounds: {}", this, bounds, rawImagesC.get(channelIdx).getBoundingBox(), res.getBoundingBox());
         }
         return res;
     }
@@ -969,8 +950,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Override
     public String toString() {
         return "P:"+getPositionIdx()+"/S:"+structureIdx+"/I:"+Selection.indicesToString(StructureObjectUtils.getIndexTree(this));//+"/id:"+id;
-        //if (isRoot()) return "F:"+getPositionIdx() + ",T:"+timePoint;
-        //else return "F:"+getPositionIdx()+ ",T:"+timePoint+ ",S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" + (flag==null?"":"{"+flag+"}") ;
+        //if (isRoot()) return "F:"+getPositionIdx() + ",T:"+frame;
+        //else return "F:"+getPositionIdx()+ ",T:"+frame+ ",S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" + (flag==null?"":"{"+flag+"}") ;
     }
     
     protected String toStringShort() {
@@ -993,35 +974,39 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public JSONObject toJSON() {
         JSONObject obj1=new JSONObject();
-        obj1.put("id", id.toHexString());
-        obj1.put("parent_id", parentId.toHexString());
-        obj1.put("structure_idx", structureIdx);
+        obj1.put("id", id);
+        if (parentId!=null) obj1.put("pId", parentId);
+        obj1.put("sIdx", structureIdx);
         obj1.put("idx", idx);
-        obj1.put("next_id", nextId.toHexString());
-        obj1.put("previous_id", previousId.toHexString());
-        obj1.put("parent_track_head_id", parentTrackHeadId.toHexString());
-        obj1.put("track_head_id", trackHeadId.toHexString());
-        obj1.put("is_track_head", isTrackHead);
+        obj1.put("frame", timePoint);
+        if (nextId!=null) obj1.put("nextId", nextId);
+        if (previousId!=null) obj1.put("prevId", previousId);
+        if (parentTrackHeadId!=null) obj1.put("parentThId", parentTrackHeadId);
+        if (trackHeadId!=null) obj1.put("thId", trackHeadId);
+        obj1.put("isTh", isTrackHead);
         if (attributes!=null && !attributes.isEmpty()) obj1.put("attributes", JSONUtils.toJSONObject(attributes));
         if (objectContainer!=null) obj1.put("object", objectContainer.toJSON());
         return obj1;
     }
     
     public StructureObject(Map json) {
-        
-        id = new ObjectId((String)json.get("id"));
-        parentId = new ObjectId((String)json.get("parent_id"));
-        
-        structureIdx = ((Number)json.get("structure_idx")).intValue();
+        id = (String)json.get("id");
+        Object pId = json.get("pId");
+        if (pId!=null) parentId = (String)pId;
+        structureIdx = ((Number)json.get("sIdx")).intValue();
         idx = ((Number)json.get("idx")).intValue();
+        timePoint = ((Number)json.get("frame")).intValue();
+        Object nId = json.get("nextId");
+        if (nId!=null) nextId = (String)nId;
+        Object prevId = json.get("prevId");
+        if (prevId!=null) previousId = (String)prevId;
+        Object parentThId = json.get("parentThId");
+        if (parentThId!=null) parentTrackHeadId = (String)parentThId;
+        Object thId = json.get("thId");
+        if (thId!=null) trackHeadId = (String)thId;
+        isTrackHead = (Boolean)json.get("isTh");
         
-        nextId = new ObjectId((String)json.get("next_id"));
-        previousId = new ObjectId((String)json.get("previous_id"));
-        parentTrackHeadId = new ObjectId((String)json.get("parent_track_head_id"));
-        trackHeadId = new ObjectId((String)json.get("track_head_id"));
-        isTrackHead = (Boolean)json.get("is_track_head");
-        
-        if (json.containsKey("attributes")) attributes = JSONUtils.toMap((Map)json.get("attributes"));
+        if (json.containsKey("attributes")) attributes = JSONUtils.toValueMap((Map)json.get("attributes"));
         if (json.containsKey("object")) {
             Map objectJ = (Map)json.get("object");
             objectContainer = ObjectContainer.createFromMap(this, objectJ);
@@ -1030,7 +1015,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject(){}
     
-    @PostLoad
     public void postLoad() {
         //logger.debug("post load: {}", this);
         if (objectContainer!=null) objectContainer.setStructureObject(this);

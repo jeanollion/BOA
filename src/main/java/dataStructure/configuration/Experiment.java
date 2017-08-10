@@ -32,7 +32,6 @@ import configuration.parameters.ParameterListener;
 import configuration.parameters.PluginParameter;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ImageDAOFactory;
-import dataStructure.objects.MorphiumObjectDAO;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;

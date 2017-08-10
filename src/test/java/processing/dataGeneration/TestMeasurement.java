@@ -22,7 +22,6 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.selection.SelectionUtils;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import ij.ImageJ;

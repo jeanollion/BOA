@@ -27,7 +27,6 @@ import core.Processor;
 import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;

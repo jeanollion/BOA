@@ -20,18 +20,16 @@ package processing.dataGeneration;
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
+import core.Task;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
-import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
 import image.Image;
 import image.ImageMask;
 import plugins.plugins.segmenters.BacteriaFluo;
-import utils.MorphiumUtils;
 
 /**
  *
@@ -47,7 +45,7 @@ public class TestProcessBacteria {
     }
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int timePoint, int microChannel) {
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO = new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);

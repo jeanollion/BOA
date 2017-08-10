@@ -28,8 +28,6 @@ import core.Task;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
-import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
@@ -46,10 +44,6 @@ import java.util.List;
 import plugins.PluginFactory;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaTrans;
-import plugins.plugins.segmenters.BacteriaFluo;
-import plugins.plugins.thresholders.ConstantValue;
-import plugins.plugins.thresholders.IJAutoThresholder;
-import utils.MorphiumUtils;
 
 /**
  *
@@ -83,7 +77,7 @@ public class TestProcessBacteriaPhase {
     }
     
     public static void testSplit(String dbName, int position, int timePoint, int microChannel, int oIdx, boolean useSegmentedObjectsFromDB) {
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO = new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(position);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);

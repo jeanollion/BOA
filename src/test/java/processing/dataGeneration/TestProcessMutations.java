@@ -22,12 +22,8 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import configuration.parameters.PostFilterSequence;
 import core.Task;
-import dataStructure.objects.MorphiumMasterDAO;
-import dataStructure.configuration.Experiment;
-import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
@@ -44,12 +40,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import plugins.ObjectFeature;
 import plugins.PluginFactory;
-import plugins.plugins.measurements.objectFeatures.LocalSNR;
-import plugins.plugins.measurements.objectFeatures.SNR;
-import plugins.plugins.postFilters.FeatureFilter;
-import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MutationSegmenter;
-import utils.MorphiumUtils;
 import utils.Utils;
 
 /**

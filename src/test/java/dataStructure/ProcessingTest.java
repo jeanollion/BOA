@@ -18,10 +18,6 @@
 package dataStructure;
 
 import TestUtils.Utils;
-import static TestUtils.Utils.showImageIJ;
-import dataStructure.objects.MorphiumMasterDAO;
-import configuration.parameters.NumberParameter;
-import testPlugins.dummyPlugins.DummySegmenter;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -31,16 +27,6 @@ import dataStructure.configuration.Structure;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.objects.BasicMasterDAO;
-import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MasterDAOFactory;
-import dataStructure.objects.MasterDAOFactory.DAOType;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.MorphiumObjectDAO;
-import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.StructureObjectUtils;
-import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
-import de.caluga.morphium.Morphium;
-import de.caluga.morphium.MorphiumConfig;
 import image.BlankMask;
 import image.Image;
 import image.ImageByte;
@@ -67,8 +53,6 @@ import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.SimpleTranslation;
 import processing.ImageTransformation;
-import utils.MorphiumUtils;
-import static utils.Utils.toStringArray;
 
 /**
  *

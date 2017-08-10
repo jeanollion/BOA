@@ -21,9 +21,10 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.TransformationPluginParameter;
 import core.Processor;
 import static core.Processor.setTransformations;
+import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.InputImagesImpl;
-import dataStructure.objects.MorphiumMasterDAO;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.StructureObject;
 import image.Image;
 import image.ImageInteger;
@@ -67,7 +68,7 @@ public class TestPreProcess {
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+       MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         //Processor.setTransformations(f, true);
         InputImagesImpl images = f.getInputImages();
@@ -82,7 +83,7 @@ public class TestPreProcess {
     }
     
     public static void testCrop(String dbName, int fieldIdx, int time, boolean flip) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
         f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
@@ -104,7 +105,7 @@ public class TestPreProcess {
     
     
     public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         if (time>=tStart) time -=tStart;
@@ -128,7 +129,7 @@ public class TestPreProcess {
     }
     
     public static void testStabFromXP(String dbName, int fieldIdx, int channelIdx,int tStart, int tEnd) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         List<TransformationPluginParameter<Transformation>> tr = new ArrayList<>(f.getPreProcessingChain().getTransformations(false));
         TransformationPluginParameter<Transformation> stab=null;
@@ -160,7 +161,7 @@ public class TestPreProcess {
     }
     
     public static void displayPreProcessed(String dbName, int fieldIdx, int structureIdx, int tStart, int tEnd) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         IJImageDisplayer disp = new IJImageDisplayer();
@@ -178,7 +179,7 @@ public class TestPreProcess {
     }
     
     public static void testStabilizer(String dbName, int fieldIdx, int channelIdx, int tRef, int t, boolean flip) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
         int bactChann = 1;

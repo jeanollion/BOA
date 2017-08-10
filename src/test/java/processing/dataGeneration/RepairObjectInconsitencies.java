@@ -20,9 +20,9 @@ package processing.dataGeneration;
 import static TestUtils.Utils.logger;
 import boa.gui.GUI;
 import boa.gui.ManualCorrection;
+import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
@@ -53,7 +53,7 @@ public class RepairObjectInconsitencies {
     public static void main(String[] args) {
         String dbName = "boa_fluo160501";
         //String dbName = "boa_160501";
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO = new Task(dbName).getDB();
         repair(mDAO, mDAO.getExperiment().getPositionsAsString()[1], 1, NEVER_ERASE);
         repair(mDAO, mDAO.getExperiment().getPositionsAsString()[3], 1, NEVER_ERASE);
     }

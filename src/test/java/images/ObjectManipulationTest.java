@@ -19,8 +19,6 @@ package images;
 
 import static TestUtils.GenerateSyntheticData.generateImages;
 import TestUtils.Utils;
-import dataStructure.objects.MorphiumMasterDAO;
-import dataStructure.configuration.Experiment;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;

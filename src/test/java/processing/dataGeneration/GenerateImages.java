@@ -22,7 +22,8 @@ import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import dataStructure.objects.MorphiumMasterDAO;
+import core.Task;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -54,7 +55,7 @@ public class GenerateImages {
         int yMin = 20;
         int yMax = 180;
         double meanIntensityThld = 135;
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         ObjectDAO dao = db.getDao(db.getExperiment().getPosition(positionIdx).getName());
         List<StructureObject> roots = dao.getRoots();
         List<StructureObject> mcTrack = getFirst(StructureObjectUtils.getAllTracks(roots, 0), o->o.getIdx()==mcIdx);

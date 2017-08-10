@@ -34,8 +34,7 @@ public class MasterDAOFactory {
     }
     
     public static MasterDAO createDAO(String dbName, String dir, DAOType daoType) {
-        if (daoType.equals(DAOType.Morphium)) return new MorphiumMasterDAO(dbName, dir);
-        else if (daoType.equals(DAOType.DBMap)) return new DBMapMasterDAO(dir, dbName);
+        if (daoType.equals(DAOType.DBMap)) return new DBMapMasterDAO(dir, dbName);
         else if (daoType.equals(DAOType.Basic)) return new BasicMasterDAO();
         else return null;
     }

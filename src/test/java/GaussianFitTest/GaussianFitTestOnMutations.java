@@ -19,8 +19,9 @@ package GaussianFitTest;
 
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
+import core.Task;
 import dataStructure.configuration.MicroscopyField;
-import dataStructure.objects.MorphiumMasterDAO;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import plugins.PluginFactory;
@@ -31,7 +32,7 @@ import processing.dataGeneration.TestProcessMutations;
  * @author jollion
  */
 public class GaussianFitTestOnMutations {
-    MorphiumMasterDAO db;
+    MasterDAO db;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
@@ -45,7 +46,7 @@ public class GaussianFitTestOnMutations {
         t.testGaussFit(fIdx, mcIdx, 3);
     }
     public void init(String dbName) {
-        db = new MorphiumMasterDAO(dbName);
+        db = new Task(dbName).getDB();
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
     public void testGaussFit(int fieldIdx, int mcIdx, int tp) {

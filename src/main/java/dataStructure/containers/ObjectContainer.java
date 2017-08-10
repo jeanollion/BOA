@@ -56,13 +56,16 @@ public abstract class ObjectContainer {
     public void initFromJSON(Map json) {
         JSONArray bds =  (JSONArray)json.get("bounds");
         this.bounds=new BoundingBox();
-        bounds.setxMin((int)bds.get(0));
-        bounds.setxMax((int)bds.get(1));
-        bounds.setyMin((int)bds.get(2));
-        bounds.setyMax((int)bds.get(3));
+        bounds.setxMin(((Number)bds.get(0)).intValue());
+        bounds.setxMax(((Number)bds.get(1)).intValue());
+        bounds.setyMin(((Number)bds.get(2)).intValue());
+        bounds.setyMax(((Number)bds.get(3)).intValue());
         if (bds.size()>=6) {
-            bounds.setzMin((int)bds.get(4));
-            bounds.setzMax((int)bds.get(5));
+            bounds.setzMin(((Number)bds.get(4)).intValue());
+            bounds.setzMax(((Number)bds.get(5)).intValue());
+        } else {
+            bounds.setzMin(0);
+            bounds.setzMax(0);
         }
     }
     public JSONObject toJSON() {
@@ -71,7 +74,7 @@ public abstract class ObjectContainer {
         bds.add(bounds.getxMax());
         bds.add(bounds.getyMin());
         bds.add(bounds.getyMax());
-        if (bounds.getSizeZ()>1 || bounds.getzMin()>0) {
+        if (bounds.getSizeZ()>1 || bounds.getzMin()!=0) {
             bds.add(bounds.getzMin());
             bds.add(bounds.getzMax());
         }

@@ -20,10 +20,10 @@ package processing.dataGeneration;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import core.Processor;
 import static core.Processor.setTransformations;
+import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.InputImagesImpl;
-import dataStructure.objects.MorphiumMasterDAO;
-import dataStructure.objects.StructureObject;
+import dataStructure.objects.MasterDAO;
 import ij.ImageJ;
 import image.Image;
 import image.ImageInteger;
@@ -68,7 +68,7 @@ public class TestPreProcessPhase {
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         //Processor.setTransformations(f, true);
         InputImagesImpl images = f.getInputImages();
@@ -84,7 +84,7 @@ public class TestPreProcessPhase {
     }
     
     public static void testRotation(String dbName, int fieldIdx, int channelIdx, int time) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
@@ -100,7 +100,7 @@ public class TestPreProcessPhase {
     }
     
     public static void testCrop(String dbName, int fieldIdx, String positionName, int time, boolean flip) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = positionName ==null ? db.getExperiment().getPosition(fieldIdx): db.getExperiment().getPosition(positionName);
         f.getPreProcessingChain().removeAllTransformations();
         f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false)));
@@ -118,7 +118,7 @@ public class TestPreProcessPhase {
     
     
     public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         if (time>=tStart) time -=tStart;

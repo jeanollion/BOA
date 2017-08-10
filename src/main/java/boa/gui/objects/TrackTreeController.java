@@ -19,9 +19,7 @@ package boa.gui.objects;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
-import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;

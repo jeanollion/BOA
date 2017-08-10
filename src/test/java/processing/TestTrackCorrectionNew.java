@@ -18,8 +18,6 @@
 package processing;
 
 import static TestUtils.Utils.logger;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import dataStructure.objects.MorphiumMasterDAO;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -28,7 +26,6 @@ import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
-import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTrackCorrection;
 import dataStructure.objects.StructureObjectUtils;
@@ -54,8 +51,6 @@ import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.ClosedMicrochannelTracker;
 import testPlugins.dummyPlugins.DummySegmenterSplitAndMerge;
-import testPlugins.dummyPlugins.DummySplitter;
-import utils.MorphiumUtils;
 
 /**
  *

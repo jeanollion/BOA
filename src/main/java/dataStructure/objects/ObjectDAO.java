@@ -32,7 +32,7 @@ public interface ObjectDAO {
     public Experiment getExperiment();
     public String getPositionName();
     public void clearCache();
-    StructureObject getById(ObjectId parentTrackHeadId, int structureIdx, int frame, ObjectId id);
+    StructureObject getById(String parentTrackHeadId, int structureIdx, int frame, String id);
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx); // needs indicies: structureIdx & parent
     /**
      * Sets children for each parent in parent Track

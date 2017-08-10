@@ -841,7 +841,7 @@ public abstract class ImageWindowManager<T, U, V> {
             else minTimePoint++;
         }
         logger.debug("Current Display range: {}, maxTimePoint: {}, minTimePoint: {}, number of objects: {}", currentDisplayRange, maxTimePoint, minTimePoint, objects.size());
-        Collections.sort(objects, frameComparator()); // sort by timePoint
+        Collections.sort(objects, frameComparator()); // sort by frame
         StructureObject nextObject = getNextObject(next? maxTimePoint: minTimePoint, objects, next);
         if (nextObject==null) {
             logger.info("No object detected {} timepoint: {}", next? "after" : "before", maxTimePoint);

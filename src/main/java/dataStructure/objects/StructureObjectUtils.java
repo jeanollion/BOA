@@ -451,13 +451,8 @@ public class StructureObjectUtils {
         return res;
     }
     
-    public static List<ObjectId> getIdList(Collection<StructureObject> objects) {
-        List<ObjectId> ids = new ArrayList<>(objects.size());
-        for (StructureObject o : objects) ids.add(o.id);
-        return ids;
-    }
-    public static List<ObjectId> getMeasurementIdList(Collection<StructureObject> objects) {
-        List<ObjectId> ids = new ArrayList<>(objects.size());
+    public static List<String> getIdList(Collection<StructureObject> objects) {
+        List<String> ids = new ArrayList<>(objects.size());
         for (StructureObject o : objects) ids.add(o.id);
         return ids;
     }

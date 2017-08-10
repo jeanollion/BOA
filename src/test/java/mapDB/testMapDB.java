@@ -18,9 +18,9 @@
 package mapDB;
 
 import com.mongodb.DBObject;
+import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.AnnotationAndReflectionHelper;
 import de.caluga.morphium.ObjectMapperImpl;
@@ -41,7 +41,6 @@ import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.DBMapUtils;
-import static utils.MorphiumUtils.createOfflineMorphium;
 import static utils.JSONUtils.marshall;
 import static utils.JSONUtils.unmarshall;
 import utils.Utils;
@@ -85,7 +84,7 @@ public class testMapDB {
     public void testStoreJSON() {
         String path = testFolder.newFolder("testDB").getAbsolutePath()+File.separator+"_testDB.db";
         String dbName = "boa_fluo170120_wt";
-        MorphiumMasterDAO mdb = new MorphiumMasterDAO(dbName);
+        MasterDAO mdb = new Task(dbName).getDB();
         String f = mdb.getExperiment().getPosition(1).getName();
         
         //ObjectMapperImpl mapper = new ObjectMapperImpl();

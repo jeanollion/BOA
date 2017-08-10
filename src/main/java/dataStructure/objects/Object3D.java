@@ -256,6 +256,7 @@ public class Object3D {
 
     public void createVoxels() {
         //logger.debug("create voxels: mask offset: {}", mask.getBoundingBox());
+        if (mask.getPixelArray()==null) logger.debug("mask pixel null for object: {}", this);
         ArrayList<Voxel> voxels_=new ArrayList<Voxel>();
         for (int z = 0; z < mask.getSizeZ(); ++z) {
             for (int y = 0; y < mask.getSizeY(); ++y) {

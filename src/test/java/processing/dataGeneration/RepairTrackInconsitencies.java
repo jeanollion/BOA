@@ -20,19 +20,9 @@ package processing.dataGeneration;
 import static TestUtils.Utils.logger;
 import boa.gui.GUI;
 import boa.gui.ManualCorrection;
+import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
-import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.Selection;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectUtils;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import utils.Utils;
 
 /**
  *
@@ -43,7 +33,7 @@ public class RepairTrackInconsitencies {
     public static void main(String[] args) {
         //String dbName = "boa_fluo160501";
         String dbName = "boa_fluo160501";
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO = new Task(dbName).getDB();
         ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[0], structureIdx);
         ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[1], structureIdx);
         ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[3], structureIdx);

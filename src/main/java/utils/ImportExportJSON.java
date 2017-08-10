@@ -99,7 +99,7 @@ public class ImportExportJSON {
     public static void readObjects(ZipReader reader, ObjectDAO dao) {
         List<StructureObject> allObjects = reader.readObjects(dao.getPositionName()+File.separator+"objects.txt", o->parse(StructureObject.class, o));
         List<Measurements> allMeas = reader.readObjects(dao.getPositionName()+File.separator+"measurements.txt", o->parse(Measurements.class, o));
-        Map<ObjectId, StructureObject> objectsById = new HashMap<>(allObjects.size());
+        Map<String, StructureObject> objectsById = new HashMap<>(allObjects.size());
         
         List<StructureObject> roots = new ArrayList<>();
         Iterator<StructureObject> it = allObjects.iterator();

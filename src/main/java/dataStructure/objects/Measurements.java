@@ -29,6 +29,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import org.bson.types.ObjectId;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import utils.JSONUtils;
 import utils.Utils;
 
 /**
@@ -36,32 +39,50 @@ import utils.Utils;
  * @author jollion
  */
 
-@Entity
-@Index(value={"structure_idx"})
 public class Measurements implements Comparable<Measurements>{
-    protected @Id ObjectId id;
+    protected String id;
     @Transient protected String positionName;
-    protected int timePoint, structureIdx;
+    protected int frame, structureIdx;
     protected double calibratedTimePoint;
     boolean isTrackHead;
     protected int[] indices;
-    protected HashMap<String, Object> values;
+    protected Map<String, Object> values;
     @Transient boolean modifications=false;
     final public static String NA_STRING = "NA";
     public Measurements(StructureObject o) {
         this.id=o.id;
         this.calibratedTimePoint=o.getCalibratedTimePoint();
         this.positionName=o.getPositionName();
-        this.timePoint=o.getFrame();
+        this.frame=o.getFrame();
         this.structureIdx=o.getStructureIdx();
         this.isTrackHead=o.isTrackHead;
         this.values=new HashMap<>();
         updateObjectProperties(o);
     }
+    public Measurements(Map json) {
+        id = (String)json.get("id");
+        structureIdx = ((Number)json.get("sIdx")).intValue();
+        frame = ((Number)json.get("frame")).intValue();
+        calibratedTimePoint = ((Number)json.get("timePointCal")).doubleValue();
+        isTrackHead = (Boolean)json.get("isTh");
+        indices = JSONUtils.fromIntArray((JSONArray)json.get("indices"));
+        values = JSONUtils.toValueMap((Map)json.get("values"));
+    }
+    public JSONObject toJSON() {
+        JSONObject obj1=new JSONObject();
+        obj1.put("id", id);
+        obj1.put("frame", frame);
+        obj1.put("sIdx", structureIdx);
+        obj1.put("timePointCal", calibratedTimePoint);
+        obj1.put("isTh", isTrackHead);
+        obj1.put("indices", JSONUtils.toJSONArray(indices));
+        obj1.put("values", JSONUtils.toJSONObject(values));
+        return obj1;
+    }
     
     public boolean modified() {return modifications;}
     
-    public ObjectId getId() {
+    public String getId() {
         return id;
     }
 
@@ -70,7 +91,7 @@ public class Measurements implements Comparable<Measurements>{
     }
 
     public int getFrame() {
-        return timePoint;
+        return frame;
     }
     
     public double getCalibratedTimePoint() {
@@ -161,7 +182,7 @@ public class Measurements implements Comparable<Measurements>{
         }
     }
     
-    public int compareTo(Measurements o) { // positionName / structureIdx / timePoint / indices
+    public int compareTo(Measurements o) { // positionName / structureIdx / frame / indices
         int f = positionName.compareTo(o.positionName);
         if (f!=0) return f;
         if (structureIdx<o.structureIdx) return -1;
@@ -185,7 +206,7 @@ public class Measurements implements Comparable<Measurements>{
             Measurements m = (Measurements)o;
             if (!positionName.equals(m.positionName)) return false;
             if (structureIdx!=m.structureIdx) return false;
-            if (timePoint!=m.timePoint) return false;
+            if (frame!=m.frame) return false;
             return Arrays.equals(indices, m.indices);
         } else return false;
     }
@@ -194,7 +215,7 @@ public class Measurements implements Comparable<Measurements>{
     public int hashCode() {
         int hash = 7;
         hash = 83 * hash + this.positionName.hashCode();
-        hash = 83 * hash + this.timePoint;
+        hash = 83 * hash + this.frame;
         hash = 83 * hash + this.structureIdx;
         hash = 83 * hash + Arrays.hashCode(this.indices);
         return hash;
@@ -204,7 +225,7 @@ public class Measurements implements Comparable<Measurements>{
     }
     private Measurements(String fieldName, int timePoint, int structureIdx, int[] indices) { // only for getParentMeasurementKey
         this.positionName = fieldName;
-        this.timePoint = timePoint;
+        this.frame = timePoint;
         this.structureIdx = structureIdx;
         this.indices = indices;
     }
@@ -215,7 +236,9 @@ public class Measurements implements Comparable<Measurements>{
             return null;
             //throw new IllegalArgumentException("parent order should be >0 & <="+indicies.length+ "current value: "+parentOrder);
         } 
-        return new Measurements(positionName, timePoint, structureIdx, Arrays.copyOfRange(indices, 0, indices.length-parentOrder));
+        return new Measurements(positionName, frame, structureIdx, Arrays.copyOfRange(indices, 0, indices.length-parentOrder));
     }
     public Map<String, Object> getValues() {return values;}
+    
+    
 }

@@ -18,11 +18,11 @@
 package processing.dataGeneration;
 
 import static TestUtils.Utils.logger;
+import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.InputImage;
 import dataStructure.containers.InputImages;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
 import image.Image;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,7 +72,7 @@ public class AnalyseImageCorruption {
         res.put("A", new int[]{10, 25, 39});
         res.put("B", new int[]{15, 20, 30, 40});
         if (true) return res;*/
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO = new Task(dbName).getDB();
         Experiment xp = mDAO.getExperiment();
         logger.debug("errors for xp: {}", dbName);
         Map<String, int[]> errors = new HashMap<>();

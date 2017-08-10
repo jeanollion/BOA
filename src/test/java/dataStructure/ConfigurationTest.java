@@ -17,12 +17,12 @@
  */
 package dataStructure;
 
-import TestUtils.Utils;
-import dataStructure.objects.MorphiumMasterDAO;
+import core.Task;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.MasterDAO;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import java.net.UnknownHostException;
@@ -100,14 +100,14 @@ public class ConfigurationTest {
     
     @Test
     public void testStroreSimpleXPMorphium() {
-        MorphiumMasterDAO db = new MorphiumMasterDAO("testdb");
+        MasterDAO db = new Task("testdb").getDB();
         db.reset();
         Experiment xp = new Experiment("test xp");
         int idx = xp.getStructureCount();
         xp.getStructures().insert(xp.getStructures().createChildInstance("structureTest"));
         db.setExperiment(xp);
-        db.getXpDAO().clearCache();
-        xp = db.getXpDAO().getExperiment();
+        db.clearCache();
+        xp = db.getExperiment();
         assertEquals("structure nb", idx+1, xp.getStructureCount());
         assertEquals("structure name", "structureTest", xp.getStructure(idx).getName());
         assertTrue("xp init postLoad", xp.getChildCount()>0);
@@ -116,7 +116,7 @@ public class ConfigurationTest {
     
     @Test
     public void testStroreCompleteXPMorphium() {
-        MorphiumMasterDAO db = new MorphiumMasterDAO("testdb");
+        MasterDAO db = new Task("testdb").getDB();
         db.reset();
 
         // set-up experiment structure
@@ -135,9 +135,9 @@ public class ConfigurationTest {
         bacteries.setProcessingScheme(new SegmentThenTrack(new DummySegmenter(true, 3), new ObjectIdxTracker()));
         
 
-        db.getXpDAO().store(xp);
-        db.getXpDAO().clearCache();
-        xp = db.getXpDAO().getExperiment();
+        db.setExperiment(xp);
+        db.clearCache();
+        xp = db.getExperiment();
 
         assertEquals("structure nb", idx, xp.getStructureCount());
         assertTrue("xp init postLoad", xp.getChildCount()>0);

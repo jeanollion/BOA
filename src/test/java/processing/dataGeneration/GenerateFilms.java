@@ -25,7 +25,6 @@ import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.InputImages;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;

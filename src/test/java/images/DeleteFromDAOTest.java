@@ -19,9 +19,8 @@ package images;
 
 import static TestUtils.GenerateSyntheticData.generateImages;
 import static boa.gui.GUI.logger;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import dataStructure.objects.MorphiumMasterDAO;
 import core.Processor;
+import core.Task;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
@@ -31,13 +30,10 @@ import dataStructure.objects.BasicMasterDAO;
 import dataStructure.objects.DBMapObjectDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Measurements;
-import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
-import de.caluga.morphium.Morphium;
-import de.caluga.morphium.MorphiumConfig;
 import de.caluga.morphium.query.Query;
 import image.BlankMask;
 import java.io.File;
@@ -56,8 +52,7 @@ import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.SimpleThresholder;
 import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.trackers.ObjectIdxTracker;
-import testPlugins.dummyPlugins.DummySegmenter;
-import utils.MorphiumUtils;
+
 
 /**
  *
@@ -73,7 +68,7 @@ public class DeleteFromDAOTest {
     
     //@Test 
     public void deleteTestMorphium() throws IOException {
-        MasterDAO dao = new MorphiumMasterDAO("testImageDAO");
+        MasterDAO dao = new Task("testImageDAO").getDB();
         dao.reset();
         deleteTest(dao);
     }
@@ -166,7 +161,7 @@ public class DeleteFromDAOTest {
     
     @Test
     public void testDeleteMass() {
-        MasterDAO db = new MorphiumMasterDAO("testImageDAO");
+        MasterDAO db = new Task("testImageDAO").getDB();
         db.reset();
         String f = "testField";
         int[] count = new int[]{10, 10, 10};
@@ -225,7 +220,7 @@ public class DeleteFromDAOTest {
     
     //@Test
     public void testDeleteAndRelabel() {
-        MasterDAO db = new MorphiumMasterDAO("testImageDAO");
+        MasterDAO db = new Task("testImageDAO").getDB();
         db.reset();
         String f = "testField";
         
@@ -269,18 +264,7 @@ public class DeleteFromDAOTest {
     }
     
     private static int countObjects(MasterDAO db, Class clazz) {
-        if (db instanceof MorphiumMasterDAO) {
-            MorphiumMasterDAO m = (MorphiumMasterDAO)db;
-            int count = 0; 
-            for (String f : db.getExperiment().getPositionsAsString()) {
-                Query q = m.getMorphium().createQueryFor(clazz);
-                if (clazz==StructureObject.class) q.setCollectionName(m.getDao(f).collectionName);
-                else if (clazz == Measurements.class) q.setCollectionName(m.getDao(f).getMeasurementsDAO().collectionName);
-                else throw new IllegalArgumentException("Class: "+clazz+" no managed by test");
-                count+=q.countAll();
-            }
-            return count;
-        } else if (db instanceof BasicMasterDAO) {
+        if (db instanceof BasicMasterDAO) {
             ArrayList<StructureObject> allObjects = new ArrayList<StructureObject>();
             for (String f : db.getExperiment().getPositionsAsString()) {
                 List<StructureObject> rootTrack = db.getDao(f).getRoots();
@@ -298,11 +282,21 @@ public class DeleteFromDAOTest {
                 for (StructureObject o : allObjects) if (!o.getMeasurements().getValues().isEmpty()) ++count;
                 return count;
             }
-        } else if (db instanceof DBMapObjectDAO) {
-            if (clazz == StructureObject.class) {
-            
+        } else {
+            db.clearCache();
+            ArrayList<StructureObject> allObjects = new ArrayList<StructureObject>();
+            for (String p : db.getExperiment().getPositionsAsString()) {
+                ObjectDAO dao = db.getDao(p);
+                for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) {
+                    allObjects.addAll(StructureObjectUtils.getAllObjects(dao, s));
+                }
             }
-        } else throw new IllegalArgumentException("MasterDAO of class: "+db.getClass()+" no managed by test");
+            if (StructureObject.class.equals(clazz)) return allObjects.size();
+            else if (Measurements.class.equals(clazz)) {
+                allObjects.removeIf(o->!o.hasMeasurements());
+                return allObjects.size();
+            }
+        }
         
         return -1;
     }

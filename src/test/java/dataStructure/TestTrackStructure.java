@@ -27,9 +27,7 @@ import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
 import dataStructure.objects.MasterDAOFactory.DAOType;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.Object3D;
-import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
@@ -46,7 +44,6 @@ import static junit.framework.Assert.assertEquals;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import utils.MorphiumUtils;
 import utils.Utils;
 
 /**

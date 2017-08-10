@@ -118,7 +118,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
         super.initFromJSON(json);
         if (json.containsKey("roi")) {
             roiZ = new ArrayList<>(1);
-            Base64.getDecoder().decode((String)json.get("roi"));
+            roiZ.add(Base64.getDecoder().decode((String)json.get("roi")));
         } else if (json.containsKey("roiZ")) {
             JSONArray rois = (JSONArray)json.get(("roiZ"));
             roiZ = new ArrayList<>(rois.size());

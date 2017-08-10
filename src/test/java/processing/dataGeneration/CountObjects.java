@@ -20,7 +20,6 @@ package processing.dataGeneration;
 import static TestUtils.Utils.logger;
 import core.Task;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 

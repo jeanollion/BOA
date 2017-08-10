@@ -17,7 +17,8 @@
  */
 package processing.dataGeneration;
 
-import dataStructure.objects.MorphiumMasterDAO;
+import core.Task;
+import dataStructure.objects.MasterDAO;
 import plugins.ManualSegmenter;
 import plugins.PluginFactory;
 
@@ -33,7 +34,7 @@ public class TestManualSegmentation {
         testManualSegmentation(dbName);
     }
     public static void testManualSegmentation(String dbName) {
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         ManualSegmenter m = db.getExperiment().getStructure(2).getManualSegmenter();
         m.manualSegment(null, null, null, 2, null);
     }

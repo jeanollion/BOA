@@ -168,7 +168,7 @@ public class TestDataStructure {
             StructureObject[][] bactos = new StructureObject[rootTrack.size()][];
             for (int t = 0; t<rootTrack.size(); ++t) {
                 bactos[t] = microChannels[t][i].getChildObjects(1).toArray(new StructureObject[0]);
-                Utils.logger.debug("parent: {}, children: {}, trackHead: {}", microChannels[t][i], toStringArray(bactos[t], o->o.toString()+"/"+o.getId().toHexString()), toStringArray(bactos[t], o->o.getTrackHead().toString()+"/"+o.getTrackHeadId().toHexString()));
+                Utils.logger.debug("parent: {}, children: {}, trackHead: {}", microChannels[t][i], toStringArray(bactos[t], o->o.toString()+"/"+o.getId()), toStringArray(bactos[t], o->o.getTrackHead().toString()+"/"+o.getTrackHeadId()));
             }
             for (int t = 0; t<rootTrack.size(); ++t) assertEquals("number of bacteries @t:"+t+" @mc:"+i, 3, bactos[t].length);
             for (int b = 0; b<bactos[0].length; ++b) {

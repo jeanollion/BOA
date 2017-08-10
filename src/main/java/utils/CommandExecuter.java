@@ -19,8 +19,6 @@ package utils;
 
 import boa.gui.PropertyUtils;
 import boa.gui.DBUtil;
-import dataStructure.objects.MorphiumMeasurementsDAO;
-import dataStructure.objects.MorphiumObjectDAO;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -266,29 +264,6 @@ public class CommandExecuter {
         }
         return processOk[0];
     }
-    public static Map<String, String> getObjectDumpedCollections(File... files) {
-        Map<String, String> map = new HashMap<String, String>(files.length);
-        for (File file : files) {
-            if (file.isDirectory()) getObjectDumpedCollectionsInDirectory(file, map);
-            else if (isExportedObjectCollection(file.getName())) map.put(trimExportedObjectCollectionFileName(file.getName()), file.getAbsolutePath());
-        }
-        return map;
-    }
-    public static Map<String, String> getObjectDumpedCollectionsInDirectory(File directory, Map<String, String> map) {
-        File[] files = directory.listFiles(new FilenameFilter() {
-            @Override public boolean accept(File file, String string) {
-                return isExportedObjectCollection(string);
-            }
-        });
-        if (map==null) map = new HashMap<String, String>(files.length);
-        for (File file : files) map.put(trimExportedObjectCollectionFileName(file.getName()), file.getAbsolutePath());
-        return map;
-    }
-    private static boolean isExportedObjectCollection(String string) {
-        return ( (string.startsWith(MorphiumObjectDAO.getCollectionName("")) || string.startsWith(MorphiumMeasurementsDAO.getCollectionName(""))) && (string.endsWith(".bson") || string.endsWith(".json")) &&  !string.endsWith(".metadata.json"));
-    }
-    private static String trimExportedObjectCollectionFileName(String fieldName) {
-        if (fieldName.startsWith(MorphiumObjectDAO.getCollectionName(""))) return fieldName.substring(MorphiumObjectDAO.getCollectionName("").length(), fieldName.length()-5);
-        else return fieldName.substring(MorphiumMeasurementsDAO.getCollectionName("").length(), fieldName.length()-5);
-    }
+ 
+
 }
