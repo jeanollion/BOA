@@ -126,6 +126,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
     }
     @Override 
     public void initFromJSON(Map json) {
+        super.initFromJSON(json);
         if (!json.containsKey("x") || !json.containsKey("y")) throw new IllegalArgumentException("JSON object do no contain x & y values");
         JSONArray xJ = (JSONArray)json.get("x");
         JSONArray yJ = (JSONArray)json.get("y");

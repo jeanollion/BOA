@@ -963,6 +963,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         miscMenu = new javax.swing.JMenu();
         closeAllWindowsMenuItem = new javax.swing.JMenuItem();
+        CloseNonInteractiveWindowsMenuItem = new javax.swing.JMenuItem();
         clearMemoryMenuItem = new javax.swing.JMenuItem();
         clearPPImageMenuItem = new javax.swing.JMenuItem();
         clearTrackImagesMenuItem = new javax.swing.JMenuItem();
@@ -1669,6 +1670,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         });
         miscMenu.add(closeAllWindowsMenuItem);
+
+        CloseNonInteractiveWindowsMenuItem.setText("Close Non Interactive Windows");
+        CloseNonInteractiveWindowsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                CloseNonInteractiveWindowsMenuItemActionPerformed(evt);
+            }
+        });
+        miscMenu.add(CloseNonInteractiveWindowsMenuItem);
 
         clearMemoryMenuItem.setText("Clear Memory");
         clearMemoryMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -2745,6 +2754,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void appendToFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_appendToFileMenuItemActionPerformed
         PropertyUtils.set(PropertyUtils.LOG_APPEND, this.activateLoggingMenuItem.isSelected());
     }//GEN-LAST:event_appendToFileMenuItemActionPerformed
+
+    private void CloseNonInteractiveWindowsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CloseNonInteractiveWindowsMenuItemActionPerformed
+        ImageWindowManagerFactory.getImageManager().closeNonInteractiveWindows();
+    }//GEN-LAST:event_CloseNonInteractiveWindowsMenuItemActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2900,6 +2913,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem CloseNonInteractiveWindowsMenuItem;
     private javax.swing.JPanel ControlPanel;
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JScrollPane actionJSP;

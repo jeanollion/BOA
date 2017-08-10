@@ -57,6 +57,7 @@ import java.awt.Container;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Scrollbar;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
@@ -258,6 +259,17 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         */
         canvas.addMouseListener(ml);
         //return ml;
+    }
+    
+    @Override public void closeNonInteractiveWindows() {
+        String[] names = WindowManager.getImageTitles();
+        if (names==null) return;
+        for (String s : names) {
+            ImagePlus ip = WindowManager.getImage(s);
+            Image im = this.displayer.getImage(ip);
+            if (im ==null) ip.close();
+            if (!imageObjectInterfaceMap.keySet().contains(im)) ip.close();
+        }
     }
     
     @Override public void setActive(Image image) {

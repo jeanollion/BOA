@@ -129,20 +129,10 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     public boolean canBeTested(Parameter p) {
         return new ArrayList<Parameter>(){{add(scale);add(intensityThreshold); add(thresholdHigh); add(thresholdLow);}}.contains(p);
     }
-    @Override
-    public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent) {
-        boolean d = debug;
-        debug=true;
-        pv.initPV(input, parent.getMask(), this.scale.getValue().doubleValue());
-        ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(parent.getMask(), null, 1));
-        ImageWindowManagerFactory.showImage(input);
-        ImageWindowManagerFactory.showImage(pv.getScaledInput());
-        if (p==this.scale || p==this.thresholdHigh || p==this.thresholdLow) ImageWindowManagerFactory.showImage(pv.getLaplacianMap().setName("LaplacianMap("+thresholdHigh.getName()+";"+thresholdLow.getName()+")"));
-        if (p==this.scale || p==this.intensityThreshold) ImageWindowManagerFactory.showImage(pv.getSmoothedMap().setName("IntensityMap"));
-        ObjectPopulation pop = runSegmenter(input, structureIdx, parent);
-        logger.debug("Quality: {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()+""));
-        ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("segmented image"));
-        debug=d;
+    Parameter testParam;
+    @Override 
+    public void setTestParameter(Parameter p) {
+        testParam = p;
     }
     
     @Override
@@ -293,6 +283,17 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         }
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
+        logger.debug("testParam: {}", testParam);
+        if (testParam!=null) {
+            ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(parent.getMask(), null, 1));
+            ImageWindowManagerFactory.showImage(input);
+            ImageWindowManagerFactory.showImage(pv.getScaledInput());
+            if (testParam.getName().equals(this.scale.getName()) || testParam.getName().equals(this.thresholdHigh.getName()) || testParam.getName().equals(this.thresholdLow.getName())) ImageWindowManagerFactory.showImage(pv.getLaplacianMap().setName("LaplacianMap("+thresholdHigh.getName()+";"+thresholdLow.getName()+")"));
+            if (testParam.getName().equals(this.scale.getName()) || testParam.getName().equals(this.intensityThreshold.getName())) ImageWindowManagerFactory.showImage(pv.getSmoothedMap().setName("IntensityMap"));
+            logger.debug("Quality: {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()+""));
+            ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("segmented image"));
+        }
+        
         return pop;
     }
     

@@ -45,10 +45,12 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import plugins.ParameterSetup;
 import plugins.ProcessingScheme;
+import plugins.Segmenter;
 import plugins.Transformation;
 import static plugins.Transformation.SelectionMode.ALL;
 import static plugins.Transformation.SelectionMode.SAME;
 import plugins.UseMaps;
+import plugins.plugins.processingScheme.SegmentOnly;
 import utils.ArrayUtil;
 import utils.Utils;
 
@@ -328,8 +330,8 @@ public class ParameterUtils {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-                        if (sel == null || sel.isEmpty() || GUI.getInstance().getSelectedPositions(false).isEmpty()) {
-                            logger.info("Select an object OR position to test parameter");
+                        if ((sel == null || sel.isEmpty()) && GUI.getInstance().getSelectedPositions(false).isEmpty()) {
+                            GUI.log("Select an object OR position to test parameter");
                         }
                         else {
                             if (sel==null) sel = new ArrayList<>(1);
@@ -339,7 +341,41 @@ public class ParameterUtils {
                             if (pp.instanciatePlugin() instanceof ProcessingScheme) psc = (ProcessingScheme)pp.instanciatePlugin();
                             else pp = ParameterUtils.getFirstParameterFromParents(PluginParameter.class, pp, false);
                             if (pp.instanciatePlugin() instanceof ProcessingScheme) psc = (ProcessingScheme)pp.instanciatePlugin();
+                            StructureObject o = sel.get(0);
+                            int parentStrutureIdx = o.getExperiment().getStructure(structureIdx).getParentStructure();
                             
+                            if (ps instanceof Segmenter) { // case segmenter -> segment only & call to test method
+                                SegmentOnly so; 
+                                if (psc instanceof SegmentOnly) so = (SegmentOnly)psc;
+                                else so = new SegmentOnly((Segmenter)ps).setPreFilters(psc.getPreFilters()).setPostFilters(psc.getPostFilters());
+                                int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
+                                List<StructureObject> subParents=null;
+                                StructureObject parent;
+                                if (o.getStructureIdx()>parentStrutureIdx) parent = o.getParent(parentStrutureIdx);
+                                else parent=o.getChildren(parentStrutureIdx).get(0);
+                                if (o.getStructureIdx()==segParentStrutureIdx) {
+                                    subParents = new ArrayList<>(parent.getChildren(segParentStrutureIdx));
+                                    final List<StructureObject> selF = sel;
+                                    List<StructureObject> subParentsFilter = new ArrayList<>(subParents);
+                                    subParentsFilter.removeIf(oo -> !selF.contains(oo));
+                                    parent.setChildren(subParentsFilter, segParentStrutureIdx);
+                                }
+                                //o=o.duplicate(); // don't edit directly structureObject -> create new id -> don't work for indirect children
+                                List<StructureObject> children = parent.getChildren(structureIdx);
+                                
+                                sel = new ArrayList<>();
+                                sel.add(parent);
+                                so.segmentAndTrack(structureIdx, sel, null, (p, s)->((ParameterSetup)s).setTestParameter(parameters[idx]));
+                                 // o -> back to same state after testing
+                                parent.setChildren(children, structureIdx);
+                                if (subParents!=null) {
+                                    if (parent.getExperiment().isDirectChildOf(parentStrutureIdx, segParentStrutureIdx)) parent.setChildren(subParents, segParentStrutureIdx);
+                                    else parent.setChildren(null, segParentStrutureIdx);
+                                }
+                            }
+                            
+                            // case tracker -> 
+                            /*
                             StructureObject o = sel.get(0);
                             int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
                             if (o.getStructureIdx()>segParentStrutureIdx) o = o.getParent(segParentStrutureIdx);
@@ -359,6 +395,7 @@ public class ParameterUtils {
                                 logger.debug("testing with use maps");
                             }
                             ps.test(parameters[idx], filtered.cropWithOffset(bds), structureIdx, o);
+                                    */
                         }
                     }
                 });

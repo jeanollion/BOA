@@ -47,7 +47,6 @@ import java.util.function.Function;
 import org.apache.commons.lang.ArrayUtils;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import plugins.MultiThreaded;
-import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;

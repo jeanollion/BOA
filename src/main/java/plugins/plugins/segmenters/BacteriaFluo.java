@@ -190,6 +190,15 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             if (contactLimit.getValue().intValue()>0 && res.getObjects().size()>1) res.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
             res.relabel(true);
         }
+        logger.debug("testParameter: {}", testParameter);
+        if (splitThreshold.getName().equals(testParameter.getName())) {
+            Image hess = pv.getHessian().duplicate("Split map");
+            hess = ImageOperations.divide(hess, input, null);
+            ImageWindowManagerFactory.showImage(res.getLabelMap().setName("Segmentation with splitThreshold: "+splitThreshold.getValue().doubleValue()));
+            ImageOperations.trim(hess, res.getLabelMap(), hess);
+            ImageWindowManagerFactory.showImage(hess);
+        }
+        
         return res;
     }
     
@@ -397,20 +406,11 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         List canBeTested = new ArrayList(){{add(splitThreshold); add(dogScale);}};
         return canBeTested.contains(p);
     }
-
-    @Override public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent) {
-        if (p==splitThreshold) {
-            ProcessingVariables pv = initializeVariables(input);
-            Image hess = pv.getHessian().duplicate("hessian");
-            hess = ImageOperations.divide(hess, input, null);
-            ObjectPopulation pop = runSegmenter(input, structureIdx, parent);
-            ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("splitThreshold: "+splitThreshold.getValue().doubleValue()));
-            ImageOperations.trim(hess, pop.getLabelMap(), hess);
-            ImageWindowManagerFactory.showImage(hess.setName("Split map"));
-        } else if (p==dogScale) {
-            //ImageWindowManagerFactory.showImage(BandPass.filter(input, 0, dogScale.getValue().doubleValue(), 0, 0).setName("DoG scale: "+dogScale.getValue().doubleValue()));
-        }
+    Parameter testParameter;
+    @Override public void setTestParameter(Parameter p) {
+        this.testParameter=p;
     }
+    
     
     private static class ProcessingVariables {
         Image hessian;

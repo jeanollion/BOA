@@ -136,7 +136,7 @@ public abstract class ImageWindowManager<T, U, V> {
         isLabelImage.clear();
         trackHeadTrackMap.clear();
     }
-    
+    public abstract void closeNonInteractiveWindows();
     public ImageDisplayer<T> getDisplayer() {return displayer;}
     
     //protected abstract T getImage(Image image);

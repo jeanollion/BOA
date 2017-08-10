@@ -321,6 +321,14 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="closeAllWindowsMenuItemActionPerformed"/>
               </Events>
             </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="CloseNonInteractiveWindowsMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Close Non Interactive Windows"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="CloseNonInteractiveWindowsMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="clearMemoryMenuItem">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Clear Memory"/>

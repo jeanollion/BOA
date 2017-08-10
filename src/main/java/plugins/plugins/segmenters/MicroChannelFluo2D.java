@@ -64,7 +64,7 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup , OverridableThresholdWithSimpleThresholder {
+public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableThresholdWithSimpleThresholder {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 350, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
@@ -171,17 +171,6 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup
         return parameters;
     }
 
-    @Override
-    public boolean canBeTested(Parameter p) {
-        return true;
-    }
-
-    @Override
-    public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent) {
-        debug=true;
-        ObjectPopulation pop = runSegmenter(input, structureIdx, parent);
-        debug = false;
-    }
     // use threshold implementation
     protected double thresholdValue = Double.NaN;
     ImageInteger thresholdedImage = null;

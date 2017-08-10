@@ -69,12 +69,12 @@ import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
-import plugins.ParameterSetup;
 import static plugins.Plugin.logger;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Thresholder;
 import plugins.OverridableThreshold;
+import plugins.ParameterSetup;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
@@ -161,34 +161,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         this.threshold.setPlugin(t);
         return this;
     }
-    
-    @Override public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent) {
-        debug=false;
-        ImageDisplayer disp = ImageWindowManagerFactory.instanciateDisplayer();
-        pv = getProcessingVariables(input, parent.getMask());
-        if (Double.isNaN(thresholdValue)) pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
-        else pv.threshold=thresholdValue;
-        if (p == relativeThicknessThreshold) {
-            logger.debug("rel t test");
-            ObjectPopulation pop = pv.splitAndMergeObjects(pv.getSegmentationMask(), pv.minSizeFusion, 0, true, false);
-            disp.showImage(pv.getSegmentationMask().duplicate("before merging"));
-            disp.showImage(pop.getLabelMap().duplicate("after merging"));
-        }
-        else if (p==curvatureScale|| p==curvatureThreshold || p == curvatureThreshold2) {
-            logger.debug("cur test");
-            disp.showImage(pv.getSegmentationMask().duplicate("segmentation mask"));
-            
-            ObjectPopulation popSplit = pv.splitAndMergeObjects(pv.getSegmentationMask(), pv.minSizeFusion, 0, true, false);
-            disp.showImage(getCurvatureImage(new ObjectPopulation(pv.getSegmentationMask(), true), curvatureScale.getValue().intValue()));
-            disp.showImage(pv.splitSegmentationMask(pv.getSegmentationMask(), minSizePropagation.getValue().intValue()).getLabelMap().setName("after split"));
-            disp.showImage(popSplit.getLabelMap().duplicate("after merge"));
-        } else if (p==threshold) {
-            disp.showImage(pv.getIntensityMap().duplicate("before threshold. Value: "+pv.threshold));
-            disp.showImage(pv.getSegmentationMask().duplicate("after threshold"));
-        } else if (p==subBackScale) {
-            disp.showImage(input.duplicate("input"));
-            disp.showImage(pv.getIntensityMap().duplicate("DoG: Scale: "+subBackScale.getValue().doubleValue()));
-        }
+    String testParameter;
+    @Override public void setTestParameter(Parameter p) {
+        this.testParameter=p.getName();
     }
     
     private static Image getCurvatureImage(ObjectPopulation pop, int curvatureScale) {
@@ -263,8 +238,30 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             new IJImageDisplayer().showImage(input.setName("input"));
             logger.debug("threshold: {}", pv.threshold);
         }
-        
         ObjectPopulation pop = pv.splitAndMergeObjects(pv.getSegmentationMask(), pv.minSizeFusion, 0, true,  debug);
+        if (this.testParameter!=null) {
+            if (testParameter.equals(relativeThicknessThreshold.getName())) {
+                logger.debug("rel t test");
+                ImageWindowManagerFactory.showImage(pv.getSegmentationMask().duplicate("before merging"));
+                ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after merging"));
+            }
+            else if (testParameter.equals(curvatureScale.getName())|| testParameter.equals(curvatureThreshold.getName()) || testParameter.equals(curvatureThreshold2.getName())) {
+                logger.debug("cur test");
+                ImageWindowManagerFactory.showImage(pv.getSegmentationMask().duplicate("segmentation mask"));
+                ImageWindowManagerFactory.showImage(getCurvatureImage(new ObjectPopulation(pv.getSegmentationMask(), true), curvatureScale.getValue().intValue()));
+                ImageWindowManagerFactory.showImage(pv.splitSegmentationMask(pv.getSegmentationMask(), minSizePropagation.getValue().intValue()).getLabelMap().setName("after split"));
+                ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after merge"));
+            } else if (testParameter.equals(threshold.getName())) {
+                ImageWindowManagerFactory.showImage(pv.getIntensityMap().duplicate("before threshold. Value: "+pv.threshold));
+                ImageWindowManagerFactory.showImage(pv.getSegmentationMask().duplicate("after threshold"));
+            } else if (testParameter.equals(subBackScale.getName())) {
+                ImageWindowManagerFactory.showImage(input.duplicate("input"));
+                ImageWindowManagerFactory.showImage(pv.getIntensityMap().duplicate("DoG: Scale: "+subBackScale.getValue().doubleValue()));
+            }
+            return null;
+        }
+        
+        
         //if (contactLimit.getValue().intValue()>0) pop.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
         
         if (!pop.getObjects().isEmpty()&& pop.getObjects().get(pop.getObjects().size()-1).getSize()<minSizeChannelEnd.getValue().intValue()) pop.getObjects().remove(pop.getObjects().size()-1); // remove small objects at the end of channel? // si plusieurs somme des tailles inférieurs?

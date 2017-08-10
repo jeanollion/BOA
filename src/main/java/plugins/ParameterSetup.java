@@ -18,10 +18,8 @@
 package plugins;
 
 import configuration.parameters.Parameter;
-import configuration.parameters.Parameter;
-import dataStructure.objects.StructureObjectProcessing;
-import image.Image;
-import javax.swing.JMenu;
+import dataStructure.objects.StructureObject;
+import java.util.List;
 
 /**
  *
@@ -29,5 +27,5 @@ import javax.swing.JMenu;
  */
 public interface ParameterSetup {
     public boolean canBeTested(Parameter p);
-    public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent);
+    public void setTestParameter(Parameter p);
 }
