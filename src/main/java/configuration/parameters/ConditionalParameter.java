@@ -146,6 +146,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
     }
     @Override public ConditionalParameter duplicate() {
         ConditionalParameter res = new ConditionalParameter((ActionableParameter)action.duplicate()); 
+        res.setListeners(listeners);
         res.setContentFrom(this);
         return res;
     }

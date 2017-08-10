@@ -63,7 +63,7 @@ import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
 import plugins.TrackerSegmenter;
-import plugins.UseThreshold;
+import plugins.OverridableThreshold;
 import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.segmenters.BacteriaTrans;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.TrackAssigner.compareScores;
@@ -104,7 +104,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     @Override public SegmenterSplitAndMerge getSegmenter() {
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
-        if (s instanceof UseThreshold) ((UseThreshold)s).setThresholdValue(threshold!= null ? threshold.getThreshold(): debugThreshold);
+        if (s instanceof OverridableThreshold) ((OverridableThreshold)s).setThresholdValue(threshold!= null ? threshold.getThreshold(): debugThreshold);
         return s;
     }
 
@@ -214,17 +214,17 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         // 0) optional compute threshold for all images
         SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters).setPreFilters(preFilters);
         applyToSegmenter = (frame, s) -> {
-            if (s instanceof UseThreshold) {
+            if (s instanceof OverridableThreshold) {
                 if (threshold!=null) {
-                    if (threshold.hasAdaptativeByY()) ((UseThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
-                    else ((UseThreshold)s).setThresholdValue(threshold.getThreshold(frame));
-                } else ((UseThreshold)s).setThresholdValue(debugThreshold);
+                    if (threshold.hasAdaptativeByY()) ((OverridableThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
+                    else ((OverridableThreshold)s).setThresholdValue(threshold.getThreshold(frame));
+                } else ((OverridableThreshold)s).setThresholdValue(debugThreshold);
             }
         };
-        if (Double.isNaN(debugThreshold) && this.thresholdMethod.getSelectedIndex()>0 && getSegmenter() instanceof UseThreshold) {
+        if (Double.isNaN(debugThreshold) && this.thresholdMethod.getSelectedIndex()>0 && getSegmenter() instanceof OverridableThreshold) {
             List<Image> planes = new ArrayList<>(parentsByF.size());
             Set<Integer> s =  new TreeSet(parentsByF.keySet());
-            for (int t : s) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parentsByF.get(t)));
+            for (int t : s) planes.add(((OverridableThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parentsByF.get(t)));
             //threshold = new ThresholdHisto(planes);
             logger.debug("adaptative: coeff: {}, hwf: {}, hwy: {}", adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
             threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue()); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED

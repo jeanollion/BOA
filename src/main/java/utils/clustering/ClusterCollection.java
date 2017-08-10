@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.HashMapGetCreate;
@@ -156,7 +157,10 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         List<Set<Interface<E, I>>> interfaceClusters = getClusters();
         // create one ClusterCollection per cluster and apply mergeSort
     }*/
-    
+    Function<I, Boolean> allowFusion;
+    public void setOverrideCheckFusionFunction(Function<I, Boolean> allowFusion) {
+        this.allowFusion=allowFusion;
+    }
     public List<E> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfElementsToKeep) {
         if (verbose) logger.debug("MERGE SORT check: {}, interfacesToKeep: {}, elements to keep: {}", checkCriterion, numberOfInterfacesToKeep, numberOfElementsToKeep);
         long t0 = System.currentTimeMillis();
@@ -171,7 +175,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         Iterator<I> it = interfaces.iterator();
         while (it.hasNext() && interfaces.size()>numberOfInterfacesToKeep && allElements.size()>numberOfElementsToKeep) {
             I i = it.next();
-            if (!checkCriterion || i.checkFusion()) {
+            if ( (allowFusion==null || allowFusion.apply(i)) && (!checkCriterion || i.checkFusion() ) ) {
                 if (verbose) logger.debug("fusion {}", i);
                 it.remove();
                 allElements.remove(i.getE2());

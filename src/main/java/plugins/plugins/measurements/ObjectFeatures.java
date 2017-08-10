@@ -43,15 +43,14 @@ public class ObjectFeatures implements Measurement {
     SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<>("Features", 0, def);
     Parameter[] parameters = new Parameter[]{structure, features};
     public ObjectFeatures() {
-        def.addListener(new ParameterListener() {
-            public void fire(Parameter sourceParameter) {
-                PluginParameter<ObjectFeature> s = (PluginParameter<ObjectFeature>)sourceParameter;
-                TextParameter tp = ((TextParameter)s.getAdditionalParameters().get(0));
-                if (s.isOnePluginSet()) tp.setValue(s.instanciatePlugin().getDefaultName());
-                else tp.setValue("");
-            }
+        def.addListener((Parameter sourceParameter) -> {
+            PluginParameter<ObjectFeature> s = (PluginParameter<ObjectFeature>)sourceParameter;
+            TextParameter tp = ((TextParameter)s.getAdditionalParameters().get(0));
+            if (s.isOnePluginSet()) tp.setValue(s.instanciatePlugin().getDefaultName());
+            else tp.setValue("");
         });
     }
+
     public ObjectFeatures(int structureIdx) {
         this();
         this.structure.setSelectedIndex(structureIdx);

@@ -45,7 +45,7 @@ import java.util.List;
 import plugins.SimpleThresholder;
 import plugins.Thresholder;
 import plugins.TransformationTimeIndependent;
-import plugins.UseThreshold;
+import plugins.OverridableThreshold;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.thresholders.IJAutoThresholder;

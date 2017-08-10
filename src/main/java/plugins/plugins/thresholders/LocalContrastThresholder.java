@@ -17,6 +17,7 @@
  */
 package plugins.plugins.thresholders;
 
+import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
@@ -32,23 +33,33 @@ import utils.Utils;
  * @author jollion
  */
 public class LocalContrastThresholder implements Thresholder {
+    BoundedNumberParameter scale = new BoundedNumberParameter("Contrast Scale", 1, 2, 1, null);
+    BoundedNumberParameter constrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.06,  0.01, 0.2);
+    Parameter[] parameters = new Parameter[]{scale, constrastThreshold};
+    
+    public LocalContrastThresholder() {}
+    public LocalContrastThresholder(double scale, double thld) {
+        this.scale.setValue(scale);
+        this.constrastThreshold.setValue(thld);
+    }
+    
     public static Image getLocalContrast(Image input, double scale) {
         Image localContrast=ImageFeatures.getGradientMagnitude(input, scale, false);
         Image smooth = ImageFeatures.gaussianSmooth(input, scale, scale * input.getScaleXY() / input.getScaleZ() , false);
         ImageOperations.divide(localContrast, smooth, localContrast);
         return localContrast;
     }
-    public static double getThreshold(Image input, double min, double max, double thld, boolean backgroundUnderThld) {
-        final Image localContrast= getLocalContrast(input, 2);
+    public static double getThreshold(Image input, double min, double scale) {
+        final Image localContrast= getLocalContrast(input, scale);
         double[] meanCount = new double[2];
         input.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
             double v = localContrast.getPixel(x, y, z);
-            if (v>=min && v<=max) {
+            if (v>=min) {
                 v = input.getPixel(x, y, z);
-                if (v > thld == backgroundUnderThld) {
+                //if (v > thld == backgroundUnderThld) {
                     meanCount[0]+=v;
                     ++meanCount[1];
-                }
+                //}
             }
         });
         meanCount[0]/=meanCount[1];
@@ -58,12 +69,12 @@ public class LocalContrastThresholder implements Thresholder {
     
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
-        return getThreshold(input, 0.15, 1, Double.POSITIVE_INFINITY, true);
+        return getThreshold(input, constrastThreshold.getValue().doubleValue(), scale.getValue().doubleValue());
     }
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[0];
+        return parameters;
     }
     
 }

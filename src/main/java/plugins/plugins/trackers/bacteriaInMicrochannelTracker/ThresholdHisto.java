@@ -30,7 +30,7 @@ import java.util.function.Function;
 import org.apache.commons.lang.ArrayUtils;
 import static plugins.Plugin.logger;
 import plugins.Segmenter;
-import plugins.UseThreshold;
+import plugins.OverridableThreshold;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.thresholders.Percentage;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
@@ -197,9 +197,9 @@ public class ThresholdHisto extends Threshold {
 
     @Override
     public void apply(StructureObject o, Segmenter s) {
-        if (!(s instanceof UseThreshold)) return;
-        if (hasAdaptativeByY()) ((UseThreshold)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
-        else ((UseThreshold)s).setThresholdValue(getThreshold(o.getFrame()));
+        if (!(s instanceof OverridableThreshold)) return;
+        if (hasAdaptativeByY()) ((OverridableThreshold)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
+        else ((OverridableThreshold)s).setThresholdValue(getThreshold(o.getFrame()));
     }
     
     

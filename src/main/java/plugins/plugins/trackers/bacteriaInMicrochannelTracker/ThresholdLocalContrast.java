@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import plugins.Segmenter;
-import plugins.UseThreshold;
+import plugins.OverridableThreshold;
 import plugins.plugins.thresholders.LocalContrastThresholder;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
@@ -304,7 +304,7 @@ public class ThresholdLocalContrast extends Threshold {
 
     @Override
     public void apply(StructureObject o, Segmenter s) {
-        if (hasAdaptativeByY()) ((UseThreshold)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
-        else ((UseThreshold)s).setThresholdValue(getThreshold(o.getFrame()));
+        if (hasAdaptativeByY()) ((OverridableThreshold)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
+        else ((OverridableThreshold)s).setThresholdValue(getThreshold(o.getFrame()));
     }
 }

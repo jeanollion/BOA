@@ -151,7 +151,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             PluginParameter otherPP = (PluginParameter) other;
             //logger.debug("set content PP: type: {} current: {} other: {}",this.pluginTypeName, this.pluginName, otherPP.pluginName);
             this.activated=otherPP.activated;
-            //this.allowNoSelection=otherPP.allowNoSelection;
             boolean toInit = false;
             if (otherPP.additionalParameters!=null) {
                 if (!ParameterUtils.setContent(additionalParameters, otherPP.additionalParameters)) {
@@ -175,7 +174,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
                 }
             }
             if (toInit) initChildList();
-            this.setListeners(otherPP.listeners);
+            
         } else throw new IllegalArgumentException("wrong parameter type");
     }
 
@@ -183,6 +182,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public PluginParameter<T> duplicate() {
         PluginParameter res = new PluginParameter(name, getPluginType(), allowNoSelection);
         if (additionalParameters!=null) res.setAdditionalParameters(ParameterUtils.duplicateList(additionalParameters));
+        res.setListeners(listeners);
         res.setContentFrom(this);
         return res;
     }

@@ -25,9 +25,9 @@ import image.ImageInteger;
  *
  * @author jollion
  */
-public interface UseThreshold {
+public interface OverridableThreshold {
     @FunctionalInterface public static interface ThresholdByPixel { public void getThreshold(int x, int y, int z);}
-    public SimpleThresholder getThresholder();
+    
     public void setThresholdValue(double threshold);
     //public void setThresholdFunction(ThresholdByPixel thresholdFunction);
     public Image getThresholdImage(Image input, int structureIdx, StructureObjectProcessing parent);

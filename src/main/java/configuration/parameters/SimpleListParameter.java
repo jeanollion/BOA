@@ -134,6 +134,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
             }
         } else if (childInstance != null) {
             return (T)childInstance.duplicate();
+            //if (res instanceof SimpleContainerParameter) ((SimpleContainerParameter)res).setListeners(((SimpleContainerParameter)childInstance).listeners);
         }
         return null;
     }

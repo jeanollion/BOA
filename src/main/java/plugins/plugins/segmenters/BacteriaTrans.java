@@ -74,12 +74,13 @@ import static plugins.Plugin.logger;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Thresholder;
-import plugins.UseThreshold;
+import plugins.OverridableThreshold;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
 import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import plugins.plugins.thresholders.LocalContrastThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import processing.Curvature;
@@ -111,7 +112,7 @@ import utils.clustering.Object3DCluster.InterfaceVoxels;
  *
  * @author jollion
  */
-public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup, UseThreshold {
+public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup, OverridableThreshold {
     public static boolean debug = false;
     
     // configuration-related attributes
@@ -122,7 +123,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter fillHolesBackgroundContactProportion = new BoundedNumberParameter("Fill holes background contact proportion", 2, 0.25, 0, 1);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 5, 5, null); // too high -> bad separation, too low: objects shape too far away from bact -> random merging
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
-    PluginParameter<plugins.SimpleThresholder> threshold = new PluginParameter<>("Threshold (separation from background)", plugins.SimpleThresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
+    PluginParameter<Thresholder> threshold = new PluginParameter<>("Threshold (separation from background)", Thresholder.class, new LocalContrastThresholder(), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.11, 0.001, 0.999); //minFN=0.14 (150325/0/1/f=113/th=144) 0.199 (150324/0/0/tp44/th=318) / maxFP=0.071(141107/0/0/tp796/th=265)
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
@@ -195,10 +196,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         pop.getObjects().stream().map((o) -> computeCurvature(o.getMask(), curvatureScale)).forEach((tree) -> { Curvature.drawOnCurvatureMask(curv, tree); });
         return curv;
     }
-    // UseTreshold related interface
-    @Override public plugins.SimpleThresholder getThresholder() {
-        return this.threshold.instanciatePlugin();
-    }
+    // Overridable Threshold related interface
+
     double thresholdValue = Double.NaN;
     @Override public void setThresholdValue(double threhsold) {
         thresholdValue = threhsold;
@@ -501,10 +500,18 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     @Override public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         ProcessingVariables pv = getProcessingVariables(input, segmentationMask);
         pv.threshold = threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
-        //pv.threshold=100d; // TODO variable ou auto
-        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
         ImageOperations.and(segmentationMask, pv.getSegmentationMask(), pv.getSegmentationMask());
-        ObjectPopulation pop = WatershedTransform.watershed(pv.getIntensityMap(), pv.getSegmentationMask(), seedObjects, false, null, null, true);
+        ObjectPopulation res = pv.splitSegmentationMask(pv.getSegmentationMask(), pv.minSizePropagation);
+        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
+        for (Object3D o : seedObjects) o.draw(pv.getSegmentationMask(), 1, null); // to ensure points are included in mask
+        Object3DCluster<InterfaceBT> c = new Object3DCluster(res, false, true, pv.getFactory());
+        c.setFixedPoints(seedObjects);
+        pv.updateCurvature(c.getClusters());
+        c.mergeSort(false, 0, seedObjects.size());  
+        Collections.sort(res.getObjects(), getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
+        res.relabel(true);
+        
+        //ObjectPopulation pop = WatershedTransform.watershed(pv.getIntensityMap(), pv.getSegmentationMask(), seedObjects, false, null, null, true);
         
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
@@ -512,10 +519,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.getEDM());
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.getIntensityMap());
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(res.getLabelMap().setName("segmented from: "+input.getName()));
         }
         
-        return pop;
+        return res;
     }
 
     // object splitter interface
@@ -723,6 +730,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 }
             }
         }
+        
         protected ObjectPopulation splitAndMergeObjects(ImageInteger segmentationMask, int minSize, int objectMergeLimit, boolean endOfChannel, boolean debug) {
             //if (BacteriaTrans.debug) debug=true;
             ObjectPopulation res = splitSegmentationMask(segmentationMask, minSizePropagation);

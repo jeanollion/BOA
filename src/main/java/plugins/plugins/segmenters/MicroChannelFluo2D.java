@@ -44,7 +44,8 @@ import java.util.Map;
 import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.Thresholder;
-import plugins.UseThreshold;
+import plugins.OverridableThreshold;
+import plugins.OverridableThresholdWithSimpleThresholder;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
@@ -63,7 +64,7 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup , UseThreshold {
+public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup , OverridableThresholdWithSimpleThresholder {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 350, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);

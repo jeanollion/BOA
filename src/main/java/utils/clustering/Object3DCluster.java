@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import processing.neighborhood.EllipsoidalNeighborhood;
 
 /**
@@ -177,6 +178,20 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
         mergeSort(population, interfaceFactory, true, 0, 0);
     }
     
+    public void setFixedPoints(final List<Object3D> points) {
+        Function<I, Boolean> f = i -> {
+            Object3D inclPoint1 = containsPoint(i.getE1(), points);
+            if (inclPoint1==null) return true;
+            Object3D inclPoint2 = containsPoint(i.getE2(), points);
+            if (inclPoint2==null || inclPoint1.equals(inclPoint2)) return true;
+            else return false;
+        };
+        super.setOverrideCheckFusionFunction(f);
+    }
+    private static Object3D containsPoint(Object3D o, List<Object3D> points) {
+        for (Object3D p : points) if (p.getBounds().isIncluded(o.getBounds())) return p;
+        return null;
+    }
     @Override public List<Object3D> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
         int nInit = population.getObjects().size();
         super.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);

@@ -175,6 +175,8 @@ public class ImportExportJSON {
                 dao.getExperiment().getStructures().setContentFrom(source.getStructures());
                 // set preprocessing template
                 dao.getExperiment().getPreProcessingTemplate().setContentFrom(source.getPreProcessingTemplate());
+                // set measurements
+                dao.getExperiment().getMeasurements().setContentFrom(source.getMeasurements());
                 dao.updateExperiment();
                 logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
             }

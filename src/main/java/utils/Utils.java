@@ -670,8 +670,9 @@ public class Utils {
         }
     }
     public static String format4(Number n) {
-        if (n instanceof Integer) {
-            return n.toString();
+        if (n instanceof Integer || n instanceof Long) {
+            if (Math.abs(n.intValue())<=1000) return n.toString();
+            else return String.format(java.util.Locale.US, "%.4E", n.doubleValue());
         } else {
             double abs = Math.abs(n.doubleValue());
             if (Double.isInfinite(abs) || Double.isNaN(abs)) return DataExtractor.NaN;

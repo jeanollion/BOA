@@ -39,7 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import plugins.PluginFactory;
 import plugins.Segmenter;
-import plugins.UseThreshold;
+import plugins.OverridableThreshold;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
@@ -71,7 +71,7 @@ public class TestProcessMicrochannels {
         //ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 50, 0.6d, 100);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
-        ((UseThreshold)s).setThresholdValue(10.5);
+        ((OverridableThreshold)s).setThresholdValue(10.5);
         ObjectPopulation pop=s.runSegmenter(input, 0, root);
         logger.debug("object count: {}", pop.getObjects().size());
         ImageDisplayer disp = new IJImageDisplayer();

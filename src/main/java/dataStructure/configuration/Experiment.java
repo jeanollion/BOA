@@ -406,7 +406,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     // measurement-related methods
-    
+    public SimpleListParameter<PluginParameter<Measurement>> getMeasurements() {checkInit(); return measurements;}
     public List<MeasurementKey> getAllMeasurementKeys() {
         if (this.measurements.getChildCount()==0) return Collections.emptyList();
         else {

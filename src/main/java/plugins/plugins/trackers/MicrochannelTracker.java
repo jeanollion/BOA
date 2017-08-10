@@ -48,7 +48,8 @@ import plugins.MultiThreaded;
 import plugins.Segmenter;
 import plugins.Thresholder;
 import plugins.TrackerSegmenter;
-import plugins.UseThreshold;
+import plugins.OverridableThreshold;
+import plugins.OverridableThresholdWithSimpleThresholder;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MicrochannelSegmenter;
@@ -125,15 +126,15 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             inputImages[idx] = preFilters.filter(parent.getRawImage(structureIdx), parent);
         }, executor, null);
         
-        if (segmenters[0] instanceof UseThreshold) {
+        if (segmenters[0] instanceof OverridableThresholdWithSimpleThresholder) {
             Image[] inputImagesToThld = new Image[inputImages.length];
             for (int i = 0; i<parentTrack.size(); ++i) {
-                inputImagesToThld[i] = ((UseThreshold)segmenters[i]).getThresholdImage(inputImages[i], structureIdx, parentTrack.get(i));
+                inputImagesToThld[i] = ((OverridableThresholdWithSimpleThresholder)segmenters[i]).getThresholdImage(inputImages[i], structureIdx, parentTrack.get(i));
             }
             Image globalImage = Image.mergeZPlanes(Arrays.asList(inputImagesToThld));
-            plugins.SimpleThresholder t = ((UseThreshold)segmenters[0]).getThresholder();
+            plugins.SimpleThresholder t = ((OverridableThresholdWithSimpleThresholder)segmenters[0]).getThresholder();
             double globalThld = t.runThresholder(globalImage);
-            for (int i = 0; i<parentTrack.size(); ++i) ((UseThreshold)segmenters[i]).setThresholdValue(globalThld);
+            for (int i = 0; i<parentTrack.size(); ++i) ((OverridableThresholdWithSimpleThresholder)segmenters[i]).setThresholdValue(globalThld);
             logger.debug("MicrochannelTracker on {}: global Treshold = {}", parentTrack.get(0).getTrackHead(), globalThld);
         }
         ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
