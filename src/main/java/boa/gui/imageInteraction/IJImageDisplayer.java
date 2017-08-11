@@ -88,6 +88,14 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         displayedImagesInv.clear();
         WindowManager.closeAllWindows(); // also close all opened windows
     }
+    @Override public void close(Image image) {
+        ImagePlus imp = this.getImage(image);
+        this.displayedImages.remove(image);
+        if (imp!=null) {
+            imp.close();
+            this.displayedImagesInv.remove(imp);
+        }
+    }
     /*@Override public boolean isVisible(Image image) {
         return displayedImages.containsKey(image) && displayedImages.get(image).isVisible();
     }*/

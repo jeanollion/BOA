@@ -80,6 +80,11 @@ public class SegmentAndTrack implements ProcessingScheme {
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
+    
+    public TrackPostFilterSequence getTrackPostFilters() {
+        return trackPostFilters;
+    }
+    
     @Override
     public List<Pair<String, Exception>> segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {
         if (!tracker.isOnePluginSet()) {

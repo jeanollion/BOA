@@ -73,7 +73,7 @@ public class ImageObjectInterfaceKey {
         return parent.toString()+"/S="+displayedStructureIdx+"/Track="+timeImage;
     }
     
-    public boolean equalsNoStructure(Object obj) {
+    public boolean equalsIgnoreStructure(Object obj) {
         if (obj == null) {
             return false;
         }
@@ -89,9 +89,9 @@ public class ImageObjectInterfaceKey {
         }
         return true;
     }
-    public static <T> T getOneElementEqualsNoStructure(ImageObjectInterfaceKey key, Map<ImageObjectInterfaceKey, T> map) {
+    public static <T> T getOneElementIgnoreStructure(ImageObjectInterfaceKey key, Map<ImageObjectInterfaceKey, T> map) {
         for (ImageObjectInterfaceKey k : map.keySet()) {
-            if (k.equalsNoStructure(key)) return map.get(k);
+            if (k.equalsIgnoreStructure(key)) return map.get(k);
         }
         return null;
     }

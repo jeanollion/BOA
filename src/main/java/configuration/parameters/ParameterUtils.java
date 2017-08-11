@@ -21,6 +21,8 @@ import boa.gui.GUI;
 import dataStructure.configuration.Experiment;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
+import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static configuration.parameters.Parameter.logger;
 import core.Processor;
@@ -31,11 +33,16 @@ import dataStructure.containers.InputImage;
 import dataStructure.containers.InputImages;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MemoryImageContainer;
+import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
 import image.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -44,14 +51,20 @@ import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import plugins.ParameterSetup;
+import plugins.ParameterSetupTracker;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
+import plugins.Tracker;
+import plugins.TrackerSegmenter;
 import plugins.Transformation;
 import static plugins.Transformation.SelectionMode.ALL;
 import static plugins.Transformation.SelectionMode.SAME;
 import plugins.UseMaps;
+import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.processingScheme.SegmentOnly;
+import plugins.plugins.processingScheme.SegmentThenTrack;
 import utils.ArrayUtil;
+import utils.Pair;
 import utils.Utils;
 
 /**
@@ -318,14 +331,14 @@ public class ParameterUtils {
         public void configure(Parameter p);
         public boolean isConfigurable(Parameter p);
     }
-    
+    static Pair<Image, ImageObjectInterface> lastTest;
     public static JMenu getTestMenu(String name, final ParameterSetup ps, Parameter parameter, final Parameter[] parameters, int structureIdx) {
         JMenu subMenu = new JMenu(name);
         List<JMenuItem> items = new ArrayList<>();
         for (int i = 0; i<parameters.length; ++i) { // todo: case of parameters with subparameters -> plain...
             final int idx = i;
-            if (ps.canBeTested(parameters[i])) {
-                JMenuItem item = new JMenuItem(parameters[i].getName());
+            if (ps.canBeTested(parameters[idx])) {
+                JMenuItem item = new JMenuItem(parameters[idx].getName());
                 item.setAction(new AbstractAction(item.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
@@ -343,59 +356,75 @@ public class ParameterUtils {
                             if (pp.instanciatePlugin() instanceof ProcessingScheme) psc = (ProcessingScheme)pp.instanciatePlugin();
                             StructureObject o = sel.get(0);
                             int parentStrutureIdx = o.getExperiment().getStructure(structureIdx).getParentStructure();
-                            
+                            int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
                             if (ps instanceof Segmenter) { // case segmenter -> segment only & call to test method
                                 SegmentOnly so; 
                                 if (psc instanceof SegmentOnly) so = (SegmentOnly)psc;
                                 else so = new SegmentOnly((Segmenter)ps).setPreFilters(psc.getPreFilters()).setPostFilters(psc.getPostFilters());
-                                int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
-                                List<StructureObject> subParents=null;
-                                StructureObject parent;
-                                if (o.getStructureIdx()>parentStrutureIdx) parent = o.getParent(parentStrutureIdx);
-                                else parent=o.getChildren(parentStrutureIdx).get(0);
-                                if (o.getStructureIdx()==segParentStrutureIdx) {
-                                    subParents = new ArrayList<>(parent.getChildren(segParentStrutureIdx));
+                                StructureObject parent = (o.getStructureIdx()>parentStrutureIdx) ? o.getParent(parentStrutureIdx) : o.getChildren(parentStrutureIdx).get(0);
+                                Map<StructureObject, StructureObject> dupMap = StructureObjectUtils.duplicateRootTrackAndChangeDAO(parent);
+                                parent = dupMap.get(parent); // don't modify object directly. 
+                                if (segParentStrutureIdx!=parentStrutureIdx && o.getStructureIdx()==segParentStrutureIdx) {
                                     final List<StructureObject> selF = sel;
-                                    List<StructureObject> subParentsFilter = new ArrayList<>(subParents);
-                                    subParentsFilter.removeIf(oo -> !selF.contains(oo));
-                                    parent.setChildren(subParentsFilter, segParentStrutureIdx);
+                                    parent.getChildren(segParentStrutureIdx).removeIf(oo -> !selF.contains(oo));
                                 }
-                                //o=o.duplicate(); // don't edit directly structureObject -> create new id -> don't work for indirect children
-                                List<StructureObject> children = parent.getChildren(structureIdx);
-                                
                                 sel = new ArrayList<>();
                                 sel.add(parent);
                                 so.segmentAndTrack(structureIdx, sel, null, (p, s)->((ParameterSetup)s).setTestParameter(parameters[idx]));
-                                 // o -> back to same state after testing
-                                parent.setChildren(children, structureIdx);
-                                if (subParents!=null) {
-                                    if (parent.getExperiment().isDirectChildOf(parentStrutureIdx, segParentStrutureIdx)) parent.setChildren(subParents, segParentStrutureIdx);
-                                    else parent.setChildren(null, segParentStrutureIdx);
+                                
+                            } else if (ps instanceof Tracker) {
+                                boolean segAndTrack = false;
+                                if (psc instanceof SegmentAndTrack && ps instanceof TrackerSegmenter && ps instanceof ParameterSetupTracker) {
+                                    segAndTrack = ((ParameterSetupTracker)ps).runSegmentAndTrack(parameters[idx]);
                                 }
+                                // get first continuous parent track
+                                sel = Utils.transform(sel, ob -> o.getStructureIdx()>parentStrutureIdx?ob.getParent(parentStrutureIdx):ob.getChildren(parentStrutureIdx).get(0));
+                                Utils.removeDuplicates(sel, false);
+                                Collections.sort(sel, (o1, o2)->Integer.compare(o1.getFrame(), o2.getFrame()));
+                                int i = 0;
+                                while (i+1<sel.size() && sel.get(i+1).getFrame()==sel.get(i).getFrame()+1) ++i;
+                                sel = sel.subList(0, i+1);
+                                logger.debug("source daos: {}", Utils.toStringList(sel, oo->oo.getDAO().getClass().getSimpleName()));
+                                Map<StructureObject, StructureObject> dupMap = StructureObjectUtils.createGraphCut(sel);
+                                List<StructureObject> parentTrack = Utils.transform(sel, oo->dupMap.get(oo));
+                                // run testing
+                                logger.debug("seg & track: {}", segAndTrack);
+                                ps.setTestParameter(parameters[idx]);
+                                TrackPostFilterSequence tpf=null;
+                                if (psc instanceof SegmentAndTrack) tpf = ((SegmentAndTrack)psc).getTrackPostFilters();
+                                if (psc instanceof SegmentThenTrack) tpf = ((SegmentThenTrack)psc).getTrackPostFilters();
+                                if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getPreFilters(), psc.getPostFilters());
+                                else ((Tracker)ps).track(structureIdx, parentTrack);
+                                if (tpf!=null) tpf.filter(structureIdx, parentTrack, null);
+                                
+                                // dispay track interactively
+                                ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+                                if (lastTest!=null) { // only on interactive image at the same time -> if 2 test on same track -> collapse
+                                   iwm.removeImage(lastTest.key);
+                                   iwm.removeImageObjectInterface(lastTest.value.getKey()); 
+                                   GUI.getInstance().populateSelections(); 
+                                   iwm.getDisplayer().close(lastTest.key);
+                                   lastTest=null;
+                                }
+                                ImageObjectInterface ioi = iwm.generateTrackMask(parentTrack, structureIdx);
+                                Image interactiveImage = ioi.generateRawImage(structureIdx, true);
+                                iwm.addImage(interactiveImage, ioi, structureIdx, false, true);
+                                lastTest= new Pair<>(interactiveImage, ioi);
+                                iwm.addWindowClosedListener(interactiveImage, e->{iwm.removeImage(interactiveImage);iwm.removeImageObjectInterface(ioi.getKey()); GUI.getInstance().populateSelections(); lastTest=null; logger.debug("cloooooose image"); return null;});
+                                if (parentStrutureIdx!=segParentStrutureIdx) {
+                                    Collection<StructureObject> bact = Utils.flattenMap(StructureObjectUtils.getChildrenMap(parentTrack, segParentStrutureIdx));
+                                    Selection bactS = new Selection("testTrackerSelection", o.getDAO().getMasterDAO());
+                                    bactS.setColor("Grey");
+                                    bactS.addElements(bact);
+                                    bactS.setIsDisplayingObjects(true);
+                                    GUI.getInstance().addSelection(bactS);
+                                    GUI.updateRoiDisplayForSelections(interactiveImage, ioi);
+                                }
+                                GUI.getInstance().setInteractiveStructureIdx(structureIdx);
+                                iwm.displayAllObjects(interactiveImage);
+                                iwm.displayAllTracks(interactiveImage);
                             }
                             
-                            // case tracker -> 
-                            /*
-                            StructureObject o = sel.get(0);
-                            int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
-                            if (o.getStructureIdx()>segParentStrutureIdx) o = o.getParent(segParentStrutureIdx);
-                            else o=o.getChildren(segParentStrutureIdx).get(0);
-                            int parentStrutureIdx = o.getExperiment().getStructure(structureIdx).getParentStructure();
-                            StructureObject p = o.getParent(parentStrutureIdx);
-                            logger.debug("testing parent: {}, seg parent: {}", p, o);
-                            Image raw = p.getRawImage(structureIdx);
-                            Image filtered = psc!=null ? psc.getPreFilters().filter(raw, p) : raw;
-                            logger.debug("prefilters: {}", psc!=null ? psc.getPreFilters().getChildCount(): "null");
-                            Image[] maps = null;
-                            final BoundingBox bds = o.getBounds();
-                            if (ps instanceof UseMaps) {
-                                //logger.debug("input off: {}, bds to crop: {}", raw.getBoundingBox(), bds);
-                                maps = ((UseMaps)ps).computeMaps(raw, filtered);
-                                ((UseMaps)ps).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(bds)));
-                                logger.debug("testing with use maps");
-                            }
-                            ps.test(parameters[idx], filtered.cropWithOffset(bds), structureIdx, o);
-                                    */
                         }
                     }
                 });

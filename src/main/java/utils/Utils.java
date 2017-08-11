@@ -591,6 +591,15 @@ public class Utils {
         }
         return null;
     }
+    public static <K, V> void removeValueFromMap(Map<K, V> map, V value) {
+        Iterator<Entry<K, V>> it = map.entrySet().iterator();
+        while(it.hasNext()) {
+            Entry<K, V> e = it.next();
+            if (e.getValue().equals(value)) {
+                it.remove();
+            }
+        }
+    }
     public static <K, V> Entry<K, V> getFromMap(Map<K, V> map, K key) {
         Iterator<Entry<K, V>> it = map.entrySet().iterator();
         while(it.hasNext()) {

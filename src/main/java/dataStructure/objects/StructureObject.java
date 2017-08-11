@@ -15,11 +15,13 @@ import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageProperties;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +59,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected ObjectContainer objectContainer;
     protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
     protected transient SmallArray<Image> trackImagesC=new SmallArray<>();
-    //@Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
+    private transient BoundingBox offsetInTrackImage;
     
     // measurement-related attributes
     Measurements measurements;
@@ -91,9 +93,31 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public StructureObject duplicate() {
-        if (isRoot()) return new StructureObject(timePoint, (BlankMask)getMask(), dao);
-        else return new StructureObject(timePoint, structureIdx, idx, getObject(), getParent());
+        StructureObject res;
+        if (isRoot()) res = new StructureObject(timePoint, (BlankMask)getMask(), dao);
+        else res= new StructureObject(timePoint, structureIdx, idx, getObject(), getParent());
+        res.id=id;
+        res.previousId=previousId;
+        res.nextId=nextId;
+        res.parentTrackHeadId=parentTrackHeadId;
+        res.trackHeadId=trackHeadId;
+        res.isTrackHead=isTrackHead;
+        res.previous=previous;
+        res.next=next;
+        res.trackHead=trackHead;
+        res.rawImagesC=rawImagesC.duplicate();
+        res.trackImagesC=trackImagesC.duplicate();
+        res.offsetInTrackImage=offsetInTrackImage;
+        if (attributes!=null && !attributes.isEmpty()) { // deep copy of attributes
+            res.attributes=new HashMap<>(attributes.size());
+            for (Entry<String, Object> e : attributes.entrySet()) {
+                if (e.getValue() instanceof double[]) res.attributes.put(e.getKey(), Arrays.copyOf((double[])e.getValue(), ((double[])e.getValue()).length));
+                else res.attributes.put(e.getKey(), e.getValue());
+            }
+        }        
+        return res;
     }
+    
     
     // structure-related methods
     public ObjectDAO getDAO() {return dao;}
@@ -188,6 +212,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public boolean isRoot() {return structureIdx==-1;}
     public List<? extends StructureObject> getChildObjects(int structureIdx) {return getChildren(structureIdx);} // for overriding purpose
+    public void loadAllChildren(boolean indirect) {
+        List<StructureObject> allChildren = indirect ? new ArrayList<>() : null;
+        for (int i : getExperiment().getAllDirectChildStructures(structureIdx)) {
+            List<StructureObject> c = getChildren(i);
+            if (indirect) allChildren.addAll(c);
+        }
+        if (indirect) for (StructureObject o : allChildren) o.loadAllChildren(true);
+    }
     public List<StructureObject> getChildren(int structureIdx) {
         if (structureIdx<this.structureIdx) throw new IllegalArgumentException("Structure: "+structureIdx+" cannot be child of structure: "+this.structureIdx);
         if (structureIdx == this.structureIdx) {
@@ -769,7 +801,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return rawImagesC.get(channelIdx);
     }
 
-    private BoundingBox offsetInTrackImage;
     public Image getTrackImage(int structureIdx) {
         //logger.debug("get Track image for : {}, id: {}, thId: {}, isTH?: {}, th: {}", this, id, this.trackHeadId, isTrackHead, this.trackHead);
         //logger.debug("get Track Image for: {} th {}", this, getTrackHead());

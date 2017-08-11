@@ -46,12 +46,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -171,7 +173,10 @@ public abstract class ImageWindowManager<T, U, V> {
     public void addImage(Image image, ImageObjectInterface i, int displayedStructureIdx, boolean labelImage, boolean displayImage) {
         if (image==null) return;
         //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
-        if (!imageObjectInterfaces.containsValue(i)) throw new RuntimeException("image object interface should be created through the manager");
+        if (!imageObjectInterfaces.containsValue(i)) {
+            //throw new RuntimeException("image object interface should be created through the manager");
+            imageObjectInterfaces.put(i.getKey(), i);
+        }
         //T dispImage = getImage(image);
         imageObjectInterfaceMap.put(image, new ImageObjectInterfaceKey(i.parents, displayedStructureIdx, i.isTimeImage()));
         isLabelImage.put(image, labelImage);
@@ -220,7 +225,7 @@ public abstract class ImageWindowManager<T, U, V> {
         return i;
     }
     public TrackMask generateTrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
-        setAllChildren(parentTrack, childStructureIdx);
+        //setAllChildren(parentTrack, childStructureIdx); // if set -> tracking test cannot work ? 
         BoundingBox bb = parentTrack.get(0).getBounds();
         return bb.getSizeY()>=bb.getSizeX() ? new TrackMaskX(parentTrack, childStructureIdx) : new TrackMaskY(parentTrack, childStructureIdx);
     }
@@ -239,7 +244,7 @@ public abstract class ImageWindowManager<T, U, V> {
         return i;
     }
     
-    public ImageObjectInterface getImageTrackObjectInterfaceIfExisting(StructureObject parentTrackHead, int childStructureIdx) {
+    /*public ImageObjectInterface getImageTrackObjectInterfaceIfExisting(StructureObject parentTrackHead, int childStructureIdx) {
         List<StructureObject> track = getTrack(parentTrackHead);
         if (track==null) return null;
         return imageObjectInterfaces.get(new ImageObjectInterfaceKey(track, childStructureIdx, true));
@@ -257,7 +262,7 @@ public abstract class ImageWindowManager<T, U, V> {
             }
         }
         return null;
-    }
+    }*/
     protected void reloadObjects__(ImageObjectInterfaceKey key, boolean track) {
         
         ImageObjectInterface i = imageObjectInterfaces.get(key);
@@ -338,7 +343,7 @@ public abstract class ImageWindowManager<T, U, V> {
         ImageObjectInterface i = this.imageObjectInterfaces.get(key.getKey(structureIdx));
         
         if (i==null) {
-            ImageObjectInterface ref = ImageObjectInterfaceKey.getOneElementEqualsNoStructure(key, imageObjectInterfaces);
+            ImageObjectInterface ref = ImageObjectInterfaceKey.getOneElementIgnoreStructure(key, imageObjectInterfaces);
             if (ref==null) logger.error("IOI not found: ref: {} ({}), all IOI: {}", key, key.getKey(-1), imageObjectInterfaces.keySet());
             else logger.debug("creating IOI: ref: {}", ref);
             // create imageObjectInterface
@@ -351,11 +356,39 @@ public abstract class ImageWindowManager<T, U, V> {
     
     public void removeImage(Image image) {
         imageObjectInterfaceMap.remove(image);
+        isLabelImage.remove(image);
         //removeClickListener(image);
+    }
+    public void removeImageObjectInterface(ImageObjectInterfaceKey key) {
+        // ignore structure
+        Iterator<Entry<ImageObjectInterfaceKey, ImageObjectInterface>> it = imageObjectInterfaces.entrySet().iterator();
+        while(it.hasNext()) if (it.next().getKey().equalsIgnoreStructure(key)) it.remove();
+        Iterator<Entry<Image, ImageObjectInterfaceKey>> it2 = imageObjectInterfaceMap.entrySet().iterator();
+        while(it2.hasNext()) if (it2.next().getValue().equalsIgnoreStructure(key)) it2.remove();
     }
     
     public abstract void addMouseListener(Image image);
     public abstract void addWindowListener(Image image, WindowListener wl);
+    public void addWindowClosedListener(Image image, Function<WindowEvent, Void> closeFunction) {
+        addWindowListener(image, new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) { }
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                closeFunction.apply(e);
+            }
+            @Override
+            public void windowIconified(WindowEvent e) { }
+            @Override
+            public void windowDeiconified(WindowEvent e) { }
+            @Override
+            public void windowActivated(WindowEvent e) { }
+            @Override
+            public void windowDeactivated(WindowEvent e) { }
+        });
+    }
     /**
      * 
      * @param image

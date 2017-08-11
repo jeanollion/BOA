@@ -283,7 +283,6 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         }
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
-        logger.debug("testParam: {}", testParam);
         if (testParam!=null) {
             ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(parent.getMask(), null, 1));
             ImageWindowManagerFactory.showImage(input);

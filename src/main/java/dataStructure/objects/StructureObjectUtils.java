@@ -363,7 +363,7 @@ public class StructureObjectUtils {
                 }
             }
         }
-        //for (List<StructureObject> l : res.values()) setTrackLinks(l);
+        //for (List<StructureObject> l : res.values()) updateTrackLinksFromMap(l);
         return res;
     }
     public static Map<StructureObject, List<StructureObject>> getAllTracksSplitDiv(List<StructureObject> parentTrack, int structureIdx) {
@@ -584,6 +584,73 @@ public class StructureObjectUtils {
 
     public static Map<Integer, List<StructureObject>> getChildrenMap(List<StructureObject> parents, int structureIdx) {
         return parents.stream().collect(Collectors.toMap(StructureObject::getFrame, (StructureObject p) -> p.getChildren(structureIdx)));
+    }
+    // duplicate objects 
+    private static StructureObject duplicateWithChildrenAndParents(StructureObject o, ObjectDAO newDAO, Map<StructureObject, StructureObject> sourceToDupMap, boolean children, boolean parents) {
+        o.loadAllChildren(false);
+        StructureObject res=o.duplicate();
+        if (sourceToDupMap!=null) sourceToDupMap.put(o, res);
+        if (children) {
+            for (int cIdx : o.getExperiment().getAllDirectChildStructures(o.structureIdx)) {
+                List<StructureObject> c = o.childrenSM.get(cIdx);
+                if (c!=null) res.setChildren(Utils.transform(c, oo->duplicateWithChildrenAndParents(oo, newDAO, sourceToDupMap, true, false)), cIdx);
+            }
+        }
+        if (parents && !o.isRoot() && res.getParent()!=null) {
+            StructureObject current = o;
+            StructureObject currentDup = res;
+            while (!current.isRoot() && current.getParent()!=null) {
+                StructureObject pDup = current.getParent().duplicate();
+                if (sourceToDupMap!=null) sourceToDupMap.put(current.getParent(), pDup);
+                pDup.dao=newDAO;
+                currentDup.setParent(pDup);
+                ArrayList<StructureObject> pCh = new ArrayList<>(1);
+                pCh.add(currentDup);
+                pDup.setChildren(pCh, currentDup.structureIdx);
+                current = current.getParent();
+                currentDup = pDup;
+            }
+        }
+        res.dao=newDAO;
+        res.setAttribute("DAOType", newDAO.getClass().getSimpleName());
+        return res;
+    }
+    
+    public static Map<StructureObject, StructureObject> duplicateRootTrackAndChangeDAO(StructureObject... rootTrack) {
+        return createGraphCut(Arrays.asList(rootTrack));
+    }
+    public static Map<StructureObject, StructureObject> createGraphCut(List<StructureObject> track) {
+        if (track==null) return null;
+        if (track.isEmpty()) return Collections.EMPTY_MAP;
+        
+        Map<StructureObject, StructureObject> dupMap = new HashMap<>();
+        BasicMasterDAO mDAO = new BasicMasterDAO();
+        mDAO.setExperiment(track.get(0).getExperiment());
+        BasicObjectDAO dao = mDAO.getDao(track.get(0).getPositionName());
+        
+        List<StructureObject> dup = Utils.transform(track, oo->duplicateWithChildrenAndParents(oo, dao, dupMap, true, true));
+        List<StructureObject> rootTrack = Utils.transform(dup, o->o.getRoot());
+        Utils.removeDuplicates(rootTrack, true);
+        Collections.sort(rootTrack);
+        dao.setRoots(rootTrack);
+        // update links
+        for (StructureObject o : dupMap.values()) {
+            o.previous=dupMap.get(o.getPrevious());
+            o.next=dupMap.get(o.getNext());
+            o.trackHead=dupMap.get(o.getTrackHead());
+        }
+        // update trackHeads
+        for (StructureObject o : dupMap.values()) {
+            StructureObject th = o;
+            while(!th.isTrackHead && th.getPrevious()!=null) th=th.getPrevious();
+            o.setTrackHead(th, false);
+            th.isTrackHead=true;
+        }
+        // update parent trackHeads
+        for (StructureObject o : dupMap.values()) {
+            if (o.parent!=null) o.parentTrackHeadId=o.parent.trackHeadId;
+        }
+        return dupMap;
     }
     
 }

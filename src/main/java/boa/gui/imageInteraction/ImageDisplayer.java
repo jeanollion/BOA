@@ -29,10 +29,12 @@ import java.util.function.Function;
 /**
  *
  * @author jollion
+ * @param <T>
  */
 public interface ImageDisplayer<T> {
     public static double zoomMagnitude=1;
     public T showImage(Image image, double... displayRange);
+    public void close(Image image);
     public T getImage(Image image);
     public Image getImage(T image);
     public void updateImageDisplay(Image image, double... displayRange);

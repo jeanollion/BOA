@@ -82,6 +82,9 @@ public class SegmentThenTrack implements ProcessingScheme {
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
+    public TrackPostFilterSequence getTrackPostFilters() {
+        return trackPostFilters;
+    }
     public SegmentThenTrack setPreFilters(PreFilterSequence preFilters) {
         this.preFilters=preFilters;
         return this;

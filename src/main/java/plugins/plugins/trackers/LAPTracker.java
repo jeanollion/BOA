@@ -47,6 +47,7 @@ import java.util.function.Function;
 import org.apache.commons.lang.ArrayUtils;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import plugins.MultiThreaded;
+import plugins.ParameterSetupTracker;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
@@ -75,7 +76,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class LAPTracker implements TrackerSegmenter, MultiThreaded {
+public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSetupTracker {
     public static boolean registerTMI=false;
     public static TrackMateInterface<SpotWithinCompartment> debugTMI;
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MutationSegmenterScaleSpace(), false);
@@ -457,6 +458,24 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
     @Override
     public Parameter[] getParameters() {
         return parameters;
+    }
+    // parameter setup
+    @Override
+    public boolean runSegmentAndTrack(Parameter p) {
+        String n = p.getName();
+        return n.equals(spotQualityThreshold.getName());
+    }
+
+    @Override
+    public boolean canBeTested(Parameter p) {
+        String n = p.getName();
+        return n.equals(spotQualityThreshold.getName()) || n.equals(maxGap.getName());
+    }
+    String testParam;
+    @Override
+    public void setTestParameter(Parameter p) {
+        testParam = p.getName();
+        logger.debug("test parameter: {}", p);
     }
 
     

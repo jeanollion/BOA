@@ -66,7 +66,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         return offsets;
     }
     
-    public void reloadObjects() {
+    @Override public void reloadObjects() {
         if (childStructureIdx == parentStructureIdx) {
             objects = this.parents;
             offsets = new BoundingBox[1];

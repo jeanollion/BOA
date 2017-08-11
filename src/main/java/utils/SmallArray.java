@@ -18,6 +18,7 @@
 package utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -117,5 +118,11 @@ public class SmallArray<T> {
     }
     public void flush() {
         array=null;
+    }
+    private SmallArray(Object[] array){this.array=array;}
+    public SmallArray<T> duplicate() {
+        if (array==null) return new SmallArray();
+        Object[] dup = Arrays.copyOf(array, array.length);
+        return new SmallArray(dup);
     }
 }
