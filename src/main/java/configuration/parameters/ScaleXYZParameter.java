@@ -17,14 +17,10 @@
  */
 package configuration.parameters;
 
-import dataStructure.configuration.MicroscopyField;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectPreProcessing;
-import dataStructure.objects.Track;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
-import image.Image;
+import org.json.simple.JSONObject;
+
 
 /**
  *
@@ -36,7 +32,25 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("ScaleZ (pix)", 3, 1, 0, null);
     BooleanParameter useImageCalibration = new BooleanParameter("Use image calibration for Z-scale", true);
     @Transient ConditionalParameter cond; // init occurs @ construction or @ postLoad
-        
+    
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res= new JSONObject();
+        res.put("scaleXY", scaleXY.toJSONEntry());
+        res.put("scaleZ", scaleZ.toJSONEntry());
+        res.put("useImageCalibration", useImageCalibration.toJSONEntry());
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        scaleXY.initFromJSONEntry(jsonO.get("scaleXY"));
+        scaleZ.initFromJSONEntry(jsonO.get("scaleZ"));
+        useImageCalibration.initFromJSONEntry(jsonO.get("useImageCalibration"));
+        init();
+    }
+    
     public ScaleXYZParameter(String name) {
         super(name);
         init();
@@ -66,15 +80,24 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
             return theoScaleZ * getScaleXY() / theoScaleXY;
         } else return scaleZ.getValue().doubleValue();
     }
-    public void setScaleXY(double scaleXY) {
+    public ScaleXYZParameter setScaleXY(double scaleXY) {
         this.scaleXY.setValue(scaleXY);
+        return this;
     }
-    public void setScaleZ(double scaleZ) {
+    public ScaleXYZParameter setScaleZ(double scaleZ) {
         if (Double.isNaN(scaleZ) || Double.isInfinite(scaleZ) || scaleZ<=0) useImageCalibration.setSelected(true);
         else {
             useImageCalibration.setSelected(false);
             this.scaleZ.setValue(scaleZ);
         }
+        return this;
+    }
+    public ScaleXYZParameter setUseImageCalibration(boolean useImageCal) {
+        this.useImageCalibration.setSelected(useImageCal);
+        return this;
+    }
+    public boolean getUseImageCalibration() {
+        return this.useImageCalibration.getSelected();
     }
     @Override public void setContentFrom(Parameter other) { // need to override because the super class's method only set the content from children parameters (children parameter = transient conditional parameter)
         if (other instanceof ScaleXYZParameter) {
@@ -101,4 +124,6 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
         //logger.debug("init null constructor scaleXYZParameter:{} XY:{}, Z:{}, use: {}", this.hashCode(), scaleXY.getValue(), scaleZ.getValue(), useImageCalibration.getValue());
         // init of conditional parameter will occur @ postLoad
     }
+
+    
 }

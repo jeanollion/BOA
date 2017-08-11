@@ -22,6 +22,7 @@ import configuration.parameters.ui.MultipleChoiceParameterUI;
 import dataStructure.configuration.Experiment;
 import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
+import org.json.simple.JSONArray;
 import utils.Utils;
 
 /**
@@ -151,5 +152,18 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
             }
         }
         return selectedIndicies;
+    }
+    @Override
+    public Object toJSONEntry() {
+        JSONArray res = new JSONArray();
+        for (int i : selectedIndicies) res.add(i);
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONArray source = (JSONArray)jsonEntry;
+        this.selectedIndicies=new int[source.size()];
+        for (int i = 0; i<source.size(); ++i) selectedIndicies[i] = ((Number)source.get(i)).intValue();
     }
 }

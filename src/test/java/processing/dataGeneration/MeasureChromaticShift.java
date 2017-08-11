@@ -41,7 +41,7 @@ public class MeasureChromaticShift {
         Experiment xp = generateXP(new double[]{125, 600}, "/data/Images/ChromaticShift/billes2", "/data/Images/ChromaticShift/billesOutput");
         
         MasterDAO db = new Task("chromaticShift").getDB();
-        db.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(db);
         db.setExperiment(xp);
         Task t = new Task("chromaticShift").setAllActions().addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/ChromaticShift", 0);
         t.runTask();

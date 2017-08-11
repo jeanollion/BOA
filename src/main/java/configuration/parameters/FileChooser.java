@@ -23,6 +23,7 @@ import java.io.File;
 import java.util.Arrays;
 import javax.swing.JFileChooser;
 import de.caluga.morphium.annotations.Transient;
+import org.json.simple.JSONArray;
 import utils.Utils;
 
 /**
@@ -31,8 +32,9 @@ import utils.Utils;
  */
 public class FileChooser extends SimpleParameter implements Listenable {
     protected String[] selectedFiles=new String[0];
-    protected FileChooserOption option = FileChooserOption.DIRECTORIES_ONLY;
+    @Transient protected FileChooserOption option = FileChooserOption.DIRECTORIES_ONLY;
     @Transient FileChooserUI ui;
+    
     
     public FileChooser(String name, FileChooserOption option) {
         super(name);
@@ -86,6 +88,20 @@ public class FileChooser extends SimpleParameter implements Listenable {
     
     @Override public FileChooser duplicate() {
         return new FileChooser(name, option);
+    }
+
+    @Override
+    public Object toJSONEntry() {
+        JSONArray res = new JSONArray();
+        for (String s : this.selectedFiles) res.add(s);
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONArray source = (JSONArray)jsonEntry;
+        this.selectedFiles=new String[source.size()];
+        for (int i = 0; i<source.size(); ++i) selectedFiles[i] = (String)source.get(i);
     }
     
     public enum FileChooserOption {

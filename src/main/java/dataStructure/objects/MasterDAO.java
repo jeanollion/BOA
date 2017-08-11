@@ -26,7 +26,7 @@ import java.util.List;
  * @author jollion
  */
 public interface MasterDAO {
-    public void delete();
+    public void eraseAll();
     public void clearCache();
     public void clearCache(String position);
     public ObjectDAO getDao(String fieldName);
@@ -34,8 +34,12 @@ public interface MasterDAO {
     public String getDBName();
     public String getDir();
     public void deleteAllObjects();
-    public void reset();
-    
+    public void deleteExperiment();
+    public static void deleteObjectsAndSelectionAndXP(MasterDAO dao) {
+        dao.deleteAllObjects();
+        dao.getSelectionDAO().deleteAllObjects();
+        dao.deleteExperiment();
+    }
     // experiments
     public Experiment getExperiment();
     public void updateExperiment();

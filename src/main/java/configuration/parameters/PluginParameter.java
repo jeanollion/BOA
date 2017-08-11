@@ -25,9 +25,12 @@ import java.util.HashMap;
 import de.caluga.morphium.annotations.Transient;
 import java.util.Arrays;
 import java.util.List;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import plugins.ParameterSetup;
 import plugins.Plugin;
 import plugins.PluginFactory;
+import utils.JSONUtils;
 import utils.Utils;
 
 /**
@@ -45,6 +48,24 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     @Transient protected boolean allowNoSelection;
     protected boolean activated=true;
     protected List<Parameter> additionalParameters;
+    
+    public Object toJSONEntry() {
+        JSONObject res= new JSONObject();
+        res.put("pluginName", pluginName);
+        //res.put("pluginTypeName", pluginTypeName);
+        res.put("activated", activated);
+        if (additionalParameters!=null && !additionalParameters.isEmpty()) res.put("addParams", JSONUtils.toJSON(additionalParameters));
+        if (pluginParameters!=null && !pluginParameters.isEmpty()) res.put("params", JSONUtils.toJSON(pluginParameters));
+        return res;
+    }
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        //pluginTypeName = (String)jsonO.get("pluginTypeName");
+        setPlugin((String)jsonO.get("pluginName"));
+        activated = (Boolean)jsonO.get("activated");
+        if (jsonO.containsKey("addParams") && additionalParameters!=null) JSONUtils.fromJSON(additionalParameters, (JSONArray)jsonO.get("addParams"));
+        if (jsonO.containsKey("params") && pluginParameters!=null) JSONUtils.fromJSON(pluginParameters, (JSONArray)jsonO.get("params"));
+    }
     
     public PluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name);

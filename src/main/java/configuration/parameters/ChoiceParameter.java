@@ -21,6 +21,7 @@ import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
+import org.json.simple.JSONAware;
 import utils.Utils;
 
 /**
@@ -36,6 +37,8 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     @Transient ChoiceParameterUI gui;
     @Transient ConditionalParameter cond;
     @Transient boolean postLoaded = false;
+    
+    
     
     public ChoiceParameter(String name, String[] listChoice, String selectedItem, boolean allowNoSelection) {
         super(name);
@@ -145,4 +148,16 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
         }
     }
     */
+
+    @Override
+    public Object toJSONEntry() {
+        return selectedItem;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object json) {
+        if (json instanceof String) {
+            setSelectedItem((String)json);
+        } else throw new IllegalArgumentException("JSON Entry is not String");
+    }
 }

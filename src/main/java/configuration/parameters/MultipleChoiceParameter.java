@@ -20,10 +20,7 @@ package configuration.parameters;
 import configuration.parameters.ui.MultipleChoiceParameterUI;
 import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
+import org.json.simple.JSONArray;
 import utils.Utils;
 
 /**
@@ -32,7 +29,7 @@ import utils.Utils;
  */
 public class MultipleChoiceParameter extends SimpleParameter implements ChoosableParameterMultiple {
     int[] selectedItems;
-    String[] listChoice;
+    @Transient String[] listChoice;
     @Transient MultipleChoiceParameterUI ui;
     @Transient int displayTrimSize=50; // for toString method
     
@@ -113,5 +110,19 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     @Override
     public MultipleChoiceParameter duplicate() {
         return new MultipleChoiceParameter(name, listChoice, selectedItems);
+    }
+    
+    @Override
+    public Object toJSONEntry() {
+        JSONArray res = new JSONArray();
+        for (int i : selectedItems) res.add(i);
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONArray source = (JSONArray)jsonEntry;
+        this.selectedItems=new int[source.size()];
+        for (int i = 0; i<source.size(); ++i) selectedItems[i] = ((Number)source.get(i)).intValue();
     }
 }

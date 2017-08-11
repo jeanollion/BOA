@@ -62,7 +62,7 @@ public class TestTrackStructure {
     
     public void testTrackStructure(DAOType daoType) {
         MasterDAO masterDAO = MasterDAOFactory.createDAO("testTrack", testFolder.newFolder("testTrack").getAbsolutePath(), daoType); //
-        masterDAO.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(masterDAO);
         Experiment xp = new Experiment("test");
         //xp.setOutputImageDirectory("/data/Images/Test/");
         xp.setOutputDirectory(testFolder.newFolder("testTrackOuput").getAbsolutePath());

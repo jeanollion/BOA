@@ -26,6 +26,7 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.ScaleXYZParameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.TimePointParameter;
@@ -47,6 +48,7 @@ import javax.swing.JSeparator;
 import javax.swing.MenuElement;
 import javax.swing.MenuSelectionManager;
 import javax.swing.plaf.basic.BasicMenuItemUI;
+import org.json.simple.JSONObject;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 import utils.Utils;
@@ -56,17 +58,45 @@ import utils.Utils;
  * @author jollion
  */
 public class PreProcessingChain extends SimpleContainerParameter {
-    BooleanParameter useImageScale;
-    BoundedNumberParameter scaleXY;
-    BoundedNumberParameter scaleZ;
-    BoundedNumberParameter frameDuration;
+    BooleanParameter useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true);
+    BoundedNumberParameter scaleXY = new BoundedNumberParameter("Scale XY", 5, 1, 0.00001, null);
+    BoundedNumberParameter scaleZ = new BoundedNumberParameter("Scale Z", 5, 1, 0.00001, null);
     @Transient ConditionalParameter imageScaleCond;
-    TimePointParameter trimFramesStart, trimFramesEnd;
-    SimpleListParameter<TransformationPluginParameter<Transformation>> transformations;
+    BoundedNumberParameter frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null);
+    TimePointParameter trimFramesStart = new TimePointParameter("Trim Frames Start Position", 0, true);
+    TimePointParameter trimFramesEnd = new TimePointParameter("Trim Frames Stop Position (0=no trimming)", 0, true);
+    SimpleListParameter<TransformationPluginParameter<Transformation>> transformations = new SimpleListParameter<>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
+    
+    @Override
+    public JSONObject toJSONEntry() {
+        JSONObject res= new JSONObject();
+        //TODO replace by scaleXYZ parameter
+        ScaleXYZParameter scale = new ScaleXYZParameter().setScaleXY(scaleXY.getValue().doubleValue()).setScaleZ(scaleZ.getValue().doubleValue()).setUseImageCalibration(useImageScale.getSelected());
+        res.put("scale", scale.toJSONEntry());
+        res.put("frameDuration", frameDuration.toJSONEntry());
+        res.put("trimFramesStart", trimFramesStart.toJSONEntry());
+        res.put("trimFramesEnd", trimFramesEnd.toJSONEntry());
+        res.put("transformations", transformations.toJSONEntry());
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        ScaleXYZParameter scale = new ScaleXYZParameter();
+        scale.initFromJSONEntry(jsonO.get("scale")); //TODO replace by scaleXYZ parameter
+        this.scaleXY.setValue(scale.getScaleXY());
+        this.scaleZ.setValue(scale.getScaleZ(1, 1));
+        this.useImageScale.setSelected(scale.getUseImageCalibration());
+        initScaleParam(true, true);
+        frameDuration.initFromJSONEntry(jsonO.get("frameDuration"));
+        trimFramesStart.initFromJSONEntry(jsonO.get("trimFramesStart"));
+        trimFramesStart.initFromJSONEntry(jsonO.get("trimFramesStart"));
+    }
     
     public PreProcessingChain(String name) {
         super(name);
-        transformations = new SimpleListParameter<TransformationPluginParameter<Transformation>>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
+        
         //logger.debug("new PPC: {}", name);
         initScaleParam(true, true);
         initChildList();
@@ -74,13 +104,9 @@ public class PreProcessingChain extends SimpleContainerParameter {
 
     private void initScaleParam(boolean initParams, boolean initCond) {
         if (initParams) {
-            useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true);
-            scaleXY = new BoundedNumberParameter("Scale XY", 5, 1, 0.00001, null);
-            scaleZ = new BoundedNumberParameter("Scale Z", 5, 1, 0.00001, null);
             scaleXY.setParent(this);
             scaleZ.setParent(this);
             useImageScale.setParent(this);
-            frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null);
             frameDuration.setParent(this);
         }
         if (initCond) {

@@ -377,7 +377,7 @@ public class GenerateXP {
         String configDir = MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap) ? new File(outputDir).getParent() : "localhost";
         if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) DBUtil.removePrefix(dbName, GUI.DBprefix);
         MasterDAO mDAO = MasterDAOFactory.createDAO(dbName, configDir);
-        mDAO.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(mDAO);
         Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
         

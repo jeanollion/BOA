@@ -17,7 +17,6 @@
  */
 package processing.dataGeneration;
 
-import boa.gui.GUI;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;

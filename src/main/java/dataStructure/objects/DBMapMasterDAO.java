@@ -57,7 +57,7 @@ public class DBMapMasterDAO implements MasterDAO {
     }
     
     @Override
-    public void delete() {
+    public void eraseAll() {
         String outputPath = getExperiment()!=null ? getExperiment().getOutputDirectory() : null;
         String outputImagePath = getExperiment()!=null ? getExperiment().getOutputImageDirectory() : null;
         clearCache();
@@ -103,16 +103,15 @@ public class DBMapMasterDAO implements MasterDAO {
             getDao(s).deleteAllObjects(); // also deletes measurements
         }
     }
-
+    
     @Override
-    public void reset() {
-        this.xpMap.clear();
-        if (!xpDB.isClosed()) this.xpDB.commit();
-        if (this.getOutputPath()!=null) {
-            deleteAllObjects();
-            getSelectionDAO().deleteAllObjects();
-        }
+    public void deleteExperiment() {
+        if (!xpDB.isClosed()) xpDB.close();
+        xpDB=null;
+        this.xpMap=null;
+        DBMapUtils.deleteDBFile(getConfigFile(dbName));
     }
+    
     @Override
     public void clearCache() {
         clearCache(true, true , true);

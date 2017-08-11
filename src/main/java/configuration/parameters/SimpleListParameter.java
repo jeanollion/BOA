@@ -27,10 +27,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONAware;
+import org.json.simple.JSONObject;
 import utils.Utils;
 
 /**
@@ -44,15 +48,34 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
 
     protected String name;
     protected ArrayList<T> children;
-    protected int unMutableIndex;
+    @Transient protected int unMutableIndex;
     @Transient protected Class<T> childClass;
-    @Transient private boolean postLoaded=false;
     protected String childClassName;
     protected T childInstance;
     
     @Transient protected ListParameterUI ui;
     @Transient protected ContainerParameter parent;
     
+    @Override
+    public JSONAware toJSONEntry() {
+        JSONObject res= new JSONObject();
+        JSONArray list= new JSONArray();
+        for (T p : children) list.add(p.toJSONEntry());
+        res.put("list", list);
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object json) {
+        JSONObject jsonO = (JSONObject)json;
+        JSONArray list = (JSONArray)jsonO.get("list");
+        for (Object o : list) {
+            T newI = createChildInstance();
+            newI.initFromJSONEntry((JSONAware)o);
+            insert(newI);
+        }
+        
+    }
     
     /**
      * 
@@ -371,4 +394,6 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         postLoaded=true;
     }
     */
+
+    
 }

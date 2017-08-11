@@ -18,7 +18,7 @@
 package images;
 
 import static TestUtils.GenerateSyntheticData.generateImages;
-import static boa.gui.GUI.logger;
+import static TestUtils.Utils.logger;
 import core.Processor;
 import core.Task;
 import dataStructure.configuration.ChannelImage;
@@ -69,14 +69,14 @@ public class DeleteFromDAOTest {
     //@Test 
     public void deleteTestMorphium() throws IOException {
         MasterDAO dao = new Task("testImageDAO").getDB();
-        dao.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(dao);
         deleteTest(dao);
     }
     
     //@Test 
     public void deleteTestBasic() throws IOException {
         MasterDAO dao = new BasicMasterDAO();
-        dao.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(dao);
         deleteTest(dao);
         // probleme store: concurent modification: les children sont déjà set lorsque store est apellée... ajouter un test?
     }
@@ -162,7 +162,7 @@ public class DeleteFromDAOTest {
     @Test
     public void testDeleteMass() {
         MasterDAO db = new Task("testImageDAO").getDB();
-        db.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(db);
         String f = "testField";
         int[] count = new int[]{10, 10, 10};
         Experiment xp = new Experiment("");
@@ -221,7 +221,7 @@ public class DeleteFromDAOTest {
     //@Test
     public void testDeleteAndRelabel() {
         MasterDAO db = new Task("testImageDAO").getDB();
-        db.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(db);
         String f = "testField";
         
         Experiment xp = new Experiment("");

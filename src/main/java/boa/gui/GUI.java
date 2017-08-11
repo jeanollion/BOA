@@ -131,6 +131,7 @@ import static plugins.PluginFactory.checkClass;
 import utils.ArrayUtil;
 import utils.CommandExecuter;
 import utils.FileIO;
+import utils.FileIO.ZipReader;
 import utils.FileIO.ZipWriter;
 import utils.ImportExportJSON;
 import utils.JSONUtils;
@@ -213,12 +214,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         format.add(jsonFormatMenuItem);
         deleteMeasurementsCheckBox.setSelected(PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, true));
         ButtonGroup dbGroup = new ButtonGroup();
-        dbGroup.add(this.localFileSystemDatabaseRadioButton);
-        dbGroup.add(this.mongoDBDatabaseRadioButton);
+        dbGroup.add(localFileSystemDatabaseRadioButton);
         String dbType = PropertyUtils.get(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
         if (dbType.equals(MasterDAOFactory.DAOType.Morphium.toString())) {
             currentDBPrefix=GUI.DBprefix;
-            mongoDBDatabaseRadioButton.setSelected(true);
             MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
             localDBMenu.setEnabled(false);
         }
@@ -940,7 +939,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         deleteMeasurementsCheckBox = new javax.swing.JCheckBoxMenuItem();
         dataBaseMenu = new javax.swing.JMenu();
         localFileSystemDatabaseRadioButton = new javax.swing.JRadioButtonMenuItem();
-        mongoDBDatabaseRadioButton = new javax.swing.JRadioButtonMenuItem();
         localDBMenu = new javax.swing.JMenu();
         compactLocalDBMenuItem = new javax.swing.JMenuItem();
         importExportMenu = new javax.swing.JMenu();
@@ -948,13 +946,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         exportSelectedFieldsMenuItem = new javax.swing.JMenuItem();
         exportXPConfigMenuItem = new javax.swing.JMenuItem();
         exportWholeXPMenuItem = new javax.swing.JMenuItem();
+        dumpObjectsMenuItem = new javax.swing.JMenuItem();
         importSubMenu = new javax.swing.JMenu();
         importFieldsToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
         importConfigToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
         importConfigurationForSelectedPositionsMenuItem = new javax.swing.JMenuItem();
         importConfigurationForSelectedStructuresMenuItem = new javax.swing.JMenuItem();
         importNewExperimentMenuItem = new javax.swing.JMenuItem();
-        setMongoBinDirectoryMenu = new javax.swing.JMenuItem();
+        unDumpObjectsMenuItem = new javax.swing.JMenuItem();
         jMenu1 = new javax.swing.JMenu();
         bsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
         jsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
@@ -1513,15 +1512,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         dataBaseMenu.add(localFileSystemDatabaseRadioButton);
 
-        mongoDBDatabaseRadioButton.setSelected(true);
-        mongoDBDatabaseRadioButton.setText("MongoDB");
-        mongoDBDatabaseRadioButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mongoDBDatabaseRadioButtonActionPerformed(evt);
-            }
-        });
-        dataBaseMenu.add(mongoDBDatabaseRadioButton);
-
         optionMenu.add(dataBaseMenu);
 
         localDBMenu.setText("Local DataBase");
@@ -1565,6 +1555,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         });
         exportSubMenu.add(exportWholeXPMenuItem);
+
+        dumpObjectsMenuItem.setText("Dump Objects");
+        dumpObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                dumpObjectsMenuItemActionPerformed(evt);
+            }
+        });
+        exportSubMenu.add(dumpObjectsMenuItem);
 
         importExportMenu.add(exportSubMenu);
 
@@ -1612,15 +1610,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         importSubMenu.add(importNewExperimentMenuItem);
 
-        importExportMenu.add(importSubMenu);
-
-        setMongoBinDirectoryMenu.setText("Set MongoDB Bin Directory");
-        setMongoBinDirectoryMenu.addActionListener(new java.awt.event.ActionListener() {
+        unDumpObjectsMenuItem.setText("Dumped Objects & Config");
+        unDumpObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                setMongoBinDirectoryMenuActionPerformed(evt);
+                unDumpObjectsMenuItemActionPerformed(evt);
             }
         });
-        importExportMenu.add(setMongoBinDirectoryMenu);
+        importSubMenu.add(unDumpObjectsMenuItem);
+
+        importExportMenu.add(importSubMenu);
 
         jMenu1.setText("Set Export Format");
 
@@ -1757,7 +1755,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     private String getHostNameOrDir(String xpName) {
         String host = this.hostName.getText();
-        if (this.mongoDBDatabaseRadioButton.isSelected() && host==null || host.length()==0) host = "localhost";
         if (this.localFileSystemDatabaseRadioButton.isSelected()) {
             if (xpName==null) return null;
             File f = this.dbFiles.get(xpName);
@@ -1877,14 +1874,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
         return newDBDir.getAbsolutePath();
     }
-    private void setMongoBinDirectoryMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setMongoBinDirectoryMenuActionPerformed
-        File[] f = Utils.chooseFiles("Choose Directory containing MongoDB Binary Files", null, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
-        if (f.length==1 && f[0].exists() && f[0].isDirectory()) {
-            PropertyUtils.set(PropertyUtils.MONGO_BIN_PATH, f[0].getAbsolutePath());
-            updateMongoDBBinActions();
-        }
-    }//GEN-LAST:event_setMongoBinDirectoryMenuActionPerformed
-
     private void refreshExperimentListMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_refreshExperimentListMenuItemActionPerformed
         populateExperimentList();
     }//GEN-LAST:event_refreshExperimentListMenuItemActionPerformed
@@ -1896,7 +1885,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         else {
             setDBConnection(dbName, host);
             PropertyUtils.set(PropertyUtils.LAST_SELECTED_EXPERIMENT, dbName);
-            if (mongoDBDatabaseRadioButton.isSelected()) PropertyUtils.set(PropertyUtils.HOSTNAME, hostName.getText());
         }
     }//GEN-LAST:event_setSelectedExperimentMenuItemActionPerformed
 
@@ -1934,7 +1922,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (response == JOptionPane.NO_OPTION || response == JOptionPane.CLOSED_OPTION) {
         } else if (response == JOptionPane.YES_OPTION) {
             if (db!=null && xps.contains(db.getDBName())) unsetXP();
-            for (String xpName : xps) MasterDAOFactory.createDAO(xpName, getHostNameOrDir(xpName)).delete();
+            for (String xpName : xps) MasterDAOFactory.createDAO(xpName, getHostNameOrDir(xpName)).eraseAll();
             populateExperimentList();
         }
     }//GEN-LAST:event_deleteXPMenuItemActionPerformed
@@ -2320,24 +2308,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         logger.debug("prune: {}", Utils.toStringList(sel));
     }
     
-    private void mongoDBDatabaseRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mongoDBDatabaseRadioButtonActionPerformed
-        unsetXP();
-        MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
-        PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.Morphium.toString());
-        localDBMenu.setEnabled(false);
-        hostName.setText(PropertyUtils.get(PropertyUtils.HOSTNAME, "localhost"));
-        populateExperimentList();
-    }//GEN-LAST:event_mongoDBDatabaseRadioButtonActionPerformed
-
-    private void localFileSystemDatabaseRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_localFileSystemDatabaseRadioButtonActionPerformed
-        unsetXP();
-        MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
-        PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
-        hostName.setText(PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, ""));
-        localDBMenu.setEnabled(true);
-        populateExperimentList();
-    }//GEN-LAST:event_localFileSystemDatabaseRadioButtonActionPerformed
-
     private void compactLocalDBMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_compactLocalDBMenuItemActionPerformed
         if (this.localFileSystemDatabaseRadioButton.isSelected()) {
             unsetXP();
@@ -2758,6 +2728,38 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void CloseNonInteractiveWindowsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CloseNonInteractiveWindowsMenuItemActionPerformed
         ImageWindowManagerFactory.getImageManager().closeNonInteractiveWindows();
     }//GEN-LAST:event_CloseNonInteractiveWindowsMenuItemActionPerformed
+
+    private void dumpObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dumpObjectsMenuItemActionPerformed
+        for (String xp : getSelectedExperiments()) {
+            MasterDAO mDAO = new Task(xp).getDB();
+            ZipWriter w = new ZipWriter(mDAO.getDir()+File.separator+mDAO.getDBName()+"_dump.zip");
+            ImportExportJSON.exportPositions(w, mDAO, false);
+            ImportExportJSON.exportConfig(w, mDAO);
+            ImportExportJSON.exportSelections(w, mDAO);
+            w.close();
+            MasterDAO.deleteObjectsAndSelectionAndXP(mDAO); // eraseAll config & objects
+        }
+    }//GEN-LAST:event_dumpObjectsMenuItemActionPerformed
+
+    private void unDumpObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unDumpObjectsMenuItemActionPerformed
+        List<File> dumpedFiles = Utils.seachAll(hostName.getText(), s->s.endsWith("_dump.zip"), 1);
+        for (File dump : dumpedFiles) {
+            String dbName = dump.getName().replace("_dump.zip", "");
+            logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
+            MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
+            ImportExportJSON.importFromZip(dump.getAbsolutePath(), dao, true, true, true);
+        }
+        
+    }//GEN-LAST:event_unDumpObjectsMenuItemActionPerformed
+
+    private void localFileSystemDatabaseRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_localFileSystemDatabaseRadioButtonActionPerformed
+        unsetXP();
+        MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
+        PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
+        hostName.setText(PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, ""));
+        localDBMenu.setEnabled(true);
+        populateExperimentList();
+    }//GEN-LAST:event_localFileSystemDatabaseRadioButtonActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2789,8 +2791,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     Map<String, File> dbFiles;
     
     private List<String> getDBNames() {
-        if (this.mongoDBDatabaseRadioButton.isSelected()) return DBUtil.getDBNames(getCurrentHostNameOrDir(), currentDBPrefix);
-        else if (this.localFileSystemDatabaseRadioButton.isSelected()) {
+        if (this.localFileSystemDatabaseRadioButton.isSelected()) {
             dbFiles = DBUtil.listExperiments(hostName.getText());
             List<String> res = new ArrayList<>(dbFiles.keySet());
             Collections.sort(res);
@@ -2940,6 +2941,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JCheckBoxMenuItem deleteMeasurementsCheckBox;
     private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JMenuItem deleteXPMenuItem;
+    private javax.swing.JMenuItem dumpObjectsMenuItem;
     private javax.swing.JMenuItem duplicateXPMenuItem;
     private javax.swing.JCheckBoxMenuItem eraseCollectionCheckbox;
     private javax.swing.JScrollPane experimentJSP;
@@ -2977,7 +2979,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JList microscopyFieldList;
     private javax.swing.JMenu miscMenu;
-    private javax.swing.JRadioButtonMenuItem mongoDBDatabaseRadioButton;
     private javax.swing.JMenuItem newXPMenuItem;
     private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JMenu optionMenu;
@@ -2997,7 +2998,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JList selectionList;
     private javax.swing.JPanel selectionPanel;
     private javax.swing.JMenuItem setLogFileMenuItem;
-    private javax.swing.JMenuItem setMongoBinDirectoryMenu;
     private javax.swing.JMenuItem setSelectedExperimentMenuItem;
     private javax.swing.JButton splitObjectsButton;
     private javax.swing.JList structureList;
@@ -3007,6 +3007,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JPanel trackPanel;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;
+    private javax.swing.JMenuItem unDumpObjectsMenuItem;
     private javax.swing.JButton unlinkObjectsButton;
     private javax.swing.JButton updateRoiDisplayButton;
     // End of variables declaration//GEN-END:variables

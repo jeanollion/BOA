@@ -26,6 +26,9 @@ import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.List;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import utils.JSONUtils;
 
 /**
  *
@@ -37,6 +40,30 @@ public class ConditionalParameter extends SimpleContainerParameter {
     HashMap<String, List<Parameter>> parameters;
     List<Parameter> defaultParameters;
     String currentValue;
+    
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res = new JSONObject();
+        res.put("action", action.toJSONEntry());
+        if (defaultParameters!=null && !defaultParameters.isEmpty()) res.put("def", JSONUtils.toJSON(defaultParameters));
+        JSONObject params = new JSONObject();
+        for (Entry<String, List<Parameter>> e : parameters.entrySet()) params.put(e.getKey(), JSONUtils.toJSON(e.getValue()));
+        res.put("params", params);
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object json) {
+        if (json instanceof JSONObject) {
+            JSONObject jsonO = (JSONObject)json;
+            action.initFromJSONEntry(jsonO.get("action"));
+            if (jsonO.containsKey("def") && defaultParameters!=null) JSONUtils.fromJSON(defaultParameters, (JSONArray)jsonO.get("def"));
+            JSONObject params = (JSONObject)jsonO.get("params");
+            for (Entry<String, List<Parameter>> e : parameters.entrySet()) {
+                if (params.containsKey(e.getKey())) JSONUtils.fromJSON(e.getValue(), (JSONArray)params.get(e.getKey()));
+            }
+        } else throw new IllegalArgumentException("JSON Entry is not JSONObject");
+    }
     
     public ConditionalParameter(ActionableParameter action) {
         this(action, new HashMap<String, List<Parameter>>(), null);

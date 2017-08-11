@@ -53,6 +53,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
+import org.json.simple.JSONObject;
 import plugins.PreFilter;
 
 /**
@@ -62,16 +63,31 @@ import plugins.PreFilter;
 public class MicroscopyField extends SimpleContainerParameter implements ListElementErasable {
     
     private MultipleImageContainer images;
-    PreProcessingChain preProcessingChain;
-    TimePointParameter defaultTimePoint;
+    PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
+    TimePointParameter defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP, false);
     @Transient InputImagesImpl inputImages;
     @Transient public static final int defaultTP = 50;
     //ui: bouton droit = selectionner un champ?
     
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res= new JSONObject();
+        res.put("images", images.toJSONEntry()); // TODO init images object @ construction !!
+        res.put("preProcessingChain", preProcessingChain.toJSONEntry());
+        res.put("defaultFrame", defaultTimePoint.toJSONEntry());
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        images.initFromJSONEntry(jsonO.get("images"));
+        preProcessingChain.initFromJSONEntry(jsonO.get("preProcessingChain"));
+        defaultTimePoint.initFromJSONEntry(jsonO.get("defaultFrame"));
+    }
+    
     public MicroscopyField(String name) {
         super(name);
-        preProcessingChain=new PreProcessingChain("Pre-Processing chain");
-        defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP, false);
         initChildList();
     }
     
@@ -247,9 +263,9 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     
     // listElementErasable
     @Override 
-    public boolean eraseData(boolean promptConfirm) { // do not delete objects if GUI not connected
+    public boolean eraseData(boolean promptConfirm) { // do not eraseAll objects if GUI not connected
         if (promptConfirm) {
-            // delete all objects..
+            // eraseAll all objects..
             int response = JOptionPane.showConfirmDialog(null, "Delete Field: "+name+ "(all data will be lost)", "Confirm",
             JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (response != JOptionPane.YES_OPTION) return false;
@@ -259,6 +275,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         for (int s =0; s<getExperiment().getStructureCount(); ++s) getExperiment().getImageDAO().deleteTrackImages(name, s);
         return true;
     }
+
+    
     
     public class MicroscopyFieldUI implements ParameterUI {
         JMenuItem[] openRawInputAll; 

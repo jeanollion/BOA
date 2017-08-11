@@ -33,6 +33,7 @@ import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import javax.swing.tree.MutableTreeNode;
+import org.json.simple.JSONObject;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import plugins.PreFilter;
@@ -62,6 +63,37 @@ public class Structure extends SimpleContainerParameter {
     BooleanParameter allowSplit = new BooleanParameter("Allow Split", "yes", "no", false);
     BooleanParameter allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false);
     @Transient NameEditorUI ui;
+    
+    @Override
+    public JSONObject toJSONEntry() {
+        JSONObject res= new JSONObject();
+        res.put("parentStructure", parentStructure.toJSONEntry());
+        res.put("segmentationParent", segmentationParent.toJSONEntry());
+        res.put("channelImage", channelImage.toJSONEntry());
+        res.put("objectSplitter", objectSplitter.toJSONEntry());
+        res.put("manualSegmenter", manualSegmenter.toJSONEntry());
+        res.put("processingScheme", processingScheme.toJSONEntry());
+        res.put("brightObject", brightObject.toJSONEntry());
+        res.put("manualObjectStrechThreshold", manualObjectStrechThreshold.toJSONEntry());
+        res.put("allowSplit", allowSplit.toJSONEntry());
+        res.put("allowMerge", allowMerge.toJSONEntry());
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        parentStructure.initFromJSONEntry(jsonO.get("parentStructure"));
+        segmentationParent.initFromJSONEntry(jsonO.get("segmentationParent"));
+        channelImage.initFromJSONEntry(jsonO.get("channelImage"));
+        objectSplitter.initFromJSONEntry(jsonO.get("objectSplitter"));
+        manualSegmenter.initFromJSONEntry(jsonO.get("manualSegmenter"));
+        processingScheme.initFromJSONEntry(jsonO.get("processingScheme"));
+        brightObject.initFromJSONEntry(jsonO.get("brightObject"));
+        manualObjectStrechThreshold.initFromJSONEntry(jsonO.get("manualObjectStrechThreshold"));
+        allowSplit.initFromJSONEntry(jsonO.get("allowSplit"));
+        allowMerge.initFromJSONEntry(jsonO.get("allowMerge"));
+    }
     
     public Structure(String name, int parentStructure, int channelImage) {
         this(name, parentStructure, parentStructure, channelImage);

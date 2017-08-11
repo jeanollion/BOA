@@ -60,7 +60,7 @@ public class perfTest {
         dest.setExperiment(source.getExperiment().duplicate());
         dest.getExperiment().setOutputDirectory(testFolder.newFolder("testPerf").getAbsolutePath());
         copy(source, dest, false);
-        dest.delete();
+        dest.eraseAll();
     }
 
 }

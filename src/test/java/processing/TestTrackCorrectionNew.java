@@ -73,7 +73,7 @@ public class TestTrackCorrectionNew {
             if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) dir = testFolder.newFolder("testTrackCorrectionNew").getAbsolutePath();
             db = MasterDAOFactory.createDAO("testTrackCorrection", dir);
         }
-        db.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(db);
     }
 
     //@Test 

@@ -23,6 +23,7 @@ import configuration.parameters.TextParameter;
 import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -30,11 +31,10 @@ import de.caluga.morphium.annotations.Transient;
  */
 public class ChannelImage extends SimpleContainerParameter {
     @Transient NameEditorUI ui;
-    TextParameter importKeyWord ;
+    TextParameter importKeyWord = new TextParameter("import file channel keyword", "", true);
     
     public ChannelImage(String name) {
         super(name);
-        importKeyWord = new TextParameter("import file channel keyword", "", true);
     }
     
     public ChannelImage(String name, String keyword) {
@@ -54,6 +54,19 @@ public class ChannelImage extends SimpleContainerParameter {
     public ParameterUI getUI() {
         if (ui==null) ui=new NameEditorUI(this, false);
         return ui;
+    }
+
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res = new JSONObject();
+        res.put("importKeyword", this.importKeyWord.toJSONEntry());
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        importKeyWord.initFromJSONEntry(jsonO.get("importKeyword"));
     }
     
 }

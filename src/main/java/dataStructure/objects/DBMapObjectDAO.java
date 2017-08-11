@@ -399,7 +399,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (cache.containsKey(key)) cache.get(key).remove(o.getId());
         if (deleteChildren) {
             for (int s : o.getExperiment().getAllDirectChildStructures(o.getStructureIdx())) deleteChildren(o, s);
-            //.. if track head is removed and has children -> inconsistency -> check at each delete, if delete children -> delete whole collection if trackHead, if not dont do anything
+            //.. if track head is removed and has children -> inconsistency -> check at each eraseAll, if eraseAll children -> eraseAll whole collection if trackHead, if not dont do anything
         }
         if (deleteFromParent) {
             if (o.getParent().getChildren(o.getStructureIdx()).remove(o) && relabelSiblings) {
@@ -429,7 +429,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                     deleteChildren(toRemove, sChild, key.key, false);
                 }
             }
-            //TODO if track head is removed and has children -> inconsistency -> check at each delete, if delete children -> delete whole collection if trackHead, if not dont do anything
+            //TODO if track head is removed and has children -> inconsistency -> check at each eraseAll, if eraseAll children -> eraseAll whole collection if trackHead, if not dont do anything
             if (deleteFromParent && relabelSiblings) {
                 if (key.value==-1) continue; // no parents
                 Set<StructureObject> parents = new HashSet<StructureObject>();
@@ -438,7 +438,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                         parents.add(o.getParent());
                     }
                 }
-                //logger.debug("number of parents with delete object from structure: {} = {}", sIdx, parents.size());
+                //logger.debug("number of parents with eraseAll object from structure: {} = {}", sIdx, parents.size());
                 List<StructureObject> relabeled = new ArrayList<StructureObject>();
                 for (StructureObject p : parents) {
                     p.relabelChildren(key.value, relabeled);

@@ -33,7 +33,7 @@ import de.caluga.morphium.annotations.Transient;
 public class NumberParameter extends SimpleParameter {
     //@Transient NumberParameterUI ui;
     Number value;
-    int decimalPlaces;
+    @Transient int decimalPlaces;
     
     public NumberParameter(String name, int decimalPlaces) {
         super(name);
@@ -83,6 +83,16 @@ public class NumberParameter extends SimpleParameter {
     
     @Override public NumberParameter duplicate() {
         return new NumberParameter(name, decimalPlaces, value);
+    }
+
+    @Override
+    public Object toJSONEntry() {
+        return value;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        this.value=(Number)jsonEntry;
     }
     
 }

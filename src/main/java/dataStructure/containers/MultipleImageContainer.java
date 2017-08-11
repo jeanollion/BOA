@@ -20,13 +20,14 @@ package dataStructure.containers;
 import de.caluga.morphium.annotations.Embedded;
 import image.BoundingBox;
 import image.Image;
+import utils.JSONSerializable;
 
 /**
  *
  * @author jollion
  */
 @Embedded(polymorph=true)
-public abstract class MultipleImageContainer {
+public abstract class MultipleImageContainer implements JSONSerializable{
     final double scaleXY, scaleZ;
     public abstract int getFrameNumber();
     public abstract int getChannelNumber();

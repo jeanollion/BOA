@@ -48,6 +48,7 @@ import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import org.apache.commons.lang.ArrayUtils;
 import org.bson.types.ObjectId;
+import org.json.simple.JSONObject;
 import plugins.Measurement;
 import utils.HashMapGetCreate;
 import utils.Utils;
@@ -65,19 +66,45 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     @Id protected ObjectId id;
     protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
     protected FileChooser outputPath = new FileChooser("Output Path", FileChooserOption.DIRECTORIES_ONLY);
-    SimpleListParameter<ChannelImage> channelImages;
-    SimpleListParameter<Structure> structures;
-    SimpleListParameter<PluginParameter<Measurement>> measurements;
-    SimpleListParameter<MicroscopyField> fields;
-    PreProcessingChain template;
-    ChoiceParameter importMethod;
+    SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<>("Channel Images", 0 , ChannelImage.class);
+    SimpleListParameter<Structure> structures= new SimpleListParameter<>("Structures", -1 , Structure.class);
+    SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<>("Measurements", -1 , new PluginParameter<Measurement>("Measurements", Measurement.class, true));
+    SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<>("Positions", -1 , MicroscopyField.class);
+    PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
+    ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
     public enum ImageDAOTypes {LocalFileSystem};
-    ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
+    @Transient ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     @Transient ConfigurationTreeModel model;
+    
+    @Override
+    public JSONObject toJSONEntry() {
+        JSONObject res= new JSONObject();
+        res.put("imagePath", imagePath.toJSONEntry());
+        res.put("outputPath", outputPath.toJSONEntry());
+        res.put("channelImages", channelImages.toJSONEntry());
+        res.put("structures", structures.toJSONEntry());
+        res.put("measurements", measurements.toJSONEntry());
+        res.put("positions", fields.toJSONEntry());
+        res.put("template", template.toJSONEntry());
+        res.put("importMethod", importMethod.toJSONEntry());
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        imagePath.initFromJSONEntry(jsonO.get("imagePath"));
+        outputPath.initFromJSONEntry(jsonO.get("outputPath"));
+        channelImages.initFromJSONEntry(jsonO.get("channelImages"));
+        structures.initFromJSONEntry(jsonO.get("structures"));
+        measurements.initFromJSONEntry(jsonO.get("measurements"));
+        fields.initFromJSONEntry(jsonO.get("positions"));
+        template.initFromJSONEntry(jsonO.get("template"));
+        importMethod.initFromJSONEntry(jsonO.get("importMethod"));
+    }
     
     public Experiment(String name) {
         super(name);
-        structures= new SimpleListParameter<>("Structures", -1 , Structure.class);
         outputPath.addListener((Parameter sourceParameter) -> {
             if (outputPath.getFirstSelectedFilePath()==null) return;
             if (imagePath.getFirstSelectedFilePath()==null) imagePath.setSelectedFilePath(outputPath.getFirstSelectedFilePath());
@@ -86,11 +113,6 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
                 GUI.getInstance().outputDirectoryUpdated();
             }
         });
-        channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
-        measurements = new SimpleListParameter<PluginParameter<Measurement>>("Measurements", -1 , new PluginParameter<Measurement>("Measurements", Measurement.class, true));
-        fields= new SimpleListParameter<MicroscopyField>("Positions", -1 , MicroscopyField.class);
-        template = new PreProcessingChain("Pre-Processing chain template");
-        importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
         initChildList();
     }
     

@@ -17,8 +17,7 @@
  */
 package processing.dataGeneration;
 
-import static TestUtils.Utils.logger;
-import boa.gui.GUI;
+
 import boa.gui.ManualCorrection;
 import core.Task;
 import dataStructure.configuration.Experiment;

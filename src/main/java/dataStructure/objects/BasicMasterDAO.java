@@ -46,7 +46,7 @@ public class BasicMasterDAO implements MasterDAO {
     }
     
     @Override
-    public void delete() {}
+    public void eraseAll() {}
     
     public String getDBName() {
         return "VirtualDB";
@@ -90,6 +90,11 @@ public class BasicMasterDAO implements MasterDAO {
     public void clearCache() {
         this.DAOs.clear();
         this.xp=null;
+    }
+
+    @Override
+    public void deleteExperiment() {
+        xp=null;
     }
     
 }

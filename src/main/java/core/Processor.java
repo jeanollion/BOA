@@ -76,7 +76,7 @@ public class Processor {
         for (MultipleImageContainer c : images) {
             MicroscopyField f = xp.createPosition(c.getName());
             if (f!=null) {
-                f.setImages(c); // TODO: bug when delete from gui just after creation
+                f.setImages(c); // TODO: bug when eraseAll from gui just after creation
                 count++;
             } else if (relink) {
                 xp.getPosition(c.getName()).setImages(c);
@@ -100,7 +100,7 @@ public class Processor {
     public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData) {
         if (!dao.getPositionName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
         InputImagesImpl images = field.getInputImages();
-        images.deleteFromDAO(); // delete images if existing in imageDAO
+        images.deleteFromDAO(); // eraseAll images if existing in imageDAO
         for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(field.getName(), s);
         setTransformations(field, computeConfigurationData);
         images.applyTranformationsSaveAndClose();

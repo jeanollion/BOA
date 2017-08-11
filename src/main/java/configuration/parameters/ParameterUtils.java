@@ -399,7 +399,7 @@ public class ParameterUtils {
                                 
                                 // dispay track interactively
                                 ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-                                if (lastTest!=null) { // only on interactive image at the same time -> if 2 test on same track -> collapse
+                                if (lastTest!=null) { // only one interactive image at the same time -> if 2 test on same track -> collapse
                                    iwm.removeImage(lastTest.key);
                                    iwm.removeImageObjectInterface(lastTest.value.getKey()); 
                                    GUI.getInstance().populateSelections(); 
@@ -548,4 +548,5 @@ public class ParameterUtils {
         });
         return item;
     }
+    
 }

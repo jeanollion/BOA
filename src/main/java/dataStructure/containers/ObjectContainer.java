@@ -53,7 +53,7 @@ public abstract class ObjectContainer {
     public abstract void updateObject();
     public abstract void deleteObject();
     public abstract void relabelObject(int newIdx);
-    public void initFromJSON(Map json) {
+    public void initFromJSON(Map<String, Object> json) {
         JSONArray bds =  (JSONArray)json.get("bounds");
         this.bounds=new BoundingBox();
         bounds.setxMin(((Number)bds.get(0)).intValue());

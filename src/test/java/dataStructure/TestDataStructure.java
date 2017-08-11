@@ -61,7 +61,7 @@ public class TestDataStructure {
     @Test
     public void StructureObjectTestStore() {
         MasterDAO db = MasterDAOFactory.createDAO("testdb", testFolder.newFolder("testDB").getAbsolutePath(), daoType);
-        db.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(db);
         Experiment xp = new Experiment("test");
         xp.setOutputDirectory(testFolder.newFolder("testDB").getAbsolutePath());
         db.setExperiment(xp);
@@ -125,7 +125,7 @@ public class TestDataStructure {
         xp.setOutputDirectory(outputFolder.getAbsolutePath());
         //save to db
         
-        db.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(db);
         db.setExperiment(xp);
         ObjectDAO dao = db.getDao(fieldName);
         

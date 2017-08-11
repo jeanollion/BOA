@@ -19,10 +19,12 @@ package dataStructure.configuration;
 
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.ScaleXYZParameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.json.simple.JSONObject;
 import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.Segmenter;
@@ -33,9 +35,26 @@ import plugins.Segmenter;
  */
 public class ProcessingChain extends SimpleContainerParameter {
     
-    protected SimpleListParameter<PluginParameter<PreFilter>> preFilters = new SimpleListParameter<PluginParameter<PreFilter>>("Pre-Filters", new PluginParameter<PreFilter>("Pre-Filter", PreFilter.class, false));
-    protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
-    protected SimpleListParameter<PluginParameter<PostFilter>> postFilters = new SimpleListParameter<PluginParameter<PostFilter>>("Post-Filters", new PluginParameter<PostFilter>("Post-Filter", PostFilter.class, false));
+    protected SimpleListParameter<PluginParameter<PreFilter>> preFilters = new SimpleListParameter<>("Pre-Filters", new PluginParameter<PreFilter>("Pre-Filter", PreFilter.class, false));
+    protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
+    protected SimpleListParameter<PluginParameter<PostFilter>> postFilters = new SimpleListParameter<>("Post-Filters", new PluginParameter<PostFilter>("Post-Filter", PostFilter.class, false));
+    
+    @Override
+    public JSONObject toJSONEntry() {
+        JSONObject res= new JSONObject();
+        res.put("preFilters", preFilters.toJSONEntry());
+        res.put("segmenter", segmenter.toJSONEntry());
+        res.put("postFilters", postFilters.toJSONEntry());
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        preFilters.initFromJSONEntry(jsonO.get("preFilters"));
+        segmenter.initFromJSONEntry(jsonO.get("segmenter"));
+        postFilters.initFromJSONEntry(jsonO.get("postFilters"));
+    }
     
     public ProcessingChain(String name) {
         super(name);

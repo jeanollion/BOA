@@ -135,7 +135,7 @@ public class GenerateMutationDynamicsXP {
         if (onlyUpdateMeasurements) {
             setMeasurements(mDAO.getExperiment());
         } else {
-            mDAO.reset();
+            MasterDAO.deleteObjectsAndSelectionAndXP(mDAO);
             Experiment xp = generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, cropXYdXdY);
             mDAO.setExperiment(xp);
             Processor.importFiles(xp, true, inputDir);

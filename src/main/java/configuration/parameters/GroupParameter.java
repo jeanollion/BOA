@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import org.json.simple.JSONArray;
+import utils.JSONUtils;
 import utils.Utils;
 
 /**
@@ -58,5 +60,15 @@ public class GroupParameter extends SimpleContainerParameter {
     public String toString() {
         return name + ":" + Utils.toStringList(children);
     }*/
+
+    @Override
+    public JSONArray toJSONEntry() {
+        return JSONUtils.toJSON(parameters);
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONUtils.fromJSON(parameters, (JSONArray)jsonEntry);
+    }
     
 }

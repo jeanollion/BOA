@@ -71,6 +71,16 @@ public class TextParameter extends SimpleParameter {
     public String getValue() {return value;}
     
     @Override public String toString() {return name+": "+value;}
+
+    @Override
+    public Object toJSONEntry() {
+        return value;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        this.value=(String)jsonEntry;
+    }
     
     class TextEditorUI implements ParameterUI { //modified from NameEditorUI
 

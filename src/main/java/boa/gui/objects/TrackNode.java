@@ -252,7 +252,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
             //delete.setEnabled(false);
             delete.setAction(new AbstractAction("Delete") {
                 @Override public void actionPerformed(ActionEvent e) {
-                    //trackNode.trackHead.getDAO().delete(track, true);
+                    //trackNode.trackHead.getDAO().eraseAll(track, true);
                     //trackNode.getParent().getChildren().remove(trackNode);
                     trackNode.root.generator.controller.getTreeGenerator(trackHead.getStructureIdx()).deleteSelectedTracks();
                 }

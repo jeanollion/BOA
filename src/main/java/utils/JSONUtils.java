@@ -884,5 +884,13 @@ public class JSONUtils {
             }
         }
     }
-
+    public static JSONArray toJSON(Collection<? extends JSONSerializable> coll) {
+        JSONArray res = new JSONArray();
+        for (JSONSerializable j : coll) res.add(j.toJSONEntry());
+        return res;
+    }
+    public static void fromJSON(List<? extends JSONSerializable> list, JSONArray json) {
+        if (list.size()!=json.size()) throw new IllegalArgumentException("Invalid size: list is:"+list.size()+ " JSON is: "+json.size());
+        for (int i =0;i<list.size(); ++i) list.get(i).initFromJSONEntry(json.get(i));
+    }
 }

@@ -101,7 +101,7 @@ public class ConfigurationTest {
     @Test
     public void testStroreSimpleXPMorphium() {
         MasterDAO db = new Task("testdb").getDB();
-        db.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(db);
         Experiment xp = new Experiment("test xp");
         int idx = xp.getStructureCount();
         xp.getStructures().insert(xp.getStructures().createChildInstance("structureTest"));
@@ -117,7 +117,7 @@ public class ConfigurationTest {
     @Test
     public void testStroreCompleteXPMorphium() {
         MasterDAO db = new Task("testdb").getDB();
-        db.reset();
+        MasterDAO.deleteObjectsAndSelectionAndXP(db);
 
         // set-up experiment structure
         Experiment xp = new Experiment("test");
