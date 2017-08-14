@@ -24,9 +24,13 @@ import image.Image;
 import static image.Image.logger;
 import image.ImageIOCoordinates;
 import image.ImageReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import utils.JSONUtils;
 
 /**
  *
@@ -43,6 +47,57 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     @Transient private Image[] singleFrameImages;
     boolean[] singleFrameC;
     Map<String, Double> timePointCZT;
+    
+    @Override
+    public boolean sameContent(MultipleImageContainer other) {
+        if (other instanceof MultipleImageContainerChannelSerie) {
+            MultipleImageContainerChannelSerie otherM = (MultipleImageContainerChannelSerie)other;
+            if (scaleXY!=otherM.scaleXY) return false;
+            if (scaleZ!=otherM.scaleZ) return false;
+            if (!name.equals(otherM.name)) return false;
+            if (!Arrays.deepEquals(filePathC, otherM.filePathC)) return false;
+            if (timePointNumber!=otherM.timePointNumber) return false;
+            if (!Arrays.equals(sizeZC, otherM.sizeZC)) return false;
+            if (bounds!=null && !bounds.equals(otherM.bounds)) return false;
+            else if (bounds==null && otherM.bounds!=null) return false;
+            if (!Arrays.equals(singleFrameC, otherM.singleFrameC)) return false;
+            if (!timePointCZT.equals(otherM.timePointCZT)) return false;
+            return true;
+        } else return false;
+    }
+    
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res = new JSONObject();
+        res.put("scaleXY", scaleXY);
+        res.put("scaleZ", scaleZ);
+        res.put("filePathC", JSONUtils.toJSONArray(filePathC));
+        res.put("name", name);
+        res.put("frameNumber", timePointNumber);
+        res.put("sizeZC", JSONUtils.toJSONArray(sizeZC));
+        if (bounds!=null) res.put("bounds", bounds.toJSONEntry());
+        res.put("singleFrameC", JSONUtils.toJSONArray(singleFrameC));
+        res.put("timePointCZT", JSONUtils.toJSONObject(timePointCZT));
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        scaleXY = ((Number)jsonO.get("scaleXY")).doubleValue();
+        scaleZ = ((Number)jsonO.get("scaleZ")).doubleValue();
+        filePathC = JSONUtils.fromStringArray((JSONArray)jsonO.get("filePathC"));
+        name = (String)jsonO.get("String");
+        timePointNumber = ((Number)jsonO.get("frameNumber")).intValue();
+        sizeZC = JSONUtils.fromIntArray((JSONArray)jsonO.get("sizeZC"));
+        if (jsonO.containsKey("bounds")) {
+            bounds = new BoundingBox();
+            bounds.initFromJSONEntry(jsonO.get(("bounds")));
+        }
+        singleFrameC = JSONUtils.fromBooleanArray((JSONArray)jsonO.get("singleFrameC"));
+        timePointCZT = (Map<String, Double>)jsonO.get("timePointCZT");
+    }
+    protected MultipleImageContainerChannelSerie() {super(1, 1);} // only for JSON initialization
     public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int frameNumber, boolean[] singleFrameC, int[] sizeZC, double scaleXY, double scaleZ) {
         this(name, imagePathC, frameNumber, singleFrameC, sizeZC, scaleXY, scaleZ, null);
     }
@@ -193,4 +248,8 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
             if (singleFrameImages!=null) singleFrameImages[i]=null;
         }
     }
+
+    
+
+    
 }

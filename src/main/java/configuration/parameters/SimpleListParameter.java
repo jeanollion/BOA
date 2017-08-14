@@ -230,10 +230,16 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
             ListParameter otherLP = (ListParameter)other;
             if (otherLP.getChildCount()==this.getChildCount()) {
                 for (int i = 0; i<getChildCount(); i++) {
-                    if (!((Parameter)this.getChildAt(i)).sameContent((Parameter)otherLP.getChildAt(i))) return false;
+                    if (!((Parameter)this.getChildAt(i)).sameContent((Parameter)otherLP.getChildAt(i))) {
+                        logger.debug("{}!={} class {}, children differ at {}", name, other.getName(), getClass().getSimpleName(), i);
+                        return false;
+                    }
                 }
                 return true;
-            } else return false;
+            } else {
+                logger.debug("{}!={} class {}, child number: {} vs {}", name, other.getName(), getClass().getSimpleName(), getChildCount(), other.getChildCount());
+                return false;
+            }
         } else return false;
     }
 

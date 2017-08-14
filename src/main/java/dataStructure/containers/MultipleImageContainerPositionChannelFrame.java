@@ -35,7 +35,10 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import utils.ArrayUtil;
+import utils.JSONUtils;
 
 /**
  *
@@ -43,12 +46,58 @@ import utils.ArrayUtil;
  */
 public class MultipleImageContainerPositionChannelFrame extends MultipleImageContainer { // one file per channel & per frame
     
-    final String inputDir, extension, positionKey, timeKeyword;
-    final int frameNumber;
-    final String[] channelKeywords;
+    String inputDir, extension, positionKey, timeKeyword;
+    int frameNumber;
+    String[] channelKeywords;
     int[] sizeZC;
     @Transient List<List<String>> fileCT;
 
+    @Override
+    public boolean sameContent(MultipleImageContainer other) {
+        if (other instanceof MultipleImageContainerPositionChannelFrame) {
+            MultipleImageContainerPositionChannelFrame otherM = (MultipleImageContainerPositionChannelFrame)other;
+            if (scaleXY!=otherM.scaleXY) return false;
+            if (scaleZ!=otherM.scaleZ) return false;
+            if (!inputDir.equals(otherM.inputDir)) return false;
+            if (!extension.equals(otherM.extension)) return false;
+            if (!positionKey.equals(otherM.positionKey)) return false;
+            if (!timeKeyword.equals(otherM.timeKeyword)) return false;
+            if (frameNumber!=otherM.frameNumber) return false;
+            if (!Arrays.deepEquals(channelKeywords, otherM.channelKeywords)) return false;
+            if (!Arrays.equals(sizeZC, otherM.sizeZC)) return false;
+            return true;
+        } else return false;
+    }
+    
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res = new JSONObject();
+        res.put("scaleXY", scaleXY);
+        res.put("scaleZ", scaleZ);
+        res.put("inputDir", inputDir);
+        res.put("extension", extension);
+        res.put("positionKey", positionKey);
+        res.put("timeKeyword", timeKeyword);
+        res.put("frameNumber", frameNumber);
+        res.put("channelKeywords", JSONUtils.toJSONArray(channelKeywords));
+        res.put("sizeZC", JSONUtils.toJSONArray(sizeZC));
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        scaleXY = ((Number)jsonO.get("scaleXY")).doubleValue();
+        scaleZ = ((Number)jsonO.get("scaleZ")).doubleValue();
+        inputDir = (String)jsonO.get("inputDir");
+        extension = (String)jsonO.get("extension");
+        positionKey = (String)jsonO.get("positionKey");
+        timeKeyword = (String)jsonO.get("timeKeyword");
+        frameNumber = ((Number)jsonO.get("frameNumber")).intValue();
+        channelKeywords = JSONUtils.fromStringArray((JSONArray)jsonO.get("channelKeywords"));
+        sizeZC = JSONUtils.fromIntArray((JSONArray)jsonO.get("sizeZC"));
+    }
+    protected MultipleImageContainerPositionChannelFrame() {super(1, 1);} // JSON init
     public MultipleImageContainerPositionChannelFrame(String inputDir, String extension, String positionKey, String timeKeyword, String[] channelKeywords, int frameNumber, double scaleXY, double scaleZ) {
         super(scaleXY, scaleZ);
         this.inputDir = inputDir;

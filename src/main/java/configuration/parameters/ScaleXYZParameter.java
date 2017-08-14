@@ -19,6 +19,7 @@ package configuration.parameters;
 
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
+import java.util.Arrays;
 import org.json.simple.JSONObject;
 
 
@@ -98,6 +99,12 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     }
     public boolean getUseImageCalibration() {
         return this.useImageCalibration.getSelected();
+    }
+    @Override public boolean sameContent(Parameter other) {
+        if (other instanceof ScaleXYZParameter) {
+            ScaleXYZParameter otherP = (ScaleXYZParameter) other;
+            return ParameterUtils.sameContent(Arrays.asList(new Parameter[]{scaleXY, scaleZ, useImageCalibration}), Arrays.asList(new Parameter[]{otherP.scaleXY, otherP.scaleZ, otherP.useImageCalibration}), "ScaleXYZParameter: "+name+"!="+otherP.name);
+        } else return false;
     }
     @Override public void setContentFrom(Parameter other) { // need to override because the super class's method only set the content from children parameters (children parameter = transient conditional parameter)
         if (other instanceof ScaleXYZParameter) {

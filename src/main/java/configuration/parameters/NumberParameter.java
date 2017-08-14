@@ -68,16 +68,20 @@ public class NumberParameter extends SimpleParameter {
     
     public boolean hasIntegerValue() {return (getValue().doubleValue()-getValue().intValue())!=0;}
     
+    @Override
     public boolean sameContent(Parameter other) {
-        if (other instanceof NumberParameter) return ((NumberParameter)other).getValue()==getValue();
+        if (other instanceof NumberParameter) {
+            if (((NumberParameter)other).getValue().doubleValue()!=getValue().doubleValue()) {
+                logger.debug("Number: {}!={} value: {} vs {}", this, other, getValue(), ((NumberParameter)other).getValue() );
+                return false;
+            } else return true;
+        }
         else return false;
     }
-
+    @Override 
     public void setContentFrom(Parameter other) {
-        //if (other!=null) Parameter.logger.trace("Parameter {} set content from {}", this.getClass(), other.getClass());
         if (other instanceof NumberParameter) {
             this.value=((NumberParameter)other).getValue();
-            //this.decimalPlaces = ((NumberParameter)other).decimalPlaces;
         }
     }
     

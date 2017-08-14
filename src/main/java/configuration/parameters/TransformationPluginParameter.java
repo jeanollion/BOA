@@ -30,30 +30,51 @@ import java.util.Arrays;
 import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import plugins.Transformation;
 import plugins.Transformation.SelectionMode;
 import plugins.TransformationTimeIndependent;
+import utils.JSONUtils;
 
 /**
  *
  * @author jollion
  */
 public class TransformationPluginParameter<T extends Transformation> extends PluginParameter<T> {
-    ArrayList configurationData;
-    ChannelImageParameter inputChannel;
-    ChannelImageParameter outputChannel;
+    List configurationData;
+    ChannelImageParameter inputChannel = new ChannelImageParameter("Configuration Channel", -1);
+    ChannelImageParameter outputChannel = null;
     //Parameter inputTimePoints;
+    
+    @Override
+    public JSONObject toJSONEntry() {
+        JSONObject res = super.toJSONEntry();
+        res.put("inputChannel", inputChannel.toJSONEntry());
+        if (outputChannel!=null) res.put("outputChannel", outputChannel.toJSONEntry());
+        if (configurationData!=null) res.put("configurationData", JSONUtils.toJSONList(configurationData));
+        return res;
+    }
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        super.initFromJSONEntry(jsonEntry);
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        inputChannel.initFromJSONEntry(jsonO.get(("inputChannel")));
+        if (jsonO.containsKey("outputChannel")) {
+            if (outputChannel==null) outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
+            outputChannel.initFromJSONEntry(jsonO.get(("outputChannel")));
+        }
+        if (jsonO.containsKey("outputChannel")) configurationData = (List)jsonO.get("configurationData");
+    }
     
     public TransformationPluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name, pluginType, allowNoSelection);
         outputChannel=null;
-        inputChannel = new ChannelImageParameter("Configuration Channel", -1);
     }
     
     public TransformationPluginParameter(String name, Class<T> pluginType, String defaultMethod, boolean allowNoSelection) {
         super(name, pluginType, defaultMethod, allowNoSelection);
         outputChannel=null;
-        inputChannel = new ChannelImageParameter("Configuration Channel", -1);
     }
     
     // constructeur désactivé car la methode setPlugin a besoin de l'experience
@@ -123,7 +144,22 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         }
         return instance;
     }
-    
+    @Override
+    public boolean sameContent(Parameter other) {
+        if (!super.sameContent(other)) return false;
+        if (other instanceof TransformationPluginParameter) {
+            TransformationPluginParameter otherPP = (TransformationPluginParameter) other;
+            if ((outputChannel==null && otherPP.outputChannel!=null) || (outputChannel!=null && !outputChannel.sameContent(otherPP.outputChannel))) {
+                logger.debug("transformationPP {}!={} differ in output channel: {} vs {}", name, otherPP.name, outputChannel, otherPP.outputChannel);
+                return false;
+            }
+            if (!inputChannel.sameContent(otherPP.inputChannel)) {
+                logger.debug("transformationPP {}!={} differ in input channel: {} vs {}", name, otherPP.name, inputChannel, otherPP.inputChannel);
+                return false;
+            }
+            return true;
+        } else return false;
+    }
     @Override
     public void setContentFrom(Parameter other) {
         super.setContentFrom(other);

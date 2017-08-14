@@ -49,7 +49,8 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     protected boolean activated=true;
     protected List<Parameter> additionalParameters;
     
-    public Object toJSONEntry() {
+    @Override
+    public JSONObject toJSONEntry() {
         JSONObject res= new JSONObject();
         res.put("pluginName", pluginName);
         //res.put("pluginTypeName", pluginTypeName);
@@ -58,6 +59,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         if (pluginParameters!=null && !pluginParameters.isEmpty()) res.put("params", JSONUtils.toJSON(pluginParameters));
         return res;
     }
+    @Override
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jsonO = (JSONObject)jsonEntry;
         //pluginTypeName = (String)jsonO.get("pluginTypeName");
@@ -167,6 +169,29 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
     
     @Override
+    public boolean sameContent(Parameter other) {
+        if (other instanceof PluginParameter) {
+            PluginParameter otherPP = (PluginParameter) other;
+            if (!otherPP.getPluginType().equals(getPluginType())) {
+                logger.debug("PluginParameter: {}!={} differ in plugin type: {} vs {}", this, other, getPluginType(), otherPP.getPluginType());
+                return false;
+            }
+            if ((getPluginName()==null && otherPP.getPluginName()!=null) || (getPluginName()!=null && !getPluginName().equals(otherPP.getPluginName()))) {
+                logger.debug("PluginParameter: {}!={} differ in plugin name: {} vs {}", this, other, getPluginName(), otherPP.getPluginName());
+                return false;
+            }
+            if (!ParameterUtils.sameContent(additionalParameters, otherPP.additionalParameters, "PluginParameter: "+name+"!="+otherPP.name+ " Additional Parameters")) return false;
+            if (!ParameterUtils.sameContent(children, otherPP.children, "PluginParameter: "+name+"!="+otherPP.name+ " Parameters")) return false;
+            if (activated!=otherPP.activated) {
+                logger.debug("PluginParameter: {}!={} differ in activation : {} vs {}", this, other, activated, otherPP.activated);
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof PluginParameter && ((PluginParameter)other).getPluginType().equals(getPluginType())) {
             PluginParameter otherPP = (PluginParameter) other;
@@ -175,8 +200,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             boolean toInit = false;
             if (otherPP.additionalParameters!=null) {
                 if (!ParameterUtils.setContent(additionalParameters, otherPP.additionalParameters)) {
-                    //logger.warn("PP ({}) additional parameters for: {} could not be loaded (cur:{}/src:{})",pluginTypeName, name, Utils.toStringList(additionalParameters), Utils.toStringList(otherPP.additionalParameters));
-                    //additionalParameters=ParameterUtils.duplicateList(otherPP.additionalParameters); // 
                     toInit=true;
                 }
             } else this.additionalParameters=null;

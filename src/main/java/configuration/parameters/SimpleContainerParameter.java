@@ -80,13 +80,6 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         if (other instanceof SimpleContainerParameter) {
             SimpleContainerParameter otherP = (SimpleContainerParameter) other;
             if (!ParameterUtils.setContent(getChildren(), otherP.getChildren())) logger.warn("SCP: {}({}): different parameter length, they might not be well set: c:{}/src:{}", name, this.getClass().getSimpleName(), children.size(), otherP.children.size());
-            /*if (getChildren().size()==otherP.getChildCount()) for (int i = 0; i<getChildren().size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
-            else {
-                logger.warn("SCP: {}({}): parameters could not be loaded: c:{}/s:{}", name, this.getClass().getSimpleName(), children.size(), otherP.children.size());
-                this.children=new ArrayList<>();
-                this.children.addAll(ParameterUtils.duplicateList(otherP.getChildren()));
-                for (Parameter p : children) p.setParent(this);
-            }*/
         } else {
             throw new IllegalArgumentException("wrong parameter type");
         }
@@ -135,10 +128,16 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
             ContainerParameter otherLP = (ContainerParameter)other;
             if (otherLP.getChildCount()==this.getChildCount()) {
                 for (int i = 0; i<getChildCount(); i++) {
-                    if (!((Parameter)this.getChildAt(i)).sameContent((Parameter)otherLP.getChildAt(i))) return false;
+                    if (!((Parameter)this.getChildAt(i)).sameContent((Parameter)otherLP.getChildAt(i))) {
+                        logger.debug("{}!={} class {}, children differ at {}", name, other.getName(), getClass().getSimpleName(), i);
+                        return false;
+                    }
                 }
                 return true;
-            } else return false;
+            } else {
+                logger.debug("{}!={} class {}, child number: {} vs {}", name, other.getName(), getClass().getSimpleName(), getChildCount(), other.getChildCount());
+                return false;
+            }
         } else return false;
     }
 

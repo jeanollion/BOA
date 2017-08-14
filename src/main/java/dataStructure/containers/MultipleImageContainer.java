@@ -20,6 +20,7 @@ package dataStructure.containers;
 import de.caluga.morphium.annotations.Embedded;
 import image.BoundingBox;
 import image.Image;
+import org.json.simple.JSONObject;
 import utils.JSONSerializable;
 
 /**
@@ -28,7 +29,7 @@ import utils.JSONSerializable;
  */
 @Embedded(polymorph=true)
 public abstract class MultipleImageContainer implements JSONSerializable{
-    final double scaleXY, scaleZ;
+    double scaleXY, scaleZ;
     public abstract int getFrameNumber();
     public abstract int getChannelNumber();
     public abstract int getSizeZ(int channel);
@@ -45,5 +46,17 @@ public abstract class MultipleImageContainer implements JSONSerializable{
         this.scaleXY = scaleXY;
         this.scaleZ = scaleZ;
     }
-    
+    public abstract boolean sameContent(MultipleImageContainer other);
+    public static MultipleImageContainer createImageContainerFromJSON(JSONObject jsonEntry) {
+        MultipleImageContainer res=null;
+        if (jsonEntry.containsKey("filePathC")) {
+            res = new MultipleImageContainerChannelSerie();
+        } else if (jsonEntry.containsKey("filePath")) {
+            res = new MultipleImageContainerSingleFile();
+        } else if (jsonEntry.containsKey("inputDir")) {
+            res = new MultipleImageContainerPositionChannelFrame();
+        }
+        if (res!=null) res.initFromJSONEntry(jsonEntry);
+        return res;
+    }
 }

@@ -17,18 +17,34 @@
  */
 package dataStructure.containers;
 
+import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
 import image.Image;
+import java.util.Arrays;
+import org.json.simple.JSONObject;
 
 /**
  *
  * @author jollion
  */
 public class MemoryImageContainer extends MultipleImageContainer {
-    Image[][] imageCT;
+    @Transient Image[][] imageCT;
     public MemoryImageContainer(Image[][] imageCT) {
         super(imageCT[0][0].getScaleXY(), imageCT[0][0].getScaleZ());
         this.imageCT=imageCT;
+    }
+    @Override
+    public boolean sameContent(MultipleImageContainer other) {
+        return true;
+    }
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res = new JSONObject();
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
     }
     
     @Override

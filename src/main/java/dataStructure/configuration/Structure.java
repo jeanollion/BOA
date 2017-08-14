@@ -67,6 +67,7 @@ public class Structure extends SimpleContainerParameter {
     @Override
     public JSONObject toJSONEntry() {
         JSONObject res= new JSONObject();
+        res.put("name", name);
         res.put("parentStructure", parentStructure.toJSONEntry());
         res.put("segmentationParent", segmentationParent.toJSONEntry());
         res.put("channelImage", channelImage.toJSONEntry());
@@ -83,6 +84,7 @@ public class Structure extends SimpleContainerParameter {
     @Override
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jsonO = (JSONObject)jsonEntry;
+        name = (String)jsonO.get("name");
         parentStructure.initFromJSONEntry(jsonO.get("parentStructure"));
         segmentationParent.initFromJSONEntry(jsonO.get("segmentationParent"));
         channelImage.initFromJSONEntry(jsonO.get("channelImage"));

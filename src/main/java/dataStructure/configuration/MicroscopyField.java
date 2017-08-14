@@ -72,7 +72,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     @Override
     public Object toJSONEntry() {
         JSONObject res= new JSONObject();
-        res.put("images", images.toJSONEntry()); // TODO init images object @ construction !!
+        res.put("name", name);
+        if (images!=null) res.put("images", images.toJSONEntry()); 
         res.put("preProcessingChain", preProcessingChain.toJSONEntry());
         res.put("defaultFrame", defaultTimePoint.toJSONEntry());
         return res;
@@ -81,7 +82,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     @Override
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jsonO = (JSONObject)jsonEntry;
-        images.initFromJSONEntry(jsonO.get("images"));
+        name = (String)jsonO.get("name");
+        if (jsonO.containsKey("images")) images = MultipleImageContainer.createImageContainerFromJSON((JSONObject)jsonO.get("images"));
         preProcessingChain.initFromJSONEntry(jsonO.get("preProcessingChain"));
         defaultTimePoint.initFromJSONEntry(jsonO.get("defaultFrame"));
     }
@@ -98,7 +100,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     @Override
     protected void initChildList() {
         //logger.debug("MF: {}, init list..", name);
-        if (defaultTimePoint==null) defaultTimePoint = new TimePointParameter("Default Frame", defaultTP, false);
+        //if (defaultTimePoint==null) defaultTimePoint = new TimePointParameter("Default Frame", defaultTP, false);
         initChildren(preProcessingChain, defaultTimePoint);
     }
     
@@ -231,7 +233,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     
     @Override public MicroscopyField duplicate() {
         MicroscopyField mf = super.duplicate();
-        mf.setImages(images.duplicate());
+        if (images!=null) mf.setImages(images.duplicate());
         return mf;
     }
     
@@ -252,8 +254,23 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         super.setContentFrom(other);
         if (other instanceof MicroscopyField) {
             MicroscopyField otherP = (MicroscopyField) other;
-            images = otherP.images.duplicate();
+            if (otherP.images!=null) images = otherP.images.duplicate();
         }
+    }
+    @Override 
+    public boolean sameContent(Parameter other) {
+        if (!super.sameContent(other)) return false;
+        if (other instanceof MicroscopyField) {
+            MicroscopyField otherP = (MicroscopyField) other;
+            if (otherP.images!=null && images!=null) {
+                if (!images.sameContent(otherP.images)) {
+                    logger.debug("Position: {}!={} content differs at images");
+                    return true; // just warn, do not concerns configuration
+                } else return true;
+            } else if (otherP.images==null && images==null) return true;
+            else return false;
+        }
+        return false;
     }
     
     @Override

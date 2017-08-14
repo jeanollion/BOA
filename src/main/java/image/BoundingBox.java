@@ -22,13 +22,17 @@ import dataStructure.objects.Voxel;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import java.io.Serializable;
+import java.util.Map;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import utils.JSONSerializable;
 
 /**
  *
  * @author jollion
  */
 @Embedded
-public class BoundingBox {
+public class BoundingBox implements JSONSerializable {
 
     int xMin, xMax, yMin, yMax, zMin, zMax;
     @Transient transient int count;
@@ -462,6 +466,34 @@ public class BoundingBox {
             }
         }
         if (function instanceof LoopFunction2) ((LoopFunction2)function).tearDown();
+    }
+    @Override
+    public void initFromJSONEntry(Object json) {
+        JSONArray bds =  (JSONArray)json;
+        setxMin(((Number)bds.get(0)).intValue());
+        setxMax(((Number)bds.get(1)).intValue());
+        setyMin(((Number)bds.get(2)).intValue());
+        setyMax(((Number)bds.get(3)).intValue());
+        if (bds.size()>=6) {
+            setzMin(((Number)bds.get(4)).intValue());
+            setzMax(((Number)bds.get(5)).intValue());
+        } else {
+            setzMin(0);
+            setzMax(0);
+        }
+    }
+    @Override
+    public JSONArray toJSONEntry() {
+        JSONArray bds =  new JSONArray();
+        bds.add(getxMin());
+        bds.add(getxMax());
+        bds.add(getyMin());
+        bds.add(getyMax());
+        if (getSizeZ()>1 || getzMin()!=0) {
+            bds.add(getzMin());
+            bds.add(getzMax());
+        }
+        return bds;
     }
     
     public static interface LoopFunction2 extends LoopFunction {

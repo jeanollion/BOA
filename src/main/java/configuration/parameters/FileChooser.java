@@ -24,6 +24,7 @@ import java.util.Arrays;
 import javax.swing.JFileChooser;
 import de.caluga.morphium.annotations.Transient;
 import org.json.simple.JSONArray;
+import utils.JSONUtils;
 import utils.Utils;
 
 /**
@@ -56,7 +57,8 @@ public class FileChooser extends SimpleParameter implements Listenable {
     }
     
     public void setSelectedFilePath(String... filePath) {
-        selectedFiles=filePath;
+        if (filePath==null) selectedFiles = new String[0];
+        else selectedFiles=filePath;
         fireListeners();
     }
     public void setSelectedFiles(File... filePath ) {
@@ -65,16 +67,24 @@ public class FileChooser extends SimpleParameter implements Listenable {
         for (File f : filePath) selectedFiles[i++]=f.getAbsolutePath();
         fireListeners();
     }
-
+    @Override
     public boolean sameContent(Parameter other) {
         if (other instanceof FileChooser) {
             if (((FileChooser)other).selectedFiles.length==selectedFiles.length) {
-                for (int i =0; i<selectedFiles.length; i++) if (!selectedFiles[i].equals(((FileChooser)other).selectedFiles[i])) return false;
+                for (int i =0; i<selectedFiles.length; i++) { 
+                    if ((selectedFiles[i] ==null && ((FileChooser)other).selectedFiles[i]!=null) || ( selectedFiles[i] !=null && !selectedFiles[i].equals(((FileChooser)other).selectedFiles[i]))) {
+                        logger.debug("FileChoose {}!={}: difference in selected files : {} vs {}", this, other, selectedFiles, ((FileChooser)other).selectedFiles);
+                        return false;
+                    }
+                }
                 return true;
-            } else return false;
+            } else {
+                logger.debug("FileChoose {}!={}: # of files : {} vs {}", this, other, selectedFiles.length, ((FileChooser)other).selectedFiles.length);
+                return false;
+            }
         } else return false;
     }
-
+    @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof FileChooser) {
             //this.option=((FileChooser)other).option;
@@ -92,16 +102,12 @@ public class FileChooser extends SimpleParameter implements Listenable {
 
     @Override
     public Object toJSONEntry() {
-        JSONArray res = new JSONArray();
-        for (String s : this.selectedFiles) res.add(s);
-        return res;
+        return JSONUtils.toJSONArray(selectedFiles);
     }
 
     @Override
     public void initFromJSONEntry(Object jsonEntry) {
-        JSONArray source = (JSONArray)jsonEntry;
-        this.selectedFiles=new String[source.size()];
-        for (int i = 0; i<source.size(); ++i) selectedFiles[i] = (String)source.get(i);
+        selectedFiles = JSONUtils.fromStringArray((JSONArray)jsonEntry);
     }
     
     public enum FileChooserOption {

@@ -89,17 +89,19 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     public String toString() {
         return name +": "+ Utils.getStringArrayAsStringTrim(displayTrimSize, getSelectedItemsNames());
     }
-    
+    @Override
     public boolean sameContent(Parameter other) { // checks only indicies
         if (other instanceof ChoosableParameterMultiple) {
-            return ParameterUtils.arraysEqual(getSelectedItems(), ((ChoosableParameterMultiple)other).getSelectedItems());
+            if (!ParameterUtils.arraysEqual(getSelectedItems(), ((ChoosableParameterMultiple)other).getSelectedItems())) {
+                logger.debug("MultipleChoiceParameter: {}!={} {} vs {}", this, other ,getSelectedItems(),((ChoosableParameterMultiple)other).getSelectedItems());
+                return false;
+            } else return true;
         } else return false;
     }
-
+    @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof ChoosableParameterMultiple) {
-            //this.listChoice=((ChoosableParameterMultiple)other).getChoiceList();
-            this.setSelectedIndicies(((ChoosableParameterMultiple)other).getSelectedItems());
+            setSelectedIndicies(((ChoosableParameterMultiple)other).getSelectedItems());
         } else if (other instanceof ChoosableParameter) {
             String sel = ((ChoosableParameter)other).getChoiceList()[((ChoosableParameter)other).getSelectedIndex()];
             int i = Utils.getIndex(listChoice, sel);

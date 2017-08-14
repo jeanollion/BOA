@@ -70,9 +70,9 @@ public class PreProcessingChain extends SimpleContainerParameter {
     @Override
     public JSONObject toJSONEntry() {
         JSONObject res= new JSONObject();
-        //TODO replace by scaleXYZ parameter
-        ScaleXYZParameter scale = new ScaleXYZParameter().setScaleXY(scaleXY.getValue().doubleValue()).setScaleZ(scaleZ.getValue().doubleValue()).setUseImageCalibration(useImageScale.getSelected());
-        res.put("scale", scale.toJSONEntry());
+        res.put("scaleXY", scaleXY.toJSONEntry());
+        res.put("scaleZ", scaleZ.toJSONEntry());
+        res.put("useImageScale", useImageScale.toJSONEntry());
         res.put("frameDuration", frameDuration.toJSONEntry());
         res.put("trimFramesStart", trimFramesStart.toJSONEntry());
         res.put("trimFramesEnd", trimFramesEnd.toJSONEntry());
@@ -83,15 +83,14 @@ public class PreProcessingChain extends SimpleContainerParameter {
     @Override
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jsonO = (JSONObject)jsonEntry;
-        ScaleXYZParameter scale = new ScaleXYZParameter();
-        scale.initFromJSONEntry(jsonO.get("scale")); //TODO replace by scaleXYZ parameter
-        this.scaleXY.setValue(scale.getScaleXY());
-        this.scaleZ.setValue(scale.getScaleZ(1, 1));
-        this.useImageScale.setSelected(scale.getUseImageCalibration());
-        initScaleParam(true, true);
+        scaleXY.initFromJSONEntry(jsonO.get("scaleXY"));
+        scaleZ.initFromJSONEntry(jsonO.get("scaleZ"));
+        useImageScale.initFromJSONEntry(jsonO.get("useImageScale"));
         frameDuration.initFromJSONEntry(jsonO.get("frameDuration"));
         trimFramesStart.initFromJSONEntry(jsonO.get("trimFramesStart"));
-        trimFramesStart.initFromJSONEntry(jsonO.get("trimFramesStart"));
+        trimFramesEnd.initFromJSONEntry(jsonO.get("trimFramesEnd"));
+        transformations.initFromJSONEntry(jsonO.get("transformations"));
+        initScaleParam(true, true);
     }
     
     public PreProcessingChain(String name) {
@@ -133,12 +132,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
     @Override
     protected void initChildList() {
         //logger.debug("PreProc chain: {}, init list..", name);
-        initScaleParam(useImageScale==null, imageScaleCond==null); //TODO for retrocompatibility
-        if (trimFramesStart==null) trimFramesStart = new TimePointParameter("Trim Frames Start Position", 0, true);
-        else trimFramesStart.setUseRawInputFrames(true); //avoid edless loop //TODO for retrocompatibility
-        if (trimFramesEnd==null) trimFramesEnd = new TimePointParameter("Trim Frames Stop Position (0=no trimming)", 0, true);
-        else trimFramesEnd.setUseRawInputFrames(true); //avoid edless loop //TODO for retrocompatibility
-        if (frameDuration==null) frameDuration=new BoundedNumberParameter("Frame Duration", 4, 4, 0, null); //TODO for retrocompatibility
+        initScaleParam(useImageScale==null, imageScaleCond==null); //TODO for morphium init
         super.initChildren(imageScaleCond, transformations, trimFramesStart, trimFramesEnd, frameDuration);
     }
     

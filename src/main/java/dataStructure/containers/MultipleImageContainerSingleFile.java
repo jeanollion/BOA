@@ -23,6 +23,10 @@ import image.BoundingBox;
 import image.Image;
 import image.ImageIOCoordinates;
 import image.ImageReader;
+import java.util.Arrays;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import utils.JSONUtils;
 
 /**
  *
@@ -38,6 +42,56 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     BoundingBox bounds;
     @Transient private ImageReader reader;
     
+    @Override
+    public boolean sameContent(MultipleImageContainer other) {
+        if (other instanceof MultipleImageContainerSingleFile) {
+            MultipleImageContainerSingleFile otherM = (MultipleImageContainerSingleFile)other;
+            if (scaleXY!=otherM.scaleXY) return false;
+            if (scaleZ!=otherM.scaleZ) return false;
+            if (!name.equals(otherM.name)) return false;
+            if (!filePath.equals(otherM.filePath)) return false;
+            if (timePointNumber!=otherM.timePointNumber) return false;
+            if (channelNumber!=otherM.channelNumber) return false;
+            if (seriesIdx!=otherM.seriesIdx) return false;
+            if (sizeZ!=otherM.sizeZ) return false;
+            if (bounds!=null && !bounds.equals(otherM.bounds)) return false;
+            else if (bounds==null && otherM.bounds!=null) return false;
+            return true;
+        } else return false;
+    }
+    
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res = new JSONObject();
+        res.put("scaleXY", scaleXY);
+        res.put("scaleZ", scaleZ);
+        res.put("filePath", filePath);
+        res.put("name", name);
+        res.put("framePointNumber", timePointNumber);
+        res.put("channelNumber", channelNumber);
+        res.put("seriesIdx", seriesIdx);
+        res.put("sizeZ", sizeZ);
+        if (bounds!=null) res.put("bounds", bounds.toJSONEntry());
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jsonO = (JSONObject)jsonEntry;
+        scaleXY = ((Number)jsonO.get("scaleXY")).doubleValue();
+        scaleZ = ((Number)jsonO.get("scaleZ")).doubleValue();
+        filePath = (String)jsonO.get("filePath");
+        name = (String)jsonO.get("name");
+        timePointNumber = ((Number)jsonO.get("framePointNumber")).intValue();
+        channelNumber = ((Number)jsonO.get("channelNumber")).intValue();
+        seriesIdx = ((Number)jsonO.get("seriesIdx")).intValue();
+        sizeZ = ((Number)jsonO.get("sizeZ")).intValue();
+        if (jsonO.containsKey("bounds")) {
+            bounds = new BoundingBox();
+            bounds.initFromJSONEntry(jsonO.get(("bounds")));
+        }
+    }
+    protected MultipleImageContainerSingleFile() {super(1, 1);}
     public MultipleImageContainerSingleFile(String name, String imagePath, int series, int timePointNumber, int channelNumber, int sizeZ, double scaleXY, double scaleZ) {
         super(scaleXY, scaleZ);
         this.name = name;

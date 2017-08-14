@@ -54,8 +54,12 @@ public class TextParameter extends SimpleParameter {
     }
     @Override
     public boolean sameContent(Parameter other) {
-        if (other instanceof TextParameter) return this.value.equals(((TextParameter)other).getValue());
-        else return false;
+        if (other instanceof TextParameter) {
+            if (!this.value.equals(((TextParameter)other).getValue())) {
+                logger.debug("TextParameter: {}!={} value: {} vs {}", this, other, getValue(), ((TextParameter)other).getValue());
+                return false;
+            } else return true;
+        } else return false;
     }
     @Override
     public void setContentFrom(Parameter other) {

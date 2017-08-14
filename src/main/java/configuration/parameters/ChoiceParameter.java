@@ -78,6 +78,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
         if (gui==null) gui = new ChoiceParameterUI(this, true);
         return gui;
     }
+    @Override
     public boolean sameContent(Parameter other) {
         if (other instanceof ChoiceParameter) {
             return this.getSelectedItem().equals(((ChoiceParameter)other).getSelectedItem());
@@ -85,13 +86,10 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
         else return false;
         
     }
-
+    @Override
     public void setContentFrom(Parameter other) {
-        //if (other!=null) Parameter.logger.trace("Parameter {} set content from {}", this.getClass(), other.getClass());
         if (other instanceof ChoiceParameter) {
             ChoiceParameter otherC = (ChoiceParameter)other;
-            //this.listChoice=otherC.listChoice;
-            //this.allowNoSelection=otherC.allowNoSelection;
             setSelectedItem(otherC.getSelectedItem());
             //logger.debug("choice {} set content from: {} current item: {}, current idx {}, other item: {}, other idx : {}", this.hashCode(), otherC.hashCode(), this.getSelectedItem(), this.getSelectedIndex(), otherC.getSelectedItem(), otherC.getSelectedIndex());
         } else throw new IllegalArgumentException("wrong parameter type: "+(other==null? "null":other.getClass()) +" instead of ChoiceParameter");

@@ -23,6 +23,7 @@ import com.mongodb.DBObject;
 import com.mongodb.DBRef;
 import com.mongodb.util.JSONParseException;
 import configuration.parameters.PostLoadable;
+import dataStructure.configuration.Experiment;
 import dataStructure.objects.Measurements;
 import dataStructure.objects.MeasurementsLegacy;
 import dataStructure.objects.StructureObject;
@@ -79,16 +80,30 @@ import sun.reflect.ReflectionFactory;
  */
 public class JSONUtils {
     public final static org.slf4j.Logger logger = LoggerFactory.getLogger(JSONUtils.class);
-    public static JSONObject toJSONObject(Map<String, Object> map) {
+    public static JSONObject toJSONObject(Map<String, ?> map) {
         JSONObject res=  new JSONObject();
-        for (Map.Entry<String, Object> e : map.entrySet()) {
-            if (e.getValue() instanceof double[]) res.put(e.getKey(), toJSONArray((double[])e.getValue()));
-            if (e.getValue() instanceof int[]) res.put(e.getKey(), toJSONArray((int[])e.getValue()));
-            else if (e.getValue() instanceof Number) res.put(e.getKey(), e.getValue());
-            else if (e.getValue() instanceof Boolean) res.put(e.getKey(), e.getValue());
-            else if (e.getValue() instanceof String) res.put(e.getKey(), e.getValue());
-        }
+        for (Map.Entry<String, ?> e : map.entrySet()) res.put(e.getKey(), toJSONEntry(e.getValue()));
         return res;
+    }
+    public static JSONArray toJSONList(List list) {
+        JSONArray res =new JSONArray();
+        for (Object o : list) res.add(toJSONEntry(o));
+        return res;
+    }
+    public static Object toJSONEntry(Object o) {
+        if (o instanceof double[]) return toJSONArray((double[])o);
+        else if (o instanceof int[]) return toJSONArray((int[])o);
+        else if (o instanceof Number) return o;
+        else if (o instanceof Boolean) return o;
+        else if (o instanceof String) return o;
+        else if (o instanceof List) {
+            JSONArray l = new JSONArray();
+            for (Object oo : ((List)o)) l.add(toJSONEntry(oo));
+            return l;
+        }
+        else if (o instanceof boolean[]) return toJSONArray((boolean[])o);
+        else if (o instanceof String[]) return toJSONArray((String[])o);
+        else return o.toString();
     }
     public static Map<String, Object> toMap(Map map) {
         HashMap<String, Object> res= new HashMap<>(map.size());
@@ -131,14 +146,34 @@ public class JSONUtils {
         for (Object o : array) res.add(((Number)o).intValue());
         return res;
     }
+    public static String[] fromStringArray(List array) {
+        String[] res = new String[array.size()];
+        res = (String[])array.toArray(res);
+        return res;
+    }
     public static int[] fromIntArray(List array) {
         int[] res = new int[array.size()];
         for (int i = 0; i<res.length; ++i) res[i]=((Number)array.get(i)).intValue();
         return res;
     }
+    public static boolean[] fromBooleanArray(List array) {
+        boolean[] res = new boolean[array.size()];
+        for (int i = 0; i<res.length; ++i) res[i]=((Boolean)array.get(i));
+        return res;
+    }
     public static JSONArray toJSONArray(int[] array) {
         JSONArray res = new JSONArray();
         for (int d : array) res.add(d);
+        return res;
+    }
+    public static JSONArray toJSONArray(boolean[] array) {
+        JSONArray res = new JSONArray();
+        for (boolean d : array) res.add(d);
+        return res;
+    }
+    public static JSONArray toJSONArray(String[] array) {
+        JSONArray res = new JSONArray();
+        for (String d : array) res.add(d);
         return res;
     }
     public static JSONArray toJSONArray(Collection<? extends Number> collection) {
@@ -154,6 +189,13 @@ public class JSONUtils {
     public static String serialize(Object o) {
         if (o instanceof StructureObject) return ((StructureObject)o).toJSON().toJSONString();
         else if (o instanceof Measurements) return ((Measurements)o).toJSON().toJSONString();
+        else if (o instanceof Experiment) {
+            String res= ((Experiment)o).toJSONEntry().toJSONString();
+            Experiment xpTest = new Experiment();
+            xpTest.initFromJSONEntry(JSONUtils.parse(res));
+            logger.debug("check xp serialization: {}", ((Experiment)o).sameContent(xpTest));
+            return res;
+        }
         DBObject oMarsh = marshall(o);
         return com.mongodb.util.JSON.serialize(oMarsh);
     }
@@ -167,45 +209,51 @@ public class JSONUtils {
         }
     }
     public static <T> T parse(Class<T> clazz, String s) {
-        
-            if (StructureObject.class.equals(clazz)) {
-                JSONObject o = parse(s);
-                if (o!=null && o.containsKey("sIdx")) return (T)new StructureObject(o);
-                else {
-                    DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
-                    StructureObjectLegacy res = unmarshall(StructureObjectLegacy.class, oParse);
-                    return (T)res.getStructureObject();
-                }
-            } else if (Measurements.class.equals(clazz)) {
-                JSONObject o = parse(s);
-                if (o!=null && o.containsKey("sIdx")) return (T)new Measurements(o);
-                else {
-                    DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
-                    MeasurementsLegacy res = unmarshall(MeasurementsLegacy.class, oParse);
-                    return (T)res.getMeasurements();
-                }
-            } else {
-            //s = s.replace("Infinity", "NaN");
-                try {
-                    DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
-                    T res = unmarshall(clazz, oParse);
-                    if (res instanceof PostLoadable) ((PostLoadable)res).postLoad();
-                    return res;
-                }
-                catch (JSONParseException e) {
-                    logger.error("Parse Exception", e);
-                    String message = e.getMessage();
-                    int idx = message.length()-2;
-                    while (idx>0 && message.charAt(idx)==' ') --idx;
-                    int idx2 = message.length()-idx;
-                    logger.debug("message length: {}, idx:{}/{}", message.length(), idx, idx2);
-                    logger.error("problem at: " + message.substring(idx2-10, idx2+10));
-                    logger.error("contect: " + message.substring(idx2-200, idx2+200));
+        if (StructureObject.class.equals(clazz)) {
+            JSONObject o = parse(s);
+            if (o!=null && o.containsKey("sIdx")) return (T)new StructureObject(o);
+            else {
+                DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
+                StructureObjectLegacy res = unmarshall(StructureObjectLegacy.class, oParse);
+                return (T)res.getStructureObject();
             }
-        } 
+        } else if (Measurements.class.equals(clazz)) {
+            JSONObject o = parse(s);
+            if (o!=null && o.containsKey("sIdx")) return (T)new Measurements(o);
+            else {
+                DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
+                MeasurementsLegacy res = unmarshall(MeasurementsLegacy.class, oParse);
+                return (T)res.getMeasurements();
+            }
+        } else if (Experiment.class.equals(clazz)) {
+            JSONObject o = parse(s);
+            if (o!=null && o.containsKey("channelImages")) {
+                Experiment xp = new Experiment();
+                xp.initFromJSONEntry(o);
+                return (T)xp;
+            }
+        }
+        return parseMorhium(clazz, s);
+    }
+    private static <T> T parseMorhium(Class<T> clazz, String s) {
+        try {
+            DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
+            T res = unmarshall(clazz, oParse);
+            if (res instanceof PostLoadable) ((PostLoadable)res).postLoad();
+            return res;
+        }
+        catch (JSONParseException e) {
+            logger.error("Parse Exception", e);
+            String message = e.getMessage();
+            int idx = message.length()-2;
+            while (idx>0 && message.charAt(idx)==' ') --idx;
+            int idx2 = message.length()-idx;
+            logger.debug("message length: {}, idx:{}/{}", message.length(), idx, idx2);
+            logger.error("problem at: " + message.substring(idx2-10, idx2+10));
+            logger.error("contect: " + message.substring(idx2-200, idx2+200));
+        }
         return null;
     }
-    
     // offline marshall / unmarshall from Morphium
     
     private final static AnnotationAndReflectionHelper annotationHelper = new AnnotationAndReflectionHelper(true);
@@ -474,6 +522,7 @@ public class JSONUtils {
                     }
                     cls = Class.forName(cN);
                 } catch (ClassNotFoundException e) {
+                    logger.debug("error in unmarshall, class: {}/{}", o.get("class_name"), o.get("className"));
                     throw new RuntimeException(e);
                 }
             }

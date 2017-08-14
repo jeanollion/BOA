@@ -56,7 +56,10 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     public boolean sameContent(Parameter other) {
         if (other instanceof StructureParameter) {
             StructureParameter otherP = (StructureParameter) other;
-            return ParameterUtils.arraysEqual(selectedIndicies, otherP.selectedIndicies);
+            if (!ParameterUtils.arraysEqual(selectedIndicies, otherP.selectedIndicies)) {
+                logger.debug("IndexChoiceParameter: {}!={} : {} vs {}", this, other, selectedIndicies, otherP.selectedIndicies);
+                return false;
+            } else return true;
         } else return false;
     }
     @Override
@@ -65,8 +68,6 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
             IndexChoiceParameter otherP = (IndexChoiceParameter) other;
             if (otherP.selectedIndicies!=null) this.setSelectedIndicies(Utils.copyArray(otherP.selectedIndicies));
             else this.setSelectedIndex(-1);
-            //this.allowNoSelection=otherP.allowNoSelection;
-            //this.multipleSelection=otherP.multipleSelection;
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     @Override

@@ -59,6 +59,7 @@ public class ChannelImage extends SimpleContainerParameter {
     @Override
     public Object toJSONEntry() {
         JSONObject res = new JSONObject();
+        res.put("name", name);
         res.put("importKeyword", this.importKeyWord.toJSONEntry());
         return res;
     }
@@ -66,6 +67,7 @@ public class ChannelImage extends SimpleContainerParameter {
     @Override
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jsonO = (JSONObject)jsonEntry;
+        name = (String)jsonO.get("name");
         importKeyWord.initFromJSONEntry(jsonO.get("importKeyword"));
     }
     

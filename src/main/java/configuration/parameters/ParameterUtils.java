@@ -148,7 +148,29 @@ public class ParameterUtils {
         }
         return ok;
     }
-    
+    public static boolean sameContent(List<Parameter> recieve, List<Parameter> give) {return sameContent(recieve, give, null);}
+    public static boolean sameContent(List<Parameter> recieve, List<Parameter> give, String message) {
+        if (recieve==null && give!=null) {
+            if (message!=null) logger.debug(message+" 1st null");
+            return false;
+        }
+        if (recieve!=null && give==null) {
+            if (message!=null) logger.debug(message+" 2nd null");
+            return false;
+        }
+        if (recieve==null && give==null) return true;
+        if (recieve.size()!=give.size()) {
+            if (message!=null) logger.debug(message+" differ in size: {} vs {}", recieve.size(), give.size());
+            return false;
+        }
+        for (int i = 0; i < recieve.size(); i++) {
+            if (!recieve.get(i).sameContent(give.get(i))) {
+                if (message!=null) logger.debug(message+" differ at index: {}", i);
+                return false;
+            }
+        }
+        return true;
+    }
     public static boolean setContent(List<Parameter> recieve, List<Parameter> give) {
         if (recieve==null || give== null || recieve.size()!=give.size()) {
             setContentMap(recieve, give);

@@ -107,6 +107,18 @@ public class SiblingStructureParameter extends StructureParameter {
             }
         }
     }
+    @Override public boolean sameContent(Parameter other) {
+        if (!super.sameContent(other)) return false;
+        if (other instanceof SiblingStructureParameter) {
+            SiblingStructureParameter otherP = (SiblingStructureParameter) other;
+            if (selectedStructureIdx!=otherP.selectedStructureIdx) {
+                logger.debug("SiblingStructureParameter {}!={}, selected structure idx: {} vs {}", name, otherP.name, selectedStructureIdx, otherP.selectedStructureIdx);
+                return false;
+            }
+            return true;
+        }else return false;
+        
+    }
     @Override public void setContentFrom(Parameter other) {
         super.setContentFrom(other);
         if (other instanceof SiblingStructureParameter) {
