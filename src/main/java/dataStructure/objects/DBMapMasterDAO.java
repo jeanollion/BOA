@@ -21,7 +21,10 @@ import boa.gui.GUI;
 import dataStructure.configuration.Experiment;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
+import org.json.simple.JSONObject;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -63,16 +66,17 @@ public class DBMapMasterDAO implements MasterDAO {
         clearCache();
         Utils.deleteDirectory(outputPath);
         Utils.deleteDirectory(outputImagePath);
-        DBMapUtils.deleteDBFile(getConfigFile(dbName));
+        deleteExperiment();
         new File(configDir).delete(); // deletes XP directory only if void. 
     }
     
     private void makeXPDB() {
-        xpDB = DBMapUtils.createFileDB(getConfigFile(dbName));
+        xpDB = DBMapUtils.createFileDB(getConfigFile(dbName, true));
         xpMap = DBMapUtils.createHTreeMap(xpDB, "experiment");
     }
-    private String getConfigFile(String dbName) {
-        return configDir + File.separator + dbName + "_config.db";
+    private String getConfigFile(String dbName, boolean db) {
+        if (db) return configDir + File.separator + dbName + "_config.db";
+        else return configDir + File.separator + dbName + "_config.txt";
     }
     
     @Override
@@ -109,7 +113,9 @@ public class DBMapMasterDAO implements MasterDAO {
         if (!xpDB.isClosed()) xpDB.close();
         xpDB=null;
         this.xpMap=null;
-        DBMapUtils.deleteDBFile(getConfigFile(dbName));
+        DBMapUtils.deleteDBFile(getConfigFile(dbName, true));
+        File cfg = new File(getConfigFile(dbName, false));
+        if (cfg.isFile()) cfg.delete();
     }
     
     @Override
@@ -138,7 +144,7 @@ public class DBMapMasterDAO implements MasterDAO {
         if (xpDAO) {
             if (!xpDB.isClosed()) {
                 xpDB.close();
-                logger.debug("closing: {}", this.getConfigFile(dbName));
+                logger.debug("closing: {}", this.getConfigFile(dbName, true));
                 this.xpMap=null;
             }
             this.xp=null;
@@ -157,22 +163,38 @@ public class DBMapMasterDAO implements MasterDAO {
     @Override
     public Experiment getExperiment() {
         if (this.xp==null) {
-            if (xpDB.isClosed()) makeXPDB();
-            if (xpMap.isEmpty()) {
-                logger.warn("Empty map");
-                return null;
-            }
-            String xpString = xpMap.get("config");
-            Experiment xpr = JSONUtils.parse(Experiment.class, xpString);
+            if (new File(this.getConfigFile(dbName, false)).exists()) xp = getXPFromFile();
+            else xp = getXPFromDB();
             
-            xp = new Experiment(xpr.getName());
-            xp.setContentFrom(xpr);
             // check output dir
             boolean modified = checkOutputDirectories(true);
             modified = checkOutputDirectories(false) || modified;
             if (modified) updateExperiment();
         }
         return xp;
+    }
+    private Experiment getXPFromDB() {
+        if (xpDB.isClosed()) makeXPDB();
+        if (xpMap.isEmpty()) {
+            logger.warn("Empty map");
+            return null;
+        }
+        String xpString = xpMap.get("config");
+        Experiment xpr = JSONUtils.parse(Experiment.class, xpString);
+
+        Experiment xp = new Experiment(xpr.getName());
+        xp.setContentFrom(xpr);
+        return xp;
+    }
+    private Experiment getXPFromFile() {
+        String file = getConfigFile(dbName, false);
+        List<Experiment> xps = FileIO.readFromFile(file, o-> {
+            Experiment xp = new Experiment();
+            xp.initFromJSONEntry(JSONUtils.parse(o));
+            return xp;
+        });
+        if (xps.size()==1) return xps.get(0);
+        else return null;
     }
     
     public boolean checkOutputDirectories(boolean image) {
@@ -201,6 +223,14 @@ public class DBMapMasterDAO implements MasterDAO {
     @Override
     public void updateExperiment() {
         if (xp==null) return;
+        //updateXPDB();
+        updateXPFile();
+    }
+    private void updateXPFile() {
+        FileIO.writeToFile(getConfigFile(dbName, false), Arrays.asList(new Experiment[]{xp}), o->o.toJSONEntry().toJSONString());
+        if (new File(getConfigFile(dbName, true)).exists()) DBMapUtils.deleteDBFile(getConfigFile(dbName, true));
+    }
+    private void updateXPDB() {
         if (xpDB.isClosed()) makeXPDB();
         xpMap.clear();
         xpMap.put("config", JSONUtils.serialize(xp));

@@ -52,7 +52,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         JSONObject res = super.toJSONEntry();
         res.put("inputChannel", inputChannel.toJSONEntry());
         if (outputChannel!=null) res.put("outputChannel", outputChannel.toJSONEntry());
-        if (configurationData!=null) res.put("configurationData", JSONUtils.toJSONList(configurationData));
+        if (configurationData!=null && !configurationData.isEmpty()) res.put("configurationData", JSONUtils.toJSONList(configurationData));
         return res;
     }
     @Override
@@ -64,7 +64,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             if (outputChannel==null) outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
             outputChannel.initFromJSONEntry(jsonO.get(("outputChannel")));
         }
-        if (jsonO.containsKey("outputChannel")) configurationData = (List)jsonO.get("configurationData");
+        if (jsonO.containsKey("configurationData")) configurationData = (List)jsonO.get("configurationData");
     }
     
     public TransformationPluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
