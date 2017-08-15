@@ -17,12 +17,10 @@
  */
 package dataStructure.configuration;
 
-import configuration.parameters.Parameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.TextParameter;
 import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
-import de.caluga.morphium.annotations.Transient;
 import org.json.simple.JSONObject;
 
 /**
@@ -30,7 +28,7 @@ import org.json.simple.JSONObject;
  * @author jollion
  */
 public class ChannelImage extends SimpleContainerParameter {
-    @Transient NameEditorUI ui;
+    NameEditorUI ui;
     TextParameter importKeyWord = new TextParameter("import file channel keyword", "", true);
     
     public ChannelImage(String name) {

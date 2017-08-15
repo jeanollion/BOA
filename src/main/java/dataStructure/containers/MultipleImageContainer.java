@@ -17,7 +17,6 @@
  */
 package dataStructure.containers;
 
-import de.caluga.morphium.annotations.Embedded;
 import image.BoundingBox;
 import image.Image;
 import org.json.simple.JSONObject;
@@ -27,7 +26,7 @@ import utils.JSONSerializable;
  *
  * @author jollion
  */
-@Embedded(polymorph=true)
+
 public abstract class MultipleImageContainer implements JSONSerializable{
     double scaleXY, scaleZ;
     public abstract int getFrameNumber();

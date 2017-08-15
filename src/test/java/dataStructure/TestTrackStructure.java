@@ -18,11 +18,8 @@
 package dataStructure;
 
 import static TestUtils.Utils.logger;
-import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
-import dataStructure.configuration.ExperimentDAO;
-import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
@@ -31,15 +28,10 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
-import de.caluga.morphium.Morphium;
-import de.caluga.morphium.MorphiumConfig;
 import image.BlankMask;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static junit.framework.Assert.assertEquals;
 import org.junit.Rule;
 import org.junit.Test;

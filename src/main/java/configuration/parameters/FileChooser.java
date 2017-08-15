@@ -22,7 +22,6 @@ import configuration.parameters.ui.ParameterUI;
 import java.io.File;
 import java.util.Arrays;
 import javax.swing.JFileChooser;
-import de.caluga.morphium.annotations.Transient;
 import org.json.simple.JSONArray;
 import utils.JSONUtils;
 import utils.Utils;
@@ -33,8 +32,8 @@ import utils.Utils;
  */
 public class FileChooser extends SimpleParameter implements Listenable {
     protected String[] selectedFiles=new String[0];
-    @Transient protected FileChooserOption option = FileChooserOption.DIRECTORIES_ONLY;
-    @Transient FileChooserUI ui;
+    protected FileChooserOption option = FileChooserOption.DIRECTORIES_ONLY;
+    FileChooserUI ui;
     
     
     public FileChooser(String name, FileChooserOption option) {

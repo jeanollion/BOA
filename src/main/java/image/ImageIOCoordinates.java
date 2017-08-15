@@ -17,18 +17,15 @@
  */
 package image;
 
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
 
 
 /**
  *
  * @author jollion
  */
-@Embedded
 public class ImageIOCoordinates {
     int serie, channel, timePoint;
-    @Transient BoundingBox bounds;
+    BoundingBox bounds;
 
     public ImageIOCoordinates(int serie, int channel, int timePoint) {
         this.serie = serie;

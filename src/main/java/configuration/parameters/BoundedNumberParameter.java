@@ -17,14 +17,13 @@
  */
 package configuration.parameters;
 
-import de.caluga.morphium.annotations.Transient;
 
 /**
  *
  * @author nasique
  */
 public class BoundedNumberParameter extends NumberParameter {
-    @Transient Number lowerBound, upperBound;
+    Number lowerBound, upperBound;
     
     public BoundedNumberParameter(String name, int decimalPlaces, Number defaultValue, Number lowerBound, Number upperBound) {
         super(name, decimalPlaces, defaultValue);

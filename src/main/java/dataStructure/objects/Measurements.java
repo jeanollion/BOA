@@ -17,19 +17,12 @@
  */
 package dataStructure.objects;
 
-import static core.Processor.logger;
-import de.caluga.morphium.annotations.Entity;
-import de.caluga.morphium.annotations.Id;
-import de.caluga.morphium.annotations.Index;
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import utils.JSONUtils;
@@ -42,13 +35,13 @@ import utils.Utils;
 
 public class Measurements implements Comparable<Measurements>{
     protected String id;
-    @Transient protected String positionName;
+    protected String positionName;
     protected int frame, structureIdx;
     protected double calibratedTimePoint;
     boolean isTrackHead;
     protected int[] indices;
     protected Map<String, Object> values;
-    @Transient boolean modifications=false;
+    boolean modifications=false;
     final public static String NA_STRING = "NA";
     public Measurements(StructureObject o) {
         this.id=o.id;

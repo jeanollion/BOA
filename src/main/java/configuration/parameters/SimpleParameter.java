@@ -15,17 +15,9 @@
  */
 package configuration.parameters;
 
-import dataStructure.configuration.Experiment;
-import boa.gui.configuration.ConfigurationTreeModel;
-import boa.gui.configuration.TreeModelContainer;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 
@@ -34,11 +26,9 @@ import javax.swing.tree.TreeNode;
  * @author jollion
  */
 
-@Lifecycle
-@Embedded(polymorph = true)
 public abstract class SimpleParameter implements Parameter {
     protected String name;
-    @Transient private ContainerParameter parent;
+    private ContainerParameter parent;
     
     protected SimpleParameter(String name) {
         this.name=name;
@@ -160,7 +150,7 @@ public abstract class SimpleParameter implements Parameter {
     }
     
     // listenable
-    @Transient ArrayList<ParameterListener> listeners;
+    ArrayList<ParameterListener> listeners;
     public void addListener(ParameterListener listener) {
         if (listeners == null) listeners = new ArrayList<>();
         listeners.add(listener);

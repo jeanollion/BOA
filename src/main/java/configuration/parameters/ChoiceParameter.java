@@ -17,11 +17,7 @@ package configuration.parameters;
 
 import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.ui.ChoiceParameterUI;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
-import org.json.simple.JSONAware;
+
 import utils.Utils;
 
 /**
@@ -31,12 +27,12 @@ import utils.Utils;
 
 public class ChoiceParameter extends SimpleParameter implements ActionableParameter, ChoosableParameter {
     String selectedItem;
-    @Transient String[] listChoice;
-    @Transient boolean allowNoSelection;
-    @Transient private int selectedIndex=-2;
-    @Transient ChoiceParameterUI gui;
-    @Transient ConditionalParameter cond;
-    @Transient boolean postLoaded = false;
+    String[] listChoice;
+    boolean allowNoSelection;
+    private int selectedIndex=-2;
+    ChoiceParameterUI gui;
+    ConditionalParameter cond;
+    boolean postLoaded = false;
     
     
     

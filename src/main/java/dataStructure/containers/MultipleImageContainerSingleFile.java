@@ -17,8 +17,6 @@
  */
 package dataStructure.containers;
 
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
 import image.Image;
 import image.ImageIOCoordinates;
@@ -40,7 +38,7 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     int seriesIdx;
     int sizeZ;
     BoundingBox bounds;
-    @Transient private ImageReader reader;
+    private ImageReader reader;
     
     @Override
     public boolean sameContent(MultipleImageContainer other) {

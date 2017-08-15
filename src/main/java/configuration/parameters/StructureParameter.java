@@ -19,15 +19,14 @@ package configuration.parameters;
 
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.Structure;
-import de.caluga.morphium.annotations.Transient;
 
 /**
  *
  * @author nasique
  */
 public class StructureParameter extends IndexChoiceParameter {
-    @Transient protected Experiment xp;
-    @Transient boolean autoConfiguration;
+    protected Experiment xp;
+    boolean autoConfiguration;
     
     public StructureParameter(String name) {
         super(name);

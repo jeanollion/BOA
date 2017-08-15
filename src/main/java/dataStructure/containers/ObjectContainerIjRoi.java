@@ -21,9 +21,6 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
-import dataStructure.objects.Voxel;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.gui.Overlay;
@@ -51,7 +48,7 @@ import org.json.simple.JSONObject;
  *
  * @author jollion
  */
-@Embedded(polymorph = true)
+
 public class ObjectContainerIjRoi extends ObjectContainer {
     ArrayList<byte[]> roiZ;
     

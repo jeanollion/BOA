@@ -19,8 +19,6 @@ package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
 import java.util.Map;
 import org.json.simple.JSONArray;
@@ -31,13 +29,12 @@ import org.json.simple.JSONObject;
  * @author jollion
  */
 
-@Embedded(polymorph=true)
 public abstract class ObjectContainer {
-    @Transient public static int MAX_VOX_3D = 1200000; //(1 vox = 12B)
-    @Transient public static int MAX_VOX_2D = 1900000; //(1 vox =8B)
-    @Transient public static final int MAX_VOX_3D_EMB = 20;
-    @Transient public static final int MAX_VOX_2D_EMB = 30;
-    @Transient protected transient StructureObject structureObject;
+    public static int MAX_VOX_3D = 1200000; //(1 vox = 12B)
+    public static int MAX_VOX_2D = 1900000; //(1 vox =8B)
+    public static final int MAX_VOX_3D_EMB = 20;
+    public static final int MAX_VOX_2D_EMB = 30;
+    protected transient StructureObject structureObject;
     BoundingBox bounds;
     
     public ObjectContainer(StructureObject structureObject) {

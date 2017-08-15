@@ -21,7 +21,6 @@ import boa.gui.GUI;
 import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
-import de.caluga.morphium.Morphium;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;

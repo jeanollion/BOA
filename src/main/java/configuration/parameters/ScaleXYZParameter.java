@@ -17,8 +17,6 @@
  */
 package configuration.parameters;
 
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import java.util.Arrays;
 import org.json.simple.JSONObject;
 
@@ -27,12 +25,12 @@ import org.json.simple.JSONObject;
  *
  * @author jollion
  */
-@Lifecycle
+
 public class ScaleXYZParameter extends SimpleContainerParameter {
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("ScaleXY (pix)", 3, 1, 0, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("ScaleZ (pix)", 3, 1, 0, null);
     BooleanParameter useImageCalibration = new BooleanParameter("Use image calibration for Z-scale", true);
-    @Transient ConditionalParameter cond; // init occurs @ construction or @ postLoad
+    ConditionalParameter cond; // init occurs @ construction or @ postLoad
     
     @Override
     public Object toJSONEntry() {

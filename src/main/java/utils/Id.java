@@ -26,8 +26,6 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.bson.diagnostics.Loggers;
 
 /**
  *
@@ -36,8 +34,6 @@ import org.bson.diagnostics.Loggers;
 public final class Id implements Comparable<Id>, Serializable {
 
     private static final long serialVersionUID = 3670079982654483072L;
-
-    static final Logger LOGGER = Loggers.getLogger("ObjectId");
 
     private static final int LOW_ORDER_THREE_BYTES = 0x00ffffff;
 
@@ -474,7 +470,6 @@ public final class Id implements Comparable<Id>, Serializable {
         } catch (Throwable t) {
             // exception sometimes happens with IBM JVM, use random
             machinePiece = (new SecureRandom().nextInt());
-            LOGGER.log(Level.WARNING, "Failed to get machine identifier from network interface, using random number instead", t);
         }
         machinePiece = machinePiece & LOW_ORDER_THREE_BYTES;
         return machinePiece;
@@ -494,7 +489,6 @@ public final class Id implements Comparable<Id>, Serializable {
 
         } catch (Throwable t) {
             processId = (short) new SecureRandom().nextInt();
-            LOGGER.log(Level.WARNING, "Failed to get process identifier from JMX, using random number instead", t);
         }
 
         return processId;
