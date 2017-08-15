@@ -111,9 +111,11 @@ public class DBUtil {
     }
     public static String searchLocalDirForDB(String dbName, String dir) {
         File config = Utils.seach(dir, dbName+"_config.db", 2);
+        if (config==null) config = Utils.seach(dir, dbName+"_config.txt", 2); //TODO retrop compatibilité
         if (config!=null) return config.getParent();
         else {
             config = Utils.seach(new File(dir).getParent(), dbName+"_config.db", 2);
+            if (config==null) config = Utils.seach(new File(dir).getParent(), dbName+"_config.txt", 2); //TODO retrop compatibilité
             if (config!=null) return config.getParent();
             else return null;
         }

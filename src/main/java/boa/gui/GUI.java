@@ -2738,14 +2738,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             public String run(int i) {
                 if (i==0) GUI.getInstance().setRunning(true);
                 String xp = xps.get(i);
-                log("dumpig: "+xp);
+                log("dumping: "+xp);
                 MasterDAO mDAO = new Task(xp).getDB();
+                logger.debug("dao ok");
                 ZipWriter w = new ZipWriter(mDAO.getDir()+File.separator+mDAO.getDBName()+"_dump.zip");
+                logger.debug("zip ok");
                 ImportExportJSON.exportPositions(w, mDAO, false);
+                logger.debug("pos ok");
                 ImportExportJSON.exportConfig(w, mDAO);
+                logger.debug("config ok");
                 ImportExportJSON.exportSelections(w, mDAO);
+                logger.debug("sel ok");
                 w.close();
+                logger.debug("close ok");
                 MasterDAO.deleteObjectsAndSelectionAndXP(mDAO); // eraseAll config & objects
+                logger.debug("delete ok");
                 if (i==xps.size()-1) {
                     GUI.getInstance().setRunning(false);
                     GUI.getInstance().populateExperimentList();
@@ -2760,6 +2767,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void unDumpObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unDumpObjectsMenuItemActionPerformed
         unsetXP();
         final List<File> dumpedFiles = Utils.seachAll(hostName.getText(), s->s.endsWith("_dump.zip"), 1);
+        if (dumpedFiles==null) return;
         log("undumping: "+dumpedFiles.size()+ " Experiment"+(dumpedFiles.size()>1?"s":""));
         
         DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {

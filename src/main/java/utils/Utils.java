@@ -487,22 +487,26 @@ public class Utils {
         if (path==null) return null;
         File f= new File(path);
         if (!f.exists()) return null;
-        if (f.isDirectory()) return searchAll(new ArrayList<File>(1){{add(f);}}, fileMatch, recLevels, 0);
+        List<File> res = new ArrayList<>();
+        if (f.isDirectory()) {
+            searchAll(new ArrayList<File>(1){{add(f);}}, res, fileMatch, recLevels, 0);
+            return res;
+        }
         else if (fileMatch.apply(f.getName())) return new ArrayList<File>(1){{add(f);}};
         else return null;
     }
-    private static List<File> searchAll(List<File> files, Function<String, Boolean> fileMatch, int recLevels, int currentLevel) {
-        for (File f : files) {
+    private static void searchAll(List<File> filesToSearchIn, List<File> res, Function<String, Boolean> fileMatch, int recLevels, int currentLevel) {
+        for (File f : filesToSearchIn) {
             File[] ff = f.listFiles((dir, name) -> fileMatch.apply(name));
-            if (ff.length>0) return Arrays.asList(ff[0]);
+            if (ff.length>0) res.addAll(Arrays.asList(ff));
         }
-        if (currentLevel==recLevels) return null;
+        if (currentLevel==recLevels) return;
         List<File> nextFiles = new ArrayList<>();
-        for (File f : files) {
+        for (File f : filesToSearchIn) {
             File[] ff = f.listFiles(file -> file.isDirectory());
             if (ff.length>0) nextFiles.addAll(Arrays.asList(ff));
         }
-        return searchAll(nextFiles, fileMatch, recLevels, currentLevel+1);
+        searchAll(nextFiles, res, fileMatch, recLevels, currentLevel+1);
     }
     
     public static File seach(String path, String fileName, int recLevels) {

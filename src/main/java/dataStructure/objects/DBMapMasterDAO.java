@@ -56,7 +56,6 @@ public class DBMapMasterDAO implements MasterDAO {
         configDir = dir;
         new File(configDir).mkdirs();
         this.dbName = dbName;
-        makeXPDB();
     }
     
     @Override
@@ -110,9 +109,11 @@ public class DBMapMasterDAO implements MasterDAO {
     
     @Override
     public void deleteExperiment() {
-        if (!xpDB.isClosed()) xpDB.close();
-        xpDB=null;
-        this.xpMap=null;
+        if (xpDB!=null) {
+            if (!xpDB.isClosed()) xpDB.close();
+            xpDB=null;
+            this.xpMap=null;
+        }
         DBMapUtils.deleteDBFile(getConfigFile(dbName, true));
         File cfg = new File(getConfigFile(dbName, false));
         if (cfg.isFile()) cfg.delete();
@@ -142,10 +143,12 @@ public class DBMapMasterDAO implements MasterDAO {
             this.selectionDAO=null;
         }
         if (xpDAO) {
-            if (!xpDB.isClosed()) {
-                xpDB.close();
-                logger.debug("closing: {}", this.getConfigFile(dbName, true));
-                this.xpMap=null;
+            if (xpDB!=null) {
+                if (!xpDB.isClosed()) {
+                    xpDB.close();
+                    logger.debug("closing: {}", this.getConfigFile(dbName, true));
+                    this.xpMap=null;
+                }
             }
             this.xp=null;
         }
