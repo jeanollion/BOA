@@ -135,7 +135,7 @@ public class ManualCorrection {
         if (objectsToUpdate==null || objectsToUpdate.isEmpty()) return;
         for (Pair<StructureObject, Object3D> p : objectsToUpdate) {
             p.key.setObject(p.value);
-            p.key.getDAO().store(p.key, false);
+            p.key.getDAO().store(p.key);
         }
         if (updateDisplay) updateDisplayAndSelectObjects(Pair.unpairKeys(objectsToUpdate));
     }
@@ -287,7 +287,7 @@ public class ManualCorrection {
         }
         //repairLinkInconsistencies(db, modifiedObjects, modifiedObjects);
         Utils.removeDuplicates(modifiedObjects, false);
-        db.getDao(objects.get(0).getPositionName()).store(modifiedObjects, true);
+        db.getDao(objects.get(0).getPositionName()).store(modifiedObjects);
         if (updateDisplay) {
             // reload track-tree and update selection toDelete
             int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
@@ -350,7 +350,7 @@ public class ManualCorrection {
         List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
         for (StructureObject o : objects) ManualCorrection.unlinkObject(o, modifiedObjects);
         Utils.removeDuplicates(modifiedObjects, false);
-        db.getDao(objects.get(0).getPositionName()).store(modifiedObjects, true);
+        db.getDao(objects.get(0).getPositionName()).store(modifiedObjects);
         if (updateDisplay) {
             // reload track-tree and update selection toDelete
             int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
@@ -428,7 +428,7 @@ public class ManualCorrection {
                     parent.relabelChildren(structureIdx, modified);
                     modified.addAll(newChildren);
                     Utils.removeDuplicates(modified, false);
-                    db.getDao(parent.getPositionName()).store(modified, true);
+                    db.getDao(parent.getPositionName()).store(modified);
                     
                     //Update tree
                     /*ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(e.getKey());
@@ -498,7 +498,7 @@ public class ManualCorrection {
             }
             
             Utils.removeDuplicates(objectsToStore, false);
-            if (!test && dao!=null) dao.store(objectsToStore, true);
+            if (!test && dao!=null) dao.store(objectsToStore);
             if (updateDisplay && !test) {
                 // unselect
                 ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
@@ -581,7 +581,7 @@ public class ManualCorrection {
                 modifiedObjects.removeAll(objectsToMerge);
                 modifiedObjects.add(res);
                 Utils.removeDuplicates(modifiedObjects, false);
-                dao.store(modifiedObjects, true);
+                dao.store(modifiedObjects);
             }
         }
         if (updateDisplay) updateDisplayAndSelectObjects(newObjects);
@@ -630,7 +630,7 @@ public class ManualCorrection {
                 logger.info("Deleting {} objects, from {} parents", toDelete.size(), parents.size());
                 dao.delete(toDelete, true, true, true);
                 modifiedObjects.removeAll(toDelete); // avoid storing deleted objects!!!
-                dao.store(modifiedObjects, true);
+                dao.store(modifiedObjects);
             }
             if (updateDisplay) {
                 //Update selection on opened image
@@ -711,7 +711,7 @@ public class ManualCorrection {
             db.getSelectionDAO().store(sel);
         }
         Utils.removeDuplicates(modifiedObjects, false);
-        dao.store(modifiedObjects, true);
+        dao.store(modifiedObjects);
     }
     
     public static void deleteAllObjectsFromFrame(MasterDAO db, boolean after) {

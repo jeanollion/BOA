@@ -196,10 +196,10 @@ public class DeleteFromDAOTest {
         root.setChildren(s0, 0);
         
         int n = 1;
-        dao.store(root, true);
+        dao.store(root);
         assertEquals("store root ", 1, countObjects(db, StructureObject.class) );
         for (int i = 0; i<=2; ++i) { 
-            dao.store(root.getChildren(i), true); 
+            dao.store(root.getChildren(i)); 
             n+=root.getChildren(i).size();
 
         }
@@ -239,9 +239,9 @@ public class DeleteFromDAOTest {
         final StructureObject c5 = new StructureObject(0, 0, 4, o, root);
         List<StructureObject> children = new ArrayList<StructureObject>(){{add(c1);add(c2);add(c3);add(c4);add(c5);}};
         assertEquals("dao cleared", 0, countObjects(db, StructureObject.class));
-        dao.store(root, true);
+        dao.store(root);
         assertEquals("root stored", 1, countObjects(db, StructureObject.class));
-        dao.store(children, true);
+        dao.store(children);
         dao.clearCache();
         root = dao.getRoots().get(0);
         children = root.getChildren(0);

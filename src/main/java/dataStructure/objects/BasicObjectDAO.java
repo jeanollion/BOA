@@ -123,7 +123,7 @@ public class BasicObjectDAO implements ObjectDAO {
         for (StructureObject o : list) delete(o, deleteChildren, deleteFromParent, relabelSiblings);
     }
 
-    public void store(StructureObject object, boolean updateTrackAttributes) {
+    public void store(StructureObject object) {
         object.dao=this;
         if (object.structureIdx==-1) {
             rootTrack.put(object.getFrame(), object);
@@ -138,8 +138,8 @@ public class BasicObjectDAO implements ObjectDAO {
         }
     }
 
-    public void store(Collection<StructureObject> objects, boolean updateTrackAttributes) {
-        for (StructureObject o : objects) store(o, updateTrackAttributes);
+    public void store(Collection<StructureObject> objects) {
+        for (StructureObject o : objects) store(o);
     }
 
     public List<StructureObject> getRoots() {

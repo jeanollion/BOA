@@ -71,7 +71,7 @@ public class DbConverter {
             ObjectDAO sourceDAO = source.getDao(position);
             ObjectDAO destDAO = dest.getDao(position);
             List<StructureObject> roots=sourceDAO.getRoots();
-            destDAO.store(roots, false);
+            destDAO.store(roots);
             for (int sIdx = 0; sIdx<source.getExperiment().getStructureCount(); ++sIdx) {
                 long tr0 = System.currentTimeMillis();
                 Collection<List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(roots, sIdx).values();
@@ -86,7 +86,7 @@ public class DbConverter {
                 }
                 readTime+=tr1-tr0;
                 long t0 = System.currentTimeMillis();
-                destDAO.store(toWrite, true);
+                destDAO.store(toWrite);
                 destDAO.upsertMeasurements(toWrite);
                 long t1 = System.currentTimeMillis();
                 writeTime+=t1-t0;

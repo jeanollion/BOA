@@ -60,7 +60,7 @@ public class Set2TrackHeadAtBacteriaDivision {
             ObjectDAO daoTarget = dbTarget.getDao(dbTarget.getExperiment().getPosition(pIdx).getName());
             daoTarget.deleteAllObjects();
             List<StructureObject> roots = Processor.getOrCreateRootTrack(daoSource);
-            daoTarget.store(roots, false);
+            daoTarget.store(roots);
             logger.debug("pos : {}, roots: {}", pIdx, roots.size());
             
                 Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(roots, 0);
@@ -68,7 +68,7 @@ public class Set2TrackHeadAtBacteriaDivision {
                 Collection<StructureObject> objects = Utils.flattenMap(allTracks);
                 //Collection<StructureObject> objects = StructureObjectUtils.getAllObjects(daoSource, sIdx);
                 logger.debug("Structure: {}, objects: {}", 0, objects.size());
-                daoTarget.store(objects, false);
+                daoTarget.store(objects);
             
             ((DBMapObjectDAO)daoTarget).compactDBs(true);
             daoTarget.clearCache();
@@ -103,7 +103,7 @@ public class Set2TrackHeadAtBacteriaDivision {
                 }
             }
             logger.debug("modified objects: {}", modified.size());
-            dao.store(modified, true);
+            dao.store(modified);
         }
     }
 }

@@ -112,12 +112,18 @@ public class ImportExportJSON {
         }
         
         for (StructureObject o : allObjects) objectsById.put(o.getId(), o);
+        for (StructureObject o : roots) objectsById.put(o.getId(), o);
+        StructureObjectUtils.setRelatives(objectsById, true, false); // avoiding calls to dao getById when storing measurements: set parents
+        
         for (Measurements m : allMeas) {
             StructureObject o = objectsById.get(m.getId());
             if (o!=null) o.setMeasurements(m);
         }
-        dao.store(roots, true);
-        dao.store(allObjects, true);
+        logger.debug("storing roots");
+        dao.store(roots);
+        logger.debug("storing other objects");
+        dao.store(allObjects);
+        logger.debug("storing measurements");
         dao.upsertMeasurements(allObjects);
         if (dao instanceof DBMapObjectDAO) ((DBMapObjectDAO)dao).compactDBs(true);
     }

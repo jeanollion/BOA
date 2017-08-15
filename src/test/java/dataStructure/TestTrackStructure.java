@@ -79,11 +79,11 @@ public class TestTrackStructure {
         for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject(i, new BlankMask("", 1, 1, 1), dao);
         
         setTrackLinks(Arrays.asList(rootT));
-        dao.store(Arrays.asList(rootT), true);
+        dao.store(Arrays.asList(rootT));
         StructureObject[] mcT = new StructureObject[5];
         for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject(i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i]);
         setTrackLinks(Arrays.asList(mcT));
-        dao.store(Arrays.asList(mcT), true);
+        dao.store(Arrays.asList(mcT));
         StructureObject[][] bTM = new StructureObject[5][3];
         for (int t = 0; t<bTM.length; ++t) {
             for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject(t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t]);
@@ -114,7 +114,7 @@ public class TestTrackStructure {
         1.0->2
         2.0
         */
-        for (int i = 0; i<bTM.length; ++i) dao.store(Arrays.asList(bTM[i]), true);
+        for (int i = 0; i<bTM.length; ++i) dao.store(Arrays.asList(bTM[i]));
         dao.clearCache();
         // retrive tracks head for microChannels
         List<StructureObject> mcHeads = dao.getTrackHeads(rootT[0], 0);

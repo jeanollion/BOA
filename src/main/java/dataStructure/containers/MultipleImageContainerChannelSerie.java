@@ -87,7 +87,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         scaleXY = ((Number)jsonO.get("scaleXY")).doubleValue();
         scaleZ = ((Number)jsonO.get("scaleZ")).doubleValue();
         filePathC = JSONUtils.fromStringArray((JSONArray)jsonO.get("filePathC"));
-        name = (String)jsonO.get("String");
+        name = (String)jsonO.get("name");
         timePointNumber = ((Number)jsonO.get("frameNumber")).intValue();
         sizeZC = JSONUtils.fromIntArray((JSONArray)jsonO.get("sizeZC"));
         if (jsonO.containsKey("bounds")) {
@@ -98,6 +98,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         timePointCZT = (Map<String, Double>)jsonO.get("timePointCZT");
     }
     protected MultipleImageContainerChannelSerie() {super(1, 1);} // only for JSON initialization
+    
     public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int frameNumber, boolean[] singleFrameC, int[] sizeZC, double scaleXY, double scaleZ) {
         this(name, imagePathC, frameNumber, singleFrameC, sizeZC, scaleXY, scaleZ, null);
     }

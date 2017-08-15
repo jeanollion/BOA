@@ -26,6 +26,7 @@ import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import org.bson.types.ObjectId;
@@ -145,9 +146,13 @@ public class Measurements implements Comparable<Measurements>{
     }
     public static String asString(Object o, Function<Number, String> numberFormater) {
         if (o instanceof Number) return numberFormater.apply((Number)o);
-        else if (o instanceof String || o instanceof Boolean) return o.toString();
+        else if (o instanceof Boolean) return o.toString();
+        else if (o instanceof List) return Utils.toStringList((List<Double>)o,"","","-", oo->numberFormater.apply(oo)).toString();
         else if (o instanceof double[]) return Utils.toStringArray((double[])o, "", "", "-", numberFormater).toString();
-        else return NA_STRING;
+        else if (o instanceof String) {
+            if ("null".equals(o) || NA_STRING.equals(o)) return NA_STRING;
+            else return (String)o;
+        } else return NA_STRING;
     }
     
     public void setValue(String key, Number value) {
@@ -176,6 +181,13 @@ public class Measurements implements Comparable<Measurements>{
     }
     
     public void setValue(String key, double[] value) {
+        synchronized(values) {
+            //this.values.put(key, value);
+            this.values.put(key, Arrays.asList(value));
+            modifications=true;
+        }
+    }
+    public void setValue(String key, List<Double> value) {
         synchronized(values) {
             this.values.put(key, value);
             modifications=true;

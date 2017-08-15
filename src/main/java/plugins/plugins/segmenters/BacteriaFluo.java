@@ -190,15 +190,16 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             if (contactLimit.getValue().intValue()>0 && res.getObjects().size()>1) res.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
             res.relabel(true);
         }
-        logger.debug("testParameter: {}", testParameter);
-        if (splitThreshold.getName().equals(testParameter.getName())) {
-            Image hess = pv.getHessian().duplicate("Split map");
-            hess = ImageOperations.divide(hess, input, null);
-            ImageWindowManagerFactory.showImage(res.getLabelMap().setName("Segmentation with splitThreshold: "+splitThreshold.getValue().doubleValue()));
-            ImageOperations.trim(hess, res.getLabelMap(), hess);
-            ImageWindowManagerFactory.showImage(hess);
+        if (testParameter!=null) {
+            logger.debug("testParameter: {}", testParameter);
+            if (splitThreshold.getName().equals(testParameter.getName())) {
+                Image hess = pv.getHessian().duplicate("Split map");
+                hess = ImageOperations.divide(hess, input, null);
+                ImageWindowManagerFactory.showImage(res.getLabelMap().setName("Segmentation with splitThreshold: "+splitThreshold.getValue().doubleValue()));
+                ImageOperations.trim(hess, res.getLabelMap(), hess);
+                ImageWindowManagerFactory.showImage(hess);
+            }
         }
-        
         return res;
     }
     

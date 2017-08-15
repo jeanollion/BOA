@@ -405,7 +405,7 @@ public class DBMapObjectDAO implements ObjectDAO {
             if (o.getParent().getChildren(o.getStructureIdx()).remove(o) && relabelSiblings) {
                 List<StructureObject> relabeled = new ArrayList<>(o.getParent().getChildren(o.getStructureIdx()).size());
                 o.relabelChildren(o.getStructureIdx(), relabeled);
-                store(relabeled, false, false);
+                store(relabeled, false);
             }   
         }
         getDB(o.getStructureIdx()).commit();
@@ -444,7 +444,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                     p.relabelChildren(key.value, relabeled);
                 }
                 Utils.removeDuplicates(relabeled, false);
-                store(relabeled, false, false);
+                store(relabeled, false);
             } else if (deleteFromParent) {
                 for (StructureObject o : toRemove) {
                     if (o.getParent()!=null) o.getParent().getChildren(o.getStructureIdx()).remove(o);
@@ -456,21 +456,16 @@ public class DBMapObjectDAO implements ObjectDAO {
     
     
     @Override
-    public void store(StructureObject object, boolean updateTrackAttributes) {
+    public void store(StructureObject object) {
         Pair<String, Integer> key = new Pair(object.getParentTrackHeadId(), object.getStructureIdx());
         if (object.hasMeasurementModifications()) upsertMeasurement(object);
         object.updateObjectContainer();
-        if (updateTrackAttributes) {
-            object.getParentTrackHeadId();
-            object.getTrackHeadId();
-            object.getPrevious();
-            object.getNext();
-        }
+        // get parent/pTh/next/prev ids ? 
         cache.getAndCreateIfNecessary(key).put(object.getId(), object);
         getDBMap(key).put(object.getId(), JSONUtils.serialize(object));
         getDB(object.getStructureIdx()).commit();
     }
-    protected void store(Collection<StructureObject> objects, boolean updateTrackAttributes, boolean commit) {
+    protected void store(Collection<StructureObject> objects, boolean commit) {
         //logger.debug("storing: {} commit: {}", objects.size(), commit);
         List<StructureObject> upserMeas = new ArrayList<>(objects.size());
         for (StructureObject o : objects) o.dao=this;
@@ -482,14 +477,8 @@ public class DBMapObjectDAO implements ObjectDAO {
             Map<String, StructureObject> cacheMap = cache.getAndCreateIfNecessary(key);
             HTreeMap<String, String> dbMap = getDBMap(key);
             for (StructureObject object : toStore) {
-                
                 object.updateObjectContainer();
-                if (updateTrackAttributes) {
-                    object.getParentTrackHeadId();
-                    object.getTrackHeadId();
-                    object.getPrevious();
-                    object.getNext();
-                }
+                // get parent/pTh/next/prev ids ? 
                 if (object.hasMeasurementModifications()) upserMeas.add(object);
                 cacheMap.put(object.getId(), object);
                 dbMap.put(object.getId(),JSONUtils.serialize(object));
@@ -499,8 +488,8 @@ public class DBMapObjectDAO implements ObjectDAO {
         upsertMeasurements(upserMeas);
     }
     @Override
-    public void store(Collection<StructureObject> objects, boolean updateTrackAttributes) {
-        store(objects, updateTrackAttributes, true);
+    public void store(Collection<StructureObject> objects) {
+        store(objects, true);
     }
 
     @Override

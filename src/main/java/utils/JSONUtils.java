@@ -91,7 +91,8 @@ public class JSONUtils {
         return res;
     }
     public static Object toJSONEntry(Object o) {
-        if (o instanceof double[]) return toJSONArray((double[])o);
+        if (o==null) return "null";
+        else if (o instanceof double[]) return toJSONArray((double[])o);
         else if (o instanceof int[]) return toJSONArray((int[])o);
         else if (o instanceof Number) return o;
         else if (o instanceof Boolean) return o;

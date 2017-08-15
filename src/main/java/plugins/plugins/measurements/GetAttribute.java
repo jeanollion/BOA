@@ -88,6 +88,12 @@ public class GetAttribute implements Measurement {
                     if (v.length>2) object.getMeasurements().setValue(key+"Z", v[2]);
                 } else object.getMeasurements().setValue(key, v);
             }
+            else if (value instanceof List) {
+                if (((List)value).isEmpty()) continue;
+                if (parseArraysAsCoordinates.getSelected() && ((List)value).size()<=3) {
+                    
+                } else object.getMeasurements().setValue(key, (List)value);
+            }
             else if (value instanceof String) object.getMeasurements().setValue(key, (String)value);
             else if (value instanceof Boolean) object.getMeasurements().setValue(key, (Boolean)value);
         }

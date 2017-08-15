@@ -126,7 +126,7 @@ public class Processor {
         List<StructureObject> res = dao.getRoots();
         if (res==null || res.isEmpty()) {
             res = dao.getExperiment().getPosition(dao.getPositionName()).createRootObjects(dao);
-            dao.store(res, true);
+            dao.store(res);
             dao.setRoots(res);
         }
         return res;
@@ -198,7 +198,7 @@ public class Processor {
         // store in DAO
         List<StructureObject> children = new ArrayList<>();
         for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
-        dao.store(children, !(ps instanceof SegmentOnly));
+        dao.store(children);
         logger.debug("total objects: {}, dao type: {}", children.size(), dao.getClass().getSimpleName());
         
         // create error selection

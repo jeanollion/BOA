@@ -277,7 +277,7 @@ public class StructureObjectUtils {
     
     public static int[] getIndexTree(StructureObject o) {
         if (o.isRoot()) return new int[]{o.getFrame()};
-        ArrayList<Integer> al = new ArrayList<Integer>();
+        ArrayList<Integer> al = new ArrayList<>();
         al.add(o.getIdx());
         while(!o.getParent().isRoot()) {
             o=o.getParent();
@@ -585,6 +585,26 @@ public class StructureObjectUtils {
     public static Map<Integer, List<StructureObject>> getChildrenMap(List<StructureObject> parents, int structureIdx) {
         return parents.stream().collect(Collectors.toMap(StructureObject::getFrame, (StructureObject p) -> p.getChildren(structureIdx)));
     }
+    
+    public static void setRelatives(Map<String, StructureObject> allObjects, boolean parent, boolean trackAttributes) {
+        for (StructureObject o : allObjects.values()) {
+            if (parent && o.parentId!=null) {
+                StructureObject p = allObjects.get(o.parentId);
+                if (p!=null) o.parent = p;
+            }
+            if (trackAttributes) {
+                if (o.nextId!=null) {
+                    StructureObject n = allObjects.get(o.nextId);
+                    if (n!=null) o.next=n;
+                }
+                if (o.previousId!=null) {
+                    StructureObject p = allObjects.get(o.previousId);
+                    if (p!=null) o.previous=p;
+                }
+            }
+        }
+    }
+    
     // duplicate objects 
     private static StructureObject duplicateWithChildrenAndParents(StructureObject o, ObjectDAO newDAO, Map<StructureObject, StructureObject> sourceToDupMap, boolean children, boolean parents) {
         o.loadAllChildren(false);

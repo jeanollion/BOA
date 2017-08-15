@@ -196,7 +196,7 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="dumpObjectsMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Dump Objects"/>
+                    <Property name="text" type="java.lang.String" value="Dump Experiment(s)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="dumpObjectsMenuItemActionPerformed"/>
@@ -253,7 +253,7 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="unDumpObjectsMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Dumped Objects &amp; Config"/>
+                    <Property name="text" type="java.lang.String" value="Dumped Experiment(s)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="unDumpObjectsMenuItemActionPerformed"/>

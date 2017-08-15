@@ -1556,7 +1556,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         exportSubMenu.add(exportWholeXPMenuItem);
 
-        dumpObjectsMenuItem.setText("Dump Objects");
+        dumpObjectsMenuItem.setText("Dump Experiment(s)");
         dumpObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 dumpObjectsMenuItemActionPerformed(evt);
@@ -1610,7 +1610,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         importSubMenu.add(importNewExperimentMenuItem);
 
-        unDumpObjectsMenuItem.setText("Dumped Objects & Config");
+        unDumpObjectsMenuItem.setText("Dumped Experiment(s)");
         unDumpObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 unDumpObjectsMenuItemActionPerformed(evt);
@@ -2730,26 +2730,57 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }//GEN-LAST:event_CloseNonInteractiveWindowsMenuItemActionPerformed
 
     private void dumpObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dumpObjectsMenuItemActionPerformed
-        for (String xp : getSelectedExperiments()) {
-            MasterDAO mDAO = new Task(xp).getDB();
-            ZipWriter w = new ZipWriter(mDAO.getDir()+File.separator+mDAO.getDBName()+"_dump.zip");
-            ImportExportJSON.exportPositions(w, mDAO, false);
-            ImportExportJSON.exportConfig(w, mDAO);
-            ImportExportJSON.exportSelections(w, mDAO);
-            w.close();
-            MasterDAO.deleteObjectsAndSelectionAndXP(mDAO); // eraseAll config & objects
-        }
+        unsetXP();
+        final List<String> xps = getSelectedExperiments();
+        log("dumping: "+xps.size()+ " Experiment"+(xps.size()>1?"s":""));
+        DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
+            @Override
+            public String run(int i) {
+                if (i==0) GUI.getInstance().setRunning(true);
+                String xp = xps.get(i);
+                log("dumpig: "+xp);
+                MasterDAO mDAO = new Task(xp).getDB();
+                ZipWriter w = new ZipWriter(mDAO.getDir()+File.separator+mDAO.getDBName()+"_dump.zip");
+                ImportExportJSON.exportPositions(w, mDAO, false);
+                ImportExportJSON.exportConfig(w, mDAO);
+                ImportExportJSON.exportSelections(w, mDAO);
+                w.close();
+                MasterDAO.deleteObjectsAndSelectionAndXP(mDAO); // eraseAll config & objects
+                if (i==xps.size()-1) {
+                    GUI.getInstance().setRunning(false);
+                    GUI.getInstance().populateExperimentList();
+                    log("dumping done!");
+                }
+                return xp+" dumped!";
+            };
+        };
+        DefaultWorker.execute(t, xps.size());
     }//GEN-LAST:event_dumpObjectsMenuItemActionPerformed
 
     private void unDumpObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unDumpObjectsMenuItemActionPerformed
-        List<File> dumpedFiles = Utils.seachAll(hostName.getText(), s->s.endsWith("_dump.zip"), 1);
-        for (File dump : dumpedFiles) {
-            String dbName = dump.getName().replace("_dump.zip", "");
-            logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
-            MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
-            ImportExportJSON.importFromZip(dump.getAbsolutePath(), dao, true, true, true);
-        }
+        unsetXP();
+        final List<File> dumpedFiles = Utils.seachAll(hostName.getText(), s->s.endsWith("_dump.zip"), 1);
+        log("undumping: "+dumpedFiles.size()+ " Experiment"+(dumpedFiles.size()>1?"s":""));
         
+        DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
+            @Override
+            public String run(int i) {
+                if (i==0) GUI.getInstance().setRunning(true);
+                File dump = dumpedFiles.get(i);
+                String dbName = dump.getName().replace("_dump.zip", "");
+                log("undumpig: "+dbName);
+                logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
+                MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
+                ImportExportJSON.importFromZip(dump.getAbsolutePath(), dao, true, true, true);
+                if (i==dumpedFiles.size()-1) {
+                    GUI.getInstance().setRunning(false);
+                    GUI.getInstance().populateExperimentList();
+                    log("undumping done!");
+                }
+                return dbName+" undumped!";
+            };
+        };
+        DefaultWorker.execute(t, dumpedFiles.size());
     }//GEN-LAST:event_unDumpObjectsMenuItemActionPerformed
 
     private void localFileSystemDatabaseRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_localFileSystemDatabaseRadioButtonActionPerformed

@@ -704,7 +704,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     object.setIsAbsoluteLandmark(true);
                     if (attributes!=null) {
                         if (attributes.containsKey("Quality")) object.setQuality((Double)attributes.get("Quality"));
-                        if (attributes.containsKey("Center")) object.setCenter((double[])attributes.get("Center"));
+                        if (attributes.containsKey("Center")) object.setCenter(JSONUtils.fromDoubleArray((List)attributes.get("Center")));
                     }
                 }
             }
@@ -914,9 +914,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             return new ObjectPopulation(objects, this.getMaskProperties(), true);
         }
     }
-    public void setAttributeArray(String key, double[] value) {
+    public void setAttributeList(String key, List<Double> value) {
         if (this.attributes==null) attributes = new HashMap<>();
         attributes.put(key, value);
+    }
+    public void setAttributeArray(String key, double[] value) {
+        if (this.attributes==null) attributes = new HashMap<>();
+        attributes.put(key, Arrays.asList(value));
     }
     public void setAttribute(String key, boolean value) {
         if (this.attributes==null) attributes = new HashMap<>();
@@ -1037,7 +1041,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (thId!=null) trackHeadId = (String)thId;
         isTrackHead = (Boolean)json.get("isTh");
         
-        if (json.containsKey("attributes")) attributes = JSONUtils.toValueMap((Map)json.get("attributes"));
+        if (json.containsKey("attributes")) {
+            attributes = (Map<String, Object>)json.get("attributes");
+            //attributes = JSONUtils.toValueMap((Map)json.get("attributes")); // leave list for better efficiency ?
+        } 
         if (json.containsKey("object")) {
             Map objectJ = (Map)json.get("object");
             objectContainer = ObjectContainer.createFromMap(this, objectJ);

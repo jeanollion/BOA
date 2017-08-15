@@ -202,32 +202,20 @@ public class Utils {
         return res;
     }
     
-    public static <T> String toStringArray(T[] array) {
-        if (array==null||array.length==0) return "[]";
-        String res = "[";
-        for (int i = 0; i<array.length-1; ++i) res+=array[i].toString()+"; ";
-        res+=array[array.length-1]+"]";
-        return res;
-    }
+    
     public static <T> String toStringList(Collection<T> array) {
         return toStringList(array, o->o.toString());
     }
-    public static <T> String toStringArray(T[] array, Function<T, Object> toString) {
-        if (array.length==0) return "[]";
-        String res = "[";
-        for (int i = 0; i<array.length; ++i) {
-            String s=null;
-            if (array[i]!=null) {
-                Object o = toString.apply(array[i]);
-                if (o!=null) s = o.toString();
-            }
-            res+=s+ (i<array.length-1 ? "; " : "]");
-        }
-        return res;
-    }
+    
     public static <T> String toStringList(Collection<T> array, Function<T, Object> toString) {
-        if (array.isEmpty()) return "[]";
-        String res = "[";
+        return toStringList(array, "[", "]", ";", toString).toString();
+    }
+    public static <T> StringBuilder toStringList(Collection<T> array, String init, String end, String sep, Function<T, Object> toString) {
+        StringBuilder sb = new StringBuilder(init);
+        if (array.isEmpty()) {
+            sb.append(end);
+            return sb;
+        }
         Iterator<T> it = array.iterator();
         while(it.hasNext()) {
             T t = it.next();
@@ -237,9 +225,11 @@ public class Utils {
                 if (o!=null) s = o.toString();
             }
             if (s==null) s = "NA";
-            res+=s+(it.hasNext()?";":"]");
+            sb.append(s);
+            if (it.hasNext()) sb.append(sep);
+            else sb.append(end);
         }
-        return res;
+        return sb;
     }
     public static <K, V> String toStringMap(Map<K, V> map, Function<K, String> toStringKey, Function<V, String> toStringValue) {
         if (map.isEmpty()) return "[]";
@@ -251,6 +241,12 @@ public class Utils {
         }
         return res;
     }
+    public static <T> String toStringArray(T[] array) {
+        return toStringArray(array, o->o.toString());
+    }
+    public static <T> String toStringArray(T[] array, Function<T, Object> toString) {
+        return toStringArray(array, "[", "]", ";", toString).toString();
+    }
     public static <T> String toStringArray(int[] array) {
         return toStringArray(array, "[", "]", "; ").toString();
     }
@@ -258,7 +254,30 @@ public class Utils {
     public static <T> String toStringArray(double[] array) {
         return toStringArray(array, "[", "]", "; ", DataExtractor.numberFormater).toString();
     }
-
+    public static <T> StringBuilder toStringArray(T[] array, String init, String end, String sep, Function<T, Object> toString) {
+        StringBuilder sb = new StringBuilder(init);
+        if (array.length==0) {
+            sb.append(end);
+            return sb;
+        }
+        for (int i = 0; i<array.length-1; ++i) {
+            String s=null;
+            if (array[i]!=null) {
+                Object o = toString.apply(array[i]);
+                if (o!=null) s = o.toString();
+            }
+            sb.append(s==null? "NA": s);
+            sb.append(sep);
+        }
+        String s=null;
+        if (array[array.length-1]!=null) {
+            Object o = toString.apply(array[array.length-1]);
+            if (o!=null) s = o.toString();
+        }
+        sb.append(s==null? "NA": s);
+        sb.append(end);
+        return sb;
+    }
     public static <T> StringBuilder toStringArray(double[] array, String init, String end, String sep, Function<Number, String> numberFormatter) {
         StringBuilder sb = new StringBuilder(init);
         if (array.length==0) {

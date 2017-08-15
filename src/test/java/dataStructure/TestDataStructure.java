@@ -73,9 +73,9 @@ public class TestDataStructure {
         setTrackLinks(r2, r3, true, true);
         //r2.setPreviousInTrack(r, true);
         //r3.setPreviousInTrack(r2, true);
-        db.getDao(f).store(r, true);
-        db.getDao(f).store(r2, true);
-        db.getDao(f).store(r3, true);
+        db.getDao(f).store(r);
+        db.getDao(f).store(r2);
+        db.getDao(f).store(r3);
         r2 = db.getDao(f).getById(null, -1, r2.getFrame(), r2.getId());
         r = db.getDao(f).getById(null, -1, r.getFrame(), r.getId());
         assertTrue("r2 retrieved", r!=null);
