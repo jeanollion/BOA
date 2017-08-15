@@ -17,7 +17,6 @@
  */
 package boa.gui;
 
-import com.mongodb.util.JSON;
 import core.Task;
 import ij.plugin.PlugIn;
 import java.io.BufferedReader;
@@ -25,9 +24,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.function.Function;
-import org.json.simple.JSONObject;
 import utils.FileIO;
 import utils.JSONUtils;
 import utils.Utils;

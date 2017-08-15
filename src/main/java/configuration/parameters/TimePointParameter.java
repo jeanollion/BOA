@@ -18,15 +18,13 @@
 package configuration.parameters;
 
 import configuration.parameters.ui.ParameterUI;
-import dataStructure.configuration.Experiment;
-import de.caluga.morphium.annotations.Transient;
 
 /**
  *
  * @author jollion
  */
 public class TimePointParameter extends BoundedNumberParameter {
-    @Transient private int timePointNumber=-1;
+    private int timePointNumber=-1;
     boolean useRawInputFrames;
     
     public TimePointParameter(String name, int defaultTimePoint, boolean useRawInputFrames) {

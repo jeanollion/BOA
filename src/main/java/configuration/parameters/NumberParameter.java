@@ -17,14 +17,8 @@
  */
 package configuration.parameters;
 
-import configuration.parameters.ui.JNumericField;
 import configuration.parameters.ui.NumberParameterUI;
 import configuration.parameters.ui.ParameterUI;
-import boa.gui.configuration.ConfigurationTreeModel;
-import java.awt.Dimension;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
-import de.caluga.morphium.annotations.Transient;
 
 /**
  *
@@ -33,7 +27,7 @@ import de.caluga.morphium.annotations.Transient;
 public class NumberParameter extends SimpleParameter {
     //@Transient NumberParameterUI ui;
     Number value;
-    @Transient int decimalPlaces;
+    int decimalPlaces;
     
     public NumberParameter(String name, int decimalPlaces) {
         super(name);

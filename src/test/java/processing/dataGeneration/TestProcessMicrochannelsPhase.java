@@ -19,29 +19,17 @@ package processing.dataGeneration;
 
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageDisplayer;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import configuration.parameters.PostFilterSequence;
-import configuration.parameters.PreFilterSequence;
 import core.Task;
-import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
-import de.caluga.morphium.Morphium;
 import ij.ImageJ;
 import image.Image;
-import image.ImageMask;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import plugins.PluginFactory;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
-import plugins.plugins.processingScheme.SegmentThenTrack;
-import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MicrochannelPhase2D;
 
 /**

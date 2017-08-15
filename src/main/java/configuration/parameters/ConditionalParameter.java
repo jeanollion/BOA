@@ -22,9 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.List;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -34,7 +31,7 @@ import utils.JSONUtils;
  *
  * @author jollion
  */
-@Lifecycle
+
 public class ConditionalParameter extends SimpleContainerParameter {
     ActionableParameter action;
     HashMap<String, List<Parameter>> parameters;

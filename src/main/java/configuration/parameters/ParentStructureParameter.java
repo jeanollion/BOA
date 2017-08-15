@@ -17,16 +17,13 @@
  */
 package configuration.parameters;
 
-import de.caluga.morphium.annotations.Transient;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author jollion
  */
 public class ParentStructureParameter extends StructureParameter {
-    @Transient int maxStructure;
+    int maxStructure;
     
     public ParentStructureParameter(String name) {
         this(name, -1, 0);

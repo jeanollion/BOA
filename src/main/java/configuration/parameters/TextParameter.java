@@ -19,9 +19,7 @@ package configuration.parameters;
 
 import boa.gui.configuration.ConfigurationTreeModel;
 import configuration.parameters.ui.DocumentFilterIllegalCharacters;
-import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
-import de.caluga.morphium.annotations.Transient;
 import java.awt.Component;
 import java.awt.Dimension;
 import javax.swing.JTextField;
@@ -34,8 +32,8 @@ import javax.swing.text.AbstractDocument;
  * @author jollion
  */
 public class TextParameter extends SimpleParameter {
-    @Transient TextEditorUI ui;
-    @Transient boolean allowSpecialCharacters;
+    TextEditorUI ui;
+    boolean allowSpecialCharacters;
     String value;
     
     public TextParameter(String name) {

@@ -25,7 +25,6 @@ import boa.gui.GUI;
 import boa.gui.UserInterface;
 import boa.gui.PropertyUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import com.mongodb.util.JSON;
 import static core.TaskRunner.logger;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;

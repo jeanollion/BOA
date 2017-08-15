@@ -21,7 +21,6 @@ import configuration.parameters.ui.ChoiceParameterUI;
 import configuration.parameters.ui.MultipleChoiceParameterUI;
 import dataStructure.configuration.Experiment;
 import configuration.parameters.ui.ParameterUI;
-import de.caluga.morphium.annotations.Transient;
 import org.json.simple.JSONArray;
 import utils.Utils;
 
@@ -31,7 +30,7 @@ import utils.Utils;
  */
 public abstract class IndexChoiceParameter extends SimpleParameter implements ChoosableParameter, ChoosableParameterMultiple {
     protected int[] selectedIndicies;
-    @Transient protected boolean allowNoSelection, multipleSelection;
+    protected boolean allowNoSelection, multipleSelection;
     //@Transient ParameterUI ui;
     
     public IndexChoiceParameter(String name) {

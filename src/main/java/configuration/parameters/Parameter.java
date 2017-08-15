@@ -17,7 +17,6 @@ package configuration.parameters;
 
 import configuration.parameters.ui.ParameterUI;
 import utils.JSONSerializable;
-import de.caluga.morphium.annotations.Embedded;
 import java.util.ArrayList;
 import javax.swing.tree.MutableTreeNode;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,7 @@ import org.slf4j.Logger;
  *
  * @author jollion
  */
-@Embedded(polymorph = true)
+
 public interface Parameter extends MutableTreeNode, JSONSerializable {
     public static final Logger logger = LoggerFactory.getLogger(Parameter.class);
     public ArrayList<Parameter> getPath();

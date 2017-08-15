@@ -19,8 +19,6 @@ package configuration.parameters;
 
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
-import de.caluga.morphium.annotations.Transient;
-import image.ImageProperties;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;

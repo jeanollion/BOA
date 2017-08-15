@@ -18,9 +18,6 @@
 package image;
 
 import dataStructure.objects.Voxel;
-import dataStructure.objects.Voxel;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
 import java.io.Serializable;
 import java.util.Map;
 import org.json.simple.JSONArray;
@@ -31,11 +28,11 @@ import utils.JSONSerializable;
  *
  * @author jollion
  */
-@Embedded
+
 public class BoundingBox implements JSONSerializable {
 
     int xMin, xMax, yMin, yMax, zMin, zMax;
-    @Transient transient int count;
+    transient int count;
     public BoundingBox(){
         xMin=Integer.MAX_VALUE;
         yMin=Integer.MAX_VALUE;

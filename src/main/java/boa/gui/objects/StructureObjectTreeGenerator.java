@@ -24,7 +24,6 @@ import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
-import de.caluga.morphium.Morphium;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -39,8 +38,6 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import utils.Utils;
 
 /**

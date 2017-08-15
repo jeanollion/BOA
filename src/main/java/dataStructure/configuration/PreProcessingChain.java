@@ -33,7 +33,6 @@ import configuration.parameters.TimePointParameter;
 import configuration.parameters.TransformationPluginParameter;
 import configuration.parameters.ui.MultipleChoiceParameterUI;
 import configuration.parameters.ui.ParameterUI;
-import de.caluga.morphium.annotations.Transient;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -61,7 +60,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
     BooleanParameter useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true);
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("Scale XY", 5, 1, 0.00001, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("Scale Z", 5, 1, 0.00001, null);
-    @Transient ConditionalParameter imageScaleCond;
+    ConditionalParameter imageScaleCond;
     BoundedNumberParameter frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null);
     TimePointParameter trimFramesStart = new TimePointParameter("Trim Frames Start Position", 0, true);
     TimePointParameter trimFramesEnd = new TimePointParameter("Trim Frames Stop Position (0=no trimming)", 0, true);

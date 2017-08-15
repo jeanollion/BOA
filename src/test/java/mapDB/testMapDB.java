@@ -17,14 +17,10 @@
  */
 package mapDB;
 
-import com.mongodb.DBObject;
 import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.StructureObject;
-import de.caluga.morphium.AnnotationAndReflectionHelper;
-import de.caluga.morphium.ObjectMapperImpl;
-import de.caluga.morphium.writer.MorphiumWriterImpl;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -41,8 +37,6 @@ import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.DBMapUtils;
-import static utils.JSONUtils.marshall;
-import static utils.JSONUtils.unmarshall;
 import utils.Utils;
 
 /**
@@ -80,43 +74,4 @@ public class testMapDB {
         db.close();
     }
     
-    @Test
-    public void testStoreJSON() {
-        String path = testFolder.newFolder("testDB").getAbsolutePath()+File.separator+"_testDB.db";
-        String dbName = "boa_fluo170120_wt";
-        MasterDAO mdb = new Task(dbName).getDB();
-        String f = mdb.getExperiment().getPosition(1).getName();
-        
-        //ObjectMapperImpl mapper = new ObjectMapperImpl();
-        //mapper.setMorphium(createOfflineMorphium()); // to be able to marshall maps
-        AnnotationAndReflectionHelper annotationHelper = new AnnotationAndReflectionHelper(true);
-        DBObject xpMash = marshall(mdb.getExperiment());
-        StructureObject o  = mdb.getDao(f).getRoot(0).getChildren(1).get(0);
-        logger.debug("object: {}, entity: {}", o, annotationHelper.isEntity(o));
-        DBObject oMarsh = marshall(o);
-        logger.debug("object: marsh {}", oMarsh); 
-        DB db = DBMapUtils.createFileDB(path);
-        HTreeMap<String, String> map = DBMapUtils.createHTreeMap(db, "xp");
-        
-        map.put(mdb.getExperiment().getName(), com.mongodb.util.JSON.serialize(xpMash));
-        map.put("object", com.mongodb.util.JSON.serialize(oMarsh));
-        db.commit();
-        db.close();
-        db = DBMapUtils.createFileDB(path);
-        map = DBMapUtils.createHTreeMap(db, "xp");
-        String xpString = map.get(mdb.getExperiment().getName());
-        DBObject dboXP = (DBObject)com.mongodb.util.JSON.parse(xpString);
-        DBObject dboOb = (DBObject)com.mongodb.util.JSON.parse(map.get("object"));
-        Experiment xp = unmarshall(Experiment.class, dboXP);
-        //xp.postLoad();
-        logger.info("xp create: {}, positions: {}", xp.getName(), xp.getPositionsAsString().length); 
-        StructureObject o2 = unmarshall(StructureObject.class, dboOb);
-        //o2.postLoad();
-        o2.setParent(o.getParent()); // for toString
-        assertEquals("object id", o.getId(), o2.getId());
-        assertArrayEquals("object center", o.getObject().getCenter(), o2.getObject().getCenter(), 0.0001);
-        assertEquals("object voxels size", o.getObject().getVoxels().size(), o2.getObject().getVoxels().size());
-        assertArrayEquals("object voxels", o.getObject().getVoxels().toArray(), o2.getObject().getVoxels().toArray());
-        db.close();
-    }
 }
