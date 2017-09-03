@@ -7,7 +7,7 @@
 
     <groupId>ljp</groupId>
     <artifactId>functional_bioimage-core</artifactId>
-    <version>0.8.1-SNAPSHOT</version>
+    <version>0.8.4-SNAPSHOT</version>
 
     <name>functional_bioimage-core</name>
     <description>Bacteria Analyzer</description>

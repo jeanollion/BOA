@@ -53,6 +53,7 @@ public class DBMapMasterDAO implements MasterDAO {
     public DBMapMasterDAO(String dir, String dbName) {
         if (dir==null) throw new IllegalArgumentException("Invalid directory: "+ dir);
         if (dbName==null) throw new IllegalArgumentException("Invalid DbName: "+ dbName);
+        logger.debug("create DBMAPMASTERDAO: dir: {}, dbName: {}", dir, dbName);
         configDir = dir;
         new File(configDir).mkdirs();
         this.dbName = dbName;
@@ -160,7 +161,7 @@ public class DBMapMasterDAO implements MasterDAO {
             getDao(s).compactDBs(true);
         }
         if (getSelectionDAO()!=null) getSelectionDAO().compact(true);
-        if (!xpDB.isClosed()) xpDB.compact();
+        if (xpDB!=null && !xpDB.isClosed()) xpDB.compact();
     }
 
     @Override
@@ -177,7 +178,7 @@ public class DBMapMasterDAO implements MasterDAO {
         return xp;
     }
     private Experiment getXPFromDB() {
-        if (xpDB.isClosed()) makeXPDB();
+        if (xpDB==null || xpDB.isClosed()) makeXPDB();
         if (xpMap.isEmpty()) {
             logger.warn("Empty map");
             return null;
@@ -196,6 +197,7 @@ public class DBMapMasterDAO implements MasterDAO {
             xp.initFromJSONEntry(JSONUtils.parse(o));
             return xp;
         });
+        logger.debug("get xp from file: size {}", xps.size());
         if (xps.size()==1) return xps.get(0);
         else return null;
     }
@@ -234,7 +236,7 @@ public class DBMapMasterDAO implements MasterDAO {
         if (new File(getConfigFile(dbName, true)).exists()) DBMapUtils.deleteDBFile(getConfigFile(dbName, true));
     }
     private void updateXPDB() {
-        if (xpDB.isClosed()) makeXPDB();
+        if (xpDB==null || xpDB.isClosed()) makeXPDB();
         xpMap.clear();
         xpMap.put("config", JSONUtils.serialize(xp));
         xpDB.commit();

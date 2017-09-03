@@ -359,7 +359,7 @@ public class ParameterUtils {
         List<JMenuItem> items = new ArrayList<>();
         for (int i = 0; i<parameters.length; ++i) { // todo: case of parameters with subparameters -> plain...
             final int idx = i;
-            if (ps.canBeTested(parameters[idx])) {
+            if (ps.canBeTested(parameters[idx].getName())) {
                 JMenuItem item = new JMenuItem(parameters[idx].getName());
                 item.setAction(new AbstractAction(item.getActionCommand()) {
                     @Override
@@ -392,12 +392,13 @@ public class ParameterUtils {
                                 }
                                 sel = new ArrayList<>();
                                 sel.add(parent);
-                                so.segmentAndTrack(structureIdx, sel, null, (p, s)->((ParameterSetup)s).setTestParameter(parameters[idx]));
+                                so.segmentAndTrack(structureIdx, sel, null, (p, s)->((ParameterSetup)s).setTestParameter(parameters[idx].getName()));
                                 
                             } else if (ps instanceof Tracker) {
                                 boolean segAndTrack = false;
-                                if (psc instanceof SegmentAndTrack && ps instanceof TrackerSegmenter && ps instanceof ParameterSetupTracker) {
-                                    segAndTrack = ((ParameterSetupTracker)ps).runSegmentAndTrack(parameters[idx]);
+                                if (psc instanceof SegmentAndTrack && ps instanceof TrackerSegmenter) {
+                                    if (ps instanceof ParameterSetupTracker) segAndTrack = ((ParameterSetupTracker)ps).runSegmentAndTrack(parameters[idx].getName());
+                                    else segAndTrack = true;
                                 }
                                 // get first continuous parent track
                                 sel = Utils.transform(sel, ob -> o.getStructureIdx()>parentStrutureIdx?ob.getParent(parentStrutureIdx):ob.getChildren(parentStrutureIdx).get(0));
@@ -406,12 +407,13 @@ public class ParameterUtils {
                                 int i = 0;
                                 while (i+1<sel.size() && sel.get(i+1).getFrame()==sel.get(i).getFrame()+1) ++i;
                                 sel = sel.subList(0, i+1);
-                                logger.debug("source daos: {}", Utils.toStringList(sel, oo->oo.getDAO().getClass().getSimpleName()));
                                 Map<StructureObject, StructureObject> dupMap = StructureObjectUtils.createGraphCut(sel);
                                 List<StructureObject> parentTrack = Utils.transform(sel, oo->dupMap.get(oo));
+                                logger.debug("getImage: {}, getXP: {}", parentTrack.get(0).getRawImage(0)!=null, parentTrack.get(0).getExperiment()!=null);
                                 // run testing
-                                logger.debug("seg & track: {}", segAndTrack);
-                                ps.setTestParameter(parameters[idx]);
+                                logger.debug("testing parameter: {}, seg & track: {}", parameters[idx], segAndTrack);
+                                logger.debug("parents for testing: {}", Utils.toStringList(parentTrack, oo->oo.getId()+"->"+oo.getTrackHeadId()));
+                                ps.setTestParameter(parameters[idx].getName());
                                 TrackPostFilterSequence tpf=null;
                                 if (psc instanceof SegmentAndTrack) tpf = ((SegmentAndTrack)psc).getTrackPostFilters();
                                 if (psc instanceof SegmentThenTrack) tpf = ((SegmentThenTrack)psc).getTrackPostFilters();
@@ -428,6 +430,7 @@ public class ParameterUtils {
                                    iwm.getDisplayer().close(lastTest.key);
                                    lastTest=null;
                                 }
+                                ... ici bug affiche sur le meme trackimage que la source. depuis les changement dans le createGraph -> load trackMap ..
                                 ImageObjectInterface ioi = iwm.generateTrackMask(parentTrack, structureIdx);
                                 Image interactiveImage = ioi.generateRawImage(structureIdx, true);
                                 iwm.addImage(interactiveImage, ioi, structureIdx, false, true);

@@ -132,7 +132,7 @@ public class DBUtil {
     public static void addConfig(File f, Map<String, File> configs) {
         File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.db") || subF.getName().endsWith("_config.txt")); // TODO retro-compatibility
         if (dbs==null) return;
-        for (File c : dbs) configs.put(removeConfig(c.getName()), c);
+        for (File c : dbs) configs.put(removeConfig(c.getName()), c.getParentFile());
     }
     private static String removeConfig(String name) {
         if (name.endsWith("db")) return name.substring(0, name.length()-10); // TODO retro-compatibility

@@ -153,8 +153,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     private final static double maxMergeCostDistanceBB = 10; // distance in pixel for cost computation for merging small objects (during correction)
     private final static double maxMergeDistanceBB = 3; // distance in pixel for merging small objects during main process
     // ParameterSetup interface
-    @Override public boolean canBeTested(Parameter p) {
-        List canBeTested = new ArrayList(){{add(curvatureThreshold); add(curvatureThreshold2); add(threshold); add(curvatureScale); add(subBackScale); add(relativeThicknessThreshold);}};
+    @Override public boolean canBeTested(String p) {
+        List canBeTested = new ArrayList<String>(){{add(curvatureThreshold.getName()); add(curvatureThreshold2.getName()); add(threshold.getName()); add(curvatureScale.getName()); add(subBackScale.getName()); add(relativeThicknessThreshold.getName());}};
         return canBeTested.contains(p);
     }
     public BacteriaTrans setThreshold(plugins.SimpleThresholder t) {
@@ -162,8 +162,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         return this;
     }
     String testParameter;
-    @Override public void setTestParameter(Parameter p) {
-        this.testParameter=p.getName();
+    @Override public void setTestParameter(String p) {
+        this.testParameter=p;
     }
     
     private static Image getCurvatureImage(ObjectPopulation pop, int curvatureScale) {

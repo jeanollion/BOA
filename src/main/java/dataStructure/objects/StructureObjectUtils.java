@@ -642,7 +642,19 @@ public class StructureObjectUtils {
     public static Map<StructureObject, StructureObject> createGraphCut(List<StructureObject> track) {
         if (track==null) return null;
         if (track.isEmpty()) return Collections.EMPTY_MAP;
+        // load trackImages if existing (on duplicated objects trackHead can be changed and trackImage won't be loadable anymore)
+        List<StructureObject> objectsWithParentsAndChildren = new ArrayList<>();
+        objectsWithParentsAndChildren.addAll(track);
+        for (StructureObject o : track) {
+            StructureObject p = o.getParent();
+            while(p!=null) {objectsWithParentsAndChildren.add(p); p=p.getParent();}
+            for (int sIdx : o.getExperiment().getAllChildStructures(o.getStructureIdx())) objectsWithParentsAndChildren.addAll(o.getChildren(sIdx));
+        }
+        for (StructureObject o : objectsWithParentsAndChildren) {
+            for (int sIdx : o.getExperiment().getAllDirectChildStructures(o.getStructureIdx())) o.getTrackImage(sIdx);
+        }
         
+        // create basic dao for duplicated objects
         Map<StructureObject, StructureObject> dupMap = new HashMap<>();
         BasicMasterDAO mDAO = new BasicMasterDAO();
         mDAO.setExperiment(track.get(0).getExperiment());
@@ -653,18 +665,24 @@ public class StructureObjectUtils {
         Utils.removeDuplicates(rootTrack, true);
         Collections.sort(rootTrack);
         dao.setRoots(rootTrack);
+        
         // update links
         for (StructureObject o : dupMap.values()) {
             o.previous=dupMap.get(o.getPrevious());
             o.next=dupMap.get(o.getNext());
-            o.trackHead=dupMap.get(o.getTrackHead());
+            //o.trackHead=dupMap.get(o.getTrackHead());
         }
-        // update trackHeads
+        // update trackHeads && trackImages
         for (StructureObject o : dupMap.values()) {
+            if (o.isTrackHead()) {
+                o.trackHead=o;
+                continue;
+            }
             StructureObject th = o;
             while(!th.isTrackHead && th.getPrevious()!=null) th=th.getPrevious();
+            th.trackImagesC=th.getTrackHead().trackImagesC.duplicate();
             o.setTrackHead(th, false);
-            th.isTrackHead=true;
+            th.setTrackHead(th, false);
         }
         // update parent trackHeads
         for (StructureObject o : dupMap.values()) {

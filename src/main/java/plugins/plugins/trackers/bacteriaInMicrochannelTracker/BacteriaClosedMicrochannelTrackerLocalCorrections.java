@@ -64,6 +64,8 @@ import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
 import plugins.TrackerSegmenter;
 import plugins.OverridableThreshold;
+import plugins.ParameterSetup;
+import plugins.ParameterSetupTracker;
 import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.segmenters.BacteriaTrans;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.TrackAssigner.compareScores;
@@ -76,7 +78,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter, MultiThreaded {
+public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter, MultiThreaded, ParameterSetupTracker {
     public final static Logger logger = LoggerFactory.getLogger(BacteriaClosedMicrochannelTrackerLocalCorrections.class);
     // parametrization-related attributes
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
@@ -113,7 +115,24 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (setMask && applyToSegmenter!=null) applyToSegmenter.apply(frame, s);
         return s;
     }
-    
+
+    @Override
+    public boolean canBeTested(String p) {
+        if (adaptativeCoefficient.getName().equals(p) || frameHalfWindow.getName().equals(p) || yHalfWindow.getName().equals(p) || contrastThreshold.getName().equals(p)) {
+            return getSegmenter() instanceof OverridableThreshold;
+        }
+        return segmenter.getName().equals(p) || maxGrowthRate.getName().equals(p)|| minGrowthRate.getName().equals(p)|| costLimit.getName().equals(p)|| cumCostLimit.getName().equals(p)|| endOfChannelContactThreshold.getName().equals(p);
+    }
+
+    String testParameterName;
+    @Override
+    public void setTestParameter(String p) {
+        this.testParameterName=p;
+    }
+    @Override 
+    public boolean runSegmentAndTrack(String p) {
+        return adaptativeCoefficient.getName().equals(p) || frameHalfWindow.getName().equals(p) || yHalfWindow.getName().equals(p) || contrastThreshold.getName().equals(p) || segmenter.getName().equals(p);
+    }
     
     // tracking-related attributes
     protected enum Flag {error, correctionMerge, correctionSplit;}
