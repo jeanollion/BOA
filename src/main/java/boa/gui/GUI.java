@@ -1742,7 +1742,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             if (xpName==null) return null;
             File f = this.dbFiles.get(xpName);
             if (f!=null) {
-                host = f.isFile() ? f.getParent() : f.getAbsolutePath();
+                host = f.getAbsolutePath();
                 logger.debug("xp: {} fir {}", xpName, host, f.getAbsolutePath());
             }
             else {

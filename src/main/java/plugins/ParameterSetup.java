@@ -17,15 +17,12 @@
  */
 package plugins;
 
-import configuration.parameters.Parameter;
-import dataStructure.objects.StructureObject;
-import java.util.List;
 
 /**
  *
  * @author jollion
  */
 public interface ParameterSetup {
-    public boolean canBeTested(Parameter p);
-    public void setTestParameter(Parameter p);
+    public boolean canBeTested(String parameterName);
+    public void setTestParameter(String parameterName);
 }

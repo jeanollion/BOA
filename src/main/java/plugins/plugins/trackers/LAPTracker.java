@@ -461,20 +461,19 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
     }
     // parameter setup
     @Override
-    public boolean runSegmentAndTrack(Parameter p) {
-        String n = p.getName();
-        return n.equals(spotQualityThreshold.getName());
+    public boolean runSegmentAndTrack(String p) {
+        return p.equals(spotQualityThreshold.getName());
     }
 
     @Override
-    public boolean canBeTested(Parameter p) {
-        String n = p.getName();
+    public boolean canBeTested(String p) {
+        String n = p;
         return n.equals(spotQualityThreshold.getName()) || n.equals(maxGap.getName());
     }
     String testParam;
     @Override
-    public void setTestParameter(Parameter p) {
-        testParam = p.getName();
+    public void setTestParameter(String p) {
+        testParam = p;
         logger.debug("test parameter: {}", p);
     }
 

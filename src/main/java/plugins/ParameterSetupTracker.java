@@ -17,12 +17,11 @@
  */
 package plugins;
 
-import configuration.parameters.Parameter;
 
 /**
  *
  * @author jollion
  */
 public interface ParameterSetupTracker extends ParameterSetup {
-    public boolean runSegmentAndTrack(Parameter p);
+    public boolean runSegmentAndTrack(String parameterName);
 }

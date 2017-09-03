@@ -126,12 +126,12 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     }
     // ParameterSetup implementation
     @Override
-    public boolean canBeTested(Parameter p) {
-        return new ArrayList<Parameter>(){{add(scale);add(intensityThreshold); add(thresholdHigh); add(thresholdLow);}}.contains(p);
+    public boolean canBeTested(String p) {
+        return new ArrayList<String>(){{add(scale.getName());add(intensityThreshold.getName()); add(thresholdHigh.getName()); add(thresholdLow.getName());}}.contains(p);
     }
-    Parameter testParam;
+    String testParam;
     @Override 
-    public void setTestParameter(Parameter p) {
+    public void setTestParameter(String p) {
         testParam = p;
     }
     
@@ -287,8 +287,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(parent.getMask(), null, 1));
             ImageWindowManagerFactory.showImage(input);
             ImageWindowManagerFactory.showImage(pv.getScaledInput());
-            if (testParam.getName().equals(this.scale.getName()) || testParam.getName().equals(this.thresholdHigh.getName()) || testParam.getName().equals(this.thresholdLow.getName())) ImageWindowManagerFactory.showImage(pv.getLaplacianMap().setName("LaplacianMap("+thresholdHigh.getName()+";"+thresholdLow.getName()+")"));
-            if (testParam.getName().equals(this.scale.getName()) || testParam.getName().equals(this.intensityThreshold.getName())) ImageWindowManagerFactory.showImage(pv.getSmoothedMap().setName("IntensityMap"));
+            if (testParam.equals(this.scale.getName()) || testParam.equals(this.thresholdHigh.getName()) || testParam.equals(this.thresholdLow.getName())) ImageWindowManagerFactory.showImage(pv.getLaplacianMap().setName("LaplacianMap("+thresholdHigh.getName()+";"+thresholdLow.getName()+")"));
+            if (testParam.equals(this.scale.getName()) || testParam.equals(this.intensityThreshold.getName())) ImageWindowManagerFactory.showImage(pv.getSmoothedMap().setName("IntensityMap"));
             logger.debug("Quality: {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()+""));
             ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("segmented image"));
         }

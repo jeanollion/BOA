@@ -517,7 +517,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             if (previous!=null && previous.next==this) previous.setNext(null);
             this.setPrevious(null);
         }
-        this.isTrackHead=this==trackHead;
+        this.isTrackHead=this.equals(trackHead);
         this.trackHead=trackHead;
         this.trackHeadId=trackHead.id;
         if (modifiedObjects!=null) modifiedObjects.add(this);

@@ -192,7 +192,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         }
         if (testParameter!=null) {
             logger.debug("testParameter: {}", testParameter);
-            if (splitThreshold.getName().equals(testParameter.getName())) {
+            if (splitThreshold.getName().equals(testParameter)) {
                 Image hess = pv.getHessian().duplicate("Split map");
                 hess = ImageOperations.divide(hess, input, null);
                 ImageWindowManagerFactory.showImage(res.getLabelMap().setName("Segmentation with splitThreshold: "+splitThreshold.getValue().doubleValue()));
@@ -403,12 +403,12 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
 
     // ParameterSetup Implementation
     
-    @Override public boolean canBeTested(Parameter p) {
+    @Override public boolean canBeTested(String p) {
         List canBeTested = new ArrayList(){{add(splitThreshold); add(dogScale);}};
         return canBeTested.contains(p);
     }
-    Parameter testParameter;
-    @Override public void setTestParameter(Parameter p) {
+    String testParameter;
+    @Override public void setTestParameter(String p) {
         this.testParameter=p;
     }
     
