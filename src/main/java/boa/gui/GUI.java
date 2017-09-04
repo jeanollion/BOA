@@ -1967,6 +1967,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             ImportExportJSON.exportSelections(w, mDAO);
             ImportExportJSON.exportPositions(w, mDAO, true, ProgressCallback.get(instance));
             w.close();
+            mDAO.clearCache();
         }
         logger.info("export done!");
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
