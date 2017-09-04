@@ -606,10 +606,10 @@ public class StructureObjectUtils {
     }
     
     // duplicate objects 
-    private static StructureObject duplicateWithChildrenAndParents(StructureObject o, ObjectDAO newDAO, Map<StructureObject, StructureObject> sourceToDupMap, boolean children, boolean parents) {
+    private static StructureObject duplicateWithChildrenAndParents(StructureObject o, ObjectDAO newDAO, Map<String, StructureObject> sourceToDupMap, boolean children, boolean parents) {
         o.loadAllChildren(false);
         StructureObject res=o.duplicate();
-        if (sourceToDupMap!=null) sourceToDupMap.put(o, res);
+        if (sourceToDupMap!=null) sourceToDupMap.put(o.getId(), res);
         if (children) {
             for (int cIdx : o.getExperiment().getAllDirectChildStructures(o.structureIdx)) {
                 List<StructureObject> c = o.childrenSM.get(cIdx);
@@ -621,7 +621,7 @@ public class StructureObjectUtils {
             StructureObject currentDup = res;
             while (!current.isRoot() && current.getParent()!=null) {
                 StructureObject pDup = current.getParent().duplicate();
-                if (sourceToDupMap!=null) sourceToDupMap.put(current.getParent(), pDup);
+                if (sourceToDupMap!=null) sourceToDupMap.put(current.getParent().getId(), pDup);
                 pDup.dao=newDAO;
                 currentDup.setParent(pDup);
                 ArrayList<StructureObject> pCh = new ArrayList<>(1);
@@ -636,10 +636,10 @@ public class StructureObjectUtils {
         return res;
     }
     
-    public static Map<StructureObject, StructureObject> duplicateRootTrackAndChangeDAO(StructureObject... rootTrack) {
+    public static Map<String, StructureObject> duplicateRootTrackAndChangeDAO(StructureObject... rootTrack) {
         return createGraphCut(Arrays.asList(rootTrack));
     }
-    public static Map<StructureObject, StructureObject> createGraphCut(List<StructureObject> track) {
+    public static Map<String, StructureObject> createGraphCut(List<StructureObject> track) {
         if (track==null) return null;
         if (track.isEmpty()) return Collections.EMPTY_MAP;
         // load trackImages if existing (on duplicated objects trackHead can be changed and trackImage won't be loadable anymore)
@@ -655,21 +655,21 @@ public class StructureObjectUtils {
         }
         
         // create basic dao for duplicated objects
-        Map<StructureObject, StructureObject> dupMap = new HashMap<>();
+        Map<String, StructureObject> dupMap = new HashMap<>();
         BasicMasterDAO mDAO = new BasicMasterDAO();
         mDAO.setExperiment(track.get(0).getExperiment());
         BasicObjectDAO dao = mDAO.getDao(track.get(0).getPositionName());
         
         List<StructureObject> dup = Utils.transform(track, oo->duplicateWithChildrenAndParents(oo, dao, dupMap, true, true));
         List<StructureObject> rootTrack = Utils.transform(dup, o->o.getRoot());
-        Utils.removeDuplicates(rootTrack, true);
+        Utils.removeDuplicates(rootTrack, false);
         Collections.sort(rootTrack);
         dao.setRoots(rootTrack);
         
         // update links
         for (StructureObject o : dupMap.values()) {
-            o.previous=dupMap.get(o.getPrevious());
-            o.next=dupMap.get(o.getNext());
+            if (o.getPrevious()!=null) o.previous=dupMap.get(o.getPrevious().getId());
+            if (o.getNext()!=null) o.next=dupMap.get(o.getNext().getId());
             //o.trackHead=dupMap.get(o.getTrackHead());
         }
         // update trackHeads && trackImages
@@ -682,7 +682,7 @@ public class StructureObjectUtils {
             while(!th.isTrackHead && th.getPrevious()!=null) th=th.getPrevious();
             th.trackImagesC=th.getTrackHead().trackImagesC.duplicate();
             o.setTrackHead(th, false);
-            th.setTrackHead(th, false);
+            //th.setTrackHead(th, false);
         }
         // update parent trackHeads
         for (StructureObject o : dupMap.values()) {

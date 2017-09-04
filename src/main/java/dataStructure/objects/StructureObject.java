@@ -59,7 +59,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected ObjectContainer objectContainer;
     protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
     protected transient SmallArray<Image> trackImagesC=new SmallArray<>();
-    private transient BoundingBox offsetInTrackImage;
+    protected transient BoundingBox offsetInTrackImage;
     
     // measurement-related attributes
     Measurements measurements;
@@ -825,6 +825,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         } else {
             return getTrackHead().getTrackImage(structureIdx);
         }
+    }
+    
+    public BoundingBox getOffsetInTrackImage() {
+        return this.offsetInTrackImage;
     }
     
     private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
