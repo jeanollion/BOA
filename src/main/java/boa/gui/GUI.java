@@ -35,6 +35,7 @@ import static boa.gui.selection.SelectionUtils.fixIOI;
 import configuration.parameters.FileChooser;
 import core.DefaultWorker;
 import core.Processor;
+import core.ProgressCallback;
 import core.PythonGateway;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
@@ -1964,7 +1965,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             ZipWriter w = new ZipWriter(dir+File.separator+mDAO.getDBName()+".zip");
             ImportExportJSON.exportConfig(w, mDAO);
             ImportExportJSON.exportSelections(w, mDAO);
-            ImportExportJSON.exportPositions(w, mDAO, true);
+            ImportExportJSON.exportPositions(w, mDAO, true, ProgressCallback.get(instance));
             w.close();
         }
         logger.info("export done!");
@@ -1981,7 +1982,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
         ImportExportJSON.exportConfig(w, db);
         ImportExportJSON.exportSelections(w, db);
-        ImportExportJSON.exportPositions(w, db, true, sel);
+        ImportExportJSON.exportPositions(w, db, true, sel, ProgressCallback.get(instance));
         w.close();
         /*
         int[] sel  = getSelectedMicroscopyFields();
@@ -2064,7 +2065,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File f = Utils.chooseFile("Select exported archive", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
-        ImportExportJSON.importFromZip(f.getAbsolutePath(), db, false, false, true);
+        ImportExportJSON.importFromZip(f.getAbsolutePath(), db, false, false, true, ProgressCallback.get(instance));
         db.updateExperiment();
         populateActionMicroscopyFieldList();
         loadObjectTrees();
@@ -2142,7 +2143,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             File zip = allXps.get(xp);
             MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
             mDAO.deleteAllObjects();
-            ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, true, true);
+            ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, true, true, ProgressCallback.get(instance));
         }
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
@@ -2726,7 +2727,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 logger.debug("dao ok");
                 ZipWriter w = new ZipWriter(mDAO.getDir()+File.separator+mDAO.getDBName()+"_dump.zip");
                 logger.debug("zip ok");
-                ImportExportJSON.exportPositions(w, mDAO, false);
+                ImportExportJSON.exportPositions(w, mDAO, false, ProgressCallback.get(instance));
                 logger.debug("pos ok");
                 ImportExportJSON.exportConfig(w, mDAO);
                 logger.debug("config ok");
@@ -2762,7 +2763,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 log("undumpig: "+dbName);
                 logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
                 MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
-                ImportExportJSON.importFromZip(dump.getAbsolutePath(), dao, true, true, true);
+                ImportExportJSON.importFromZip(dump.getAbsolutePath(), dao, true, true, true, ProgressCallback.get(instance));
                 if (i==dumpedFiles.size()-1) {
                     GUI.getInstance().setRunning(false);
                     GUI.getInstance().populateExperimentList();
