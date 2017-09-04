@@ -384,8 +384,8 @@ public class ParameterUtils {
                                 if (psc instanceof SegmentOnly) so = (SegmentOnly)psc;
                                 else so = new SegmentOnly((Segmenter)ps).setPreFilters(psc.getPreFilters()).setPostFilters(psc.getPostFilters());
                                 StructureObject parent = (o.getStructureIdx()>parentStrutureIdx) ? o.getParent(parentStrutureIdx) : o.getChildren(parentStrutureIdx).get(0);
-                                Map<StructureObject, StructureObject> dupMap = StructureObjectUtils.duplicateRootTrackAndChangeDAO(parent);
-                                parent = dupMap.get(parent); // don't modify object directly. 
+                                Map<String, StructureObject> dupMap = StructureObjectUtils.duplicateRootTrackAndChangeDAO(parent);
+                                parent = dupMap.get(parent.getId()); // don't modify object directly. 
                                 if (segParentStrutureIdx!=parentStrutureIdx && o.getStructureIdx()==segParentStrutureIdx) {
                                     final List<StructureObject> selF = sel;
                                     parent.getChildren(segParentStrutureIdx).removeIf(oo -> !selF.contains(oo));
@@ -407,12 +407,12 @@ public class ParameterUtils {
                                 int i = 0;
                                 while (i+1<sel.size() && sel.get(i+1).getFrame()==sel.get(i).getFrame()+1) ++i;
                                 sel = sel.subList(0, i+1);
-                                Map<StructureObject, StructureObject> dupMap = StructureObjectUtils.createGraphCut(sel);
-                                List<StructureObject> parentTrack = Utils.transform(sel, oo->dupMap.get(oo));
+                                Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut(sel);
+                                List<StructureObject> parentTrack = Utils.transform(sel, oo->dupMap.get(oo.getId()));
                                 logger.debug("getImage: {}, getXP: {}", parentTrack.get(0).getRawImage(0)!=null, parentTrack.get(0).getExperiment()!=null);
                                 // run testing
                                 logger.debug("testing parameter: {}, seg & track: {}", parameters[idx], segAndTrack);
-                                logger.debug("parents for testing: {}", Utils.toStringList(parentTrack, oo->oo.getId()+"->"+oo.getTrackHeadId()));
+                                //logger.debug("parents for testing: {}", Utils.toStringList(parentTrack, oo->oo+"->"+oo.getTrackHead()));
                                 ps.setTestParameter(parameters[idx].getName());
                                 TrackPostFilterSequence tpf=null;
                                 if (psc instanceof SegmentAndTrack) tpf = ((SegmentAndTrack)psc).getTrackPostFilters();
@@ -430,7 +430,6 @@ public class ParameterUtils {
                                    iwm.getDisplayer().close(lastTest.key);
                                    lastTest=null;
                                 }
-                                ... ici bug affiche sur le meme trackimage que la source. depuis les changement dans le createGraph -> load trackMap ..
                                 ImageObjectInterface ioi = iwm.generateTrackMask(parentTrack, structureIdx);
                                 Image interactiveImage = ioi.generateRawImage(structureIdx, true);
                                 iwm.addImage(interactiveImage, ioi, structureIdx, false, true);
