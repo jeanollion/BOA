@@ -245,6 +245,7 @@ public class ImportExportJSON {
                     if (pcb!=null) pcb.log("Position: "+position+" imported!");
                 }
             }
+            dao.clearCache(); // avoid lock issues
             r.close();
         }
     }
