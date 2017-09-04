@@ -36,6 +36,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -249,14 +250,14 @@ public class FileIO {
             }
             return res;
         }
-        public List<String> listDirectories(String... excludeKeyWords) {
-            List<String> res = listDirectories();
+        public Set<String> listDirectories(String... excludeKeyWords) {
+            Set<String> res = listDirectories();
             if (res.isEmpty()) return res;
             for (String k : excludeKeyWords) res.removeIf(s->s.contains(k));
             return res;
         }
-        public List<String> listDirectories() {
-            List<String> res = new ArrayList<>();
+        public Set<String> listDirectories() {
+            Set<String> res = new HashSet<>();
             Enumeration<? extends ZipEntry> entries = in.entries();
             while(entries.hasMoreElements()){
                 ZipEntry entry = entries.nextElement();

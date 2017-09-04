@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.FileIO.ZipReader;
@@ -229,7 +230,7 @@ public class ImportExportJSON {
                 }
             }
             if (objects) {
-                List<String> dirs = objects ? r.listDirectories("/Images") : Collections.EMPTY_LIST;
+                Set<String> dirs = objects ? r.listDirectories("/Images") : Collections.EMPTY_SET;
                 if (pcb!=null) pcb.incrementTaskNumber(dirs.size());
                 int count = 0;
                 for (String position : dirs) {
