@@ -18,6 +18,7 @@
 package utils;
 
 import boa.gui.GUI;
+import core.ProgressCallback;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.ImageDAO;
 import dataStructure.objects.DBMapObjectDAO;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -132,16 +134,21 @@ public class ImportExportJSON {
         return FileIO.readFromFile(path, s-> parse(clazz, s));
     }
     
-    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean images) {exportPositions(w, dao, images, null);}
-    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean images, List<String> positions) {
+    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean images, ProgressCallback pcb) {exportPositions(w, dao, images, null, pcb);}
+    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean images, List<String> positions, ProgressCallback pcb) {
         if (!w.isValid()) return;
         if (positions==null) positions = Arrays.asList(dao.getExperiment().getPositionsAsString());
         int count = 0;
+        if (pcb!=null) pcb.incrementTaskNumber(positions.size());
         for (String p : positions) {
-            logger.info("Exporting: {}/{}", ++count, positions.size());
+            count++;
+            logger.info("Exporting: {}/{}", count, positions.size());
+            if (pcb!=null) pcb.log("Exporting position: "+p+ " ("+count+"/"+positions.size()+")");
             ObjectDAO oDAO = dao.getDao(p);
             writeObjects(w, oDAO);
             if (images) writePreProcessedImages(w, oDAO);
+            if (pcb!=null) pcb.incrementProgress();
+            if (pcb!=null) pcb.log("Position: "+p+" exported!");
         }
         logger.info("Exporting position done!");
     }
@@ -189,7 +196,7 @@ public class ImportExportJSON {
             
         }
     }
-    public static void importFromFile(String path, MasterDAO dao, boolean config, boolean selections, boolean objects) {
+    public static void importFromFile(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, ProgressCallback pcb) {
         File f = new File(path);
         if (f.getName().endsWith(".txt")) {
             if (config) {
@@ -201,10 +208,10 @@ public class ImportExportJSON {
                     logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
                 }
             }
-        } else if (f.getName().endsWith(".zip")) importFromZip(path, dao, config, selections, objects);
+        } else if (f.getName().endsWith(".zip")) importFromZip(path, dao, config, selections, objects, pcb);
     }
     
-    public static void importFromZip(String path, MasterDAO dao, boolean config, boolean selections, boolean objects) {
+    public static void importFromZip(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, ProgressCallback pcb) {
         ZipReader r = new ZipReader(path);
         if (r.valid()) {
             if (config) {
@@ -224,11 +231,18 @@ public class ImportExportJSON {
                 }
             }
             if (objects) {
-                for (String position : r.listDirectories("/Images")) {
+                List<String> dirs = objects ? r.listDirectories("/Images") : Collections.EMPTY_LIST;
+                if (pcb!=null) pcb.incrementTaskNumber(dirs.size());
+                int count = 0;
+                for (String position : dirs) {
+                    count++;
+                    if (pcb!=null) pcb.log("Importing: Position: "+position + " ("+ count+"/"+dirs.size()+")");
                     ObjectDAO oDAO = dao.getDao(position);
                     oDAO.deleteAllObjects();
                     readObjects(r, oDAO);
                     readImages(r, oDAO);
+                    if (pcb!=null) pcb.incrementProgress();
+                    if (pcb!=null) pcb.log("Position: "+position+" imported!");
                 }
             }
             r.close();

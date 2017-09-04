@@ -17,6 +17,8 @@
  */
 package core;
 
+import boa.gui.UserInterface;
+
 /**
  *
  * @author jollion
@@ -25,4 +27,24 @@ public interface ProgressCallback {
     public void incrementTaskNumber(int subtask);
     public void incrementProgress();
     public void log(String message);
+    public static ProgressCallback get(UserInterface ui) {
+        ProgressCallback pcb = new ProgressCallback(){
+            int progress = 0;
+            int taskCount = 0;
+            @Override
+            public void incrementTaskNumber(int subtask) {
+                taskCount+=subtask;
+            }
+            @Override
+            public void incrementProgress() {
+                progress++;
+                if (taskCount>0) ui.setProgress((int)(100 * ((double)progress/(double)taskCount)));
+            }
+            @Override
+            public void log(String message) {
+                ui.setMessage(message);
+            }
+        };
+        return pcb;
+    }
 }
