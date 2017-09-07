@@ -33,6 +33,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.ObjectFeature;
@@ -385,7 +386,11 @@ public class GenerateXP {
         setFlip(xp, flipArray);
         deletePositions(xp, deletePositions);
         if (performProcessing) {
-            Processor.preProcessImages(mDAO, true);
+            try {
+                Processor.preProcessImages(mDAO, true);
+            } catch (Exception ex) {
+                logger.error("Error while preprocessing", ex);
+            }
             Processor.processAndTrackStructures(mDAO, true, 0);
         }
         mDAO.updateExperiment(); // save changes

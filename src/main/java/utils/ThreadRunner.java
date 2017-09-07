@@ -6,10 +6,14 @@ package utils;
 import static core.Processor.logger;
 import core.ProgressCallback;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -94,16 +98,26 @@ public class ThreadRunner {
     }
 
     public void startAndJoin() {
-       startAndJoin(threads);
+        Map<Integer, Throwable> err = startAndJoin(threads);
+        for (Entry<Integer, Throwable> er : err.entrySet()) errors.add(new Pair<>("Thread #"+er.getKey(), er.getValue() instanceof Exception ? (Exception)er.getValue() : new RuntimeException(er.getValue())));
     }
     
+    public void throwErrorIfNecessary(String message) throws Exception {
+        if (!errors.isEmpty()) {
+            throw errors.iterator().next().value;
+            //throw new RuntimeException(message +"Errors in #"+ errors.size()+" threads. Throwing one error", errors.iterator().next().value);
+        }
+    }
     
-    protected static void startAndJoin(Thread[] threads) {
+    protected static Map<Integer, Throwable> startAndJoin(Thread[] threads) {
+        Map<Integer, Throwable> res = new HashMap<>();
+        Thread.UncaughtExceptionHandler h = (Thread th, Throwable ex) -> {
+            res.put(Arrays.asList(threads).indexOf(th), ex);
+        };
         for (int ithread = 0; ithread < threads.length; ++ithread) {
             threads[ithread].setPriority(Thread.NORM_PRIORITY);
+            threads[ithread].setUncaughtExceptionHandler(h);
             threads[ithread].start();
-            //SwingUtilities.invokeLater(threads[ithread]);
-            
         }
 
         try {
@@ -113,6 +127,7 @@ public class ThreadRunner {
         } catch (InterruptedException ie) {
             throw new RuntimeException(ie);
         }
+        return res;
     }
     
 

@@ -46,6 +46,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
@@ -490,7 +492,11 @@ public class ParameterUtils {
                         }
                         Transformation transfo = tpp.instanciatePlugin();
                         logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
-                        transfo.computeConfigurationData(tpp.getInputChannel(), images);
+                        try {
+                            transfo.computeConfigurationData(tpp.getInputChannel(), images);
+                        } catch (Exception ex) {
+                            logger.debug("Error computing tranfo configuration", ex);
+                        }
                         tpp.setConfigurationData(transfo.getConfigurationData());
                         images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
                         
@@ -561,7 +567,11 @@ public class ParameterUtils {
 
                 logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), input, output, transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
 
-                transfo.computeConfigurationData(input, images);
+                try {
+                    transfo.computeConfigurationData(input, images);
+                } catch (Exception ex) {
+                    logger.debug("Error computing tranfo configuration", ex);
+                }
                 tpp.setConfigurationData(transfo.getConfigurationData());
                 images.addTransformation(input, output, transfo);
 

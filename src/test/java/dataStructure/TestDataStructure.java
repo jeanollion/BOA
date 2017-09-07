@@ -18,6 +18,7 @@
 package dataStructure;
 
 import TestUtils.Utils;
+import static TestUtils.Utils.logger;
 import configuration.parameters.NumberParameter;
 import core.Processor;
 import static dataStructure.ProcessingTest.createDummyImagesTC;
@@ -36,6 +37,8 @@ import image.ImageFormat;
 import image.ImageWriter;
 import java.io.File;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Rule;
@@ -129,7 +132,11 @@ public class TestDataStructure {
         db.setExperiment(xp);
         ObjectDAO dao = db.getDao(fieldName);
         
-        Processor.preProcessImages(db, true);
+        try {
+            Processor.preProcessImages(db, true);
+        } catch (Exception ex) {
+            logger.debug("", ex);
+        }
         List<StructureObject> rootTrack = xp.getPosition(0).createRootObjects(dao);
         assertEquals("root object creation: number of objects", 3, rootTrack.size());
         Processor.processAndTrackStructures(db, true);

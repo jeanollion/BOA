@@ -49,7 +49,7 @@ import processing.ImageTransformation;
  * @author jollion
  */
 public class TestPreProcessPhase {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         new ImageJ();
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName= "boa_phase140115mutH";
@@ -67,7 +67,7 @@ public class TestPreProcessPhase {
         //testStabilizer(dbName, field, 0, 20, 19, flip);
     }
     
-    public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
+    public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         //Processor.setTransformations(f, true);
@@ -83,7 +83,7 @@ public class TestPreProcessPhase {
         disp.showImage(res.setName("transformed"));
     }
     
-    public static void testRotation(String dbName, int fieldIdx, int channelIdx, int time) {
+    public static void testRotation(String dbName, int fieldIdx, int channelIdx, int time) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
@@ -99,7 +99,7 @@ public class TestPreProcessPhase {
         disp.showImage(res.setName("rotated"));
     }
     
-    public static void testCrop(String dbName, int fieldIdx, String positionName, int time, boolean flip) {
+    public static void testCrop(String dbName, int fieldIdx, String positionName, int time, boolean flip) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = positionName ==null ? db.getExperiment().getPosition(fieldIdx): db.getExperiment().getPosition(positionName);
         f.getPreProcessingChain().removeAllTransformations();
@@ -117,7 +117,7 @@ public class TestPreProcessPhase {
     }
     
     
-    public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) {
+    public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();

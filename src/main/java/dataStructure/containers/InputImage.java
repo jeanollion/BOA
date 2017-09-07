@@ -26,6 +26,8 @@ import image.ImageShort;
 import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 
@@ -111,7 +113,14 @@ public class InputImage {
                 //new IJImageDisplayer().showImage(image);
                 while(it.hasNext()) {
                     Transformation t = it.next();
-                    image =t.applyTransformation(channelIdx, timePoint, image);
+                    
+                    try {
+                        image =t.applyTransformation(channelIdx, timePoint, image);
+                    } catch (Exception ex) {
+                        logger.debug("Transformation error: ", ex);
+                        image= null;
+                        return;
+                    }
                     //if (this.timePoint==0) logger.debug("after trans: {}, scale: {}", t.getClass().getSimpleName(), image.getScaleXY());
                     it.remove();
                     //new IJImageDisplayer().showImage(image.setName("after: "+t.getClass().getSimpleName()));

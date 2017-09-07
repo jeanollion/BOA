@@ -113,7 +113,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     public Image rotate(Image image) {
         return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), getAngle(image), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), true);
     }
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {     
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {     
         // TODO search for best image to Rotate ... better dispertion of signal ? using spatial moments? average on several frames ?
         int fn = Math.min(frameNumber.getValue().intValue(), inputImages.getFrameNumber());
         List<Integer> frames;

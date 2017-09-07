@@ -50,7 +50,7 @@ import processing.ImageTransformation;
  * @author jollion
  */
 public class TestPreProcess {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         PluginFactory.findPlugins("plugins.plugins");
         ImageStabilizerXY.debug=true;
         //String dbName= "boa_fluo160428";
@@ -67,7 +67,7 @@ public class TestPreProcess {
         testStabFromXP(dbName, field, 1, 0, 40);
     }
     
-    public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
+    public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) throws Exception {
        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         //Processor.setTransformations(f, true);
@@ -82,7 +82,7 @@ public class TestPreProcess {
         disp.showImage(res.setName("transformed"));
     }
     
-    public static void testCrop(String dbName, int fieldIdx, int time, boolean flip) {
+    public static void testCrop(String dbName, int fieldIdx, int time, boolean flip) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
@@ -104,7 +104,7 @@ public class TestPreProcess {
     }
     
     
-    public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) {
+    public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
@@ -128,7 +128,7 @@ public class TestPreProcess {
         }
     }
     
-    public static void testStabFromXP(String dbName, int fieldIdx, int channelIdx,int tStart, int tEnd) {
+    public static void testStabFromXP(String dbName, int fieldIdx, int channelIdx,int tStart, int tEnd) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         List<TransformationPluginParameter<Transformation>> tr = new ArrayList<>(f.getPreProcessingChain().getTransformations(false));
@@ -178,7 +178,7 @@ public class TestPreProcess {
         disp.showImage(Image.mergeZPlanes(output).setName("output"));
     }
     
-    public static void testStabilizer(String dbName, int fieldIdx, int channelIdx, int tRef, int t, boolean flip) {
+    public static void testStabilizer(String dbName, int fieldIdx, int channelIdx, int tRef, int t, boolean flip) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();

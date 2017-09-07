@@ -348,7 +348,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             db.clearCache();
             db=null;
         }
-    private void run(String position, boolean deleteAllField) {
+    private void run(String position, boolean deleteAllField) throws Exception {
         publish("Position: "+position);
         if (deleteAllField) db.getDao(position).deleteAllObjects();
         if (preProcess) {
@@ -476,7 +476,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     public void done() {
         this.publish("Job done. Errors: "+this.errors.size());
         for (Pair<String, Exception> e : errors) {
-            publish("Error: "+e.key);
+            publish("Error @"+e.key);
+            publish(e.value.getMessage());
             for (StackTraceElement s : e.value.getStackTrace()) publish(s.toString());
         }
         this.printErrors();

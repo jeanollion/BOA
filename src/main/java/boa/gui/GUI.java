@@ -1868,7 +1868,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (dbName==null || (this.db!=null && db.getDBName().equals(dbName))) unsetXP();
         else {
             setDBConnection(dbName, host);
-            PropertyUtils.set(PropertyUtils.LAST_SELECTED_EXPERIMENT, dbName);
+            if (db!=null) PropertyUtils.set(PropertyUtils.LAST_SELECTED_EXPERIMENT, dbName);
         }
     }//GEN-LAST:event_setSelectedExperimentMenuItemActionPerformed
 
@@ -2398,7 +2398,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
         if (!checkConnection()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        ManualCorrection.deleteObjects(db, sel, true);
+        if (sel.size()<=10 || Utils.promptBoolean("Delete "+sel.size()+ " Objects ? ", this)) ManualCorrection.deleteObjects(db, sel, true);
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
     private void deleteObjectsButtonMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteObjectsButtonMousePressed
@@ -2625,7 +2625,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                             if (logFile!=null && activateLoggingMenuItem.isSelected()) t.setLogFile(logFile);
                         }
                     }
-                    Task.executeTasks(jobs, GUI.getInstance());
+                    if (!jobs.isEmpty()) {
+                        unsetXP(); // avoid lock problems
+                        Task.executeTasks(jobs, GUI.getInstance());
+                    }
+                    
                 }
             };
             menu.add(run);

@@ -90,14 +90,14 @@ public class Processor {
     
     // preProcessing-related methods
     
-    public static void preProcessImages(MasterDAO db, boolean computeConfigurationData) {
+    public static void preProcessImages(MasterDAO db, boolean computeConfigurationData)  throws Exception {
         Experiment xp = db.getExperiment();
         for (int i = 0; i<xp.getPositionCount(); ++i) {
             preProcessImages(xp.getPosition(i), db.getDao(xp.getPosition(i).getName()), false, computeConfigurationData);
         }
     }
     
-    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData) {
+    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData)  throws Exception {
         if (!dao.getPositionName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
         InputImagesImpl images = field.getInputImages();
         images.deleteFromDAO(); // eraseAll images if existing in imageDAO
@@ -107,7 +107,7 @@ public class Processor {
         if (deleteObjects) dao.deleteAllObjects();
     }
     
-    public static void setTransformations(MicroscopyField field, boolean computeConfigurationData) {
+    public static void setTransformations(MicroscopyField field, boolean computeConfigurationData)  throws Exception {
         InputImagesImpl images = field.getInputImages();
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations(true)) {

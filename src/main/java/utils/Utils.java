@@ -27,6 +27,7 @@ import java.awt.Component;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
@@ -58,6 +59,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -73,7 +75,16 @@ import measurement.extraction.DataExtractor;
  * @author jollion
  */
 public class Utils {
-    
+    public static String getMemoryUsage() {
+        long used = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        String of = Utils.getOpenedFileCount();
+        return " Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)"+(of.length()==0?"": " OpenedFiles: "+of);
+    }
+    public static boolean promptBoolean(String message, Component parent) {
+        int response = JOptionPane.showConfirmDialog(parent, message, "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (response == JOptionPane.YES_OPTION)  return true;
+        return false;
+    }
     public static String getOpenedFileCount() {
         OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
         if(os instanceof UnixOperatingSystemMXBean){

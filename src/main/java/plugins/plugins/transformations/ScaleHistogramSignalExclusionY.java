@@ -73,7 +73,8 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
         this.signalExclusionThreshold.setValue(thld);
         return this;
     }
-    public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
+    @Override 
+    public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  throws Exception {
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();
         final double signalMaxThreshold = this.signalMaxThreshold.getValue().doubleValue();
@@ -103,6 +104,7 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
             );
         }
         tr.startAndJoin();
+        tr.throwErrorIfNecessary("");
         meanSigmaTY=new ArrayList<ArrayList<ArrayList<Double>>>(muSigmaTY.length);
         for (Double[][] d : muSigmaTY) {
             ArrayList<ArrayList<Double>> al = new ArrayList<ArrayList<Double>>();

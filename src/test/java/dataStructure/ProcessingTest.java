@@ -33,6 +33,7 @@ import image.ImageWriter;
 import image.TypeConverter;
 import images.ImageIOTest;
 import java.io.File;
+import java.util.logging.Level;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -160,7 +161,11 @@ public class ProcessingTest {
         
         //pre-process
         BasicMasterDAO masterDAO = new BasicMasterDAO(xp);
-        Processor.preProcessImages(masterDAO, true);
+        try {
+            Processor.preProcessImages(masterDAO, true);
+        } catch (Exception ex) {
+            assertTrue("Failed to preprocess images", false);
+        }
        
         // test 
         ImageDAO dao = xp.getImageDAO();

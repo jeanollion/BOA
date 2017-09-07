@@ -59,8 +59,8 @@ public class ScaleHistogramSignalExclusion implements Transformation {
         this.signalExclusionThreshold.setValue(signalExclusionThreshold);
         this.vertical.setSelected(verticalSignal);
     }
-    
-    public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
+    @Override
+    public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  throws Exception{
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();
         final boolean underThreshold = true;
@@ -72,7 +72,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
         for (int i = 0; i<tr.threads.length; i++) {
             final int trIdx = i;
             tr.threads[i] = new Thread(
-                    new Runnable() {  
+                new Runnable() {  
                     public void run() {
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
                             Image signalExclusion=null;
@@ -89,6 +89,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
             );
         }
         tr.startAndJoin();
+        tr.throwErrorIfNecessary("");
         meanSigmaT=new ArrayList<ArrayList<Double>>(muSigma.length);
         for (Double[] d : muSigma) {
             //logger.debug("muSigma: {}", (Object[])d);

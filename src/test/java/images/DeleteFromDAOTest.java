@@ -39,6 +39,8 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Rule;
@@ -114,7 +116,11 @@ public class DeleteFromDAOTest {
         long t0 = System.currentTimeMillis();
         // process
         assertEquals("number of files before preProcess", 0, countFiles(new File(xp.getOutputImageDirectory())));
-        Processor.preProcessImages(masterDAO, true);
+        try {
+            Processor.preProcessImages(masterDAO, true);
+        } catch (Exception ex) {
+            assertTrue("failed to preProcess images", false);
+        }
         assertEquals("number of files after preProcess",10, countFiles(new File(xp.getOutputImageDirectory())));
         Processor.processAndTrackStructures(masterDAO, true);
         

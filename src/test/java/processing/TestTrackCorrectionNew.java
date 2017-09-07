@@ -206,7 +206,11 @@ public class TestTrackCorrectionNew {
         Experiment xp = generateXP(output.getAbsolutePath());
         db.setExperiment(xp);
         Processor.importFiles(xp, true, input.getAbsolutePath());
-        Processor.preProcessImages(db, true);
+        try {
+            Processor.preProcessImages(db, true);
+        } catch (Exception ex) {
+            logger.error("failed to pp images", ex);
+        }
         MicroscopyField f= xp.getPosition(0);
         List<StructureObject> root = Processor.getOrCreateRootTrack(db.getDao(f.getName()));
         logger.debug("create root objects: {}", root.size());

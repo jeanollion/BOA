@@ -35,6 +35,8 @@ import dataStructure.objects.MasterDAOFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import plugins.ObjectFeature;
 import plugins.PluginFactory;
 import plugins.Transformation;
@@ -142,7 +144,11 @@ public class GenerateMutationDynamicsXP {
             for (MicroscopyField f : xp.getPositions()) f.setDefaultFrame(0);
             GenerateXP.setFlip(xp, flipArray);
             if (performProcessing) {
-                Processor.preProcessImages(mDAO, true);
+                try {
+                    Processor.preProcessImages(mDAO, true);
+                } catch (Exception ex) {
+                    logger.debug("Error while preprocessing", ex);
+                }
                 Processor.processAndTrackStructures(mDAO, true, 0);
             }
         }
