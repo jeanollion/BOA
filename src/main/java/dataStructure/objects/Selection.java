@@ -34,20 +34,48 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import org.json.simple.JSONObject;
+import utils.JSONSerializable;
+import utils.JSONUtils;
 import utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class Selection implements Comparable<Selection> {
-    String id;
+public class Selection implements Comparable<Selection>, JSONSerializable {
+    String name;
     int structureIdx;
     Map<String, List<String>> elements; // stored as list for simplicity
     String color="Green";
     boolean displayingTracks=false;
     boolean displayingObjects=false;
     boolean highlightingTracks=false;
+    
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res= new JSONObject();
+        res.put("elements", JSONUtils.toJSONObject(elements));
+        res.put("name", name);
+        res.put("structureIdx", structureIdx);
+        res.put("color", color);
+        res.put("displayingTracks", displayingTracks);
+        res.put("displayingObjects", displayingObjects);
+        res.put("highlightingTracks", highlightingTracks);
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jo = (JSONObject)jsonEntry;
+        elements = (Map<String, List<String>>)jo.get("elements");
+        name = (String)jo.get("name");
+        structureIdx = ((Number)jo.get("structureIdx")).intValue();
+        color = (String)jo.get("color");
+        displayingTracks = (Boolean)jo.get("displayingTracks");
+        displayingObjects = (Boolean)jo.get("displayingObjects");
+        highlightingTracks = (Boolean)jo.get("highlightingTracks");
+    }
     
     public final static String indexSeparator ="-";
     Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
@@ -57,7 +85,7 @@ public class Selection implements Comparable<Selection> {
         this(name, -1, mDAO);
     }
     public Selection(String name, int structureIdx, MasterDAO mDAO) {
-        this.id=name;
+        this.name=name;
         this.structureIdx=structureIdx;
         elements = new HashMap<>();
         this.mDAO=mDAO;
@@ -183,7 +211,7 @@ public class Selection implements Comparable<Selection> {
         if (fieldName==null) throw new IllegalArgumentException("Position cannot be null");
         Collection<String> indiciesList = get(fieldName, false);
         if (indiciesList==null) {
-            logger.debug("position: {} absent from sel: {}", fieldName, id);
+            logger.debug("position: {} absent from sel: {}", fieldName, name);
             return Collections.EMPTY_SET;
         }
         ObjectDAO dao = mDAO.getDao(fieldName);
@@ -225,7 +253,7 @@ public class Selection implements Comparable<Selection> {
             }
         }*/
         long t2 = System.currentTimeMillis();
-        logger.debug("Selection: {}, position: {}, #{} elements retrieved in: {}", this.id, fieldName, res.size(), t2-t0);
+        logger.debug("Selection: {}, position: {}, #{} elements retrieved in: {}", this.name, fieldName, res.size(), t2-t0);
         if (notFound!=null && !notFound.isEmpty()) logger.debug("Selection: {} objects not found: {}", getName(), Utils.toStringList(notFound, array -> Utils.toStringArray(array)));
         return res;
     }
@@ -358,7 +386,7 @@ public class Selection implements Comparable<Selection> {
             List<StructureObject> toRemove = new ArrayList<>();
             for (StructureObject parent : parentsByPosition.get(position)) if (elementsByParent.containsKey(parent)) toRemove.addAll(elementsByParent.get(parent));
             removeElements(toRemove);
-            logger.debug("sel : {}, remove children of: {}", this.id, toRemove);
+            logger.debug("sel : {}, remove children of: {}", this.name, toRemove);
         }
     }
     public synchronized void clear() {
@@ -367,7 +395,7 @@ public class Selection implements Comparable<Selection> {
     }
     @Override 
     public String toString() {
-        return id+" (s:"+structureIdx+"; n="+count()+")";
+        return name+" (s:"+structureIdx+"; n="+count()+")";
     }
     public int count() {
         int c = 0;
@@ -378,22 +406,22 @@ public class Selection implements Comparable<Selection> {
         return get(position, true).size();
     }
     public String getName() {
-        return id;
+        return name;
     }
 
     @Override public int compareTo(Selection o) {
-        return this.id.compareTo(o.id);
+        return this.name.compareTo(o.name);
     }
 
     @Override
     public int hashCode() {
-        return id.hashCode();
+        return name.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Selection) {
-            return ((Selection)obj).id.equals(id);
+            return ((Selection)obj).name.equals(name);
         } else return false;
     }
     // morphium
@@ -402,7 +430,7 @@ public class Selection implements Comparable<Selection> {
     public static Selection generateSelection(String name, int structureIdx, Map<String, List<String>> elements) {
         Selection res= new Selection();
         if (name==null) name="current";
-        res.id=name;
+        res.name=name;
         res.structureIdx=structureIdx;
         res.elements=elements;
         return res;
@@ -429,4 +457,6 @@ public class Selection implements Comparable<Selection> {
             return indicesToString(ii);
         }
     }
+
+    
 }

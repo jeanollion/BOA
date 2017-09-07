@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.function.Function;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import utils.JSONSerializable;
 import utils.JSONUtils;
 import utils.Utils;
 
@@ -33,7 +34,7 @@ import utils.Utils;
  * @author jollion
  */
 
-public class Measurements implements Comparable<Measurements>{
+public class Measurements implements Comparable<Measurements>, JSONSerializable{
     protected String id;
     protected String positionName;
     protected int frame, structureIdx;
@@ -54,6 +55,11 @@ public class Measurements implements Comparable<Measurements>{
         updateObjectProperties(o);
     }
     public Measurements(Map json) {
+        this.initFromJSONEntry(json);
+    }
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject json = (JSONObject)jsonEntry;
         id = (String)json.get("id");
         structureIdx = ((Number)json.get("sIdx")).intValue();
         frame = ((Number)json.get("frame")).intValue();
@@ -62,7 +68,8 @@ public class Measurements implements Comparable<Measurements>{
         indices = JSONUtils.fromIntArray((JSONArray)json.get("indices"));
         values = JSONUtils.toValueMap((Map)json.get("values"));
     }
-    public JSONObject toJSON() {
+    @Override
+    public JSONObject toJSONEntry() {
         JSONObject obj1=new JSONObject();
         obj1.put("id", id);
         obj1.put("frame", frame);

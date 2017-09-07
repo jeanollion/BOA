@@ -2753,7 +2753,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         unsetXP();
         final List<File> dumpedFiles = Utils.seachAll(hostName.getText(), s->s.endsWith("_dump.zip"), 1);
         if (dumpedFiles==null) return;
-        log("undumping: "+dumpedFiles.size()+ " Experiment"+(dumpedFiles.size()>1?"s":""));
         // remove xp already undumped
         Map<String, File> dbFiles = DBUtil.listExperiments(hostName.getText());
         dumpedFiles.removeIf(f->dbFiles.containsValue(f.getParentFile()));

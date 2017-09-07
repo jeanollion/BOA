@@ -42,7 +42,7 @@ public class CompareSerializationTime {
         ObjectDAO dao  = db.getDao(db.getExperiment().getPosition(0).getName());
         List<StructureObject> obs = StructureObjectUtils.getAllObjects(dao, 1);
         testSerialization(obs, "default ser ", o->JSONUtils.serialize(o), s->JSONUtils.parse(StructureObject.class, s));
-        testSerialization(obs, "JSON simple ser ", o->o.toJSON().toJSONString(), s->new StructureObject(JSONUtils.parse(s)));
+        testSerialization(obs, "JSON simple ser ", o->o.toJSONEntry().toJSONString(), s->new StructureObject(JSONUtils.parse(s)));
     }
     public static void testSerialization(List<StructureObject> objects, String serName,  Function<StructureObject, String> ser, Function<String, StructureObject> unser) {
         List<String> serList = new ArrayList<>();

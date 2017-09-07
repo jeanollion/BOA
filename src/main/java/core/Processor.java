@@ -284,6 +284,7 @@ public class Processor {
         }
         logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getPositionName(), t1-t0, allModifiedObjects.size());
         dao.upsertMeasurements(allModifiedObjects);
+        if (allModifiedObjects.isEmpty()) errors.add(new Pair(dao.getPositionName(), new Error("No Measurement preformed")));
         return errors;
     }
     

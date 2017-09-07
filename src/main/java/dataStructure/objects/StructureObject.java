@@ -28,13 +28,14 @@ import org.slf4j.LoggerFactory;
 import plugins.ObjectSplitter;
 import processing.ImageFeatures;
 import utils.Id;
+import utils.JSONSerializable;
 import utils.JSONUtils;
 import utils.Pair;
 import utils.SmallArray;
 import utils.Utils;
 
 
-public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject>, PostLoadable {
+public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject>, PostLoadable, JSONSerializable {
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     protected String id;
@@ -1011,7 +1012,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return Integer.compare(getIdx(), other.getIdx());
     }
     
-    public JSONObject toJSON() {
+    @Override
+    public JSONObject toJSONEntry() {
         JSONObject obj1=new JSONObject();
         obj1.put("id", id);
         if (parentId!=null) obj1.put("pId", parentId);
@@ -1027,8 +1029,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (objectContainer!=null) obj1.put("object", objectContainer.toJSON());
         return obj1;
     }
-    
-    public StructureObject(Map json) {
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        Map json = (JSONObject)jsonEntry;
         id = (String)json.get("id");
         Object pId = json.get("pId");
         if (pId!=null) parentId = (String)pId;
@@ -1053,6 +1056,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             Map objectJ = (Map)json.get("object");
             objectContainer = ObjectContainer.createFromMap(this, objectJ);
         }
+    }
+    public StructureObject(Map json) {
+        this.initFromJSONEntry(json);
     }
     
     public StructureObject(){}

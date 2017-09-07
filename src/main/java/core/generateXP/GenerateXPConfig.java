@@ -42,7 +42,7 @@ public class GenerateXPConfig {
         
     }
     private static void exportXP(String dir, Experiment xp, boolean zip) {
-        if (!zip) FileIO.writeToFile(dir+File.separator+xp.getName()+"Config.txt", new ArrayList(){{add(xp);}}, o->JSONUtils.serialize(o));
+        if (!zip) FileIO.writeToFile(dir+File.separator+xp.getName()+"Config.txt", new ArrayList<Experiment>(){{add(xp);}}, o->JSONUtils.serialize(o));
         else {
             FileIO.ZipWriter w = new FileIO.ZipWriter(dir+File.separator+xp.getName()+".zip");
             w.write("config.txt", new ArrayList<Experiment>(1){{add(xp);}}, o->JSONUtils.serialize(o));

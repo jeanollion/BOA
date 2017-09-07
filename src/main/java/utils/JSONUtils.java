@@ -19,6 +19,7 @@ package utils;
 
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.Measurements;
+import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.json.simple.JSONArray;
+import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -145,17 +147,10 @@ public class JSONUtils {
         for (Object o : array) res.add(((Number)o).intValue());
         return res;
     }
-    public static String serialize(Object o) {
-        if (o instanceof StructureObject) return ((StructureObject)o).toJSON().toJSONString();
-        else if (o instanceof Measurements) return ((Measurements)o).toJSON().toJSONString();
-        else if (o instanceof Experiment) {
-            String res= ((Experiment)o).toJSONEntry().toJSONString();
-            Experiment xpTest = new Experiment();
-            xpTest.initFromJSONEntry(JSONUtils.parse(res));
-            logger.debug("check xp serialization: {}", ((Experiment)o).sameContent(xpTest));
-            return res;
-        }
-        throw new IllegalArgumentException("Type not supported");
+    public static String serialize(JSONSerializable o) {
+        Object entry = o.toJSONEntry();
+        if (entry instanceof JSONAware) return ((JSONAware)entry).toJSONString();
+        else return entry.toString();
     }
     public static JSONObject parse(String s) {
         try {
@@ -178,6 +173,11 @@ public class JSONUtils {
             Experiment xp = new Experiment();
             xp.initFromJSONEntry(o);
             return (T)xp;
+        } else if (Selection.class.equals(clazz)) {
+            JSONObject o = parse(s);
+            Selection sel = new Selection();
+            sel.initFromJSONEntry(o);
+            return (T)sel;
         }
         throw new IllegalArgumentException("Type not supported");
     }

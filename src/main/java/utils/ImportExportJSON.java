@@ -223,7 +223,9 @@ public class ImportExportJSON {
                 }
             }
             if (selections) {
+                logger.debug("importing selections....");
                 List<Selection> sels = r.readObjects("selections.txt", o->JSONUtils.parse(Selection.class, o));
+                logger.debug("selections: {}", sels.size());
                 if (sels.size()>0 && dao.getSelectionDAO()!=null) {
                     for (Selection s: sels )dao.getSelectionDAO().store(s);
                     logger.debug("Stored: #{} selections from file: {} set to db: {}", sels.size(), path, dao.getDBName());
