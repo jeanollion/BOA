@@ -97,6 +97,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (res==null) {
             synchronized(dbS) {
                 if (!dbS.containsKey(structureIdx)) {
+                    logger.debug("creating db: {}", getDBFile(structureIdx));
                     res = createFileDB(getDBFile(structureIdx));
                     dbS.put(structureIdx, res);
                 } else {

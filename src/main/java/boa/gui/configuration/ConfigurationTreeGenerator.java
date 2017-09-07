@@ -15,32 +15,19 @@
  */
 package boa.gui.configuration;
 
-import static boa.gui.GUI.logger;
-import com.mongodb.MongoClient;
 import dataStructure.configuration.Experiment;
-import dataStructure.configuration.ExperimentDAO;
-import configuration.parameters.ContainerParameter;
 import configuration.parameters.ListParameter;
 import configuration.parameters.ui.ListParameterUI;
 import configuration.parameters.Parameter;
 import configuration.parameters.ui.ParameterUI;
-import configuration.parameters.SimpleListParameter;
 import configuration.parameters.ui.ArmableUI;
 import configuration.parameters.ui.ChoiceParameterUI;
 import configuration.parameters.ui.MultipleChoiceParameterUI;
 import dataStructure.configuration.PreProcessingChain.PreProcessingChainUI;
-import de.caluga.morphium.Morphium;
-import de.caluga.morphium.MorphiumConfig;
 import java.awt.Component;
-import java.awt.GridLayout;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.JMenuItem;

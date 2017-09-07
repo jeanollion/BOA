@@ -16,11 +16,6 @@
 package configuration.parameters;
 
 import configuration.parameters.ui.ParameterUI;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.caching.Cache;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,12 +33,10 @@ import utils.Utils;
  * @author jollion
  */
 
-@Embedded(polymorph = true)
 public abstract class SimpleContainerParameter implements ContainerParameter {
     protected String name;
-    @Transient protected ContainerParameter parent;
-    @Transient protected List<Parameter> children;
-    //@Transient protected boolean postLoaded=false;
+    protected ContainerParameter parent;
+    protected List<Parameter> children;
     public SimpleContainerParameter(String name) {
         this.name=name;
     }
@@ -215,7 +208,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     // listenable
-    @Transient ArrayList<ParameterListener> listeners;
+    ArrayList<ParameterListener> listeners;
     public void addListener(ParameterListener listener) {
         if (listeners == null) listeners = new ArrayList<ParameterListener>();
         listeners.add(listener);

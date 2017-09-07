@@ -64,11 +64,12 @@ public class FileIO {
             java.io.FileWriter fstream;
             BufferedWriter out;
             File output = new File(outputFile);
-            output.delete();
+            //output.delete();
             output.getParentFile().mkdirs();
             if (objects.isEmpty()) return;
             fstream = new java.io.FileWriter(output);
             out = new BufferedWriter(fstream);
+            //out.flush();
             Iterator<T> it = objects.iterator();
             out.write(converter.apply(it.next()));
 

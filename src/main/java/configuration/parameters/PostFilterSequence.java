@@ -19,19 +19,16 @@ package configuration.parameters;
 
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
-import de.caluga.morphium.annotations.Transient;
 import image.ImageProperties;
 import java.util.Collection;
 import plugins.PostFilter;
-import plugins.PreFilter;
-import utils.Utils;
 
 /**
  *
  * @author jollion
  */
 public class PostFilterSequence extends PluginParameterList<PostFilter> {
-    @Transient Boolean configured = false;
+    Boolean configured = false;
     
     public PostFilterSequence(String name) {
         super(name, "Post-Filter", PostFilter.class);

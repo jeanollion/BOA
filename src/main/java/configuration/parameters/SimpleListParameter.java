@@ -17,10 +17,6 @@ package configuration.parameters;
 
 import configuration.parameters.ui.SimpleListParameterUI;
 import configuration.parameters.ui.ListParameterUI;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
@@ -42,19 +38,17 @@ import utils.Utils;
  * @author jollion
  */
 
-
-@Embedded(polymorph = true)
 public class SimpleListParameter<T extends Parameter> implements ListParameter<T> {
 
     protected String name;
     protected ArrayList<T> children;
-    @Transient protected int unMutableIndex;
-    @Transient protected Class<T> childClass;
+    protected int unMutableIndex;
+    protected Class<T> childClass;
     protected String childClassName;
     protected T childInstance;
     
-    @Transient protected ListParameterUI ui;
-    @Transient protected ContainerParameter parent;
+    protected ListParameterUI ui;
+    protected ContainerParameter parent;
     
     @Override
     public JSONAware toJSONEntry() {

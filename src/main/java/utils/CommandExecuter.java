@@ -119,53 +119,6 @@ public class CommandExecuter {
         }
     }
     
-    public static boolean dumpDB(String host, String dbName, String outputPath, boolean json) {
-        if (!json) return dump(host, dbName, null, outputPath, false);
-        else { // get all collections
-            boolean processOk = true;
-            for (String collectionName : DBUtil.listCollections(dbName, host)) processOk = processOk && dump(host, dbName, collectionName, outputPath, true);
-            return processOk;
-        }
-    }
-    
-    public static boolean dump(String host, String dbName, String collectionName, String outputPath, boolean json) {
-        if (outputPath==null) throw new IllegalArgumentException("Output path is null");
-        if (dbName==null) throw new IllegalArgumentException("DBName is null");
-        if (json && collectionName==null) throw new IllegalArgumentException("Export to JSON only on single collections");
-        String mongoBinPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
-        if (host==null) host = "localhost";
-        String cName = json? "mongoexport" : "mongodump";
-        if (json) {
-            File out = new File(outputPath);
-            if (out.isDirectory()) {
-                if (!outputPath.endsWith(File.separator)) outputPath+=File.separator;
-                outputPath+=collectionName+".json";
-            }
-        }
-        if(interactive){
-            String command = cName+" --host "+host+" --db "+dbName + (collectionName==null ? "" : " --collection "+collectionName) +" -o "+outputPath;
-            command = arrangeCommand(command, mongoBinPath);
-            logger.info("Will execute interactively dump command: {}", command);
-            //return mongoBinPath.executeInteractiveProcess(command);
-            return false;
-        } else {
-            String command = cName;
-            command = arrangeCommand(command, mongoBinPath);
-            ArrayList<String> commandArgs = new ArrayList<String>();
-            commandArgs.add(command);
-            commandArgs.add("--host");
-            commandArgs.add(host);
-            commandArgs.add("--db");
-            commandArgs.add(dbName);
-            if (collectionName!=null) {
-                commandArgs.add("--collection");
-                commandArgs.add(collectionName);
-            }
-            commandArgs.add("-o");
-            commandArgs.add(outputPath);
-            return execProcess(null, commandArgs);
-        }
-    }
     
     private static String arrangeCommand(String command, String binPath) {
         if (binPath==null || "".equals(binPath)) {

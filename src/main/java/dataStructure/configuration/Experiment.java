@@ -32,10 +32,6 @@ import configuration.parameters.ParameterListener;
 import configuration.parameters.PluginParameter;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ImageDAOFactory;
-import de.caluga.morphium.annotations.Entity;
-import de.caluga.morphium.annotations.Id;
-import de.caluga.morphium.annotations.Index;
-import de.caluga.morphium.annotations.Transient;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +43,6 @@ import java.util.Map.Entry;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import org.apache.commons.lang.ArrayUtils;
-import org.bson.types.ObjectId;
 import org.json.simple.JSONObject;
 import plugins.Measurement;
 import utils.HashMapGetCreate;
@@ -60,10 +55,7 @@ import static utils.Utils.toArray;
  * 
  */
 
-@Entity(collectionName = "Experiment", polymorph=false)
-@Index(value="name", options="unique:1")
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
-    @Id protected ObjectId id;
     protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
     protected FileChooser outputPath = new FileChooser("Output Path", FileChooserOption.DIRECTORIES_ONLY);
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<>("Channel Images", 0 , ChannelImage.class);
@@ -73,8 +65,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
     public enum ImageDAOTypes {LocalFileSystem};
-    @Transient ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
-    @Transient ConfigurationTreeModel model;
+    ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
+    ConfigurationTreeModel model;
     
     @Override
     public JSONObject toJSONEntry() {
@@ -178,8 +170,6 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         for (String p : pos)  getPosition(p).flushImages(raw, preProcessed);
     }
    
-    public ObjectId getId() {return id;}
-    
     public SimpleListParameter<ChannelImage> getChannelImages() {
         checkInit();
         return channelImages;

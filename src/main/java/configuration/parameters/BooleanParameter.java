@@ -17,7 +17,6 @@
  */
 package configuration.parameters;
 
-import de.caluga.morphium.annotations.Embedded;
 
 /**
  * ChoiceParameter with two elements, 1st = true, 2nd = false

@@ -17,8 +17,6 @@
  */
 package dataStructure.containers;
 
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
 import image.Image;
 import static image.Image.logger;
@@ -43,8 +41,8 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     int timePointNumber;
     int[] sizeZC;
     BoundingBox bounds;
-    @Transient private ImageReader reader[];
-    @Transient private Image[] singleFrameImages;
+    private ImageReader reader[];
+    private Image[] singleFrameImages;
     boolean[] singleFrameC;
     Map<String, Double> timePointCZT;
     

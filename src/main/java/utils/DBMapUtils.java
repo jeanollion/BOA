@@ -34,28 +34,28 @@ import org.mapdb.Serializer;
 public class DBMapUtils {
     public static DB createFileDB(String path) {
         //logger.debug("creating file db: {}, is dir: {}, exists: {}", path, new File(path).isDirectory(),new File(path).exists());
-        return DBMaker.newFileDB(new File(path)).cacheDisable().closeOnJvmShutdown().make(); // v1        //
-        //return DBMaker.fileDB(path).transactionEnable().make(); // v3
+        //return DBMaker.newFileDB(new File(path)).cacheDisable().closeOnJvmShutdown().make(); // v1        //
+        return DBMaker.fileDB(path).transactionEnable().make(); // v3
     }
     public static HTreeMap<String, String> createHTreeMap(DB db, String key) {
-        return db.createHashMap(key).keySerializer(Serializer.STRING).valueSerializer(Serializer.STRING).makeOrGet();
-        //return db.hashMap(key, Serializer.STRING, Serializer.STRING).createOrOpen(); 
+        //return db.createHashMap(key).keySerializer(Serializer.STRING).valueSerializer(Serializer.STRING).makeOrGet();
+        return db.hashMap(key, Serializer.STRING, Serializer.STRING).createOrOpen(); 
     }
     public static <K, V> Set<Entry<K, V>> getEntrySet(HTreeMap<K, V> map) {
-        return map.entrySet(); //v1
-        //return map.getEntries(); //v3
+        //return map.entrySet(); //v1
+        return map.getEntries(); //v3
     }
     public static <V> Collection<V> getValues(HTreeMap<?, V> map) {
-        return map.values(); // v1
-        //return map.getValues(); // v3
+        //return map.values(); // v1
+        return map.getValues(); // v3
     }
-    public static Collection<String> getNames(DB db) {
-        return db.getAll().keySet(); // v1
-        //return db.getAllNames(); //v3
+    public static Iterable<String> getNames(DB db) {
+        //return db.getAll().keySet(); // v1
+        return db.getAllNames(); //v3
     }
     public static void deleteDBFile(String path) {
         new File(path).delete();
-        new File(path+".p").delete(); // v1
-        new File(path+".t").delete(); // v1 
+        //new File(path+".p").delete(); // v1
+        //new File(path+".t").delete(); // v1 
     }
 }

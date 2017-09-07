@@ -18,7 +18,6 @@
 package dataStructure.containers;
 
 import static core.Processor.logger;
-import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
 import image.Image;
 import image.ImageIOCoordinates;
@@ -50,7 +49,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     int frameNumber;
     String[] channelKeywords;
     int[] sizeZC;
-    @Transient List<List<String>> fileCT;
+    List<List<String>> fileCT;
 
     @Override
     public boolean sameContent(MultipleImageContainer other) {

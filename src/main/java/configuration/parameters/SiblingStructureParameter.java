@@ -18,8 +18,6 @@
 package configuration.parameters;
 
 import dataStructure.configuration.Structure;
-import de.caluga.morphium.annotations.Transient;
-import utils.Utils;
 
 /**
  *
@@ -27,7 +25,7 @@ import utils.Utils;
  */
 public class SiblingStructureParameter extends StructureParameter {
     int parentStructureIdx=-2;
-    @Transient int[] idxStructureMap;
+    int[] idxStructureMap;
     int selectedStructureIdx=-1;
     boolean includeParent=false;
     

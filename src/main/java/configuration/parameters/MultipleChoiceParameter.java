@@ -19,7 +19,6 @@ package configuration.parameters;
 
 import configuration.parameters.ui.MultipleChoiceParameterUI;
 import configuration.parameters.ui.ParameterUI;
-import de.caluga.morphium.annotations.Transient;
 import org.json.simple.JSONArray;
 import utils.Utils;
 
@@ -29,9 +28,9 @@ import utils.Utils;
  */
 public class MultipleChoiceParameter extends SimpleParameter implements ChoosableParameterMultiple {
     int[] selectedItems;
-    @Transient String[] listChoice;
-    @Transient MultipleChoiceParameterUI ui;
-    @Transient int displayTrimSize=50; // for toString method
+    String[] listChoice;
+    MultipleChoiceParameterUI ui;
+    int displayTrimSize=50; // for toString method
     
     public MultipleChoiceParameter(String name, String[] listChoice, int[] selectedItems) {
         super(name);

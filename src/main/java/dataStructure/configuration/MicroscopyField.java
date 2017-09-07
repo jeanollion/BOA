@@ -18,14 +18,7 @@
 package dataStructure.configuration;
 
 import boa.gui.GUI;
-import static boa.gui.GUI.logger;
 import boa.gui.imageInteraction.IJVirtualStack;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import com.mongodb.MongoClient;
-import configuration.parameters.BooleanParameter;
-import configuration.parameters.BoundedNumberParameter;
-import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ListElementErasable;
 import configuration.parameters.Parameter;
 import configuration.parameters.SimpleContainerParameter;
@@ -42,7 +35,6 @@ import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
-import de.caluga.morphium.annotations.Transient;
 import image.BlankMask;
 import image.Image;
 import java.awt.event.ActionEvent;
@@ -65,8 +57,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     private MultipleImageContainer images;
     PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
     TimePointParameter defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP, false);
-    @Transient InputImagesImpl inputImages;
-    @Transient public static final int defaultTP = 50;
+    InputImagesImpl inputImages;
+    public static final int defaultTP = 50;
     //ui: bouton droit = selectionner un champ?
     
     @Override

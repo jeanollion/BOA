@@ -21,7 +21,6 @@ import dataStructure.objects.Object3D;
 import static dataStructure.objects.Object3D.logger;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
-import de.caluga.morphium.annotations.Embedded;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +33,6 @@ import utils.JSONUtils;
  *
  * @author jollion
  */
-@Embedded(polymorph = true)
 public class ObjectContainerVoxels extends ObjectContainer {
 
     int[] x, y, z;

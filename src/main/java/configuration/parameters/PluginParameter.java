@@ -22,7 +22,6 @@ import static configuration.parameters.ui.ChoiceParameterUI.NO_SELECTION;
 import dataStructure.configuration.Structure;
 import java.util.ArrayList;
 import java.util.HashMap;
-import de.caluga.morphium.annotations.Transient;
 import java.util.Arrays;
 import java.util.List;
 import org.json.simple.JSONArray;
@@ -40,12 +39,12 @@ import utils.Utils;
  */
 public class PluginParameter<T extends Plugin> extends SimpleContainerParameter implements Deactivatable, ChoosableParameter {
     
-    @Transient private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
+    private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
     protected List<Parameter> pluginParameters;
     protected String pluginName=NO_SELECTION;
-    @Transient private Class<T> pluginType;
+    private Class<T> pluginType;
     protected String pluginTypeName;
-    @Transient protected boolean allowNoSelection;
+    protected boolean allowNoSelection;
     protected boolean activated=true;
     protected List<Parameter> additionalParameters;
     

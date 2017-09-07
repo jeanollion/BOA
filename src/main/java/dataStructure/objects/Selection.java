@@ -19,13 +19,7 @@ package dataStructure.objects;
 
 import static boa.gui.selection.SelectionUtils.colors;
 import static boa.gui.selection.SelectionUtils.colorsImageDisplay;
-import com.google.common.collect.Sets;
 import static dataStructure.objects.StructureObject.logger;
-import de.caluga.morphium.annotations.Entity;
-import de.caluga.morphium.annotations.Id;
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,9 +40,8 @@ import utils.Utils;
  *
  * @author jollion
  */
-@Entity
 public class Selection implements Comparable<Selection> {
-    @Id String id;
+    String id;
     int structureIdx;
     Map<String, List<String>> elements; // stored as list for simplicity
     String color="Green";
@@ -56,9 +49,9 @@ public class Selection implements Comparable<Selection> {
     boolean displayingObjects=false;
     boolean highlightingTracks=false;
     
-    @Transient public final static String indexSeparator ="-";
-    @Transient Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
-    @Transient MasterDAO mDAO;
+    public final static String indexSeparator ="-";
+    Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
+    MasterDAO mDAO;
     
     public Selection(String name, MasterDAO mDAO) {
         this(name, -1, mDAO);

@@ -26,7 +26,6 @@ import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
-import de.caluga.morphium.Morphium;
 import ij.ImageJ;
 import image.BlankMask;
 import image.BoundingBox;

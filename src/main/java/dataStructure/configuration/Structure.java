@@ -30,8 +30,6 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.PreFilterSequence;
 import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
-import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import javax.swing.tree.MutableTreeNode;
 import org.json.simple.JSONObject;
 import plugins.ManualSegmenter;
@@ -62,7 +60,7 @@ public class Structure extends SimpleContainerParameter {
     BoundedNumberParameter manualObjectStrechThreshold = new BoundedNumberParameter("Manual Object Streching Threshold", 2, 0.5, 0, 1);
     BooleanParameter allowSplit = new BooleanParameter("Allow Split", "yes", "no", false);
     BooleanParameter allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false);
-    @Transient NameEditorUI ui;
+    NameEditorUI ui;
     
     @Override
     public JSONObject toJSONEntry() {
