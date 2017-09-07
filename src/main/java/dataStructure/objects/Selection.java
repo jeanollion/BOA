@@ -40,6 +40,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+import org.json.simple.JSONObject;
+import utils.JSONSerializable;
+import utils.JSONUtils;
 import utils.Utils;
 
 /**
@@ -47,7 +50,7 @@ import utils.Utils;
  * @author jollion
  */
 @Entity
-public class Selection implements Comparable<Selection> {
+public class Selection implements Comparable<Selection>, JSONSerializable {
     @Id String id;
     int structureIdx;
     Map<String, List<String>> elements; // stored as list for simplicity
@@ -59,6 +62,31 @@ public class Selection implements Comparable<Selection> {
     @Transient public final static String indexSeparator ="-";
     @Transient Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
     @Transient MasterDAO mDAO;
+    
+    @Override
+    public JSONObject toJSONEntry() {
+        JSONObject res= new JSONObject();
+        res.put("elements", JSONUtils.toJSONObject(elements));
+        res.put("name", id);
+        res.put("structureIdx", structureIdx);
+        res.put("color", color);
+        res.put("displayingTracks", displayingTracks);
+        res.put("displayingObjects", displayingObjects);
+        res.put("highlightingTracks", highlightingTracks);
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jo = (JSONObject)jsonEntry;
+        elements = (Map<String, List<String>>)jo.get("elements");
+        id = (String)jo.get("name");
+        structureIdx = ((Number)jo.get("structureIdx")).intValue();
+        color = (String)jo.get("color");
+        displayingTracks = (Boolean)jo.get("displayingTracks");
+        displayingObjects = (Boolean)jo.get("displayingObjects");
+        highlightingTracks = (Boolean)jo.get("highlightingTracks");
+    }
     
     public Selection(String name, MasterDAO mDAO) {
         this(name, -1, mDAO);

@@ -26,6 +26,7 @@ import configuration.parameters.PostLoadable;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.Measurements;
 import dataStructure.objects.MeasurementsLegacy;
+import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectLegacy;
 import de.caluga.morphium.AnnotationAndReflectionHelper;
@@ -190,6 +191,7 @@ public class JSONUtils {
     public static String serialize(Object o) {
         if (o instanceof StructureObject) return ((StructureObject)o).toJSON().toJSONString();
         else if (o instanceof Measurements) return ((Measurements)o).toJSON().toJSONString();
+        else if (o instanceof Selection) return ((Selection)o).toJSONEntry().toJSONString();
         else if (o instanceof Experiment) {
             String res= ((Experiment)o).toJSONEntry().toJSONString();
             Experiment xpTest = new Experiment();
@@ -232,6 +234,13 @@ public class JSONUtils {
                 Experiment xp = new Experiment();
                 xp.initFromJSONEntry(o);
                 return (T)xp;
+            }
+        } else if (Selection.class.equals(clazz)) {
+            JSONObject o = parse(s);
+            if (o!=null && o.containsKey("name")) {
+                Selection sel = new Selection();
+                sel.initFromJSONEntry(o);
+                return (T)sel;
             }
         }
         return parseMorhium(clazz, s);
