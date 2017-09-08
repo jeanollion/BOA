@@ -57,11 +57,11 @@ public abstract class Threshold implements ApplyToSegmenter {
         Image im = planes.get(frame);
         ImageByte res=  new ImageByte("thld", im);
         res.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
-            if (im.getPixel(x, y, z) > getThreshold(frame, y) == backgroundUnderThreshold) res.setPixel(x, y, z, 1);
+            if (im.getPixel(x, y, z) > getThreshold(f, y) == backgroundUnderThreshold) res.setPixel(x, y, z, 1);
         });
         if (showOne) {
             double[] thld = new double[im.getSizeY()];
-            for (int y = 0; y<thld.length; ++y) thld[y] = getThreshold(frame, y);
+            for (int y = 0; y<thld.length; ++y) thld[y] = getThreshold(f, y);
             Utils.plotProfile("thld Y", thld);
             showOne = false;
             ImageWindowManagerFactory.showImage(im.duplicate("image to be thlded"));

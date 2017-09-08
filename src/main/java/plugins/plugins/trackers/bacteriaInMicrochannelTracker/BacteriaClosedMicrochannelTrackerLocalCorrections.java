@@ -229,6 +229,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.correction=performCorrection;
         maxT = Collections.max(parentsByF.keySet())+1;
         minT = Collections.min(parentsByF.keySet());
+        if (debug) logger.debug("minF: {}, maxF: {}", minT, maxT);
         if (correction) inputImages=new HashMap<>(parentsByF.size());
         // 0) optional compute threshold for all images
         SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters).setPreFilters(preFilters);

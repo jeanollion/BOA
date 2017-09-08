@@ -56,7 +56,7 @@ import utils.Utils;
  */
 
 public class ImageFieldFactory {
-    private final static String seriesSeparator = "_xy";
+    private final static String seriesSeparator = "xy";
     private final static List<String> ignoredExtensions = Arrays.asList(new String[]{".log"});
     public static List<MultipleImageContainer> importImages(String[] path, Experiment xp) {
         ArrayList<MultipleImageContainer> res = new ArrayList<>();
@@ -120,7 +120,7 @@ public class ImageFieldFactory {
             if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
             if (tc[1]==xp.getChannelImageCount()) {
                 double[] scaleXYZ = reader.getScaleXYZ(1);
-                containersTC.add(new MultipleImageContainerSingleFile(Utils.removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4], scaleXYZ[0], scaleXYZ[2]));
+                containersTC.add(new MultipleImageContainerSingleFile(end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4], scaleXYZ[0], scaleXYZ[2])); //Utils.removeExtension(image.getName())+"_"+
                 logger.info("image {} imported successfully", image.getAbsolutePath());
             } else {
                 logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageCount());
