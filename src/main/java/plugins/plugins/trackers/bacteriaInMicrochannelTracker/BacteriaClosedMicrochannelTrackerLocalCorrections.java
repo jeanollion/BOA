@@ -674,7 +674,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (this.populations.get(timePoint)==null) {
             StructureObject parent = this.parentsByF.get(timePoint);
             List<StructureObject> list = parent.getChildren(structureIdx);
-            if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o->{
+            if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
                 if (segment) o.getObject().translate(parent.getBounds().duplicate().reverseOffset()); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
                 return o.getObject();
             }));
@@ -706,8 +706,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
 
     protected void resetIndices(int timePoint) {
         int idx = 0;
-        for (Object3D o : populations.get(timePoint)) {
-            if (!objectAttributeMap.containsKey(o)) return;
+        for (Object3D o : getObjects(timePoint)) {
+            if (!objectAttributeMap.containsKey(o)) {
+                if (idx!=0)  logger.warn("inconsistent attributes for timePoint: {} will be created de novo", timePoint); 
+                createAttributes(timePoint);
+                return;
+            } // has not been created ? 
             objectAttributeMap.get(o).idx=idx++;
         }
     }
@@ -1189,8 +1193,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             objects = new List[tpMax-tpMin+1];
             taMap = new HashMap<>();
             for (int t = tpMin; t<=tpMax; ++t) {
-                objects[t-tpMin] = new ArrayList(populations.get(t));
-                for (Object3D o : populations.get(t)) {
+                objects[t-tpMin] = new ArrayList(getObjects(t));
+                for (Object3D o : getObjects(t)) {
                     TrackAttribute ta = objectAttributeMap.get(o);
                     if (ta!=null) taMap.put(o, ta);
                 }

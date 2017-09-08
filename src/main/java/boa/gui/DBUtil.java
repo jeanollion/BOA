@@ -19,15 +19,19 @@ package boa.gui;
 
 import static boa.gui.GUI.logger;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import core.ProgressCallback;
 import dataStructure.objects.MasterDAO;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import utils.Pair;
 import utils.Utils;
 
 /**
@@ -79,23 +83,35 @@ public class DBUtil {
             else return null;
         }
     }
-    public static Map<String, File> listExperiments(String path) {
+    public static Map<String, File> listExperiments(String path, boolean excludeDuplicated, ProgressCallback pcb) {
         File f = new File(path);
         Map<String, File> configs = new HashMap<>();
+        Set<Pair<String, File>> dup = new HashSet<>();
         if (f.exists() && f.isDirectory()) { // only in directories included in path
             File[] sub = f.listFiles(subF -> subF.isDirectory());
-            for (File subF : sub) addConfig(subF, configs);
+            for (File subF : sub) addConfig(subF, configs, dup);
+        }
+        if (!dup.isEmpty()) {
+            for (Pair<String, File> p : dup) {
+                if (excludeDuplicated) configs.remove(p.key);
+                if (pcb!=null) pcb.log("Duplicated Experiment: "+p.key +"@:"+p.value+ (excludeDuplicated?" will not be listed":" only one will be listed"));
+            }
         }
         return configs;
     }
-    public static void addConfig(File f, Map<String, File> configs) {
-        File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.db") || subF.getName().endsWith("_config.txt")); // TODO retro-compatibility
+    public static void addConfig(File f, Map<String, File> configs, Set<Pair<String, File>> duplicated) {
+        File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.txt")); 
         if (dbs==null) return;
-        for (File c : dbs) configs.put(removeConfig(c.getName()), c.getParentFile());
+        for (File c : dbs) {
+            String dbName = removeConfig(c.getName());
+            if (configs.containsKey(dbName)) {
+                duplicated.add(new Pair<>(dbName, c.getParentFile()));
+                duplicated.add(new Pair<>(dbName, configs.get(dbName)));
+            } else configs.put(dbName, c.getParentFile());
+        }
     }
     private static String removeConfig(String name) {
-        if (name.endsWith("db")) return name.substring(0, name.length()-10); // TODO retro-compatibility
-        else return name.substring(0, name.length()-11);
+        return name.substring(0, name.length()-11);
     }
     static long minMem = 2000000000;
     public static void checkMemoryAndFlushIfNecessary(String... exceptPositions) {

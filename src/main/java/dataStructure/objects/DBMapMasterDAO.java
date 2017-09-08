@@ -126,7 +126,7 @@ public class DBMapMasterDAO implements MasterDAO {
         try {
             cfg = new RandomAccessFile(new File(getConfigFile(dbName, false)), "rw");
             xpFileLock = cfg.getChannel().tryLock();
-            logger.debug("lock at creation: {}, for file: {}", xpFileLock, getConfigFile(dbName, false));
+            //logger.debug("lock at creation: {}, for file: {}", xpFileLock, getConfigFile(dbName, false));
         } catch (FileNotFoundException ex) {
             logger.debug("no config file found!");
         } catch (OverlappingFileLockException e) {

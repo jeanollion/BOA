@@ -1844,7 +1844,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         File newDBDir = new File(path+File.separator+DBUtil.removePrefix(dbName, GUI.DBprefix));
         if (newDBDir.exists()) {
             logger.info("folder : {}, already exists", newDBDir.getAbsolutePath());
-            if (!DBUtil.listExperiments(newDBDir.getAbsolutePath()).isEmpty()) {
+            if (!DBUtil.listExperiments(newDBDir.getAbsolutePath(), false, null).isEmpty()) {
                 logger.info("folder : {}, already exists and contains xp", newDBDir.getAbsolutePath());
                 return null;
             } else {
@@ -2758,7 +2758,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         final List<File> dumpedFiles = Utils.seachAll(hostName.getText(), s->s.endsWith("_dump.zip"), 1);
         if (dumpedFiles==null) return;
         // remove xp already undumped
-        Map<String, File> dbFiles = DBUtil.listExperiments(hostName.getText());
+        Map<String, File> dbFiles = DBUtil.listExperiments(hostName.getText(), true, ProgressCallback.get(this));
         dumpedFiles.removeIf(f->dbFiles.containsValue(f.getParentFile()));
         log("undumping: "+dumpedFiles.size()+ " Experiment"+(dumpedFiles.size()>1?"s":""));
         
@@ -2823,7 +2823,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     private List<String> getDBNames() {
         if (this.localFileSystemDatabaseRadioButton.isSelected()) {
-            dbFiles = DBUtil.listExperiments(hostName.getText());
+            dbFiles = DBUtil.listExperiments(hostName.getText(), true, ProgressCallback.get(this));
             List<String> res = new ArrayList<>(dbFiles.keySet());
             Collections.sort(res);
             return res;
