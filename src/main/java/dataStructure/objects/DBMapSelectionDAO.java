@@ -43,14 +43,16 @@ public class DBMapSelectionDAO implements SelectionDAO {
     DB db;
     HTreeMap<String, String> dbMap;
     private final Map<String, Selection> idCache = new HashMap<>();
-    public DBMapSelectionDAO(DBMapMasterDAO mDAO, String dir) {
+    private final boolean readOnly;
+    public DBMapSelectionDAO(DBMapMasterDAO mDAO, String dir, boolean readOnly) {
         this.mDAO=mDAO;
         this.dir= dir+File.separator+"Selections"+File.separator;
         new File(this.dir).mkdirs();
+        this.readOnly=readOnly;
         makeDB();
     }
     private synchronized void makeDB() {
-        db = DBMapUtils.createFileDB(getSelectionFile());
+        db = DBMapUtils.createFileDB(getSelectionFile(), readOnly);
         dbMap = DBMapUtils.createHTreeMap(db, "selections");
     }
     
@@ -110,8 +112,9 @@ public class DBMapSelectionDAO implements SelectionDAO {
 
     @Override
     public synchronized void store(Selection s) {
-        s.mDAO=this.mDAO;
         idCache.put(s.getName(), s);
+        if (readOnly) return;
+        s.mDAO=this.mDAO;
         if (db.isClosed()) makeDB();
         this.dbMap.put(s.getName(), JSONUtils.serialize(s));
         db.commit();
@@ -120,6 +123,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
     @Override
     public synchronized void delete(String id) {
         idCache.remove(id);
+        if (readOnly) return;
         if (db.isClosed()) makeDB();
         dbMap.remove(id);
         db.commit();
@@ -133,19 +137,21 @@ public class DBMapSelectionDAO implements SelectionDAO {
     @Override
     public synchronized void deleteAllObjects() {
         idCache.clear();
+        if (readOnly) return;
         db.close();
         db=null;
         dbMap=null;
         DBMapUtils.deleteDBFile(getSelectionFile());
     }
     public synchronized void compact(boolean commit) {
+        if (readOnly) return;
         if (db.isClosed()) makeDB();
         if (commit) this.db.commit();
         this.db.compact();
     }
     private synchronized void close(boolean commit) {
         if (db.isClosed()) return;
-        if (commit) this.db.commit();
+        if (commit && !readOnly) this.db.commit();
         this.db.close();
     }
 

@@ -61,14 +61,14 @@ public class testMapDB {
     public void testFileDB() {
         boolean close = true;
         String path = testFolder.newFolder("testDB").getAbsolutePath()+File.separator+"_testDB.db";
-        DB db = DBMapUtils.createFileDB(path);
+        DB db = DBMapUtils.createFileDB(path, false);
         HTreeMap<String, String> map = DBMapUtils.createHTreeMap(db, "collection");
         map.put("something", "here");
         logger.info("read before commit: {}", map.get("something"));
         db.commit();
         logger.info("read after commit: {}", map.get("something"));
         if (close) db.close();
-        db = DBMapUtils.createFileDB(path);
+        db = DBMapUtils.createFileDB(path, false);
         map = DBMapUtils.createHTreeMap(db, "collection");
         logger.info("read: {}", map.get("something"));
         db.close();

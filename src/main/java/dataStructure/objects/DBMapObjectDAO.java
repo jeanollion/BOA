@@ -63,11 +63,13 @@ public class DBMapObjectDAO implements ObjectDAO {
     final String dir;
     final Map<Integer, DB> dbS = new HashMap<>();
     final Map<Integer, Pair<DB, HTreeMap<String, String>>> measurementdbS = new HashMap<>();
-    public DBMapObjectDAO(DBMapMasterDAO mDAO, String positionName, String dir) {
+    private final boolean readOnly;
+    public DBMapObjectDAO(DBMapMasterDAO mDAO, String positionName, String dir, boolean readOnly) {
         this.mDAO=mDAO;
         this.positionName=positionName;
         this.dir = dir+File.separator+positionName+File.separator+"segmented_objects"+File.separator;
         new File(this.dir).mkdirs();
+        this.readOnly=readOnly;
     }
     
     @Override
@@ -98,7 +100,7 @@ public class DBMapObjectDAO implements ObjectDAO {
             synchronized(dbS) {
                 if (!dbS.containsKey(structureIdx)) {
                     logger.debug("creating db: {}", getDBFile(structureIdx));
-                    res = createFileDB(getDBFile(structureIdx));
+                    res = createFileDB(getDBFile(structureIdx), readOnly);
                     dbS.put(structureIdx, res);
                 } else {
                     res = dbS.get(structureIdx);
@@ -263,6 +265,7 @@ public class DBMapObjectDAO implements ObjectDAO {
 
     @Override
     public void deleteChildren(StructureObject parent, int structureIdx) {
+        if (readOnly) return;
         List<StructureObject> children = DBMapObjectDAO.this.getChildren(parent, structureIdx);
         if (!children.isEmpty()) {
             Pair<String, Integer> key = new Pair(parent.getTrackHeadId(), structureIdx);
@@ -290,11 +293,13 @@ public class DBMapObjectDAO implements ObjectDAO {
     
     @Override
     public void deleteChildren(Collection<StructureObject> parents, int structureIdx) {
+        if (readOnly) return;
         Map<StructureObject, List<StructureObject>> byTh = StructureObjectUtils.splitByTrackHead(parents);
         for (StructureObject pth : byTh.keySet()) deleteChildren(byTh.get(pth), structureIdx, pth.getId(), false);
         getDB(structureIdx).commit();
     }
     protected void deleteChildren(Collection<StructureObject> parents, int structureIdx, String parentThreackHeadId, boolean commit) {
+        if (readOnly) return;
         Pair<String, Integer> key = new Pair(parentThreackHeadId, structureIdx);
         Set<String> parentIds = toIds(parents);
         Map<String, StructureObject> cacheMap = getChildren(key);
@@ -319,6 +324,7 @@ public class DBMapObjectDAO implements ObjectDAO {
 
     @Override
     public synchronized void deleteObjectsByStructureIdx(int... structures) {
+        if (readOnly) return;
         for (int structureIdx : structures) {
             if (this.dbS.containsKey(structureIdx)) {
                 dbS.remove(structureIdx).close();
@@ -341,12 +347,13 @@ public class DBMapObjectDAO implements ObjectDAO {
     public synchronized void deleteAllObjects() {
         closeAllObjectFiles(false);
         closeAllMeasurementFiles(false);
+        if (readOnly) return;
         File f = new File(dir);
         if (f.exists() && f.isDirectory()) for (File subF : f.listFiles())  subF.delete();
     }
     private synchronized void closeAllObjectFiles(boolean commit) {
         for (DB db : dbS.values()) {
-            if (commit&&!db.isClosed()) db.commit();
+            if (!readOnly && commit&&!db.isClosed()) db.commit();
             db.close();
         }
         dbS.clear();
@@ -359,10 +366,12 @@ public class DBMapObjectDAO implements ObjectDAO {
         closeAllMeasurementFiles(commit);
     }
     public synchronized void compactDBs(boolean onlyOpened) {
+        if (readOnly) return;
         compactObjectDBs(onlyOpened);
         compactMeasurementDBs(onlyOpened);
     }
     public synchronized void compactObjectDBs(boolean onlyOpened) {
+        if (readOnly) return;
         if (onlyOpened) {
             for (DB db : this.dbS.values()) {
                 db.commit();
@@ -378,6 +387,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         }
     }
     public synchronized void compactMeasurementDBs(boolean onlyOpened) {
+        if (readOnly) return;
         if (onlyOpened) {
             for (Pair<DB, ?> p : this.measurementdbS.values()) {
                 p.key.commit();
@@ -394,6 +404,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     }
     @Override
     public void delete(StructureObject o, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
+        if (readOnly) return;
         Pair<String, Integer> key = new Pair(o.getParentTrackHeadId(), o.getStructureIdx());
         HTreeMap<String, String> dbMap = getDBMap(key);
         dbMap.remove(o.getId());
@@ -414,6 +425,7 @@ public class DBMapObjectDAO implements ObjectDAO {
 
     @Override
     public void delete(Collection<StructureObject> list, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
+        if (readOnly) return;
         Map<Pair<String, Integer>, List<StructureObject>> splitByPTH = splitByParentTrackHeadIdAndStructureIdx(list);
         Set<Integer> allModifiedStructureIdx = new HashSet<>(Pair.unpairValues(splitByPTH.keySet()));
         for (Pair<String, Integer> key : splitByPTH.keySet()) {
@@ -458,6 +470,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     
     @Override
     public void store(StructureObject object) {
+        if (readOnly) return;
         Pair<String, Integer> key = new Pair(object.getParentTrackHeadId(), object.getStructureIdx());
         if (object.hasMeasurementModifications()) upsertMeasurement(object);
         object.updateObjectContainer();
@@ -467,6 +480,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         getDB(object.getStructureIdx()).commit();
     }
     protected void store(Collection<StructureObject> objects, boolean commit) {
+        if (readOnly) return;
         //logger.debug("storing: {} commit: {}", objects.size(), commit);
         List<StructureObject> upserMeas = new ArrayList<>(objects.size());
         for (StructureObject o : objects) o.dao=this;
@@ -555,7 +569,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (res==null) {
             synchronized(measurementdbS) {
                 if (!measurementdbS.containsKey(structureIdx)) {
-                    DB db = DBMapUtils.createFileDB(getMeasurementDBFile(structureIdx));
+                    DB db = DBMapUtils.createFileDB(getMeasurementDBFile(structureIdx), readOnly);
                     HTreeMap<String, String> dbMap = DBMapUtils.createHTreeMap(db, "measurements");
                     res = new Pair(db, dbMap);
                     measurementdbS.put(structureIdx, res);
@@ -569,6 +583,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     
     @Override
     public void upsertMeasurements(Collection<StructureObject> objects) {
+        if (readOnly) return;
         Map<Integer, List<StructureObject>> bySIdx = StructureObjectUtils.splitByStructureIdx(objects);
         for (int i : bySIdx.keySet()) {
             Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(i);
@@ -583,6 +598,7 @@ public class DBMapObjectDAO implements ObjectDAO {
 
     @Override
     public void upsertMeasurement(StructureObject o) {
+        if (readOnly) return;
         o.getMeasurements().updateObjectProperties(o);
         Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(o.getStructureIdx());
         mDB.value.put(o.getId(), JSONUtils.serialize(o.getMeasurements()));
@@ -631,12 +647,13 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public void deleteAllMeasurements() {
         closeAllMeasurementFiles(false);
+        if (readOnly) return;
         for (int s = 0; s<getExperiment().getStructureCount(); ++s) DBMapUtils.deleteDBFile(getMeasurementDBFile(s));
     }
     
     private synchronized void closeAllMeasurementFiles(boolean commit) {
         for (Pair<DB, HTreeMap<String, String>> p : this.measurementdbS.values()) {
-            if (commit&&!p.key.isClosed()) p.key.commit();
+            if (!readOnly&&commit&&!p.key.isClosed()) p.key.commit();
             p.key.close();
         }
         measurementdbS.clear();

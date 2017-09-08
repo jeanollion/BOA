@@ -32,10 +32,12 @@ import org.mapdb.Serializer;
  * @author jollion
  */
 public class DBMapUtils {
-    public static DB createFileDB(String path) {
+    public static DB createFileDB(String path, boolean readOnly) {
         //logger.debug("creating file db: {}, is dir: {}, exists: {}", path, new File(path).isDirectory(),new File(path).exists());
         //return DBMaker.newFileDB(new File(path)).cacheDisable().closeOnJvmShutdown().make(); // v1        //
-        return DBMaker.fileDB(path).transactionEnable().make(); // v3
+        if (readOnly) return DBMaker.fileDB(path).transactionEnable().fileLockDisable().readOnly().closeOnJvmShutdown().make();
+        return DBMaker.fileDB(path).transactionEnable().closeOnJvmShutdown().make(); // v3   https://jankotek.gitbooks.io/mapdb/performance/
+        
     }
     public static HTreeMap<String, String> createHTreeMap(DB db, String key) {
         //return db.createHashMap(key).keySerializer(Serializer.STRING).valueSerializer(Serializer.STRING).makeOrGet();

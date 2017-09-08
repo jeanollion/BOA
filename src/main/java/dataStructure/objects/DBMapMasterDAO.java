@@ -56,7 +56,7 @@ public class DBMapMasterDAO implements MasterDAO {
     java.nio.channels.FileLock xpFileLock;
     RandomAccessFile cfg;
     DBMapSelectionDAO selectionDAO;
-    
+    boolean readOnly = false;
     public DBMapMasterDAO(String dir, String dbName) {
         if (dir==null) throw new IllegalArgumentException("Invalid directory: "+ dir);
         if (dbName==null) throw new IllegalArgumentException("Invalid DbName: "+ dbName);
@@ -68,6 +68,7 @@ public class DBMapMasterDAO implements MasterDAO {
     
     @Override
     public void eraseAll() {
+        if (readOnly) return;
         String outputPath = getExperiment()!=null ? getExperiment().getOutputDirectory() : null;
         String outputImagePath = getExperiment()!=null ? getExperiment().getOutputImageDirectory() : null;
         clearCache();
@@ -88,7 +89,7 @@ public class DBMapMasterDAO implements MasterDAO {
         if (res==null) {
             String op = getOutputPath();
             if (op==null) return null;
-            res = new DBMapObjectDAO(this, fieldName, op);
+            res = new DBMapObjectDAO(this, fieldName, op, readOnly);
             DAOs.put(fieldName, res);
         }
         return res;
@@ -105,6 +106,7 @@ public class DBMapMasterDAO implements MasterDAO {
 
     @Override
     public void deleteAllObjects() {
+        if (readOnly) return;
         if (getExperiment()==null) return;
         for (String s : getExperiment().getPositionsAsString()) {
             getDao(s).deleteAllObjects(); // also deletes measurements
@@ -113,6 +115,7 @@ public class DBMapMasterDAO implements MasterDAO {
     
     @Override
     public void deleteExperiment() {
+        if (readOnly) return;
         unlockXP();
         File cfg = new File(getConfigFile(dbName, false));
         if (cfg.isFile()) cfg.delete();
@@ -195,9 +198,10 @@ public class DBMapMasterDAO implements MasterDAO {
             if (!cfg.exists()) return null;
             this.lockXP();
             if (xpFileLock==null) {
-                logger.warn("Config file could not be locked. Experiment already opened ? ");
-                GUI.log("Config file could not be locked. Experiment already opened ? ");
-                return null;
+                logger.warn(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
+                GUI.log(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
+                readOnly = true;
+                //return null;
             }
             xp = getXPFromFile();
             
@@ -248,7 +252,7 @@ public class DBMapMasterDAO implements MasterDAO {
     
     @Override
     public void updateExperiment() {
-        if (xp==null) return;
+        if (xp==null || readOnly) return;
         //updateXPDB();
         updateXPFile();
     }
@@ -281,7 +285,7 @@ public class DBMapMasterDAO implements MasterDAO {
         if (this.selectionDAO==null) {
             String op = getOutputPath();
             if (op!=null) {
-                selectionDAO = new DBMapSelectionDAO(this, op);
+                selectionDAO = new DBMapSelectionDAO(this, op, readOnly);
             }
         }
         return selectionDAO;
