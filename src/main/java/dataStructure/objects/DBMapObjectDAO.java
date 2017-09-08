@@ -100,8 +100,13 @@ public class DBMapObjectDAO implements ObjectDAO {
             synchronized(dbS) {
                 if (!dbS.containsKey(structureIdx)) {
                     logger.debug("creating db: {}", getDBFile(structureIdx));
-                    res = createFileDB(getDBFile(structureIdx), readOnly);
-                    dbS.put(structureIdx, res);
+                    try {
+                        res = createFileDB(getDBFile(structureIdx), readOnly);
+                        dbS.put(structureIdx, res);
+                    } catch (org.mapdb.DBException ex) {
+                        logger.error("DB already opened. Try to close other processes", ex);
+                        return null;
+                    }
                 } else {
                     res = dbS.get(structureIdx);
                 }
