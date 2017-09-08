@@ -17,11 +17,16 @@
  */
 package boa.gui;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import ij.plugin.PlugIn;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import loci.common.DebugTools;
+import loci.formats.FormatHandler;
+import org.apache.log4j.LogManager;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -30,11 +35,10 @@ import loci.common.DebugTools;
 public class IJ1_plugin implements PlugIn {
     
     public void run(String string) {
-        
+        /*
         try {
             // Set cross-platform Java L&F (also called "Metal")
-            UIManager.setLookAndFeel(
-                UIManager.getSystemLookAndFeelClassName());
+            UIManager.setLookAndFeel( UIManager.getSystemLookAndFeelClassName());
         } 
         catch (UnsupportedLookAndFeelException e) {
            // handle exception
@@ -48,20 +52,16 @@ public class IJ1_plugin implements PlugIn {
         catch (IllegalAccessException e) {
            // handle exception
         }
-        System.setProperty("scijava.log.level", "warn");
-        
-        // TODO find other plugins...
-        
+        */
+        //System.setProperty("scijava.log.level", "error");
         //DebugTools.enableIJLogging(false);
+        //DebugTools.enableLogging("ERROR");
+        ((Logger)LoggerFactory.getLogger(FormatHandler.class)).setLevel(Level.OFF);
+        
+        // TODO find other IJ1&2 plugins & ops...
+        
         new GUI().setVisible(true);
-        /*
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                new GUI().setVisible(true);
-            }
-        });
-        SwingUtilities.invokeLater(t);
-                */
+        
     }
     
 }
