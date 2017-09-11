@@ -354,7 +354,11 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         if (preProcess) {
             publish("Pre-Processing: DB: "+dbName+", Position: "+position);
             logger.info("Pre-Processing: DB: {}, Position: {}", dbName, position);
-            Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, preProcess);
+            try {
+                Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, preProcess, this);
+            } catch (Exception e) {
+                errors.add(new Pair(position, e));
+            }
             db.getExperiment().getPosition(position).flushImages(true, false);
             incrementProgress();
         }
@@ -477,7 +481,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         this.publish("Job done. Errors: "+this.errors.size());
         for (Pair<String, Exception> e : errors) {
             publish("Error @"+e.key);
-            publish(e.value.getMessage());
+            publish(e.value.toString());
             for (StackTraceElement s : e.value.getStackTrace()) publish(s.toString());
         }
         this.printErrors();

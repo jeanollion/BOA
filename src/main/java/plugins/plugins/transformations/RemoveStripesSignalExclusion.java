@@ -88,7 +88,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
                             Image signalExclusion=null;
                             if (chExcl>=0) signalExclusion = inputImages.getImage(chExcl, idx);
                             meanX[idx] = computeMeanX(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, addGlobalMean);
-                            //logger.debug("tp: {} {}", idx, Utils.getMemoryUsage());
+                            if (idx%100==0) logger.debug("tp: {} {}", idx, Utils.getMemoryUsage());
                         }
                     }
                 }

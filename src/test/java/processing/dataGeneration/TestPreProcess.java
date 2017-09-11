@@ -55,16 +55,17 @@ public class TestPreProcess {
         ImageStabilizerXY.debug=true;
         //String dbName= "boa_fluo160428";
         //String dbName= "fluo151127";
-        String dbName = "boa_fluo170117_GammeMutTrackStab";
+        //String dbName = "boa_fluo170117_GammeMutTrackStab";
+        String dbName = "fluo160501";
         // 12 -> flip = true
         boolean flip = false;
-        int field = 9;
+        int field = 17;
         //testTransformation(dbName, 0, 0, 0);
         //testPreProcessing(dbName, field, 0, -1, 0, 150);
         //testCrop(dbName, field, 0, flip);
         //displayPreProcessed(dbName, field, 2, 0, 680);
         //testStabilizer(dbName, field, 0, 19, 0, flip);
-        testStabFromXP(dbName, field, 1, 0, 40);
+        testStabFromXP(dbName, field, 1, 500, 1000);
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) throws Exception {

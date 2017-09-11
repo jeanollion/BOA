@@ -511,7 +511,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             logger.warn("no experiment found in DB: {}", db);
             unsetXP();
             return;
-        } else logger.info("Experiment found in db: {} ", db.getDBName());
+        } else {
+            logger.info("Experiment found in db: {} ", db.getDBName());
+            this.setMessage("Experiment opened");
+        }
         updateConfigurationTree();
         populateActionStructureList();
         populateActionMicroscopyFieldList();

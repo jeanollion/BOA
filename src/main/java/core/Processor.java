@@ -94,13 +94,17 @@ public class Processor {
     public static void preProcessImages(MasterDAO db, boolean computeConfigurationData)  throws Exception {
         Experiment xp = db.getExperiment();
         for (int i = 0; i<xp.getPositionCount(); ++i) {
-            preProcessImages(xp.getPosition(i), db.getDao(xp.getPosition(i).getName()), false, computeConfigurationData);
+            preProcessImages(xp.getPosition(i), db.getDao(xp.getPosition(i).getName()), false, computeConfigurationData, null);
         }
     }
     
-    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData)  throws Exception {
+    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData, ProgressCallback pcb)  throws Exception {
         if (!dao.getPositionName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
         InputImagesImpl images = field.getInputImages();
+        if (images==null || images.getImage(0, images.getDefaultTimePoint())==null) {
+            if (pcb!=null) pcb.log("Error: no input images found for position: "+field.getName());
+            throw new RuntimeException("No images found for position "+field.getName());
+        }
         images.deleteFromDAO(); // eraseAll images if existing in imageDAO
         for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(field.getName(), s);
         setTransformations(field, computeConfigurationData);

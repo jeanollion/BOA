@@ -152,7 +152,8 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     @Override public String toString() {
         if (trackHead==null) return "tracking should be re-run";
         getTrack();
-        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getFrame()+" length: "+(track!=null?track.size():"........."); 
+        int tl = track!=null ? track.get(track.size()-1).getFrame()-track.get(0).getFrame()+1:-1;
+        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getFrame()+" length: "+(track!=null?track.size():".........")+(track!=null && tl!=track.size() ? " (gaps: "+(tl-track.size())+")" : ""); 
     }
     
     public TrackNode getChildAt(int childIndex) {

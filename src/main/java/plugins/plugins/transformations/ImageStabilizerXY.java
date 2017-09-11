@@ -78,7 +78,7 @@ public class ImageStabilizerXY implements Transformation {
     BoundedNumberParameter alpha = new BoundedNumberParameter("Template Update Coefficient", 2, 1, 0, 1);
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 1000, 1, null);
     BoundedNumberParameter segmentLength = new BoundedNumberParameter("Segment length", 0, 20, 2, null);
-    NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 12, 5e-8, 0, null);
+    NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 15, 5e-8, 0, null);
     BooleanParameter allowInterpolation = new BooleanParameter("Allow non-integer translation (interpolation)", false);
     PluginParameter<Cropper> cropper = new PluginParameter<>("Cropper", Cropper.class, true);
     SimpleListParameter<GroupParameter> additionalTranslation = new SimpleListParameter<GroupParameter>("Additional Translation", new GroupParameter("Channel Translation", new ChannelImageParameter("Channel"), new NumberParameter("dX", 3, 0), new NumberParameter("dY", 3, 0), new NumberParameter("dZ", 3, 0)));
@@ -121,9 +121,8 @@ public class ImageStabilizerXY implements Transformation {
         final Double[][] translationTXYArray = new Double[inputImages.getFrameNumber()][];
         Cropper crop = cropper.instanciatePlugin();
         BoundingBox cropBB= crop==null? null : crop.getCropBoundginBox(channelIdx, inputImages);
-        
+        logger.debug("crop bounding box: {}", cropBB);
         ccdSegments(channelIdx, inputImages, segmentLength.getValue().intValue(), tRef, translationTXYArray, maxIterations, tolerance, cropBB);
-        
         translationTXY = new ArrayList<>(translationTXYArray.length);
         for (Double[] d : translationTXYArray) translationTXY.add(new ArrayList<>(Arrays.asList(d)));
         if (cropBB!=null) { // ensure BB never gets out of the image + store BB parameters

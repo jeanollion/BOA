@@ -199,6 +199,7 @@ public class InputImagesImpl implements InputImages {
         if (this.defaultTimePoint>tEnd-tStart) defaultTimePoint = tEnd-tStart;
         logger.debug("default time Point: {}", defaultTimePoint);
         this.imageCT=newImageCT;
+        this.frameNumber = tEnd-tStart+1;
     }
 
 }

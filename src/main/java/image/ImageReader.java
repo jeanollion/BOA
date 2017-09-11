@@ -149,6 +149,7 @@ public class ImageReader {
     }
     
     public Image openImage(ImageIOCoordinates coords) {
+        if (reader==null) return null;
         Image res = null;
         /*if (reader==null && extension==ImageFormat.TIF) { // try IJ's method
             res = ImageReader.openIJTif(fullPath);

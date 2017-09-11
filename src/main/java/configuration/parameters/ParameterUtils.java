@@ -533,13 +533,7 @@ public class ParameterUtils {
                 logger.debug("current image has: {} frames, {} channels, {} slices", imCT[0].length, imCT.length, imCT[0][0].getSizeZ());
                 MemoryImageContainer cont = new MemoryImageContainer(imCT);
                 logger.debug("container: {} frames, {} channels", cont.getFrameNumber(), cont.getChannelNumber());
-                InputImage[][] inputCT = new InputImage[cont.getChannelNumber()][cont.getFrameNumber()];
-                for (int t = 0; t<cont.getFrameNumber(); ++t) {
-                    for (int c = 0; c<cont.getChannelNumber(); ++c) {
-                        inputCT[c][t] = new InputImage(c, t, t, position.getName(), cont, null);
-                    }
-                }
-                InputImagesImpl images = new InputImagesImpl(inputCT, 0);
+                InputImagesImpl images = cont.getInputImages(position.getName());
                 logger.debug("images: {} frames, {} channels", images.getFrameNumber(), images.getChannelNumber());
                 
                 PreProcessingChain ppc = position.getPreProcessingChain();
