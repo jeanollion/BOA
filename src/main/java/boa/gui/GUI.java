@@ -2719,24 +2719,27 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 log("dumping: "+xp);
                 MasterDAO mDAO = new Task(xp).getDB();
                 logger.debug("dao ok");
-                ZipWriter w = new ZipWriter(mDAO.getDir()+File.separator+mDAO.getDBName()+"_dump.zip");
-                logger.debug("zip ok");
-                ImportExportJSON.exportPositions(w, mDAO, false, ProgressCallback.get(instance));
-                logger.debug("pos ok");
-                ImportExportJSON.exportConfig(w, mDAO);
-                logger.debug("config ok");
-                ImportExportJSON.exportSelections(w, mDAO);
-                logger.debug("sel ok");
-                w.close();
-                logger.debug("close ok");
-                MasterDAO.deleteObjectsAndSelectionAndXP(mDAO); // eraseAll config & objects
+                String file = mDAO.getDir()+File.separator+mDAO.getDBName()+"_dump.zip";
+                boolean error = false;
+                try {
+                    ZipWriter w = new ZipWriter(file);
+                    ImportExportJSON.exportPositions(w, mDAO, false, ProgressCallback.get(instance));
+                    ImportExportJSON.exportConfig(w, mDAO);
+                    ImportExportJSON.exportSelections(w, mDAO);
+                    w.close();
+                } catch (Exception e) {
+                    logger.error("Error while dumping");
+                    error = true;
+                }
+                if (error) new File(file).delete();
+                if (!error) MasterDAO.deleteObjectsAndSelectionAndXP(mDAO); // eraseAll config & objects
                 logger.debug("delete ok");
                 if (i==xps.size()-1) {
                     GUI.getInstance().setRunning(false);
                     GUI.getInstance().populateExperimentList();
                     log("dumping done!");
                 }
-                return xp+" dumped!";
+                return error ? xp+" NOT DUMPED : error": xp+" dumped!";
             };
         };
         DefaultWorker.execute(t, xps.size());
