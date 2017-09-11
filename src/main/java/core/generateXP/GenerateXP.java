@@ -382,7 +382,7 @@ public class GenerateXP {
         Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
         
-        Processor.importFiles(xp, true, inputDir);
+        Processor.importFiles(xp, true, null, inputDir);
         setFlip(xp, flipArray);
         deletePositions(xp, deletePositions);
         if (performProcessing) {

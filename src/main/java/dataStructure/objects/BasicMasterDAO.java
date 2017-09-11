@@ -96,5 +96,10 @@ public class BasicMasterDAO implements MasterDAO {
     public void deleteExperiment() {
         xp=null;
     }
+
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
     
 }

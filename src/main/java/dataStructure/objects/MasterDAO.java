@@ -30,7 +30,7 @@ public interface MasterDAO {
     public void clearCache();
     public void clearCache(String position);
     public ObjectDAO getDao(String fieldName);
-    
+    public boolean isReadOnly();
     public String getDBName();
     public String getDir();
     public void deleteAllObjects();

@@ -90,7 +90,7 @@ public class ProcessingTest {
         Experiment xp = new Experiment("testXP", new Structure("structure"));
         xp.getChannelImages().insert(new ChannelImage("channel1"), new ChannelImage("channel2"));
         
-        Processor.importFiles(xp, true, folder.getAbsolutePath());
+        Processor.importFiles(xp, true, null, folder.getAbsolutePath());
         assertEquals("number of fields detected", 6-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)
         assertTrue("field non null", xp.getPosition(title)!=null);
         assertTrue("images non null", xp.getPosition(title).getInputImages()!=null);
@@ -126,7 +126,7 @@ public class ProcessingTest {
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         xp.getChannelImages().insert(new ChannelImage("channel1", "_c1"), new ChannelImage("channel2", "_c2"));
         
-        Processor.importFiles(xp, true, folder.getAbsolutePath());
+        Processor.importFiles(xp, true, null, folder.getAbsolutePath());
         assertEquals("number of fields detected", 6-1-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
         Utils.assertImage("test import field keyword", images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
     }
@@ -148,7 +148,7 @@ public class ProcessingTest {
         images[0][0].setPixel(0, 0, 0, 1);
         File folder = testFolder.newFolder("TestImagesPreProcessing");
         ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
-        Processor.importFiles(xp, true, folder.getAbsolutePath());
+        Processor.importFiles(xp, true, null, folder.getAbsolutePath());
         MicroscopyField f = xp.getPosition(0);
         assertEquals("number of fields detected", 1, xp.getPositionCount());
         

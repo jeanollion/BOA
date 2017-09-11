@@ -205,7 +205,7 @@ public class TestTrackCorrectionNew {
         ImageWriter.writeToFile(input.getAbsolutePath(), "field1", ImageFormat.OMETIF, testImage);
         Experiment xp = generateXP(output.getAbsolutePath());
         db.setExperiment(xp);
-        Processor.importFiles(xp, true, input.getAbsolutePath());
+        Processor.importFiles(xp, true, null, input.getAbsolutePath());
         try {
             Processor.preProcessImages(db, true);
         } catch (Exception ex) {

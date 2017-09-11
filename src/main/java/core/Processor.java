@@ -70,7 +70,7 @@ public class Processor {
     /*public static int getRemainingMemory() {
         
     }*/
-    public static void importFiles(Experiment xp, boolean relink, String... selectedFiles) {
+    public static void importFiles(Experiment xp, boolean relink, ProgressCallback pcb, String... selectedFiles) {
         List<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
         int count=0, relinkCount=0;
         for (MultipleImageContainer c : images) {
@@ -86,6 +86,7 @@ public class Processor {
             }
         }
         logger.info("#{} fields found, #{} created, #{} relinked. From files: {}", images.size(), count, relinkCount, selectedFiles);
+        if (pcb!=null) pcb.log("#"+images.size()+" fields found, #"+count+" created, #"+relinkCount+" relinked. From files: "+Utils.toStringArray(selectedFiles));
     }
     
     // preProcessing-related methods

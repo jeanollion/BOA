@@ -140,7 +140,7 @@ public class GenerateMutationDynamicsXP {
             MasterDAO.deleteObjectsAndSelectionAndXP(mDAO);
             Experiment xp = generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, cropXYdXdY);
             mDAO.setExperiment(xp);
-            Processor.importFiles(xp, true, inputDir);
+            Processor.importFiles(xp, true, null, inputDir);
             for (MicroscopyField f : xp.getPositions()) f.setDefaultFrame(0);
             GenerateXP.setFlip(xp, flipArray);
             if (performProcessing) {

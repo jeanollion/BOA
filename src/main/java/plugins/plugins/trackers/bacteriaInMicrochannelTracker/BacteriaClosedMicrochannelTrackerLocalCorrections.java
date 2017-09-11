@@ -709,7 +709,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         int idx = 0;
         for (Object3D o : getObjects(timePoint)) {
             if (!objectAttributeMap.containsKey(o)) {
-                if (idx!=0)  logger.warn("inconsistent attributes for timePoint: {} will be created de novo", timePoint); 
+                if (idx!=0 && debug)  logger.warn("inconsistent attributes for timePoint: {} will be created de novo", timePoint); 
                 createAttributes(timePoint);
                 return;
             } // has not been created ? 

@@ -32,6 +32,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,6 +60,27 @@ import static utils.ArrayFileWriter.separator;
  */
 public class FileIO {
     public static final Logger logger = LoggerFactory.getLogger(FileIO.class);
+    
+    // random access file
+    public static void write(RandomAccessFile raf, String write, boolean append) throws IOException  {
+        //clearRAF(raf);
+        if (append) {
+            raf.seek(raf.length());
+            raf.writeBytes("\n");
+            raf.writeBytes(write);
+        } else {
+            raf.setLength(0);
+            raf.writeBytes(write);
+            raf.setLength(write.length());
+        }
+    }
+    public static void clearRAF(RandomAccessFile raf) throws IOException {
+        long l = raf.length();
+        raf.setLength(0);
+        raf.setLength(l);
+    }
+    
+    
     public static <T> void writeToFile(String outputFile, Collection<T> objects, Function<T, String> converter) {
         try {
             java.io.FileWriter fstream;
@@ -71,8 +93,11 @@ public class FileIO {
             out = new BufferedWriter(fstream);
             //out.flush();
             Iterator<T> it = objects.iterator();
-            out.write(converter.apply(it.next()));
-
+            T next = it.next();
+            String nextS = next==null? null : converter.apply(next);
+            if (nextS!=null) out.write(nextS);
+            else logger.error("object: {} could not be written to file: {}", next, outputFile);
+            
             while(it.hasNext()) {
                 out.newLine();
                 out.write(converter.apply(it.next()));

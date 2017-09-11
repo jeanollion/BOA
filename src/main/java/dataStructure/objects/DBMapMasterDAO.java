@@ -65,6 +65,11 @@ public class DBMapMasterDAO implements MasterDAO {
         new File(configDir).mkdirs();
         this.dbName = dbName;
     }
+
+    @Override
+    public boolean isReadOnly() {
+        return readOnly;
+    }
     
     @Override
     public void eraseAll() {
@@ -121,9 +126,10 @@ public class DBMapMasterDAO implements MasterDAO {
         if (cfg.isFile()) cfg.delete();
     }
 
-    private void lockXP() {
+    private synchronized void lockXP() {
         if (xpFileLock!=null) return;
         try {
+            logger.debug("locking file: {} (xp null? {})", getConfigFile(dbName, false), xp==null);
             cfg = new RandomAccessFile(new File(getConfigFile(dbName, false)), "rw");
             xpFileLock = cfg.getChannel().tryLock();
             //logger.debug("lock at creation: {}, for file: {}", xpFileLock, getConfigFile(dbName, false));
@@ -135,9 +141,10 @@ public class DBMapMasterDAO implements MasterDAO {
             logger.debug("File could not be locked", ex);
         }
     }
-    private void unlockXP() {
+    private synchronized void unlockXP() {
         if (this.xpFileLock!=null) {
             try {
+                logger.debug("realising lock: {}", xpFileLock);
                 xpFileLock.release();
                 xpFileLock = null;
             } catch (IOException ex) {
@@ -156,6 +163,7 @@ public class DBMapMasterDAO implements MasterDAO {
     
     @Override
     public void clearCache() {
+        logger.debug("clearing cache...");
         clearCache(true, true , true);
     }
     @Override 
@@ -164,7 +172,7 @@ public class DBMapMasterDAO implements MasterDAO {
         if (dao!=null) dao.clearCache();
         getExperiment().getPosition(position).flushImages(true, true);
     }
-    public void clearCache(boolean xpDAO, boolean objectDAO, boolean selectionDAO) {
+    public synchronized void clearCache(boolean xpDAO, boolean objectDAO, boolean selectionDAO) {
         if (objectDAO) {
             for (DBMapObjectDAO dao : DAOs.values()) {
                 getExperiment().getPosition(dao.getPositionName()).flushImages(true, true); // input images
@@ -194,21 +202,24 @@ public class DBMapMasterDAO implements MasterDAO {
     @Override
     public Experiment getExperiment() {
         if (this.xp==null) {
-            File cfg = new File(this.getConfigFile(dbName, false));
-            if (!cfg.exists()) return null;
-            this.lockXP();
-            if (xpFileLock==null) {
-                logger.warn(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
-                GUI.log(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
-                readOnly = true;
-                //return null;
+            synchronized(this) {
+                if (xp==null) {
+                    if (!new File(this.getConfigFile(dbName, false)).exists()) return null;
+                    this.lockXP();
+                    if (xpFileLock==null) {
+                        logger.warn(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
+                        GUI.log(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
+                        readOnly = true;
+                        //return null;
+                    }
+                    xp = getXPFromFile();
+
+                    // check output dir & set default if necessary
+                    boolean modified = checkOutputDirectories(true);
+                    modified = checkOutputDirectories(false) || modified;
+                    if (modified) updateExperiment();
+                } else return xp;
             }
-            xp = getXPFromFile();
-            
-            // check output dir & set default if necessary
-            boolean modified = checkOutputDirectories(true);
-            modified = checkOutputDirectories(false) || modified;
-            if (modified) updateExperiment();
         }
         return xp;
     }
@@ -217,6 +228,7 @@ public class DBMapMasterDAO implements MasterDAO {
         if (cfg==null) return null;
         String xpString;
         try {
+            cfg.seek(0);
             xpString = cfg.readLine();
         } catch (IOException ex) {
             logger.debug("couldnot read config file: ", ex);
@@ -258,7 +270,15 @@ public class DBMapMasterDAO implements MasterDAO {
     }
     private void updateXPFile() {
         logger.debug("updating xp file..");
-        FileIO.writeToFile(getConfigFile(dbName, false), Arrays.asList(new Experiment[]{xp}), o->o.toJSONEntry().toJSONString());
+        if (xp!=null && cfg!=null) {
+            try {
+                FileIO.write(cfg, xp.toJSONEntry().toJSONString(), false);
+            } catch (IOException ex) {
+                logger.error("Could not update experiment", ex);
+            }
+        }
+        
+        //FileIO.writeToFile(getConfigFile(dbName, false), Arrays.asList(new Experiment[]{xp}), o->o.toJSONEntry().toJSONString());
     }
 
     @Override

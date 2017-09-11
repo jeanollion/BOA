@@ -123,7 +123,7 @@ public class TestDataStructure {
         images[0][0].setPixel(12, 12, 0, 2);
         File folder = testFolder.newFolder("TestInputImagesStructureObject");
         ImageWriter.writeToFile(folder.getAbsolutePath(), fieldName, ImageFormat.OMETIF, images);
-        Processor.importFiles(xp, true, folder.getAbsolutePath());
+        Processor.importFiles(xp, true, null, folder.getAbsolutePath());
         File outputFolder = testFolder.newFolder("TestOutputImagesStructureObject");
         xp.setOutputDirectory(outputFolder.getAbsolutePath());
         //save to db
