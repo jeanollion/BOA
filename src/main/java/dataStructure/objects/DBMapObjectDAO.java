@@ -99,7 +99,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (res==null) {
             synchronized(dbS) {
                 if (!dbS.containsKey(structureIdx)) {
-                    logger.debug("creating db: {}", getDBFile(structureIdx));
+                    logger.debug("creating db: {} (From DAO: {})", getDBFile(structureIdx), this.hashCode());
                     try {
                         res = createFileDB(getDBFile(structureIdx), readOnly);
                         dbS.put(structureIdx, res);
@@ -123,7 +123,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                 else {
                     DB db = getDB(key.value);
                     res = DBMapUtils.createHTreeMap(db, key.key!=null? key.key : "root");
-                    dbMaps.put(key, res);
+                    if (res!=null) dbMaps.put(key, res);
                 }
             }
         }

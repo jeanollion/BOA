@@ -25,8 +25,10 @@ import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
+import ij.ImageJ;
 import image.Image;
 import image.ImageMask;
+import plugins.PluginFactory;
 import plugins.plugins.segmenters.BacteriaFluo;
 
 /**
@@ -35,10 +37,12 @@ import plugins.plugins.segmenters.BacteriaFluo;
  */
 public class TestProcessBacteria {
     public static void main(String[] args) {
-        int time =0;
-        int microChannel =0;
-        int field = 0;
-        String dbName = "boa_fluo160501";
+        PluginFactory.findPlugins("plugins.plugins");
+        new ImageJ();
+        int time =652;
+        int microChannel =1;
+        int field = 17;
+        String dbName = "fluo160501";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     

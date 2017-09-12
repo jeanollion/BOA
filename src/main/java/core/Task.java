@@ -318,6 +318,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             publish("Run task: "+this.toString());
             initDB();
             db.clearCache();
+            db.getExperiment(); // lock directly after
             ImageWindowManagerFactory.getImageManager().flush();
             publishMemoryUsage("Before processing");
             if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
@@ -346,6 +347,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             
             
             db.clearCache();
+            db.getExperiment();
             db=null;
         }
     private void run(String position, boolean deleteAllField) throws Exception {

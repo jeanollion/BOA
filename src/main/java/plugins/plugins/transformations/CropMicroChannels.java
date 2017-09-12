@@ -50,7 +50,7 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
     protected NumberParameter xStop = new BoundedNumberParameter("X stop (0 for image width)", 0, 0, 0, null);
     protected NumberParameter yStart = new BoundedNumberParameter("Y start", 0, 0, 0, null);
     protected NumberParameter yStop = new BoundedNumberParameter("Y stop (0 for image heigth)", 0, 0, 0, null);
-    protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 10, 0, null);
+    protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 0, 0, null);
     protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 330, 0, null);
     protected NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null);
     NumberParameter number = new BoundedNumberParameter("Number of Frames", 0, 20, 1, null);

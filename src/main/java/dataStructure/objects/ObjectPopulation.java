@@ -277,7 +277,7 @@ public class ObjectPopulation {
     }
     public void redrawLabelMap(boolean fillImage) {
         if (hasImage()) {
-            int maxLabel = Collections.max(getObjects(), (o1, o2) -> Integer.compare(o1.getLabel(), o2.getLabel())).getLabel();
+            int maxLabel = getObjects().isEmpty()? 0 : Collections.max(getObjects(), (o1, o2) -> Integer.compare(o1.getLabel(), o2.getLabel())).getLabel();
             if (maxLabel > ImageInteger.getMaxValue(labelImage, false)) {
                 labelImage = ImageInteger.createEmptyLabelImage(labelImage.getName(), maxLabel, properties);
             } else {

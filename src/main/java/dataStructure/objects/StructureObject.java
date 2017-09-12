@@ -718,7 +718,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             object=o;
             object.label=idx+1;
             flushImages();
-            
         }
     }
     public ImageProperties getMaskProperties() {return getObject().getImageProperties();}
@@ -925,7 +924,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public void setAttributeArray(String key, double[] value) {
         if (this.attributes==null) attributes = new HashMap<>();
-        attributes.put(key, Arrays.asList(value));
+        attributes.put(key, Utils.toList(value));
     }
     public void setAttribute(String key, boolean value) {
         if (this.attributes==null) attributes = new HashMap<>();

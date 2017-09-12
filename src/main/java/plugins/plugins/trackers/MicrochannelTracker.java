@@ -135,7 +135,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             plugins.SimpleThresholder t = ((OverridableThresholdWithSimpleThresholder)segmenters[0]).getThresholder();
             double globalThld = t.runThresholder(globalImage);
             for (int i = 0; i<parentTrack.size(); ++i) ((OverridableThresholdWithSimpleThresholder)segmenters[i]).setThresholdValue(globalThld);
-            logger.debug("MicrochannelTracker on {}: global Treshold = {}", parentTrack.get(0).getTrackHead(), globalThld);
+            logger.debug("MicrochannelTracker on {}: global Treshold = {}", parentTrack.get(0), globalThld);
         }
         ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
             boundingBoxes[idx] = segmenters[idx].segment(inputImages[idx]);
@@ -149,17 +149,17 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
         // tracking
-        //if (debug) logger.debug("mc2: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
+        if (debug) logger.debug("mc2: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         track(structureIdx, parentTrack);
         fillGaps(structureIdx, parentTrack, true);
-        //if (debug) logger.debug("mc3: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
+        if (debug) logger.debug("mc3: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         // compute mean of Y-shifts & width for each microchannel and modify objects
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         logger.debug("Microchannel tracker: trackHead number: {}", allTracks.size());
         List<StructureObject> toRemove = new ArrayList<>();
         for (List<StructureObject> track : allTracks.values()) { // compute median shift on the whole track + mean width
             if (track.isEmpty()) continue;
-            if (track.size()<this.minTrackLength.getValue().intValue()) {
+            if (!debug && track.size()<this.minTrackLength.getValue().intValue()) {
                 toRemove.addAll(track);
                 continue;
             }
@@ -285,9 +285,10 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                                 // stop filling gap 
                                 while(gcPrev!=null && gcPrev.getFrame()>prev.getFrame()) {
                                     if (debug) logger.debug("erasing: {}, prev: {}", gcPrev, gcPrev.getPrevious());
+                                    StructureObject p = gcPrev.getPrevious();
                                     gcPrev.resetTrackLinks(true, true);
                                     gcPrev.getParent().getChildren(structureIdx).remove(gcPrev);
-                                    gcPrev = gcPrev.getPrevious();
+                                    gcPrev = p;
                                 }
                                 prev.resetTrackLinks(false, true);
                                 next.resetTrackLinks(true, false, true, null);

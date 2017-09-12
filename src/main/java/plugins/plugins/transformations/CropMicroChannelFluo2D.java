@@ -147,7 +147,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         int rightLimit = image.getSizeX() - Xmargin;
         while(it.hasNext()) {
             BoundingBox b = it.next().getBounds();
-            if (b.getxMin()<Xmargin || b.getxMax()>rightLimit) it.remove();
+            if (b.getXMean()<Xmargin || b.getXMean()>rightLimit) it.remove(); //if (b.getxMin()<Xmargin || b.getxMax()>rightLimit) it.remove(); //
         }
         if (xObjectList.isEmpty()) return null;
         // fusion of overlapping objects

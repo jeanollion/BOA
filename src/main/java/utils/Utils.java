@@ -181,6 +181,12 @@ public class Utils {
         for (int i : array) res.add(i);
         return res;
     }
+    public static List<Double> toList(double[] array) {
+        if (array==null || array.length==0) return new ArrayList<>();
+        ArrayList<Double> res = new ArrayList<>(array.length);
+        for (double i : array) res.add(i);
+        return res;
+    }
     
     public static double[] toDoubleArray(List<? extends Number> arrayList, boolean reverseOrder) {
         double[] res=new double[arrayList.size()];

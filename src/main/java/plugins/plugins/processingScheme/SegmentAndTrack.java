@@ -97,6 +97,7 @@ public class SegmentAndTrack implements ProcessingScheme {
             TrackerSegmenter t = tracker.instanciatePlugin();
             if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
             t.segmentAndTrack(structureIdx, parentTrack, preFilters, postFilters);
+            logger.debug("executing #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
             trackPostFilters.filter(structureIdx, parentTrack, executor); 
         } catch (MultipleException me) {
             l.addAll(me.getExceptions());

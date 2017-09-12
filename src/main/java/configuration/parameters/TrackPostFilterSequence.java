@@ -46,6 +46,7 @@ public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter
         for (TrackPostFilter p : this.get()) {
             if (p instanceof MultiThreaded) ((MultiThreaded)p).setExecutor(executor);
             try {
+                logger.debug("executing tpf: {}", p.getClass().getSimpleName());
                 p.filter(structureIdx, parentTrack);
             } catch (MultipleException me) {
                 e.getExceptions().addAll(me.getExceptions());

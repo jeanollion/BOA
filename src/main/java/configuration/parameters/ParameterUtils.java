@@ -386,7 +386,7 @@ public class ParameterUtils {
                                 if (psc instanceof SegmentOnly) so = (SegmentOnly)psc;
                                 else so = new SegmentOnly((Segmenter)ps).setPreFilters(psc.getPreFilters()).setPostFilters(psc.getPostFilters());
                                 StructureObject parent = (o.getStructureIdx()>parentStrutureIdx) ? o.getParent(parentStrutureIdx) : o.getChildren(parentStrutureIdx).get(0);
-                                Map<String, StructureObject> dupMap = StructureObjectUtils.duplicateRootTrackAndChangeDAO(parent);
+                                Map<String, StructureObject> dupMap = StructureObjectUtils.duplicateRootTrackAndChangeDAO(false, parent); // ? true ? 
                                 parent = dupMap.get(parent.getId()); // don't modify object directly. 
                                 if (segParentStrutureIdx!=parentStrutureIdx && o.getStructureIdx()==segParentStrutureIdx) {
                                     final List<StructureObject> selF = sel;
@@ -409,7 +409,7 @@ public class ParameterUtils {
                                 int i = 0;
                                 while (i+1<sel.size() && sel.get(i+1).getFrame()==sel.get(i).getFrame()+1) ++i;
                                 sel = sel.subList(0, i+1);
-                                Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut(sel);
+                                Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut(sel, false); // true ? 
                                 List<StructureObject> parentTrack = Utils.transform(sel, oo->dupMap.get(oo.getId()));
                                 logger.debug("getImage: {}, getXP: {}", parentTrack.get(0).getRawImage(0)!=null, parentTrack.get(0).getExperiment()!=null);
                                 // run testing

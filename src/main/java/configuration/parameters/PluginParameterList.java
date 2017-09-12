@@ -46,7 +46,7 @@ public class PluginParameterList<T extends Plugin> extends SimpleListParameter<P
     }
     
     public List<T> get() {
-        List<T> res = new ArrayList<T>(this.getChildCount());
+        List<T> res = new ArrayList<>(this.getChildCount());
         for (PluginParameter<T> pp : this.getActivatedChildren()) {
             T p = pp.instanciatePlugin();
             if (p!=null) res.add(p);

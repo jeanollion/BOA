@@ -2258,6 +2258,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void runActionAllXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runActionAllXPMenuItemActionPerformed
         List<String> xps = this.getSelectedExperiments();
+        if (xps.isEmpty()) return;
+        unsetXP();
         List<Task> tasks = new ArrayList<>(xps.size());
         for (String xp : xps) tasks.add(getCurrentJob(xp));
         Task.executeTasks(tasks, this);
