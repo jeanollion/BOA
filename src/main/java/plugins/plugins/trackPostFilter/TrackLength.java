@@ -38,6 +38,16 @@ public class TrackLength implements TrackPostFilter {
     BoundedNumberParameter maxSize = new BoundedNumberParameter("Maximum Length", 0, 0, 0, null);
     Parameter[] parameters = new Parameter[]{minSize, maxSize};
     
+    public TrackLength() {}
+    public TrackLength setMinSize(int minSize) {
+        this.minSize.setValue(minSize);
+        return this;
+    }
+    public TrackLength setMaxSize(int maxSize) {
+        this.maxSize.setValue(maxSize);
+        return this;
+    }
+    
     @Override
     public void filter(int structureIdx, List<StructureObject> parentTrack) throws Exception {
         int min = minSize.getValue().intValue();
@@ -47,7 +57,7 @@ public class TrackLength implements TrackPostFilter {
         for (Entry<StructureObject, List<StructureObject>> e : allTracks.entrySet()) {
             if (e.getValue().size()<min || (max>0 && e.getValue().size()>max)) objectsToRemove.addAll(e.getValue());
         }
-        logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
+        //logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
         if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false);
     }
 

@@ -36,7 +36,10 @@ public class RemoveTracksStartingAfterFrame implements TrackPostFilter {
     
     BoundedNumberParameter startFrame = new BoundedNumberParameter("Maximum starting frame", 0, 0, 0, null);
     Parameter[] parameters = new Parameter[]{startFrame};
-    
+    public RemoveTracksStartingAfterFrame() {}
+    public RemoveTracksStartingAfterFrame(int startFrame) {
+        this.startFrame.setValue(startFrame);
+    }
     @Override
     public void filter(int structureIdx, List<StructureObject> parentTrack) throws Exception {
         int start = startFrame.getValue().intValue();
@@ -45,7 +48,7 @@ public class RemoveTracksStartingAfterFrame implements TrackPostFilter {
         for (Entry<StructureObject, List<StructureObject>> e : allTracks.entrySet()) {
             if (e.getKey().getFrame()>start) objectsToRemove.addAll(e.getValue());
         }
-        logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
+        //logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
         if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false);
     }
 

@@ -205,6 +205,7 @@ public class ImportExportJSON {
                     xp.get(0).setOutputImageDirectory(xp.get(0).getOutputDirectory());
                     dao.setExperiment(xp.get(0));
                     logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
+                    dao.clearCache(); // avoid lock issues
                 }
             }
         } else if (f.getName().endsWith(".zip")) importFromZip(path, dao, config, selections, objects, pcb);

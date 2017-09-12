@@ -33,6 +33,7 @@ import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
+import plugins.TrackPostFilter;
 import plugins.Tracker;
 import plugins.TrackerSegmenter;
 import utils.MultipleException;
@@ -54,6 +55,15 @@ public class SegmentAndTrack implements ProcessingScheme {
     
     public SegmentAndTrack(TrackerSegmenter tracker){
         this.tracker.setPlugin(tracker);
+    }
+    public SegmentAndTrack addTrackPostFilters(TrackPostFilter... postFilter) {
+        trackPostFilters.add(postFilter);
+        return this;
+    }
+    
+    public SegmentAndTrack addTrackPostFilters(Collection<TrackPostFilter> postFilter) {
+        trackPostFilters.add(postFilter);
+        return this;
     }
     @Override
     public SegmentAndTrack addPreFilters(PreFilter... preFilter) {
@@ -97,7 +107,7 @@ public class SegmentAndTrack implements ProcessingScheme {
             TrackerSegmenter t = tracker.instanciatePlugin();
             if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
             t.segmentAndTrack(structureIdx, parentTrack, preFilters, postFilters);
-            logger.debug("executing #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
+            //logger.debug("executing #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
             trackPostFilters.filter(structureIdx, parentTrack, executor); 
         } catch (MultipleException me) {
             l.addAll(me.getExceptions());

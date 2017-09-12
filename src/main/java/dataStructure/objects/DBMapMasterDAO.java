@@ -64,6 +64,7 @@ public class DBMapMasterDAO implements MasterDAO {
         configDir = dir;
         new File(configDir).mkdirs();
         this.dbName = dbName;
+        //lockXP();
     }
 
     @Override
@@ -130,7 +131,9 @@ public class DBMapMasterDAO implements MasterDAO {
         if (xpFileLock!=null) return;
         try {
             logger.debug("locking file: {} (xp null? {})", getConfigFile(dbName, false), xp==null);
-            cfg = new RandomAccessFile(new File(getConfigFile(dbName, false)), "rw");
+            File f = new File(getConfigFile(dbName, false));
+            if (!f.exists()) f.createNewFile();
+            cfg = new RandomAccessFile(f, "rw");
             xpFileLock = cfg.getChannel().tryLock();
             //logger.debug("lock at creation: {}, for file: {}", xpFileLock, getConfigFile(dbName, false));
         } catch (FileNotFoundException ex) {
@@ -204,8 +207,7 @@ public class DBMapMasterDAO implements MasterDAO {
         if (this.xp==null) {
             synchronized(this) {
                 if (xp==null) {
-                    if (!new File(this.getConfigFile(dbName, false)).exists()) return null;
-                    this.lockXP();
+                    if (xpFileLock==null) this.lockXP();
                     if (xpFileLock==null) {
                         logger.warn(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
                         GUI.log(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
@@ -234,12 +236,14 @@ public class DBMapMasterDAO implements MasterDAO {
             logger.debug("couldnot read config file: ", ex);
             return null;
         }
+        if (xpString==null || xpString.length()==0) return null;
         Experiment xp = new Experiment();
         xp.initFromJSONEntry(JSONUtils.parse(xpString));
         return xp;
     }
     
     public boolean checkOutputDirectories(boolean image) {
+        if (xp==null) return false;
         String outS = image ? xp.getOutputImageDirectory() : xp.getOutputDirectory();
         File out = outS!=null ? new File(outS) : null;
         if (out==null || !out.exists() || !out.isDirectory()) { // look for default output dir and set it up if exists
@@ -265,7 +269,7 @@ public class DBMapMasterDAO implements MasterDAO {
     @Override
     public void updateExperiment() {
         if (xp==null || readOnly) return;
-        //updateXPDB();
+        if (this.xpFileLock==null) lockXP();
         updateXPFile();
     }
     private void updateXPFile() {
@@ -276,7 +280,7 @@ public class DBMapMasterDAO implements MasterDAO {
             } catch (IOException ex) {
                 logger.error("Could not update experiment", ex);
             }
-        }
+        } else logger.error("could not update experiment");
         
         //FileIO.writeToFile(getConfigFile(dbName, false), Arrays.asList(new Experiment[]{xp}), o->o.toJSONEntry().toJSONString());
     }

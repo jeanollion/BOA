@@ -513,7 +513,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             return;
         } else {
             logger.info("Experiment found in db: {} ", db.getDBName());
-            this.setMessage("Experiment opened");
+            setMessage("Experiment: "+db.getDBName()+" opened");
         }
         updateConfigurationTree();
         populateActionStructureList();
@@ -1880,6 +1880,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             xp2.setName(name);
             if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) xp2.setOutputDirectory(adress+File.separator+"Output");
             db2.setExperiment(xp2);
+            db2.updateExperiment();
             db2.clearCache();
             populateExperimentList();
             this.setDBConnection(name, null);
@@ -1922,8 +1923,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             xp2.setOutputDirectory(adress+File.separator+"Output");
             xp2.setOutputImageDirectory(xp2.getOutputDirectory());
             db2.setExperiment(xp2);
+            db2.updateExperiment();
             db2.clearCache();
             populateExperimentList();
+            db1.clearCache();// avoid lock issues
             //setSelectedExperiment(name);
             //setDBConnection(getSelectedExperiment(), getCurrentHostNameOrDir());
         }
