@@ -187,8 +187,9 @@ public class JSONUtils {
         for (JSONSerializable j : coll) res.add(j.toJSONEntry());
         return res;
     }
-    public static void fromJSON(List<? extends JSONSerializable> list, JSONArray json) {
-        if (list.size()!=json.size()) throw new IllegalArgumentException("Invalid size: list is:"+list.size()+ " JSON is: "+json.size());
+    public static boolean fromJSON(List<? extends JSONSerializable> list, JSONArray json) {
+        if (list.size()!=json.size()) return false;
         for (int i =0;i<list.size(); ++i) list.get(i).initFromJSONEntry(json.get(i));
+        return true;
     }
 }

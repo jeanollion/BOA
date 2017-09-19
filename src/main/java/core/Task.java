@@ -26,6 +26,7 @@ import boa.gui.UserInterface;
 import boa.gui.PropertyUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static core.TaskRunner.logger;
+import dataStructure.configuration.PreProcessingChain;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
 import ij.IJ;
@@ -263,6 +264,13 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             } else {
                 if (structures!=null) checkArray(structures, db.getExperiment().getStructureCount(), "Invalid structure: ");
                 if (positions!=null) checkArray(positions, db.getExperiment().getPositionCount(), "Invalid position: ");
+                // check positions
+                if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+                PreProcessingChain template = db.getExperiment().getPreProcessingTemplate();
+                for (int p : positions) {
+                    PreProcessingChain pr = db.getExperiment().getPosition(p).getPreProcessingChain();
+                    if (!template.sameContent(pr)) publish("Warning: Position: "+db.getExperiment().getPosition(p).getName()+": pre-processing chain differs from template");
+                }
                 // check files
                 for (Pair<String, int[]> e : extractMeasurementDir) {
                     String exDir = e.key==null? db.getDir() : e.key;

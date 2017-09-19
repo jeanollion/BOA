@@ -61,11 +61,18 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     @Override
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jsonO = (JSONObject)jsonEntry;
-        //pluginTypeName = (String)jsonO.get("pluginTypeName");
         setPlugin((String)jsonO.get("pluginName"));
         activated = (Boolean)jsonO.get("activated");
-        if (jsonO.containsKey("addParams") && additionalParameters!=null) JSONUtils.fromJSON(additionalParameters, (JSONArray)jsonO.get("addParams"));
-        if (jsonO.containsKey("params") && pluginParameters!=null) JSONUtils.fromJSON(pluginParameters, (JSONArray)jsonO.get("params"));
+        if (jsonO.containsKey("addParams") && additionalParameters!=null) {
+            if (!JSONUtils.fromJSON(additionalParameters, (JSONArray)jsonO.get("addParams"))) {
+                
+            }
+        }
+        if (jsonO.containsKey("params") && pluginParameters!=null) {
+            if (!JSONUtils.fromJSON(pluginParameters, (JSONArray)jsonO.get("params"))) {
+                logger.warn("Could not initialize plugin-parameter: {} plugin: {} type: {}, #parameters: {}, JSON parameters: {}", name, this.pluginName, this.pluginType, pluginParameters.size(), jsonO.get("params") );
+            }
+        }
     }
     
     public PluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {

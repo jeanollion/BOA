@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PluginFactory {
 
-    private final static TreeMap<String, Class> plugins = new TreeMap<String, Class>();
+    private final static TreeMap<String, Class> plugins = new TreeMap<>();
     private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
     private final static Map<String, String> refactoredNames = new HashMap<String, String>(){{put("BacteriaLineageIndex", "BacteriaLineageMeasurements");}};
     
@@ -55,6 +55,10 @@ public class PluginFactory {
                 //Class<?> clazz = Class.forName(c);
                 if (Plugin.class.isAssignableFrom(c) && !Modifier.isAbstract( c.getModifiers() )) { // ne check pas l'heritage indirect!!
                     if (!plugins.containsKey(c.getSimpleName())) plugins.put(c.getSimpleName(), c);
+                    else {
+                        Class otherC = plugins.get(c.getSimpleName());
+                        if (!otherC.equals(c)) logger.warn("Duplicate class name: {} & {}", otherC.getName(), c.getName());
+                    }
                     //logger.debug("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
                 } //else logger.trace("class is not a plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
             }

@@ -54,7 +54,7 @@ import static utils.JSONUtils.serialize;
  */
 public class ImportExportJSON {
     public static final Logger logger = LoggerFactory.getLogger(ImportExportJSON.class);
-    public static void writeObjects(ZipWriter writer, ObjectDAO dao) {
+    public static void writeObjects(ZipWriter writer, ObjectDAO dao, ProgressCallback pcb) {
         List<StructureObject> roots=dao.getRoots();
         if (roots.isEmpty()) return;
         List<StructureObject> allObjects = new ArrayList<>();
@@ -63,8 +63,10 @@ public class ImportExportJSON {
             setAllChildren(roots, sIdx);
             for (StructureObject r : roots) allObjects.addAll(r.getChildren(sIdx));
         }
+        if (pcb!=null) pcb.log(allObjects.size()+"# objects found");
         writer.write(dao.getPositionName()+File.separator+"objects.txt", allObjects, o -> serialize(o));
         allObjects.removeIf(o -> o.getMeasurements().getValues().isEmpty());
+        if (pcb!=null) pcb.log(allObjects.size()+"# measurements found");
         writer.write(dao.getPositionName()+File.separator+"measurements.txt", allObjects, o -> serialize(o.getMeasurements()));
     }
     public static void writePreProcessedImages(ZipWriter writer, ObjectDAO dao) {
@@ -144,8 +146,12 @@ public class ImportExportJSON {
             logger.info("Exporting: {}/{}", count, positions.size());
             if (pcb!=null) pcb.log("Exporting position: "+p+ " ("+count+"/"+positions.size()+")");
             ObjectDAO oDAO = dao.getDao(p);
-            writeObjects(w, oDAO);
-            if (images) writePreProcessedImages(w, oDAO);
+            writeObjects(w, oDAO, pcb);
+            logger.info("objects exported");
+            if (images) {
+                logger.info("Writing images");
+                writePreProcessedImages(w, oDAO);
+            }
             if (pcb!=null) pcb.incrementProgress();
             if (pcb!=null) pcb.log("Position: "+p+" exported!");
         }

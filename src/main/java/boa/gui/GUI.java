@@ -2209,6 +2209,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             log("Could not define job");
             return;
         }
+        if (!t.isValid()) {
+            log("invalid task");
+            return;
+        }
         t.execute();
         if (t.isPreProcess() || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed

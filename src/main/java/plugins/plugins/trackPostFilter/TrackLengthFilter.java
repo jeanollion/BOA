@@ -32,18 +32,18 @@ import plugins.TrackPostFilter;
  *
  * @author jollion
  */
-public class TrackLength implements TrackPostFilter {
+public class TrackLengthFilter implements TrackPostFilter {
     
     BoundedNumberParameter minSize = new BoundedNumberParameter("Minimum Length", 0, 0, 0, null);
     BoundedNumberParameter maxSize = new BoundedNumberParameter("Maximum Length", 0, 0, 0, null);
     Parameter[] parameters = new Parameter[]{minSize, maxSize};
     
-    public TrackLength() {}
-    public TrackLength setMinSize(int minSize) {
+    public TrackLengthFilter() {}
+    public TrackLengthFilter setMinSize(int minSize) {
         this.minSize.setValue(minSize);
         return this;
     }
-    public TrackLength setMaxSize(int maxSize) {
+    public TrackLengthFilter setMaxSize(int maxSize) {
         this.maxSize.setValue(maxSize);
         return this;
     }

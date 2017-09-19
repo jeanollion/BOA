@@ -444,7 +444,7 @@ public class GenerateXP {
                     new MicrochannelTracker().setSegmenter(
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
-                    ).addTrackPostFilters(new plugins.plugins.trackPostFilter.TrackLength().setMinSize(100), 
+                    ).addTrackPostFilters(new plugins.plugins.trackPostFilter.TrackLengthFilter().setMinSize(100), 
                             new RemoveTracksStartingAfterFrame())
             );
             bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
