@@ -97,6 +97,7 @@ public class NumberParameterUI implements ParameterUI {
 
     private void updateNumber() {
         editing = true;
+        boolean modif = false;
         Number n = number.getNumber();
         if (n != null) {
             if (lowerBound!=null && compare(n, lowerBound)<0) {
@@ -108,11 +109,13 @@ public class NumberParameterUI implements ParameterUI {
                 //number.setNumber(n);
             }
             if (slider!=null) slider.setValue(getSliderValue(n));
+            if (!number.getNumber().equals(n)) modif = true;
             parameter.setValue(n);
         }
         number.setPreferredSize(new Dimension(Math.max(componentMinWith, number.getText().length() * 9), number.getPreferredSize().height)); 
         updateNode();
         editing = false;
+        if (modif) parameter.fireListeners();
     }
     
     private void updateNode() {

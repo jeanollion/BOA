@@ -72,7 +72,7 @@ public class InputImagesImpl implements InputImages {
             }
             c=c2;
         }
-        if (imageCT[c][t]==null || imageCT[c][t].imageSources==null) return Double.NaN;
+        if (imageCT[c][t]==null || imageCT[c][t].imageSources==null || imageCT.length<=c || imageCT[c].length<=t) return Double.NaN;
         return imageCT[c][t].imageSources.getCalibratedTimePoint(t, c, z);
     }
     @Override public boolean singleFrameChannel(int channelIdx) {

@@ -208,7 +208,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     // listenable
-    ArrayList<ParameterListener> listeners;
+    List<ParameterListener> listeners;
     public void addListener(ParameterListener listener) {
         if (listeners == null) listeners = new ArrayList<ParameterListener>();
         listeners.add(listener);
@@ -219,9 +219,9 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     public void fireListeners() {
         if (listeners != null) for (ParameterListener pl : listeners) pl.fire(this);
     }
-    public void setListeners(ArrayList<ParameterListener> listeners) {
+    public void setListeners(List<ParameterListener> listeners) {
         if (listeners==null) this.listeners=null;
-        else this.listeners=new ArrayList<ParameterListener>(listeners);
+        else this.listeners=new ArrayList<>(listeners);
     }
     
     // morphium
