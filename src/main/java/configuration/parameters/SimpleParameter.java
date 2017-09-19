@@ -30,8 +30,18 @@ public abstract class SimpleParameter implements Parameter {
     protected String name;
     private ContainerParameter parent;
     
+    
     protected SimpleParameter(String name) {
         this.name=name;
+    }
+    protected String toolTipText;
+    @Override
+    public String getToolTipText() {
+        return toolTipText;
+    }
+    @Override
+    public void setToolTipText(String txt) {
+        this.toolTipText=txt;
     }
     
     @Override

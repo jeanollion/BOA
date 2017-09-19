@@ -166,6 +166,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private ProgressIcon progressBar;
     
     final private List<Component> relatedToXPSet;
+    final private List<Component> relatedToReadOnly;
     /**
      * Creates new form GUI
      */
@@ -187,6 +188,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
+        relatedToReadOnly = new ArrayList<Component>() {{add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(experimentMenu);add(importSubMenu);add(importFieldsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(experimentMenu);}};
+        
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
         setLogFile(PropertyUtils.get(PropertyUtils.LOG_FILE));
@@ -536,6 +539,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void unsetXP() {
         if (db!=null) db.clearCache();
         db=null;
+        if (configurationTreeGenerator!=null) configurationTreeGenerator.flush();
         configurationTreeGenerator=null;
         trackTreeController=null;
         reloadObjectTrees=true;
@@ -561,14 +565,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         // readOnly
         if (enable) {
             boolean rw = !db.isReadOnly();
-            manualSegmentButton.setEnabled(rw);
-            splitObjectsButton.setEnabled(rw);
-            mergeObjectsButton.setEnabled(rw);
-            deleteObjectsButton.setEnabled(rw);
-            pruneTrackButton.setEnabled(rw);
-            linkObjectsButton.setEnabled(rw);
-            unlinkObjectsButton.setEnabled(rw);
-            resetLinksButton.setEnabled(rw);
+            for (Component c : relatedToReadOnly) c.setEnabled(rw);
         }
     }
     

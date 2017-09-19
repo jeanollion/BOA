@@ -40,7 +40,15 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     public SimpleContainerParameter(String name) {
         this.name=name;
     }
-    
+    protected String toolTipText;
+    @Override
+    public String getToolTipText() {
+        return toolTipText;
+    }
+    @Override
+    public void setToolTipText(String txt) {
+        this.toolTipText=txt;
+    }
     protected void initChildren(List<Parameter> parameters) {
         if (parameters==null) {
             children = new ArrayList<Parameter>(0);

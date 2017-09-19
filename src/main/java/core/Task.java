@@ -256,6 +256,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         public boolean isValid() {
             initDB();
+            if (db.isReadOnly()) {
+                publish("db is read only! task cannot be run");
+                return false;
+            }
             if (db.getExperiment()==null) {
                 errors.add(new Pair(dbName, new Exception("DB: "+ dbName+ " not found")));
                 printErrors();
@@ -281,7 +285,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 }
             }
             if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty()) errors.add(new Pair(dbName, new Exception("No action to run!")));
-            db=null;
+            //db=null;
             printErrors();
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
             return errors.isEmpty();
@@ -356,7 +360,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             
             db.clearCache();
             db.getExperiment();
-            db=null;
+            //db=null;
         }
     private void run(String position, boolean deleteAllField) throws Exception {
         publish("Position: "+position);

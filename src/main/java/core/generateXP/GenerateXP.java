@@ -68,6 +68,7 @@ import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackPostFilter.RemoveTracksStartingAfterFrame;
+import plugins.plugins.trackPostFilter.TrackLengthFilter;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.LAPTracker;
 import plugins.plugins.trackers.MicrochannelTracker;
@@ -444,7 +445,7 @@ public class GenerateXP {
                     new MicrochannelTracker().setSegmenter(
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
-                    ).addTrackPostFilters(new plugins.plugins.trackPostFilter.TrackLengthFilter().setMinSize(100), 
+                    ).addTrackPostFilters(new TrackLengthFilter().setMinSize(100), 
                             new RemoveTracksStartingAfterFrame())
             );
             bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
@@ -523,12 +524,13 @@ public class GenerateXP {
         Structure bacteria = xp.getStructure(1);
         if (processing) {
             if (!subTransPre) mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D())).addPreFilters(new IJSubtractBackground(0.3, true, false, true, false)));
-            else mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D())));
+            else mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D()))
+                    .addTrackPostFilters(new TrackLengthFilter().setMinSize(100),  new RemoveTracksStartingAfterFrame()));
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
                             .setSegmenter(new BacteriaTrans())
-                            .setCostParameters(1.5, 3).setThresholdParameters(2, 1, 10, 30)
+                            .setCostParameters(1.5, 3)//.setThresholdParameters(2, 1, 10, 30)
                     )
             );
         }

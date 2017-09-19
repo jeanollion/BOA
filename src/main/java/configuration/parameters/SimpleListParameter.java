@@ -50,6 +50,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     protected ListParameterUI ui;
     protected ContainerParameter parent;
     
+    
     @Override
     public JSONAware toJSONEntry() {
         JSONObject res= new JSONObject();
@@ -68,7 +69,16 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
             newI.initFromJSONEntry((JSONAware)o);
             insert(newI);
         }
-        
+    }
+    
+    protected String toolTipText;
+    @Override
+    public String getToolTipText() {
+        return toolTipText;
+    }
+    @Override
+    public void setToolTipText(String txt) {
+        this.toolTipText=txt;
     }
     
     /**

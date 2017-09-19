@@ -36,4 +36,6 @@ public interface Parameter extends MutableTreeNode, JSONSerializable {
     public String getName();
     public void setName(String name);
     public String toStringFull();
+    public String getToolTipText();
+    public void setToolTipText(String text);
 }

@@ -15,6 +15,7 @@
  */
 package boa.gui.configuration;
 
+import static boa.gui.GUI.logger;
 import dataStructure.configuration.Experiment;
 import configuration.parameters.ListParameter;
 import configuration.parameters.ui.ListParameterUI;
@@ -37,9 +38,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.ToolTipManager;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -61,10 +64,26 @@ public class ConfigurationTreeGenerator {
         if (tree==null) generateTree();
         return tree;
     }
-    
+    public void flush() {
+        if (tree!=null) {
+            ToolTipManager.sharedInstance().unregisterComponent(tree);
+            tree= null;
+            rootParameter = null;
+        }
+    }
     private void generateTree() {
         treeModel = new ConfigurationTreeModel(rootParameter);
-        tree = new JTree(treeModel);
+        tree = new JTree(treeModel) {
+            @Override
+            public String getToolTipText(MouseEvent evt) {
+                if (getRowForLocation(evt.getX(), evt.getY()) == -1) return null;
+                TreePath curPath = getPathForLocation(evt.getX(), evt.getY());
+                Object node = curPath.getLastPathComponent();
+                if (node instanceof Parameter) {
+                    return ((Parameter)node).getToolTipText();
+                } else return null;
+            }
+        };
         treeModel.setJTree(tree);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         DefaultTreeCellRenderer renderer = new TransparentTreeCellRenderer();
@@ -123,6 +142,7 @@ public class ConfigurationTreeGenerator {
                 }
             }
         });
+        ToolTipManager.sharedInstance().registerComponent(tree);
     }
     
     public static void addToMenu(Object[] UIElements, JPopupMenu menu) {
