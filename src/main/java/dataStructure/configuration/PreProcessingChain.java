@@ -201,7 +201,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
                 actions[i] = fieldUI.getDisplayComponent()[i - 2];
                 //if (i<actions.length-1) ((JMenuItem)actions[i]).setUI(new StayOpenMenuItemUI());
             }
-            JMenuItem overide = new JMenuItem("Overide configuration on selected fields");
+            JMenuItem overide = new JMenuItem("Overwrite configuration on selected fields");
             overide.setAction(
                 new AbstractAction("Overide configuration on selected fields") {
                     @Override

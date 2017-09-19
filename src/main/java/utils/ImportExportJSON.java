@@ -279,47 +279,4 @@ public class ImportExportJSON {
         }
     }
     
-    /*
-        // MONGODB IMPORT LEGACY
-        // whole xp are located in sub directories
-        FileFilter filter = new FileFilter() {
-            @Override public boolean accept(File file) {
-                if (file.isDirectory()) { // contains at least experiment collection
-                    for (String fName : file.list()) {
-                        if (fName.equals("Experiment.bson") || fName.equals("Experiment.json")) return true;
-                    }
-                } 
-                return false;
-            }
-        };
-        List<File> subDirs = new ArrayList<File>(Arrays.asList(directory.listFiles(filter)));
-        if (filter.accept(directory)) subDirs.add(directory);
-        
-        boolean someDBAlreadyExist = false;
-        for (File f : subDirs) {
-            if (dbNames.contains(DBUtil.addPrefix(f.getName(), DBprefix))) {
-                someDBAlreadyExist=true;
-                break;
-            }
-        }
-        
-        boolean ignoreExisting=false;
-        if (someDBAlreadyExist) {
-            Object[] options = {"Override existig experiments (data loss)", "Ignore existing experiments"};
-            int n = JOptionPane.showOptionDialog(this, "Some experiments found in the directory are already present", "Import Whole Experiment", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-            ignoreExisting = n==1;
-        }
-        if (ignoreExisting) {
-            Iterator<File> it = subDirs.iterator();
-            while (it.hasNext()) { if (dbNames.contains(it.next().getName())) it.remove();}
-        }
-        String hostname = getCurrentHostNameOrDir();
-        int count = 0;
-        for (File f : subDirs) {
-            logger.info("Importing XP: {}/{}", ++count, subDirs.size());
-            CommandExecuter.restoreDB(hostname, DBUtil.addPrefix(f.getName(), DBprefix), f.getAbsolutePath());
-        }
-        populateExperimentList();
-        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
-        */
 }

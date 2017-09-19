@@ -88,7 +88,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
             for (Selection s : sels) {
                 s.setMasterDAO(mDAO);
                 if (idCache.containsKey(s.getName())) {
-                    logger.info("Selection: {} found in file: {} will be overriden in local database", s.getName(), f.getAbsolutePath());
+                    logger.info("Selection: {} found in file: {} will be overwriten in local database", s.getName(), f.getAbsolutePath());
                     // copy metadata
                     Selection source = idCache.get(s.getName());
                     s.setHighlightingTracks(source.isHighlightingTracks());

@@ -2127,7 +2127,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (xpNotPresent.size()!=allXps.size()) {
             List<String> xpPresent = new ArrayList<>(allXps.keySet());
             xpPresent.retainAll(dbNames);
-            Object[] options = {"Override existig experiments (data loss)", "Ignore existing experiments"};
+            Object[] options = {"Overwrite existig experiments (data loss)", "Ignore existing experiments"};
             int n = JOptionPane.showOptionDialog(this, "Some experiments found in the directory are already present: "+Utils.toStringList(xpPresent), "Import Whole Experiment", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
             if (n==1) xpsToImport = xpNotPresent;
         }
