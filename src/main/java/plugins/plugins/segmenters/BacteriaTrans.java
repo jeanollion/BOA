@@ -123,8 +123,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter fillHolesBackgroundContactProportion = new BoundedNumberParameter("Fill holes background contact proportion", 2, 0.25, 0, 1);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 5, 5, null); // too high -> bad separation, too low: objects shape too far away from bact -> random merging
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
-    PluginParameter<Thresholder> threshold = new PluginParameter<>("Threshold (separation from background)", Thresholder.class, new LocalContrastThresholder(), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.02, 0.001, 0.999); //minFN=0.14 (150325/0/1/f=113/th=144) 0.199 (150324/0/0/tp44/th=318) / maxFP=0.071(141107/0/0/tp796/th=265)
+    PluginParameter<Thresholder> threshold = new PluginParameter<>("Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); // // //new LocalContrastThresholder()
+    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.07, 0.01, 0.999); //minFN=0.14 (150325/0/1/f=113/th=144) 0.199 (150324/0/0/tp44/th=318) / maxFP=0.071(141107/0/0/tp796/th=265)
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
@@ -232,8 +232,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         pv = getProcessingVariables(input, parent.getMask());
         if (mask==null) {
             if (Double.isNaN(thresholdValue)) pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
-            else pv.threshold=thresholdValue;
-        } else pv.thresh=mask;
+            else {
+                if (debug) logger.debug("using pre-set threshold");
+                pv.threshold=thresholdValue;
+            }
+        } else {
+            if (debug) logger.debug("using pre-set mask");
+            pv.thresh=mask;
+        }
         if (debug) {
             new IJImageDisplayer().showImage(input.setName("input"));
             logger.debug("threshold: {}", pv.threshold);
@@ -618,8 +624,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit, int minSize) {
             
             
-            
-            ObjectPopulation res =  WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
+            ImageByte seeds = Filters.localExtrema(getEDM(), null, true, Filters.getNeighborhood(3, 3, getEDM())); // TODO seed radius -> parameter ? 
+            if (maskToSplit!=null) ImageOperations.and(seeds, maskToSplit, seeds);
+            ObjectPopulation res =  WatershedTransform.watershed(getEDM(), maskToSplit, ImageLabeller.labelImageList(seeds), true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
             if (res.getObjects().size()==1) { // relabel with low connectivity -> if not contour will fail
                 List<Object3D> list = ImageLabeller.labelImageListLowConnectivity(maskToSplit);
                 return new ObjectPopulation(list, maskToSplit);
@@ -1018,7 +1025,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             Image smooth = ImageFeatures.gaussianSmooth(intensityMap, radiusXY, radiusZ, false);
             ImageOperations.divide(this.intensityMap, smooth, this.intensityMap);
             
-            if (debug) new IJImageDisplayer().showImage(this.intensityMap.setName("sigma mu"));
+            if (debug) new IJImageDisplayer().showImage(this.intensityMap.setName("contrast map"));
         }
                 
         @Override
@@ -1027,7 +1034,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         @Override
         public boolean keepObject(Object3D object) {
             double value = BasicMeasurements.getMeanValue(object.getContour(), intensityMap, false);
-            if (debug) logger.debug("SigmaMu filter: object: {}, value: {}, thld: {}, keep? {}", object.getLabel(), value, threshold, value>threshold);
+            if (debug) logger.debug("Local Contrast filter: object: {}, value: {}, thld: {}, keep? {}", object.getLabel(), value, threshold, value>threshold);
             return value>threshold;
         }
         

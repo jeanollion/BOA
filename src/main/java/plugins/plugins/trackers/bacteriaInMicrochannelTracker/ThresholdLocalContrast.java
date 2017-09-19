@@ -132,6 +132,7 @@ public class ThresholdLocalContrast extends Threshold {
         long t2 = System.currentTimeMillis();
         if (debug || debugCorr) logger.debug("slide by Frames: {}ms, slide by y: {}ms", t1-t0, t2-t1);
     }
+    
     @Override
     public void setAdaptativeByY(int yHalfWindow) {
         List<double[]> stats = Arrays.asList(getStatisticsLocalContrast(planes.subList(frameRange[0], frameRange[1]+1), lcImages.subList(frameRange[0], frameRange[1]+1), true, localContrastThreshold, true));

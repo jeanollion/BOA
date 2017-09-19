@@ -71,6 +71,21 @@ public class DBMapMasterDAO implements MasterDAO {
     public boolean isReadOnly() {
         return readOnly;
     }
+    @Override 
+    public boolean setReadOnly(boolean readOnly) {
+        if (readOnly) {
+            this.readOnly=true;
+            this.unlockXP();
+            return true;
+        } else {
+            this.getExperiment();
+            if (xpFileLock!=null) {
+                this.readOnly=false;
+                return true;
+            } else return false;
+        }
+        
+    }
     
     @Override
     public void eraseAll() {
@@ -134,7 +149,7 @@ public class DBMapMasterDAO implements MasterDAO {
             File f = new File(getConfigFile(dbName, false));
             if (!f.exists()) f.createNewFile();
             cfg = new RandomAccessFile(f, "rw");
-            xpFileLock = cfg.getChannel().tryLock();
+            if (!readOnly) xpFileLock = cfg.getChannel().tryLock();
             //logger.debug("lock at creation: {}, for file: {}", xpFileLock, getConfigFile(dbName, false));
         } catch (FileNotFoundException ex) {
             logger.debug("no config file found!");
@@ -208,11 +223,10 @@ public class DBMapMasterDAO implements MasterDAO {
             synchronized(this) {
                 if (xp==null) {
                     if (xpFileLock==null) this.lockXP();
-                    if (xpFileLock==null) {
+                    if (!readOnly && xpFileLock==null) {
                         logger.warn(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
                         GUI.log(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
                         readOnly = true;
-                        //return null;
                     }
                     xp = getXPFromFile();
 

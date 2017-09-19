@@ -101,5 +101,8 @@ public class BasicMasterDAO implements MasterDAO {
     public boolean isReadOnly() {
         return false;
     }
-    
+    @Override 
+    public boolean setReadOnly(boolean readOnly) {
+        return false;
+    }
 }

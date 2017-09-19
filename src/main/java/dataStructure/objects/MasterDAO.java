@@ -17,6 +17,7 @@
  */
 package dataStructure.objects;
 
+import core.ProgressCallback;
 import dataStructure.configuration.Experiment;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +32,7 @@ public interface MasterDAO {
     public void clearCache(String position);
     public ObjectDAO getDao(String fieldName);
     public boolean isReadOnly();
+    public boolean setReadOnly(boolean readOnly);
     public String getDBName();
     public String getDir();
     public void deleteAllObjects();
@@ -52,5 +54,11 @@ public interface MasterDAO {
     public static ObjectDAO getDao(MasterDAO db, int positionIdx) {
         String p = db.getExperiment().getPosition(positionIdx).getName();
         return db.getDao(p);
+    }
+    
+    public static void compareDAOContent(MasterDAO dao1, MasterDAO dao2, boolean config, boolean positions, boolean selections, ProgressCallback pcb) {
+        if (config) {
+            
+        }
     }
 }

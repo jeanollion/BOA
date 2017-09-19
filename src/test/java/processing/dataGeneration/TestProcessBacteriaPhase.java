@@ -52,25 +52,16 @@ public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        //String dbName = "boa_mutH_140115";
-        //String dbName = "boa_phase140115mutH";
-        //String dbName = "boa_phase150324mutH";
-        //String dbName = "boa_phase150616wtSub05";
-        
-        /*String dbName = "boa_phase141107wt";
+
+        String dbName = "MF1_170519";
+        //String dbName = "MF1_11052017";
         int field = 0;
-        int microChannel =0;
-        int time =796;
-        thld = 265;
-        */
-        String dbName = "boa_lydia_test";
-        int field = 0;
-        int microChannel =8;
+        int microChannel =6;
         int time =0;
-        thld = 312;
+        //thld = 312;
         
         //testSegBacteriesFromXP(dbName, field, time, microChannel);
-        testSegBacteriesFromXP(dbName, field, microChannel, 0, 20);
+        testSegBacteriesFromXP(dbName, field, microChannel, 204, 204);
         //testSplit(dbName, field, time, microChannel, 1, true);
     }
     
@@ -129,6 +120,7 @@ public class TestProcessBacteriaPhase {
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int microChannel, int timePointMin, int timePointMax) {
         MasterDAO mDAO = new Task(dbName).getDB();
+        mDAO.setReadOnly(true);
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
         rootTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
@@ -137,7 +129,7 @@ public class TestProcessBacteriaPhase {
             StructureObject mc = root.getChildren(0).get(microChannel);
             parentTrack.add(mc);
             Image input = mc.getRawImage(1);
-            BacteriaTrans.debug=false;
+            BacteriaTrans.debug=true;
             BacteriaTrans seg = new BacteriaTrans();
             if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
                 seg = (BacteriaTrans) mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();

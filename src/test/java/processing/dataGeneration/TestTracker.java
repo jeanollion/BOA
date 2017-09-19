@@ -69,6 +69,7 @@ public class TestTracker {
         int mcIdx =12;
         int structureIdx = 1;
         MasterDAO db = new Task(dbName).getDB();
+        db.setReadOnly(true);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         MicrochannelTracker.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;

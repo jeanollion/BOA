@@ -62,8 +62,21 @@ public class LocalContrastThresholder implements Thresholder {
                 //}
             }
         });
-        meanCount[0]/=meanCount[1];
-        return meanCount[0];
+        double fore = meanCount[0]/meanCount[1];
+        /*double[] meanCountBck = new double[2];
+        // background
+        input.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
+            double v = input.getPixel(x, y, z);
+            if (v<fore) {
+                meanCountBck[0]+=v;
+                ++meanCountBck[1];
+            }
+        });
+        
+        double back = meanCountBck[1]>meanCount[1]*0.1 ? meanCountBck[0]/meanCountBck[1] : fore;
+        logger.debug("fore: {}, back {}", fore, back);
+        return (fore+back)/2;*/
+        return fore;
     }
     
     

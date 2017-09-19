@@ -100,8 +100,11 @@ public class ImportExportJSON {
         }
     }
     public static void readObjects(ZipReader reader, ObjectDAO dao) {
+        logger.debug("reading objects..");
         List<StructureObject> allObjects = reader.readObjects(dao.getPositionName()+File.separator+"objects.txt", o->parse(StructureObject.class, o));
+        logger.debug("{} objets read", allObjects.size());
         List<Measurements> allMeas = reader.readObjects(dao.getPositionName()+File.separator+"measurements.txt", o->parse(Measurements.class, o));
+        logger.debug("{} measurements read", allObjects.size());
         Map<String, StructureObject> objectsById = new HashMap<>(allObjects.size());
         
         List<StructureObject> roots = new ArrayList<>();
@@ -217,16 +220,40 @@ public class ImportExportJSON {
         } else if (f.getName().endsWith(".zip")) importFromZip(path, dao, config, selections, objects, pcb);
     }
     
-    public static void importFromZip(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, ProgressCallback pcb) {
+    public static boolean importFromZip(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, ProgressCallback pcb) {
         ZipReader r = new ZipReader(path);
         if (r.valid()) {
-            if (config) {
+            if (config) { 
                 List<Experiment> xp = r.readObjects("config.txt", o->JSONUtils.parse(Experiment.class, o));
                 if (xp.size()==1) {
                     xp.get(0).setOutputDirectory(dao.getDir()+File.separator+"Output");
                     xp.get(0).setOutputImageDirectory(xp.get(0).getOutputDirectory());
                     dao.setExperiment(xp.get(0));
                     logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
+                } else return false;
+            }
+            if (objects) {
+                Set<String> dirs = objects ? r.listDirectories("/Images") : Collections.EMPTY_SET;
+                if (pcb!=null) pcb.incrementTaskNumber(dirs.size());
+                int count = 0;
+                for (String position : dirs) {
+                    count++;
+                    if (pcb!=null) pcb.log("Importing: Position: "+position + " ("+ count+"/"+dirs.size()+")");
+                    ObjectDAO oDAO = dao.getDao(position);
+                    try {
+                        logger.debug("deleting all objects");
+                        oDAO.deleteAllObjects();
+                        logger.debug("all objects deleted");
+                        readObjects(r, oDAO);
+                        readImages(r, oDAO);
+                    } catch (Exception e) {
+                        if (pcb!=null) pcb.log("Error! xp could not be undumped! "+e.getMessage());
+                        e.printStackTrace();
+                        dao.deleteExperiment();
+                        throw e;
+                    }
+                    if (pcb!=null) pcb.incrementProgress();
+                    if (pcb!=null) pcb.log("Position: "+position+" imported!");
                 }
             }
             if (selections) {
@@ -238,24 +265,11 @@ public class ImportExportJSON {
                     logger.debug("Stored: #{} selections from file: {} set to db: {}", sels.size(), path, dao.getDBName());
                 }
             }
-            if (objects) {
-                Set<String> dirs = objects ? r.listDirectories("/Images") : Collections.EMPTY_SET;
-                if (pcb!=null) pcb.incrementTaskNumber(dirs.size());
-                int count = 0;
-                for (String position : dirs) {
-                    count++;
-                    if (pcb!=null) pcb.log("Importing: Position: "+position + " ("+ count+"/"+dirs.size()+")");
-                    ObjectDAO oDAO = dao.getDao(position);
-                    oDAO.deleteAllObjects();
-                    readObjects(r, oDAO);
-                    readImages(r, oDAO);
-                    if (pcb!=null) pcb.incrementProgress();
-                    if (pcb!=null) pcb.log("Position: "+position+" imported!");
-                }
-            }
+            
             dao.clearCache(); // avoid lock issues
             r.close();
-        }
+            return true;
+        } else return false;
     }
     public static Map<String, File> listExperiments(String dir) {
         File fDir = new File(dir);

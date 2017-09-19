@@ -94,7 +94,12 @@ public class JSONUtils {
     
     public static double[] fromDoubleArray(List array) {
         double[] res = new double[array.size()];
-        for (int i = 0; i<res.length; ++i) res[i]=((Number)array.get(i)).doubleValue();
+        for (int i = 0; i<res.length; ++i) {
+            if (array.get(i)==null) {
+                logger.debug("fromDoubleArrayError: {}", array);
+                res[i] = Double.NaN;
+            } else res[i]=((Number)array.get(i)).doubleValue();
+        }
         return res;
     }
     public static JSONArray toJSONArray(double[] array) {

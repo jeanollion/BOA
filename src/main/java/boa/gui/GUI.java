@@ -41,6 +41,7 @@ import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.containers.ImageDAO;
+import dataStructure.objects.BasicMasterDAO;
 import dataStructure.objects.DBMapMasterDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
@@ -942,6 +943,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         exportXPConfigMenuItem = new javax.swing.JMenuItem();
         exportWholeXPMenuItem = new javax.swing.JMenuItem();
         dumpObjectsMenuItem = new javax.swing.JMenuItem();
+        compareToDumpFileMenuItem = new javax.swing.JMenuItem();
         importSubMenu = new javax.swing.JMenu();
         importFieldsToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
         importConfigToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
@@ -1555,6 +1557,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         });
         exportSubMenu.add(dumpObjectsMenuItem);
+
+        compareToDumpFileMenuItem.setText("Compare To Dump file");
+        compareToDumpFileMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                compareToDumpFileMenuItemActionPerformed(evt);
+            }
+        });
+        exportSubMenu.add(compareToDumpFileMenuItem);
 
         importExportMenu.add(exportSubMenu);
 
@@ -2792,6 +2802,36 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         localDBMenu.setEnabled(true);
         populateExperimentList();
     }//GEN-LAST:event_localFileSystemDatabaseRadioButtonActionPerformed
+
+    private void compareToDumpFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_compareToDumpFileMenuItemActionPerformed
+        final List<File> dumpedFiles = Utils.seachAll(hostName.getText(), s->s.endsWith("_dump.zip"), 1);
+        if (dumpedFiles==null) return;
+        // remove xp already undumped
+        Map<String, File> dbFiles = DBUtil.listExperiments(hostName.getText(), true, ProgressCallback.get(this));
+        dumpedFiles.removeIf(f->!dbFiles.containsValue(f.getParentFile()));
+        log("found: "+dumpedFiles.size()+ "undumped Experimentse");
+        DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
+            @Override
+            public String run(int i) {
+                if (i==0) GUI.getInstance().setRunning(true);
+                File dump = dumpedFiles.get(i);
+                String dbName = dump.getName().replace("_dump.zip", "");
+                log("comparing dump of: "+dbName);
+                logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
+                MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
+                MasterDAO daoDump = new BasicMasterDAO();
+                ImportExportJSON.importFromZip(dump.getAbsolutePath(), daoDump, true, true, true, ProgressCallback.get(instance));
+                MasterDAO.compareDAOContent(dao, daoDump, true, true, true, ProgressCallback.get(instance));
+                if (i==dumpedFiles.size()-1) {
+                    GUI.getInstance().setRunning(false);
+                    GUI.getInstance().populateExperimentList();
+                    log("dump comparison done!");
+                }
+                return dbName+" compared!";
+            };
+        };
+        DefaultWorker.execute(t, dumpedFiles.size());
+    }//GEN-LAST:event_compareToDumpFileMenuItemActionPerformed
     
     private String getSelectedExperiment() {
         Object sel = experimentList.getSelectedValue();
@@ -2947,6 +2987,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JMenuItem clearTrackImagesMenuItem;
     private javax.swing.JMenuItem closeAllWindowsMenuItem;
     private javax.swing.JMenuItem compactLocalDBMenuItem;
+    private javax.swing.JMenuItem compareToDumpFileMenuItem;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JPanel configurationPanel;
     private javax.swing.JTextPane console;
