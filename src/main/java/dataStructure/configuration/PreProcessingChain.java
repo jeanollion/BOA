@@ -24,6 +24,7 @@ import configuration.parameters.ConditionalParameter;
 import configuration.parameters.MultipleChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.ParameterListener;
 import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.ScaleXYZParameter;
@@ -37,6 +38,7 @@ import de.caluga.morphium.annotations.Transient;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.JCheckBoxMenuItem;
@@ -91,6 +93,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
         trimFramesEnd.initFromJSONEntry(jsonO.get("trimFramesEnd"));
         transformations.initFromJSONEntry(jsonO.get("transformations"));
         initScaleParam(true, true);
+        
     }
     
     public PreProcessingChain(String name) {
@@ -99,6 +102,17 @@ public class PreProcessingChain extends SimpleContainerParameter {
         //logger.debug("new PPC: {}", name);
         initScaleParam(true, true);
         initChildList();
+        PreProcessingChain pp = this;
+        ParameterListener pl = new ParameterListener() {
+            @Override
+            public void fire(Parameter sourceParameter) {
+                if (sourceParameter.getName().equals(trimFramesStart.getName()) || sourceParameter.getName().equals(trimFramesEnd.getName())) {
+                    MicroscopyField pos = ParameterUtils.getMicroscopyField(pp);
+                    if (pos!=null) pos.flushImages(true, true);
+                }
+            }
+        };
+        setListeners(Arrays.asList(new ParameterListener[]{pl}));
     }
 
     private void initScaleParam(boolean initParams, boolean initCond) {

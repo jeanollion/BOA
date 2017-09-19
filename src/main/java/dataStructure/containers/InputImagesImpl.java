@@ -72,6 +72,7 @@ public class InputImagesImpl implements InputImages {
             }
             c=c2;
         }
+        if (imageCT[c].length<=t) return Double.NaN;
         if (imageCT[c][t]==null || imageCT[c][t].imageSources==null) return Double.NaN;
         return imageCT[c][t].imageSources.getCalibratedTimePoint(t, c, z);
     }
