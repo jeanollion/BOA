@@ -56,12 +56,12 @@ public class TestProcessBacteriaPhase {
         String dbName = "MF1_170519";
         //String dbName = "MF1_11052017";
         int field = 0;
-        int microChannel =6;
+        int microChannel =15;
         int time =0;
         //thld = 312;
         
         //testSegBacteriesFromXP(dbName, field, time, microChannel);
-        testSegBacteriesFromXP(dbName, field, microChannel, 204, 204);
+        testSegBacteriesFromXP(dbName, field, microChannel, 139, 139);
         //testSplit(dbName, field, time, microChannel, 1, true);
     }
     

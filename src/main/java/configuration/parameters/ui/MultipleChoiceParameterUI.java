@@ -107,7 +107,7 @@ public class MultipleChoiceParameterUI implements ParameterUI {
         this.X=X;
         this.Y=Y;
         this.parentComponent=parent;
-        logger.debug("menu set!");
+        //logger.debug("menu set!");
         menu.addPopupMenuListener(new PopupMenuListener() {
             
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
@@ -124,7 +124,7 @@ public class MultipleChoiceParameterUI implements ParameterUI {
         });
     }
     public void showMenu() {
-        logger.debug("menu null? {}", menu==null);
+        //logger.debug("menu null? {}", menu==null);
         if (menu!=null) menu.show(parentComponent, X, Y);
     }
 }

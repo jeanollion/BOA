@@ -284,7 +284,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
                 }
             }
-            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty()) errors.add(new Pair(dbName, new Exception("No action to run!")));
+            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages) errors.add(new Pair(dbName, new Exception("No action to run!")));
             //db=null;
             printErrors();
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());

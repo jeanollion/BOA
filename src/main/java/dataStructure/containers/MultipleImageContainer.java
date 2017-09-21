@@ -58,4 +58,7 @@ public abstract class MultipleImageContainer implements JSONSerializable{
         if (res!=null) res.initFromJSONEntry(jsonEntry);
         return res;
     }
+    public static String getKey(int c, int z, int t) {
+        return new StringBuilder(11).append(c).append(";").append(z).append(";").append(t).toString();
+    }
 }

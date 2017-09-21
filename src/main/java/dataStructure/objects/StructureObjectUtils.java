@@ -137,9 +137,9 @@ public class StructureObjectUtils {
      */
     public static ArrayList<StructureObject> getAllObjects(StructureObject referenceStructureObject, int[] pathToStructure) {
         //logger.debug("getAllObjects: path to structure: length: {}, elements: {}", pathToStructure.length, pathToStructure);
-        if (pathToStructure.length==0) return new ArrayList<StructureObject>(0);
+        if (pathToStructure.length==0) return new ArrayList<>(0);
         ArrayList<StructureObject> currentChildren;
-        currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildren(pathToStructure[0]));
+        currentChildren = new ArrayList<>(referenceStructureObject.getChildren(pathToStructure[0]));
         //logger.debug("getAllObjects: current structure {} current number of objects: {}", pathToStructure[0], currentChildren.size());
         for (int i = 1; i<pathToStructure.length; ++i) {
             currentChildren = getAllChildren(currentChildren, pathToStructure[i]);
@@ -149,9 +149,9 @@ public class StructureObjectUtils {
     }
     
     private static ArrayList<StructureObject> getAllChildren(ArrayList<StructureObject> parents, int childrenStructureIdx) {
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>();
+        ArrayList<StructureObject> res = new ArrayList<>();
         for (StructureObject parent : parents) {
-            //logger.debug("getAllChildren: current object {} childrenStructureIdx : {} number of objects: {}", parent,childrenStructureIdx, parent.getChildObjects(childrenStructureIdx)==null?"null": parent.getChildObjects(childrenStructureIdx).length);
+            //logger.debug("getAllChildren: current object {} childrenStructureIdx : {} number of objects: {}", parent,childrenStructureIdx, parent.getChildObjects(childrenStructureIdx)==null?"null": parent.getChildObjects(childrenStructureIdx).size());
             res.addAll(parent.getChildren(childrenStructureIdx)); // no loop because childrenStructureIdx is direct child of parent
         }
         return res;
@@ -287,6 +287,7 @@ public class StructureObjectUtils {
     }
     public static void setAllChildren(List<StructureObject> parentTrack, int structureIdx) {
         ObjectDAO dao = parentTrack.get(0).getDAO();
+        if (dao instanceof BasicObjectDAO) return;
         logger.debug("set all children: parent: {}, structure: {}", parentTrack.get(0).getTrackHead(), structureIdx);
         if (dao.getExperiment().isDirectChildOf(parentTrack.get(0).getStructureIdx(), structureIdx)) {
             List<StructureObject> parentWithNoChildren = new ArrayList<>(parentTrack.size());

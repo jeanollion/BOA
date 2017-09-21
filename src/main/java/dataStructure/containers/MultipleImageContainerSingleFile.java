@@ -19,9 +19,12 @@ package dataStructure.containers;
 
 import image.BoundingBox;
 import image.Image;
+import static image.Image.logger;
 import image.ImageIOCoordinates;
 import image.ImageReader;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import utils.JSONUtils;
@@ -39,7 +42,7 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     int sizeZ;
     BoundingBox bounds;
     private ImageReader reader;
-    
+    private Map<String, Double> timePointCZT;
     @Override
     public boolean sameContent(MultipleImageContainer other) {
         if (other instanceof MultipleImageContainerSingleFile) {
@@ -70,6 +73,7 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
         res.put("seriesIdx", seriesIdx);
         res.put("sizeZ", sizeZ);
         if (bounds!=null) res.put("bounds", bounds.toJSONEntry());
+        if (timePointCZT!=null) res.put("timePointCZT", JSONUtils.toJSONObject(timePointCZT));
         return res;
     }
 
@@ -88,6 +92,10 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
             bounds = new BoundingBox();
             bounds.initFromJSONEntry(jsonO.get(("bounds")));
         }
+        if (jsonO.containsKey("timePointCZT")) {
+            timePointCZT = (Map<String, Double>)jsonO.get("timePointCZT");
+            logger.debug("load tpMap: {}", timePointCZT);
+        }
     }
     protected MultipleImageContainerSingleFile() {super(1, 1);}
     public MultipleImageContainerSingleFile(String name, String imagePath, int series, int timePointNumber, int channelNumber, int sizeZ, double scaleXY, double scaleZ) {
@@ -105,7 +113,28 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     }
     
     @Override public double getCalibratedTimePoint(int t, int c, int z) {
-        return getReader().getTimePoint(c, t, z);
+        return Double.NaN; // not supported
+        /*if (timePointCZT==null) initTimePointMap();
+        if (timePointCZT.isEmpty()) return Double.NaN;
+        String key = getKey(c, z, t);
+        Double d = timePointCZT.get(key);
+        if (d!=null) return d;
+        else return Double.NaN;*/
+    }
+    
+    private void initTimePointMap() {
+        ImageReader r = this.getReader();
+        timePointCZT = new HashMap<>();
+        if (r==null) return;
+        for (int c = 0; c<this.getChannelNumber(); ++c) {
+            for (int z = 0; z<getSizeZ(c); ++z) {
+                for (int t = 0; t<getFrameNumber(); ++t) {
+                    double tp = r.getTimePoint(c, t, z);
+                    if (!Double.isNaN(tp)) timePointCZT.put(getKey(c, z, t), tp);
+                }
+            }
+        }
+        logger.debug("tpMap: {}", timePointCZT);
     }
     
     public void setImagePath(String path) {

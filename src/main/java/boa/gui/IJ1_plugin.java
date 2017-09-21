@@ -49,7 +49,8 @@ public class IJ1_plugin implements PlugIn {
         
         Map<String, LookAndFeelInfo> lafMap = Arrays.asList(UIManager.getInstalledLookAndFeels()).stream().collect(Collectors.toMap(LookAndFeelInfo::getName, Function.identity()));
         logger.info("LookAndFeels {}", lafMap.keySet());
-        if (lafMap.keySet().contains("Quaqua")) lookAndFeel="Quaqua";
+        if (lafMap.keySet().contains("Mac OS X")) lookAndFeel="Mac OS X";
+        else if (lafMap.keySet().contains("Quaqua")) lookAndFeel="Quaqua";
         else if (lafMap.keySet().contains("Seaglass")) lookAndFeel="Seaglass";
         else if (lafMap.keySet().contains("Nimbus")) lookAndFeel="Nimbus";
         else if (lafMap.keySet().contains("Metal")) lookAndFeel="Metal";

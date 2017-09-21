@@ -317,19 +317,22 @@ public class Utils {
     }
     
     public static<T> ArrayList<T> reverseOrder(ArrayList<T> arrayList) {
-        ArrayList<T> res = new ArrayList<T>(arrayList.size());
+        ArrayList<T> res = new ArrayList<>(arrayList.size());
         for (int i = arrayList.size()-1; i>=0; --i) res.add(arrayList.get(i));
         return res;
     }
-    
+    public static <K, V> K getOneKey(Map<K, V> map, V value) {
+        for (Entry<K, V> e : map.entrySet()) if (e.getValue().equals(value))return e.getKey();
+        return null;
+    }
     public static <K, V> ArrayList<K> getKeys(Map<K, V> map, V value) {
-        ArrayList<K> res = new ArrayList<K>();
+        ArrayList<K> res = new ArrayList<>();
         for (Entry<K, V> e : map.entrySet()) if (e.getValue().equals(value)) res.add(e.getKey());
         return res;
     }
     
     public static <K, V> ArrayList<K> getKeys(Map<K, V> map, Collection<V> values) {
-        ArrayList<K> res = new ArrayList<K>();
+        ArrayList<K> res = new ArrayList<>();
         for (Entry<K, V> e : map.entrySet()) if (values.contains(e.getValue())) res.add(e.getKey());
         return res;
     }

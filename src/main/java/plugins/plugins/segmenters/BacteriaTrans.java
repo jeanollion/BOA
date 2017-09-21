@@ -505,6 +505,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     @Override public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         ProcessingVariables pv = getProcessingVariables(input, segmentationMask);
         pv.threshold = threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
+        if (verboseManualSeg) logger.debug("threshold: {} (type: {})", pv.threshold, threshold.toJSONEntry().toJSONString());
         ImageOperations.and(segmentationMask, pv.getSegmentationMask(), pv.getSegmentationMask());
         ObjectPopulation res = pv.splitSegmentationMask(pv.getSegmentationMask(), pv.minSizePropagation);
         List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());

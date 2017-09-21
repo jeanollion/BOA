@@ -45,9 +45,11 @@ import dataStructure.objects.BasicMasterDAO;
 import dataStructure.objects.DBMapMasterDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.Selection;
 import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import ij.ImageJ;
 import image.Image;
 import java.awt.Color;
@@ -189,7 +191,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
-        relatedToReadOnly = new ArrayList<Component>() {{add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(experimentMenu);add(importSubMenu);add(importFieldsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(experimentMenu);}};
+        relatedToReadOnly = new ArrayList<Component>() {{add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importFieldsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
         
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
@@ -358,6 +360,33 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             @Override
             public void actionPerformed(ActionEvent e) {
                 nextTrackErrorButtonActionPerformed(e);
+            }
+        });
+        
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Add to selection") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("Z pressed");
+                addToSelectionActionPerformed();
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Remove from selection") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("Z pressed (alt)");
+                removeFromSelectionActionPerformed();
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Open Next Image") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                navigateToNextImage(true);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Open Previous Image") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                navigateToNextImage(false);
             }
         });
         
@@ -538,6 +567,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     
     private void unsetXP() {
+        String xp = db!=null ? db.getDBName() : null;
         if (db!=null) db.clearCache();
         db=null;
         if (configurationTreeGenerator!=null) configurationTreeGenerator.flush();
@@ -550,6 +580,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         updateConfigurationTree();
         tabs.setSelectedIndex(0);
         ImageWindowManagerFactory.getImageManager().flush();
+        if (xp!=null) setMessage("XP: "+xp+ " closed");
     }
     
     private void updateDisplayRelatedToXPSet() {
@@ -1752,7 +1783,36 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
         return host;
     }
-    
+    public void navigateToNextImage(boolean next) {
+        if (trackTreeController==null) this.loadObjectTrees();
+        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
+        if (i==null) return;
+        // get next parent
+        StructureObject nextParent = null;
+        if (i.getParent().isRoot()) return;
+        List<StructureObject> siblings = i.getParent().getSiblings();
+        int idx = siblings.indexOf(i.getParent()) + (next ? 1 : -1) ;
+        if (siblings.size()==idx || idx<0) { // next position
+            List<String> positions = Arrays.asList(i.getParent().getExperiment().getPositionsAsString());
+            int idxP = positions.indexOf(i.getParent().getPositionName()) + (next ? 1 : -1);
+            if (idxP<0 || idxP==positions.size()) return;
+            String nextPos = positions.get(idxP);
+            ObjectDAO dao = i.getParent().getDAO().getMasterDAO().getDao(nextPos);
+            List<StructureObject> allObjects = StructureObjectUtils.getAllObjects(dao, i.getParent().getStructureIdx());
+            allObjects.removeIf(o->!o.isTrackHead());
+            if (allObjects.isEmpty()) return;
+            Collections.sort(allObjects);
+            nextParent = next ? allObjects.get(0) : allObjects.get(allObjects.size()-1);
+        } else nextParent = siblings.get(idx);
+        logger.debug("open next Image : next parent: {}", nextParent);
+        if (nextParent==null) return;
+        List<StructureObject> parentTrack = StructureObjectUtils.getTrack(nextParent, false);
+        i= ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentTrack, i.getChildStructureIdx());
+        Image im = ImageWindowManagerFactory.getImageManager().getImage(i, i.getChildStructureIdx());
+        if (im==null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(i.getChildStructureIdx(), true), i, i.getChildStructureIdx(), false, true);
+        else ImageWindowManagerFactory.getImageManager().setActive(im);
+        
+    }
     private int navigateCount = 0;
     public void navigateToNextObjects(boolean next, boolean nextPosition, int structureDisplay, boolean setInteractiveStructure) {
         if (trackTreeController==null) this.loadObjectTrees();
@@ -2806,10 +2866,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void compareToDumpFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_compareToDumpFileMenuItemActionPerformed
         final List<File> dumpedFiles = Utils.seachAll(hostName.getText(), s->s.endsWith("_dump.zip"), 1);
         if (dumpedFiles==null) return;
+        unsetXP();
         // remove xp already undumped
         Map<String, File> dbFiles = DBUtil.listExperiments(hostName.getText(), true, ProgressCallback.get(this));
         dumpedFiles.removeIf(f->!dbFiles.containsValue(f.getParentFile()));
-        log("found: "+dumpedFiles.size()+ "undumped Experimentse");
+        // remove unselected xp if any
+        Set<String> xpSel = new HashSet<>(getSelectedExperiments());
+        if (!xpSel.isEmpty()) dumpedFiles.removeIf(f->!xpSel.contains(Utils.getOneKey(dbFiles, f.getParentFile())));
+
+        log("found: "+dumpedFiles.size()+ " undumped Experimentse");
         DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
             @Override
             public String run(int i) {
@@ -2819,9 +2884,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 log("comparing dump of: "+dbName);
                 logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
                 MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
+                dao.setReadOnly(true);
                 MasterDAO daoDump = new BasicMasterDAO();
                 ImportExportJSON.importFromZip(dump.getAbsolutePath(), daoDump, true, true, true, ProgressCallback.get(instance));
-                MasterDAO.compareDAOContent(dao, daoDump, true, true, true, ProgressCallback.get(instance));
+                try {
+                    MasterDAO.compareDAOContent(dao, daoDump, true, true, true, ProgressCallback.get(instance));
+                } catch (Exception|Error e) {
+                    throw e;
+                }
+                
                 if (i==dumpedFiles.size()-1) {
                     GUI.getInstance().setRunning(false);
                     GUI.getInstance().populateExperimentList();
@@ -2832,6 +2903,37 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         };
         DefaultWorker.execute(t, dumpedFiles.size());
     }//GEN-LAST:event_compareToDumpFileMenuItemActionPerformed
+    
+    public void addToSelectionActionPerformed() {
+        if (!this.checkConnection()) return;
+        List<Selection> selList = this.getSelectedSelections(false);
+        if (selList.size()!=1) return;
+        Selection s = selList.get(0);
+        List<StructureObject> objects = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (objects.isEmpty()) return;
+        int sIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
+        logger.debug("idx : {} ({})", sIdx, s.getStructureIdx());
+        if (sIdx == s.getStructureIdx() || s.getStructureIdx()==-1) {
+            s.addElements(objects);
+        }
+        db.getSelectionDAO().store(s);
+        selectionList.updateUI();
+        GUI.updateRoiDisplayForSelections(null, null);
+    }
+    
+    public void removeFromSelectionActionPerformed() {
+        if (!this.checkConnection()) return;
+        List<Selection> selList = this.getSelectedSelections(false);
+        if (selList.size()!=1) return;
+        Selection s = selList.get(0);
+        List<StructureObject> objects = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (objects.isEmpty()) return;
+        int sIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
+        if (sIdx == s.getStructureIdx()) s.removeElements(objects);
+        db.getSelectionDAO().store(s);
+        selectionList.updateUI();
+        GUI.updateRoiDisplayForSelections(null, null);
+    }
     
     private String getSelectedExperiment() {
         Object sel = experimentList.getSelectedValue();

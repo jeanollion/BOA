@@ -17,9 +17,16 @@
  */
 package dataStructure.objects;
 
+import com.google.common.base.Functions;
+import core.ProgressCallback;
 import dataStructure.configuration.Experiment;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -74,4 +81,31 @@ public interface ObjectDAO {
     public Measurements getMeasurements(StructureObject o);
     public List<Measurements> getMeasurements(int structureIdx, String... measurements);
     public void deleteAllMeasurements();
+    
+    public static boolean sameContent(ObjectDAO dao1, ObjectDAO dao2, ProgressCallback pcb) {
+        List<StructureObject> roots1 = dao1.getRoots();
+        List<StructureObject> roots2 = dao2.getRoots();
+        if (!roots1.equals(roots2)) {
+            pcb.log("positions:"+dao1.getPositionName()+" differs in roots");
+            return false;
+        }
+        for (int sIdx =0; sIdx< dao1.getExperiment().getStructureCount() ; sIdx++) {
+            Set<StructureObject> allObjects1 = new HashSet<>(StructureObjectUtils.getAllObjects(dao1, sIdx));
+            Set<StructureObject> allObjects2 = new HashSet<>(StructureObjectUtils.getAllObjects(dao2, sIdx));
+            if (!allObjects1.equals(allObjects2)) {
+                pcb.log("positions:"+dao1.getPositionName()+" differs @ structure: "+sIdx + "#"+allObjects1.size()+" vs #"+allObjects2.size());
+                return false;
+            }
+            // deep equals
+            Map<String, StructureObject> allObjects2Map = allObjects2.stream().collect(Collectors.toMap(StructureObject::getId, Function.identity()));
+            for (StructureObject o1 : allObjects1) {
+                StructureObject o2  = allObjects2Map.get(o1.getId());
+                if (!o1.toJSONEntry().toJSONString().equals(o2.toJSONEntry().toJSONString())) {
+                    pcb.log("positions:"+dao1.getPositionName()+" differs @ object: "+o1.toStringShort());
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }

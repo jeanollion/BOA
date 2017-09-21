@@ -152,7 +152,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return false;
     }
-    
+
     public Experiment getExperiment() {
         if (dao==null) return null;
         return dao.getExperiment();

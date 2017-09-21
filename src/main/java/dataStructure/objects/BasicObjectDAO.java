@@ -24,10 +24,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.Utils;
 
 /**
  *
@@ -67,7 +70,7 @@ public class BasicObjectDAO implements ObjectDAO {
 
     @Override
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
-        logger.debug("try to get children of : {} from structure: {}", this, structureIdx);
+        //logger.debug("try to get children of : {} from structure: {}", this, structureIdx);
         return null;
     }
     
@@ -128,16 +131,47 @@ public class BasicObjectDAO implements ObjectDAO {
         } else {
             List<StructureObject> children = object.getParent().getChildren(object.getStructureIdx());
             if (children == null) {
-                children = new ArrayList<StructureObject>();
+                children = new ArrayList<>();
                 object.getParent().setChildren(children, object.getStructureIdx());
             } else {
-                if (!children.contains(object)) children.add(object.idx, object);
+                if (!children.contains(object)) {
+                    children.add(object);
+                    Collections.sort(children);
+                }
             }
         }
     }
 
     public void store(Collection<StructureObject> objects) {
-        for (StructureObject o : objects) store(o);
+        //Map<Integer, List<StructureObject>> bySIdx = StructureObjectUtils.splitByStructureIdx(objects);
+        //for (Entry<Integer, List<StructureObject>> e : bySIdx.entrySet()) logger.debug("storing : {} objects from structure: {}", e.getValue().size(), e.getKey());
+        //for (StructureObject o : objects) store(o);
+        // remove roots 
+        Collection<StructureObject> objectsWithoutRoot = new HashSet<>();
+        Collection<StructureObject> roots = new HashSet<>();
+        for (StructureObject o : objects ) {
+            o.dao=this;
+            if (o.isRoot()) roots.add(o);
+            else objectsWithoutRoot.add(o);
+        }
+        for (StructureObject root : roots) rootTrack.put(root.getFrame(), root);
+        if (objectsWithoutRoot.isEmpty()) return;
+        Map<StructureObject, List<StructureObject>> byParent = StructureObjectUtils.splitByParent(objectsWithoutRoot);
+        for (Entry<StructureObject, List<StructureObject>> e : byParent.entrySet()) {
+            int sIdx = e.getValue().get(0).getStructureIdx();
+            List<StructureObject> children = e.getKey().getChildren(sIdx);
+            if (children == null) {
+                e.getKey().setChildren(e.getValue(), sIdx);
+                Collections.sort(e.getValue());
+                if (new HashSet<>(e.getValue()).size()!=e.getValue().size()) logger.error("duplicated objects to be stored in {}", e.getKey());
+                if (e.getKey().getFrame()==0) logger.debug("setting {} to : {}", e.getKey().getChildren(sIdx), e.getKey());
+            } else {
+                children.addAll(e.getValue());
+                Utils.removeDuplicates(children, false);
+                Collections.sort(children);
+            }
+        }
+        
     }
 
     public List<StructureObject> getRoots() {

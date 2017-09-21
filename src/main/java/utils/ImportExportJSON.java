@@ -81,6 +81,9 @@ public class ImportExportJSON {
             }
         }
     }
+    public static void writeTrackImages(ZipWriter writer, ObjectDAO dao) {
+        // TODO
+    }
     public static void readImages(ZipReader reader, ObjectDAO dao) {
         String dir = dao.getPositionName()+File.separator+"Images"+File.separator;
         ImageDAO iDao = dao.getExperiment().getImageDAO();
@@ -226,8 +229,10 @@ public class ImportExportJSON {
             if (config) { 
                 List<Experiment> xp = r.readObjects("config.txt", o->JSONUtils.parse(Experiment.class, o));
                 if (xp.size()==1) {
-                    xp.get(0).setOutputDirectory(dao.getDir()+File.separator+"Output");
-                    xp.get(0).setOutputImageDirectory(xp.get(0).getOutputDirectory());
+                    if (dao.getDir()!=null) {
+                        xp.get(0).setOutputDirectory(dao.getDir()+File.separator+"Output");
+                        xp.get(0).setOutputImageDirectory(xp.get(0).getOutputDirectory());
+                    }
                     dao.setExperiment(xp.get(0));
                     logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
                 } else return false;
@@ -261,7 +266,7 @@ public class ImportExportJSON {
                 List<Selection> sels = r.readObjects("selections.txt", o->JSONUtils.parse(Selection.class, o));
                 logger.debug("selections: {}", sels.size());
                 if (sels.size()>0 && dao.getSelectionDAO()!=null) {
-                    for (Selection s: sels )dao.getSelectionDAO().store(s);
+                    for (Selection s: sels ) if (dao.getSelectionDAO()!=null) dao.getSelectionDAO().store(s);
                     logger.debug("Stored: #{} selections from file: {} set to db: {}", sels.size(), path, dao.getDBName());
                 }
             }

@@ -52,30 +52,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     boolean displayingObjects=false;
     boolean highlightingTracks=false;
     
-    @Override
-    public Object toJSONEntry() {
-        JSONObject res= new JSONObject();
-        res.put("elements", JSONUtils.toJSONObject(elements));
-        res.put("name", name);
-        res.put("structureIdx", structureIdx);
-        res.put("color", color);
-        res.put("displayingTracks", displayingTracks);
-        res.put("displayingObjects", displayingObjects);
-        res.put("highlightingTracks", highlightingTracks);
-        return res;
-    }
-
-    @Override
-    public void initFromJSONEntry(Object jsonEntry) {
-        JSONObject jo = (JSONObject)jsonEntry;
-        elements = (Map<String, List<String>>)jo.get("elements");
-        name = (String)jo.get("name");
-        structureIdx = ((Number)jo.get("structureIdx")).intValue();
-        color = (String)jo.get("color");
-        displayingTracks = (Boolean)jo.get("displayingTracks");
-        displayingObjects = (Boolean)jo.get("displayingObjects");
-        highlightingTracks = (Boolean)jo.get("highlightingTracks");
-    }
+    
     
     public final static String indexSeparator ="-";
     Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
@@ -458,5 +435,28 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         }
     }
 
-    
+    @Override
+    public Object toJSONEntry() {
+        JSONObject res= new JSONObject();
+        res.put("elements", JSONUtils.toJSONObject(elements));
+        res.put("name", name);
+        res.put("structureIdx", structureIdx);
+        res.put("color", color);
+        res.put("displayingTracks", displayingTracks);
+        res.put("displayingObjects", displayingObjects);
+        res.put("highlightingTracks", highlightingTracks);
+        return res;
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        JSONObject jo = (JSONObject)jsonEntry;
+        elements = (Map<String, List<String>>)jo.get("elements");
+        name = (String)jo.get("name");
+        structureIdx = ((Number)jo.get("structureIdx")).intValue();
+        color = (String)jo.get("color");
+        displayingTracks = (Boolean)jo.get("displayingTracks");
+        displayingObjects = (Boolean)jo.get("displayingObjects");
+        highlightingTracks = (Boolean)jo.get("highlightingTracks");
+    }
 }

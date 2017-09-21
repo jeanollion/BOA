@@ -115,7 +115,7 @@ public class ImageFieldFactory {
         long t2 = System.currentTimeMillis();
         int s = 0;
         String end = "";
-        int digits=(int)(Math.log10(stc.length)+0.5);
+        int digits=(int)(Math.log10(stc.length)+1);
         for (int[] tc:stc) {
             if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
             if (tc[1]==xp.getChannelImageCount()) {

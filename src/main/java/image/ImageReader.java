@@ -224,7 +224,7 @@ public class ImageReader {
         //logger.debug("image: {} calibration: {}", this.fullPath, res);
         return res;
     }
-    
+    //static boolean logeed = false;
     public double getTimePoint(int c, int t, int z) {
         if (timePoints==null) {
             synchronized(this) {
@@ -234,6 +234,8 @@ public class ImageReader {
                         String logPath = deconvIdx>0 ? getImagePath().substring(0, deconvIdx)+".dv.log" : getImagePath()+".log";
                         timePoints = paseDVLogFile(logPath, "Time Point: ");
                         //logger.debug("timePoints: {}", timePoints);
+                    } else {
+                        // not supported
                     }
                 }
             }
@@ -244,15 +246,15 @@ public class ImageReader {
         } else return Double.NaN;
     }
     
-    /*public void logTimeAnnotations() {
+    public void logTimeAnnotations() {
         if (meta!=null) {
             logger.debug("image count: {}", meta.getImageCount()); 
             for (int i = 0; i<meta.getImageCount(); ++i) {
-                logger.debug("i:{}, time: {}, ", i, meta.getImageAcquisitionDate(i), meta.getImageAcquisitionDate(i).asDateTime(DateTimeZone.UTC), meta.getImageAcquisitionDate(i).asInstant());
+                logger.debug("i:{}, time: {}, {} {}", i, meta.getImageAcquisitionDate(i), meta.getImageAcquisitionDate(i)==null? "":meta.getImageAcquisitionDate(i).asDateTime(DateTimeZone.UTC), meta.getImageAcquisitionDate(i)==null? "":meta.getImageAcquisitionDate(i).asInstant());
             }
             int c = meta.getTimestampAnnotationCount();
             for (int i = 0; i<c; ++c) {
-                logger.debug("time: i={}, time: {}({}/{}), ns={}, id={}, desc={}, annotator={}", i, meta.getTimestampAnnotationValue(i), meta.getTimestampAnnotationValue(i).asDateTime(DateTimeZone.UTC), meta.getTimestampAnnotationValue(i).asInstant(), meta.getTimestampAnnotationNamespace(i), meta.getTimestampAnnotationID(i), meta.getTimestampAnnotationDescription(i), meta.getTimestampAnnotationAnnotator(i));
+                logger.debug("time: i={}, time: {}({}/{}), ns={}, id={}, desc={}, annotator={}", i, meta.getTimestampAnnotationValue(i), meta.getTimestampAnnotationValue(i)==null? "":meta.getTimestampAnnotationValue(i).asDateTime(DateTimeZone.UTC), meta.getTimestampAnnotationValue(i), meta.getTimestampAnnotationValue(i)==null? "":meta.getTimestampAnnotationValue(i).asInstant(), meta.getTimestampAnnotationNamespace(i), meta.getTimestampAnnotationID(i), meta.getTimestampAnnotationDescription(i), meta.getTimestampAnnotationAnnotator(i));
                 
                 int cc = meta.getTimestampAnnotationAnnotationCount(i);
                 for (int ii = 0; ii<cc; ++ii) {
@@ -261,7 +263,7 @@ public class ImageReader {
             }
         }
         
-    }*/
+    }
     
     /*private float[] getTifCalibrationIJ() {
         try {
