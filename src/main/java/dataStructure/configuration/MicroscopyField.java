@@ -38,6 +38,7 @@ import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
 import image.BlankMask;
 import image.Image;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.AbstractAction;
@@ -47,6 +48,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import org.json.simple.JSONObject;
 import plugins.PreFilter;
+import utils.Utils;
 
 /**
  *
@@ -285,6 +287,10 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         if (GUI.getDBConnection()!=null && GUI.getDBConnection().getDao(name)!=null) GUI.getDBConnection().getDao(name).deleteAllObjects(); //TODO : unsafe if not called from GUI.. // ne pas conditionner par callFromGUI 
         if (getInputImages()!=null) getInputImages().deleteFromDAO();
         for (int s =0; s<getExperiment().getStructureCount(); ++s) getExperiment().getImageDAO().deleteTrackImages(name, s);
+        if (GUI.getDBConnection()!=null) { // delete position folder
+            String posDir = GUI.getDBConnection().getDir()+File.separator+name;
+            Utils.deleteDirectory(posDir);
+        }
         return true;
     }
 

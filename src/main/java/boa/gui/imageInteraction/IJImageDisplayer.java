@@ -108,7 +108,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             @Override
             public void run() {
                 //Thread.sleep(10000);
-                try {Thread.sleep(500);}
+                try {Thread.sleep(1000);}
                 catch(Exception e) {}
                 ImageCanvas ic = image.getCanvas();
                 if (ic==null) return;

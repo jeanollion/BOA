@@ -29,6 +29,7 @@ import dataStructure.configuration.PreProcessingChain;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
+import ij.process.AutoThresholder;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,6 +68,7 @@ import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
+import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackPostFilter.RemoveTracksStartingAfterFrame;
 import plugins.plugins.trackPostFilter.TrackLengthFilter;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
@@ -530,8 +532,12 @@ public class GenerateXP {
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
                             .setSegmenter(new BacteriaTrans())
-                            .setCostParameters(1.5, 3)//.setThresholdParameters(2, 1, 10, 30)
+                            .setCostParameters(1.5, 3).setThresholdParameters(3, 1, 10, 30)
                     )
+            );
+            bacteria.setManualSegmenter(new BacteriaTrans()
+                    .setThreshold(new IJAutoThresholder().setMethod(AutoThresholder.Method.MaxEntropy))
+                    .setObjectParameters(50, 1)
             );
         }
         if (measurements) {

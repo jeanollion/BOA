@@ -190,8 +190,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
-        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
-        relatedToReadOnly = new ArrayList<Component>() {{add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importFieldsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
+        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importPositionsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
+        relatedToReadOnly = new ArrayList<Component>() {{add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
         
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
@@ -973,10 +973,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         exportSelectedFieldsMenuItem = new javax.swing.JMenuItem();
         exportXPConfigMenuItem = new javax.swing.JMenuItem();
         exportWholeXPMenuItem = new javax.swing.JMenuItem();
-        dumpObjectsMenuItem = new javax.swing.JMenuItem();
+        exportObjectsMenuItem = new javax.swing.JMenuItem();
         compareToDumpFileMenuItem = new javax.swing.JMenuItem();
         importSubMenu = new javax.swing.JMenu();
-        importFieldsToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
+        importPositionsToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
         importConfigToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
         importConfigurationForSelectedPositionsMenuItem = new javax.swing.JMenuItem();
         importConfigurationForSelectedStructuresMenuItem = new javax.swing.JMenuItem();
@@ -1581,13 +1581,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         exportSubMenu.add(exportWholeXPMenuItem);
 
-        dumpObjectsMenuItem.setText("Dump Experiment(s)");
-        dumpObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+        exportObjectsMenuItem.setText("Objects of Selected Experiment(s)");
+        exportObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                dumpObjectsMenuItemActionPerformed(evt);
+                exportObjectsMenuItemActionPerformed(evt);
             }
         });
-        exportSubMenu.add(dumpObjectsMenuItem);
+        exportSubMenu.add(exportObjectsMenuItem);
 
         compareToDumpFileMenuItem.setText("Compare To Dump file");
         compareToDumpFileMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1601,13 +1601,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         importSubMenu.setText("Import");
 
-        importFieldsToCurrentExperimentMenuItem.setText("Fields to Current Experiment");
-        importFieldsToCurrentExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
+        importPositionsToCurrentExperimentMenuItem.setText("Positions to Current Experiment");
+        importPositionsToCurrentExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                importFieldsToCurrentExperimentMenuItemActionPerformed(evt);
+                importPositionsToCurrentExperimentMenuItemActionPerformed(evt);
             }
         });
-        importSubMenu.add(importFieldsToCurrentExperimentMenuItem);
+        importSubMenu.add(importPositionsToCurrentExperimentMenuItem);
 
         importConfigToCurrentExperimentMenuItem.setText("Configuration to Current Experiment");
         importConfigToCurrentExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -2024,7 +2024,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             ZipWriter w = new ZipWriter(dir+File.separator+mDAO.getDBName()+".zip");
             ImportExportJSON.exportConfig(w, mDAO);
             ImportExportJSON.exportSelections(w, mDAO);
-            ImportExportJSON.exportPositions(w, mDAO, true, ProgressCallback.get(instance));
+            ImportExportJSON.exportPositions(w, mDAO, true, true, ProgressCallback.get(instance));
             w.close();
             mDAO.clearCache();
         }
@@ -2042,7 +2042,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
         ImportExportJSON.exportConfig(w, db);
         ImportExportJSON.exportSelections(w, db);
-        ImportExportJSON.exportPositions(w, db, true, sel, ProgressCallback.get(instance));
+        ImportExportJSON.exportPositions(w, db, true, true, sel, ProgressCallback.get(instance));
         w.close();
         /*
         int[] sel  = getSelectedMicroscopyFields();
@@ -2069,59 +2069,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_exportXPConfigMenuItemActionPerformed
 
-    private void importFieldsToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
+    private void importPositionsToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importPositionsToCurrentExperimentMenuItemActionPerformed
         if (!checkConnection()) return;
-        /*String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        File[] selectedFiles = Utils.chooseFiles("Select directory containing exported files OR directly exported files", defDir, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
-        if (selectedFiles==null || selectedFiles.length==0) return;
-        Map<String, String> fields = CommandExecuter.getObjectDumpedCollections(selectedFiles);
-        if (fields.isEmpty()) {
-            logger.warn("No fields found in directory");
-            return;
-        }
-        boolean hasFieldsAlreadyPresent = false;
-        boolean ignoreExisting = false;
-        for (String f : fields.keySet()) {
-            if (db.getExperiment().getPosition(f)!=null) {
-                hasFieldsAlreadyPresent = true;
-                break;
-            }
-        }
-        if (hasFieldsAlreadyPresent) {
-            String opt = true ? "Import and override existing data" : "Import and join with existing data";
-            Object[] options = {opt, "Ignore existing positions"};
-            String erase = true ? "Existing Data will be earsed before import, this may result in data loss.": "Existing data will not be earsed before import, this may result in data collapse and errors, check that imported data is disjoined from data that is already present.";
-            int n = JOptionPane.showOptionDialog(this, "Some positions found in the directory are already present in the current experiment. "+erase, "Import Positions", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-            ignoreExisting = n==1;
-        }
-        if (ignoreExisting) {
-            Iterator<String> it = fields.keySet().iterator();
-            while (it.hasNext()) { if (db.getExperiment().getPosition(it.next())!=null) it.remove();}
-        }
-        String dbName = db.getDBName();
-        String hostname = getCurrentHostNameOrDir();
-        int count = 0;
-        boolean fieldsCreated = false;
-        for (String f : fields.keySet()) {
-            logger.info("Importing: {}/{}, collection: {} file: {}", ++count, fields.size(), f, fields.get(f));
-            boolean ok = CommandExecuter.restore(hostname, dbName, MorphiumObjectDAO.getCollectionName("")+f, fields.get(f), true);
-            if (ok) {
-                if (db.getExperiment().getPosition(f)==null) { // create entry
-                    db.getExperiment().createPosition(f);
-                    fieldsCreated=true;
-                    logger.info("Position: {} was created. Run \"re-link images\" to set the input images", f);
-                } else db.getDao(f).clearCache();
-            }
-        }
-        if (fieldsCreated) {
-            db.updateExperiment();
-            populateActionMicroscopyFieldList();
-        }
-        loadObjectTrees();
-        
-        File f = Utils.getOneDir(selectedFiles);
-        if (f!=null) PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
-        */
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File f = Utils.chooseFile("Select exported archive", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
@@ -2129,8 +2078,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         db.updateExperiment();
         populateActionMicroscopyFieldList();
         loadObjectTrees();
+        ImageWindowManagerFactory.getImageManager().flush();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
-    }//GEN-LAST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
+    }//GEN-LAST:event_importPositionsToCurrentExperimentMenuItemActionPerformed
 
     private void importConfigurationForSelectedPositionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationForSelectedPositionsMenuItemActionPerformed
         if (!checkConnection()) return;
@@ -2281,6 +2231,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             return;
         }
         t.execute();
+        db.getExperiment(); // lock (unlocked after run task)
         if (t.isPreProcess() || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
@@ -2786,7 +2737,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         ImageWindowManagerFactory.getImageManager().closeNonInteractiveWindows();
     }//GEN-LAST:event_CloseNonInteractiveWindowsMenuItemActionPerformed
 
-    private void dumpObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_dumpObjectsMenuItemActionPerformed
+    private void exportObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportObjectsMenuItemActionPerformed
+        exportSelectedExperiments(true, true, true, false, false, false);
+    }//GEN-LAST:event_exportObjectsMenuItemActionPerformed
+    private void exportSelectedExperiments(boolean config, boolean objects, boolean selections, boolean preProcessedImages, boolean trackImages, boolean eraseXP) {
         unsetXP();
         final List<String> xps = getSelectedExperiments();
         log("dumping: "+xps.size()+ " Experiment"+(xps.size()>1?"s":""));
@@ -2802,28 +2756,27 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 boolean error = false;
                 try {
                     ZipWriter w = new ZipWriter(file);
-                    ImportExportJSON.exportPositions(w, mDAO, false, ProgressCallback.get(instance));
-                    ImportExportJSON.exportConfig(w, mDAO);
-                    ImportExportJSON.exportSelections(w, mDAO);
+                    if (objects) ImportExportJSON.exportPositions(w, mDAO, preProcessedImages, trackImages , ProgressCallback.get(instance));
+                    if (config) ImportExportJSON.exportConfig(w, mDAO);
+                    if (selections) ImportExportJSON.exportSelections(w, mDAO);
                     w.close();
                 } catch (Exception e) {
                     logger.error("Error while dumping");
                     error = true;
                 }
                 if (error) new File(file).delete();
-                if (!error) MasterDAO.deleteObjectsAndSelectionAndXP(mDAO); // eraseAll config & objects
+                if (!error && eraseXP) MasterDAO.deleteObjectsAndSelectionAndXP(mDAO); // eraseAll config & objects
                 logger.debug("delete ok");
                 if (i==xps.size()-1) {
                     GUI.getInstance().setRunning(false);
                     GUI.getInstance().populateExperimentList();
-                    log("dumping done!");
+                    log("exporting done!");
                 }
                 return error ? xp+" NOT DUMPED : error": xp+" dumped!";
             };
         };
         DefaultWorker.execute(t, xps.size());
-    }//GEN-LAST:event_dumpObjectsMenuItemActionPerformed
-
+    }
     private void unDumpObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unDumpObjectsMenuItemActionPerformed
         unsetXP();
         final List<File> dumpedFiles = Utils.seachAll(hostName.getText(), s->s.endsWith("_dump.zip"), 1);
@@ -3100,12 +3053,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JCheckBoxMenuItem deleteMeasurementsCheckBox;
     private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JMenuItem deleteXPMenuItem;
-    private javax.swing.JMenuItem dumpObjectsMenuItem;
     private javax.swing.JMenuItem duplicateXPMenuItem;
     private javax.swing.JCheckBoxMenuItem eraseCollectionCheckbox;
     private javax.swing.JScrollPane experimentJSP;
     private javax.swing.JList experimentList;
     private javax.swing.JMenu experimentMenu;
+    private javax.swing.JMenuItem exportObjectsMenuItem;
     private javax.swing.JMenuItem exportSelectedFieldsMenuItem;
     private javax.swing.JMenu exportSubMenu;
     private javax.swing.JMenuItem exportWholeXPMenuItem;
@@ -3117,10 +3070,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JMenuItem importConfigurationForSelectedPositionsMenuItem;
     private javax.swing.JMenuItem importConfigurationForSelectedStructuresMenuItem;
     private javax.swing.JMenu importExportMenu;
-    private javax.swing.JMenuItem importFieldsToCurrentExperimentMenuItem;
     private javax.swing.JMenuItem importImagesMenuItem;
     private javax.swing.JMenuItem importNewExperimentMenuItem;
     private javax.swing.JMenu importOptionsSubMenu;
+    private javax.swing.JMenuItem importPositionsToCurrentExperimentMenuItem;
     private javax.swing.JMenu importSubMenu;
     private javax.swing.JComboBox interactiveStructure;
     private javax.swing.JLabel jLabel1;

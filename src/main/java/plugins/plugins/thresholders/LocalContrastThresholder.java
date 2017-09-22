@@ -34,7 +34,7 @@ import utils.Utils;
  */
 public class LocalContrastThresholder implements Thresholder {
     BoundedNumberParameter scale = new BoundedNumberParameter("Contrast Scale", 1, 2, 1, null);
-    BoundedNumberParameter constrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.01,  0.001, 0.2);
+    BoundedNumberParameter constrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.04,  0.001, 0.2);
     Parameter[] parameters = new Parameter[]{scale, constrastThreshold};
     
     public LocalContrastThresholder() {}

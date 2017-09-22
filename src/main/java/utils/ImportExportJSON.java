@@ -69,22 +69,38 @@ public class ImportExportJSON {
         if (pcb!=null) pcb.log(allObjects.size()+"# measurements found");
         writer.write(dao.getPositionName()+File.separator+"measurements.txt", allObjects, o -> serialize(o.getMeasurements()));
     }
-    public static void writePreProcessedImages(ZipWriter writer, ObjectDAO dao) {
+    public static void exportPreProcessedImages(ZipWriter writer, ObjectDAO dao) {
         int ch = dao.getExperiment().getChannelImageCount();
         int fr = dao.getExperiment().getPosition(dao.getPositionName()).getTimePointNumber(false);
         String dir = dao.getPositionName()+File.separator+"Images"+File.separator;
         ImageDAO iDao = dao.getExperiment().getImageDAO();
         for (int c = 0; c<ch; ++c) {
             for (int f = 0; f<fr; ++f) {
-                InputStream is = iDao.openStream(c, f, dao.getPositionName());
+                InputStream is = iDao.openPreProcessedImageAsStream(c, f, dao.getPositionName());
                 if (is!=null) writer.appendFile(dir+f+"_"+c, is); //closes is
             }
         }
     }
-    public static void writeTrackImages(ZipWriter writer, ObjectDAO dao) {
+    public static void exportTrackImages(ZipWriter writer, ObjectDAO dao) {
         // TODO
+        ImageDAO iDao = dao.getExperiment().getImageDAO();
+        String dir = dao.getPositionName()+File.separator+"TrackImages"+File.separator;
+        for (int sIdx = 0; sIdx<dao.getExperiment().getStructureCount(); ++sIdx) {
+            List<Integer> direct = dao.getExperiment().getAllDirectChildStructures(sIdx);
+            Utils.transform(direct, s->dao.getExperiment().getChannelImageIdx(s));
+            Utils.removeDuplicates(direct, false);
+            if (direct.isEmpty()) continue;
+            List<StructureObject> ths = StructureObjectUtils.getAllObjects(dao, sIdx);
+            ths.removeIf(o->!o.isTrackHead());
+            for (int childCIdx : direct) {
+                for (StructureObject th : ths) {
+                    InputStream is = iDao.openTrackImageAsStream(th, childCIdx);
+                    if (is!=null) writer.appendFile(dir+Selection.indicesString(th)+"_"+childCIdx, is);
+                }
+            }
+        }
     }
-    public static void readImages(ZipReader reader, ObjectDAO dao) {
+    public static void importPreProcessedImages(ZipReader reader, ObjectDAO dao) {
         String dir = dao.getPositionName()+File.separator+"Images"+File.separator;
         ImageDAO iDao = dao.getExperiment().getImageDAO();
         String pos = dao.getPositionName();
@@ -102,7 +118,7 @@ public class ImportExportJSON {
             }
         }
     }
-    public static void readObjects(ZipReader reader, ObjectDAO dao) {
+    public static void importObjects(ZipReader reader, ObjectDAO dao) {
         logger.debug("reading objects..");
         List<StructureObject> allObjects = reader.readObjects(dao.getPositionName()+File.separator+"objects.txt", o->parse(StructureObject.class, o));
         logger.debug("{} objets read", allObjects.size());
@@ -141,8 +157,8 @@ public class ImportExportJSON {
         return FileIO.readFromFile(path, s-> parse(clazz, s));
     }
     
-    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean images, ProgressCallback pcb) {exportPositions(w, dao, images, null, pcb);}
-    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean images, List<String> positions, ProgressCallback pcb) {
+    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean preProcessedImages, boolean trackImages, ProgressCallback pcb) {exportPositions(w, dao, preProcessedImages, trackImages, null, pcb);}
+    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean preProcessedImages, boolean trackImages, List<String> positions, ProgressCallback pcb) {
         if (!w.isValid()) return;
         if (positions==null) positions = Arrays.asList(dao.getExperiment().getPositionsAsString());
         int count = 0;
@@ -154,9 +170,13 @@ public class ImportExportJSON {
             ObjectDAO oDAO = dao.getDao(p);
             writeObjects(w, oDAO, pcb);
             logger.info("objects exported");
-            if (images) {
-                logger.info("Writing images");
-                writePreProcessedImages(w, oDAO);
+            if (preProcessedImages) {
+                logger.info("Writing pp images");
+                exportPreProcessedImages(w, oDAO);
+            }
+            if (trackImages) {
+                logger.info("Writing track images");
+                exportTrackImages(w, oDAO);
             }
             if (pcb!=null) pcb.incrementProgress();
             if (pcb!=null) pcb.log("Position: "+p+" exported!");
@@ -249,8 +269,8 @@ public class ImportExportJSON {
                         logger.debug("deleting all objects");
                         oDAO.deleteAllObjects();
                         logger.debug("all objects deleted");
-                        readObjects(r, oDAO);
-                        readImages(r, oDAO);
+                        importObjects(r, oDAO);
+                        importPreProcessedImages(r, oDAO);
                     } catch (Exception e) {
                         if (pcb!=null) pcb.log("Error! xp could not be undumped! "+e.getMessage());
                         e.printStackTrace();

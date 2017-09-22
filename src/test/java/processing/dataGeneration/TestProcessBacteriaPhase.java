@@ -53,15 +53,15 @@ public class TestProcessBacteriaPhase {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
 
-        String dbName = "MF1_170519";
+        String dbName = "MF1_170523";
         //String dbName = "MF1_11052017";
         int field = 0;
-        int microChannel =15;
-        int time =0;
+        int microChannel =4;
+        int time =578;
         //thld = 312;
         
         //testSegBacteriesFromXP(dbName, field, time, microChannel);
-        testSegBacteriesFromXP(dbName, field, microChannel, 139, 139);
+        testSegBacteriesFromXP(dbName, field, microChannel, time, time);
         //testSplit(dbName, field, time, microChannel, 1, true);
     }
     

@@ -65,9 +65,9 @@ public class TestTracker {
         //String dbName = "mutd5_12052017";
         //String dbName = "fluo160501";
         //String dbName = "MF1_11052017";
-        String dbName = "MF1_170519";
-        int pIdx = 0;
-        int mcIdx =2;
+        String dbName = "MF1_170523";
+        int pIdx = 1;
+        int mcIdx =3;
         int structureIdx = 1;
         MasterDAO db = new Task(dbName).getDB();
         db.setReadOnly(true);
@@ -77,7 +77,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 340,370);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,1000);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {

@@ -194,12 +194,12 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportWholeXPMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="dumpObjectsMenuItem">
+                <MenuItem class="javax.swing.JMenuItem" name="exportObjectsMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Dump Experiment(s)"/>
+                    <Property name="text" type="java.lang.String" value="Objects of Selected Experiment(s)"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="dumpObjectsMenuItemActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportObjectsMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="compareToDumpFileMenuItem">
@@ -217,12 +217,12 @@
                 <Property name="text" type="java.lang.String" value="Import"/>
               </Properties>
               <SubComponents>
-                <MenuItem class="javax.swing.JMenuItem" name="importFieldsToCurrentExperimentMenuItem">
+                <MenuItem class="javax.swing.JMenuItem" name="importPositionsToCurrentExperimentMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Fields to Current Experiment"/>
+                    <Property name="text" type="java.lang.String" value="Positions to Current Experiment"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importFieldsToCurrentExperimentMenuItemActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importPositionsToCurrentExperimentMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="importConfigToCurrentExperimentMenuItem">

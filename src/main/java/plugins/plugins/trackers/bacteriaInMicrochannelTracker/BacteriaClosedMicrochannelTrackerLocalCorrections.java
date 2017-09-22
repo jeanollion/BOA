@@ -89,11 +89,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
     BoundedNumberParameter endOfChannelContactThreshold = new BoundedNumberParameter("End of channel contact Threshold", 2, 0.45, 0, 1);
     
-    ChoiceParameter thresholdMethod = new ChoiceParameter("Threshold method", new String[]{"From Segmenter", "Adaptative By Frame", "Adaptative By Frame and Y"}, "From Segmenter", false);
+    ChoiceParameter thresholdMethod = new ChoiceParameter("Threshold method", new String[]{"From Segmenter", "Local Contrast Adaptative By Frame", "Local Contrast Adaptative By Frame and Y", "Autothreshold", "Autothreshold Adaptative by Frame"}, "From Segmenter", false);
     BoundedNumberParameter adaptativeCoefficient = new BoundedNumberParameter("Adaptative coefficient", 2, 1, 0, 1);
-    BoundedNumberParameter frameHalfWindow = new BoundedNumberParameter("Adaptative by Frame: half-window", 1, 10, 1, null);
+    BoundedNumberParameter frameHalfWindow = new BoundedNumberParameter("Adaptative by Frame: half-window", 1, 20, 1, null);
     BoundedNumberParameter yHalfWindow = new BoundedNumberParameter("Adaptative by Y: half-window", 1, 30, 10, null);
     BoundedNumberParameter contrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.06, 0.01, 0.2);
+    ChoiceParameter autothresholdMethod = new ChoiceParameter("Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod);
     
     Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold, thresholdCond};
@@ -175,8 +176,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {
-        thresholdCond.setActionParameters("Adaptative By Frame", new Parameter[]{contrastThreshold, adaptativeCoefficient, frameHalfWindow});
-        thresholdCond.setActionParameters("Adaptative By Frame and Y", new Parameter[]{contrastThreshold, adaptativeCoefficient, frameHalfWindow, yHalfWindow});
+        thresholdCond.setActionParameters("Local Contrast Adaptative By Frame", new Parameter[]{contrastThreshold, adaptativeCoefficient, frameHalfWindow});
+        thresholdCond.setActionParameters("Local Contrast Adaptative By Frame and Y", new Parameter[]{contrastThreshold, adaptativeCoefficient, frameHalfWindow, yHalfWindow});
+        thresholdCond.setActionParameters("Autothreshold", new Parameter[]{autothresholdMethod});
+        thresholdCond.setActionParameters("Autothreshold Adaptative by Frame", new Parameter[]{autothresholdMethod, adaptativeCoefficient, frameHalfWindow});
     }
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections setSegmenter(SegmenterSplitAndMerge seg) {
@@ -245,14 +248,28 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<Image> planes = new ArrayList<>(parentsByF.size());
             Set<Integer> s =  new TreeSet(parentsByF.keySet());
             for (int t : s) planes.add(((OverridableThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parentsByF.get(t)));
-            //threshold = new ThresholdHisto(planes);
-            logger.debug("adaptative: coeff: {}, hwf: {}, hwy: {}", adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
-            threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue()); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
-            threshold.setAdaptativeThreshold(adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue()); // global threshold not relevant for cell range computation if some channel are void
-            int[] fr = getFrameRangeContainingCells(so); // will use the global threshold
-            if (debug) logger.debug("frame range: {}", fr);
-            if (fr !=null && thresholdMethod.getSelectedIndex()==2) { // adaptative by F & Y
+            logger.debug("threshold method: {}. Adaptative coeff: {}, hwf: {}, hwy: {}", this.thresholdMethod.getSelectedItem(), adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
+            int method = thresholdMethod.getSelectedIndex();
+            if (method==1 || method==2) {
+                threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue()); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
+            } else {
+                if (debug || debugCorr) logger.debug("threshold method: {}", autothresholdMethod.getSelectedItem() );
+                threshold = new ThresholdHisto(planes, minT, true, AutoThresholder.Method.valueOf(autothresholdMethod.getSelectedItem()));
+            }
+            if (method==1 || method==2 || method==3 || method==4) {
+                threshold.setAdaptativeThreshold(adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue()); 
+            }
+            
+            int[] fr = getFrameRangeContainingCells(so); // will use the adaptative threshold by Frame because global threshold not relevant for cell range computation if some channel are void
+            if (fr!=null) {
                 threshold.setFrameRange(fr);
+                if (method==3) ((ThresholdHisto)threshold).unsetAdaptativeByF();
+            }
+            if (debug || debugCorr) {
+                logger.debug("frame range: {}", fr);
+                for (int i = fr[0]; i<fr[1]; i+=100) logger.debug("thld={} F={}", threshold.getThreshold(i), i);
+            }
+            if (fr !=null && thresholdMethod.getSelectedIndex()==2) { // adaptative by F & Y
                 ((ThresholdLocalContrast)threshold).setAdaptativeByFY(frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue()); // TODO parametrer!
             }            
             threshold.freeMemory();
@@ -352,10 +369,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         final int minFF=minF;
         final int maxFF = maxF;
         while (minF<maxF && hasNoObjects(so, minF)) minF+=inc;
-        if (minF>=maxF) return null;
+        if (minF>=maxF) {
+            if (debug || debugCorr) logger.debug("getFrameRange: [{}-{}]", minF, maxF);
+            return null;
+        }
         if (inc>1) while (minF>minFF && !hasNoObjects(so, minF-1)) minF--; // backward 
         
         while (maxF>minF && hasNoObjects(so, maxF)) maxF-=inc;
+        if (debug || debugCorr) logger.debug("getFrameRange: [{}-{}]", minF, maxF);
         if (maxF<=minF) return null;
         if (inc>1) while (maxF<maxFF-1 && !hasNoObjects(so, maxF+1)) maxF++; // forward 
         

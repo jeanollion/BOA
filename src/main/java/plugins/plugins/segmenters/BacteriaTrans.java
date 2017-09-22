@@ -123,7 +123,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter fillHolesBackgroundContactProportion = new BoundedNumberParameter("Fill holes background contact proportion", 2, 0.25, 0, 1);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 5, 5, null); // too high -> bad separation, too low: objects shape too far away from bact -> random merging
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
-    PluginParameter<Thresholder> threshold = new PluginParameter<>("Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); // // //new LocalContrastThresholder()
+    PluginParameter<Thresholder> threshold = new PluginParameter<>("Threshold (separation from background)", Thresholder.class, new LocalContrastThresholder() , false); // // // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.07, 0.01, 0.999); //minFN=0.14 (150325/0/1/f=113/th=144) 0.199 (150324/0/0/tp44/th=318) / maxFP=0.071(141107/0/0/tp796/th=265)
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
@@ -146,13 +146,20 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
     NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 100, 5, null);
     NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 300, 5, null);
-    NumberParameter minXSize = new BoundedNumberParameter("Minimum X-Thickness", 0, 7, 1, null);
+    NumberParameter minXSize = new BoundedNumberParameter("Minimum Average of X-Thickness", 0, 4, 1, null);
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minXSize, minSizeFusion, minSizeFusionCost, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
     private final static double maxMergeCostDistanceBB = 10; // distance in pixel for cost computation for merging small objects (during correction)
     private final static double maxMergeDistanceBB = 3; // distance in pixel for merging small objects during main process
     // ParameterSetup interface
+    
+    public BacteriaTrans setObjectParameters(double minSize, double minXSize) {
+        this.minSize.setValue(minSize);
+        this.minXSize.setValue(minXSize);
+        return this;
+    }
+    
     @Override public boolean canBeTested(String p) {
         List canBeTested = new ArrayList<String>(){{add(curvatureThreshold.getName()); add(curvatureThreshold2.getName()); add(threshold.getName()); add(curvatureScale.getName()); add(subBackScale.getName()); add(relativeThicknessThreshold.getName());}};
         return canBeTested.contains(p);
@@ -523,7 +530,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
             for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.getEDM());
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.getEDM().setName("EDM. Threshold: "+pv.threshold));
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.getIntensityMap());
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(res.getLabelMap().setName("segmented from: "+input.getName()));
         }

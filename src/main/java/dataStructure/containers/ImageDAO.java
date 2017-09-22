@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  */
 public interface ImageDAO {
     public String getImageExtension();
-    public InputStream openStream(int channelImageIdx, int timePoint, String microscopyFieldName);
+    public InputStream openPreProcessedImageAsStream(int channelImageIdx, int timePoint, String microscopyFieldName);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds);
     public BlankMask getPreProcessedImageProperties(String microscopyFieldName);
@@ -44,6 +44,7 @@ public interface ImageDAO {
     // track images
     public void writeTrackImage(StructureObject trackHead, int channelImageIdx, Image image);
     public Image openTrackImage(StructureObject trackHead, int channelImageIdx);
+    public InputStream openTrackImageAsStream(StructureObject trackHead, int channelImageIdx);
     public void deleteTrackImages(String position, int parentStructureIdx);
     
 }

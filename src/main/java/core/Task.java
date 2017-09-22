@@ -265,27 +265,26 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 printErrors();
                 db = null;
                 return false;
-            } else {
-                if (structures!=null) checkArray(structures, db.getExperiment().getStructureCount(), "Invalid structure: ");
-                if (positions!=null) checkArray(positions, db.getExperiment().getPositionCount(), "Invalid position: ");
-                // check positions
-                if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
-                PreProcessingChain template = db.getExperiment().getPreProcessingTemplate();
-                for (int p : positions) {
-                    PreProcessingChain pr = db.getExperiment().getPosition(p).getPreProcessingChain();
-                    if (!template.sameContent(pr)) publish("Warning: Position: "+db.getExperiment().getPosition(p).getName()+": pre-processing chain differs from template");
-                }
-                // check files
-                for (Pair<String, int[]> e : extractMeasurementDir) {
-                    String exDir = e.key==null? db.getDir() : e.key;
-                    File f= new File(exDir);
-                    if (!f.exists()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " not found")));
-                    else if (!f.isDirectory()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " is not a directory")));
-                    else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
-                }
+            } 
+            if (structures!=null) checkArray(structures, db.getExperiment().getStructureCount(), "Invalid structure: ");
+            if (positions!=null) checkArray(positions, db.getExperiment().getPositionCount(), "Invalid position: ");
+            // check positions
+            if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+            PreProcessingChain template = db.getExperiment().getPreProcessingTemplate();
+            for (int p : positions) {
+                PreProcessingChain pr = db.getExperiment().getPosition(p).getPreProcessingChain();
+                if (!template.sameContent(pr)) publish("Warning: Position: "+db.getExperiment().getPosition(p).getName()+": pre-processing chain differs from template");
+            }
+            // check files
+            for (Pair<String, int[]> e : extractMeasurementDir) {
+                String exDir = e.key==null? db.getDir() : e.key;
+                File f= new File(exDir);
+                if (!f.exists()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " not found")));
+                else if (!f.isDirectory()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " is not a directory")));
+                else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
             }
             if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages) errors.add(new Pair(dbName, new Exception("No action to run!")));
-            //db=null;
+            db.clearCache(); // unlock
             printErrors();
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
             return errors.isEmpty();
@@ -359,7 +358,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             
             
             db.clearCache();
-            db.getExperiment();
+            //db.getExperiment();
             //db=null;
         }
     private void run(String position, boolean deleteAllField) throws Exception {
@@ -526,6 +525,11 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         if (ui!=null) ui.setMessage("Total subTasks: "+totalSubtasks);
         int[] taskCounter = new int[]{0, totalSubtasks};
         for (Task t : tasks) t.setSubtaskNumber(taskCounter);
-        DefaultWorker.execute(i -> {tasks.get(i).run(); return "";}, tasks.size());
+        DefaultWorker.execute(i -> {
+            tasks.get(i).run();
+            if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
+            tasks.get(i).db=null;
+            return "";
+        }, tasks.size());
     }
 }

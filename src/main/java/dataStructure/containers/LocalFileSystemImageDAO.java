@@ -56,7 +56,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         return ".tif";
     }
     @Override
-    public InputStream openStream(int channelImageIdx, int timePoint, String microscopyFieldName) {
+    public InputStream openPreProcessedImageAsStream(int channelImageIdx, int timePoint, String microscopyFieldName) {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName);
         File f = new File(path);
         try {
@@ -167,6 +167,18 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         } else {
             return null;
         }
+    }
+    @Override
+    public InputStream openTrackImageAsStream(StructureObject trackHead, int channelImageIdx) {
+        String path = getTrackImagePath(trackHead, channelImageIdx);
+        File f = new File(path);
+        try {
+            //logger.trace("Opening track image:  trackHead: {}", trackHead);
+            return new FileInputStream(f);
+        } catch (FileNotFoundException ex) {
+            logger.trace("Error Opening track image:  trackHead: {} channelImage: {}", trackHead, channelImageIdx);
+        } 
+        return null;
     }
 
     @Override
