@@ -50,9 +50,11 @@ public class TrackTreeController {
     public TrackTreeController(MasterDAO db) {
         this.db = db;
         //this.objectGenerator=objectGenerator;
-        allGeneratorS = new HashMap<Integer, TrackTreeGenerator>();
-        for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) allGeneratorS.put(s, new TrackTreeGenerator(db, this));
-        displayedGeneratorS=new TreeMap<Integer, TrackTreeGenerator>();
+        allGeneratorS = new HashMap<>();
+        for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) {
+            allGeneratorS.put(s, new TrackTreeGenerator(db, this));
+        }
+        displayedGeneratorS=new TreeMap<>();
     }
     public void setEnabled(boolean enabled) {
         for (TrackTreeGenerator t : allGeneratorS.values()) t.setEnabled(enabled);

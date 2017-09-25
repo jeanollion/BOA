@@ -888,7 +888,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     private boolean checkConnection() {
         if (this.db==null) {
-            log("Connect to DB and create experiment first");
+            log("Open Experiment first (GUI:"+hashCode());
             return false;
         } else return true;
     }
@@ -1951,7 +1951,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             db2.updateExperiment();
             db2.clearCache();
             populateExperimentList();
-            this.setDBConnection(name, null, false);
+            setDBConnection(name, null, false);
             if (this.db!=null) setSelectedExperiment(name);
         }
     }//GEN-LAST:event_newXPMenuItemActionPerformed
@@ -2431,6 +2431,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
         if (!checkConnection()) return;
+        logger.info("delete: from GUI: "+hashCode());
         //if (db.isReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (sel.size()<=10 || Utils.promptBoolean("Delete "+sel.size()+ " Objects ? ", this)) ManualCorrection.deleteObjects(db, sel, true);

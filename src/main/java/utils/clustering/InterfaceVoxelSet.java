@@ -28,6 +28,7 @@ import utils.clustering.Object3DCluster.InterfaceVoxels;
 /**
  *
  * @author jollion
+ * @param <T>
  */
 public abstract class InterfaceVoxelSet<T extends InterfaceVoxelSet<T>> extends InterfaceObject3DImpl<T> implements InterfaceVoxels<T> {
     Set<Pair<Voxel, Voxel>> voxels;

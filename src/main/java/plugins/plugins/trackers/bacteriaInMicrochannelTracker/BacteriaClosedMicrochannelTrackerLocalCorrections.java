@@ -279,7 +279,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         
         
         //if (true) return;
-        // 1) assign all. Limit to first continuous segment of cells
+        // 1) segment. Limit to first continuous segment of cells
         if (true && threshold!=null && threshold.getFrameRange()!=null) {
             maxT = threshold.getFrameRange()[1]+1;
             minT = threshold.getFrameRange()[0];
@@ -302,24 +302,25 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return;
         } //else for (int t = maxT; t<parents.size(); ++t) if (populations.get(t]!=null) populations.get(t].clear();
         for (int f = minT; f<maxT; ++f) getObjects(f); // init
-        if (correctionStep) step(null, true);
-        for (int t = minT+1; t<maxT; ++t) {
-            /*if (getObjects(t).isEmpty()) { // would limit to first continuous segment
-                maxT=t;
-                if ((debug || debugCorr)) logger.debug("no objects @frame: {}, threhsold: {}", maxT, threshold!=null ? threshold.getThreshold(maxT) : debugThreshold);
-                break;
-            }*/
-            setAssignmentToTrackAttributes(t, false);
-        }
-        
         
         if (correctionStep) step(null, true);
         
         // correct beheaded cells bias
-        if (correction) correctBeheadedCells();
+        if (correction) {
+            for (int t = minT+1; t<maxT; ++t) {
+                /*if (getObjects(t).isEmpty()) { // would limit to first continuous segment
+                    maxT=t;
+                    if ((debug || debugCorr)) logger.debug("no objects @frame: {}, threhsold: {}", maxT, threshold!=null ? threshold.getThreshold(maxT) : debugThreshold);
+                    break;
+                }*/
+                setAssignmentToTrackAttributes(t, true); // last assignment -> for beheaded cell correction
+            }
+            correctBeheadedCells();
+            for (int t = minT+1; t<maxT; ++t) setAssignmentToTrackAttributes(t, false);
+        }
         if (correctionStep) step("after correct beheaded cells", true);
         // 2) perform corrections idx-wise
-        if (correction && false) {
+        if (correction) {
             int idxMax=0;
             int idxLim = populations.get(minT).size();
             for (int t = minT+1; t<maxT; ++t) if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
@@ -541,7 +542,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (debugCorr) logger.debug("Merge beheaded cells candidate frames: [{}->{}], sizes: {}", track.get(0).timePoint, track.get(track.size()-1).timePoint, Utils.toStringList(track, ta -> ""+ta.o.getSize()));
                 int trackSize = track.size();
                 track.removeIf( ta -> !isCandidate.apply(ta));
-                //if (debugCorr) logger.debug("Merge beheaded cells: remove {} -> {}", trackSize, track.size());
+                if (debugCorr) logger.debug("Merge beheaded cells: remove {} -> {}", trackSize, track.size());
                 if (track.size()==trackSize) { // all objects verify beheaded conditions
                     TrackAttribute end = track.get(track.size()-1);
                     getBucket.clear();
@@ -697,7 +698,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     protected List<Object3D> getObjects(int timePoint) {
         if (this.populations.get(timePoint)==null) {
             StructureObject parent = this.parentsByF.get(timePoint);
-            List<StructureObject> list = parent.getChildren(structureIdx);
+            List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
             if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
                 if (segment) o.getObject().translate(parent.getBounds().duplicate().reverseOffset()); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
                 return o.getObject();
@@ -867,14 +868,18 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (bucket==null) bucket = new ArrayList<>();
         else bucket.clear();
         Integer stop = stopCondition.apply(this);
-        if (stop>=0) bucket.add(this);
-        if (stop>0) return bucket;
+        if (stop>=0) {
+            bucket.add(this);
+            if (stop>0) return bucket;
+        }
         TrackAttribute ta= this;
         while(!ta.division && ta.next!=null) {
             ta = ta.next;
             stop = stopCondition.apply(ta);
-            if (stop>=0) bucket.add(ta);
-            if (stop>0) return bucket;
+            if (stop>=0) {
+                bucket.add(ta);
+                if (stop>0) return bucket;
+            }
         }
         return bucket;
     }

@@ -38,7 +38,7 @@ import static plugins.Plugin.logger;
 import plugins.plugins.segmenters.BacteriaTrans;
 import static plugins.plugins.segmenters.BacteriaTrans.debug;
 import utils.clustering.ClusterCollection;
-import utils.clustering.DummyInterfaceVoxelSet;
+import utils.clustering.SimpleInterfaceVoxelSet;
 import utils.clustering.Object3DCluster;
 
 /**
@@ -144,7 +144,7 @@ public class FillHoles2D {
         @Override
         public void init(ObjectPopulation population) {
             if (!population.getImageProperties().sameSize(foregroundObjects.getImageProperties())) throw new IllegalArgumentException("Foreground objects population should have same bounds as current population");
-            ClusterCollection.InterfaceFactory<Object3D, DummyInterfaceVoxelSet> f = (Object3D e1, Object3D e2, Comparator<? super Object3D> elementComparator) -> new DummyInterfaceVoxelSet(e1, e2);
+            ClusterCollection.InterfaceFactory<Object3D, SimpleInterfaceVoxelSet> f = (Object3D e1, Object3D e2, Comparator<? super Object3D> elementComparator) -> new SimpleInterfaceVoxelSet(e1, e2);
             List<Object3D> allObjects = new ArrayList<>(population.getObjects().size()+foregroundObjects.getObjects().size());
             allObjects.addAll(population.getObjects());
             allObjects.addAll(foregroundObjects.getObjects());
@@ -154,9 +154,9 @@ public class FillHoles2D {
             //if (debug) new IJImageDisplayer().showImage(Object3DCluster.drawInterfaces(clust));
         }
         private Map<Integer, Integer> getInterfaceSize(Object3D o) {
-            Set<DummyInterfaceVoxelSet> inter = clust.getInterfaces(o);
+            Set<SimpleInterfaceVoxelSet> inter = clust.getInterfaces(o);
             Map<Integer, Integer> res = new HashMap<>(inter.size());
-            for (DummyInterfaceVoxelSet i : inter) {
+            for (SimpleInterfaceVoxelSet i : inter) {
                 Object3D other = i.getOther(o);
                 res.put(other.getLabel(), res.getOrDefault(other.getLabel(), 0) + i.getVoxels(other).size());
             }

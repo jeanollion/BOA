@@ -23,9 +23,9 @@ import dataStructure.objects.Object3D;
  *
  * @author jollion
  */
-public class DummyInterfaceVoxelSet extends InterfaceVoxelSet<DummyInterfaceVoxelSet> {
+public class SimpleInterfaceVoxelSet extends InterfaceVoxelSet<SimpleInterfaceVoxelSet> {
 
-    public DummyInterfaceVoxelSet(Object3D e1, Object3D e2) {
+    public SimpleInterfaceVoxelSet(Object3D e1, Object3D e2) {
         super(e1, e2);
     }
 
@@ -40,7 +40,7 @@ public class DummyInterfaceVoxelSet extends InterfaceVoxelSet<DummyInterfaceVoxe
     }
 
     @Override
-    public int compareTo(DummyInterfaceVoxelSet o) {
+    public int compareTo(SimpleInterfaceVoxelSet o) {
         return 0;
     }
     

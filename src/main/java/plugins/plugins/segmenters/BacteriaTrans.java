@@ -100,11 +100,12 @@ import utils.HashMapGetCreate;
 import utils.Utils;
 import static utils.Utils.plotProfile;
 import utils.clustering.ClusterCollection.InterfaceFactory;
-import utils.clustering.DummyInterfaceVoxelSet;
+import utils.clustering.SimpleInterfaceVoxelSet;
 import utils.clustering.Interface;
 import utils.clustering.InterfaceImpl;
 import utils.clustering.InterfaceObject3D;
 import utils.clustering.InterfaceObject3DImpl;
+import utils.clustering.InterfaceVoxelSet;
 import utils.clustering.Object3DCluster;
 import utils.clustering.Object3DCluster.InterfaceVoxels;
 
@@ -713,10 +714,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 FillHoles2D.fillHolesClosing(thresh, closeRadius, fillHolesBckProp, minSizeFusion);
                 if (debug) disp.showImage(thresh.duplicate("SEG MASK AFTER Morpho"));
                 pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true);
+                Collections.sort(pop1.getObjects(), getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
                 pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
                 pop1.filter(new ObjectPopulation.MeanThickness().setX(minXSize)); // remove thin objects
                 pop1.filter(new ObjectPopulation.Thickness().setY(2));
-                Collections.sort(pop1.getObjects(), getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
                 pop1.relabel(false);
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
                 //pop1.filter(new ContrastIntensity(-contrastThreshold, contrastRadius, 0, false, getIntensityMap()));
