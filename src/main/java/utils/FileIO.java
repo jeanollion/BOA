@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -274,6 +275,12 @@ public class FileIO {
                 String name = entry.getName();
                 if (name.startsWith(relativeDir) && name.length()>l) res.add(name);
             }
+            return res;
+        }
+        public Set<String> listDirectories(Predicate<? super String> excludeDirectory) {
+            Set<String> res = listDirectories();
+            if (res.isEmpty()) return res;
+            res.removeIf(excludeDirectory);
             return res;
         }
         public Set<String> listDirectories(String... excludeKeyWords) {

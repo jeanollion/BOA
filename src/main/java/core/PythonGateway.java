@@ -45,7 +45,7 @@ public class PythonGateway {
         } catch(Exception e) {}
     }
     public void setExperimentToGUI(String xpName) {
-        GUI.getInstance().setDBConnection(xpName, null);
+        GUI.getInstance().setDBConnection(xpName, null, false);
     }
     
     public void saveCurrentSelection(String dbName, int structureIdx, String selectionName, List<String> ids, List<String> positions, boolean showObjects, boolean showTracks, boolean open, boolean openWholeSelection, int structureDisplay, int interactiveStructure) {
@@ -63,7 +63,7 @@ public class PythonGateway {
         if (GUI.getDBConnection()==null || !GUI.getDBConnection().getDBName().equals(dbName)) {
             if (GUI.getDBConnection()!=null) logger.debug("current xp name : {} vs {}", GUI.getDBConnection().getDBName(), dbName);
             logger.info("Connection to {}....", dbName);
-            GUI.getInstance().setDBConnection(dbName, null);
+            GUI.getInstance().setDBConnection(dbName, null, false);
             logger.info("Selection tab....");
             GUI.getInstance().setSelectedTab(2);
             logger.info("Tab selected");

@@ -65,20 +65,20 @@ public class TestTracker {
         //String dbName = "mutd5_12052017";
         //String dbName = "fluo160501";
         //String dbName = "MF1_11052017";
-        String dbName = "MF1_170523";
-        int pIdx = 1;
-        int mcIdx =3;
+        String dbName = "MF1_170523_test";
+        int pIdx = 43;
+        int mcIdx =0;
         int structureIdx = 1;
-        MasterDAO db = new Task(dbName).getDB();
-        db.setReadOnly(true);
+        GUI.getInstance().setDBConnection(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
+        MasterDAO db = GUI.getDBConnection();
+        
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         MicrochannelTracker.debug=true;
-        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
+        //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,1000);
-        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,100);
+        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0, 100); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);
@@ -121,7 +121,7 @@ public class TestTracker {
         for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);
         logger.debug("children: {} ({})", StructureObjectUtils.getAllTracks(parentTrack, 0).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, 0).values(), o->o.size()));
 
-        GUI.getInstance();
+        
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (structureIdx==2 && LAPTracker.debugTMI!=null) iwm.setRoiModifier(new SpotWithinCompartmentRoiModifier(LAPTracker.debugTMI, 2));
         logger.debug("generating TOI");
@@ -169,8 +169,6 @@ public class TestTracker {
                 }
             }
         }
-        BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
-        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         ps.segmentAndTrack(structureIdx, parentTrack, null);
@@ -180,8 +178,8 @@ public class TestTracker {
         for (String name : BacteriaClosedMicrochannelTrackerLocalCorrections.stepParents.keySet()) {
             List<StructureObject> pt = BacteriaClosedMicrochannelTrackerLocalCorrections.stepParents.get(name);
             ImageObjectInterface i = iwm.getImageTrackObjectInterface(pt, structureIdx);
-            Image im = i.generateRawImage(structureIdx, true);
-            im.setName(name);
+            Image im = i.generateRawImage(structureIdx, true).duplicate(name); // duplicate if not hascode collapse in case of trackImage
+            //im.setName(name);
             iwm.addImage(im, i, structureIdx, false, true);
             iwm.setInteractiveStructure(structureIdx);
             iwm.displayAllObjects(im);

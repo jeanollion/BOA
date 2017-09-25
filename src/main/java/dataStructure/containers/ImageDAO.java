@@ -45,6 +45,7 @@ public interface ImageDAO {
     public void writeTrackImage(StructureObject trackHead, int channelImageIdx, Image image);
     public Image openTrackImage(StructureObject trackHead, int channelImageIdx);
     public InputStream openTrackImageAsStream(StructureObject trackHead, int channelImageIdx);
+    public void writeTrackImage(StructureObject trackHead, int channelImageIdx, InputStream image);
     public void deleteTrackImages(String position, int parentStructureIdx);
     
 }

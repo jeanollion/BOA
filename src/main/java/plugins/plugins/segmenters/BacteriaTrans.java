@@ -240,7 +240,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         if (mask==null) {
             if (Double.isNaN(thresholdValue)) pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
             else {
-                if (debug) logger.debug("using pre-set threshold");
+                if (debug) logger.debug("using pre-set threshold {}, for {}", thresholdValue, parent);
                 pv.threshold=thresholdValue;
             }
         } else {
@@ -663,8 +663,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (thresh==null && Double.isNaN(threshold)) throw new Error("Threshold not set");
                 IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 if (thresh==null) thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
+                if (debug) disp.showImage(thresh.duplicate("raw thresholded map"));
                 ImageOperations.and(mask, thresh, thresh);
                 thresh = Filters.applyFilter(thresh, null, new RemoveThinBorder(), null); // aberation: borders of microchannels can be segemented -> fill holes would create aberations
+                if (debug) disp.showImage(thresh.duplicate("after remove thin borders"));
                 ObjectPopulation pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, false); // high connectivity for fill holes to fill holes between close cells?
                 FillHoles2D.fillHoles(pop1); // before open in order to avoid digging holes close to borders / after having removed borders
                 /*
@@ -706,9 +708,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     for (Object3D o : toRemove) o.draw(open, label++);
                     disp.showImage(open.duplicate("Open Border Remove #: "+label));
                 }
+                if (debug) disp.showImage(thresh.duplicate("SEG MASK AFTER REMOVE OPEN BORDER"));
                 FillHoles2D.debug=debug;
                 FillHoles2D.fillHolesClosing(thresh, closeRadius, fillHolesBckProp, minSizeFusion);
-                //if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER Morpho"));
+                if (debug) disp.showImage(thresh.duplicate("SEG MASK AFTER Morpho"));
                 pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true);
                 pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
                 pop1.filter(new ObjectPopulation.MeanThickness().setX(minXSize)); // remove thin objects

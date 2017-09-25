@@ -535,11 +535,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
     }
 
-    public void setDBConnection(String dbName, String hostnameOrDir) {
+    public void setDBConnection(String dbName, String hostnameOrDir, boolean readOnly) {
         if (db!=null) unsetXP();
         //long t0 = System.currentTimeMillis();
         if (hostnameOrDir==null) hostnameOrDir = getHostNameOrDir(dbName);
         db = MasterDAOFactory.createDAO(dbName, hostnameOrDir);
+        if (readOnly) db.setReadOnly(readOnly);
         if (db==null || db.getExperiment()==null) {
             logger.warn("no experiment found in DB: {}", db);
             unsetXP();
@@ -1923,7 +1924,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         String dbName = getSelectedExperiment();
         if (dbName==null || (this.db!=null && db.getDBName().equals(dbName))) unsetXP();
         else {
-            setDBConnection(dbName, host);
+            setDBConnection(dbName, host, false);
             if (db!=null) PropertyUtils.set(PropertyUtils.LAST_SELECTED_EXPERIMENT, dbName);
         }
     }//GEN-LAST:event_setSelectedExperimentMenuItemActionPerformed
@@ -1950,7 +1951,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             db2.updateExperiment();
             db2.clearCache();
             populateExperimentList();
-            this.setDBConnection(name, null);
+            this.setDBConnection(name, null, false);
             if (this.db!=null) setSelectedExperiment(name);
         }
     }//GEN-LAST:event_newXPMenuItemActionPerformed
@@ -2074,12 +2075,32 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File f = Utils.chooseFile("Select exported archive", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
-        ImportExportJSON.importFromZip(f.getAbsolutePath(), db, false, false, true, ProgressCallback.get(instance));
-        db.updateExperiment();
-        populateActionMicroscopyFieldList();
-        loadObjectTrees();
-        ImageWindowManagerFactory.getImageManager().flush();
-        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
+        
+        DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
+            @Override
+            public String run(int i) {
+                GUI.getInstance().setRunning(true);
+                ProgressCallback pcb = ProgressCallback.get(instance);
+                pcb.log("Will import objects from file: "+f);
+                boolean error = false;
+                try {
+                    ImportExportJSON.importFromZip(f.getAbsolutePath(), db, false, false, true, pcb);
+                } catch (Exception e) {
+                    logger.error("Error while importing", e);
+                    log("error while importing");
+                }
+                GUI.getInstance().setRunning(false);
+                GUI.getInstance().populateExperimentList();
+                db.updateExperiment();
+                populateActionMicroscopyFieldList();
+                loadObjectTrees();
+                ImageWindowManagerFactory.getImageManager().flush();
+                if (!error) pcb.log("importing done!");
+                PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
+                return "";
+            };
+        };
+        DefaultWorker.execute(t, 1);       
     }//GEN-LAST:event_importPositionsToCurrentExperimentMenuItemActionPerformed
 
     private void importConfigurationForSelectedPositionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationForSelectedPositionsMenuItemActionPerformed
@@ -2363,7 +2384,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void resetLinksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetLinksButtonActionPerformed
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        //if (db.isReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (sel.isEmpty()) {
             logger.warn("Select at least one object to modify its links");
@@ -2374,7 +2395,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void unlinkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unlinkObjectsButtonActionPerformed
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        //if (db.isReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (sel.isEmpty()) {
             logger.warn("Select at least one object to modify its links");
@@ -2385,7 +2406,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        //if (db.isReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (sel.isEmpty()) {
             logger.warn("Select at least one object to modify its links");
@@ -2400,7 +2421,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void manualSegmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manualSegmentButtonActionPerformed
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        //if (db.isReadOnly()) return;
         ManualCorrection.manualSegmentation(db, null, false);
     }//GEN-LAST:event_manualSegmentButtonActionPerformed
 
@@ -2410,14 +2431,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        //if (db.isReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (sel.size()<=10 || Utils.promptBoolean("Delete "+sel.size()+ " Objects ? ", this)) ManualCorrection.deleteObjects(db, sel, true);
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
     private void deleteObjectsButtonMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteObjectsButtonMousePressed
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        //if (db.isReadOnly()) return;
         if (SwingUtilities.isRightMouseButton(evt)) {
             JPopupMenu menu = new JPopupMenu();
             Action prune = new AbstractAction("Prune track (P)") {
@@ -2464,7 +2485,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        //if (db.isReadOnly()) return;
         List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (selList.isEmpty()) logger.warn("Select at least two objects to Merge first!");
         else ManualCorrection.mergeObjects(db, selList, true);
@@ -2472,7 +2493,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        //if (db.isReadOnly()) return;
         List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
         else ManualCorrection.splitObjects(db, selList, true, false);
@@ -2765,8 +2786,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     error = true;
                 }
                 if (error) new File(file).delete();
-                if (!error && eraseXP) MasterDAO.deleteObjectsAndSelectionAndXP(mDAO); // eraseAll config & objects
-                logger.debug("delete ok");
+                if (!error && eraseXP) { // eraseAll config & objects
+                    MasterDAO.deleteObjectsAndSelectionAndXP(mDAO);
+                    logger.debug("delete ok");
+                } 
+                mDAO.clearCache();
                 if (i==xps.size()-1) {
                     GUI.getInstance().setRunning(false);
                     GUI.getInstance().populateExperimentList();

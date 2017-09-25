@@ -46,7 +46,7 @@ public class TestMeasurement {
         int parentdispStructure = 0;
         int dispStructure = 2;
         //MasterDAO db = new MorphiumMasterDAO(dbName);
-        GUI.getInstance().setDBConnection(dbName, null);
+        GUI.getInstance().setDBConnection(dbName, null, true);
         MasterDAO db = GUI.getDBConnection();
         //Measurement m  = new SimpleIntensityMeasurementStructureExclusion(1, 2, 2).setRadii(4, 0).setPrefix("YFPExcl");
         //Measurement m  = new SimpleIntensityMeasurement(1, 2);

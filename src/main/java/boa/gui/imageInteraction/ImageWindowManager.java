@@ -173,6 +173,7 @@ public abstract class ImageWindowManager<T, U, V> {
     public void addImage(Image image, ImageObjectInterface i, int displayedStructureIdx, boolean labelImage, boolean displayImage) {
         if (image==null) return;
         //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
+        logger.debug("add image: {} (hash: {}), IOI exists: {} ({})", image.getName(), image.hashCode(), imageObjectInterfaces.containsKey(i.getKey()), imageObjectInterfaces.containsValue(i));
         if (!imageObjectInterfaces.containsValue(i)) {
             //throw new RuntimeException("image object interface should be created through the manager");
             imageObjectInterfaces.put(i.getKey(), i);
@@ -230,16 +231,19 @@ public abstract class ImageWindowManager<T, U, V> {
         return bb.getSizeY()>=bb.getSizeX() ? new TrackMaskX(parentTrack, childStructureIdx) : new TrackMaskY(parentTrack, childStructureIdx);
     }
     public ImageObjectInterface getImageTrackObjectInterface(List<StructureObject> parentTrack, int childStructureIdx) {
+        
         if (parentTrack.isEmpty()) {
             logger.warn("cannot open track image of length == 0" );
             return null;
         }
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true));
+        logger.debug("getIOI: hash: {} ({}), exists: {}, trackHeadTrackMap: {}", parentTrack.hashCode(), new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true).hashCode(), i!=null, trackHeadTrackMap.containsKey(parentTrack.get(0)));
         if (i==null) {
             i = generateTrackMask(parentTrack, childStructureIdx);
             imageObjectInterfaces.put(i.getKey(), i);
             trackHeadTrackMap.getAndCreateIfNecessary(parentTrack.get(0)).add(parentTrack);
             i.setGUIMode(GUI.hasInstance());
+            logger.debug("create IOI: {} key: {}", i.hashCode(), i.getKey().hashCode());
         } 
         return i;
     }

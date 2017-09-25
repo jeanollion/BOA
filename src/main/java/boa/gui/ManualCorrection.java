@@ -291,7 +291,7 @@ public class ManualCorrection {
         if (updateDisplay) {
             // reload track-tree and update selection toDelete
             int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
-            GUI.getInstance().trackTreeController.updateParentTracks(GUI.getInstance().trackTreeController.getTreeIdx(parentStructureIdx));
+            if (GUI.getInstance().trackTreeController!=null) GUI.getInstance().trackTreeController.updateParentTracks(GUI.getInstance().trackTreeController.getTreeIdx(parentStructureIdx));
             //List<List<StructureObject>> tracks = this.trackTreeController.getGeneratorS().get(structureIdx).getSelectedTracks(true);
             // get unique tracks to display
             Set<StructureObject> uniqueTh = new HashSet<StructureObject>();
@@ -354,7 +354,7 @@ public class ManualCorrection {
         if (updateDisplay) {
             // reload track-tree and update selection toDelete
             int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
-            GUI.getInstance().trackTreeController.updateParentTracks(GUI.getInstance().trackTreeController.getTreeIdx(parentStructureIdx));
+            if (GUI.getInstance().trackTreeController!=null) GUI.getInstance().trackTreeController.updateParentTracks(GUI.getInstance().trackTreeController.getTreeIdx(parentStructureIdx));
             Set<StructureObject> uniqueTh = new HashSet<StructureObject>();
             for (StructureObject o : modifiedObjects) uniqueTh.add(o.getTrackHead());
             List<List<StructureObject>> trackToDisp = new ArrayList<List<StructureObject>>();
@@ -524,7 +524,7 @@ public class ManualCorrection {
                     GUI.updateRoiDisplayForSelections(null, null);
                 }
                 // update trackTree
-                GUI.getInstance().trackTreeController.updateParentTracks();
+                if (GUI.getInstance().trackTreeController!=null) GUI.getInstance().trackTreeController.updateParentTracks();
             }
         }
     }
@@ -610,7 +610,7 @@ public class ManualCorrection {
             }
         }
         // update trackTree
-        GUI.getInstance().trackTreeController.updateParentTracks();
+        if (GUI.getInstance().trackTreeController!=null) GUI.getInstance().trackTreeController.updateParentTracks();
     }
     public static void deleteObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay) {
         String fieldName = StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
@@ -644,7 +644,7 @@ public class ManualCorrection {
                 GUI.updateRoiDisplayForSelections(null, null);
                 
                 // update trackTree
-                GUI.getInstance().trackTreeController.updateParentTracks();
+                if (GUI.getInstance().trackTreeController!=null) GUI.getInstance().trackTreeController.updateParentTracks();
             }
         }
     }

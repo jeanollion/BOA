@@ -336,7 +336,6 @@ public class Utils {
         for (Entry<K, V> e : map.entrySet()) if (values.contains(e.getValue())) res.add(e.getKey());
         return res;
     }
-    
     public static void addHorizontalScrollBar(JComboBox box) {
         Object comp = box.getUI().getAccessibleChild(box, 0);
         if (!(comp instanceof JPopupMenu)) return;

@@ -152,10 +152,18 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         File f = new File(path);
         f.delete();
         f.getParentFile().mkdirs();
-        logger.trace("writing preprocessed image to path: {}", path);
+        logger.trace("writing track image to path: {}", path);
         ImageWriter.writeToFile(image, path, ImageFormat.TIF);
     }
-
+    @Override
+    public void writeTrackImage(StructureObject trackHead, int channelImageIdx, InputStream image) {
+        String path = getTrackImagePath(trackHead, channelImageIdx);
+        File f = new File(path);
+        f.delete();
+        f.getParentFile().mkdirs();
+        logger.trace("writing track image to path: {}", path);
+        FileIO.writeFile(image, path);
+    }
     @Override
     public Image openTrackImage(StructureObject trackHead, int channelImageIdx) {
         String path = getTrackImagePath(trackHead, channelImageIdx);

@@ -175,7 +175,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             initDB();
             return db;
         }
-        
+        public String getDir() {
+            return dir;
+        }
         public Task setAllActions() {
             this.preProcess=true;
             this.segmentAndTrack=true;
@@ -268,12 +270,13 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             } 
             if (structures!=null) checkArray(structures, db.getExperiment().getStructureCount(), "Invalid structure: ");
             if (positions!=null) checkArray(positions, db.getExperiment().getPositionCount(), "Invalid position: ");
-            // check positions
-            if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
-            PreProcessingChain template = db.getExperiment().getPreProcessingTemplate();
-            for (int p : positions) {
-                PreProcessingChain pr = db.getExperiment().getPosition(p).getPreProcessingChain();
-                if (!template.sameContent(pr)) publish("Warning: Position: "+db.getExperiment().getPosition(p).getName()+": pre-processing chain differs from template");
+            if (preProcess) { // compare pre processing to template
+                if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+                PreProcessingChain template = db.getExperiment().getPreProcessingTemplate();
+                for (int p : positions) {
+                    PreProcessingChain pr = db.getExperiment().getPosition(p).getPreProcessingChain();
+                    if (!template.sameContent(pr)) publish("Warning: Position: "+db.getExperiment().getPosition(p).getName()+": pre-processing chain differs from template");
+                }
             }
             // check files
             for (Pair<String, int[]> e : extractMeasurementDir) {

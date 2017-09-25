@@ -228,7 +228,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     ApplyToSegmenter applyToSegmenter;
     
     protected void segmentAndTrack(boolean performCorrection) {
-        if (performCorrection && correctionStep) stepParents = new LinkedHashMap<>();
+        if (performCorrection && (correctionStep)) stepParents = new LinkedHashMap<>();
         this.correction=performCorrection;
         maxT = Collections.max(parentsByF.keySet())+1;
         minT = Collections.min(parentsByF.keySet());
@@ -302,6 +302,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return;
         } //else for (int t = maxT; t<parents.size(); ++t) if (populations.get(t]!=null) populations.get(t].clear();
         for (int f = minT; f<maxT; ++f) getObjects(f); // init
+        if (correctionStep) step(null, true);
         for (int t = minT+1; t<maxT; ++t) {
             /*if (getObjects(t).isEmpty()) { // would limit to first continuous segment
                 maxT=t;
@@ -318,7 +319,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (correction) correctBeheadedCells();
         if (correctionStep) step("after correct beheaded cells", true);
         // 2) perform corrections idx-wise
-        if (correction) {
+        if (correction && false) {
             int idxMax=0;
             int idxLim = populations.get(minT).size();
             for (int t = minT+1; t<maxT; ++t) if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
@@ -481,8 +482,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             else name = "Step: "+step;
         }
         List<StructureObject> newParents = new ArrayList<>(parentsByF.size());
-        for (StructureObject p : parentsByF.values()) newParents.add(p.duplicate());
+        for (StructureObject p : parentsByF.values()) newParents.add(p.duplicate(true));
         Collections.sort(newParents);
+        StructureObjectUtils.setTrackLinks(newParents);
         stepParents.put(name, newParents);
         // perform assignment without corrections?
         for (int t = minT+1; t<maxT; ++t)  setAssignmentToTrackAttributes(t, false);
@@ -523,6 +525,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     private boolean correctBeheadedCells() {
+        if (debugCorr) logger.debug("correcting beheaded cells");
         List<TrackAttribute> bucket = new ArrayList<>();
         Set<TrackAttribute> getBucket = new HashSet<>();
         boolean correctionsHaveBeenPerformed = false;
@@ -532,8 +535,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 (populations.get(ta.timePoint).size()>2 && populations.get(ta.timePoint).get(1).getSize()<2*beheadedCellsSizeLimit); // case of fractionated cells: follwing object is small -> will be able to merge several times
         
         for (int f = minT+1; f<maxT; ++f) {
-            if(!populations.get(f).isEmpty() 
-                    && isCandidate.apply(objectAttributeMap.get(populations.get(f).get(0)))) {
+            if(!populations.get(f).isEmpty() && isCandidate.apply(objectAttributeMap.get(populations.get(f).get(0)))) {
                 boolean hasMerged = false;
                 List<TrackAttribute> track = objectAttributeMap.get(populations.get(f).get(0)).getTrackToNextDivision(bucket, ta -> ta.errorCur ? 1 : 0);
                 if (debugCorr) logger.debug("Merge beheaded cells candidate frames: [{}->{}], sizes: {}", track.get(0).timePoint, track.get(track.size()-1).timePoint, Utils.toStringList(track, ta -> ""+ta.o.getSize()));
@@ -574,7 +576,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     }
                 }
                 if (hasMerged) f-=1; // for overfragemented cells -> go back
-                else f+=track.size();
+                else f+=track.size()-1;
             }
         }
         return correctionsHaveBeenPerformed;

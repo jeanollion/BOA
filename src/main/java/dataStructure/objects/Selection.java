@@ -248,9 +248,11 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         
     }
     
-    private StructureObject getObject(int[] indices, int[] pathToRoot, List<StructureObject> roots) {
+    public static StructureObject getObject(int[] indices, int[] pathToRoot, List<StructureObject> roots) {
         if (roots==null || roots.size()<=indices[0]) return null;
         StructureObject elem = roots.get(indices[0]);
+        if (elem.getFrame()!=indices[0]) elem = Utils.getFirst(roots, o->o.getFrame()==indices[0]);
+        if (elem==null) return null;
         for (int i= 1; i<indices.length; ++i) {
             /*if (elem.getChildren(pathToRoot[i-1]).size()<=indices[i]) {
                 logger.warn("Selection: Object: {} was not found @ idx {}, last parent: {}", indices, i, elem);

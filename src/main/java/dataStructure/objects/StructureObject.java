@@ -92,12 +92,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.idx = 0;
         this.dao=dao;
     }
-    
     public StructureObject duplicate() {
+        return duplicate(false);
+    }
+    public StructureObject duplicate(boolean generateNewID) {
         StructureObject res;
         if (isRoot()) res = new StructureObject(timePoint, (BlankMask)getMask(), dao);
         else res= new StructureObject(timePoint, structureIdx, idx, getObject(), getParent());
-        res.id=id;
+        if (!generateNewID) res.id=id;
         res.previousId=previousId;
         res.nextId=nextId;
         res.parentTrackHeadId=parentTrackHeadId;

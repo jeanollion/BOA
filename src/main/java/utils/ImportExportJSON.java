@@ -84,18 +84,40 @@ public class ImportExportJSON {
     public static void exportTrackImages(ZipWriter writer, ObjectDAO dao) {
         // TODO
         ImageDAO iDao = dao.getExperiment().getImageDAO();
-        String dir = dao.getPositionName()+File.separator+"TrackImages"+File.separator;
         for (int sIdx = 0; sIdx<dao.getExperiment().getStructureCount(); ++sIdx) {
             List<Integer> direct = dao.getExperiment().getAllDirectChildStructures(sIdx);
             Utils.transform(direct, s->dao.getExperiment().getChannelImageIdx(s));
             Utils.removeDuplicates(direct, false);
             if (direct.isEmpty()) continue;
+            String dir = dao.getPositionName()+File.separator+"TrackImages_"+sIdx+File.separator;
             List<StructureObject> ths = StructureObjectUtils.getAllObjects(dao, sIdx);
             ths.removeIf(o->!o.isTrackHead());
             for (int childCIdx : direct) {
                 for (StructureObject th : ths) {
                     InputStream is = iDao.openTrackImageAsStream(th, childCIdx);
                     if (is!=null) writer.appendFile(dir+Selection.indicesString(th)+"_"+childCIdx, is);
+                }
+            }
+        }
+    }
+    public static void importTrackImages(ZipReader reader, ObjectDAO dao) {
+        Set<String> trackImageDirs = reader.listDirectories(s->!s.contains(dao.getPositionName()+File.separator+"TrackImages_"));
+        ImageDAO iDao = dao.getExperiment().getImageDAO();
+        List<StructureObject> roots=  dao.getRoots();
+        for (String dir : trackImageDirs) {
+            int structureIdx =  Integer.parseInt(new File(dir).getName().split("_")[1]);
+            List<String> files = reader.listsubFiles(dir);
+            int[] pathToRoot = dao.getExperiment().getPathToRoot(structureIdx);
+            for (String f : files) {
+                File file = new File(f);
+                String[] fc = file.getName().split("_");
+                String idx = fc[0];
+                StructureObject parentTh = Selection.getObject(Selection.parseIndices(idx), pathToRoot, roots);
+                int channel = Integer.parseInt(fc[1]);
+                InputStream is = reader.readFile(f);
+                if (parentTh!=null && is!=null) {
+                    //logger.debug("read images: f={}, c={} pos: {}", frame, channel, pos);
+                    iDao.writeTrackImage(parentTh, channel, is);
                 }
             }
         }
@@ -178,6 +200,7 @@ public class ImportExportJSON {
                 logger.info("Writing track images");
                 exportTrackImages(w, oDAO);
             }
+            oDAO.clearCache();
             if (pcb!=null) pcb.incrementProgress();
             if (pcb!=null) pcb.log("Position: "+p+" exported!");
         }
@@ -258,8 +281,11 @@ public class ImportExportJSON {
                 } else return false;
             }
             if (objects) {
-                Set<String> dirs = objects ? r.listDirectories("/Images") : Collections.EMPTY_SET;
-                if (pcb!=null) pcb.incrementTaskNumber(dirs.size());
+                Set<String> dirs = objects ? r.listDirectories("/Images", "/TrackImages") : Collections.EMPTY_SET;
+                if (pcb!=null) {
+                    pcb.incrementTaskNumber(dirs.size());
+                    pcb.log("positions: "+dirs.size());
+                }
                 int count = 0;
                 for (String position : dirs) {
                     count++;
@@ -271,12 +297,14 @@ public class ImportExportJSON {
                         logger.debug("all objects deleted");
                         importObjects(r, oDAO);
                         importPreProcessedImages(r, oDAO);
+                        importTrackImages(r, oDAO);
                     } catch (Exception e) {
                         if (pcb!=null) pcb.log("Error! xp could not be undumped! "+e.getMessage());
                         e.printStackTrace();
                         dao.deleteExperiment();
                         throw e;
                     }
+                    oDAO.clearCache();
                     if (pcb!=null) pcb.incrementProgress();
                     if (pcb!=null) pcb.log("Position: "+position+" imported!");
                 }
@@ -290,7 +318,6 @@ public class ImportExportJSON {
                     logger.debug("Stored: #{} selections from file: {} set to db: {}", sels.size(), path, dao.getDBName());
                 }
             }
-            
             dao.clearCache(); // avoid lock issues
             r.close();
             return true;
