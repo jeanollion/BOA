@@ -532,7 +532,7 @@ public class GenerateXP {
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
                             .setSegmenter(new BacteriaTrans())
-                            .setCostParameters(1.5, 3).setThresholdParameters(3, 1, 10, 30)
+                            .setCostParameters(1.5, 3).setThresholdParameters(2, 1, 25, 15)
                     )
             );
             bacteria.setManualSegmenter(new BacteriaTrans()

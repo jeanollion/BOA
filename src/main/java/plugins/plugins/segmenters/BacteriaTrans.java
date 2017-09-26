@@ -138,17 +138,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter curvatureSearchRadius = new BoundedNumberParameter("Radius for min. search", 1, 2.5, 1, null);
     GroupParameter curvatureParameters = new GroupParameter("Constaint on curvature", curvatureScale, curvatureThreshold, curvatureThreshold2, curvatureSearchRadius);
     
-    /*NumberParameter aspectRatioThreshold = new BoundedNumberParameter("Aspect Ratio Threshold", 2, 1.5, 1, null);
-    NumberParameter angleThreshold = new BoundedNumberParameter("Angle Threshold", 1, 20, 0, 90);
-    GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
-    */
-    NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
-    NumberParameter minSizeFusionCost = new BoundedNumberParameter("Minimum Object size (split & merge)", 0, 300, 5, null); 
-    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
-    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 100, 5, null);
-    NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 300, 5, null);
-    NumberParameter minXSize = new BoundedNumberParameter("Minimum Average of X-Thickness", 0, 4, 1, null);
-    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minXSize, minSizeFusion, minSizeFusionCost, minSizeChannelEnd, contactLimit);
+    NumberParameter minSizeFusionCost = new BoundedNumberParameter("Minimum Object size (split & merge)", 0, 50, 5, null).setToolTipText("during object correction step: under this size objects will be merged with other object in contact"); 
+    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 50, 5, null).setToolTipText("under this size (pixels) objects will be merged with other object in contact");
+    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 50, 5, null).setToolTipText("under this size (pixels) objects will be erased");
+    NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 100, 5, null).setToolTipText("under this size (pixels) the last object of the channel will be erased");
+    NumberParameter minXSize = new BoundedNumberParameter("Minimum Average of X-Thickness", 0, 4, 1, null).setToolTipText("objects with average thickness along X-axis under this value will be erased");
+    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minXSize, minSizeFusion, minSizeFusionCost, minSizeChannelEnd);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
     private final static double maxMergeCostDistanceBB = 10; // distance in pixel for cost computation for merging small objects (during correction)
@@ -278,7 +273,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         
         //if (contactLimit.getValue().intValue()>0) pop.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
         
-        if (!pop.getObjects().isEmpty()&& pop.getObjects().get(pop.getObjects().size()-1).getSize()<minSizeChannelEnd.getValue().intValue()) pop.getObjects().remove(pop.getObjects().size()-1); // remove small objects at the end of channel? // si plusieurs somme des tailles inférieurs?
+        if (!pop.getObjects().isEmpty() && pop.getObjects().get(pop.getObjects().size()-1).getSize()<minSizeChannelEnd.getValue().intValue()) pop.getObjects().remove(pop.getObjects().size()-1); // remove small objects at the end of channel? // si plusieurs somme des tailles inférieurs?
         pop.filter(new ObjectPopulation.Size().setMin(minSize.getValue().intValue()));
         return pop;
     }

@@ -64,15 +64,15 @@ public class ImportExportJSON {
             for (StructureObject r : roots) allObjects.addAll(r.getChildren(sIdx));
         }
         if (pcb!=null) pcb.log(allObjects.size()+"# objects found");
-        writer.write(dao.getPositionName()+File.separator+"objects.txt", allObjects, o -> serialize(o));
+        writer.write(dao.getPositionName()+"/objects.txt", allObjects, o -> serialize(o));
         allObjects.removeIf(o -> o.getMeasurements().getValues().isEmpty());
         if (pcb!=null) pcb.log(allObjects.size()+"# measurements found");
-        writer.write(dao.getPositionName()+File.separator+"measurements.txt", allObjects, o -> serialize(o.getMeasurements()));
+        writer.write(dao.getPositionName()+"/measurements.txt", allObjects, o -> serialize(o.getMeasurements()));
     }
     public static void exportPreProcessedImages(ZipWriter writer, ObjectDAO dao) {
         int ch = dao.getExperiment().getChannelImageCount();
         int fr = dao.getExperiment().getPosition(dao.getPositionName()).getTimePointNumber(false);
-        String dir = dao.getPositionName()+File.separator+"Images"+File.separator;
+        String dir = dao.getPositionName()+"/Images/";
         ImageDAO iDao = dao.getExperiment().getImageDAO();
         for (int c = 0; c<ch; ++c) {
             for (int f = 0; f<fr; ++f) {
@@ -89,9 +89,10 @@ public class ImportExportJSON {
             Utils.transform(direct, s->dao.getExperiment().getChannelImageIdx(s));
             Utils.removeDuplicates(direct, false);
             if (direct.isEmpty()) continue;
-            String dir = dao.getPositionName()+File.separator+"TrackImages_"+sIdx+File.separator;
+            String dir = dao.getPositionName()+"/TrackImages_"+sIdx+"/";
             List<StructureObject> ths = StructureObjectUtils.getAllObjects(dao, sIdx);
             ths.removeIf(o->!o.isTrackHead());
+            logger.debug("exporting track images: structure: {}, child structures: {}, th: {}", sIdx, direct, ths.size());
             for (int childCIdx : direct) {
                 for (StructureObject th : ths) {
                     InputStream is = iDao.openTrackImageAsStream(th, childCIdx);
@@ -101,7 +102,7 @@ public class ImportExportJSON {
         }
     }
     public static void importTrackImages(ZipReader reader, ObjectDAO dao) {
-        Set<String> trackImageDirs = reader.listDirectories(s->!s.contains(dao.getPositionName()+File.separator+"TrackImages_"));
+        Set<String> trackImageDirs = reader.listDirectories(s->!s.contains(dao.getPositionName()+"/TrackImages_"));
         ImageDAO iDao = dao.getExperiment().getImageDAO();
         List<StructureObject> roots=  dao.getRoots();
         for (String dir : trackImageDirs) {
@@ -123,7 +124,7 @@ public class ImportExportJSON {
         }
     }
     public static void importPreProcessedImages(ZipReader reader, ObjectDAO dao) {
-        String dir = dao.getPositionName()+File.separator+"Images"+File.separator;
+        String dir = dao.getPositionName()+"/Images/";
         ImageDAO iDao = dao.getExperiment().getImageDAO();
         String pos = dao.getPositionName();
         List<String> files = reader.listsubFiles(dir);
@@ -142,9 +143,9 @@ public class ImportExportJSON {
     }
     public static void importObjects(ZipReader reader, ObjectDAO dao) {
         logger.debug("reading objects..");
-        List<StructureObject> allObjects = reader.readObjects(dao.getPositionName()+File.separator+"objects.txt", o->parse(StructureObject.class, o));
+        List<StructureObject> allObjects = reader.readObjects(dao.getPositionName()+"/objects.txt", o->parse(StructureObject.class, o));
         logger.debug("{} objets read", allObjects.size());
-        List<Measurements> allMeas = reader.readObjects(dao.getPositionName()+File.separator+"measurements.txt", o->parse(Measurements.class, o));
+        List<Measurements> allMeas = reader.readObjects(dao.getPositionName()+"/measurements.txt", o->parse(Measurements.class, o));
         logger.debug("{} measurements read", allObjects.size());
         Map<String, StructureObject> objectsById = new HashMap<>(allObjects.size());
         
@@ -179,8 +180,8 @@ public class ImportExportJSON {
         return FileIO.readFromFile(path, s-> parse(clazz, s));
     }
     
-    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean preProcessedImages, boolean trackImages, ProgressCallback pcb) {exportPositions(w, dao, preProcessedImages, trackImages, null, pcb);}
-    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean preProcessedImages, boolean trackImages, List<String> positions, ProgressCallback pcb) {
+    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean objects, boolean preProcessedImages, boolean trackImages, ProgressCallback pcb) {exportPositions(w, dao, objects, preProcessedImages, trackImages, null, pcb);}
+    public static void exportPositions(ZipWriter w, MasterDAO dao, boolean objects, boolean preProcessedImages, boolean trackImages, List<String> positions, ProgressCallback pcb) {
         if (!w.isValid()) return;
         if (positions==null) positions = Arrays.asList(dao.getExperiment().getPositionsAsString());
         int count = 0;
@@ -190,8 +191,10 @@ public class ImportExportJSON {
             logger.info("Exporting: {}/{}", count, positions.size());
             if (pcb!=null) pcb.log("Exporting position: "+p+ " ("+count+"/"+positions.size()+")");
             ObjectDAO oDAO = dao.getDao(p);
-            writeObjects(w, oDAO, pcb);
-            logger.info("objects exported");
+            if (objects) {
+                writeObjects(w, oDAO, pcb);
+                logger.info("objects exported");
+            }
             if (preProcessedImages) {
                 logger.info("Writing pp images");
                 exportPreProcessedImages(w, oDAO);
@@ -281,7 +284,7 @@ public class ImportExportJSON {
                 } else return false;
             }
             if (objects || preProcessedImages || trackImages) {
-                Set<String> dirs = objects ? r.listDirectories("/Images", "/TrackImages") : Collections.EMPTY_SET;
+                Set<String> dirs = objects ? r.listDirectories("Images", "TrackImages") : Collections.EMPTY_SET;
                 if (pcb!=null) {
                     pcb.incrementTaskNumber(dirs.size());
                     pcb.log("positions: "+dirs.size());

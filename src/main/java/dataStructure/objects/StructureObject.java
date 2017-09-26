@@ -816,7 +816,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                             im.setCalibration(getScaleXY(), getScaleZ());
                             trackImagesC.setQuick(im, channelIdx);
                             List<StructureObject> track = StructureObjectUtils.getTrack(this, false);
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, this.structureIdx);
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().generateTrackMask(track, structureIdx); // not saved in image window manager to avoid memory leaks
                             List<Pair<StructureObject, BoundingBox>> off = i.pairWithOffset(track);
                             for (Pair<StructureObject, BoundingBox> p : off) p.key.offsetInTrackImage=p.value;
                         }

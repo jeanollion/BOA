@@ -40,8 +40,9 @@ public abstract class SimpleParameter implements Parameter {
         return toolTipText;
     }
     @Override
-    public void setToolTipText(String txt) {
+    public <T extends Parameter> T setToolTipText(String txt) {
         this.toolTipText=txt;
+        return (T)this;
     }
     
     @Override

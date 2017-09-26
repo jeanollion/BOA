@@ -66,8 +66,14 @@ public class TestTracker {
         //String dbName = "fluo160501";
         //String dbName = "MF1_11052017";
         String dbName = "MF1_170523";
-        int pIdx = 0;
-        int mcIdx =13;
+        // Optimier pur MF1_170523: P10 
+        //mc7 62 ; 352 544-477: why not merge ? 
+        // mc12 346
+        // mc12: bcp de terminaisons évidentes
+        // mc 16: 70 pk pas split ? 
+        // mc 16 : 93 fragmentation
+        int pIdx = 44;
+        int mcIdx =1; //14
         int structureIdx = 1;
         GUI.getInstance().setDBConnection(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
         MasterDAO db = GUI.getDBConnection();
@@ -77,8 +83,8 @@ public class TestTracker {
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 50,70);
-        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 28, 37); // 91 to test rearrange objects 
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 290,300);
+        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 295, 300); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);

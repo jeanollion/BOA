@@ -529,7 +529,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         int[] taskCounter = new int[]{0, totalSubtasks};
         for (Task t : tasks) t.setSubtaskNumber(taskCounter);
         DefaultWorker.execute(i -> {
-            tasks.get(i).run();
+            tasks.get(i).runTask();
             if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
             tasks.get(i).db=null;
             return "";

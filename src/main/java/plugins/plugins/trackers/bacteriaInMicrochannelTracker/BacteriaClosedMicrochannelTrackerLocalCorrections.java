@@ -91,9 +91,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     ChoiceParameter thresholdMethod = new ChoiceParameter("Threshold method", new String[]{"From Segmenter", "Local Contrast Adaptative By Frame", "Local Contrast Adaptative By Frame and Y", "Autothreshold", "Autothreshold Adaptative by Frame"}, "From Segmenter", false);
     BoundedNumberParameter adaptativeCoefficient = new BoundedNumberParameter("Adaptative coefficient", 2, 1, 0, 1);
-    BoundedNumberParameter frameHalfWindow = new BoundedNumberParameter("Adaptative by Frame: half-window", 1, 20, 1, null);
-    BoundedNumberParameter yHalfWindow = new BoundedNumberParameter("Adaptative by Y: half-window", 1, 30, 10, null);
-    BoundedNumberParameter contrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.06, 0.01, 0.2);
+    BoundedNumberParameter frameHalfWindow = new BoundedNumberParameter("Adaptative by Frame: half-window", 1, 25, 1, null);
+    BoundedNumberParameter yHalfWindow = new BoundedNumberParameter("Adaptative by Y: half-window", 1, 15, 10, null);
+    BoundedNumberParameter contrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.05, 0.01, 0.2);
     ChoiceParameter autothresholdMethod = new ChoiceParameter("Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod);
     
@@ -333,7 +333,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         int nLoop=1;
                         for (int idx = 0; idx<=idxMax; ++idx) {
                             boolean corr2 = performCorrectionsByIdx(tRange[0], tRange[1], idx, corrRanges2, true);
-                            //if (stepParents.size()>=12) return;
+                            if (correctionStep && stepParents.size()>5) return;
                             if (corr2) {
                                 int[] tRange2 = corrRanges2.get(0);
                                 if (tRange2[0]<tRange[0]) tRange[0] = tRange2[0];
@@ -530,11 +530,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         List<TrackAttribute> bucket = new ArrayList<>();
         Set<TrackAttribute> getBucket = new HashSet<>();
         boolean correctionsHaveBeenPerformed = false;
-        Function<TrackAttribute, Boolean> isCandidate = ta -> ta.idx==0 && ta.o.getSize()<=2*beheadedCellsSizeLimit && 
-                (populations.get(ta.timePoint).size()==1 || // no other cell
-                ta.o.getSize() <  populations.get(ta.timePoint).get(1).getSize()) || // head < 1/2 of total size (1/3?)
-                (populations.get(ta.timePoint).size()>2 && populations.get(ta.timePoint).get(1).getSize()<2*beheadedCellsSizeLimit); // case of fractionated cells: follwing object is small -> will be able to merge several times
-        
+        Function<TrackAttribute, Boolean> isCandidate = ta -> ta.idx==0 && ta.o.getSize()<=beheadedCellsSizeLimit && 
+                (populations.get(ta.timePoint).size()==1  // no other cell
+                || ta.o.getSize() <  2 * populations.get(ta.timePoint).get(1).getSize())  // head < 1/2 of total size (1/3?)
+                //|| (populations.get(ta.timePoint).size()>2 && populations.get(ta.timePoint).get(1).getSize()<2*beheadedCellsSizeLimit) // case of fractionated cells: follwing object is small -> will be able to merge several times
+                ;
         for (int f = minT+1; f<maxT; ++f) {
             if(!populations.get(f).isEmpty() && isCandidate.apply(objectAttributeMap.get(populations.get(f).get(0)))) {
                 boolean hasMerged = false;
@@ -1159,12 +1159,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         if (debugCorr && a.ta.verboseLevel<verboseLevelLimit) logger.debug("t: {}: performing correction: errors: {}, merge scenario length: {}, cost: {}, errors: {}, split scenario: length {}, cost: {}, errors: {}", frame, currentErrors, merge.size(), mergeCost[1], mergeCost[0], split.size(), splitCost[1], splitCost[0]);
         if (saveMerge!=null && mergeCost[0]<=currentErrors && compareScores(mergeCost, splitCost, true)<=0 ) {
-            if (mergeCost[0]==currentErrors && mergeCost[1]>0) return null; // if same number of errors and cost >0 do not apply
+            if (mergeCost[0]==currentErrors) return null; // if same number of errors do not apply  // && mergeCost[1]>0
             saveMerge.restoreAll();
             if (debugCorr && a.ta.verboseLevel<verboseLevelLimit) logger.debug("apply merge scenario!");
             return new int[]{Math.max(minT+1, frame-merge.size()), Math.min(maxT-1, frame+1)};
         } else if (saveSplit!=null && splitCost[0]<=currentErrors && compareScores(mergeCost, splitCost, true)>=0 ) {
-            if (splitCost[0]==currentErrors && splitCost[1]>0) return null; // if same number of errors and cost >0 do not apply
+            if (splitCost[0]==currentErrors ) return null; // if same number of errors do not apply // && splitCost[1]>0
             if (debugCorr && a.ta.verboseLevel<verboseLevelLimit) logger.debug("apply split scenario!");
             saveSplit.restoreAll();
             return new int[]{frame, Math.min(maxT-1, frame+split.size()+1)};
@@ -1203,7 +1203,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (comp==0) comp = Double.compare(o1.cost, o2.cost);
             return comp;
         });
-        if (errorMap.get(best)<currentErrors || (best.cost==0 && errorMap.get(best)==currentErrors)) {
+        if (errorMap.get(best)<currentErrors) { //|| (best.cost==0 && errorMap.get(best)==currentErrors)
             saveMap.get(best).restoreAll();
             return new int[]{Math.max(minT+1, best.timePointMin), Math.min(best.timePointMax+1, maxT-1)};
         }

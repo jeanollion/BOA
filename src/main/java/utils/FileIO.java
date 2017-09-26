@@ -190,7 +190,8 @@ public class FileIO {
         public <T> void write(String relativePath, List<T> objects, Function<T, String> converter) {
             writeToZip(out, relativePath, objects, converter);
         }
-        public void appendFile(String relativePath, InputStream in) {
+        public void appendFile(String relativePath, InputStream in) { 
+            //relativePath=relativePath.replace('\\', '/'); // WARNING : path should be with "/" as separator. 
             try {
                 ZipEntry e= new ZipEntry(relativePath);
                 out.putNextEntry(e);
@@ -250,7 +251,7 @@ public class FileIO {
                     if (e!=null) {
                         InputStream is = in.getInputStream(e);
                         String fileName = new File(f).getName();
-                        String outPath = localDir+File.separator+fileName;
+                        String outPath = localDir+"/"+fileName; // OS independent
                         writeFile(is, outPath);
                     }
                 } catch (IOException ex) {
@@ -294,10 +295,8 @@ public class FileIO {
             Enumeration<? extends ZipEntry> entries = in.entries();
             while(entries.hasMoreElements()){
                 ZipEntry entry = entries.nextElement();
-                String name = entry.getName();
-                if (name.contains(File.separator)) {
-                    res.add(new File(entry.getName()).getParent());
-                }
+                String s = new File(entry.getName()).getParent();
+                if (s!=null) res.add(s);
             }
             return res;
         }

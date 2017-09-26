@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JCheckBoxMenuItem;
 
 /**
  *
@@ -146,4 +147,8 @@ public class PropertyUtils {
         return f;
     }
     
+    public static void setPersistant(JCheckBoxMenuItem item, String key, boolean defaultValue) {
+        item.setSelected(PropertyUtils.get(key, defaultValue));
+        item.addActionListener((java.awt.event.ActionEvent evt) -> { PropertyUtils.set(key, item.isSelected()); });
+    }
 }

@@ -184,7 +184,9 @@ public class LocalFileSystemImageDAO implements ImageDAO {
             //logger.trace("Opening track image:  trackHead: {}", trackHead);
             return new FileInputStream(f);
         } catch (FileNotFoundException ex) {
-            logger.trace("Error Opening track image:  trackHead: {} channelImage: {}", trackHead, channelImageIdx);
+            
+            logger.debug("Error Opening track image:  trackHead: {} channelImage: {} ({})", trackHead, channelImageIdx, path);
+            logger.debug("error", ex);
         } 
         return null;
     }

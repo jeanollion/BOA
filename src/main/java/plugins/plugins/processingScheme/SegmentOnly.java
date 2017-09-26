@@ -183,7 +183,7 @@ public class SegmentOnly implements ProcessingScheme {
            }
         }
         long t4 = System.currentTimeMillis();
-        logger.debug("SegmentOnly: {} total time: {}, load images: {}ms, compute maps: {}ms, process: {}ms, set to parents: {}", parentTrack.get(0), t4-t0, t1-t0, t2-t1, t3-t2, t4-t3);
+        logger.debug("SegmentOnly: {}(trackLength: {}) total time: {}, load images: {}ms, compute maps: {}ms, process: {}ms, set to parents: {}", parentTrack.get(0), parentTrack.size(), t4-t0, t1-t0, t2-t1, t3-t2, t4-t3);
         return errors;
     }
     

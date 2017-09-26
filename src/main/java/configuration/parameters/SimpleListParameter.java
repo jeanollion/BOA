@@ -77,8 +77,9 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         return toolTipText;
     }
     @Override
-    public void setToolTipText(String txt) {
+    public <T extends Parameter> T setToolTipText(String txt) {
         this.toolTipText=txt;
+        return (T)this;
     }
     
     /**
