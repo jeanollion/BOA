@@ -111,8 +111,13 @@ public class ManualCorrection {
             if (next.getPrevious()==prev) {
                 next.resetTrackLinks(true, false);
                 next.setTrackHead(next, true, true, modifiedObjects);
+            } else prev.resetTrackLinks(false, prev.getNext()==next);
+            
+            List<StructureObject> allNext = getNext(prev); 
+            if (allNext.size()==1) { // set trackHead 
+                unlinkObjects(prev, allNext.get(0), modifiedObjects);
+                linkObjects(prev, allNext.get(0), true, modifiedObjects);
             }
-            else prev.resetTrackLinks(false, prev.getNext()==next);
             //next.resetTrackLinks(next.getPrevious()==prev, false);
             getManualCorrectionSelection(prev).addElement(next);
             getManualCorrectionSelection(prev).addElement(prev);
@@ -164,12 +169,12 @@ public class ManualCorrection {
                 if (allowMergeLink && !allNext.contains(next)) {
                     prev.setTrackLinks(next, false, true);
                     prev.setAttribute(correctionMerge, true);
-                    modifiedObjects.add(prev);
+                    if (modifiedObjects!=null) modifiedObjects.add(prev);
                     //logger.debug("merge link : {}>{}", prev, next);
                 }
                 
             }
-            if (allowSplit && !doubleLink) {
+            if (allowSplit && !doubleLink) { // split link
                 doubleLink=false;
                 boolean allowSplitLink = true;
                 if (!allPrev.contains(prev)) {
@@ -180,7 +185,11 @@ public class ManualCorrection {
                 if (allowSplitLink && !allPrev.contains(prev)) {
                     prev.setTrackLinks(next, true, false);
                     prev.setAttribute(correctionSplit, true);
-                    modifiedObjects.add(next);
+                    if (modifiedObjects!=null) modifiedObjects.add(next);
+                    for (StructureObject o : allNext) {
+                        o.setTrackHead(o, true, true, modifiedObjects);
+                        if (modifiedObjects!=null) modifiedObjects.add(o);
+                    }
                     //logger.debug("split link : {}>{}", prev, next);
                 }
                 
@@ -192,8 +201,8 @@ public class ManualCorrection {
                     prev.setTrackLinks(next, true, true);
                     prev.setAttribute(correctionMerge, true);
                     next.setTrackHead(prev.getTrackHead(), false, true, modifiedObjects);
-                    modifiedObjects.add(prev);
-                    modifiedObjects.add(next);
+                    if (modifiedObjects!=null) modifiedObjects.add(prev);
+                    if (modifiedObjects!=null) modifiedObjects.add(next);
                     //logger.debug("double link : {}+{}, th:{}", prev, next, prev.getTrackHead());
                 //}
             }

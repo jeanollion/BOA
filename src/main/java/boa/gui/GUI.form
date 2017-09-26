@@ -194,12 +194,12 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportWholeXPMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="exportObjectsMenuItem">
+                <MenuItem class="javax.swing.JMenuItem" name="exportXPObjectsMenuItem">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Objects of Selected Experiment(s)"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportObjectsMenuItemActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportXPObjectsMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="compareToDumpFileMenuItem">
@@ -283,6 +283,73 @@
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="eraseCollectionCheckboxActionPerformed"/>
                   </Events>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="importObjectsMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Objects"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="importPPImagesMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Pre-Processed Images"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="importTrackImagesMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Track Images"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="importConfigMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Configuration"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="importSelectionsMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Selections"/>
+                  </Properties>
+                </MenuItem>
+              </SubComponents>
+            </Menu>
+            <Menu class="javax.swing.JMenu" name="exportOptionsSubMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Export Options"/>
+              </Properties>
+              <SubComponents>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportObjectsMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Objects"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportPPImagesMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Pre Processed Images"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportTrackImagesMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Track Images"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportConfigMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Configuration"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportSelectionsMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Selections"/>
+                  </Properties>
                 </MenuItem>
               </SubComponents>
             </Menu>

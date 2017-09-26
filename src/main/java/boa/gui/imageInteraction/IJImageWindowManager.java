@@ -133,9 +133,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 //logger.debug("tool : {}", IJ.getToolName());
                 if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand") || IJ.getToolName().equals("multipoint") || IJ.getToolName().equals("point")) return;            
                 boolean ctrl = e.isControlDown();
+                //boolean ctrl = (IJ.isMacOSX() || IJ.isMacintosh()) ? e.isAltDown() : e.isControlDown(); // for mac: ctrl + clik = right click -> alt instead of ctrl
                 boolean freeHandSplit = ( IJ.getToolName().equals("freeline")) && ctrl;
                 boolean strechObjects = (IJ.getToolName().equals("line")) && ctrl;
-                //logger.debug("ctrl: {}, tool : {}, freeHandSplit: {}", ctrl, IJ.getToolName(), freeHandSplit);
+                logger.debug("ctrl: {}, tool : {}, freeHandSplit: {}", ctrl, IJ.getToolName(), freeHandSplit);
                 boolean addToSelection = e.isShiftDown() && (!freeHandSplit || !strechObjects);
                 boolean displayTrack = displayTrackMode;
                 //logger.debug("button ctrl: {}, shift: {}, alt: {}, meta: {}, altGraph: {}, alt: {}", e.isControlDown(), e.isShiftDown(), e.isAltDown(), e.isMetaDown(), e.isAltGraphDown(), displayTrackMode);

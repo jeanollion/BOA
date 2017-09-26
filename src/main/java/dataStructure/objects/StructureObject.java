@@ -518,7 +518,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public StructureObject setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects, Collection<StructureObject> modifiedObjects) {
         if (resetPreviousIfTrackHead && this==trackHead) {
             if (previous!=null && previous.next==this) previous.setNext(null);
-            this.setPrevious(null);
+            //this.setPrevious(null); // WAS MODIFIED FOR ManualCorrection linkObjects 191
         }
         this.isTrackHead=this.equals(trackHead);
         this.trackHead=trackHead;

@@ -250,7 +250,7 @@ public class ImportExportJSON {
             
         }
     }
-    public static void importFromFile(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, ProgressCallback pcb) {
+    public static void importFromFile(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, boolean preProcessedImages, boolean trackImages, ProgressCallback pcb) {
         File f = new File(path);
         if (f.getName().endsWith(".txt")) {
             if (config) {
@@ -263,10 +263,10 @@ public class ImportExportJSON {
                     dao.clearCache(); // avoid lock issues
                 }
             }
-        } else if (f.getName().endsWith(".zip")) importFromZip(path, dao, config, selections, objects, pcb);
+        } else if (f.getName().endsWith(".zip")) importFromZip(path, dao, config, selections, objects, preProcessedImages, trackImages, pcb);
     }
     
-    public static boolean importFromZip(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, ProgressCallback pcb) {
+    public static boolean importFromZip(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, boolean preProcessedImages, boolean trackImages, ProgressCallback pcb) {
         ZipReader r = new ZipReader(path);
         if (r.valid()) {
             if (config) { 
@@ -280,7 +280,7 @@ public class ImportExportJSON {
                     logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
                 } else return false;
             }
-            if (objects) {
+            if (objects || preProcessedImages || trackImages) {
                 Set<String> dirs = objects ? r.listDirectories("/Images", "/TrackImages") : Collections.EMPTY_SET;
                 if (pcb!=null) {
                     pcb.incrementTaskNumber(dirs.size());
@@ -292,12 +292,14 @@ public class ImportExportJSON {
                     if (pcb!=null) pcb.log("Importing: Position: "+position + " ("+ count+"/"+dirs.size()+")");
                     ObjectDAO oDAO = dao.getDao(position);
                     try {
-                        logger.debug("deleting all objects");
-                        oDAO.deleteAllObjects();
-                        logger.debug("all objects deleted");
-                        importObjects(r, oDAO);
-                        importPreProcessedImages(r, oDAO);
-                        importTrackImages(r, oDAO);
+                        if (objects) {
+                            logger.debug("deleting all objects");
+                            oDAO.deleteAllObjects();
+                            logger.debug("all objects deleted");
+                            importObjects(r, oDAO);
+                        }
+                        if (preProcessedImages) importPreProcessedImages(r, oDAO);
+                        if (trackImages) importTrackImages(r, oDAO);
                     } catch (Exception e) {
                         if (pcb!=null) pcb.log("Error! xp could not be undumped! "+e.getMessage());
                         e.printStackTrace();
