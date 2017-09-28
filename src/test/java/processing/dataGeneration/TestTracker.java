@@ -72,6 +72,8 @@ public class TestTracker {
         // mc12: bcp de terminaisons évidentes
         // mc 16: 70 pk pas split ? 
         // mc 16 : 93 fragmentation
+        // Pour xp MF1_170519
+        // P0 mc1 F39: ajouter terminaison comme option de scenario!
         int pIdx = 44;
         int mcIdx =1; //14
         int structureIdx = 1;
