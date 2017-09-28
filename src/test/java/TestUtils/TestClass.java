@@ -34,7 +34,9 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import static plugins.plugins.measurements.BacteriaLineageMeasurements.getTrackHeadName;
 import testPlugins.dummyPlugins.DummySegmenter;
+import utils.ArrayUtil;
 import utils.Pair;
 import utils.SymetricalPair;
 import static utils.Utils.removeFromMap;
@@ -45,10 +47,9 @@ import static utils.Utils.removeFromMap;
  */
 public class TestClass {
     public static void main(String[] args) {
-        int[] a1 = new int[]{1, 2};
-        int[] a11 = new int[]{1, 2};
-        int[] a2 = new int[]{1, 3};
-        logger.debug("a1==a11: {}, a1==a2: {}", a1.equals(a11), a1.equals(a2));
+        for (int i = 0; i<100; ++i) {
+            logger.debug("i: {}->{} ", i, getTrackHeadName(i));
+        }
     }
     //@Test
     public void testSymetricalPair() {

@@ -2162,7 +2162,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void importPositionsToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importPositionsToCurrentExperimentMenuItemActionPerformed
         if (!checkConnection()) return;
-        String defDir = db.getDir(); //PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        String defDir = db.getDir();
         File f = Utils.chooseFile("Select exported archive", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
         
@@ -2174,7 +2174,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 pcb.log("Will import objects from file: "+f);
                 boolean error = false;
                 try {
-                    ImportExportJSON.importFromZip(f.getAbsolutePath(), db, false, false, true, true, true, pcb);
+                    ImportExportJSON.importFromZip(f.getAbsolutePath(), db, false, false, true, false, false, pcb);
                 } catch (Exception e) {
                     logger.error("Error while importing", e);
                     log("error while importing");
@@ -2186,7 +2186,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 loadObjectTrees();
                 ImageWindowManagerFactory.getImageManager().flush();
                 if (!error) pcb.log("importing done!");
-                //PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
                 return "";
             };
         };

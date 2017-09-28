@@ -166,10 +166,21 @@ public class BacteriaLineageMeasurements implements Measurement {
     public boolean does3D() {
         return true;
     }
-    private static String getTrackHeadName(int trackHeadIdx) {
+    public static String getTrackHeadName(int trackHeadIdx) {
         //return String.valueOf(trackHeadIdx);
-        char c = (char)(trackHeadIdx%26 + 65); //ASCII UPPER CASE +65
-        int mod = trackHeadIdx/26;
+        int r = trackHeadIdx%24; // 24 : skip T & H 
+        int mod = trackHeadIdx/24;
+        if (r>=18) { // skip T
+            trackHeadIdx+=2;
+            if (r>=24) r = trackHeadIdx%24;
+            else r+=2;
+        } else if (r>=7) { // skip H
+            trackHeadIdx+=1;
+            r+=1;
+        }
+        
+        char c = (char)(r + 65); //ASCII UPPER CASE +65
+        
         if (mod>0) return String.valueOf(c)+mod;
         else return String.valueOf(c);
     }
