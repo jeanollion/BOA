@@ -35,8 +35,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -80,31 +82,38 @@ public class ImportExportJSON {
                 if (is!=null) writer.appendFile(dir+f+"_"+c, is); //closes is
             }
         }
+        // todo check all exported
     }
-    public static void exportTrackImages(ZipWriter writer, ObjectDAO dao) {
-        // TODO
-        ImageDAO iDao = dao.getExperiment().getImageDAO();
+    private static Set<Triplet<StructureObject,Integer, Integer>> listAllTrackImages(ObjectDAO dao) {
+        Set<Triplet<StructureObject,Integer, Integer>> res = new HashSet<>();
         for (int sIdx = 0; sIdx<dao.getExperiment().getStructureCount(); ++sIdx) {
             List<Integer> direct = dao.getExperiment().getAllDirectChildStructures(sIdx);
-            Utils.transform(direct, s->dao.getExperiment().getChannelImageIdx(s));
+            direct = Utils.transform(direct, s->dao.getExperiment().getChannelImageIdx(s));
             Utils.removeDuplicates(direct, false);
             if (direct.isEmpty()) continue;
-            String dir = dao.getPositionName()+"/TrackImages_"+sIdx+"/";
             List<StructureObject> ths = StructureObjectUtils.getAllObjects(dao, sIdx);
             ths.removeIf(o->!o.isTrackHead());
             logger.debug("exporting track images: structure: {}, child structures: {}, th: {}", sIdx, direct, ths.size());
             for (int childCIdx : direct) {
                 for (StructureObject th : ths) {
-                    InputStream is = iDao.openTrackImageAsStream(th, childCIdx);
-                    if (is!=null) writer.appendFile(dir+Selection.indicesString(th)+"_"+childCIdx, is);
+                    res.add(new Triplet(th, sIdx, childCIdx));
                 }
             }
         }
+        return res;
     }
-    public static void importTrackImages(ZipReader reader, ObjectDAO dao) {
+    public static void exportTrackImages(ZipWriter writer, ObjectDAO dao) {
+        ImageDAO iDao = dao.getExperiment().getImageDAO();
+        for (Triplet<StructureObject, Integer, Integer> p : listAllTrackImages(dao)) {
+            InputStream is = iDao.openTrackImageAsStream(p.v1, p.v3);
+            if (is!=null) writer.appendFile(dao.getPositionName()+"/TrackImages_"+p.v2+"/"+Selection.indicesString(p.v1)+"_"+p.v3, is);
+        }
+    }
+    public static String importTrackImages(ZipReader reader, ObjectDAO dao) {
         Set<String> trackImageDirs = reader.listDirectories(s->!s.contains(dao.getPositionName()+"/TrackImages_"));
         ImageDAO iDao = dao.getExperiment().getImageDAO();
         List<StructureObject> roots=  dao.getRoots();
+        Map<String, Triplet<StructureObject,Integer, Integer>> fileTrackImageRefMap = new HashMap<>();
         for (String dir : trackImageDirs) {
             int structureIdx =  Integer.parseInt(new File(dir).getName().split("_")[1]);
             List<String> files = reader.listsubFiles(dir);
@@ -119,9 +128,19 @@ public class ImportExportJSON {
                 if (parentTh!=null && is!=null) {
                     //logger.debug("read images: f={}, c={} pos: {}", frame, channel, pos);
                     iDao.writeTrackImage(parentTh, channel, is);
+                    fileTrackImageRefMap.put(f, new Triplet(parentTh, structureIdx, channel));
                 }
             }
         }
+        // check if all trackImages have been retrieved: 
+        Set<Triplet<StructureObject,Integer, Integer>> allTIRefs = listAllTrackImages(dao);
+        Set<Triplet<StructureObject,Integer, Integer>> allImported = new HashSet(fileTrackImageRefMap.values());
+        if (!allImported.equals(allTIRefs)) {
+            logger.error("Error while importing trackImages for position: {}: should be: {} files, but {} were imported", dao.getPositionName(), allTIRefs, allImported);
+            String message = "Error while importing trackImages for position: "+dao.getPositionName()+": should be: "+allTIRefs.size()+" files, but "+allImported.size()+" were imported";
+            return message;
+        }
+        return null;
     }
     public static void importPreProcessedImages(ZipReader reader, ObjectDAO dao) {
         String dir = dao.getPositionName()+"/Images/";
@@ -140,6 +159,7 @@ public class ImportExportJSON {
                 iDao.writePreProcessedImage(is, channel, frame, pos);
             }
         }
+        // todo check all imported
     }
     public static void importObjects(ZipReader reader, ObjectDAO dao) {
         logger.debug("reading objects..");
@@ -284,12 +304,16 @@ public class ImportExportJSON {
                 } else return false;
             }
             if (objects || preProcessedImages || trackImages) {
-                Set<String> dirs = objects ? r.listDirectories("Images", "TrackImages") : Collections.EMPTY_SET;
+                Collection<String> dirs = r.listRootDirectories();
+                dirs = new ArrayList<>(dirs);
+                Collections.sort((List)dirs);
+                logger.info("directories: {}", dirs);
                 if (pcb!=null) {
                     pcb.incrementTaskNumber(dirs.size());
                     pcb.log("positions: "+dirs.size());
                 }
                 int count = 0;
+                
                 for (String position : dirs) {
                     count++;
                     if (pcb!=null) pcb.log("Importing: Position: "+position + " ("+ count+"/"+dirs.size()+")");
@@ -302,7 +326,11 @@ public class ImportExportJSON {
                             importObjects(r, oDAO);
                         }
                         if (preProcessedImages) importPreProcessedImages(r, oDAO);
-                        if (trackImages) importTrackImages(r, oDAO);
+                        if (trackImages) {
+                            String importTI = importTrackImages(r, oDAO);
+                            if (importTI!=null && pcb!=null) pcb.log(importTI);
+                            else if (pcb!=null) pcb.log("Import track images ok");
+                        }
                     } catch (Exception e) {
                         if (pcb!=null) pcb.log("Error! xp could not be undumped! "+e.getMessage());
                         e.printStackTrace();

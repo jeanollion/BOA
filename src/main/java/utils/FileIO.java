@@ -290,6 +290,16 @@ public class FileIO {
             for (String k : excludeKeyWords) res.removeIf(s->s.contains(k));
             return res;
         }
+        public Set<String> listRootDirectories() {
+            Set<String> dirs = listDirectories();
+            Set<String> res = new HashSet<>();
+            for (String d : dirs) {
+                File f = new File(d);
+                while (f.getParentFile()!=null) f=f.getParentFile();
+                res.add(f.toString());
+            }
+            return res;
+        }
         public Set<String> listDirectories() {
             Set<String> res = new HashSet<>();
             Enumeration<? extends ZipEntry> entries = in.entries();

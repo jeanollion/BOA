@@ -38,6 +38,8 @@ import measurement.MeasurementKeyObject;
 import plugins.Measurement;
 import utils.HashMapGetCreate;
 import utils.LinearRegression;
+import utils.MultipleException;
+import utils.Pair;
 
 /**
  *
@@ -78,7 +80,7 @@ public class BacteriaLineageMeasurements implements Measurement {
     public void performMeasurement(StructureObject parentTrackHead) {
         int bIdx = structure.getSelectedIndex();
         String key = this.keyName.getValue();
-        
+        MultipleException ex = new MultipleException();
         HashMapGetCreate<StructureObject, List<StructureObject>> siblings = new HashMapGetCreate<>(o -> getAllNextSortedY(o, null));
         StructureObject currentParent = parentTrackHead;
         List<StructureObject> bacteria = currentParent.getChildren(bIdx);
@@ -97,7 +99,10 @@ public class BacteriaLineageMeasurements implements Measurement {
                     List<StructureObject> sib = siblings.getAndCreateIfNecessary(o.getPrevious());
                     if (sib.size()==1 && Boolean.FALSE.equals(o.getPrevious().getAttribute("TruncatedDivision", false))) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
                     else {
-                        if (sib.size()>2 || sib.isEmpty()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError);
+                        if (sib.size()>2 || sib.isEmpty()) {
+                            o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError);
+                            if (sib.isEmpty()) ex.addExceptions(new Pair<String, Exception>(o.toString(), new RuntimeException("Invalid bacteria lineage")));
+                        }
                         else if (sib.get(0).equals(o)) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
                         else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
                     }
@@ -139,6 +144,7 @@ public class BacteriaLineageMeasurements implements Measurement {
                 }*/
             }
         }
+        if (!ex.isEmpty()) throw ex;
     }
     
     @Override 

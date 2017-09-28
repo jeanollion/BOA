@@ -358,8 +358,6 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 }
             }
             for (Pair<String, int[]> e  : this.extractMeasurementDir) extract(e.key==null?db.getDir():e.key, e.value);
-            
-            
             db.clearCache();
             //db.getExperiment();
             //db=null;
@@ -492,13 +490,19 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
         }
     }
+    private static boolean toPrint(String stackTraceElement) {
+        return !stackTraceElement.startsWith("java.util.concurrent")&&!stackTraceElement.startsWith("utils.ThreadRunner")&&!stackTraceElement.startsWith("java.lang.Thread");
+    }
     @Override 
     public void done() {
         this.publish("Job done. Errors: "+this.errors.size());
         for (Pair<String, Exception> e : errors) {
             publish("Error @"+e.key);
             publish(e.value.toString());
-            for (StackTraceElement s : e.value.getStackTrace()) publish(s.toString());
+            for (StackTraceElement s : e.value.getStackTrace()) {
+                String ss = s.toString();
+                if (toPrint(ss)) publish(s.toString());
+            }
         }
         this.printErrors();
         this.publish("------------------");

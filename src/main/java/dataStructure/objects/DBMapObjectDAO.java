@@ -122,8 +122,10 @@ public class DBMapObjectDAO implements ObjectDAO {
                 if (dbMaps.containsKey(key)) res=dbMaps.get(key);
                 else {
                     DB db = getDB(key.value);
-                    res = DBMapUtils.createHTreeMap(db, key.key!=null? key.key : "root");
-                    if (res!=null) dbMaps.put(key, res);
+                    if (db!=null) {
+                        res = DBMapUtils.createHTreeMap(db, key.key!=null? key.key : "root");
+                        if (res!=null) dbMaps.put(key, res);
+                    }
                 }
             }
         }
@@ -243,7 +245,8 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
         List<StructureObject> res = new ArrayList<>();
-        for (StructureObject o : ((Map<String, StructureObject>)getChildren(new Pair(parent.getTrackHeadId(), structureIdx))).values()) {
+        Map<String, StructureObject> children = getChildren(new Pair(parent.getTrackHeadId(), structureIdx));
+        for (StructureObject o : children.values()) {
             if (o.parentId.equals(parent.getId())) {
                 //o.parent=parent;
                 res.add(o);
@@ -652,10 +655,16 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public void deleteAllMeasurements() {
         closeAllMeasurementFiles(false);
+        deleteMeasurementsFromOpenObjects(); // also in opened structureObjects
         if (readOnly) return;
         for (int s = 0; s<getExperiment().getStructureCount(); ++s) DBMapUtils.deleteDBFile(getMeasurementDBFile(s));
     }
     
+    private void deleteMeasurementsFromOpenObjects() {
+        for (Map<String, StructureObject> m : cache.values()) {
+            for (StructureObject o : m.values()) o.measurements=null;
+        }
+    }
     private synchronized void closeAllMeasurementFiles(boolean commit) {
         for (Pair<DB, HTreeMap<String, String>> p : this.measurementdbS.values()) {
             if (!readOnly&&commit&&!p.key.isClosed()) p.key.commit();

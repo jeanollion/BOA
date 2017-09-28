@@ -235,7 +235,7 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="importPositionsToCurrentExperimentMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Positions to Current Experiment"/>
+                    <Property name="text" type="java.lang.String" value="Objects to Current Experiment"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importPositionsToCurrentExperimentMenuItemActionPerformed"/>

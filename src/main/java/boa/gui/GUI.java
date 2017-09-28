@@ -1643,7 +1643,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         importSubMenu.add(importDataMenuItem);
 
-        importPositionsToCurrentExperimentMenuItem.setText("Positions to Current Experiment");
+        importPositionsToCurrentExperimentMenuItem.setText("Objects to Current Experiment");
         importPositionsToCurrentExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 importPositionsToCurrentExperimentMenuItemActionPerformed(evt);

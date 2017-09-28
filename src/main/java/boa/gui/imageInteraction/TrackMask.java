@@ -125,8 +125,9 @@ public abstract class TrackMask extends ImageObjectInterface {
         long t01 = System.currentTimeMillis();
         logger.debug("total loading time: {}", t01-t00);*/
         Image image0 = trackObjects[0].generateRawImage(structureIdx, false);
+        if (image0==null) return null;
         String structureName;
-        if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(structureIdx).getName(); 
+        if (getParent().getExperiment()!=null) structureName = getParent().getExperiment().getStructure(structureIdx).getName(); 
         else structureName= structureIdx+"";
         final Image displayImage =  generateEmptyImage("Track: Parent:"+parents.get(0)+" Raw Image of"+structureName, image0);
         pasteImage(image0, displayImage, trackOffset[0]);

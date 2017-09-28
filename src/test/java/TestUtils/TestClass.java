@@ -44,7 +44,12 @@ import static utils.Utils.removeFromMap;
  * @author jollion
  */
 public class TestClass {
-
+    public static void main(String[] args) {
+        int[] a1 = new int[]{1, 2};
+        int[] a11 = new int[]{1, 2};
+        int[] a2 = new int[]{1, 3};
+        logger.debug("a1==a11: {}, a1==a2: {}", a1.equals(a11), a1.equals(a2));
+    }
     //@Test
     public void testSymetricalPair() {
         Voxel v1 = new Voxel(1, 2, 3);

@@ -104,7 +104,7 @@ public class ThreadRunner {
     
     public void throwErrorIfNecessary(String message) throws Exception {
         if (!errors.isEmpty()) {
-            throw errors.iterator().next().value;
+            throw new MultipleException(errors);
             //throw new RuntimeException(message +"Errors in #"+ errors.size()+" threads. Throwing one error", errors.iterator().next().value);
         }
     }
@@ -184,7 +184,10 @@ public class ThreadRunner {
             Pair<String, Exception> e;
             try {
                 e = completion.take().get();
-                if (e!=null) errors.add(e);
+                if (e!=null) {
+                    if (e.value instanceof MultipleException) errors.addAll(((MultipleException)e.value).getExceptions());
+                    else errors.add(e);
+                }
             } catch (InterruptedException|ExecutionException ex) {
                 errors.add(new Pair("Execution exception", ex));
             }
@@ -238,7 +241,10 @@ public class ThreadRunner {
             Pair<String, Exception> e;
             try {
                 e = completion.take().get();
-                if (e!=null) errors.add(e);
+                if (e!=null) {
+                    if (e.value instanceof MultipleException) errors.addAll(((MultipleException)e.value).getExceptions());
+                    else errors.add(e);
+                }
             } catch (InterruptedException|ExecutionException ex) {
                 errors.add(new Pair("Execution exception", ex));
             }

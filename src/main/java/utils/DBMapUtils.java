@@ -42,11 +42,11 @@ public class DBMapUtils {
     }
     public static HTreeMap<String, String> createHTreeMap(DB db, String key) {
         //return db.createHashMap(key).keySerializer(Serializer.STRING).valueSerializer(Serializer.STRING).makeOrGet();
-        try {
+        //try {
             return db.hashMap(key, Serializer.STRING, Serializer.STRING).createOrOpen(); 
-        } catch (UnsupportedOperationException e) { // read-only case
-            return null;
-        }
+        //} catch (UnsupportedOperationException e) { // read-only case
+        //    return null;
+        //}
     }
     public static <K, V> Set<Entry<K, V>> getEntrySet(HTreeMap<K, V> map) {
         //return map.entrySet(); //v1

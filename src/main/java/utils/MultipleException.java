@@ -18,6 +18,8 @@
 package utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -25,14 +27,23 @@ import java.util.List;
  * @author jollion
  */
 public class MultipleException extends RuntimeException {
-    final List<Pair<String, Exception>> exceptions;
+    final private List<Pair<String, Exception>> exceptions;
     public MultipleException(List<Pair<String, Exception>> exceptions) {
         this.exceptions=exceptions;
     }
     public MultipleException() {
         this.exceptions=new ArrayList<>();
     }
+    public void addExceptions(Pair<String, Exception>... ex) {
+        exceptions.addAll(Arrays.asList(ex));
+    }
+    public void addExceptions(Collection<Pair<String, Exception>> ex) {
+        exceptions.addAll(ex);
+    }
     public List<Pair<String, Exception>> getExceptions() {
         return exceptions;
+    }
+    public boolean isEmpty() {
+        return exceptions.isEmpty();
     }
 }

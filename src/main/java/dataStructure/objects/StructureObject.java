@@ -751,7 +751,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                         if (rawImagesC.getAndExtend(channelIdx)==null) {
                             if (getMicroscopyField().singleFrame(structureIdx) && timePoint>0 && trackHead!=null) { // getImage from trackHead
                                 rawImagesC.set(trackHead.getRawImage(structureIdx), channelIdx);
-                            } else rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, getMicroscopyField().singleFrame(structureIdx) ? 0 : timePoint, getPositionName()), channelIdx);
+                            } else {
+                                Image im = getExperiment().getImageDAO().openPreProcessedImage(channelIdx, getMicroscopyField().singleFrame(structureIdx) ? 0 : timePoint, getPositionName());
+                                rawImagesC.set(im, channelIdx);
+                                if (im==null) logger.error("Could not find preProcessed Image for: {}", this);
+                            }
                         }
                     } else { // look in parent
                         StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
