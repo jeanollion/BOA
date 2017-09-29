@@ -342,7 +342,7 @@ public class SelectionUtils {
         }
         final SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
         if (selectedValues.size()==1) {
-            final JCheckBoxMenuItem showImage = new JCheckBoxMenuItem("Show Selection in Image");
+            final JCheckBoxMenuItem showImage = new JCheckBoxMenuItem("Display Selection as an Image");
             showImage.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     SelectionUtils.displaySelection(selectedValues.get(0), -2, ImageWindowManagerFactory.getImageManager().getInteractiveStructure());
@@ -454,6 +454,23 @@ public class SelectionUtils {
             }
         });
         menu.add(remove);
+        
+        JMenuItem removeFromParent = new JMenuItem("Remove all Objects from Current Image");
+        removeFromParent.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (selectedValues.isEmpty()) return;
+                ImageObjectInterface ioi = ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
+                if (ioi==null) return;
+                List<StructureObject> parents = ioi.getParents();
+                for (Selection s : selectedValues ) {
+                    s.removeChildrenOf(parents);
+                    dao.store(s);
+                }
+                GUI.updateRoiDisplayForSelections(null, null);
+                list.updateUI();
+            }
+        });
+        menu.add(removeFromParent);
         
         JMenuItem clear = new JMenuItem("Clear");
         clear.addActionListener(new ActionListener() {

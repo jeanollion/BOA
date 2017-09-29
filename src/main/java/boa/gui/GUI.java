@@ -1004,7 +1004,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         exportConfigMenuItem = new javax.swing.JCheckBoxMenuItem();
         exportSelectionsMenuItem = new javax.swing.JCheckBoxMenuItem();
         importOptionsSubMenu = new javax.swing.JMenu();
-        eraseCollectionCheckbox = new javax.swing.JCheckBoxMenuItem();
         importObjectsMenuItem = new javax.swing.JCheckBoxMenuItem();
         importPPImagesMenuItem = new javax.swing.JCheckBoxMenuItem();
         importTrackImagesMenuItem = new javax.swing.JCheckBoxMenuItem();
@@ -1721,16 +1720,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         importOptionsSubMenu.setText("Import Options");
 
-        eraseCollectionCheckbox.setSelected(true);
-        eraseCollectionCheckbox.setText("Erase Collections before Import (recommended)");
-        eraseCollectionCheckbox.setEnabled(false);
-        eraseCollectionCheckbox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                eraseCollectionCheckboxActionPerformed(evt);
-            }
-        });
-        importOptionsSubMenu.add(eraseCollectionCheckbox);
-
         importObjectsMenuItem.setSelected(true);
         importObjectsMenuItem.setText("Objects");
         importObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -2383,10 +2372,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structureIdx);
         DataExtractor.extractMeasurementObjects(db, file, getSelectedPositions(true), keys);
     }
-    private void eraseCollectionCheckboxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_eraseCollectionCheckboxActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_eraseCollectionCheckboxActionPerformed
-
     private void deleteMeasurementsCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteMeasurementsCheckBoxActionPerformed
         PropertyUtils.set(PropertyUtils.DELETE_MEASUREMENTS, this.deleteMeasurementsCheckBox.isSelected());
     }//GEN-LAST:event_deleteMeasurementsCheckBoxActionPerformed
@@ -3217,7 +3202,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JMenuItem deleteXPMenuItem;
     private javax.swing.JMenuItem duplicateXPMenuItem;
-    private javax.swing.JCheckBoxMenuItem eraseCollectionCheckbox;
     private javax.swing.JScrollPane experimentJSP;
     private javax.swing.JList experimentList;
     private javax.swing.JMenu experimentMenu;

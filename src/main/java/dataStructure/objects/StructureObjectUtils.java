@@ -486,7 +486,7 @@ public class StructureObjectUtils {
         return res;
     }
     
-    public static Map<String, List<StructureObject>> splitByFieldName(Collection<StructureObject> list) {
+    public static Map<String, List<StructureObject>> splitByPosition(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
         return list.stream().collect(Collectors.groupingBy(o -> o.getPositionName()));
     }
