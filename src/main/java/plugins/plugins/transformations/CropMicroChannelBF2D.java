@@ -50,7 +50,7 @@ import static utils.Utils.plotProfile;
  */
 public class CropMicroChannelBF2D extends CropMicroChannels {
     public static boolean debug = false;
-    NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Width (pix)", 0, 20, 5, null);
+    NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Typical Width (pixels)", 0, 20, 5, null);
     NumberParameter microChannelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
     NumberParameter microChannelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
     NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 30, 0, null);
