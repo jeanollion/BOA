@@ -37,7 +37,10 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
     protected int[] taskIdx;
     protected UserInterface gui;
     public static DefaultWorker execute(WorkerTask t, int maxTaskIdx) {
-        DefaultWorker res = new DefaultWorker(t, maxTaskIdx, GUI.hasInstance()?GUI.getInstance():null);
+        return execute(t, maxTaskIdx, GUI.hasInstance()?GUI.getInstance():null);
+    }
+    public static DefaultWorker execute(WorkerTask t, int maxTaskIdx, UserInterface gui) {
+        DefaultWorker res = new DefaultWorker(t, maxTaskIdx, gui);
         res.execute();
         return res;
     }
