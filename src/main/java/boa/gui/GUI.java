@@ -2615,10 +2615,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     Task t = getCurrentJob(null);
-                    actionPoolListModel.addElement(t.toJSON().toJSONString());
+                    if (t!=null) actionPoolListModel.addElement(t.toJSON().toJSONString());
                 }
             };
             menu.add(addCurrentJob);
+            addCurrentJob.setEnabled(db!=null);
             Action deleteSelected = new AbstractAction("Delete Selected Jobs") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -2744,10 +2745,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                         unsetXP(); // avoid lock problems
                         Task.executeTasks(jobs, GUI.getInstance());
                     }
-                    
                 }
             };
             menu.add(run);
+            run.setEnabled(!actionPoolListModel.isEmpty());
             //Utils.chooseFile("Choose Directory to save Job List", DBprefix, FileChooser.FileChooserOption.FILES_ONLY, jLabel1)
             menu.show(this.actionPoolList, evt.getX(), evt.getY());
         }

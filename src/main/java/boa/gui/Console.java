@@ -22,8 +22,10 @@ import ij.plugin.PlugIn;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.function.Function;
 import utils.FileIO;
 import utils.JSONUtils;
@@ -34,15 +36,22 @@ import utils.Utils;
  * @author jollion
  */
 public class Console implements UserInterface, PlugIn {
-    public static UserInterface ui;
+    public static void main(String[] args) {
+        String arg = "";
+        Iterator<String> it = Arrays.asList(args).iterator();
+        while(it.hasNext()) {
+            String n = it.next();
+            arg+=n+(it.hasNext()?";":"");
+        }
+        new Console().run(arg);
+    }
     
     @Override
     public void run(String args) {
         setMessage("BOA Shell version: "+Utils.getVersion(this));
         if (args==null || args.length()==0) return;
-        ui = this;
         Collection<Task> jobs;
-        Function<String, Task> parser = s->new Task().fromJSON(JSONUtils.parse(s));
+        Function<String, Task> parser = s->new Task().setUI(this).fromJSON(JSONUtils.parse(s));
         if (args.endsWith(".txt")|args.endsWith(".json")) { // open text file
             jobs = FileIO.readFromFile(args, parser); // TODO -> read JSON File en utilisant content handler de JSON simple
         } else { // directly parse command
@@ -56,21 +65,22 @@ public class Console implements UserInterface, PlugIn {
     }
     public void runJobs(Collection<Task> jobs) {
         if (jobs==null || jobs.isEmpty()) return;
+        int count = 0;
         for (Task t : jobs) {
             if (t==null) {
-                setMessage("Error: job could not be parsed");
+                setMessage("Error: job "+count+" could not be parsed");
                 return;
             }
             if (!t.isValid()) {
                 setMessage("Error: job: "+t.toString()+" is not valid" + (t.getDB()==null?"db null": (t.getDB().getExperiment()==null? "xp null":"")));
                 return;
             }
+            ++count;
         }
         System.out.println(">Will execute: "+jobs.size()+" jobs");
         for (Task t : jobs) {
             setMessage("Running: "+t.toString());
             t.runTask();
-            
         }
         int errorCount = 0;
         for (Task t: jobs) errorCount+=t.getErrors().size();
@@ -90,10 +100,11 @@ public class Console implements UserInterface, PlugIn {
         return "";
     }
     
-    private boolean promptBool(String instruction) {
-        String p = prompt(instruction+" [Y/N]:");
-        if ("Y".equals(p)) return true;
-        else return false;
+    private boolean promptBool(String instruction, boolean def) {
+        String p = prompt(instruction+(def?" [Y/n]:":" [y/N]:"));
+        if ("Y".equals(p)||"y".equals(p)) return true;
+        else if ("N".equals(p)||"n".equals(p)) return true;
+        else return def;
     }
 
     @Override

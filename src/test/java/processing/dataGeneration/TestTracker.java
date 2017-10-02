@@ -21,7 +21,6 @@ import static TestUtils.Utils.logger;
 import boa.gui.GUI;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManager.RoiModifier;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import core.Processor;
 import core.Task;

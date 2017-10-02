@@ -122,11 +122,11 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             return this;
         }
-        
-        public Task() {
-            if (GUI.hasInstance()) ui = GUI.getInstance();
-            else ui = Console.ui;
-            if (ui!=null) {
+        public Task setUI(UserInterface ui) {
+            if (ui==null) this.ui=null;
+            else {
+                if (ui.equals(this.ui)) return this;
+                this.ui=ui;
                 addPropertyChangeListener(new PropertyChangeListener() {
                     @Override    
                     public void propertyChange(PropertyChangeEvent evt) {
@@ -141,6 +141,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     }
                 });
             }
+            return this;
+        }
+        public Task() {
+            if (GUI.hasInstance()) setUI(GUI.getInstance());
         }
         public Task(MasterDAO db) {
             this();
@@ -495,7 +499,15 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
     @Override 
     public void done() {
+        //logger.debug("EXECUTING DONE FOR : {}", this.toJSON().toJSONString());
         this.publish("Job done. Errors: "+this.errors.size());
+        publishErrors();
+        this.printErrors();
+        this.publish("------------------");
+        if (ui!=null) ui.setRunning(false);
+    }
+    public void publishErrors() {
+        this.publish("Errors: "+this.errors.size()+ " For JOB: "+this.toString());
         for (Pair<String, Exception> e : errors) {
             publish("Error @"+e.key);
             publish(e.value.toString());
@@ -504,11 +516,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 if (toPrint(ss)) publish(s.toString());
             }
         }
-        this.printErrors();
-        this.publish("------------------");
-        if (ui!=null) ui.setRunning(false);
     }
-    
     // Progress Callback
     @Override
     public void incrementTaskNumber(int subtask) {
@@ -537,6 +545,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
             tasks.get(i).db=null;
             return "";
-        }, tasks.size());
+        }, tasks.size()).setEndOfWork(
+                ()->{for (Task t : tasks) t.publishErrors();});
     }
 }
