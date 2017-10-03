@@ -44,6 +44,7 @@ import plugins.plugins.measurements.BacteriaFluoMeasurements;
 import plugins.plugins.measurements.BacteriaLineageMeasurements;
 import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
 import plugins.plugins.measurements.BacteriaTransMeasurements;
+import plugins.plugins.measurements.GrowthRate;
 import plugins.plugins.measurements.ObjectFeatures;
 import plugins.plugins.measurements.MutationMeasurements;
 import plugins.plugins.measurements.MutationTrackMeasurements;
@@ -545,6 +546,8 @@ public class GenerateXP {
             xp.addMeasurement(new BacteriaLineageMeasurements(1));
             xp.addMeasurement(new BacteriaTransMeasurements(1));
             xp.addMeasurement(new TrackLength(0));
+            xp.addMeasurement(new GrowthRate().setFeature(new Size()).setSuffix("Area"));
+            xp.addMeasurement(new GrowthRate().setFeature(new FeretMax()).setSuffix("Length"));
         }
     }
     

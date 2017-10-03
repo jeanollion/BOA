@@ -495,7 +495,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
     }
     private static boolean toPrint(String stackTraceElement) {
-        return !stackTraceElement.startsWith("java.util.concurrent")&&!stackTraceElement.startsWith("utils.ThreadRunner")&&!stackTraceElement.startsWith("java.lang.Thread");
+        return !stackTraceElement.startsWith("java.util.concurrent")&&!stackTraceElement.startsWith("utils.ThreadRunner")&&!stackTraceElement.startsWith("java.lang.Thread")&&!stackTraceElement.startsWith("core.Processor.lambda")&&!stackTraceElement.startsWith("plugins.plugins.processingScheme");
     }
     @Override 
     public void done() {

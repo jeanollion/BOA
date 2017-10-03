@@ -246,6 +246,10 @@ public class DBMapObjectDAO implements ObjectDAO {
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
         List<StructureObject> res = new ArrayList<>();
         Map<String, StructureObject> children = getChildren(new Pair(parent.getTrackHeadId(), structureIdx));
+        if (children==null) {
+            logger.error("null children for: {} @ structure: {}", parent, structureIdx);
+            return new ArrayList<>();
+        }
         for (StructureObject o : children.values()) {
             if (o.parentId.equals(parent.getId())) {
                 //o.parent=parent;

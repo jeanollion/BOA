@@ -110,34 +110,17 @@ public class ImportExportJSON {
         }
     }
     public static String importTrackImages(ZipReader reader, ObjectDAO dao) {
-        Set<String> trackImageDirs = reader.listDirectories(s->!s.contains(dao.getPositionName()+"/TrackImages_"));
         ImageDAO iDao = dao.getExperiment().getImageDAO();
-        List<StructureObject> roots=  dao.getRoots();
-        Map<String, Triplet<StructureObject,Integer, Integer>> fileTrackImageRefMap = new HashMap<>();
-        for (String dir : trackImageDirs) {
-            int structureIdx =  Integer.parseInt(new File(dir).getName().split("_")[1]);
-            List<String> files = reader.listsubFiles(dir);
-            int[] pathToRoot = dao.getExperiment().getPathToRoot(structureIdx);
-            for (String f : files) {
-                File file = new File(f);
-                String[] fc = file.getName().split("_");
-                String idx = fc[0];
-                StructureObject parentTh = Selection.getObject(Selection.parseIndices(idx), pathToRoot, roots);
-                int channel = Integer.parseInt(fc[1]);
-                InputStream is = reader.readFile(f);
-                if (parentTh!=null && is!=null) {
-                    //logger.debug("read images: f={}, c={} pos: {}", frame, channel, pos);
-                    iDao.writeTrackImage(parentTh, channel, is);
-                    fileTrackImageRefMap.put(f, new Triplet(parentTh, structureIdx, channel));
-                }
-            }
+        Set<Triplet<StructureObject,Integer, Integer>> missingTrackImages = new HashSet<>();
+        for (Triplet<StructureObject, Integer, Integer> p : listAllTrackImages(dao)) {
+            String file = dao.getPositionName()+"/TrackImages_"+p.v2+"/"+Selection.indicesString(p.v1)+"_"+p.v3;
+            InputStream is = reader.readFile(file);
+            if (is!=null) iDao.writeTrackImage(p.v1, p.v3, is);
+            else missingTrackImages.add(p);
         }
-        // check if all trackImages have been retrieved: 
-        Set<Triplet<StructureObject,Integer, Integer>> allTIRefs = listAllTrackImages(dao);
-        Set<Triplet<StructureObject,Integer, Integer>> allImported = new HashSet(fileTrackImageRefMap.values());
-        if (!allImported.equals(allTIRefs)) {
-            logger.error("Error while importing trackImages for position: {}: should be: {} files, but {} were imported", dao.getPositionName(), allTIRefs, allImported);
-            String message = "Error while importing trackImages for position: "+dao.getPositionName()+": should be: "+allTIRefs.size()+" files, but "+allImported.size()+" were imported";
+        if (!missingTrackImages.isEmpty()) {
+            logger.info("trackImages Import @position: {} missing trackImages: {}", dao.getPositionName(), missingTrackImages);
+            String message = "TrackImages Import @position: "+dao.getPositionName()+" missing trackImages: "+Utils.toStringList(missingTrackImages, t->t.v1);
             return message;
         }
         return null;

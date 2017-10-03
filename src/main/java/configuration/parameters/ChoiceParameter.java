@@ -30,7 +30,6 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     String[] listChoice;
     boolean allowNoSelection;
     private int selectedIndex=-2;
-    ChoiceParameterUI gui;
     ConditionalParameter cond;
     boolean postLoaded = false;
     
@@ -71,8 +70,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
 
     @Override
     public ParameterUI getUI() {
-        if (gui==null) gui = new ChoiceParameterUI(this, true);
-        return gui;
+        return new ChoiceParameterUI(this, true);
     }
     @Override
     public boolean sameContent(Parameter other) {

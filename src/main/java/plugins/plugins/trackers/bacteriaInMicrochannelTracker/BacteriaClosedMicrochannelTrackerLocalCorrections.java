@@ -164,8 +164,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     final static double SIIncreaseThld = 0.1;
     final static double SIQuiescentThld = 1.05; // under this value we consider cells are not growing -> if break in lineage no error count (cell dies)
     final static boolean setSIErrorsAsErrors = false; // SI errors are set as tracking errors in object attributes
-    
-    final static int maxCorrectionLength = 20000;
+    final static int correctionLevelLimit = 7;
+    final static int cellNumberLimitForAssignment = 7;
+    final static int maxCorrectionLength = 1000;
     private static final double beheadedCellsSizeLimit = 300;
     
     // functions for assigners
@@ -301,9 +302,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             for (StructureObject p : parentsByF.values()) p.setChildren(null, structureIdx);
             return;
         } //else for (int t = maxT; t<parents.size(); ++t) if (populations.get(t]!=null) populations.get(t].clear();
+        if (debugCorr||debug) logger.debug("Frame range: [{};{}]", minT, maxT);
         for (int f = minT; f<maxT; ++f) getObjects(f); // init
-        
+        if (debugCorr||debug) logger.debug("getObjects ok");
         if (correctionStep) step(null, true);
+        
+        //if (debugCorr) correction=false; // TO REMOVE
         
         // correct beheaded cells bias
         if (correction) {
@@ -324,6 +328,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             int idxMax=0;
             int idxLim = populations.get(minT).size();
             for (int t = minT+1; t<maxT; ++t) if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
+            idxLim = Math.min(correctionLevelLimit, idxLim);
             List<int[]> corrRanges = new ArrayList<>();
             List<int[]> corrRanges2 = new ArrayList<>(1);
             while(idxMax<idxLim) {
@@ -344,7 +349,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                                 nLoop++;
                             } 
                         }
-                        for (int t = tRange[0]; t<=tRange[1]; ++t) if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
+                        for (int t = tRange[0]; t<=tRange[1]; ++t) {
+                            if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
+                        }
+                        idxLim = Math.min(correctionLevelLimit, idxLim);
                     }
                 }
                 idxMax++;
@@ -385,7 +393,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return new int[]{minF, maxF};
     }
     
-    private boolean performCorrectionsByIdx(int tMin, int tMax, int idx, List<int[]> outRanges, boolean limitToOneRange) {
+    private boolean performCorrectionsByIdx(int tMin, int tMax, final int idx, List<int[]> outRanges, boolean limitToOneRange) {
         if (debugCorr) logger.debug("performing corrections [{};{}] @ {}", tMin, tMax, idx);
         int nLoop=0, rangeLoop=0;
         int currentT = tMin;

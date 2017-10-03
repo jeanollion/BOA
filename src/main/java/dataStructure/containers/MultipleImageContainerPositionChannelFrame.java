@@ -105,6 +105,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         this.channelKeywords = channelKeywords;
         this.timeKeyword = timeKeyword;
         this.frameNumber = frameNumber;
+        for (int c = 0; c<channelKeywords.length; ++c) getSizeZ(c); // init sizeZC
     }
     
     @Override public double getCalibratedTimePoint(int t, int c, int z) {
@@ -128,12 +129,12 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     @Override
     public int getSizeZ(int channelNumber) {
         if (fileCT==null) createFileMap();
-        if (sizeZC==null) sizeZC = new int[channelNumber]; 
+        if (sizeZC==null) sizeZC = new int[channelKeywords.length]; 
         if (sizeZC[channelNumber]==0) {
             ImageReader reader = new ImageReader(fileCT.get(channelNumber).get(0));
             sizeZC[channelNumber] = reader.getSTCXYZNumbers()[0][4];
             reader.closeReader();
-        } // temporary, for retrocompatibility
+        } 
         return sizeZC[channelNumber];
     }
 

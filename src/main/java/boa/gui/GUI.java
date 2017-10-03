@@ -966,6 +966,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         refreshExperimentListMenuItem = new javax.swing.JMenuItem();
         setSelectedExperimentMenuItem = new javax.swing.JMenuItem();
         newXPMenuItem = new javax.swing.JMenuItem();
+        newXPFromTemplateMenuItem = new javax.swing.JMenuItem();
         deleteXPMenuItem = new javax.swing.JMenuItem();
         duplicateXPMenuItem = new javax.swing.JMenuItem();
         saveXPMenuItem = new javax.swing.JMenuItem();
@@ -1466,6 +1467,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         });
         experimentMenu.add(newXPMenuItem);
+
+        newXPFromTemplateMenuItem.setText("New XP from Template");
+        newXPFromTemplateMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newXPFromTemplateMenuItemActionPerformed(evt);
+            }
+        });
+        experimentMenu.add(newXPFromTemplateMenuItem);
 
         deleteXPMenuItem.setText("Delete");
         deleteXPMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -2251,12 +2260,38 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             if (n==1) xpsToImport = xpNotPresent;
         }
         unsetXP();
-        for (String xp : xpsToImport) {
-            File zip = allXps.get(xp);
-            MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
-            mDAO.deleteAllObjects();
-            ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, true, true, true, true, ProgressCallback.get(instance));
-        }
+        List<String> xpList = new ArrayList<>(xpsToImport);
+        /*DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
+            @Override
+            public String run(int i) {
+                GUI.getInstance().setRunning(true);
+                ProgressCallback pcb = ProgressCallback.get(instance);
+                String xp =xpList.get(i);
+                File zip = allXps.get(xp);
+                MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
+                mDAO.deleteAllObjects();
+                ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, false, false, false, false, ProgressCallback.get(instance));
+                pcb.log("Will import data from file: "+f);
+                boolean error = false;
+                try {
+                    ImportExportJSON.importFromZip(f.getAbsolutePath(), db, importConfigMenuItem.isSelected(), importSelectionsMenuItem.isSelected(), importObjectsMenuItem.isSelected(), importPPImagesMenuItem.isSelected(), importTrackImagesMenuItem.isSelected(), pcb);
+                } catch (Exception e) {
+                    logger.error("Error while importing", e);
+                    log("error while importing");
+                }
+                GUI.getInstance().setRunning(false);
+                GUI.getInstance().populateExperimentList();
+                db.updateExperiment();
+                populateActionMicroscopyFieldList();
+                loadObjectTrees();
+                ImageWindowManagerFactory.getImageManager().flush();
+                if (!error) pcb.log("importing done!");
+                //PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
+                return "";
+            };
+        };
+        DefaultWorker.execute(t, 1);
+        */
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_importNewExperimentMenuItemActionPerformed
@@ -3008,6 +3043,42 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             menu.show(this.hostName, evt.getX(), evt.getY());
         }
     }//GEN-LAST:event_hostNameMousePressed
+
+    private void newXPFromTemplateMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPFromTemplateMenuItemActionPerformed
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        String config = promptDir("Select configuration file (or zip containing config file)", defDir, false);
+        if (config==null) return;
+        File configF = new File(config);
+        List<String> dbNames = getDBNames();
+        Map<String, File> allXps = ImportExportJSON.listExperiments(configF.getAbsolutePath());
+        if (allXps.size()==1) {
+            String name = JOptionPane.showInputDialog("New XP name:", allXps.keySet().iterator().next());
+            if (name==null) return;
+            name = DBUtil.addPrefix(name, currentDBPrefix);
+            if (!Utils.isValid(name, false)) {
+                log("Name should not contain special characters");
+                return;
+            } else if (dbNames.contains(name)) {
+                log("XP already present");
+                return;
+            } else {
+                File f = allXps.values().iterator().next();
+                allXps.clear();
+                allXps.put(name, f);
+            }
+        } else {
+            log("Select only one file");
+            return;
+        }
+        for (String xp : allXps.keySet()) {
+            File zip = allXps.get(xp);
+            MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
+            mDAO.deleteAllObjects();
+            ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, false, false, false, false, ProgressCallback.get(instance));
+        }
+        populateExperimentList();
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, config);
+    }//GEN-LAST:event_newXPFromTemplateMenuItemActionPerformed
     
     public void addToSelectionActionPerformed() {
         if (!this.checkConnection()) return;
@@ -3254,6 +3325,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JList microscopyFieldList;
     private javax.swing.JMenu miscMenu;
+    private javax.swing.JMenuItem newXPFromTemplateMenuItem;
     private javax.swing.JMenuItem newXPMenuItem;
     private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JMenu optionMenu;

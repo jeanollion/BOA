@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import static plugins.Plugin.logger;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SIIncreaseThld;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
 import utils.Utils;
@@ -35,9 +36,7 @@ import utils.Utils;
  * @author jollion
  */
 public class TrackAssigner {
-    final static double significativeSIErrorThld = 0.3; // size increment difference > to this value lead to an error
-    final static double SIErrorValue=1; //0.9 -> less weight to sizeIncrement error / 1 -> same weight
-    final static double SIIncreaseThld = 0.1;
+    
     public static enum AssignerMode {ADAPTATIVE, RANGE};
     
     double[] currentScore = null;

@@ -144,10 +144,10 @@ public class ConditionalParameter extends SimpleContainerParameter {
         currentValue = actionValue;
         if (!action.getValue().equals(actionValue)) this.action.setValue(actionValue); // avoid loop
         initChildList();
-        //logger.debug("setActionParameters: {} value: {}, class: {}, children: {}, allActions: {}",this.hashCode(), actionValue, actionValue.getClass().getSimpleName(), getCurrentParameters()==null ? "null" : getCurrentParameters().size(), this.parameters.keySet());
+        //logger.debug("setActionValue: {} value: {}, class: {}, children: {}, allActions: {}",this.hashCode(), actionValue, actionValue.getClass().getSimpleName(), getCurrentParameters()==null ? "null" : getCurrentParameters().size(), this.parameters.keySet());
     }
     
-    public List<Parameter> getParameters(Object actionValue) {
+    public List<Parameter> getParameters(String actionValue) {
         List<Parameter> p = this.parameters.get(actionValue);
         if (p==null) return defaultParameters;
         else return p;
@@ -157,8 +157,6 @@ public class ConditionalParameter extends SimpleContainerParameter {
         if (parameters.containsKey(currentValue)) return parameters.get(currentValue);
         else return defaultParameters;
     }
-    
-    
     
     @Override
     public String toString() {

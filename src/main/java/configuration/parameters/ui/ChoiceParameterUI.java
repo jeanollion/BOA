@@ -31,6 +31,7 @@ import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
+import utils.Utils;
 
 /**
  *
@@ -43,10 +44,8 @@ public class ChoiceParameterUI implements ArmableUI {
     JMenuItem[] actionChoice;
     List allActions;
     int inc;
-    //final static int choiceLimit = 50;
     boolean limitChoice;
     public static String NO_SELECTION="no selection";
-    //double modulo;
     public ChoiceParameterUI(ChoosableParameter choice_, boolean limitChoice) {
         this(choice_, limitChoice, null);
     } 
@@ -67,11 +66,8 @@ public class ChoiceParameterUI implements ArmableUI {
             System.arraycopy(c, 0, res, 1, c.length);
             choices=res;
         } else choices=choice.getChoiceList();
-        //this.actionChoice = new JMenuItem[!limitChoice || choiceLimit>choices.length? choices.length:choiceLimit];
         this.actionChoice = new JMenuItem[choices.length];
-        //modulo = (!limitChoice || choiceLimit>choices.length)? 1 : (double)choices.length/(double)(choiceLimit-1);
         for (int i = 0; i < actionChoice.length; i++) {
-            //int choiceIdx = (int)(i * modulo);
             actionChoice[i] = new JMenuItem(choices[i]);
             actionChoice[i].setAction(
                 new AbstractAction(choices[i]) {
@@ -80,8 +76,11 @@ public class ChoiceParameterUI implements ArmableUI {
                         //if (ae.getActionCommand().equals("no selection"))
                         choice.setSelectedItem(ae.getActionCommand());
                         choice.fireListeners();
-                        //logger.debug("choice modif: {}, cond null? {}, model null?: {}", ae.getActionCommand(), cond==null, model==null);
-                        if (cond!=null) model.nodeStructureChanged(cond);
+                        logger.debug("choice modif: {}, cond null? {}, model null?: {}, cond children: {}", ae.getActionCommand(), cond==null, model==null, cond==null?"0":cond.getChildCount());
+                        if (cond!=null) {
+                            model.nodeStructureChanged(cond);
+                            logger.debug("path: {}", Utils.toStringArray(model.getPathToRoot(cond), s->s.toString()));
+                        }
                         else if (model!=null) model.nodeStructureChanged(choice);
                     }
                 }
@@ -106,7 +105,6 @@ public class ChoiceParameterUI implements ArmableUI {
         unArm();
         int sel = choice.getSelectedIndex();
         if (sel>=0 && (sel+inc) < actionChoice.length) {
-            //actions[(int)((sel+inc) / modulo+0.5)].setArmed(true);
             actionChoice[sel+inc].setArmed(true);
         }
         if (inc>0 && sel<0) actionChoice[0].setArmed(true);

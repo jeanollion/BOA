@@ -211,6 +211,7 @@ public class ImageFieldFactory {
         PosLoop : for (Entry<String, List<File>> positionFiles : filesByPosition.entrySet()) {
             Map<String, List<File>> filesByChannel = positionFiles.getValue().stream().collect(Collectors.groupingBy(f -> getKeyword(f.getName(), channelKeywords, "")));
             logger.debug("Pos: {}, channel found: {}", positionFiles.getKey(),filesByChannel.keySet() );
+            
             if (filesByChannel.size()==channelKeywords.length) {
                 Integer frameNumber = null;
                 boolean ok = true;

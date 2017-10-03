@@ -115,15 +115,15 @@ public class PreProcessingChain extends SimpleContainerParameter {
     }
 
     private void initScaleParam(boolean initParams, boolean initCond) {
-        if (initParams) {
-            scaleXY.setParent(this);
-            scaleZ.setParent(this);
-            useImageScale.setParent(this);
-            frameDuration.setParent(this);
-        }
         if (initCond) {
             imageScaleCond = new ConditionalParameter(useImageScale).setActionParameters("Custom Calibration", new Parameter[]{scaleXY, scaleZ});
             imageScaleCond.setParent(this);
+        }
+        if (initParams) {
+            scaleXY.setParent(imageScaleCond);
+            scaleZ.setParent(imageScaleCond);
+            useImageScale.setParent(this);
+            frameDuration.setParent(this);
         }
     }
     public PreProcessingChain setCustomScale(double scaleXY, double scaleZ) {
@@ -145,7 +145,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
     @Override
     protected void initChildList() {
         //logger.debug("PreProc chain: {}, init list..", name);
-        initScaleParam(useImageScale==null, imageScaleCond==null); //TODO for morphium init
+        //initScaleParam(useImageScale==null, imageScaleCond==null); //TODO for morphium init
         super.initChildren(imageScaleCond, transformations, trimFramesStart, trimFramesEnd, frameDuration);
     }
     

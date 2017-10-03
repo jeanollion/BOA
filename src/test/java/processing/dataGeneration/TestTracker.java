@@ -43,6 +43,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import plugins.PluginFactory;
 import plugins.ProcessingScheme;
+import plugins.ProcessingSchemeWithTracking;
+import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.LAPTracker;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
@@ -64,7 +66,8 @@ public class TestTracker {
         //String dbName = "mutd5_12052017";
         //String dbName = "fluo160501";
         //String dbName = "MF1_11052017";
-        String dbName = "MF1_170523";
+        //String dbName = "MF1_170522";
+        String dbName = "WT_150616";
         // Optimier pur MF1_170523: P10 
         //mc7 62 ; 352 544-477: why not merge ? 
         // mc12 346
@@ -73,18 +76,18 @@ public class TestTracker {
         // mc 16 : 93 fragmentation
         // Pour xp MF1_170519
         // P0 mc1 F39: ajouter terminaison comme option de scenario!
-        int pIdx = 44;
-        int mcIdx =1; //14
-        int structureIdx = 1;
+        int pIdx = 61;
+        int mcIdx =0; //14
+        int structureIdx = 0;
         GUI.getInstance().setDBConnection(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
         MasterDAO db = GUI.getDBConnection();
         
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         MicrochannelTracker.debug=true;
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=false;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 290,300);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,1000);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 295, 300); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
@@ -114,8 +117,8 @@ public class TestTracker {
                 }
             }
         }
-        //Map<String, StructureObject> gCutMap = StructureObjectUtils.createGraphCut(parentTrack, false);
-        //parentTrack = Utils.transform(parentTrack, o->gCutMap.get(o.getId()));
+        Map<String, StructureObject> gCutMap = StructureObjectUtils.createGraphCut(parentTrack, false);
+        parentTrack = Utils.transform(parentTrack, o->gCutMap.get(o.getId()));
         
         logger.debug("parent track: {}", parentTrack.size());
         LAPTracker.registerTMI=true;
@@ -123,12 +126,12 @@ public class TestTracker {
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         List<Pair<String, Exception>> l;
         CropMicroChannelFluo2D.debug=false;
+        if (ps instanceof ProcessingSchemeWithTracking) ((ProcessingSchemeWithTracking)ps).getTrackPostFilters().removeAllElements();
         if (trackOnly) l=ps.trackOnly(structureIdx, parentTrack, null);
         else l=ps.segmentAndTrack(structureIdx, parentTrack, null);
         for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);
-        logger.debug("children: {} ({})", StructureObjectUtils.getAllTracks(parentTrack, 0).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, 0).values(), o->o.size()));
+        logger.debug("track: {} ({}) children of {} = ({})", StructureObjectUtils.getAllTracks(parentTrack, structureIdx).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, structureIdx).values(), o->o.size()), parentTrack.get(0), parentTrack.get(0).getChildren(structureIdx));
 
-        
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (structureIdx==2 && LAPTracker.debugTMI!=null) iwm.setRoiModifier(new SpotWithinCompartmentRoiModifier(LAPTracker.debugTMI, 2));
         logger.debug("generating TOI");

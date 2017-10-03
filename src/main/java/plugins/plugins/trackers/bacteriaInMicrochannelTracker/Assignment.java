@@ -23,10 +23,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import static plugins.Plugin.logger;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SIErrorValue;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.cellNumberLimitForAssignment;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.TrackAssigner.SIErrorValue;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.TrackAssigner.significativeSIErrorThld;
 
 /**
  *
@@ -167,7 +168,7 @@ public class Assignment {
             if (!verifyInequality()) return;
             boolean change = true;
             if (ta.currentAssignment!=this) throw new Error("TA's currentAssignment should be calling assignment");
-            while (change) change = ta.checkNextIncrement();
+            while (change && this.idxPrev<=cellNumberLimitForAssignment) change = ta.checkNextIncrement();
         }
                 
         protected void incrementUntilVerifyInequality() {
