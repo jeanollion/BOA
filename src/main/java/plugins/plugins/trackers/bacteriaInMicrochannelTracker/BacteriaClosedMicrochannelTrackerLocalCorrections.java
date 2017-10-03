@@ -247,9 +247,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         };
         if (Double.isNaN(debugThreshold) && this.thresholdMethod.getSelectedIndex()>0 && getSegmenter() instanceof OverridableThreshold) {
             List<Image> planes = new ArrayList<>(parentsByF.size());
-            Set<Integer> s =  new TreeSet(parentsByF.keySet());
-            for (int t : s) planes.add(((OverridableThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parentsByF.get(t)));
+            for (int t = minT; t<maxT; ++t) planes.add(((OverridableThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, getParent(t, true)));
             logger.debug("threshold method: {}. Adaptative coeff: {}, hwf: {}, hwy: {}", this.thresholdMethod.getSelectedItem(), adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
+            //logger.debug("minF: [{}-{}], nb planes: {}, nbParents: {}", minT, maxT, planes.size(), this.parentsByF.size());
             int method = thresholdMethod.getSelectedIndex();
             if (method==1 || method==2) {
                 threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue()); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
@@ -366,6 +366,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         applyLinksToParents(parents);
     }
     private boolean hasNoObjects(SegmentOnly so, int f) {
+        if (!parentsByF.containsKey(f)) return true;
         List<StructureObject> before = parentsByF.get(f).getChildren(structureIdx);
         so.segmentAndTrack(structureIdx, new ArrayList<StructureObject>(1){{add(parentsByF.get(f));}}, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
         List<StructureObject> after = parentsByF.get(f).getChildren(structureIdx);
@@ -691,14 +692,26 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         sizeIncrementFunction = o -> objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getLineageSizeIncrement() : Double.NaN;
         areFromSameLine = (o1, o2) -> objectAttributeMap.containsKey(o1) && objectAttributeMap.containsKey(o2) ? objectAttributeMap.get(o1).prev == objectAttributeMap.get(o2).prev : false;
     }
-    
-    protected Image getImage(int timePoint) {
-        Image res = inputImages!=null ? inputImages.get(timePoint) : null;
+    protected StructureObject getParent(int frame, boolean searchClosestIfAbsent) {
+        StructureObject parent = parentsByF.get(frame);
+        if (parent==null && searchClosestIfAbsent) {
+            if (parentsByF.isEmpty()) return null;
+            int delta = 1;
+            while(true) {
+                if (frame-delta>=0 && parentsByF.containsKey(frame-delta)) return parentsByF.get(frame-delta);
+                if ((maxT==0 || frame+delta<=maxT) && parentsByF.containsKey(frame+delta)) return parentsByF.get(frame+delta);
+                delta++;
+            }
+        }
+        return parent;
+    }
+    protected Image getImage(int frame) {
+        Image res = inputImages!=null ? inputImages.get(frame) : null;
         if (res==null) {
-            StructureObject parent = this.parentsByF.get(timePoint);
+            StructureObject parent = this.getParent(frame, true);
             if (parent==null) return null;
             res = preFilters.filter(parent.getRawImage(structureIdx), parent);
-            if (inputImages!=null) inputImages.put(timePoint, res);
+            if (inputImages!=null) inputImages.put(frame, res);
         }
         return res;
     }
@@ -711,7 +724,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (segment) o.getObject().translate(parent.getBounds().duplicate().reverseOffset()); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
                 return o.getObject();
             }));
-            else populations.put(parent.getFrame(), Collections.EMPTY_LIST); 
+            else populations.put(timePoint, Collections.EMPTY_LIST); 
             //logger.debug("get object @ {}, size: {}", timePoint, populations.get(timePoint].size());
             createAttributes(timePoint);
         }

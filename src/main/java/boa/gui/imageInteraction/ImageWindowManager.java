@@ -987,6 +987,7 @@ public abstract class ImageWindowManager<T, U, V> {
         else if (sel.size()==1) return getMenu(sel.get(0));
         else {
             Collections.sort(sel);
+            if (sel.size()>50) sel=sel.subList(0, 50);
             return getMenu(sel);
         }
     }

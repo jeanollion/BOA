@@ -432,11 +432,27 @@ public class GenerateXP {
             ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
             ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
             ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
-            ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, 1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
+            ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
             ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             CropMicroChannels cropper = new CropMicroChannelFluo2D(0, 45, 200, 0.5, 10);
             ps.addTransformation(0, null, cropper).setActivated(true);
             ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, flip?-1:1).setCropper(cropper)).setActivated(false); // additional translation to correct chromatic shift
+    }
+    public static void setPreprocessingTrans(PreProcessingChain ps, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
+        ps.setFrameDuration(4);
+        if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
+        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, true)));
+        ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
+        ps.addTransformation(0, null, new CropMicroChannelBF2D());
+        if (subTransPre) ps.addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, false)); // subtract after crop because subtract alter optical aberation detection. Optimization: paraboloid = true / range=03-05 best = 0.3 
+        ps.addTransformation(0, null, new BandPass(0, 20, 0, 0)).setActivated(false); // TODO optimize low bound [10-50]
+        ps.setTrimFrames(trimFramesStart, trimFramesEnd);
+    }
+    public static void setPreprocessingTransAndMut(PreProcessingChain ps, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
+        ps.removeAllTransformations();
+        setPreprocessingTrans(ps, flip, trimFramesStart, trimFramesEnd, scaleXY );
+        ps.addTransformation(1, null, new RemoveStripesSignalExclusion(-1));
+        ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(false); // nearest -> translation entiers
     }
     public static void setParametersFluo(Experiment xp, boolean processing, boolean measurements) {
         Structure mc = xp.getStructure(0).setBrightObject(true);
@@ -473,7 +489,6 @@ public class GenerateXP {
     }
     
     public static Experiment generateXPTrans(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
-        
         Experiment xp = new Experiment(name);
         xp.setImportImageMethod(importMethod==null ? Experiment.ImportImageMethod.SINGLE_FILE : importMethod);
         xp.getChannelImages().insert(new ChannelImage("BF", ""));
@@ -482,16 +497,7 @@ public class GenerateXP {
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);
         setParametersTrans(xp, true, true);
-        if (setUpPreProcessing) { // preProcessing 
-            xp.getPreProcessingTemplate().setFrameDuration(4);
-            if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
-            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, true)));
-            xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-            xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelBF2D());
-            if (subTransPre) xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, false)); // subtract after crop because subtract alter optical aberation detection. Optimization: paraboloid = true / range=03-05 best = 0.3 
-            xp.getPreProcessingTemplate().addTransformation(0, null, new BandPass(0, 20, 0, 0)).setActivated(false); // TODO optimize low bound [10-50]
-            xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
-        }
+        if (setUpPreProcessing) setPreprocessingTrans(xp.getPreProcessingTemplate(), flip, trimFramesStart, trimFramesEnd, scaleXY);
         return xp;
     }
     public static void deletePositions(Experiment xp, boolean[] deletePositions) {

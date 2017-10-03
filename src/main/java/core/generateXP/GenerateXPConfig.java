@@ -19,6 +19,7 @@ package core.generateXP;
 
 import static core.generateXP.GenerateXP.generateXPFluo;
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.PreProcessingChain;
 import java.io.File;
 import java.util.ArrayList;
 import utils.FileIO;
@@ -39,6 +40,13 @@ public class GenerateXPConfig {
         
         Experiment xpTrans = GenerateXP.generateXPTrans("MotherMachinePhaseContrast", null, true, true, 0, 0, Double.NaN);
         exportXP(path, xpTrans, false);
+        
+        Experiment xpTransFluo = GenerateXP.generateXPFluo("MotherMachinePhaseContrastAndMutations", null, true, true, 0, 0, Double.NaN, null);
+        GenerateXP.setParametersTrans(xpTransFluo, true, false);
+        PreProcessingChain ps = xpTransFluo.getPreProcessingTemplate();
+        ps.removeAllTransformations();
+        GenerateXP.setPreprocessingTransAndMut(ps, true, 0, 0, Double.NaN);
+        exportXP(path, xpTransFluo, false);
         
     }
     private static void exportXP(String dir, Experiment xp, boolean zip) {
