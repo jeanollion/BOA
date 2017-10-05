@@ -95,12 +95,18 @@ public class GrowthRate implements Measurement {
             return of;
         });
         List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
-        Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracksSplitDiv(parentTrack, bIdx);
+        //Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracksSplitDiv(parentTrack, bIdx);
+        Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
+        long t3 = System.currentTimeMillis();
         for (List<StructureObject> l : bacteriaTracks.values()) {
             if (l.size()>=2) {
                 double[] frame = new double[l.size()];
                 double[] length = new double[frame.length];
                 int idx = 0;
+                for (StructureObject b : l) {
+                    b.getObject().getVoxels();
+                    b.getObject().getContour();
+                }
                 for (StructureObject b : l) {
                     frame[idx] = b.getCalibratedTimePoint();
                     length[idx++] = Math.log(ofMap.getAndCreateIfNecessary(b.getParent()).performMeasurement(b.getObject(), null));
@@ -113,9 +119,10 @@ public class GrowthRate implements Measurement {
                     b.getMeasurements().setValue("GrowthRateIntersection"+suffix, beta[0] );
                     if (res) b.getMeasurements().setValue("GrowthRateResidual"+suffix, residuals[idx++] );
                 }
-                
             }
         }
+        long t4 = System.currentTimeMillis();
+        logger.debug("GR: process: {}", t4-t3);
         if (!ex.isEmpty()) throw ex;
     }
     
