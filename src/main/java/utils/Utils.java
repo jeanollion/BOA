@@ -799,42 +799,5 @@ public class Utils {
         for (int i = 0; i<array.length; ++i) outputArray[i] = func.apply(array[i]);
         return outputArray;
     }
-    public static MouseListener getMouseListenerWithInvalidatedRightClick(final MouseListener ml, int idx) {
-        MouseListener res = new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                logger.debug("ml: {}, mouseClicked, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mouseClicked(e);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                logger.debug("ml: {}, mousePressed, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mousePressed(e);
-                //if (!SwingUtilities.isRightMouseButton(e)) ml.mousePressed(e);
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                logger.debug("ml: {}, mouseReleased, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mouseReleased(e);
-                //if (!SwingUtilities.isRightMouseButton(e)) ml.mouseReleased(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                logger.debug("ml: {}, mouseEntered, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mouseEntered(e);
-                //if (!SwingUtilities.isRightMouseButton(e)) ml.mouseEntered(e);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                logger.debug("ml: {}, mouseExited, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mouseExited(e);
-                //if (!SwingUtilities.isRightMouseButton(e)) ml.mouseExited(e);
-            }
-        };
-        return res;
-    }
+    
 }

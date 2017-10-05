@@ -1038,7 +1038,9 @@ public abstract class ImageWindowManager<T, U, V> {
         menu.add(new JMenuItem(Utils.toStringList(list)));
         menu.add(new JMenuItem("Prev:"+Utils.toStringList(list, o->o.getPrevious()==null?"NA":o.getPrevious().toString())));
         menu.add(new JMenuItem("Next:"+Utils.toStringList(list, o->o.getNext()==null?"NA":o.getNext().toString())));
-        menu.add(new JMenuItem("TrackHead:"+Utils.toStringList(list, o->o.getTrackHead()==null?"NA":o.getTrackHead().toString())));
+        List<String> thList = Utils.transform(list, o->o.getTrackHead()==null?"NA":o.getTrackHead().toString());
+        replaceRepetedValues(thList);
+        menu.add(new JMenuItem("TrackHead:"+Utils.toStringList(thList)));
         //DecimalFormat df = new DecimalFormat("#.####E0");
         // getAllAttributeKeys
         Collection<String> attributeKeys = new HashSet();
