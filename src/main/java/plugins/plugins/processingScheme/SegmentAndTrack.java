@@ -102,6 +102,7 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
             logger.info("No tracker set for structure: {}", structureIdx);
             return Collections.EMPTY_LIST;
         }
+        if (parentTrack.isEmpty()) return Collections.EMPTY_LIST;
         //logger.debug("segmentAndTrack: # prefilters: {}", preFilters.getChildCount());
         List<Pair<String, Exception>> l = new ArrayList<>();
         try {
