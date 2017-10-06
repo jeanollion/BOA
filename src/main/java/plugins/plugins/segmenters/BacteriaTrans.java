@@ -910,7 +910,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                         double min2 = getMinCurvature(borderVoxels2);
                         this.curvL=min1;
                         this.curvR=min2;
-                        double res = (Math.abs(min1-min2)>2*Math.abs(curvatureThreshold)) ? Math.max(min1, min2) : 0.5 * (min1 + min2); // when one side has a curvature very different from the other -> hole -> do not take into acount // TODO: check generality of criterion. put parameter? 
+                        double res;
+                        if ((Math.abs(min1-min2)>2*Math.abs(curvatureThreshold))) { // when one side has a curvature very different from the other -> hole -> do not take into acount // TODO: check generality of criterion. put parameter? 
+                            res = Math.max(min1, min2);
+                        } else res = 0.5 * (min1 + min2); 
                         if (debug | ProcessingVariables.this.splitVerbose) logger.debug("{}, GET CURV: {}&{} -> {} , borderVoxels: {}&{}", this, min1, min2, res, borderVoxels.size(), borderVoxels2.size());
                         return res;
                     }

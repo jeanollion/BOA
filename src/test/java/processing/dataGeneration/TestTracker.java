@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 import plugins.PluginFactory;
 import plugins.ProcessingScheme;
 import plugins.ProcessingSchemeWithTracking;
+import plugins.plugins.postFilters.MicrochannelPhaseArtifacts;
 import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.LAPTracker;
@@ -62,12 +63,8 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        //String dbName = "fluo160408_MutH";
-        //String dbName = "mutd5_12052017";
-        //String dbName = "fluo160501";
-        //String dbName = "MF1_11052017";
-        //String dbName = "MF1_170522";
-        String dbName = "MF1_170523";
+
+        //String dbName = "MF1_170523";
         // Optimier pur MF1_170523: P10 
         //mc7 62 ; 352 544-477: why not merge ? 
         // mc12 346
@@ -76,8 +73,10 @@ public class TestTracker {
         // mc 16 : 93 fragmentation
         // Pour xp MF1_170519
         // P0 mc1 F39: ajouter terminaison comme option de scenario!
-        int pIdx = 10;
-        int mcIdx =7; //14
+        String dbName = "MutH_150324";
+        // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
+        int pIdx = 0;
+        int mcIdx =1; //14
         int structureIdx = 1;
         GUI.getInstance().setDBConnection(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
         MasterDAO db = GUI.getDBConnection();
@@ -128,7 +127,8 @@ public class TestTracker {
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         List<Pair<String, Exception>> l;
         CropMicroChannelFluo2D.debug=false;
-        if (ps instanceof ProcessingSchemeWithTracking) ((ProcessingSchemeWithTracking)ps).getTrackPostFilters().removeAllElements();
+        if (ps instanceof ProcessingSchemeWithTracking && structureIdx==0) ((ProcessingSchemeWithTracking)ps).getTrackPostFilters().removeAllElements();
+        ps.getPostFilters().add(new MicrochannelPhaseArtifacts());
         if (trackOnly) l=ps.trackOnly(structureIdx, parentTrack, null);
         else l=ps.segmentAndTrack(structureIdx, parentTrack, null);
         for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);

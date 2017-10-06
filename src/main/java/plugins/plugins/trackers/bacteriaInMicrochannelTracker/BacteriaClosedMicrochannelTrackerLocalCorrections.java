@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ConditionalParameter;
@@ -240,7 +241,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         applyToSegmenter = (frame, s) -> {
             if (s instanceof OverridableThreshold) {
                 if (threshold!=null) {
-                    if (threshold.hasAdaptativeByY()) ((OverridableThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
+                    if (threshold.hasAdaptativeByY()) {
+                        ((OverridableThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
+                        //if (frame==300) ImageWindowManagerFactory.showImage(threshold.getThresholdedPlane(frame, false));
+                    }
                     else ((OverridableThreshold)s).setThresholdValue(threshold.getThreshold(frame));
                 } else ((OverridableThreshold)s).setThresholdValue(debugThreshold);
             }
