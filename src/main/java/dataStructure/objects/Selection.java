@@ -33,7 +33,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.eclipse.collections.impl.factory.Sets;
 import org.json.simple.JSONObject;
 import utils.JSONSerializable;
 import utils.JSONUtils;
@@ -184,17 +186,17 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         }
         return (Collection<String>)indiciesList;
     }
-    protected synchronized Set<StructureObject> retrieveElements(String fieldName) {
-        if (fieldName==null) throw new IllegalArgumentException("Position cannot be null");
-        Collection<String> indiciesList = get(fieldName, false);
+    protected synchronized Set<StructureObject> retrieveElements(String position) {
+        if (position==null) throw new IllegalArgumentException("Position cannot be null");
+        Collection<String> indiciesList = get(position, false);
         if (indiciesList==null) {
-            logger.debug("position: {} absent from sel: {}", fieldName, name);
+            logger.debug("position: {} absent from sel: {}", position, name);
             return Collections.EMPTY_SET;
         }
-        ObjectDAO dao = mDAO.getDao(fieldName);
+        ObjectDAO dao = mDAO.getDao(position);
         int[] pathToRoot = mDAO.getExperiment().getPathToRoot(structureIdx);
         Set<StructureObject> res = new HashSet<>(indiciesList.size());
-        retrievedElements.put(fieldName, res);
+        retrievedElements.put(position, res);
         List<StructureObject> roots = dao.getRoots();
         long t0 = System.currentTimeMillis();
         List<int[]> notFound = logger.isWarnEnabled() ? new ArrayList<>() : null;
@@ -230,7 +232,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
             }
         }*/
         long t2 = System.currentTimeMillis();
-        logger.debug("Selection: {}, position: {}, #{} elements retrieved in: {}", this.name, fieldName, res.size(), t2-t0);
+        logger.debug("Selection: {}, position: {}, #{} elements retrieved in: {}", this.name, position, res.size(), t2-t0);
         if (notFound!=null && !notFound.isEmpty()) logger.debug("Selection: {} objects not found: {}", getName(), Utils.toStringList(notFound, array -> Utils.toStringArray(array)));
         return res;
     }
@@ -344,6 +346,13 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         return this;
     }
     
+    public synchronized Selection removeElements(String position, Collection<String> elementsToRemove) {
+        if (elementsToRemove==null || elementsToRemove.isEmpty()) return this;
+        List<String> els = this.elements.get(position);
+        if (els!=null) els.removeAll(elementsToRemove);
+        return this;
+    }    
+  
     public boolean removeElement(StructureObject elementToRemove) {
         Set<StructureObject> list = getElements(elementToRemove.getPositionName());
         if (list!=null) {
@@ -357,17 +366,35 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         if (elementsToRemove==null || elementsToRemove.isEmpty()) return;
         for (StructureObject o : elementsToRemove) removeElement(o);
     }
-    public synchronized void removeChildrenOf(List<StructureObject> parents) {
-        Map<String, List<StructureObject>> parentsByPosition = StructureObjectUtils.splitByFieldName(parents);
+    public synchronized void removeChildrenOf(List<StructureObject> parents) { // currently supports only direct children
+        Map<String, List<StructureObject>> parentsByPosition = StructureObjectUtils.splitByPosition(parents);
+        for (String position : parentsByPosition.keySet()) {
+            Set<String> elements = getElementStrings(position);
+            Map<String, List<String>> parentToChildrenMap = elements.stream().collect(Collectors.groupingBy(s->Selection.getParent(s)));
+            int parentSIdx = this.mDAO.getExperiment().getStructure(structureIdx).getParentStructure();
+            List<StructureObject> posParents = parentsByPosition.get(position);
+            Map<Integer, List<StructureObject>> parentsBySIdx = StructureObjectUtils.splitByStructureIdx(posParents);
+            if (!parentsBySIdx.containsKey(parentSIdx)) continue;
+            Set<String> curParents = new HashSet<>(Utils.transform(parentsBySIdx.get(parentSIdx), p->Selection.indicesString(p)));
+            Set<String> intersectParents = Sets.intersect(curParents, parentToChildrenMap.keySet());
+            if (intersectParents.isEmpty()) continue;
+            List<String> toRemove = new ArrayList<>();
+            for (String p : intersectParents) toRemove.addAll(parentToChildrenMap.get(p));
+            this.removeElements(position, toRemove);
+            logger.debug("removed {} children from {} parent in position: {}", toRemove.size(), intersectParents.size(), position);
+        }
+    }
+    /*public synchronized void removeChildrenOf(List<StructureObject> parents) {
+        Map<String, List<StructureObject>> parentsByPosition = StructureObjectUtils.splitByPosition(parents);
         for (String position : parentsByPosition.keySet()) {
             Set<StructureObject> allElements = getElements(position);
             Map<StructureObject, List<StructureObject>> elementsByParent = StructureObjectUtils.splitByParent(allElements);
             List<StructureObject> toRemove = new ArrayList<>();
             for (StructureObject parent : parentsByPosition.get(position)) if (elementsByParent.containsKey(parent)) toRemove.addAll(elementsByParent.get(parent));
             removeElements(toRemove);
-            logger.debug("sel : {}, remove children of: {}", this.name, toRemove);
+            logger.debug("sel : {} position: {}, remove {}/{} children from {} parents (split by parents: {})", this.name, position, toRemove.size(), allElements.size(), parents.size(), elementsByParent.size());
         }
-    }
+    }*/
     public synchronized void clear() {
         elements.clear();
         if (retrievedElements!=null) retrievedElements.clear();

@@ -291,7 +291,7 @@ public class StructureObjectUtils {
         logger.debug("set all children: parent: {}, structure: {}", parentTrack.get(0).getTrackHead(), structureIdx);
         if (dao.getExperiment().isDirectChildOf(parentTrack.get(0).getStructureIdx(), structureIdx)) {
             List<StructureObject> parentWithNoChildren = new ArrayList<>(parentTrack.size());
-            for (StructureObject p : parentTrack) if (!p.childrenSM.has(structureIdx)) parentWithNoChildren.add(p);
+            for (StructureObject p : parentTrack) if (!p.hasChildren(structureIdx)) parentWithNoChildren.add(p);
             logger.debug("parents with no children : {}", parentWithNoChildren.size());
             if (parentWithNoChildren.isEmpty()) return;
             dao.setAllChildren(parentWithNoChildren, structureIdx);
@@ -486,7 +486,7 @@ public class StructureObjectUtils {
         return res;
     }
     
-    public static Map<String, List<StructureObject>> splitByFieldName(Collection<StructureObject> list) {
+    public static Map<String, List<StructureObject>> splitByPosition(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
         return list.stream().collect(Collectors.groupingBy(o -> o.getPositionName()));
     }

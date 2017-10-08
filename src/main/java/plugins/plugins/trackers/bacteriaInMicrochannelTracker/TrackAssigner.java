@@ -26,8 +26,10 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import static plugins.Plugin.logger;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SIIncreaseThld;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
+import utils.HashMapGetCreate;
 import utils.Utils;
 
 /**
@@ -35,16 +37,14 @@ import utils.Utils;
  * @author jollion
  */
 public class TrackAssigner {
-    final static double significativeSIErrorThld = 0.3; // size increment difference > to this value lead to an error
-    final static double SIErrorValue=1; //0.9 -> less weight to sizeIncrement error / 1 -> same weight
-    final static double SIIncreaseThld = 0.1;
+    
     public static enum AssignerMode {ADAPTATIVE, RANGE};
     
     double[] currentScore = null;
     protected int verboseLevel = 0;
     AssignerMode mode = AssignerMode.ADAPTATIVE;
     final Function<Object3D, Double> sizeFunction;
-    Function<Object3D, Double> sizeIncrementFunction;
+    private Function<Object3D, Double> sizeIncrementFunction;
     final BiFunction<Object3D, Object3D, Boolean> areFromSameLine;
     final List<Object3D> prev, next;
     final int idxPrevLim, idxNextLim;
@@ -52,6 +52,8 @@ public class TrackAssigner {
     protected Assignment currentAssignment;
     double[] baseSizeIncrement;
     protected boolean truncatedChannel;
+    int nextIncrementCheckRecursiveLevel = -1; 
+    HashMapGetCreate<Object3D, Double> sizeIncrements = new HashMapGetCreate<>(o -> sizeIncrementFunction.apply(o));
     protected TrackAssigner(List<Object3D> prev, List<Object3D> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Object3D, Double> sizeFunction, Function<Object3D, Double> sizeIncrementFunction, BiFunction<Object3D, Object3D, Boolean> areFromSameLine) {
         this.prev= prev!=null ? prev : Collections.EMPTY_LIST;
         this.next= next!=null ? next : Collections.EMPTY_LIST;
@@ -76,8 +78,21 @@ public class TrackAssigner {
         this.truncatedChannel=allow;
         return this;
     }
+
+    public TrackAssigner setNextIncrementCheckRecursiveLevel(int recursiveDepth) {
+        this.nextIncrementCheckRecursiveLevel = recursiveDepth;
+        return this;
+    }
+    public boolean allowRecurstiveNextIncrementCheck() {
+        return nextIncrementCheckRecursiveLevel!=0;
+    }
+    public boolean allowCellDeathScenario() {
+        return nextIncrementCheckRecursiveLevel<0 || nextIncrementCheckRecursiveLevel>1;
+    }
+    
     protected TrackAssigner duplicate(boolean duplicateCurrentAssignment) {
         TrackAssigner res = new TrackAssigner(prev, next, baseSizeIncrement, truncatedChannel, sizeFunction, sizeIncrementFunction, areFromSameLine);
+        res.sizeIncrements=sizeIncrements;
         res.assignments.addAll(assignments);
         if (duplicateCurrentAssignment && currentAssignment!=null) {
             res.currentAssignment = currentAssignment.duplicate(res);
@@ -147,13 +162,14 @@ public class TrackAssigner {
     public boolean nextTrack() {
         if (currentAssignment!=null && (currentAssignment.idxPrevEnd()==idxPrevLim || currentAssignment.idxNextEnd()==idxNextLim)) return false;
         currentAssignment = new Assignment(this, currentAssignment==null?0:currentAssignment.idxPrevEnd(), currentAssignment==null?0:currentAssignment.idxNextEnd());
+        currentScore=null;
         assignments.add(currentAssignment);
         currentAssignment.incrementIfNecessary();
         return true;
     }
     
     protected boolean checkNextIncrement() {
-        TrackAssigner nextSolution = duplicate(true).setVerboseLevel(verboseLevel+1);
+        TrackAssigner nextSolution = duplicate(true).setVerboseLevel(verboseLevel+1).setNextIncrementCheckRecursiveLevel(this.nextIncrementCheckRecursiveLevel<0 ? 1: (nextIncrementCheckRecursiveLevel==0 ? 0:this.nextIncrementCheckRecursiveLevel-1));
         // get another solution that verifies inequality
         boolean incrementPrev;
         if (mode==AssignerMode.ADAPTATIVE && !Double.isNaN(currentAssignment.getPreviousSizeIncrement())) incrementPrev = currentAssignment.sizeNext/currentAssignment.sizePrev>currentAssignment.getPreviousSizeIncrement();
@@ -165,12 +181,12 @@ public class TrackAssigner {
         }
         nextSolution.currentAssignment.incrementUntilVerifyInequality();
         if (!nextSolution.currentAssignment.verifyInequality()) return false;
-        if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, {} next solution: {}, current score: {}, next score: {}", verboseLevel, currentAssignment.toString(false), nextSolution.currentAssignment.toString(false), getCurrentScore(), nextSolution.getCurrentScore());
+        if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, {} next solution: {}, current score: {}, next score: {}, prev from sameLine: {}", verboseLevel, currentAssignment.toString(false), nextSolution.currentAssignment.toString(false), getCurrentScore(), nextSolution.getCurrentScore(), nextSolution.currentAssignment.prevFromSameLine());
         //if (debug && verboseLevel<verboseLevelLimit) logger.debug("current: {}, next: {}", this, nextSolution);
         // compare the current & new solution
         double[] newScore = nextSolution.getCurrentScore();
         double curSIIncreaseThld = SIIncreaseThld; // increment only if significative improvement OR objects come from a division at previous timePoint & improvement
-        if (incrementPrev && areFromSameLine.apply(prev.get(currentAssignment.idxPrevEnd()-1), prev.get(nextSolution.currentAssignment.idxPrevEnd()-1))) curSIIncreaseThld=0;
+        if (nextSolution.currentAssignment.prevFromSameLine()) curSIIncreaseThld=0;
         newScore[1]+=curSIIncreaseThld; 
         if (compareScores(getCurrentScore(), newScore, mode!=AssignerMode.RANGE)<=0) return false;
         newScore[1]-=curSIIncreaseThld;
@@ -189,6 +205,9 @@ public class TrackAssigner {
         verboseLevel++;
         if (currentAssignment==null) nextTrack();
         Assignment current = currentAssignment;
+        int recursiveLevel = this.nextIncrementCheckRecursiveLevel;
+        if (recursiveLevel<0) this.nextIncrementCheckRecursiveLevel=recursiveLevel = 1;
+        double[] oldScore=this.currentScore;
         int assignmentCount = assignments.size();
         if (currentAssignment.truncatedEndOfChannel()) return new double[]{currentAssignment.getErrorCount(), 0}; 
         double[] score = currentAssignment.getScore();
@@ -212,6 +231,8 @@ public class TrackAssigner {
         // revert to previous state
         verboseLevel--;
         this.currentAssignment=current;
+        this.currentScore=oldScore;
+        this.nextIncrementCheckRecursiveLevel=recursiveLevel;
         for (int i = this.assignments.size()-1; i>=assignmentCount; --i) assignments.remove(i);
         return score;
     }

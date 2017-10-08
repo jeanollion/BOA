@@ -75,9 +75,9 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
     NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
     NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x [mean channel width])", 1, 1, 0, null);
     NumberParameter yShiftQuantile = new BoundedNumberParameter("Y-shift Quantile", 2, 0.5, 0, 1);
-    NumberParameter minTrackLength = new BoundedNumberParameter("Minimum Track Length", 0, 100, 10, null);
+    //NumberParameter minTrackLength = new BoundedNumberParameter("Minimum Track Length", 0, 100, 10, null);
     
-    Parameter[] parameters = new Parameter[]{segmenter, maxShift, maxDistanceWidthFactor, yShiftQuantile, minTrackLength};
+    Parameter[] parameters = new Parameter[]{segmenter, maxShift, maxDistanceWidthFactor, yShiftQuantile};
     private static double widthQuantile = 0.9;
     public static boolean debug = false;
     
@@ -155,14 +155,15 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         if (debug) logger.debug("mc3: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         // compute mean of Y-shifts & width for each microchannel and modify objects
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
+        if (debug) logger.debug("mc4: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         logger.debug("Microchannel tracker: trackHead number: {}", allTracks.size());
         List<StructureObject> toRemove = new ArrayList<>();
         for (List<StructureObject> track : allTracks.values()) { // compute median shift on the whole track + mean width
             if (track.isEmpty()) continue;
-            if (!debug && track.size()<this.minTrackLength.getValue().intValue()) {
+            /*if (!debug && track.size()<this.minTrackLength.getValue().intValue()) {
                 toRemove.addAll(track);
                 continue;
-            }
+            }*/
             
             List<Integer> shifts = new ArrayList<>(track.size());
             List<Double> widths = new ArrayList<>(track.size());
@@ -209,6 +210,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                 o.setObject(new Object3D(m, o.getIdx()+1));
             }
         }
+        if (debug) logger.debug("mc after adjust width: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         if (!toRemove.isEmpty()) {
             Map<StructureObject, List<StructureObject>> toRemByParent = StructureObjectUtils.splitByParent(toRemove);
             for (Entry<StructureObject, List<StructureObject>> e : toRemByParent.entrySet()) {
@@ -216,6 +218,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                 e.getKey().relabelChildren(structureIdx);
             }
         }
+        if (debug) logger.debug("mc after remove: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         // relabel by trackHead appearance
         HashMapGetCreate<StructureObject, Integer> trackHeadIdxMap = new HashMapGetCreate(new Factory<StructureObject, Integer>() {
             int count = -1;
@@ -233,6 +236,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                 if (idx!=c.getIdx()) c.setIdx(idx);
             }
         }
+        if (debug) logger.debug("mc end: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
     }
 
     private static void fillGaps(int structureIdx, List<StructureObject> parentTrack, boolean allowUnfilledGaps) {
@@ -248,7 +252,10 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                     if (debug) logger.debug("gap: {}->{}", prev, next);
                     Map<Integer, StructureObject> localReference = reference==null? getReference(allTracks,prev.getFrame(), next.getFrame()) : reference;
                     if (localReference==null) { // case no object detected in frame -> no reference. allow unfilled gaps ? 
-                        if (allowUnfilledGaps) continue;
+                        if (allowUnfilledGaps) {
+                            prev=next;
+                            continue;
+                        }
                         else {
                             prev.resetTrackLinks(false, true);
                             next.resetTrackLinks(true, false, true, null);

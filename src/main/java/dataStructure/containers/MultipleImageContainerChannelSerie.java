@@ -75,7 +75,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         res.put("sizeZC", JSONUtils.toJSONArray(sizeZC));
         if (bounds!=null) res.put("bounds", bounds.toJSONEntry());
         res.put("singleFrameC", JSONUtils.toJSONArray(singleFrameC));
-        res.put("timePointCZT", JSONUtils.toJSONObject(timePointCZT));
+        if (timePointCZT!=null) res.put("timePointCZT", JSONUtils.toJSONObject(timePointCZT));
         return res;
     }
 
@@ -134,7 +134,11 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     }
     
     @Override public double getCalibratedTimePoint(int t, int c, int z) {
-        if (timePointCZT==null) initTimePointMap();
+        if (timePointCZT==null) {
+            synchronized(this) {
+                if (timePointCZT==null) initTimePointMap();
+            }
+        }
         if (timePointCZT.isEmpty()) return Double.NaN;
         String key = getKey(c, z, t);
         Double d = timePointCZT.get(key);

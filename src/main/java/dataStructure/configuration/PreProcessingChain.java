@@ -62,7 +62,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
     BooleanParameter useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true);
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("Scale XY", 5, 1, 0.00001, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("Scale Z", 5, 1, 0.00001, null);
-    ConditionalParameter imageScaleCond;
+    ConditionalParameter imageScaleCond = new ConditionalParameter(useImageScale).setActionParameters("Custom Calibration", new Parameter[]{scaleXY, scaleZ});
     BoundedNumberParameter frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null);
     TimePointParameter trimFramesStart = new TimePointParameter("Trim Frames Start Position", 0, true);
     TimePointParameter trimFramesEnd = new TimePointParameter("Trim Frames Stop Position (0=no trimming)", 0, true);
@@ -91,14 +91,11 @@ public class PreProcessingChain extends SimpleContainerParameter {
         trimFramesStart.initFromJSONEntry(jsonO.get("trimFramesStart"));
         trimFramesEnd.initFromJSONEntry(jsonO.get("trimFramesEnd"));
         transformations.initFromJSONEntry(jsonO.get("transformations"));
-        initScaleParam(true, true);
     }
     
     public PreProcessingChain(String name) {
         super(name);
-        
         //logger.debug("new PPC: {}", name);
-        initScaleParam(true, true);
         initChildList();
         PreProcessingChain pp = this;
         ParameterListener pl = (Parameter sourceParameter) -> {
@@ -114,18 +111,6 @@ public class PreProcessingChain extends SimpleContainerParameter {
         trimFramesEnd.addListener(pl);
     }
 
-    private void initScaleParam(boolean initParams, boolean initCond) {
-        if (initParams) {
-            scaleXY.setParent(this);
-            scaleZ.setParent(this);
-            useImageScale.setParent(this);
-            frameDuration.setParent(this);
-        }
-        if (initCond) {
-            imageScaleCond = new ConditionalParameter(useImageScale).setActionParameters("Custom Calibration", new Parameter[]{scaleXY, scaleZ});
-            imageScaleCond.setParent(this);
-        }
-    }
     public PreProcessingChain setCustomScale(double scaleXY, double scaleZ) {
         if (Double.isNaN(scaleXY) || Double.isInfinite(scaleXY)) throw new IllegalArgumentException("Invalid scale value");
         if (scaleXY<=0) throw new IllegalArgumentException("Scale should be >=0");
@@ -145,7 +130,6 @@ public class PreProcessingChain extends SimpleContainerParameter {
     @Override
     protected void initChildList() {
         //logger.debug("PreProc chain: {}, init list..", name);
-        initScaleParam(useImageScale==null, imageScaleCond==null); //TODO for morphium init
         super.initChildren(imageScaleCond, transformations, trimFramesStart, trimFramesEnd, frameDuration);
     }
     
@@ -215,7 +199,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
                 actions[i] = fieldUI.getDisplayComponent()[i - 2];
                 //if (i<actions.length-1) ((JMenuItem)actions[i]).setUI(new StayOpenMenuItemUI());
             }
-            JMenuItem overide = new JMenuItem("Overwrite configuration on selected fields");
+            JMenuItem overide = new JMenuItem("Overwrite configuration on selected positions");
             overide.setAction(
                 new AbstractAction(overide.getActionCommand()) {
                     @Override

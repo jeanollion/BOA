@@ -93,6 +93,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         fields.initFromJSONEntry(jsonO.get("positions"));
         template.initFromJSONEntry(jsonO.get("template"));
         importMethod.initFromJSONEntry(jsonO.get("importMethod"));
+        this.name="Configuration";
     }
     
     public Experiment(String name) {

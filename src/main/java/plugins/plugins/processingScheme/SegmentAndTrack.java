@@ -32,6 +32,7 @@ import plugins.MultiThreaded;
 import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.ProcessingScheme;
+import plugins.ProcessingSchemeWithTracking;
 import plugins.Segmenter;
 import plugins.TrackPostFilter;
 import plugins.Tracker;
@@ -43,7 +44,7 @@ import utils.Pair;
  *
  * @author jollion
  */
-public class SegmentAndTrack implements ProcessingScheme {
+public class SegmentAndTrack implements ProcessingSchemeWithTracking {
     int nThreads;
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
@@ -90,7 +91,7 @@ public class SegmentAndTrack implements ProcessingScheme {
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
-    
+    @Override
     public TrackPostFilterSequence getTrackPostFilters() {
         return trackPostFilters;
     }
@@ -101,6 +102,7 @@ public class SegmentAndTrack implements ProcessingScheme {
             logger.info("No tracker set for structure: {}", structureIdx);
             return Collections.EMPTY_LIST;
         }
+        if (parentTrack.isEmpty()) return Collections.EMPTY_LIST;
         //logger.debug("segmentAndTrack: # prefilters: {}", preFilters.getChildCount());
         List<Pair<String, Exception>> l = new ArrayList<>();
         try {

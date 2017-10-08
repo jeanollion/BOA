@@ -37,7 +37,10 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
     protected int[] taskIdx;
     protected UserInterface gui;
     public static DefaultWorker execute(WorkerTask t, int maxTaskIdx) {
-        DefaultWorker res = new DefaultWorker(t, maxTaskIdx, GUI.hasInstance()?GUI.getInstance():null);
+        return execute(t, maxTaskIdx, GUI.hasInstance()?GUI.getInstance():null);
+    }
+    public static DefaultWorker execute(WorkerTask t, int maxTaskIdx, UserInterface gui) {
+        DefaultWorker res = new DefaultWorker(t, maxTaskIdx, gui);
         res.execute();
         return res;
     }
@@ -46,6 +49,7 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
     }
     public DefaultWorker(WorkerTask task, int maxTaskIdx, UserInterface gui) {
         this.task=task;
+        this.gui=gui;
         taskIdx = ArrayUtil.generateIntegerArray(0, maxTaskIdx);
         if (gui!=null) {
             addPropertyChangeListener(new PropertyChangeListener() {
@@ -81,16 +85,22 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
     public void done() {
         if (this.endOfWork!=null) endOfWork.run();
         setProgress(0);
+        if (gui!=null) {
+            gui.setMessage("End of Jobs");
+            gui.setRunning(false);
+        } //else System.out.println("No GUI. End of JOBS");
     }
-    public void setEndOfWork(Runnable endOfWork) {
+    public DefaultWorker setEndOfWork(Runnable endOfWork) {
         this.endOfWork=endOfWork;
+        return this;
     }
-    public void appendEndOfWork(Runnable endOfWork) {
+    public DefaultWorker appendEndOfWork(Runnable endOfWork) {
         Runnable oldEnd = this.endOfWork;
         this.endOfWork = () -> {
             oldEnd.run();
             endOfWork.run();
         };
+        return this;
     }
     public static interface WorkerTask {
         public String run(int i);

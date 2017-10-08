@@ -35,7 +35,9 @@ import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
+import image.ImageInteger;
 import image.ImageMask;
+import image.ImageReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -53,12 +55,12 @@ public class TestProcessBacteriaPhase {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
 
-        String dbName = "MF1_170523";
-        //String dbName = "MF1_11052017";
+        //String dbName = "MF1_170523";
+        String dbName = "MutH_150324";
         int field = 0;
-        int microChannel =13;
-        int time =62;
-        thld = 600;
+        int microChannel =1;
+        int time =300;
+        //thld = 600;
         
         //testSegBacteriesFromXP(dbName, field, time, microChannel);
         testSegBacteriesFromXP(dbName, field, microChannel, time, time);
@@ -133,6 +135,7 @@ public class TestProcessBacteriaPhase {
             BacteriaTrans seg = new BacteriaTrans();
             if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
                 seg = (BacteriaTrans) mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
+                //seg.setThresholdedImage((ImageInteger)ImageReader.openIJTif("/data/Images/MOP/ThldPlaneF300.tif")); open radius = 3 ou appliquer le filtre pour objets phase ? 
                 logger.debug("using seg from XP: {}", seg);
             }
             if (!Double.isNaN(thld)) seg.setThresholdValue(thld);

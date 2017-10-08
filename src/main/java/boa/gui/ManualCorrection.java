@@ -470,7 +470,7 @@ public class ManualCorrection {
             logger.warn("No splitter configured");
             return;
         }
-        Map<String, List<StructureObject>> objectsByFieldName = StructureObjectUtils.splitByFieldName(objects);
+        Map<String, List<StructureObject>> objectsByFieldName = StructureObjectUtils.splitByPosition(objects);
         for (String f : objectsByFieldName.keySet()) {
             ObjectDAO dao = db==null? null : db.getDao(f);
             List<StructureObject> objectsToStore = new ArrayList<>();

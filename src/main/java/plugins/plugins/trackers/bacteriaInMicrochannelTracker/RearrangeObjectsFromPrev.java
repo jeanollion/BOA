@@ -56,7 +56,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         super(frame, frame, tracker);
         objects.put(frame, new ArrayList(assignment.nextObjects)); // new arraylist -> can be modified
         objects.put(frame-1, assignment.prevObjects);
-        assignements = new ArrayList<>(assignment.sizePrev());
+        assignements = new ArrayList<>(assignment.objectCountPrev());
         this.assignment=assignment;
         for (Object3D o : assignment.prevObjects) {
             double[] sizeRange = new double[2];
@@ -240,7 +240,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             while(it.hasNext()) {
                 Object3D currentO = it.next();
                 Assignment ass = assignments.getAssignmentContaining(currentO, true);
-                if (ass!=null && ass == lastAss && (ass.sizeNext()<ass.sizePrev())) {
+                if (ass!=null && ass == lastAss && (ass.objectCountNext()<ass.objectCountPrev())) {
                     Merge m = getMerge(timePointMax, new Pair(lastO, currentO));
                     if (debugCorr) logger.debug("RO: merge using next: cost: {} assignement containing objects {}", m.cost, ass);
                     if (true || Double.isFinite(m.cost)) {

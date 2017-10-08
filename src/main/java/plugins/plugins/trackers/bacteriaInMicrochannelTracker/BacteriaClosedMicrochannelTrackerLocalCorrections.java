@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ConditionalParameter;
@@ -164,10 +165,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     final static double SIIncreaseThld = 0.1;
     final static double SIQuiescentThld = 1.05; // under this value we consider cells are not growing -> if break in lineage no error count (cell dies)
     final static boolean setSIErrorsAsErrors = false; // SI errors are set as tracking errors in object attributes
-    
-    final static int maxCorrectionLength = 20000;
+    final static int correctionLevelLimit = 7;
+    final static int cellNumberLimitForAssignment = 7;
+    final static int maxCorrectionLength = 1000;
     private static final double beheadedCellsSizeLimit = 300;
-    
+    final static boolean useVolumeAsSize=false; // if length -> length should be re-computed for merged objects and not just summed
     // functions for assigners
     
     Function<Object3D, Double> sizeFunction; 
@@ -239,16 +241,19 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         applyToSegmenter = (frame, s) -> {
             if (s instanceof OverridableThreshold) {
                 if (threshold!=null) {
-                    if (threshold.hasAdaptativeByY()) ((OverridableThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
+                    if (threshold.hasAdaptativeByY()) {
+                        ((OverridableThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
+                        //if (frame==300) ImageWindowManagerFactory.showImage(threshold.getThresholdedPlane(frame, false));
+                    }
                     else ((OverridableThreshold)s).setThresholdValue(threshold.getThreshold(frame));
                 } else ((OverridableThreshold)s).setThresholdValue(debugThreshold);
             }
         };
         if (Double.isNaN(debugThreshold) && this.thresholdMethod.getSelectedIndex()>0 && getSegmenter() instanceof OverridableThreshold) {
             List<Image> planes = new ArrayList<>(parentsByF.size());
-            Set<Integer> s =  new TreeSet(parentsByF.keySet());
-            for (int t : s) planes.add(((OverridableThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parentsByF.get(t)));
+            for (int t = minT; t<maxT; ++t) planes.add(((OverridableThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, getParent(t, true)));
             logger.debug("threshold method: {}. Adaptative coeff: {}, hwf: {}, hwy: {}", this.thresholdMethod.getSelectedItem(), adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
+            //logger.debug("minF: [{}-{}], nb planes: {}, nbParents: {}", minT, maxT, planes.size(), this.parentsByF.size());
             int method = thresholdMethod.getSelectedIndex();
             if (method==1 || method==2) {
                 threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue()); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
@@ -301,9 +306,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             for (StructureObject p : parentsByF.values()) p.setChildren(null, structureIdx);
             return;
         } //else for (int t = maxT; t<parents.size(); ++t) if (populations.get(t]!=null) populations.get(t].clear();
+        if (debugCorr||debug) logger.debug("Frame range: [{};{}]", minT, maxT);
         for (int f = minT; f<maxT; ++f) getObjects(f); // init
-        
+        if (debugCorr||debug) logger.debug("getObjects ok");
         if (correctionStep) step(null, true);
+        
+        //if (debugCorr) correction=false; // TO REMOVE
         
         // correct beheaded cells bias
         if (correction) {
@@ -324,6 +332,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             int idxMax=0;
             int idxLim = populations.get(minT).size();
             for (int t = minT+1; t<maxT; ++t) if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
+            idxLim = Math.min(correctionLevelLimit, idxLim);
             List<int[]> corrRanges = new ArrayList<>();
             List<int[]> corrRanges2 = new ArrayList<>(1);
             while(idxMax<idxLim) {
@@ -344,7 +353,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                                 nLoop++;
                             } 
                         }
-                        for (int t = tRange[0]; t<=tRange[1]; ++t) if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
+                        for (int t = tRange[0]; t<=tRange[1]; ++t) {
+                            if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
+                        }
+                        idxLim = Math.min(correctionLevelLimit, idxLim);
                     }
                 }
                 idxMax++;
@@ -358,6 +370,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         applyLinksToParents(parents);
     }
     private boolean hasNoObjects(SegmentOnly so, int f) {
+        if (!parentsByF.containsKey(f)) return true;
         List<StructureObject> before = parentsByF.get(f).getChildren(structureIdx);
         so.segmentAndTrack(structureIdx, new ArrayList<StructureObject>(1){{add(parentsByF.get(f));}}, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
         List<StructureObject> after = parentsByF.get(f).getChildren(structureIdx);
@@ -385,7 +398,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return new int[]{minF, maxF};
     }
     
-    private boolean performCorrectionsByIdx(int tMin, int tMax, int idx, List<int[]> outRanges, boolean limitToOneRange) {
+    private boolean performCorrectionsByIdx(int tMin, int tMax, final int idx, List<int[]> outRanges, boolean limitToOneRange) {
         if (debugCorr) logger.debug("performing corrections [{};{}] @ {}", tMin, tMax, idx);
         int nLoop=0, rangeLoop=0;
         int currentT = tMin;
@@ -682,15 +695,28 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         sizeFunction = o -> objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getSize() : getObjectSize(o);
         sizeIncrementFunction = o -> objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getLineageSizeIncrement() : Double.NaN;
         areFromSameLine = (o1, o2) -> objectAttributeMap.containsKey(o1) && objectAttributeMap.containsKey(o2) ? objectAttributeMap.get(o1).prev == objectAttributeMap.get(o2).prev : false;
+        
     }
-    
-    protected Image getImage(int timePoint) {
-        Image res = inputImages!=null ? inputImages.get(timePoint) : null;
+    protected StructureObject getParent(int frame, boolean searchClosestIfAbsent) {
+        StructureObject parent = parentsByF.get(frame);
+        if (parent==null && searchClosestIfAbsent) {
+            if (parentsByF.isEmpty()) return null;
+            int delta = 1;
+            while(true) {
+                if (frame-delta>=0 && parentsByF.containsKey(frame-delta)) return parentsByF.get(frame-delta);
+                if ((maxT==0 || frame+delta<=maxT) && parentsByF.containsKey(frame+delta)) return parentsByF.get(frame+delta);
+                delta++;
+            }
+        }
+        return parent;
+    }
+    protected Image getImage(int frame) {
+        Image res = inputImages!=null ? inputImages.get(frame) : null;
         if (res==null) {
-            StructureObject parent = this.parentsByF.get(timePoint);
+            StructureObject parent = this.getParent(frame, true);
             if (parent==null) return null;
             res = preFilters.filter(parent.getRawImage(structureIdx), parent);
-            if (inputImages!=null) inputImages.put(timePoint, res);
+            if (inputImages!=null) inputImages.put(frame, res);
         }
         return res;
     }
@@ -703,7 +729,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (segment) o.getObject().translate(parent.getBounds().duplicate().reverseOffset()); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
                 return o.getObject();
             }));
-            else populations.put(parent.getFrame(), Collections.EMPTY_LIST); 
+            else populations.put(timePoint, Collections.EMPTY_LIST); 
             //logger.debug("get object @ {}, size: {}", timePoint, populations.get(timePoint].size());
             createAttributes(timePoint);
         }
@@ -758,11 +784,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         return res;
     }
-
+    
     protected static double getObjectSize(Object3D o) {
-        //this.objectSize=GeometricalMeasurements.getVolume(o); // ATTENTION SI VOLUME MODIFIER LA FONCTION GET WIDTH
+        if (useVolumeAsSize) return GeometricalMeasurements.getVolume(o);
         //this.objectSize = o.getBounds().getSizeY();
-        return GeometricalMeasurements.getFeretMax(o);
+        else return GeometricalMeasurements.getFeretMax(o);
         // TODO Pour le squelette: calculer le squelette et pour le fermet: prendre une extremité et chercher le point du contour le + eloingé et le relier a l'autre extremitée, idem pour l'autre extremité.
     }
     public class TrackAttribute {
@@ -778,6 +804,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         public final Object3D o;
         boolean division=false, trackHead=true;
         private double objectSize=Double.NaN;
+        private double objectLength = Double.NaN;
         
         final boolean touchEndOfChannel;
         double endOfChannelContact;
@@ -810,12 +837,19 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 truncatedDivision=false;
             }
         }
+        public double getLength() {
+            if (Double.isNaN(objectLength)) {
+                if (!useVolumeAsSize) objectLength = getSize();
+                else objectLength = GeometricalMeasurements.getFeretMax(o);
+            }
+            return objectLength;
+        }
         public double getSize() {
             if (Double.isNaN(objectSize)) objectSize = getObjectSize(o);
             return objectSize;
         }
         private double getWidth() { // unscaled
-            return (double)o.getVoxels().size() * o.getScaleXY() / getSize(); // do not use getSize() if getSize() return area !!
+            return (double)o.getVoxels().size() * o.getScaleXY() / getLength(); // do not use getSize() if getSize() return area !!
         }
         private List<Double> getLineageSizeIncrementList() {
             List<Double> res=  new ArrayList<>(sizeIncrementFrameNumber);
@@ -929,7 +963,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             double res = ArrayUtil.median(list);
             if (res<minGR) res = minGR;
             else if (res>maxGR) res = maxGR;
-            //if (debug) logger.debug("getSizeIncrement for {}-{}: {} list:{}", timePoint, idx, res, list);
+            if (debug) logger.debug("getSizeIncrement for {}-{}: {} list:{}", timePoint, idx, res, list);
             return res;
         }
         
@@ -987,8 +1021,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     private void setAssignmentToTrackAttributes(Assignment a, int frame, boolean forceError, boolean lastAssignment) {
-        boolean error = forceError || a.sizePrev()>1 || a.sizeNext()>2;
-        if (a.sizePrev()==1 && a.sizeNext()==1) {
+        boolean error = forceError || a.objectCountPrev()>1 || a.objectCountNext()>2;
+        if (a.objectCountPrev()==1 && a.objectCountNext()==1) {
             TrackAttribute taCur = getAttribute(frame, a.idxNext);
             TrackAttribute taPrev = getAttribute(frame-1, a.idxPrev);
             taPrev.division=false;
@@ -997,7 +1031,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             taCur.trackHead=false;
             taCur.errorPrev=error;
             taPrev.errorCur=error;
-            taCur.nPrev=a.sizePrev();
+            taCur.nPrev=a.objectCountPrev();
             taPrev.truncatedDivision = a.truncatedEndOfChannel();
             if (!taPrev.truncatedDivision) {
                 taCur.sizeIncrementError = a.significantSizeIncrementError();
@@ -1005,7 +1039,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             } else taCur.sizeIncrement=Double.NaN;
             if (setSIErrorsAsErrors && taCur.sizeIncrementError && !taCur.errorPrev) taCur.errorPrev=true;
             if (setSIErrorsAsErrors && taCur.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
-        } else if (a.sizePrev()==1 && a.sizeNext()>1) { // division
+        } else if (a.objectCountPrev()==1 && a.objectCountNext()>1) { // division
             TrackAttribute taPrev = getAttribute(frame-1, a.idxPrev);
             TrackAttribute taCur = getAttribute(frame, a.idxNext);
             taPrev.division=true;
@@ -1016,7 +1050,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 TrackAttribute ta = getAttribute(frame, i);
                 ta.prev=taPrev;
                 ta.errorPrev=error;
-                ta.nPrev=a.sizePrev();
+                ta.nPrev=a.objectCountPrev();
                 taPrev.truncatedDivision = a.truncatedEndOfChannel();
                 if (!taPrev.truncatedDivision) {
                     ta.sizeIncrementError = a.significantSizeIncrementError();
@@ -1026,16 +1060,16 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (setSIErrorsAsErrors && ta.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
 
             }
-        } else if (a.sizePrev()>1 && a.sizeNext()==1) { // merging
+        } else if (a.objectCountPrev()>1 && a.objectCountNext()==1) { // merging
             TrackAttribute taCur = getAttribute(frame, a.idxNext);
             taCur.trackHead=false;
             TrackAttribute prev= getAttribute(frame-1, a.idxPrev); 
-            if (!lastAssignment) { // assign biggest prev object to current
+            //if (!lastAssignment) { // assign biggest prev object to current
                 for (int i = a.idxPrev+1; i<a.idxPrevEnd(); ++i) if (getAttribute(frame-1, i).getSize()>prev.getSize()) prev= getAttribute(frame-1, i);
-            }
+            //}
             taCur.prev=prev;
             taCur.errorPrev=true;
-            taCur.nPrev=a.sizePrev();
+            taCur.nPrev=a.objectCountPrev();
             boolean truncated = a.truncatedEndOfChannel();
             if (!truncated) {
                 taCur.sizeIncrementError = a.significantSizeIncrementError();
@@ -1047,7 +1081,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 ta.next=taCur;
                 ta.errorCur=true;
             }
-        } else if (a.sizePrev()>1 && a.sizeNext()>1) { // algorithm assign first with first (or 2 first) or last with last (or 2 last) (the most likely) and recursive call. If last window -> do not consider 
+        } else if (a.objectCountPrev()>1 && a.objectCountNext()>1) { // algorithm assign first with first (or 2 first) or last with last (or 2 last) (the most likely) and recursive call. If last window -> do not consider 
             Assignment dup = a.duplicate(a.ta);
             Assignment currentAssigner = a.duplicate(a.ta);
             TrackAttribute taCur1 = getAttribute(frame, a.idxNext);
@@ -1086,29 +1120,29 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (dup.idxNextEnd() == dup.idxNext) nextIdxError = dup.idxNextEnd()+1;
             } else if (scoreDiv==score) { // assign first with 2 first
                 dup.remove(true, true);
-                dup.removeUntil(false, true, dup.sizeNext()-2);
+                dup.removeUntil(false, true, dup.objectCountNext()-2);
                 currentAssigner.removeUntil(true, false, 1);
                 currentAssigner.removeUntil(false, false, 2);
                 if (dup.idxNextEnd() == dup.idxNext) nextIdxError = dup.idxNext-1;
             } else { // assign last with 2 lasts
                 dup.remove(true, false);
-                dup.removeUntil(false, false, dup.sizeNext()-2);
+                dup.removeUntil(false, false, dup.objectCountNext()-2);
                 currentAssigner.removeUntil(true, true, 1);
                 currentAssigner.removeUntil(false, true, 2);
                 if (dup.idxNextEnd() == dup.idxNext) nextIdxError = dup.idxNextEnd()+1;
             }
-            if (debug && a.ta.verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{} / ass1={}, ass2={}", a.sizePrev(), a.sizeNext(), (score==score1||score==scoreDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv), currentAssigner.toString(false), dup.toString(false));
+            if (debug && a.ta.verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{} / ass1={}, ass2={}", a.objectCountPrev(), a.objectCountNext(), (score==score1||score==scoreDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv), currentAssigner.toString(false), dup.toString(false));
             setAssignmentToTrackAttributes(currentAssigner, frame, !lastAssignment, lastAssignment); // perform current assignement
             setAssignmentToTrackAttributes(dup, frame, !lastAssignment, lastAssignment); // recursive call
             if (nextIdxError>=0) { // case of assignemnet 1 with O in dup : set next & signal error
                 getAttribute(frame-1, dup.idxPrev).next = getAttribute(frame, nextIdxError);
                 getAttribute(frame-1, dup.idxPrev).errorCur=true;
             }
-        } else if (a.sizePrev()==1 && a.sizeNext()==0) { // end of lineage
+        } else if (a.objectCountPrev()==1 && a.objectCountNext()==0) { // end of lineage
             TrackAttribute ta = getAttribute(frame-1, a.idxPrev);
             ta.resetTrackAttributes(false, true);
             if (a.idxPrev<a.ta.idxPrevLim-1 && ta.getLineageSizeIncrement()>SIQuiescentThld) ta.errorCur=true; // no error if cell is not growing
-        } else if (a.sizeNext()==1 && a.sizePrev()==0) {
+        } else if (a.objectCountNext()==1 && a.objectCountPrev()==0) {
             TrackAttribute ta = getAttribute(frame, a.idxNext);
             ta.resetTrackAttributes(true, false);
         }
@@ -1121,7 +1155,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     */
     public int[] performCorrection(Assignment a, int frame) {
         if (debugCorr && a.ta.verboseLevel<verboseLevelLimit) logger.debug("t: {}: performing correction, {}", frame, a.toString(true));
-        if (a.sizeNext()==1) return performCorrectionSplitOrMergeOverMultipleTime(a, frame);
+        if (a.objectCountNext()==1) return performCorrectionSplitOrMergeOverMultipleTime(a, frame);
         else return performCorrectionMultipleObjects(a, frame);
         //else return null;
     }
@@ -1176,8 +1210,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
 
         // Todo : rearrange objects from next au lieu de toutes les combinaisons de merge..
         List<CorrectionScenario> scenarios = new ArrayList<>();
-        for (int iMerge = 0; iMerge+1<a.sizePrev(); ++iMerge) scenarios.add(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, iMerge+a.idxPrev, a.prevObjects.subList(iMerge, iMerge+2), frame-1)); // merge one @ previous
-        if (a.sizePrev()>2 && a.sizeNext()<=2) scenarios.add(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, a.idxPrev, a.prevObjects, frame-1)); // merge all previous objects
+        for (int iMerge = 0; iMerge+1<a.objectCountPrev(); ++iMerge) scenarios.add(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, iMerge+a.idxPrev, a.prevObjects.subList(iMerge, iMerge+2), frame-1)); // merge one @ previous
+        if (a.objectCountPrev()>2 && a.objectCountNext()<=2) scenarios.add(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, a.idxPrev, a.prevObjects, frame-1)); // merge all previous objects
 
         scenarios.add(new RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections.this, frame, a)); // TODO: TEST INSTEAD OF SPLIT / SPLITANDMERGE
 

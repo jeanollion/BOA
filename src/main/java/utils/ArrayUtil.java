@@ -394,10 +394,14 @@ public class ArrayUtil {
     public static double median(List<Double> list) {
         if (list.isEmpty()) return Double.NaN;
         Collections.sort(list);
-        double res;
-        if (list.size()%2==1) res = list.get(list.size()/2);
-        else res=(list.get(list.size()/2)+list.get(list.size()/2-1))/2.0;
-        return res;
+        if (list.size()%2==1) return list.get(list.size()/2);
+        else return (list.get(list.size()/2)+list.get(list.size()/2-1))/2.0;
+    }
+    public static double medianInt(List<Integer> list) {
+        if (list.isEmpty()) return Double.NaN;
+        Collections.sort(list);
+        if (list.size()%2==1) return list.get(list.size()/2);
+        else return (list.get(list.size()/2)+list.get(list.size()/2-1))/2.0;
     }
     public static double quantileInt(List<Integer> list, double q) {
         if (list.isEmpty()) return Double.NaN;

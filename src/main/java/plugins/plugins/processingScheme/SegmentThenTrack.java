@@ -34,6 +34,7 @@ import plugins.MultiThreaded;
 import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.ProcessingScheme;
+import plugins.ProcessingSchemeWithTracking;
 import plugins.Segmenter;
 import plugins.TrackPostFilter;
 import plugins.Tracker;
@@ -45,11 +46,11 @@ import utils.ThreadRunner;
  *
  * @author jollion
  */
-public class SegmentThenTrack implements ProcessingScheme {
-    protected PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
+public class SegmentThenTrack implements ProcessingSchemeWithTracking {
+    protected PluginParameter<Tracker> tracker = new PluginParameter<>("Tracker", Tracker.class, true);
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
-    protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
+    protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
     protected TrackPostFilterSequence trackPostFilters = new TrackPostFilterSequence("Track Post-Filters");
     protected Parameter[] parameters;
     public SegmentThenTrack() {}
@@ -92,6 +93,7 @@ public class SegmentThenTrack implements ProcessingScheme {
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
+    @Override
     public TrackPostFilterSequence getTrackPostFilters() {
         return trackPostFilters;
     }

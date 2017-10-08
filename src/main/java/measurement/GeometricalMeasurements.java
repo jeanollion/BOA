@@ -22,6 +22,7 @@ import dataStructure.objects.Voxel;
 import image.Image;
 import java.util.ArrayList;
 import java.util.List;
+import utils.ArrayUtil;
 
 /**
  *
@@ -71,5 +72,165 @@ public class GeometricalMeasurements {
     public static double getDistance(double[] c1, double[] c2, double scaleXY, double scaleZ) {
         return Math.sqrt(Math.pow((c1[0]-c2[0])*scaleXY, 2) + Math.pow((c1[1]-c2[1])*scaleXY, 2) + Math.pow((c1[2]-c2[2])*scaleZ, 2));
     }
-    
+
+    public static double meanThicknessZ(Object3D object) {
+        double mean = 0;
+        double count = 0;
+        for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                int min = -1;
+                int max = -1;
+                for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        min = z;
+                        break;
+                    }
+                }
+                for (int z = object.getBounds().getSizeZ() - 1; z >= 0; --z) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        max = z;
+                        break;
+                    }
+                }
+                if (min >= 0) {
+                    mean += max - min + 1;
+                    ++count;
+                }
+            }
+        }
+        if (count > 0) {
+            mean /= count;
+        }
+        return mean;
+    }
+    public static double medianThicknessZ(Object3D object) {
+        List<Integer> values = new ArrayList<>();
+        for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                int min = -1;
+                int max = -1;
+                for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        min = z;
+                        break;
+                    }
+                }
+                for (int z = object.getBounds().getSizeZ() - 1; z >= 0; --z) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        max = z;
+                        break;
+                    }
+                }
+                if (min >= 0) values.add(max - min + 1);
+            }
+        }
+        return ArrayUtil.medianInt(values);
+    }
+    public static double meanThicknessY(Object3D object) {
+        double mean = 0;
+        double count = 0;
+        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                int min = -1;
+                int max = -1;
+                for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        min = y;
+                        break;
+                    }
+                }
+                for (int y = object.getBounds().getSizeY() - 1; y >= 0; --y) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        max = y;
+                        break;
+                    }
+                }
+                if (min >= 0) {
+                    mean += max - min + 1;
+                    ++count;
+                }
+            }
+        }
+        if (count > 0) {
+            mean /= count;
+        }
+        return mean;
+    }
+    public static double medianThicknessY(Object3D object) {
+        List<Integer> values = new ArrayList<>();
+        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                int min = -1;
+                int max = -1;
+                for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        min = y;
+                        break;
+                    }
+                }
+                for (int y = object.getBounds().getSizeY() - 1; y >= 0; --y) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        max = y;
+                        break;
+                    }
+                }
+                if (min >= 0) values.add(max - min + 1);
+            }
+        }
+        return ArrayUtil.medianInt(values);
+    }
+
+    public static double meanThicknessX(Object3D object) {
+        double mean = 0;
+        double count = 0;
+        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+            for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+                int min = -1;
+                int max = -1;
+                for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        min = x;
+                        break;
+                    }
+                }
+                for (int x = object.getBounds().getSizeX() - 1; x >= 0; --x) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        max = x;
+                        break;
+                    }
+                }
+                if (min >= 0) {
+                    mean += max - min + 1;
+                    ++count;
+                }
+            }
+        }
+        if (count > 0) {
+            mean /= count;
+        }
+        return mean;
+    }
+    public static double medianThicknessX(Object3D object) {
+        List<Integer> values = new ArrayList<>();
+        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+            for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+                int min = -1;
+                int max = -1;
+                for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        min = x;
+                        break;
+                    }
+                }
+                for (int x = object.getBounds().getSizeX() - 1; x >= 0; --x) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        max = x;
+                        break;
+                    }
+                }
+                if (min >= 0) values.add(max - min + 1);
+            }
+        }
+        return ArrayUtil.medianInt(values);
+    }
 }

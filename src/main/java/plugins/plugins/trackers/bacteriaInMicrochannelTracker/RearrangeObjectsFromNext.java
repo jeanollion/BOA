@@ -17,22 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
-import dataStructure.objects.Object3D;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-import java.util.function.BiFunction;
-import static plugins.Plugin.logger;
-import plugins.plugins.trackers.ObjectIdxTracker;
-import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.getObjectSize;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
-import utils.HashMapGetCreate;
-import utils.Pair;
+
 
 /**
  *

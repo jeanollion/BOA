@@ -115,35 +115,6 @@ public class BacteriaLineageMeasurements implements Measurement {
             }
             siblings.clear();
         }
-        
-        List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
-        Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracksSplitDiv(parentTrack, bIdx);
-        for (List<StructureObject> l : bacteriaTracks.values()) {
-            if (l.size()>=2) {
-                double[] frame = new double[l.size()];
-                double[] length = new double[frame.length];
-                int idx = 0;
-                for (StructureObject b : l) {
-                    frame[idx] = b.getCalibratedTimePoint();
-                    length[idx++] = Math.log(GeometricalMeasurements.getFeretMax(b.getObject()));
-                }
-                double[] beta = LinearRegression.run(frame, length);
-                double[] residuals = LinearRegression.getResiduals(frame, length, beta[0], beta[1]);
-                idx = 0;
-                for (StructureObject b : l) {
-                    b.getMeasurements().setValue("GrowthRate", beta[1] );
-                    b.getMeasurements().setValue("GrowthRateIntersection", beta[0] );
-                    b.getMeasurements().setValue("GrowthRateResidual", residuals[idx++] );
-                }
-                /*if (!debug && l.size()>=5) {
-                    debug = true;
-                    logger.debug("frames: {}", frame);
-                    logger.debug("length: {}", length);
-                    logger.debug("intersect: {}, slope: {}", beta[0], beta[1]);
-                    logger.debug("residuals: {}", residuals);
-                }*/
-            }
-        }
         if (!ex.isEmpty()) throw ex;
     }
     
@@ -153,9 +124,6 @@ public class BacteriaLineageMeasurements implements Measurement {
         res.add(new MeasurementKeyObject(keyName.getValue(), structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("NextDivisionFrame", structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("PreviousDivisionFrame", structure.getSelectedIndex()));
-        res.add(new MeasurementKeyObject("GrowthRate", structure.getSelectedIndex()));
-        //res.add(new MeasurementKeyObject("GrowthRateIntersection", structure.getSelectedIndex()));
-        //res.add(new MeasurementKeyObject("GrowthRateResidual", structure.getSelectedIndex()));
         return res;
     }
     

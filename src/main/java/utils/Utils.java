@@ -32,6 +32,9 @@ import java.io.File;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -52,6 +55,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -68,6 +73,7 @@ import javax.swing.ListModel;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import static jdk.nashorn.internal.objects.ArrayBufferView.buffer;
 import measurement.extraction.DataExtractor;
 
 /**
@@ -799,42 +805,17 @@ public class Utils {
         for (int i = 0; i<array.length; ++i) outputArray[i] = func.apply(array[i]);
         return outputArray;
     }
-    public static MouseListener getMouseListenerWithInvalidatedRightClick(final MouseListener ml, int idx) {
-        MouseListener res = new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                logger.debug("ml: {}, mouseClicked, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mouseClicked(e);
-            }
 
-            @Override
-            public void mousePressed(MouseEvent e) {
-                logger.debug("ml: {}, mousePressed, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mousePressed(e);
-                //if (!SwingUtilities.isRightMouseButton(e)) ml.mousePressed(e);
-            }
+    public static void cleanDirectByteBuffer(ByteBuffer buffer) {
+        try {
+            Method cleanerMethod = buffer.getClass().getMethod("cleaner");
+            cleanerMethod.setAccessible(true);
+            Object cleaner = cleanerMethod.invoke(buffer);
+            Method cleanMethod = cleaner.getClass().getMethod("clean");
+            cleanMethod.setAccessible(true);
+            cleanMethod.invoke(cleaner);
+        } catch (NoSuchMethodException|IllegalAccessException|InvocationTargetException|SecurityException ex) {
+        } 
 
-            @Override
-            public void mouseReleased(MouseEvent e) {
-                logger.debug("ml: {}, mouseReleased, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mouseReleased(e);
-                //if (!SwingUtilities.isRightMouseButton(e)) ml.mouseReleased(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                logger.debug("ml: {}, mouseEntered, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mouseEntered(e);
-                //if (!SwingUtilities.isRightMouseButton(e)) ml.mouseEntered(e);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                logger.debug("ml: {}, mouseExited, right: {}", idx, SwingUtilities.isRightMouseButton(e));
-                ml.mouseExited(e);
-                //if (!SwingUtilities.isRightMouseButton(e)) ml.mouseExited(e);
-            }
-        };
-        return res;
     }
 }

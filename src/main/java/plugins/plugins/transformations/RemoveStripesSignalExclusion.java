@@ -75,7 +75,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
     @Override
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  throws Exception {
         final int chExcl = signalExclusion.getSelectedIndex();
-        final double exclThld = signalExclusionThreshold.instanciatePlugin().runThresholder(inputImages.getImage(chExcl, inputImages.getDefaultTimePoint()));
+        final double exclThld = chExcl>=0?signalExclusionThreshold.instanciatePlugin().runThresholder(inputImages.getImage(chExcl, inputImages.getDefaultTimePoint())):Double.NaN;
         final boolean addGlobalMean = this.addGlobalMean.getSelected();
         //logger.debug("remove stripes thld: {}", exclThld);
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getFrameNumber());

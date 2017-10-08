@@ -75,6 +75,10 @@ public class Processor {
         int count=0, relinkCount=0;
         for (MultipleImageContainer c : images) {
             MicroscopyField f = xp.createPosition(c.getName());
+            if (c.getScaleXY()==1) {
+                if (pcb!=null) pcb.log("Warning: no scale set for position: "+f.getName());
+                logger.info("no scale set for positon: "+f.getName());
+            }
             if (f!=null) {
                 f.setImages(c); // TODO: bug when eraseAll from gui just after creation
                 count++;

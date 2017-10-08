@@ -47,6 +47,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import measurement.BasicMeasurements;
+import measurement.GeometricalMeasurements;
 import plugins.ObjectFeature;
 import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
 import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
@@ -666,89 +667,33 @@ public class ObjectPopulation {
         
         @Override
         public boolean keepObject(Object3D object) {
-            return (tX < 0 || (object.getBounds().getSizeX() > tX && meanThicknessX(object)>tX)) && (tY < 0 || (object.getBounds().getSizeY() > tY && meanThicknessY(object)>tY)) && (tZ < 0 || (object.getBounds().getSizeZ() > tZ && meanThicknessZ(object)>tZ));
+            return (tX < 0 || (object.getBounds().getSizeX() > tX && GeometricalMeasurements.meanThicknessX(object)>tX)) && (tY < 0 || (object.getBounds().getSizeY() > tY && GeometricalMeasurements.meanThicknessY(object)>tY)) && (tZ < 0 || (object.getBounds().getSizeZ() > tZ && GeometricalMeasurements.meanThicknessZ(object)>tZ));
         }
-        private double meanThicknessX(Object3D object) {
-            double mean = 0;
-            double count = 0;
-            for (int z = 0; z<object.getBounds().getSizeZ(); ++z) {
-                for (int y = 0; y<object.getBounds().getSizeY(); ++y) {
-                    int min = -1, max = -1;
-                    for (int x=0; x<object.getBounds().getSizeX(); ++x) {
-                        if (object.getMask().insideMask(x, y, z)) {
-                            min=x;
-                            break;
-                        }
-                    }
-                    for (int x=object.getBounds().getSizeX()-1; x>=0; --x) {
-                        if (object.getMask().insideMask(x, y, z)) {
-                            max=x;
-                            break;
-                        }
-                    }
-                    if (min>=0) {
-                        mean +=max-min+1;
-                        ++count;
-                    }
-                }
-            }
-            if (count>0) mean/=count;
-            //logger.debug("mean thicknessX: {}", mean);
-            return mean;
+
+        public void init(ObjectPopulation population) {}
+    }
+    public static class MedianThickness implements Filter {
+
+        double tX = -1, tY = -1, tZ = -1;
+
+        public MedianThickness setX(double minX) {
+            this.tX = minX;
+            return this;
         }
-        private double meanThicknessY(Object3D object) {
-            double mean = 0;
-            double count = 0;
-            for (int z = 0; z<object.getBounds().getSizeZ(); ++z) {
-                for (int x = 0; x<object.getBounds().getSizeX(); ++x) {
-                    int min = -1, max = -1;
-                    for (int y=0; y<object.getBounds().getSizeY(); ++y) {
-                        if (object.getMask().insideMask(x, y, z)) {
-                            min=y;
-                            break;
-                        }
-                    }
-                    for (int y=object.getBounds().getSizeY()-1; y>=0; --y) {
-                        if (object.getMask().insideMask(x, y, z)) {
-                            max=y;
-                            break;
-                        }
-                    }
-                    if (min>=0) {
-                        mean +=max-min+1;
-                        ++count;
-                    }
-                }
-            }
-            if (count>0) mean/=count;
-            return mean;
+
+        public MedianThickness setY(double minY) {
+            this.tY = minY;
+            return this;
         }
-        private double meanThicknessZ(Object3D object) {
-            double mean = 0;
-            double count = 0;
-            for (int y = 0; y<object.getBounds().getSizeY(); ++y) {
-                for (int x = 0; x<object.getBounds().getSizeX(); ++x) {
-                    int min = -1, max = -1;
-                    for (int z=0; z<object.getBounds().getSizeZ(); ++z) {
-                        if (object.getMask().insideMask(x, y, z)) {
-                            min=z;
-                            break;
-                        }
-                    }
-                    for (int z=object.getBounds().getSizeZ()-1; z>=0; --z) {
-                        if (object.getMask().insideMask(x, y, z)) {
-                            max=z;
-                            break;
-                        }
-                    }
-                    if (min>=0) {
-                        mean +=max-min+1;
-                        ++count;
-                    }
-                }
-            }
-            if (count>0) mean/=count;
-            return mean;
+
+        public MedianThickness setZ(double minZ) {
+            this.tZ = minZ;
+            return this;
+        }
+        
+        @Override
+        public boolean keepObject(Object3D object) {
+            return (tX < 0 || (object.getBounds().getSizeX() > tX && GeometricalMeasurements.medianThicknessX(object)>tX)) && (tY < 0 || (object.getBounds().getSizeY() > tY && GeometricalMeasurements.medianThicknessY(object)>tY)) && (tZ < 0 || (object.getBounds().getSizeZ() > tZ && GeometricalMeasurements.medianThicknessZ(object)>tZ));
         }
 
         public void init(ObjectPopulation population) {}
@@ -794,18 +739,7 @@ public class ObjectPopulation {
         public static enum Border {
 
             X, Y, YDown, YUp, Z, XY, XYZ;            
-            ImageProperties mask;
-            public void setMask(ImageProperties mask) {
-                this.mask=mask;
-            }
-            public boolean contact(Voxel v) {
-                if (hasX() && (v.x == 0 || v.x == mask.getSizeX() - 1)) return true;
-                if (hasY() && (v.y == 0 || v.y == mask.getSizeY() - 1)) return true;
-                if (hasZ() && (v.z == 0 || v.z == mask.getSizeZ() - 1)) return true;
-                if (this.equals(YDown) && v.y==mask.getSizeY() - 1) return true;
-                else if (this.equals(YUp) && v.y==0) return true;
-                return false;
-            }
+            
             public boolean hasX() {
                 return (this.equals(X) || this.equals(XY) || this.equals(XYZ));
             }
@@ -821,12 +755,29 @@ public class ObjectPopulation {
         int contactLimit;
         ImageProperties mask;
         Border border;
-
+        int tolerance, tolEnd;
         public ContactBorder(int contactLimit, ImageProperties mask, Border border) {
             this.contactLimit = contactLimit;
             this.mask = mask;
             this.border = border;
-            border.setMask(mask);
+        }
+        public ContactBorder setLimit(int contactLimit) {
+            this.contactLimit=contactLimit;
+            return this;
+        }
+        public ContactBorder setTolerance(int tolerance) {
+            if (tolerance<=0) tolerance=0;
+            this.tolerance=tolerance;
+            this.tolEnd=tolerance+1;
+            return this;
+        }
+        public boolean contact(Voxel v) {
+            if (border.hasX() && (v.x <=tolerance || v.x >= mask.getSizeX() - tolEnd)) return true;
+            if (border.hasY() && (v.y <=tolerance || v.y >= mask.getSizeY() - tolEnd)) return true;
+            if (border.hasZ() && (v.z <=tolerance || v.z >= mask.getSizeZ() - tolEnd)) return true;
+            if (border.equals(Border.YDown) && v.y==mask.getSizeY() - 1) return true;
+            else if (border.equals(Border.YUp) && v.y==0) return true;
+            return false;
         }
         @Override public void init(ObjectPopulation population) {}
         @Override
@@ -836,7 +787,7 @@ public class ObjectPopulation {
             }
             int count = 0;
             for (Voxel v : object.getVoxels()) {
-                if (border.contact(v)) {
+                if (contact(v)) {
                     ++count;
                     if (count>=contactLimit) return false;
                 }

@@ -179,7 +179,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         logger.info("Creating GUI instance...");
         this.instance=this;
         initComponents();
-        
+        logger.debug("JSP size: {} controlPanel SIze: {}", controlPanelJSP.getSize(), this.ControlPanel.getSize());
+        //this.controlPanelJSP.setSize(this.ControlPanel.getSize());
         
         this.addWindowListener(new WindowAdapter() {
             @Override 
@@ -914,6 +915,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jSplitPane3 = new javax.swing.JSplitPane();
         tabs = new javax.swing.JTabbedPane();
         actionPanel = new javax.swing.JPanel();
         hostName = new javax.swing.JTextField();
@@ -925,13 +927,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         runActionList = new javax.swing.JList();
         experimentJSP = new javax.swing.JScrollPane();
         experimentList = new javax.swing.JList();
-        consoleJSP = new javax.swing.JScrollPane();
-        console = new javax.swing.JTextPane();
         actionPoolJSP = new javax.swing.JScrollPane();
         actionPoolList = new javax.swing.JList();
         configurationPanel = new javax.swing.JPanel();
         configurationJSP = new javax.swing.JScrollPane();
         dataPanel = new javax.swing.JPanel();
+        trackPanel = new javax.swing.JPanel();
+        TimeJSP = new javax.swing.JScrollPane();
+        trackSubPanel = new javax.swing.JPanel();
+        selectionPanel = new javax.swing.JPanel();
+        selectionJSP = new javax.swing.JScrollPane();
+        selectionList = new javax.swing.JList();
+        createSelectionButton = new javax.swing.JButton();
+        reloadSelectionsButton = new javax.swing.JButton();
+        controlPanelJSP = new javax.swing.JScrollPane();
         ControlPanel = new javax.swing.JPanel();
         trackStructureJCB = new javax.swing.JComboBox();
         selectAllTracksButton = new javax.swing.JButton();
@@ -952,19 +961,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         resetLinksButton = new javax.swing.JButton();
         testSplitButton = new javax.swing.JButton();
         pruneTrackButton = new javax.swing.JButton();
-        trackPanel = new javax.swing.JPanel();
-        TimeJSP = new javax.swing.JScrollPane();
-        trackSubPanel = new javax.swing.JPanel();
-        selectionPanel = new javax.swing.JPanel();
-        selectionJSP = new javax.swing.JScrollPane();
-        selectionList = new javax.swing.JList();
-        createSelectionButton = new javax.swing.JButton();
-        reloadSelectionsButton = new javax.swing.JButton();
+        consoleJSP = new javax.swing.JScrollPane();
+        console = new javax.swing.JTextPane();
         mainMenu = new javax.swing.JMenuBar();
         experimentMenu = new javax.swing.JMenu();
         refreshExperimentListMenuItem = new javax.swing.JMenuItem();
         setSelectedExperimentMenuItem = new javax.swing.JMenuItem();
         newXPMenuItem = new javax.swing.JMenuItem();
+        newXPFromTemplateMenuItem = new javax.swing.JMenuItem();
         deleteXPMenuItem = new javax.swing.JMenuItem();
         duplicateXPMenuItem = new javax.swing.JMenuItem();
         saveXPMenuItem = new javax.swing.JMenuItem();
@@ -1004,7 +1008,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         exportConfigMenuItem = new javax.swing.JCheckBoxMenuItem();
         exportSelectionsMenuItem = new javax.swing.JCheckBoxMenuItem();
         importOptionsSubMenu = new javax.swing.JMenu();
-        eraseCollectionCheckbox = new javax.swing.JCheckBoxMenuItem();
         importObjectsMenuItem = new javax.swing.JCheckBoxMenuItem();
         importPPImagesMenuItem = new javax.swing.JCheckBoxMenuItem();
         importTrackImagesMenuItem = new javax.swing.JCheckBoxMenuItem();
@@ -1023,6 +1026,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         appendToFileMenuItem = new javax.swing.JCheckBoxMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
+
+        jSplitPane3.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+
+        tabs.setPreferredSize(new java.awt.Dimension(840, 450));
 
         hostName.setText("localhost");
         hostName.setBorder(javax.swing.BorderFactory.createTitledBorder("DataBase URL"));
@@ -1061,36 +1068,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         experimentList.setBorder(null);
         experimentJSP.setViewportView(experimentList);
 
-        consoleJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Console:"));
-
-        console.setEditable(false);
-        console.setBorder(null);
-        console.setFont(new java.awt.Font("TeXGyreCursor", 0, 12)); // NOI18N
-        console.setOpaque(false);
-        JPopupMenu consoleMenu = new JPopupMenu();
-        Action copy = new DefaultEditorKit.CopyAction();
-        copy.putValue(Action.NAME, "Copy");
-        copy.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control C"));
-        consoleMenu.add( copy );
-        Action selectAll = new TextAction("Select All") {
-            @Override public void actionPerformed(ActionEvent e) {
-                JTextComponent component = getFocusedComponent();
-                component.selectAll();
-                component.requestFocusInWindow();
-            }
-        };
-        consoleMenu.add( selectAll );
-        Action clear = new TextAction("Clear") {
-            @Override public void actionPerformed(ActionEvent e) {
-                JTextComponent component = getFocusedComponent();
-                component.setText(null);
-                component.requestFocusInWindow();
-            }
-        };
-        consoleMenu.add( clear );
-        console.setComponentPopupMenu( consoleMenu );
-        consoleJSP.setViewportView(console);
-
         actionPoolJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Job Pool"));
 
         actionPoolList.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -1106,22 +1083,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(actionPanelLayout.createSequentialGroup()
                 .addContainerGap()
+                .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(experimentJSP)
+                    .addComponent(hostName))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(actionMicroscopyFieldJSP)
+                    .addComponent(actionStructureJSP))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(consoleJSP)
-                        .addContainerGap())
-                    .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(experimentJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 227, Short.MAX_VALUE)
-                            .addComponent(hostName))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 320, Short.MAX_VALUE)
-                            .addComponent(actionStructureJSP))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(actionPoolJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(actionJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 216, Short.MAX_VALUE)))))
+                    .addComponent(actionPoolJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 230, Short.MAX_VALUE)
+                    .addComponent(actionJSP)))
         );
         actionPanelLayout.setVerticalGroup(
             actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1131,18 +1103,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(actionPoolJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MAX_VALUE))
-                    .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(experimentJSP))
+                        .addComponent(actionPoolJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 194, Short.MAX_VALUE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addComponent(actionMicroscopyFieldJSP)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 194, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(consoleJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 194, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(actionPanelLayout.createSequentialGroup()
+                        .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(experimentJSP))))
         );
 
         tabs.addTab("Actions", actionPanel);
@@ -1151,14 +1120,70 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         configurationPanel.setLayout(configurationPanelLayout);
         configurationPanelLayout.setHorizontalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 787, Short.MAX_VALUE)
+            .addComponent(configurationJSP)
         );
         configurationPanelLayout.setVerticalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 799, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 407, Short.MAX_VALUE)
         );
 
         tabs.addTab("Configuration", configurationPanel);
+
+        trackPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
+
+        trackSubPanel.setLayout(new javax.swing.BoxLayout(trackSubPanel, javax.swing.BoxLayout.LINE_AXIS));
+        TimeJSP.setViewportView(trackSubPanel);
+
+        javax.swing.GroupLayout trackPanelLayout = new javax.swing.GroupLayout(trackPanel);
+        trackPanel.setLayout(trackPanelLayout);
+        trackPanelLayout.setHorizontalGroup(
+            trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 351, Short.MAX_VALUE)
+        );
+        trackPanelLayout.setVerticalGroup(
+            trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(TimeJSP)
+        );
+
+        selectionPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Selections"));
+
+        selectionList.setBackground(new java.awt.Color(214, 214, 214));
+        selectionJSP.setViewportView(selectionList);
+
+        createSelectionButton.setText("Create Selection");
+        createSelectionButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                createSelectionButtonActionPerformed(evt);
+            }
+        });
+
+        reloadSelectionsButton.setText("Reload Selections");
+        reloadSelectionsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                reloadSelectionsButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout selectionPanelLayout = new javax.swing.GroupLayout(selectionPanel);
+        selectionPanel.setLayout(selectionPanelLayout);
+        selectionPanelLayout.setHorizontalGroup(
+            selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(createSelectionButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(selectionJSP, javax.swing.GroupLayout.Alignment.TRAILING)
+        );
+        selectionPanelLayout.setVerticalGroup(
+            selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, selectionPanelLayout.createSequentialGroup()
+                .addComponent(createSelectionButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(selectionJSP))
+        );
+
+        controlPanelJSP.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        controlPanelJSP.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
         ControlPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createTitledBorder("Controls")));
 
@@ -1292,7 +1317,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(trackStructureJCB, 0, 162, Short.MAX_VALUE)
+            .addComponent(trackStructureJCB, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(selectAllTracksButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(nextTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(mergeObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1300,17 +1325,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             .addComponent(interactiveStructure, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(selectAllObjects, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(deleteObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(updateRoiDisplayButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(linkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(unlinkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(resetLinksButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, ControlPanelLayout.createSequentialGroup()
                 .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(splitObjectsButton, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(manualSegmentButton, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE))
+                    .addComponent(manualSegmentButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(testManualSegmentationButton, javax.swing.GroupLayout.DEFAULT_SIZE, 59, Short.MAX_VALUE)
+                    .addComponent(testManualSegmentationButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(testSplitButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
             .addGroup(ControlPanelLayout.createSequentialGroup()
                 .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1318,6 +1342,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     .addComponent(jLabel2))
                 .addGap(0, 0, Short.MAX_VALUE))
             .addComponent(pruneTrackButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(updateRoiDisplayButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1330,97 +1355,46 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(updateRoiDisplayButton)
+                .addComponent(updateRoiDisplayButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(selectAllObjects)
+                .addComponent(selectAllObjects, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(selectAllTracksButton)
+                .addComponent(selectAllTracksButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(nextTrackErrorButton)
+                .addComponent(nextTrackErrorButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(previousTrackErrorButton)
+                .addComponent(previousTrackErrorButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(manualSegmentButton)
-                    .addComponent(testManualSegmentationButton))
+                .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(testManualSegmentationButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(manualSegmentButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(splitObjectsButton)
-                    .addComponent(testSplitButton))
+                .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(testSplitButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(splitObjectsButton, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(mergeObjectsButton)
+                .addComponent(mergeObjectsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(deleteObjectsButton)
+                .addComponent(deleteObjectsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(pruneTrackButton)
+                .addComponent(pruneTrackButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(linkObjectsButton)
+                .addComponent(linkObjectsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(unlinkObjectsButton)
+                .addComponent(unlinkObjectsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(resetLinksButton)
-                .addContainerGap(176, Short.MAX_VALUE))
+                .addComponent(resetLinksButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
-        trackPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
-
-        trackSubPanel.setLayout(new javax.swing.BoxLayout(trackSubPanel, javax.swing.BoxLayout.LINE_AXIS));
-        TimeJSP.setViewportView(trackSubPanel);
-
-        javax.swing.GroupLayout trackPanelLayout = new javax.swing.GroupLayout(trackPanel);
-        trackPanel.setLayout(trackPanelLayout);
-        trackPanelLayout.setHorizontalGroup(
-            trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 416, Short.MAX_VALUE)
-        );
-        trackPanelLayout.setVerticalGroup(
-            trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP)
-        );
-
-        selectionPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Selections"));
-
-        selectionList.setBackground(new java.awt.Color(214, 214, 214));
-        selectionJSP.setViewportView(selectionList);
-
-        createSelectionButton.setText("Create Selection");
-        createSelectionButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                createSelectionButtonActionPerformed(evt);
-            }
-        });
-
-        reloadSelectionsButton.setText("Reload Selections");
-        reloadSelectionsButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                reloadSelectionsButtonActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout selectionPanelLayout = new javax.swing.GroupLayout(selectionPanel);
-        selectionPanel.setLayout(selectionPanelLayout);
-        selectionPanelLayout.setHorizontalGroup(
-            selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(createSelectionButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.DEFAULT_SIZE, 167, Short.MAX_VALUE)
-            .addComponent(selectionJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-        );
-        selectionPanelLayout.setVerticalGroup(
-            selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, selectionPanelLayout.createSequentialGroup()
-                .addComponent(createSelectionButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(reloadSelectionsButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(selectionJSP))
-        );
+        controlPanelJSP.setViewportView(ControlPanel);
 
         javax.swing.GroupLayout dataPanelLayout = new javax.swing.GroupLayout(dataPanel);
         dataPanel.setLayout(dataPanelLayout);
         dataPanelLayout.setHorizontalGroup(
             dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(dataPanelLayout.createSequentialGroup()
-                .addComponent(ControlPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(controlPanelJSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -1428,18 +1402,51 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         );
         dataPanelLayout.setVerticalGroup(
             dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(dataPanelLayout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, dataPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ControlPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(dataPanelLayout.createSequentialGroup()
-                        .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(selectionPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(trackPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                        .addGap(4, 4, 4))))
+                .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(controlPanelJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 391, Short.MAX_VALUE)
+                    .addComponent(selectionPanel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(trackPanel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(4, 4, 4))
         );
 
         tabs.addTab("Data Browsing", dataPanel);
+
+        jSplitPane3.setLeftComponent(tabs);
+
+        consoleJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Console:"));
+        consoleJSP.setMinimumSize(new java.awt.Dimension(32, 100));
+
+        console.setEditable(false);
+        console.setBorder(null);
+        console.setFont(new java.awt.Font("TeXGyreCursor", 0, 12)); // NOI18N
+        console.setOpaque(false);
+        JPopupMenu consoleMenu = new JPopupMenu();
+        Action copy = new DefaultEditorKit.CopyAction();
+        copy.putValue(Action.NAME, "Copy");
+        copy.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control C"));
+        consoleMenu.add( copy );
+        Action selectAll = new TextAction("Select All") {
+            @Override public void actionPerformed(ActionEvent e) {
+                JTextComponent component = getFocusedComponent();
+                component.selectAll();
+                component.requestFocusInWindow();
+            }
+        };
+        consoleMenu.add( selectAll );
+        Action clear = new TextAction("Clear") {
+            @Override public void actionPerformed(ActionEvent e) {
+                JTextComponent component = getFocusedComponent();
+                component.setText(null);
+                component.requestFocusInWindow();
+            }
+        };
+        consoleMenu.add( clear );
+        console.setComponentPopupMenu( consoleMenu );
+        consoleJSP.setViewportView(console);
+
+        jSplitPane3.setBottomComponent(consoleJSP);
 
         experimentMenu.setText("Experiment");
 
@@ -1466,6 +1473,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         });
         experimentMenu.add(newXPMenuItem);
+
+        newXPFromTemplateMenuItem.setText("New XP from Template");
+        newXPFromTemplateMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                newXPFromTemplateMenuItemActionPerformed(evt);
+            }
+        });
+        experimentMenu.add(newXPFromTemplateMenuItem);
 
         deleteXPMenuItem.setText("Delete");
         deleteXPMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1721,16 +1736,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         importOptionsSubMenu.setText("Import Options");
 
-        eraseCollectionCheckbox.setSelected(true);
-        eraseCollectionCheckbox.setText("Erase Collections before Import (recommended)");
-        eraseCollectionCheckbox.setEnabled(false);
-        eraseCollectionCheckbox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                eraseCollectionCheckboxActionPerformed(evt);
-            }
-        });
-        importOptionsSubMenu.add(eraseCollectionCheckbox);
-
         importObjectsMenuItem.setSelected(true);
         importObjectsMenuItem.setText("Objects");
         importObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1841,11 +1846,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tabs)
+            .addComponent(jSplitPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 802, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tabs)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jSplitPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 664, Short.MAX_VALUE))
         );
 
         pack();
@@ -2259,12 +2266,38 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             if (n==1) xpsToImport = xpNotPresent;
         }
         unsetXP();
-        for (String xp : xpsToImport) {
-            File zip = allXps.get(xp);
-            MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
-            mDAO.deleteAllObjects();
-            ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, true, true, true, true, ProgressCallback.get(instance));
-        }
+        List<String> xpList = new ArrayList<>(xpsToImport);
+        /*DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
+            @Override
+            public String run(int i) {
+                GUI.getInstance().setRunning(true);
+                ProgressCallback pcb = ProgressCallback.get(instance);
+                String xp =xpList.get(i);
+                File zip = allXps.get(xp);
+                MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
+                mDAO.deleteAllObjects();
+                ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, false, false, false, false, ProgressCallback.get(instance));
+                pcb.log("Will import data from file: "+f);
+                boolean error = false;
+                try {
+                    ImportExportJSON.importFromZip(f.getAbsolutePath(), db, importConfigMenuItem.isSelected(), importSelectionsMenuItem.isSelected(), importObjectsMenuItem.isSelected(), importPPImagesMenuItem.isSelected(), importTrackImagesMenuItem.isSelected(), pcb);
+                } catch (Exception e) {
+                    logger.error("Error while importing", e);
+                    log("error while importing");
+                }
+                GUI.getInstance().setRunning(false);
+                GUI.getInstance().populateExperimentList();
+                db.updateExperiment();
+                populateActionMicroscopyFieldList();
+                loadObjectTrees();
+                ImageWindowManagerFactory.getImageManager().flush();
+                if (!error) pcb.log("importing done!");
+                //PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
+                return "";
+            };
+        };
+        DefaultWorker.execute(t, 1);
+        */
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_importNewExperimentMenuItemActionPerformed
@@ -2383,10 +2416,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structureIdx);
         DataExtractor.extractMeasurementObjects(db, file, getSelectedPositions(true), keys);
     }
-    private void eraseCollectionCheckboxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_eraseCollectionCheckboxActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_eraseCollectionCheckboxActionPerformed
-
     private void deleteMeasurementsCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteMeasurementsCheckBoxActionPerformed
         PropertyUtils.set(PropertyUtils.DELETE_MEASUREMENTS, this.deleteMeasurementsCheckBox.isSelected());
     }//GEN-LAST:event_deleteMeasurementsCheckBoxActionPerformed
@@ -2440,171 +2469,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR, outputDir.getAbsolutePath());
         }
     }//GEN-LAST:event_extractSelectionMenuItemActionPerformed
-
-    private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
-        populateSelections();
-    }//GEN-LAST:event_reloadSelectionsButtonActionPerformed
     
-    private void createSelectionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createSelectionButtonActionPerformed
-        if (!checkConnection()) return;
-        String name = JOptionPane.showInputDialog("New Selection name:");
-        if (!SelectionUtils.validSelectionName(db, name)) return;
-        Selection sel = new Selection(name, db);
-        if (this.db.getSelectionDAO()==null) {
-            logger.error("No selection DAO. Output Directory set ? ");
-            return;
-        }
-        this.db.getSelectionDAO().store(sel);
-        populateSelections();
-    }//GEN-LAST:event_createSelectionButtonActionPerformed
-
-    private void pruneTrackButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pruneTrackButtonActionPerformed
-        if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
-        pruneTrackActionPerformed(evt);
-    }//GEN-LAST:event_pruneTrackButtonActionPerformed
-
-    private void testSplitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testSplitButtonActionPerformed
-        if (!checkConnection()) return;
-        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
-        else ManualCorrection.splitObjects(db, selList, false, true);
-    }//GEN-LAST:event_testSplitButtonActionPerformed
-
-    private void resetLinksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetLinksButtonActionPerformed
-        if (!checkConnection()) return;
-        //if (db.isReadOnly()) return;
-        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (sel.isEmpty()) {
-            logger.warn("Select at least one object to modify its links");
-            return;
-        }
-        ManualCorrection.resetObjectLinks(db, sel, true);
-    }//GEN-LAST:event_resetLinksButtonActionPerformed
-
-    private void unlinkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unlinkObjectsButtonActionPerformed
-        if (!checkConnection()) return;
-        //if (db.isReadOnly()) return;
-        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (sel.isEmpty()) {
-            logger.warn("Select at least one object to modify its links");
-            return;
-        }
-        ManualCorrection.modifyObjectLinks(db, sel, true, true);
-    }//GEN-LAST:event_unlinkObjectsButtonActionPerformed
-
-    private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
-        if (!checkConnection()) return;
-        //if (db.isReadOnly()) return;
-        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (sel.isEmpty()) {
-            logger.warn("Select at least one object to modify its links");
-            return;
-        }
-        ManualCorrection.modifyObjectLinks(db, sel, false, true);
-    }//GEN-LAST:event_linkObjectsButtonActionPerformed
-
-    private void testManualSegmentationButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testManualSegmentationButtonActionPerformed
-        ManualCorrection.manualSegmentation(db, null, true);
-    }//GEN-LAST:event_testManualSegmentationButtonActionPerformed
-
-    private void manualSegmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manualSegmentButtonActionPerformed
-        if (!checkConnection()) return;
-        //if (db.isReadOnly()) return;
-        ManualCorrection.manualSegmentation(db, null, false);
-    }//GEN-LAST:event_manualSegmentButtonActionPerformed
-
-    private void updateRoiDisplayButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateRoiDisplayButtonActionPerformed
-        GUI.updateRoiDisplay(null);
-    }//GEN-LAST:event_updateRoiDisplayButtonActionPerformed
-
-    private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
-        if (!checkConnection()) return;
-        logger.info("delete: from GUI: "+hashCode());
-        //if (db.isReadOnly()) return;
-        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (sel.size()<=10 || Utils.promptBoolean("Delete "+sel.size()+ " Objects ? ", this)) ManualCorrection.deleteObjects(db, sel, true);
-    }//GEN-LAST:event_deleteObjectsButtonActionPerformed
-
-    private void deleteObjectsButtonMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteObjectsButtonMousePressed
-        if (!checkConnection()) return;
-        //if (db.isReadOnly()) return;
-        if (SwingUtilities.isRightMouseButton(evt)) {
-            JPopupMenu menu = new JPopupMenu();
-            Action prune = new AbstractAction("Prune track (P)") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    pruneTrackActionPerformed(null);
-                }
-            };
-            Action delAfter = new AbstractAction("Delete All objects after first selected object") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    ManualCorrection.deleteAllObjectsFromFrame(db, true);
-                    logger.debug("will delete all after");
-                }
-            };
-            Action delBefore = new AbstractAction("Delete All objects before first selected object") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    ManualCorrection.deleteAllObjectsFromFrame(db, false);
-                    logger.debug("will delete all after");
-                }
-            };
-            menu.add(prune);
-            menu.add(delAfter);
-            menu.add(delBefore);
-            menu.show(this.deleteObjectsButton, evt.getX(), evt.getY());
-        }
-    }//GEN-LAST:event_deleteObjectsButtonMousePressed
-
-    private void selectAllObjectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsActionPerformed
-        getImageManager().displayAllObjects(null);
-        //GUI.updateRoiDisplayForSelections(null, null);
-    }//GEN-LAST:event_selectAllObjectsActionPerformed
-
-    private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
-        if (!checkConnection()) return;
-        getImageManager().setInteractiveStructure(interactiveStructure.getSelectedIndex());
-    }//GEN-LAST:event_interactiveStructureActionPerformed
-
-    private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
-        if (!checkConnection()) return;
-        navigateToNextObjects(false, false, interactiveStructure.getSelectedIndex(), false);
-    }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
-
-    private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
-        if (!checkConnection()) return;
-        //if (db.isReadOnly()) return;
-        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (selList.isEmpty()) logger.warn("Select at least two objects to Merge first!");
-        else ManualCorrection.mergeObjects(db, selList, true);
-    }//GEN-LAST:event_mergeObjectsButtonActionPerformed
-
-    private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
-        if (!checkConnection()) return;
-        //if (db.isReadOnly()) return;
-        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
-        else ManualCorrection.splitObjects(db, selList, true, false);
-    }//GEN-LAST:event_splitObjectsButtonActionPerformed
-
-    private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
-        if (!checkConnection()) return;
-        navigateToNextObjects(true, false, interactiveStructure.getSelectedIndex(), false);
-    }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
-
-    private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed
-        ImageWindowManagerFactory.getImageManager().displayAllTracks(null);
-        //GUI.updateRoiDisplayForSelections(null, null);
-    }//GEN-LAST:event_selectAllTracksButtonActionPerformed
-
-    private void trackStructureJCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackStructureJCBActionPerformed
-        if (!checkConnection()) return;
-        logger.debug("trackStructureJCBActionPerformed: selected index: {} action event: {}", trackStructureJCB.getSelectedIndex(), evt);
-        this.setStructure(this.trackStructureJCB.getSelectedIndex());
-    }//GEN-LAST:event_trackStructureJCBActionPerformed
-
     private void clearTrackImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTrackImagesMenuItemActionPerformed
         if (!checkConnection()) return;
         ImageDAO iDAO = db.getExperiment().getImageDAO();
@@ -2620,208 +2485,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             if (f.getInputImages()!=null) f.getInputImages().deleteFromDAO();
         }
     }//GEN-LAST:event_clearPPImageMenuItemActionPerformed
-
-    private void actionPoolListMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_actionPoolListMousePressed
-        if (this.running) return;
-        if (SwingUtilities.isRightMouseButton(evt)) {
-            JPopupMenu menu = new JPopupMenu();
-            List<String> sel = actionPoolList.getSelectedValuesList();
-            Action addCurrentJob = new AbstractAction("Add Current Job to Job Pool") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    Task t = getCurrentJob(null);
-                    actionPoolListModel.addElement(t.toJSON().toJSONString());
-                }
-            };
-            menu.add(addCurrentJob);
-            Action deleteSelected = new AbstractAction("Delete Selected Jobs") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    for (String s : sel) actionPoolListModel.removeElement(s);
-                }
-            };
-            deleteSelected.setEnabled(!sel.isEmpty());
-            menu.add(deleteSelected);
-            Action up = new AbstractAction("Move Up") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    int[] newIndices = new int[sel.size()];
-                    int idx = 0;
-                    for (String s : sel) {
-                        int i = actionPoolListModel.indexOf(s);
-                        if (i>0) {
-                            actionPoolListModel.removeElement(s);
-                            actionPoolListModel.add(i-1, s);
-                            newIndices[idx++] = i-1;
-                        } else newIndices[idx++] = i;
-                    }
-                    actionPoolList.setSelectedIndices(newIndices);
-                }
-            };
-            up.setEnabled(!sel.isEmpty() && sel.size()<actionPoolListModel.size());
-            menu.add(up);
-            Action down = new AbstractAction("Move Down") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    int[] newIndices = new int[sel.size()];
-                    int idx = 0;
-                    for (String s : sel) {
-                        int i = actionPoolListModel.indexOf(s);
-                        if (i>=0 && i<actionPoolListModel.size()-1) {
-                            actionPoolListModel.removeElement(s);
-                            actionPoolListModel.add(i+1, s);
-                            newIndices[idx++] = i+1;
-                        } else newIndices[idx++] = i;
-                    }
-                    actionPoolList.setSelectedIndices(newIndices);
-                }
-            };
-            down.setEnabled(!sel.isEmpty() && sel.size()<actionPoolListModel.size());
-            menu.add(down);
-            Action clearAll = new AbstractAction("Clear All") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    actionPoolListModel.clear();
-                }
-            };
-            menu.add(clearAll);
-            clearAll.setEnabled(!actionPoolListModel.isEmpty());
-            Action save = new AbstractAction("Save to File") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    File out = Utils.chooseFile("Save Job list as...", hostName.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, jLabel1);
-                    if (out==null || out.isDirectory()) return;
-                    String outS = out.getAbsolutePath();
-                    if (!outS.endsWith(".txt")&&!outS.endsWith(".json")) outS+=".json";
-                    FileIO.writeToFile(outS, Collections.list(actionPoolListModel.elements()), s->s);
-                }
-            };
-            menu.add(save);
-            save.setEnabled(!actionPoolListModel.isEmpty());
-            Action load = new AbstractAction("Load from File") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String dir = hostName.getText();
-                    if (!new File(dir).isDirectory()) dir = null;
-                    File f = Utils.chooseFile("Choose Job list file", dir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
-                    if (f!=null && f.exists()) {
-                        List<String> jobs = FileIO.readFromFile(f.getAbsolutePath(), s->s);
-                        for (String j : jobs) actionPoolListModel.addElement(j);
-                    }
-                }
-            };
-            menu.add(load);
-            Action setXP = new AbstractAction("Set selected Experiment to selected Actions") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String xp = (String) experimentList.getSelectedValue();
-                    String dir = hostName.getText();
-                    Map<Integer, String> indexSelJobMap = ((List<String>)actionPoolList.getSelectedValuesList()).stream().collect(Collectors.toMap(o->actionPoolListModel.indexOf(o), o->o));
-                    for (Entry<Integer, String> en : indexSelJobMap.entrySet()) {
-                        
-                        JSONObject o = JSONUtils.parse(en.getValue());
-                        if (o==null) log("Error: could not parse task: "+en.getValue());
-                        else {
-                            Task t = new Task().fromJSON(o);
-                            // look for dir in current directory
-                            String d = DBUtil.searchLocalDirForDB(xp, dir);
-                            if (d==null) log("Error: Could not find directory of XP: "+xp);
-                            else {
-                                t.setDBName(xp).setDir(d);
-                                if (!t.isValid()) log("Error: could not set experiment to task: "+en.getValue());
-                                else {
-                                    actionPoolListModel.remove(en.getKey());
-                                    actionPoolListModel.add(en.getKey(), t.toJSON().toJSONString());
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-            menu.add(setXP);
-            setXP.setEnabled(experimentList.getSelectedValuesList().size()==1 && !sel.isEmpty());
-            String runTitle = sel.isEmpty()?"Run All Jobs":"Run Selected Jobs";
-            Action run = new AbstractAction(runTitle) {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    List<Task> jobs = new ArrayList<>();
-                    List<String> jobsS = sel.isEmpty()? Collections.list(actionPoolListModel.elements()) : sel;
-                    for (String s : jobsS) {
-                        JSONObject o = JSONUtils.parse(s);
-                        if (o==null) log("Error: could not parse task: "+s);
-                        else {
-                            Task t = new Task().fromJSON(o);
-                            jobs.add(t);
-                            if (logFile!=null && activateLoggingMenuItem.isSelected()) t.setLogFile(logFile);
-                        }
-                    }
-                    if (!jobs.isEmpty()) {
-                        unsetXP(); // avoid lock problems
-                        Task.executeTasks(jobs, GUI.getInstance());
-                    }
-                    
-                }
-            };
-            menu.add(run);
-            //Utils.chooseFile("Choose Directory to save Job List", DBprefix, FileChooser.FileChooserOption.FILES_ONLY, jLabel1)
-            menu.show(this.actionPoolList, evt.getX(), evt.getY());
-        }
-    }//GEN-LAST:event_actionPoolListMousePressed
-
-    private void hostNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_hostNameActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_hostNameActionPerformed
-
-    private void hostNameMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_hostNameMousePressed
-        if (this.running) return;
-        if (SwingUtilities.isRightMouseButton(evt) && localFileSystemDatabaseRadioButton.isSelected()) {
-            JPopupMenu menu = new JPopupMenu();
-            Action chooseFile = new AbstractAction("Choose local data folder") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, null);
-                    File f = Utils.chooseFile("Choose local data folder", path, FileChooser.FileChooserOption.DIRECTORIES_ONLY, hostName);
-                    if (f!=null) {
-                        unsetXP();
-                        PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
-                        PropertyUtils.addStringToList(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
-                        hostName.setText(f.getAbsolutePath());
-                        localFileSystemDatabaseRadioButton.setSelected(true);
-                        populateExperimentList();
-                    }
-                }
-            };
-            menu.add(chooseFile);
-            JMenu recentFiles = new JMenu("Recent");
-            menu.add(recentFiles);
-            List<String> recent = PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH);
-            for (String s : recent) {
-                Action setRecent = new AbstractAction(s) {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        File f = new File(s);
-                        if (f.exists() && f.isDirectory()) {
-                            unsetXP();
-                            hostName.setText(s);
-                            PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, s);
-                            localFileSystemDatabaseRadioButton.setSelected(true);
-                            populateExperimentList();
-                        }
-                    }
-                };
-                recentFiles.add(setRecent);
-            }
-            if (recent.isEmpty()) recentFiles.setEnabled(false);
-            Action delRecent = new AbstractAction("Delete recent list") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    PropertyUtils.setStrings(PropertyUtils.LOCAL_DATA_PATH, null);
-                }
-            };
-            recentFiles.add(delRecent);
-            menu.show(this.hostName, evt.getX(), evt.getY());
-        }
-    }//GEN-LAST:event_hostNameMousePressed
     private void setLogFile(String path) {
         this.logFile=path;
         if (path==null) this.setLogFileMenuItem.setText("Set Log File");
@@ -3019,6 +2682,409 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         };
         DefaultWorker.execute(t, 1);   
     }//GEN-LAST:event_importDataMenuItemActionPerformed
+
+    private void actionPoolListMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_actionPoolListMousePressed
+        if (this.running) return;
+        if (SwingUtilities.isRightMouseButton(evt)) {
+            JPopupMenu menu = new JPopupMenu();
+            List<String> sel = actionPoolList.getSelectedValuesList();
+            Action addCurrentJob = new AbstractAction("Add Current Job to Job Pool") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Task t = getCurrentJob(null);
+                    if (t!=null) actionPoolListModel.addElement(t.toJSON().toJSONString());
+                }
+            };
+            menu.add(addCurrentJob);
+            addCurrentJob.setEnabled(db!=null);
+            Action deleteSelected = new AbstractAction("Delete Selected Jobs") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    for (String s : sel) actionPoolListModel.removeElement(s);
+                }
+            };
+            deleteSelected.setEnabled(!sel.isEmpty());
+            menu.add(deleteSelected);
+            Action up = new AbstractAction("Move Up") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    int[] newIndices = new int[sel.size()];
+                    int idx = 0;
+                    for (String s : sel) {
+                        int i = actionPoolListModel.indexOf(s);
+                        if (i>0) {
+                            actionPoolListModel.removeElement(s);
+                            actionPoolListModel.add(i-1, s);
+                            newIndices[idx++] = i-1;
+                        } else newIndices[idx++] = i;
+                    }
+                    actionPoolList.setSelectedIndices(newIndices);
+                }
+            };
+            up.setEnabled(!sel.isEmpty() && sel.size()<actionPoolListModel.size());
+            menu.add(up);
+            Action down = new AbstractAction("Move Down") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    int[] newIndices = new int[sel.size()];
+                    int idx = 0;
+                    for (String s : sel) {
+                        int i = actionPoolListModel.indexOf(s);
+                        if (i>=0 && i<actionPoolListModel.size()-1) {
+                            actionPoolListModel.removeElement(s);
+                            actionPoolListModel.add(i+1, s);
+                            newIndices[idx++] = i+1;
+                        } else newIndices[idx++] = i;
+                    }
+                    actionPoolList.setSelectedIndices(newIndices);
+                }
+            };
+            down.setEnabled(!sel.isEmpty() && sel.size()<actionPoolListModel.size());
+            menu.add(down);
+            Action clearAll = new AbstractAction("Clear All") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    actionPoolListModel.clear();
+                }
+            };
+            menu.add(clearAll);
+            clearAll.setEnabled(!actionPoolListModel.isEmpty());
+            Action save = new AbstractAction("Save to File") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    File out = Utils.chooseFile("Save Job list as...", hostName.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, jLabel1);
+                    if (out==null || out.isDirectory()) return;
+                    String outS = out.getAbsolutePath();
+                    if (!outS.endsWith(".txt")&&!outS.endsWith(".json")) outS+=".json";
+                    FileIO.writeToFile(outS, Collections.list(actionPoolListModel.elements()), s->s);
+                }
+            };
+            menu.add(save);
+            save.setEnabled(!actionPoolListModel.isEmpty());
+            Action load = new AbstractAction("Load from File") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String dir = hostName.getText();
+                    if (!new File(dir).isDirectory()) dir = null;
+                    File f = Utils.chooseFile("Choose Job list file", dir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
+                    if (f!=null && f.exists()) {
+                        List<String> jobs = FileIO.readFromFile(f.getAbsolutePath(), s->s);
+                        for (String j : jobs) actionPoolListModel.addElement(j);
+                    }
+                }
+            };
+            menu.add(load);
+            Action setXP = new AbstractAction("Set selected Experiment to selected Actions") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String xp = (String) experimentList.getSelectedValue();
+                    String dir = hostName.getText();
+                    Map<Integer, String> indexSelJobMap = ((List<String>)actionPoolList.getSelectedValuesList()).stream().collect(Collectors.toMap(o->actionPoolListModel.indexOf(o), o->o));
+                    for (Entry<Integer, String> en : indexSelJobMap.entrySet()) {
+
+                        JSONObject o = JSONUtils.parse(en.getValue());
+                        if (o==null) log("Error: could not parse task: "+en.getValue());
+                        else {
+                            Task t = new Task().fromJSON(o);
+                            // look for dir in current directory
+                            String d = DBUtil.searchLocalDirForDB(xp, dir);
+                            if (d==null) log("Error: Could not find directory of XP: "+xp);
+                            else {
+                                t.setDBName(xp).setDir(d);
+                                if (!t.isValid()) log("Error: could not set experiment to task: "+en.getValue());
+                                else {
+                                    actionPoolListModel.remove(en.getKey());
+                                    actionPoolListModel.add(en.getKey(), t.toJSON().toJSONString());
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            menu.add(setXP);
+            setXP.setEnabled(experimentList.getSelectedValuesList().size()==1 && !sel.isEmpty());
+            String runTitle = sel.isEmpty()?"Run All Jobs":"Run Selected Jobs";
+            Action run = new AbstractAction(runTitle) {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    List<Task> jobs = new ArrayList<>();
+                    List<String> jobsS = sel.isEmpty()? Collections.list(actionPoolListModel.elements()) : sel;
+                    for (String s : jobsS) {
+                        JSONObject o = JSONUtils.parse(s);
+                        if (o==null) log("Error: could not parse task: "+s);
+                        else {
+                            Task t = new Task().fromJSON(o);
+                            jobs.add(t);
+                            if (logFile!=null && activateLoggingMenuItem.isSelected()) t.setLogFile(logFile);
+                        }
+                    }
+                    if (!jobs.isEmpty()) {
+                        unsetXP(); // avoid lock problems
+                        Task.executeTasks(jobs, GUI.getInstance());
+                    }
+                }
+            };
+            menu.add(run);
+            run.setEnabled(!actionPoolListModel.isEmpty());
+            //Utils.chooseFile("Choose Directory to save Job List", DBprefix, FileChooser.FileChooserOption.FILES_ONLY, jLabel1)
+            menu.show(this.actionPoolList, evt.getX(), evt.getY());
+        }
+    }//GEN-LAST:event_actionPoolListMousePressed
+
+    private void hostNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_hostNameActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_hostNameActionPerformed
+
+    private void hostNameMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_hostNameMousePressed
+        if (this.running) return;
+        if (SwingUtilities.isRightMouseButton(evt) && localFileSystemDatabaseRadioButton.isSelected()) {
+            JPopupMenu menu = new JPopupMenu();
+            Action chooseFile = new AbstractAction("Choose local data folder") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, null);
+                    File f = Utils.chooseFile("Choose local data folder", path, FileChooser.FileChooserOption.DIRECTORIES_ONLY, hostName);
+                    if (f!=null) {
+                        unsetXP();
+                        PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
+                        PropertyUtils.addStringToList(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
+                        hostName.setText(f.getAbsolutePath());
+                        localFileSystemDatabaseRadioButton.setSelected(true);
+                        populateExperimentList();
+                    }
+                }
+            };
+            menu.add(chooseFile);
+            JMenu recentFiles = new JMenu("Recent");
+            menu.add(recentFiles);
+            List<String> recent = PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH);
+            for (String s : recent) {
+                Action setRecent = new AbstractAction(s) {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        File f = new File(s);
+                        if (f.exists() && f.isDirectory()) {
+                            unsetXP();
+                            hostName.setText(s);
+                            PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, s);
+                            localFileSystemDatabaseRadioButton.setSelected(true);
+                            populateExperimentList();
+                        }
+                    }
+                };
+                recentFiles.add(setRecent);
+            }
+            if (recent.isEmpty()) recentFiles.setEnabled(false);
+            Action delRecent = new AbstractAction("Delete recent list") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    PropertyUtils.setStrings(PropertyUtils.LOCAL_DATA_PATH, null);
+                }
+            };
+            recentFiles.add(delRecent);
+            menu.show(this.hostName, evt.getX(), evt.getY());
+        }
+    }//GEN-LAST:event_hostNameMousePressed
+
+    private void newXPFromTemplateMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPFromTemplateMenuItemActionPerformed
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        String config = promptDir("Select configuration file (or zip containing config file)", defDir, false);
+        if (config==null) return;
+        File configF = new File(config);
+        List<String> dbNames = getDBNames();
+        Map<String, File> allXps = ImportExportJSON.listExperiments(configF.getAbsolutePath());
+        if (allXps.size()==1) {
+            String name = JOptionPane.showInputDialog("New XP name:", allXps.keySet().iterator().next());
+            if (name==null) return;
+            name = DBUtil.addPrefix(name, currentDBPrefix);
+            if (!Utils.isValid(name, false)) {
+                log("Name should not contain special characters");
+                return;
+            } else if (dbNames.contains(name)) {
+                log("XP already present");
+                return;
+            } else {
+                File f = allXps.values().iterator().next();
+                allXps.clear();
+                allXps.put(name, f);
+            }
+        } else {
+            log("Select only one file");
+            return;
+        }
+        for (String xp : allXps.keySet()) {
+            File zip = allXps.get(xp);
+            MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
+            mDAO.deleteAllObjects();
+            ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, false, false, false, false, ProgressCallback.get(instance));
+        }
+        populateExperimentList();
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, config);
+    }//GEN-LAST:event_newXPFromTemplateMenuItemActionPerformed
+
+    private void pruneTrackButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pruneTrackButtonActionPerformed
+        if (!checkConnection()) return;
+        if (db.isReadOnly()) return;
+        pruneTrackActionPerformed(evt);
+    }//GEN-LAST:event_pruneTrackButtonActionPerformed
+
+    private void testSplitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testSplitButtonActionPerformed
+        if (!checkConnection()) return;
+        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
+        else ManualCorrection.splitObjects(db, selList, false, true);
+    }//GEN-LAST:event_testSplitButtonActionPerformed
+
+    private void resetLinksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetLinksButtonActionPerformed
+        if (!checkConnection()) return;
+        //if (db.isReadOnly()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (sel.isEmpty()) {
+            logger.warn("Select at least one object to modify its links");
+            return;
+        }
+        ManualCorrection.resetObjectLinks(db, sel, true);
+    }//GEN-LAST:event_resetLinksButtonActionPerformed
+
+    private void unlinkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unlinkObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        //if (db.isReadOnly()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (sel.isEmpty()) {
+            logger.warn("Select at least one object to modify its links");
+            return;
+        }
+        ManualCorrection.modifyObjectLinks(db, sel, true, true);
+    }//GEN-LAST:event_unlinkObjectsButtonActionPerformed
+
+    private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        //if (db.isReadOnly()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (sel.isEmpty()) {
+            logger.warn("Select at least one object to modify its links");
+            return;
+        }
+        ManualCorrection.modifyObjectLinks(db, sel, false, true);
+    }//GEN-LAST:event_linkObjectsButtonActionPerformed
+
+    private void testManualSegmentationButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testManualSegmentationButtonActionPerformed
+        ManualCorrection.manualSegmentation(db, null, true);
+    }//GEN-LAST:event_testManualSegmentationButtonActionPerformed
+
+    private void manualSegmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manualSegmentButtonActionPerformed
+        if (!checkConnection()) return;
+        //if (db.isReadOnly()) return;
+        ManualCorrection.manualSegmentation(db, null, false);
+    }//GEN-LAST:event_manualSegmentButtonActionPerformed
+
+    private void updateRoiDisplayButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateRoiDisplayButtonActionPerformed
+        GUI.updateRoiDisplay(null);
+    }//GEN-LAST:event_updateRoiDisplayButtonActionPerformed
+
+    private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        logger.info("delete: evt source {}, evt: {}, ac: {}, param: {}", evt.getSource(), evt, evt.getActionCommand(), evt.paramString());
+        //if (db.isReadOnly()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (sel.size()<=10 || Utils.promptBoolean("Delete "+sel.size()+ " Objects ? ", this)) ManualCorrection.deleteObjects(db, sel, true);
+    }//GEN-LAST:event_deleteObjectsButtonActionPerformed
+
+    private void deleteObjectsButtonMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteObjectsButtonMousePressed
+        if (!checkConnection()) return;
+        //if (db.isReadOnly()) return;
+        if (SwingUtilities.isRightMouseButton(evt)) {
+            JPopupMenu menu = new JPopupMenu();
+            Action prune = new AbstractAction("Prune track (P)") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    pruneTrackActionPerformed(null);
+                }
+            };
+            Action delAfter = new AbstractAction("Delete All objects after first selected object") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    ManualCorrection.deleteAllObjectsFromFrame(db, true);
+                    logger.debug("will delete all after");
+                }
+            };
+            Action delBefore = new AbstractAction("Delete All objects before first selected object") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    ManualCorrection.deleteAllObjectsFromFrame(db, false);
+                    logger.debug("will delete all after");
+                }
+            };
+            menu.add(prune);
+            menu.add(delAfter);
+            menu.add(delBefore);
+            menu.show(this.deleteObjectsButton, evt.getX(), evt.getY());
+        }
+    }//GEN-LAST:event_deleteObjectsButtonMousePressed
+
+    private void selectAllObjectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsActionPerformed
+        getImageManager().displayAllObjects(null);
+        //GUI.updateRoiDisplayForSelections(null, null);
+    }//GEN-LAST:event_selectAllObjectsActionPerformed
+
+    private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
+        if (!checkConnection()) return;
+        getImageManager().setInteractiveStructure(interactiveStructure.getSelectedIndex());
+    }//GEN-LAST:event_interactiveStructureActionPerformed
+
+    private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
+        if (!checkConnection()) return;
+        navigateToNextObjects(false, false, interactiveStructure.getSelectedIndex(), false);
+    }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
+
+    private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        //if (db.isReadOnly()) return;
+        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (selList.isEmpty()) logger.warn("Select at least two objects to Merge first!");
+        else if (selList.size()<=10 || Utils.promptBoolean("Merge "+selList.size()+ " Objects ? ", this))  ManualCorrection.mergeObjects(db, selList, true);
+    }//GEN-LAST:event_mergeObjectsButtonActionPerformed
+
+    private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        //if (db.isReadOnly()) return;
+        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
+        else if (selList.size()<=10 || Utils.promptBoolean("Split "+selList.size()+ " Objects ? ", this)) ManualCorrection.splitObjects(db, selList, true, false);
+    }//GEN-LAST:event_splitObjectsButtonActionPerformed
+
+    private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
+        if (!checkConnection()) return;
+        navigateToNextObjects(true, false, interactiveStructure.getSelectedIndex(), false);
+    }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
+
+    private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed
+        ImageWindowManagerFactory.getImageManager().displayAllTracks(null);
+        //GUI.updateRoiDisplayForSelections(null, null);
+    }//GEN-LAST:event_selectAllTracksButtonActionPerformed
+
+    private void trackStructureJCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackStructureJCBActionPerformed
+        if (!checkConnection()) return;
+        logger.debug("trackStructureJCBActionPerformed: selected index: {} action event: {}", trackStructureJCB.getSelectedIndex(), evt);
+        this.setStructure(this.trackStructureJCB.getSelectedIndex());
+    }//GEN-LAST:event_trackStructureJCBActionPerformed
+
+    private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
+        populateSelections();
+    }//GEN-LAST:event_reloadSelectionsButtonActionPerformed
+
+    private void createSelectionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createSelectionButtonActionPerformed
+        if (!checkConnection()) return;
+        String name = JOptionPane.showInputDialog("New Selection name:");
+        if (!SelectionUtils.validSelectionName(db, name)) return;
+        Selection sel = new Selection(name, db);
+        if (this.db.getSelectionDAO()==null) {
+            logger.error("No selection DAO. Output Directory set ? ");
+            return;
+        }
+        this.db.getSelectionDAO().store(sel);
+        populateSelections();
+    }//GEN-LAST:event_createSelectionButtonActionPerformed
     
     public void addToSelectionActionPerformed() {
         if (!this.checkConnection()) return;
@@ -3210,6 +3276,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JPanel configurationPanel;
     private javax.swing.JTextPane console;
     private javax.swing.JScrollPane consoleJSP;
+    private javax.swing.JScrollPane controlPanelJSP;
     private javax.swing.JButton createSelectionButton;
     private javax.swing.JMenu dataBaseMenu;
     private javax.swing.JPanel dataPanel;
@@ -3217,7 +3284,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JMenuItem deleteXPMenuItem;
     private javax.swing.JMenuItem duplicateXPMenuItem;
-    private javax.swing.JCheckBoxMenuItem eraseCollectionCheckbox;
     private javax.swing.JScrollPane experimentJSP;
     private javax.swing.JList experimentList;
     private javax.swing.JMenu experimentMenu;
@@ -3256,6 +3322,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
+    private javax.swing.JSplitPane jSplitPane3;
     private javax.swing.JButton linkObjectsButton;
     private javax.swing.JMenu localDBMenu;
     private javax.swing.JRadioButtonMenuItem localFileSystemDatabaseRadioButton;
@@ -3265,6 +3332,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JList microscopyFieldList;
     private javax.swing.JMenu miscMenu;
+    private javax.swing.JMenuItem newXPFromTemplateMenuItem;
     private javax.swing.JMenuItem newXPMenuItem;
     private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JMenu optionMenu;

@@ -23,16 +23,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import static plugins.Plugin.logger;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SIErrorValue;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.cellNumberLimitForAssignment;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.TrackAssigner.SIErrorValue;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.TrackAssigner.significativeSIErrorThld;
 
 /**
  *
  * @author jollion
  */
 public class Assignment {
+        final static boolean notSameLineIsError = true;
         List<Object3D> prevObjects;
         List<Object3D> nextObjects;
         int idxPrev, idxNext;
@@ -40,6 +42,7 @@ public class Assignment {
         double previousSizeIncrement = Double.NaN;
         double[] currentScore;
         TrackAssigner ta;
+        private Boolean prevFromSameLine;
         public Assignment(TrackAssigner ta, int idxPrev, int idxNext) {
             prevObjects = new ArrayList();
             nextObjects = new ArrayList();
@@ -72,10 +75,10 @@ public class Assignment {
             this.idxPrev= idxPrev;
             this.idxNext = idxNext;
         }
-        public int sizePrev() {
+        public int objectCountPrev() {
             return prevObjects.size();
         }
-        public int sizeNext() {
+        public int objectCountNext() {
             return nextObjects.size();
         }
         public int idxPrevEnd() {
@@ -83,6 +86,18 @@ public class Assignment {
         }
         public int idxNextEnd() {
             return idxNext + nextObjects.size();
+        }
+        public boolean prevFromSameLine() {
+            if (this.prevFromSameLine==null) {
+                if (prevObjects.size()<=1) prevFromSameLine=true;
+                else {
+                    Iterator<Object3D> it = prevObjects.iterator();
+                    Object3D first = it.next();
+                    prevFromSameLine=true;
+                    while(it.hasNext() && prevFromSameLine) prevFromSameLine = ta.areFromSameLine.apply(first, it.next());
+                }
+            }
+            return prevFromSameLine;
         }
         public Object3D getLastObject(boolean prev) {
             if (prev) {
@@ -97,6 +112,7 @@ public class Assignment {
             if (idxPrevEnd()<ta.idxPrevLim) {
                 Object3D o = ta.prev.get(idxPrevEnd());
                 prevObjects.add(o);
+                if (prevFromSameLine!=null && prevFromSameLine) prevFromSameLine = ta.areFromSameLine.apply(prevObjects.get(0), o);
                 sizePrev+=ta.sizeFunction.apply(o);
                 previousSizeIncrement = Double.NaN;
                 currentScore=null;
@@ -119,6 +135,7 @@ public class Assignment {
                     if (removeFirst) idxPrev++;
                     previousSizeIncrement = Double.NaN;
                     currentScore=null;
+                    if (prevFromSameLine!=null && !prevFromSameLine) prevFromSameLine=null; // reset prevFromSame line only if false -> could turn true
                     return true;
                 } else return false;
             } else {
@@ -133,7 +150,10 @@ public class Assignment {
             List<Object3D> l = prev ? prevObjects : nextObjects;
             if (l.size()<=n) return false;
             currentScore=null;
-            if (prev) previousSizeIncrement = Double.NaN;
+            if (prev) {
+                previousSizeIncrement = Double.NaN;
+                if (prevFromSameLine!=null && !prevFromSameLine) prevFromSameLine=null; // reset prevFromSame line only if false -> could turn true
+            }
             
             if (removeFirst) {
                 Iterator<Object3D> it = l.iterator();
@@ -161,13 +181,19 @@ public class Assignment {
 
         protected void incrementIfNecessary() {
             if (prevObjects.isEmpty()) incrementPrev();
-            if (nextObjects.isEmpty()) incrementNext();
-            incrementUntilVerifyInequality();
-            if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} start increment: {}", ta.verboseLevel, this);
-            if (!verifyInequality()) return;
+            boolean cellDeathScenario=false;
+            if (nextObjects.isEmpty()) {
+                if (false && ta.allowCellDeathScenario() && idxNextEnd()<ta.idxNextLim) cellDeathScenario=true;
+                else incrementNext();
+            }
             boolean change = true;
+            if (!cellDeathScenario) {
+                incrementUntilVerifyInequality();
+                if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} start increment: {}", ta.verboseLevel, this);
+                if (!verifyInequality()) return;
+            } else change = ta.checkNextIncrement();
             if (ta.currentAssignment!=this) throw new Error("TA's currentAssignment should be calling assignment");
-            while (change) change = ta.checkNextIncrement();
+            while (ta.allowRecurstiveNextIncrementCheck() && change && this.idxPrev<=cellNumberLimitForAssignment) change = ta.checkNextIncrement();
         }
                 
         protected void incrementUntilVerifyInequality() {
@@ -181,15 +207,16 @@ public class Assignment {
         }
         public double getPreviousSizeIncrement() {
             if (Double.isNaN(previousSizeIncrement) && !prevObjects.isEmpty()) {
-                previousSizeIncrement = ta.sizeIncrementFunction.apply(prevObjects.get(0));
-                if (prevObjects.size()>1) { // size-weighted barycenter of size increment lineage
+                previousSizeIncrement = ta.sizeIncrements.getAndCreateIfNecessary(prevObjects.get(0));
+                if (prevObjects.size()>1 && !prevFromSameLine()) {  // size-weighted barycenter of size increment from lineage
                     double totalSize= ta.sizeFunction.apply(prevObjects.get(0));
                     previousSizeIncrement *= totalSize;
                     for (int i = 1; i<prevObjects.size(); ++i) { 
-                        double curSI = previousSizeIncrement = ta.sizeIncrementFunction.apply(prevObjects.get(i));
+                        double curSI = ta.sizeIncrements.getAndCreateIfNecessary(prevObjects.get(i));
                         if (!Double.isNaN(curSI)) {
-                            previousSizeIncrement+= curSI * ta.sizeFunction.apply(prevObjects.get(i));
-                            totalSize += ta.sizeFunction.apply(prevObjects.get(i));
+                            double size = ta.sizeFunction.apply(prevObjects.get(i));
+                            previousSizeIncrement+= curSI * size;
+                            totalSize += size;
                         }
                     }
                     previousSizeIncrement/=totalSize;
@@ -212,6 +239,7 @@ public class Assignment {
             return needCorrection();// && (idxEnd-idx==1) ;
         }
         protected double[] getScore() {
+            if (this.nextObjects.isEmpty() && idxNextEnd()<ta.idxNextLim) return new double[]{getErrorCount(), 0}; // cell death scenario
             double prevSizeIncrement = ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE ? getPreviousSizeIncrement() : Double.NaN;
             if (Double.isNaN(prevSizeIncrement)) return new double[]{getErrorCount(), Double.NaN};
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignement score: prevSI: {}, SI: {}", ta.verboseLevel, prevSizeIncrement, sizeNext/sizePrev);
@@ -224,8 +252,9 @@ public class Assignment {
             //if ((!verifyInequality() || significantSizeIncrementError()) && !truncatedEndOfChannel()) ++res; // bad size increment
             if (!truncatedEndOfChannel()) {
                 if (!verifyInequality()) res+=1;
-                else if (significantSizeIncrementError()) res+=SIErrorValue;//res+=0.9;
+                else if (significantSizeIncrementError()) res+=SIErrorValue;
             }
+            if (notSameLineIsError && !prevFromSameLine()) ++res;
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, getError count: {}, errors: {}, truncated: {}", ta.verboseLevel, this, res, truncatedEndOfChannel());
             return res;        
         }

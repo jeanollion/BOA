@@ -117,6 +117,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
 
             public void mouseClicked(MouseEvent e) {
                 //logger.trace("mouseclicked");
+                
             }
 
             public void mousePressed(MouseEvent e) {
@@ -125,6 +126,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     JPopupMenu menu = getMenu(image);
                     if (menu!=null) {
                         menu.show(canvas, e.getX(), e.getY());
+                        e.consume();
                     }
                 } 
             }
@@ -249,17 +251,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 //logger.trace("mousexited");
             }
         };
-        // remove right click from other MouseListeners to avoid collapse // TODO only mouse released? 
-        /*MouseListener[] mls = canvas.getMouseListeners();
-        int count= 0;
-        for (MouseListener m : mls) {
-            canvas.removeMouseListener(m);
-            canvas.addMouseListener(Utils.getMouseListenerWithInvalidatedRightClick(m, count++));
-        }
-        canvas.addMouseListener(Utils.getMouseListenerWithInvalidatedRightClick(ml, -1));
-        */
+        canvas.disablePopupMenu(true); 
+        MouseListener[] mls = canvas.getMouseListeners();
+        for (MouseListener m : mls) canvas.removeMouseListener(m);
         canvas.addMouseListener(ml);
-        //return ml;
+        for (MouseListener m : mls) canvas.addMouseListener(m);
     }
     
     @Override public void closeNonInteractiveWindows() {

@@ -76,6 +76,7 @@ import plugins.Thresholder;
 import plugins.OverridableThreshold;
 import plugins.ParameterSetup;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
+import plugins.plugins.postFilters.MicrochannelPhaseArtifacts;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
 import plugins.plugins.thresholders.ConstantValue;
@@ -626,15 +627,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             //return input;
         }
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit, int minSize) {
-            
-            
             ImageByte seeds = Filters.localExtrema(getEDM(), null, true, Filters.getNeighborhood(3, 3, getEDM())); // TODO seed radius -> parameter ? 
             if (maskToSplit!=null) ImageOperations.and(seeds, maskToSplit, seeds);
             ObjectPopulation res =  WatershedTransform.watershed(getEDM(), maskToSplit, ImageLabeller.labelImageList(seeds), true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
             if (res.getObjects().size()==1) { // relabel with low connectivity -> if not contour will fail
                 List<Object3D> list = ImageLabeller.labelImageListLowConnectivity(maskToSplit);
-                return new ObjectPopulation(list, maskToSplit);
-            } else return res;
+                res = new ObjectPopulation(list, maskToSplit);
+            } 
+            // filter to remove channel border artifacts
+            res.filter(MicrochannelPhaseArtifacts.getFilter(6, 0.75)); // TODO add parameters to plugin ?
+            return res;
             /*   
             ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), true);
             if (splitVerbose) logger.debug("splitMask: {}", res.getObjects().size());
@@ -910,7 +912,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                         double min2 = getMinCurvature(borderVoxels2);
                         this.curvL=min1;
                         this.curvR=min2;
-                        double res = (Math.abs(min1-min2)>2*Math.abs(curvatureThreshold)) ? Math.max(min1, min2) : 0.5 * (min1 + min2); // when one side has a curvature very different from the other -> hole -> do not take into acount // TODO: check generality of criterion. put parameter? 
+                        double res;
+                        if ((Math.abs(min1-min2)>2*Math.abs(curvatureThreshold))) { // when one side has a curvature very different from the other -> hole -> do not take into acount // TODO: check generality of criterion. put parameter? 
+                            res = Math.max(min1, min2);
+                        } else res = 0.5 * (min1 + min2); 
                         if (debug | ProcessingVariables.this.splitVerbose) logger.debug("{}, GET CURV: {}&{} -> {} , borderVoxels: {}&{}", this, min1, min2, res, borderVoxels.size(), borderVoxels2.size());
                         return res;
                     }
