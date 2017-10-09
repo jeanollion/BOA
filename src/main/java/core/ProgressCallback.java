@@ -27,6 +27,11 @@ public interface ProgressCallback {
     public void incrementTaskNumber(int subtask);
     public void incrementProgress();
     public void log(String message);
+    public static ProgressCallback get(UserInterface ui, int taskNumber) {
+        ProgressCallback pcb = get(ui);
+        pcb.incrementTaskNumber(taskNumber);
+        return pcb;
+    }
     public static ProgressCallback get(UserInterface ui) {
         ProgressCallback pcb = new ProgressCallback(){
             int progress = 0;

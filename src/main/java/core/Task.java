@@ -57,6 +57,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import utils.ArrayUtil;
 import utils.FileIO;
+import utils.FileIO.ZipWriter;
+import utils.ImportExportJSON;
 import utils.JSONUtils;
 import utils.Pair;
 import utils.Utils;
@@ -67,7 +69,8 @@ import utils.Utils;
  */
 public class Task extends SwingWorker<Integer, String> implements ProgressCallback {
         String dbName, dir;
-        boolean preProcess, segmentAndTrack, trackOnly, measurements, generateTrackImages;
+        boolean preProcess, segmentAndTrack, trackOnly, measurements, generateTrackImages, exportPreProcessedImages, exportTrackImages, exportObjects, exportSelections, exportConfig;
+        boolean exportData;
         List<Integer> positions;
         int[] structures;
         List<Pair<String, int[]>> extractMeasurementDir = new ArrayList<>();
@@ -85,6 +88,11 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             res.put("trackOnly", trackOnly);
             res.put("measurements", measurements);
             res.put("generateTrackImages", generateTrackImages);
+            res.put("exportPreProcessedImages", exportPreProcessedImages);
+            res.put("exportTrackImages", exportTrackImages);
+            res.put("exportObjects", exportObjects);
+            res.put("exportSelections", exportSelections);
+            res.put("exportConfig", exportConfig);
             if (positions!=null) res.put("positions", positions);
             if (structures!=null) res.put("structures", JSONUtils.toJSONArray(structures));
             JSONArray ex = new JSONArray();
@@ -110,6 +118,12 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this.trackOnly = (Boolean)data.getOrDefault("trackOnly", false);
             this.measurements = (Boolean)data.getOrDefault("measurements", false);
             this.generateTrackImages = (Boolean)data.getOrDefault("generateTrackImages", false);
+            this.exportPreProcessedImages = (Boolean)data.getOrDefault("exportPreProcessedImages", false);
+            this.exportTrackImages = (Boolean)data.getOrDefault("exportTrackImages", false);
+            this.exportObjects = (Boolean)data.getOrDefault("exportObjects", false);
+            this.exportSelections = (Boolean)data.getOrDefault("exportSelections", false);
+            this.exportConfig = (Boolean)data.getOrDefault("exportConfig", false);
+            if (exportPreProcessedImages || exportTrackImages || exportObjects || exportSelections || exportConfig) exportData= true;
             if (data.containsKey("positions")) positions = JSONUtils.fromIntArrayToList((JSONArray)data.get("positions"));
             if (data.containsKey("structures")) structures = JSONUtils.fromIntArray((JSONArray)data.get("structures"));
             if (data.containsKey("extractMeasurementDir")) {
@@ -223,6 +237,16 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             return this;
         }
         
+        public Task setExportData(boolean preProcessedImages, boolean trackImages, boolean objects, boolean config, boolean selections) {
+            this.exportPreProcessedImages=preProcessedImages;
+            this.exportTrackImages=trackImages;
+            this.exportObjects=objects;
+            this.exportConfig=config;
+            this.exportSelections=selections;
+            if (preProcessedImages || trackImages || objects || config || selections) exportData= true;
+            return this;
+        }
+        
         public Task setPositions(int... positions) {
             if (positions!=null && positions.length>0) this.positions=Utils.toList(positions);
             return this;
@@ -290,7 +314,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 else if (!f.isDirectory()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " is not a directory")));
                 else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
             }
-            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages) errors.add(new Pair(dbName, new Exception("No action to run!")));
+            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages && !exportData) errors.add(new Pair(dbName, new Exception("No action to run!")));
             db.clearCache(); // unlock
             printErrors();
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
@@ -323,6 +347,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 count+=positions.size()*gen;
             }
             count+=extractMeasurementDir.size();
+            if (this.exportObjects || this.exportPreProcessedImages || this.exportTrackImages) count+=positions.size();
             return count;
         }
         public void setSubtaskNumber(int[] taskCounter) {
@@ -361,7 +386,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     errors.add(new Pair(position, e));
                 }
             }
-            for (Pair<String, int[]> e  : this.extractMeasurementDir) extract(e.key==null?db.getDir():e.key, e.value);
+            for (Pair<String, int[]> e  : this.extractMeasurementDir) extractMeasurements(e.key==null?db.getDir():e.key, e.value);
+            if (exportData) exportData();
             db.clearCache();
             //db.getExperiment();
             //db=null;
@@ -429,17 +455,32 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         String of = Utils.getOpenedFileCount();
         publish(message+" Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)"+(of.length()==0?"": " OpenedFiles: "+of));
     }
-    private void extract(String dir, int[] structures) {
+    public void extractMeasurements(String dir, int[] structures) {
         if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
         String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structures, "_", "", "_")+".csv";
         publish("extracting measurements from structures: "+Utils.toStringArray(structures));
         publish("measurements will be extracted to: "+ file);
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structures);
         logger.debug("keys: {}", keys);
-        DataExtractor.extractMeasurementObjects(db, file, getPositionNames(), keys);
+        DataExtractor.extractMeasurementObjects(db, file, getPositions(), keys);
         incrementProgress();
     }
-    private List<String> getPositionNames() {
+    public void exportData() {
+        try {
+            String file = db.getDir()+File.separator+db.getDBName()+"_dump.zip";
+            ZipWriter w = new ZipWriter(file);
+            if (exportObjects || exportPreProcessedImages || exportTrackImages) {
+                ImportExportJSON.exportPositions(w, db, exportObjects, exportPreProcessedImages, exportTrackImages , getPositions(), this);
+            }
+            if (exportConfig) ImportExportJSON.exportConfig(w, db);
+            if (exportSelections) ImportExportJSON.exportSelections(w, db);
+            w.close();
+        } catch (Exception e) {
+            publish("Error while dumping");
+            this.errors.add(new Pair(this.dbName, e));
+        }
+    }
+    private List<String> getPositions() {
         if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
         List<String> res = new ArrayList<>(positions.size());
         for (int i : positions) res.add(db.getExperiment().getPosition(i).getName());
@@ -457,6 +498,13 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             res+= "/Extract: ";
             for (Pair<String, int[]> p : this.extractMeasurementDir) res+=(p.key==null?dir:p.key)+ "="+ArrayUtils.toString(res);
             res+="/";
+        }
+        if (exportData) {
+            if (exportPreProcessedImages) res+="/ExportPPImages/";
+            if (exportTrackImages) res+="/ExportTrackImages/";
+            if (exportObjects) res+="/ExportObjects/";
+            if (exportConfig) res+="/ExportConfig/";
+            if (exportSelections) res+="/ExportSelection/";
         }
         return res;
     }

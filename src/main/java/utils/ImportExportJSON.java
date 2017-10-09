@@ -188,7 +188,7 @@ public class ImportExportJSON {
         if (!w.isValid()) return;
         if (positions==null) positions = Arrays.asList(dao.getExperiment().getPositionsAsString());
         int count = 0;
-        if (pcb!=null) pcb.incrementTaskNumber(positions.size());
+        //if (pcb!=null) pcb.incrementTaskNumber(positions.size());
         for (String p : positions) {
             count++;
             logger.info("Exporting: {}/{}", count, positions.size());

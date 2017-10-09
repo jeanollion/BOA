@@ -1055,11 +1055,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         actionJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Jobs"));
 
         runActionList.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Pre-Processing", "Re-Run Pre-Processing", "Segment", "Track", "Generate Track Images", "Measurements", "Extract Measurements" };
+            String[] strings = { "Pre-Processing", "Segment", "Track", "Generate Track Images", "Measurements", "Extract Measurements", "Export Data" };
             public int getSize() { return strings.length; }
             public Object getElementAt(int i) { return strings[i]; }
         });
-        runActionList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         actionJSP.setViewportView(runActionList);
 
         experimentJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Experiments:"));
@@ -2140,7 +2139,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
         ImportExportJSON.exportConfig(w, db);
         ImportExportJSON.exportSelections(w, db);
-        ImportExportJSON.exportPositions(w, db, true, true, true, sel, ProgressCallback.get(instance));
+        ImportExportJSON.exportPositions(w, db, true, true, true, sel, ProgressCallback.get(instance, sel.size()));
         w.close();
         /*
         int[] sel  = getSelectedMicroscopyFields();
@@ -2326,20 +2325,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private Task getCurrentJob(String dbName) {
         
         boolean preProcess=false;
-        boolean reRunPreProcess=false;
         boolean segmentAndTrack = false;
         boolean trackOnly = false;
         boolean runMeasurements=false;
         boolean generateTrackImages = false;
         boolean extract = false;
+        boolean export=false;
         for (int i : this.runActionList.getSelectedIndices()) {
             if (i==0) preProcess=true;
-            if (i==1) reRunPreProcess=!preProcess;
-            if (i==2) segmentAndTrack=true;
-            if (i==3) trackOnly = !segmentAndTrack;
-            if (i==4) generateTrackImages=true;
-            if (i==5) runMeasurements=true;
-            if (i==6) extract=true;
+            if (i==1) segmentAndTrack=true;
+            if (i==2) trackOnly = !segmentAndTrack;
+            if (i==3) generateTrackImages=true;
+            if (i==4) runMeasurements=true;
+            if (i==5) extract=true;
+            if (i==6) export=true;
         }
         Task t;
         if (dbName==null && db!=null) {
@@ -2356,6 +2355,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         } else return null;
         t.setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages);
+        if (export) t.setExportData(this.exportPPImagesMenuItem.isSelected(), this.exportTrackImagesMenuItem.isSelected(), this.exportObjectsMenuItem.isSelected(), this.exportConfigMenuItem.isSelected(), this.exportSelectionsMenuItem.isSelected());
         if (logFile!=null && activateLoggingMenuItem.isSelected()) {
             log("Setting log file:" +logFile);
             t.setLogFile(logFile);
@@ -2536,8 +2536,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 try {
                     ZipWriter w = new ZipWriter(file);
                     if (objects || preProcessedImages || trackImages) {
-                        if (positions.isEmpty()) ImportExportJSON.exportPositions(w, mDAO, objects, preProcessedImages, trackImages ,  ProgressCallback.get(instance));
-                        else ImportExportJSON.exportPositions(w, mDAO, objects, preProcessedImages, trackImages , positions, ProgressCallback.get(instance));
+                        if (positions.isEmpty()) ImportExportJSON.exportPositions(w, mDAO, objects, preProcessedImages, trackImages ,  ProgressCallback.get(instance, mDAO.getExperiment().getPositionCount()));
+                        else ImportExportJSON.exportPositions(w, mDAO, objects, preProcessedImages, trackImages , positions, ProgressCallback.get(instance, positions.size()));
                     }
                     if (config) ImportExportJSON.exportConfig(w, mDAO);
                     if (selections) ImportExportJSON.exportSelections(w, mDAO);
