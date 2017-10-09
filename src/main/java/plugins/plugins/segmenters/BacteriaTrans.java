@@ -76,6 +76,7 @@ import plugins.Thresholder;
 import plugins.OverridableThreshold;
 import plugins.ParameterSetup;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
+import plugins.plugins.postFilters.MicrochannelPhaseArtifacts;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
 import plugins.plugins.thresholders.ConstantValue;
@@ -626,15 +627,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             //return input;
         }
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit, int minSize) {
-            
-            
             ImageByte seeds = Filters.localExtrema(getEDM(), null, true, Filters.getNeighborhood(3, 3, getEDM())); // TODO seed radius -> parameter ? 
             if (maskToSplit!=null) ImageOperations.and(seeds, maskToSplit, seeds);
             ObjectPopulation res =  WatershedTransform.watershed(getEDM(), maskToSplit, ImageLabeller.labelImageList(seeds), true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
             if (res.getObjects().size()==1) { // relabel with low connectivity -> if not contour will fail
                 List<Object3D> list = ImageLabeller.labelImageListLowConnectivity(maskToSplit);
-                return new ObjectPopulation(list, maskToSplit);
-            } else return res;
+                res = new ObjectPopulation(list, maskToSplit);
+            } 
+            // filter to remove channel border artifacts
+            res.filter(MicrochannelPhaseArtifacts.getFilter(6, 0.75)); // TODO add parameters to plugin ?
+            return res;
             /*   
             ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), true);
             if (splitVerbose) logger.debug("splitMask: {}", res.getObjects().size());

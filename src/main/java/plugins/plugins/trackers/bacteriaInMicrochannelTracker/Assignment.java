@@ -181,13 +181,19 @@ public class Assignment {
 
         protected void incrementIfNecessary() {
             if (prevObjects.isEmpty()) incrementPrev();
-            if (nextObjects.isEmpty()) incrementNext();
-            incrementUntilVerifyInequality();
-            if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} start increment: {}", ta.verboseLevel, this);
-            if (!verifyInequality()) return;
+            boolean cellDeathScenario=false;
+            if (nextObjects.isEmpty()) {
+                if (false && ta.allowCellDeathScenario() && idxNextEnd()<ta.idxNextLim) cellDeathScenario=true;
+                else incrementNext();
+            }
             boolean change = true;
+            if (!cellDeathScenario) {
+                incrementUntilVerifyInequality();
+                if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} start increment: {}", ta.verboseLevel, this);
+                if (!verifyInequality()) return;
+            } else change = ta.checkNextIncrement();
             if (ta.currentAssignment!=this) throw new Error("TA's currentAssignment should be calling assignment");
-            while (ta.allowRecursiveNextIncrementCheck && change && this.idxPrev<=cellNumberLimitForAssignment) change = ta.checkNextIncrement();
+            while (ta.allowRecurstiveNextIncrementCheck() && change && this.idxPrev<=cellNumberLimitForAssignment) change = ta.checkNextIncrement();
         }
                 
         protected void incrementUntilVerifyInequality() {
@@ -233,6 +239,7 @@ public class Assignment {
             return needCorrection();// && (idxEnd-idx==1) ;
         }
         protected double[] getScore() {
+            if (this.nextObjects.isEmpty() && idxNextEnd()<ta.idxNextLim) return new double[]{getErrorCount(), 0}; // cell death scenario
             double prevSizeIncrement = ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE ? getPreviousSizeIncrement() : Double.NaN;
             if (Double.isNaN(prevSizeIncrement)) return new double[]{getErrorCount(), Double.NaN};
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignement score: prevSI: {}, SI: {}", ta.verboseLevel, prevSizeIncrement, sizeNext/sizePrev);
@@ -245,7 +252,7 @@ public class Assignment {
             //if ((!verifyInequality() || significantSizeIncrementError()) && !truncatedEndOfChannel()) ++res; // bad size increment
             if (!truncatedEndOfChannel()) {
                 if (!verifyInequality()) res+=1;
-                else if (significantSizeIncrementError()) res+=SIErrorValue;//res+=0.9;
+                else if (significantSizeIncrementError()) res+=SIErrorValue;
             }
             if (notSameLineIsError && !prevFromSameLine()) ++res;
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, getError count: {}, errors: {}, truncated: {}", ta.verboseLevel, this, res, truncatedEndOfChannel());
