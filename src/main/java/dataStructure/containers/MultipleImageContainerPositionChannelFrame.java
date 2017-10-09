@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import utils.ArrayUtil;
+import utils.HashMapGetCreate;
 import utils.JSONUtils;
 
 /**
@@ -51,7 +52,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     int[] sizeZC;
     List<List<String>> fileCT;
     Map<String, Double> timePointCZT;
-    
+    HashMapGetCreate<String, ImageReader> readerMap = new HashMapGetCreate<>(f->new ImageReader(f));
     @Override
     public boolean sameContent(MultipleImageContainer other) {
         if (other instanceof MultipleImageContainerPositionChannelFrame) {
@@ -138,15 +139,16 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
             }
         }
         timePointCZT = new HashMap<>();
-        for (int c = 0; c<this.channelKeywords.length; ++c) {
-            for (int f = 0; f<fileCT.get(c).size(); ++f) {
-                ImageReader r = new ImageReader(fileCT.get(c).get(f));
-                if (r==null) continue;
-                for (int z = 0; z<sizeZC[c]; ++z) {
-                    double res= r.getTimePoint(0, 0, z);
-                    if (!Double.isNaN(res)) timePointCZT.put(getKey(c, z, f), res);
+        synchronized(this) {
+            for (int c = 0; c<this.channelKeywords.length; ++c) {
+                for (int f = 0; f<fileCT.get(c).size(); ++f) {
+                    ImageReader r = readerMap.getAndCreateIfNecessary(fileCT.get(c).get(f));
+                    if (r==null) continue;
+                    for (int z = 0; z<sizeZC[c]; ++z) {
+                        double res= r.getTimePoint(0, 0, z);
+                        if (!Double.isNaN(res)) timePointCZT.put(getKey(c, z, f), res);
+                    }
                 }
-                r.closeReader();
             }
         }
     }
@@ -170,40 +172,45 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         }
         if (sizeZC==null) sizeZC = new int[channelKeywords.length]; 
         if (sizeZC[channelNumber]==0) {
-            ImageReader reader = new ImageReader(fileCT.get(channelNumber).get(0));
+            ImageReader reader = readerMap.getAndCreateIfNecessarySyncOnKey(fileCT.get(channelNumber).get(0));
             sizeZC[channelNumber] = reader.getSTCXYZNumbers()[0][4];
-            reader.closeReader();
         } 
         return sizeZC[channelNumber];
     }
 
     @Override
-    public Image getImage(int timePoint, int channel) {
+    public Image getImage(int frame, int channel) {
         if (fileCT==null) {
             synchronized(this) {
                 if (fileCT==null) createFileMap();
             }
         }
-        if (timePoint==0) {
+        /*if (timePoint==0) {
             logger.debug("fileMap: {} x {}", fileCT.size(), fileCT.get(0).size());
             logger.debug("file: {}", fileCT.get(channel).get(timePoint));
-        }
-        return ImageReader.openImage(fileCT.get(channel).get(timePoint));
+        }*/
+        ImageReader r = readerMap.getAndCreateIfNecessarySyncOnKey(fileCT.get(channel).get(frame));
+        return r.openChannel();
     }
-
+    
+    
+    
     @Override
-    public Image getImage(int timePoint, int channel, BoundingBox bounds) {
+    public Image getImage(int frame, int channel, BoundingBox bounds) {
         if (fileCT==null) {
             synchronized(this) {
                 if (fileCT==null) createFileMap();
             }
         }
-        return ImageReader.openImage(fileCT.get(channel).get(timePoint), new ImageIOCoordinates(0, 0, 0, bounds));
+        ImageReader r = readerMap.getAndCreateIfNecessarySyncOnKey(fileCT.get(channel).get(frame));
+        return r.openImage(new ImageIOCoordinates(0, 0, 0, bounds));
     }
 
     @Override
     public void close() {
         fileCT=null;
+        for (ImageReader r: readerMap.values()) r.closeReader();
+        readerMap.clear();
     }
 
     @Override

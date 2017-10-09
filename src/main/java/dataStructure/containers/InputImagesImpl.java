@@ -165,7 +165,9 @@ public class InputImagesImpl implements InputImages {
         }
     }
     
-    @Override public void flush() {
+    @Override 
+    public void flush() {
+        imageCT[0][0].imageSources.close();
         for (int c = 0; c<getChannelNumber(); ++c) {
             for (int t = 0; t<imageCT[c].length; ++t) {
                 imageCT[c][t].flush();

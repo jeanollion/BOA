@@ -104,7 +104,7 @@ public class InputImage {
     
     public void flush() {
         if (image!=null) image=null;
-        imageSources.close();
+        //imageSources.close();
     }
     
     private void applyTransformations() {

@@ -42,6 +42,7 @@ import static image.Image.logger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import loci.formats.IFormatReader;
 import org.joda.time.DateTimeZone;
 
 /**
@@ -67,10 +68,14 @@ public class ImageReader {
         this.invertTZ=extension.getInvertTZ();
         this.supportView=extension.getSupportView();
         //System.out.println("path: "+path+File.separator+imageTitle+extension);
-        init();
+        initReader();
     }
     
     public ImageReader(String fullPath) {
+        setFullPath(fullPath);
+        initReader();
+    }
+    private void setFullPath(String fullPath) {
         File f= new File(fullPath);
         path  = f.getParent();
         imageTitle = f.getName();
@@ -86,7 +91,6 @@ public class ImageReader {
             invertTZ=extension.getInvertTZ();
             this.supportView=extension.getSupportView();
         }
-        init();
     }
 
     public ImageFormat getExtension() {
@@ -105,10 +109,11 @@ public class ImageReader {
         if (fullPath!=null) return fullPath;
         else return path+File.separator+imageTitle+extension;
     }
-    
-    private void init() {
+    //loci.formats.ImageReader ifr;
+    private void initReader() {
         if (!new File(getImagePath()).exists()) logger.error("File: {} was not found", getImagePath());
         //logger.debug("init reader: {}", getImagePath());
+        //ifr = LociPrefs.makeImageReader();
         reader = new ImageProcessorReader(new ChannelSeparator(LociPrefs.makeImageReader()));
         
         ServiceFactory factory;
@@ -125,15 +130,21 @@ public class ImageReader {
         } catch (DependencyException ex) {
             logger.error(ex.getMessage(), ex);
         }
-        
+        setId();
+    }
+    private void setId() {
         try {
             reader.setId(getImagePath());
+            //logger.debug("reader: {}", ifr.getReader().getClass());
         } catch (FormatException | IOException ex) {
-            logger.error("An error occurred while opering image: {}, message: {}", getImagePath(),  ex.getMessage());
+            logger.error("An error occurred while setting image id: {}, message: {}", getImagePath(),  ex.getMessage());
             reader=null;
         }
     }
-    
+    private void setFile(String fullPath) {
+        setFullPath(fullPath);
+        setId();
+    }
     
     public void closeReader() {
         if (reader==null) return;
@@ -147,7 +158,6 @@ public class ImageReader {
     public Image openChannel() {
         return openImage(new ImageIOCoordinates());
     }
-    
     public Image openImage(ImageIOCoordinates coords) {
         if (reader==null) return null;
         Image res = null;
