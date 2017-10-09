@@ -317,7 +317,7 @@ public class Object3D {
     public List<Voxel> getContour() {
         ArrayList<Voxel> res = new ArrayList<Voxel>();
         ImageMask mask = getMask();
-        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
+        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true); // 1 and not 1.5 -> diagonal
         int xx, yy, zz;
         for (int i = 0; i<neigh.dx.length; ++i) {
             neigh.dx[i]-=mask.getOffsetX();

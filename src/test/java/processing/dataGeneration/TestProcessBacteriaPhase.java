@@ -58,8 +58,8 @@ public class TestProcessBacteriaPhase {
         //String dbName = "MF1_170523";
         String dbName = "MutH_150324";
         int field = 0;
-        int microChannel =1;
-        int time =300;
+        int microChannel =3;
+        int time =10;
         //thld = 600;
         
         //testSegBacteriesFromXP(dbName, field, time, microChannel);
@@ -135,7 +135,7 @@ public class TestProcessBacteriaPhase {
             BacteriaTrans seg = new BacteriaTrans();
             if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
                 seg = (BacteriaTrans) mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
-                //seg.setThresholdedImage((ImageInteger)ImageReader.openIJTif("/data/Images/MOP/ThldPlaneF300.tif")); open radius = 3 ou appliquer le filtre pour objets phase ? 
+                seg.setThresholdedImage((ImageInteger)ImageReader.openIJTif("/data/Images/MOP/ThldPlaneF10.tif")); //open radius = 3 ou appliquer le filtre pour objets phase ? 
                 logger.debug("using seg from XP: {}", seg);
             }
             if (!Double.isNaN(thld)) seg.setThresholdValue(thld);

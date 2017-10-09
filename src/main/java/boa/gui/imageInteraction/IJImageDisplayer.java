@@ -25,6 +25,7 @@ import ij.process.StackStatistics;
 import image.IJImageWrapper;
 import image.Image;
 import static boa.gui.GUI.logger;
+import core.DefaultWorker;
 import i5d.Image5D;
 import i5d.cal.ChannelDisplayProperties;
 import i5d.gui.ChannelControl;
@@ -104,14 +105,15 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     }
     
     private static void zoom(ImagePlus image, double magnitude) {
-        Thread t = new Thread(new Runnable() { // invoke later -> if not, linux bug display, bad window size
+        DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
+
             @Override
-            public void run() {
-                //Thread.sleep(10000);
+            public String run(int workingTaskIndex) {
+                ImageCanvas ic = image.getCanvas();
+                if (ic==null) return "";
+                if (ic.getMagnification()==magnitude) return "";
                 try {Thread.sleep(1000);}
                 catch(Exception e) {}
-                ImageCanvas ic = image.getCanvas();
-                if (ic==null) return;
                 ic.zoom100Percent();
                 //IJ.runPlugIn("ij.plugin.Zoom", null);
                 if (magnitude > 1) {
@@ -124,35 +126,10 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                     }
                 }
                 image.repaintWindow();
+                return "";
             }
-        });
-        SwingUtilities.invokeLater(t);
-        /*t.start();
-        try{t.join();}
-        catch(Exception e) {}*/
-        /*
-        Dimension d = image.getWindow().getSize();
-        //Dimension d = image.getCanvas().getSize();
-        Rectangle max = GUI.getMaxWindowBounds();
-        logger.debug("window size: {}, canvas size: {}, maxSize: {}", image.getWindow().getSize(), image.getCanvas().getSize(), max);
-        if (d.width < image.getWidth()) d.width=Math.min(max.width, image.getWidth());
-        if (d.height < image.getHeight()+40) d.height=Math.min(max.height, image.getHeight()+40);
-        
-        //image.getCanvas().setSize(d.width, d.height);
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                image.getWindow().setSize(d.width, d.height+100);
-                image.updateAndRepaintWindow();
-                logger.debug("window size after set: {}, window shape: {}, canvas size: {}", image.getWindow().getSize(), image.getWindow().getShape(), image.getCanvas().getSize());
-        
-            }
-        });
-        */
-       
-        //image.updateAndDraw();
-        //image.updateAndRepaintWindow();
-        //image.getWindow().repaint();
+        };
+        DefaultWorker w = DefaultWorker.execute(t, 1, null);
         
     }
     

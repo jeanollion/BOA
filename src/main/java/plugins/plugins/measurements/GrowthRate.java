@@ -104,10 +104,6 @@ public class GrowthRate implements Measurement {
                 double[] length = new double[frame.length];
                 int idx = 0;
                 for (StructureObject b : l) {
-                    b.getObject().getVoxels();
-                    b.getObject().getContour();
-                }
-                for (StructureObject b : l) {
                     frame[idx] = b.getCalibratedTimePoint();
                     length[idx++] = Math.log(ofMap.getAndCreateIfNecessary(b.getParent()).performMeasurement(b.getObject(), null));
                 }

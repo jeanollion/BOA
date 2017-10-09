@@ -55,6 +55,7 @@ import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker.IndexingOrder;
 import processing.Filters;
 import processing.WatershedTransform;
+import processing.neighborhood.DisplacementNeighborhood;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
 import utils.HashMapGetCreate;
@@ -333,6 +334,17 @@ public class ObjectPopulation {
         return res;
     }
     
+    public boolean isInContactWithOtherObject(Object3D o) {
+        DisplacementNeighborhood n = (DisplacementNeighborhood) Filters.getNeighborhood(1.5, 1, properties);
+        getLabelMap();
+        for (Voxel v : o.getContour()) {
+            n.setPixels(v, labelImage);
+            for (int i = 0; i<n.getValueCount(); ++i) if (n.getPixelValues()[i]>0 && n.getPixelValues()[i]!=o.getLabel()) return true; // TODO for high number of objects float can lead to ambiguities
+            
+        }
+        return false;
+    }
+    
     /*public void fitToEdges(Image edgeMap, ImageMask mask) {
      // 1st pass: increase foreground
      WatershedTransform wt = new WatershedTransform(edgeMap, mask, objects, false, null, null);
@@ -425,16 +437,14 @@ public class ObjectPopulation {
     
     public ObjectPopulation filter(Filter filter, List<Object3D> removedObjects) {
         //int objectNumber = objects.size();
+        if (removedObjects==null) removedObjects=new ArrayList<>();
         filter.init(this);
-        Iterator<Object3D> it = getObjects().iterator();
-        while (it.hasNext()) {
-            Object3D o = it.next();
-            if (!filter.keepObject(o)) {
-                it.remove();
-                if (removedObjects != null) removedObjects.add(o);
-                if (hasImage()) draw(o, 0);
-            }
+        for (Object3D o : getObjects()) {
+            if (!filter.keepObject(o)) removedObjects.add(o);
         }
+        if (removedObjects.isEmpty()) return this;
+        this.objects.removeAll(removedObjects);
+        if (hasImage()) for (Object3D o : removedObjects) draw(o, 0);
         relabel(false);
         //logger.debug("filter: {}, total object number: {}, remaning objects: {}", filter.getClass().getSimpleName(), objectNumber, objects.size());
         return this;
@@ -738,24 +748,22 @@ public class ObjectPopulation {
 
         public static enum Border {
 
-            X, Y, YDown, YUp, Z, XY, XYZ;            
-            
-            public boolean hasX() {
-                return (this.equals(X) || this.equals(XY) || this.equals(XYZ));
-            }
+            X(true, true, false, false, false), Xl(true, false, false, false, false), Xr(false, true, false, false, false), Y(false, false, true, true, false), YDown(false, false, false, true, false), YUp(false, false, true, false, false), Z(false, false, false, false, true), XY(true, true, true, true, false), XYup(true, true, true, false, false), XYZ(true, true, true, true, true), XlYup(true, false, true, false, false), XrYup(false, true, true, false, false);            
+            boolean xl, xr, yup, ydown, z;
 
-            public boolean hasY() {
-                return (this.equals(Y) || this.equals(XY) || this.equals(XYZ));
-            }
-
-            public boolean hasZ() {
-                return (this.equals(Z) || this.equals(XYZ));
+            private Border(boolean xl, boolean xr, boolean yup, boolean ydown, boolean z) {
+                this.xl = xl;
+                this.xr = xr;
+                this.yup = yup;
+                this.ydown = ydown;
+                this.z = z;
             }
         };
         int contactLimit;
         ImageProperties mask;
         Border border;
-        int tolerance, tolEnd;
+        int tolerance;
+        int tolEnd = 1;
         public ContactBorder(int contactLimit, ImageProperties mask, Border border) {
             this.contactLimit = contactLimit;
             this.mask = mask;
@@ -772,11 +780,11 @@ public class ObjectPopulation {
             return this;
         }
         public boolean contact(Voxel v) {
-            if (border.hasX() && (v.x <=tolerance || v.x >= mask.getSizeX() - tolEnd)) return true;
-            if (border.hasY() && (v.y <=tolerance || v.y >= mask.getSizeY() - tolEnd)) return true;
-            if (border.hasZ() && (v.z <=tolerance || v.z >= mask.getSizeZ() - tolEnd)) return true;
-            if (border.equals(Border.YDown) && v.y==mask.getSizeY() - 1) return true;
-            else if (border.equals(Border.YUp) && v.y==0) return true;
+            if (border.xl && v.x <=tolerance) return true;
+            if (border.xr && v.x >= mask.getSizeX() - tolEnd) return true;
+            if (border.yup && v.y <=tolerance) return true;
+            if (border.ydown && v.y >= mask.getSizeY() - tolEnd) return true;
+            if (border.z && (v.z <=tolerance || v.z >= mask.getSizeZ() - tolEnd)) return true;
             return false;
         }
         @Override public void init(ObjectPopulation population) {}
@@ -786,13 +794,20 @@ public class ObjectPopulation {
                 return true;
             }
             int count = 0;
-            for (Voxel v : object.getVoxels()) {
+            for (Voxel v : object.getContour()) {
                 if (contact(v)) {
                     ++count;
                     if (count>=contactLimit) return false;
                 }
             }
             return true;
+        }
+        public int getContact(Object3D object) {
+            int count = 0;
+            for (Voxel v : object.getContour()) {
+                if (contact(v)) ++count;
+            }
+            return count;
         }
     }
 

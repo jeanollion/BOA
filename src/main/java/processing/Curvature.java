@@ -91,6 +91,7 @@ public class Curvature {
             if (x>=xLim) --x;
             if (y>=yLim) --y;
             //double oldV = curvatureMask.getPixel(x, y, 0);
+            //if (d.isInfinite()) d=Double.NaN;
             curvatureMask.setPixel(x, y, 0, d);
         }
     }

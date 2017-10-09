@@ -243,7 +243,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (threshold!=null) {
                     if (threshold.hasAdaptativeByY()) {
                         ((OverridableThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
-                        //if (frame==300) ImageWindowManagerFactory.showImage(threshold.getThresholdedPlane(frame, false));
+                        //if (frame==10) ImageWindowManagerFactory.showImage(threshold.getThresholdedPlane(frame, false));
                     }
                     else ((OverridableThreshold)s).setThresholdValue(threshold.getThreshold(frame));
                 } else ((OverridableThreshold)s).setThresholdValue(debugThreshold);

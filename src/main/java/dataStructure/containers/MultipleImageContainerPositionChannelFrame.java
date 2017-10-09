@@ -150,7 +150,8 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
                         else {
                             timePointCZT.clear();
                             logger.error("time point information not found in file: {}", f);
-                            break;
+                            r.closeReader();
+                            return;
                         }
                     }
                     r.closeReader();

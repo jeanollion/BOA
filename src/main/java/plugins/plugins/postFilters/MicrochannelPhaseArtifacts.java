@@ -27,6 +27,7 @@ import dataStructure.objects.ObjectPopulation.Filter;
 import dataStructure.objects.ObjectPopulation.Size;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
+import dataStructure.objects.Voxel;
 import measurement.GeometricalMeasurements;
 import plugins.PostFilter;
 
@@ -35,35 +36,84 @@ import plugins.PostFilter;
  * @author jollion
  */
 public class MicrochannelPhaseArtifacts implements PostFilter {
-    BoundedNumberParameter XThickness = new BoundedNumberParameter("X-thickness", 1, 6, 0, null).setToolTipText("Thickness along X-axis should be under this threshold to erase object");
-    BoundedNumberParameter XContactFraction = new BoundedNumberParameter("Minimum X contact", 2, 0.75, 0, 1).setToolTipText("Contact with X-border of channel divided by Y-thickness should be higher than this value to erase object");
-    Parameter[] parameters = new Parameter[]{XThickness, XContactFraction};
+    BoundedNumberParameter XThickness = new BoundedNumberParameter("X-thickness", 1, 7, 0, null).setToolTipText("Thickness along X-axis should be under this threshold to erase object");
+    BoundedNumberParameter XContactFraction = new BoundedNumberParameter("Minimum X contact", 2, 0.75, 0, 1).setToolTipText("Contact with X-border of channel divided by length should be higher than this value to erase object");
+    BoundedNumberParameter YContactFraction = new BoundedNumberParameter("Minimum Y contact", 2, 0.90, 0, 1).setToolTipText("Contact with upper Y-border of channel divided by X-thickness should be higher than this value to erase object");
+    BoundedNumberParameter cornerContactFraction = new BoundedNumberParameter("corner contact fraction", 2, 0.5, 0, 1).setToolTipText("Contact with X-border (left XOR right) & upper Y-border of channel divided by perimeter should be higher than this value to erase object");
+    Parameter[] parameters = new Parameter[]{XThickness, XContactFraction, YContactFraction, cornerContactFraction};
     
     public MicrochannelPhaseArtifacts(){}
 
+    public MicrochannelPhaseArtifacts setThickness(int thickness) {
+        this.XThickness.setValue(thickness);
+        return this;
+    }
     
     @Override public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
-        childPopulation.filter(getFilter(XThickness.getValue().doubleValue(), XContactFraction.getValue().doubleValue()));
+        childPopulation.filter(getFilter(XThickness.getValue().doubleValue(), XContactFraction.getValue().doubleValue(), 0, 0));
+        childPopulation.filter(getFilter(XThickness.getValue().doubleValue(), 0, YContactFraction.getValue().doubleValue(), 0));
+        childPopulation.filter(getFilter(XThickness.getValue().doubleValue(), 0, 0, cornerContactFraction.getValue().doubleValue())); // for corner removal contact condition
         return childPopulation;
     }
-    public static ObjectPopulation.Filter getFilter(double maxThickness, double minContactFraction) {
+    public static ObjectPopulation.Filter getFilter(double maxThickness, double minXContactFraction, double minYContactFraction, double minContactFractionCorner) {
         return new ObjectPopulation.Filter() {
-            ContactBorder borderX, borderY;
+            ContactBorder borderY, borderXl, borderXr;
+            ObjectPopulation population;
             @Override
             public void init(ObjectPopulation population) {
-                this.borderX = new ContactBorder(0, population.getImageProperties(), Border.X).setTolerance(1);
-                this.borderY = new ContactBorder(0, population.getImageProperties(), Border.YUp).setTolerance(1);
+                this.population=population;
+                this.borderY = new ContactBorder(0, population.getImageProperties(), Border.YUp);//.setTolerance(1);
+                this.borderXl = new ContactBorder(0, population.getImageProperties(), Border.Xl).setTolerance(1);
+                this.borderXr = new ContactBorder(0, population.getImageProperties(), Border.Xr).setTolerance(1);
             }
 
             @Override
             public boolean keepObject(Object3D object) {
                 double xThickness = GeometricalMeasurements.medianThicknessX(object);
-                if (xThickness>maxThickness) return true;
-                double length = GeometricalMeasurements.getFeretMax(object)/object.getScaleXY();
-                borderX.setLimit((int)(length * minContactFraction+0.5));
-                if (!borderX.keepObject(object)) return false;
-                borderY.setLimit((int)(xThickness * minContactFraction+0.5) );
-                return borderY.keepObject(object);
+                if (xThickness>maxThickness) { 
+                    if (xThickness<1.5*maxThickness) { // allow corner check for objects a little bit thicker
+                        if (population.isInContactWithOtherObject(object)) return true;
+                        if (isCorner(object, minContactFractionCorner)) return false;
+                    }
+                    return true;
+                }
+                if (minXContactFraction>0) {
+                    double length = GeometricalMeasurements.getFeretMax(object)/object.getScaleXY();
+                    int lim = (int)(length * minXContactFraction+0.5);
+                    int xl = borderXl.getContact(object);
+                    int xr = borderXr.getContact(object);
+                    if (xl>0 && xr>0) return true; // artifacts are not in contact with both borders
+                    int x = Math.max(xl, xr);
+                    if (x>lim) {
+                        //logger.debug("X contact: Contact value: {} length: {}, limit: {}", x, length, lim);
+                        return false;
+                    }
+                }
+                if (minContactFractionCorner<=0 && minYContactFraction<=0) return true;
+                if (population.isInContactWithOtherObject(object)) return true;
+                if (minYContactFraction>0) {
+                    int lim = (int)(xThickness * minYContactFraction+0.5);
+                    borderY.setLimit(lim);
+                    //logger.debug("Y contact: Contact value: {} thickness: {}, limit: {}", borderY.getContact(object), xThickness, lim);
+                    if (!borderY.keepObject(object)) {
+                        return false;
+                    }
+                }
+                return !isCorner(object, minContactFractionCorner);
+            }
+
+            public boolean isCorner(Object3D object, double minContactFraction) {
+                if (minContactFraction<=0) return false;
+                int xl = borderXl.getContact(object);
+                int xr = borderXr.getContact(object);
+                if (xl>0 && xr>0) return false; // not a corner
+                int x = Math.max(xl, xr);
+                if (x==0) return false;
+                int y = borderY.getContact(object);
+                if (y==0) return false;
+                double limCorner = object.getContour().size() * minContactFraction;
+                //logger.debug("corner detection: x: {}, xr: {}, y: {}, sum: {} lim: {}", xl, xr, y, x+y, limCorner);
+                return x+y>limCorner;
             }
         };
     }
