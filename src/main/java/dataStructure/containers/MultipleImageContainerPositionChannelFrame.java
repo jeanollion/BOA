@@ -52,7 +52,6 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     int[] sizeZC;
     List<List<String>> fileCT;
     Map<String, Double> timePointCZT;
-    HashMapGetCreate<String, ImageReader> readerMap = new HashMapGetCreate<>(f->new ImageReader(f));
     @Override
     public boolean sameContent(MultipleImageContainer other) {
         if (other instanceof MultipleImageContainerPositionChannelFrame) {
@@ -104,6 +103,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         channelKeywords = JSONUtils.fromStringArray((JSONArray)jsonO.get("channelKeywords"));
         sizeZC = JSONUtils.fromIntArray((JSONArray)jsonO.get("sizeZC"));
         if (jsonO.containsKey("timePointCZT")) timePointCZT = (Map<String, Double>)jsonO.get("timePointCZT");
+        //else initTimePointMap();         
     }
     protected MultipleImageContainerPositionChannelFrame() {super(1, 1);} // JSON init
     public MultipleImageContainerPositionChannelFrame(String inputDir, String extension, String positionKey, String timeKeyword, String[] channelKeywords, int frameNumber, double scaleXY, double scaleZ) {
@@ -142,12 +142,18 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         synchronized(this) {
             for (int c = 0; c<this.channelKeywords.length; ++c) {
                 for (int f = 0; f<fileCT.get(c).size(); ++f) {
-                    ImageReader r = readerMap.getAndCreateIfNecessary(fileCT.get(c).get(f));
+                    ImageReader r = new ImageReader(fileCT.get(c).get(f));
                     if (r==null) continue;
                     for (int z = 0; z<sizeZC[c]; ++z) {
                         double res= r.getTimePoint(0, 0, z);
                         if (!Double.isNaN(res)) timePointCZT.put(getKey(c, z, f), res);
+                        else {
+                            timePointCZT.clear();
+                            logger.error("time point information not found in file: {}", f);
+                            break;
+                        }
                     }
+                    r.closeReader();
                 }
             }
         }
@@ -172,8 +178,9 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         }
         if (sizeZC==null) sizeZC = new int[channelKeywords.length]; 
         if (sizeZC[channelNumber]==0) {
-            ImageReader reader = readerMap.getAndCreateIfNecessarySyncOnKey(fileCT.get(channelNumber).get(0));
+            ImageReader reader = new ImageReader(fileCT.get(channelNumber).get(0));
             sizeZC[channelNumber] = reader.getSTCXYZNumbers()[0][4];
+            reader.closeReader();
         } 
         return sizeZC[channelNumber];
     }
@@ -189,8 +196,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
             logger.debug("fileMap: {} x {}", fileCT.size(), fileCT.get(0).size());
             logger.debug("file: {}", fileCT.get(channel).get(timePoint));
         }*/
-        ImageReader r = readerMap.getAndCreateIfNecessarySyncOnKey(fileCT.get(channel).get(frame));
-        return r.openChannel();
+        return ImageReader.openImage(fileCT.get(channel).get(frame));
     }
     
     
@@ -202,15 +208,12 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
                 if (fileCT==null) createFileMap();
             }
         }
-        ImageReader r = readerMap.getAndCreateIfNecessarySyncOnKey(fileCT.get(channel).get(frame));
-        return r.openImage(new ImageIOCoordinates(0, 0, 0, bounds));
+        return ImageReader.openImage(fileCT.get(channel).get(frame), new ImageIOCoordinates(0, 0, 0, bounds));
     }
 
     @Override
     public void close() {
         fileCT=null;
-        for (ImageReader r: readerMap.values()) r.closeReader();
-        readerMap.clear();
     }
 
     @Override

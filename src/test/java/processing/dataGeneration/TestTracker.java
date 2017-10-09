@@ -73,10 +73,10 @@ public class TestTracker {
         // mc 16 : 93 fragmentation
         // Pour xp MF1_170519
         // P0 mc1 F39: ajouter terminaison comme option de scenario!
-        String dbName = "MF1_170522";
+        String dbName = "MutH_150324";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         int pIdx = 0;
-        int mcIdx =0; 
+        int mcIdx =2; 
         int structureIdx = 1;
         if (new Task(dbName).getDir()==null) return;
         GUI.getInstance().setDBConnection(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
@@ -88,7 +88,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,300);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,400);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 47, 63); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {

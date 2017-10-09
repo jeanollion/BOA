@@ -537,7 +537,7 @@ public class Utils {
     private static File search(List<File> files, String fileName, int recLevels, int currentLevel) {
         for (File f : files) {
             File[] ff = f.listFiles((dir, name) -> fileName.equals(name));
-            if (ff.length>0) return ff[0];
+            if (ff!=null && ff.length>0) return ff[0];
         }
         if (currentLevel==recLevels) return null;
         List<File> nextFiles = new ArrayList<>();
