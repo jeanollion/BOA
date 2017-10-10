@@ -17,9 +17,11 @@
  */
 package boa.gui;
 
+import core.Daemon;
 import core.Task;
 import ij.plugin.PlugIn;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Arrays;
@@ -27,6 +29,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.function.Function;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import org.slf4j.LoggerFactory;
+import plugins.PluginFactory;
 import utils.FileIO;
 import utils.JSONUtils;
 import utils.Utils;
@@ -35,23 +41,30 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class Console implements UserInterface, PlugIn {
+public class Console implements PlugIn {
+    static final String WATCH_DIR_KEY = "watch_dir";
+    Daemon d;
+    ConsoleUserInterface ui = new ConsoleUserInterface();
     public static void main(String[] args) {
-        String arg = "";
+        PluginFactory.findPlugins("plugins.plugins");
+        Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.INFO);
+        /*String arg = "";
         Iterator<String> it = Arrays.asList(args).iterator();
         while(it.hasNext()) {
             String n = it.next();
             arg+=n+(it.hasNext()?";":"");
-        }
-        new Console().run(arg);
+        }*/
+        new Console().run(args.length==0 ? null : args[0]);
     }
     
     @Override
     public void run(String args) {
-        setMessage("BOA Shell version: "+Utils.getVersion(this));
-        if (args==null || args.length()==0) return;
-        Collection<Task> jobs;
-        Function<String, Task> parser = s->new Task().setUI(this).fromJSON(JSONUtils.parse(s));
+        ui.setMessage("BOA Shell version: "+Utils.getVersion(this));
+        while(!promptCommand()){};
+        //if (args==null || args.length()==0) return;
+        /*Collection<Task> jobs;
+        Function<String, Task> parser = s->new Task().setUI(ui).fromJSON(JSONUtils.parse(s));
         if (args.endsWith(".txt")|args.endsWith(".json")) { // open text file
             jobs = FileIO.readFromFile(args, parser); // TODO -> read JSON File en utilisant content handler de JSON simple
         } else { // directly parse command
@@ -61,41 +74,74 @@ public class Console implements UserInterface, PlugIn {
             jobs = new HashSet<>(tasksS.length);
             for (String s : tasksS) jobs.add(parser.apply(s));
         }
-        runJobs(jobs);
+        runJobs(jobs);*/
     }
     public void runJobs(Collection<Task> jobs) {
         if (jobs==null || jobs.isEmpty()) return;
         int count = 0;
         for (Task t : jobs) {
             if (t==null) {
-                setMessage("Error: job "+count+" could not be parsed");
+                ui.setMessage("Error: job "+count+" could not be parsed");
                 return;
             }
             if (!t.isValid()) {
-                setMessage("Error: job: "+t.toString()+" is not valid" + (t.getDB()==null?"db null": (t.getDB().getExperiment()==null? "xp null":"")));
+                ui.setMessage("Error: job: "+t.toString()+" is not valid" + (t.getDB()==null?"db null": (t.getDB().getExperiment()==null? "xp null":"")));
                 return;
             }
             ++count;
         }
         System.out.println(">Will execute: "+jobs.size()+" jobs");
         for (Task t : jobs) {
-            setMessage("Running: "+t.toString());
+            ui.setMessage("Running: "+t.toString());
             t.runTask();
         }
         int errorCount = 0;
         for (Task t: jobs) errorCount+=t.getErrors().size();
-        setMessage("All jobs finished. Errors: "+errorCount);
+        ui.setMessage("All jobs finished. Errors: "+errorCount);
         for (Task t: jobs) t.printErrors();
     }
     
+    private boolean promptCommand() {
+        ui.setMessage("Current Watch Dir: "+PropertyUtils.get(WATCH_DIR_KEY, "NONE"));
+        String c = prompt("Type \"R\" to run daemon \"S\" to set watch directory \"q\" to exit shell:");
+        if (c.equals("S")) {
+           String dir = this.prompt("Type watch directory");
+           if (dir!=null && new File(dir).isDirectory()) {
+               ui.setMessage("Setting watch directory to: "+dir);
+               PropertyUtils.set(WATCH_DIR_KEY, dir);
+           }
+           return false;
+        } else if (c.equals("R")) {
+            runDaemon();
+            return false;
+        } else if (c.equals("q")) {
+            if (d!=null) {
+                d.stopAfterNextJob();
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+    private void runDaemon() {
+        String watchDir = PropertyUtils.get(WATCH_DIR_KEY);
+        if (watchDir==null || !new File(watchDir).isDirectory()) {
+            ui.setMessage("No watch Dir found "+watchDir);
+            return;
+        } else {
+            ui.setMessage("Watch Directory: "+watchDir);
+        }
+        d = new Daemon(new LogUserInterface(ui));
+        d.watchDirectory(watchDir);
+    }
+    
     private String prompt(String promptInstruction) {
-        if (promptInstruction!=null && promptInstruction.length()>0) System.out.println(promptInstruction);
-        setMessage(">");
+        if (promptInstruction!=null && promptInstruction.length()>0) ui.setMessage(promptInstruction);
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         try {
            return(br.readLine());
         } catch (IOException ioe) {
-           setMessage("IO error trying to read command!");
+           ui.setMessage("IO error trying to read command!");
         }
         return "";
     }
@@ -107,18 +153,4 @@ public class Console implements UserInterface, PlugIn {
         else return def;
     }
 
-    @Override
-    public void setProgress(int i) {
-        setMessage("Progress: "+i+"%");
-    }
-
-    @Override
-    public void setMessage(String message) {
-        System.out.println(">"+message);
-    }
-
-    @Override
-    public void setRunning(boolean running) {
-        
-    }
 }

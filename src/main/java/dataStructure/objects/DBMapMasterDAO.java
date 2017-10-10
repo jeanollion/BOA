@@ -69,6 +69,7 @@ public class DBMapMasterDAO implements MasterDAO {
 
     @Override
     public boolean isReadOnly() {
+        if (cfg==null) this.getExperiment(); // try to get lock 
         return readOnly;
     }
     @Override 

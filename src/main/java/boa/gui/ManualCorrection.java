@@ -85,17 +85,9 @@ public class ManualCorrection {
     }
     public static void unlinkObject(StructureObject o, Collection<StructureObject> modifiedObjects) {
         if (o==null) return;
-        for (StructureObject n : getNext(o) ) {
-            n.resetTrackLinks(true, false);
-            n.setTrackHead(n, true, true, modifiedObjects);
-        }
-        for (StructureObject p : getPrevious(o) ) {
-            if (o.equals(p.getNext())) {
-                p.resetTrackLinks(false, true);
-                modifiedObjects.add(p);
-            }
-        }
-        o.resetTrackLinks(true, true);
+        for (StructureObject n : getNext(o) ) unlinkObjects(o, n, modifiedObjects);
+        for (StructureObject p : getPrevious(o) ) unlinkObjects(p, o, modifiedObjects);
+        //o.resetTrackLinks(true, true);
         modifiedObjects.add(o);
         //logger.debug("unlinking: {}", o);
     }
@@ -119,9 +111,9 @@ public class ManualCorrection {
                 linkObjects(prev, allNext.get(0), true, modifiedObjects);
             }
             //next.resetTrackLinks(next.getPrevious()==prev, false);
-            getManualCorrectionSelection(prev).addElement(next);
-            getManualCorrectionSelection(prev).addElement(prev);
-            saveManualCorrectionSelection(prev);
+            //getManualCorrectionSelection(prev).addElement(next);
+            //getManualCorrectionSelection(prev).addElement(prev);
+            //saveManualCorrectionSelection(prev);
             //logger.debug("unlinking.. previous: {}, previous's next: {}", sel.get(1).getPrevious(), sel.get(0).getNext());
             if (modifiedObjects!=null) {
                 modifiedObjects.add(prev);

@@ -521,29 +521,11 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     protected void process(List<String> strings) {
         if (ui!=null) for (String s : strings) ui.setMessage(s);
         for (String s : strings) logger.info(s);
-        if (logFile!=null) {
-            FileWriter fw = null;
-            try {
-                fw = new FileWriter(logFile,true);
-                for (String s: strings) {
-                    fw.write(Utils.getFormattedTime()+": "+s+"\n");
-                    //logWriter.newLine();
-                }
-            } catch (IOException ex) {
-                logger.warn("Could no write to file: "+logFile.getAbsolutePath(), ex);
-            } finally {
-                if (fw!=null) {
-                    try {
-                        fw.close();
-                    } catch (IOException ex) {
-                        logger.warn("Could close writer: "+logFile.getAbsolutePath(), ex);
-                    }
-                }
-            }
-        }
+        
     }
     private static boolean toPrint(String stackTraceElement) {
-        return !stackTraceElement.startsWith("java.util.concurrent")&&!stackTraceElement.startsWith("utils.ThreadRunner")&&!stackTraceElement.startsWith("java.lang.Thread")&&!stackTraceElement.startsWith("core.Processor.lambda")&&!stackTraceElement.startsWith("plugins.plugins.processingScheme");
+        return true;
+        //return !stackTraceElement.startsWith("java.util.concurrent")&&!stackTraceElement.startsWith("utils.ThreadRunner")&&!stackTraceElement.startsWith("java.lang.Thread")&&!stackTraceElement.startsWith("core.Processor.lambda")&&!stackTraceElement.startsWith("plugins.plugins.processingScheme");
     }
     @Override 
     public void done() {

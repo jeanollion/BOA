@@ -112,7 +112,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 ImageCanvas ic = image.getCanvas();
                 if (ic==null) return "";
                 if (ic.getMagnification()==magnitude) return "";
-                try {Thread.sleep(1000);}
+                try {Thread.sleep(500);}
                 catch(Exception e) {}
                 ic.zoom100Percent();
                 //IJ.runPlugIn("ij.plugin.Zoom", null);

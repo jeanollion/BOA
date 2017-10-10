@@ -450,6 +450,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (trackTreeController!=null) this.trackTreeController.setEnabled(!running);
         trackStructureJCB.setEnabled(!running);
         tabs.setEnabledAt(2, !running);
+        updateDisplayRelatedToXPSet();
     }
     // gui interface method
     @Override
@@ -657,11 +658,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     
     protected void loadObjectTrees() {
-        //TODO remember treepath if existing and set them in the new trees
-        
-        //objectTreeGenerator = new StructureObjectTreeGenerator(db);
-        //structureJSP.setViewportView(objectTreeGenerator.getTree());
-        
+        if (db==null) {
+            trackTreeController = null;
+            return;
+        }
         trackTreeController = new TrackTreeController(db);
         setTrackTreeStructures(db.getExperiment().getStructuresAsString());
         resetSelectionHighlight();

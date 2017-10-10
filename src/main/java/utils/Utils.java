@@ -17,6 +17,7 @@
  */
 package utils;
 
+import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import com.sun.management.UnixOperatingSystemMXBean;
 import configuration.parameters.FileChooser;
@@ -61,16 +62,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.swing.DefaultListModel;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.ListModel;
+import javax.swing.LookAndFeel;
+import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import static javax.swing.UIManager.setLookAndFeel;
+import javax.swing.plaf.MenuItemUI;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import static jdk.nashorn.internal.objects.ArrayBufferView.buffer;
@@ -818,4 +827,18 @@ public class Utils {
         } 
 
     }
+    /*public static void makeStayOpen(JCheckBoxMenuItem i) {
+        UIDefaults uid = UIManager.getDefaults();//.getLookAndFeelDefaults();
+        
+        //GUI.log("UI: "+i.getUIClassID()+ " class: "+uid.getUIClass(i.getUIClassID()));
+        MenuItemUI ui = ((MenuItemUI) uid.getUIClass(i.getUIClassID()).newInstance()) {
+            @Override
+            protected void doClick(MenuSelectionManager msm) {
+                menuItem.doClick(0);
+            }
+        };
+        i.setUI(  {
+            
+        });
+    }*/
 }
