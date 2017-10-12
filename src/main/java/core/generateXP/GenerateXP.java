@@ -60,6 +60,7 @@ import plugins.plugins.postFilters.FeatureFilter;
 import plugins.plugins.preFilter.BandPass;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
+import plugins.plugins.preFilter.SubtractBackgroundMicrochannel;
 import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.processingScheme.SegmentThenTrack;
@@ -101,7 +102,7 @@ import processing.ImageTransformation;
  */
 public class GenerateXP {
     public static final Logger logger = LoggerFactory.getLogger(GenerateXP.class);
-    static boolean subTransPre = true;
+    static boolean subTransPre = false;
     static Experiment.ImportImageMethod importMethod;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
@@ -445,7 +446,6 @@ public class GenerateXP {
         ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
         ps.addTransformation(0, null, new CropMicroChannelBF2D());
         if (subTransPre) ps.addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, false)); // subtract after crop because subtract alter optical aberation detection. Optimization: paraboloid = true / range=03-05 best = 0.3 
-        ps.addTransformation(0, null, new BandPass(0, 20, 0, 0)).setActivated(false); // TODO optimize low bound [10-50]
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
     }
     public static void setPreprocessingTransAndMut(PreProcessingChain ps, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
@@ -539,8 +539,8 @@ public class GenerateXP {
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
                             .setSegmenter(new BacteriaTrans())
-                            .setCostParameters(1.5, 3).setThresholdParameters(2, 1, 25, 15)
-                    )
+                            .setCostParameters(1.5, 3).setThresholdParameters(0, 1, 25, 15) // was 2
+                    ).addPreFilters(new SubtractBackgroundMicrochannel()) // was not
             );
             bacteria.setManualSegmenter(new BacteriaTrans()
                     .setThreshold(new IJAutoThresholder().setMethod(AutoThresholder.Method.MaxEntropy))

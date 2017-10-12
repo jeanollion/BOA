@@ -37,7 +37,7 @@ import utils.Utils;
  */
 public class LocalContrastThresholder implements Thresholder {
     BoundedNumberParameter scale = new BoundedNumberParameter("Contrast Scale", 1, 2, 1, null);
-    BoundedNumberParameter constrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.04,  0.001, 0.2);
+    BoundedNumberParameter constrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.02,  0.001, 0.2);
     Parameter[] parameters = new Parameter[]{scale, constrastThreshold};
     
     public LocalContrastThresholder() {}
@@ -47,14 +47,8 @@ public class LocalContrastThresholder implements Thresholder {
     }
     
     public static Image getLocalContrast(Image input, double scale) {
-        //input = IJSubtractBackground.filter(input, 0.3, true, false, true, false);
-        //ImageWindowManagerFactory.showImage(input.setName("sub"));
-        //double min = input.getMinAndMax(null)[0];
         input = ImageOperations.normalize(input, null, null);
-        //ImageFloat inputMinusMean = ImageOperations.addValue(input, -min+1, new ImageFloat("", 0, 0, 0));
         Image localContrast=ImageFeatures.getGradientMagnitude(input, scale, false);
-        //Image smooth = ImageFeatures.gaussianSmooth(input, scale, scale * input.getScaleXY() / input.getScaleZ() , false);
-        //ImageOperations.divide(localContrast, smooth, localContrast);
         return localContrast;
     }
     /*public static Image[] getLocalContrastAndSmooth(Image input, double scale) {
