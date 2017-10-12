@@ -337,6 +337,7 @@ public class StructureObjectUtils {
         setAllChildren(parentTrack, structureIdx);
         for (StructureObject p : parentTrack) {
             List<StructureObject> children = p.getChildren(structureIdx);
+            if (children==null) continue;
             for (StructureObject c : children) {
                 List<StructureObject> l;
                 if (c.isTrackHead()) {
@@ -580,7 +581,11 @@ public class StructureObjectUtils {
     }
 
     public static Map<Integer, List<StructureObject>> getChildrenMap(List<StructureObject> parents, int structureIdx) {
-        return parents.stream().collect(Collectors.toMap(StructureObject::getFrame, (StructureObject p) -> p.getChildren(structureIdx)));
+        try {
+            return parents.stream().collect(Collectors.toMap(StructureObject::getFrame, (StructureObject p) -> p.getChildren(structureIdx)));
+        } catch (NullPointerException e) {
+            return Collections.EMPTY_MAP;
+        }
     }
     
     public static void setRelatives(Map<String, StructureObject> allObjects, boolean parent, boolean trackAttributes) {

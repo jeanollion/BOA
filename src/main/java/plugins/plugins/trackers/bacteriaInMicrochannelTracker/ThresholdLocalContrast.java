@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.objects.StructureObject;
 import image.Image;
 import image.ImageByte;
@@ -52,7 +53,14 @@ public class ThresholdLocalContrast extends Threshold {
         this.localContrastThreshold=localContrastThreshold;
         long t0 = System.currentTimeMillis();
         this.lcImages = new ArrayList<>(planes.size());
-        for (Image i : planes) lcImages.add(LocalContrastThresholder.getLocalContrast(i, 2));
+        //ArrayList<Image> smooth = new ArrayList<>(planes.size());
+        for (Image i : planes) {
+            lcImages.add(LocalContrastThresholder.getLocalContrast(i, 2));
+            //Image[] lcS = LocalContrastThresholder.getLocalContrastAndSmooth(i, 2);
+            //lcImages.add(lcS[0]);
+            //smooth.add(lcS[1]);
+        }
+        //planes = smooth;
         long t1 = System.currentTimeMillis();
         final double[] stats = new double[2];
         for (int idx = 0; idx<planes.size(); ++idx) {
@@ -130,9 +138,33 @@ public class ThresholdLocalContrast extends Threshold {
             for (int i = 0; i<frameRange[0]; ++i) thldFY.add(0, thldFY.get(0));
         }
         long t2 = System.currentTimeMillis();
-        if (debug || debugCorr) logger.debug("slide by Frames: {}ms, slide by y: {}ms", t1-t0, t2-t1);
+        if (debug || debugCorr) {
+            displayOneFrame(stats, slideByF, 52);
+            logger.debug("slide by Frames: {}ms, slide by y: {}ms", t1-t0, t2-t1);
+        }
     }
-    
+    private void displayOneFrame(List<double[][]> stats, List<double[][]> slideByF, int frame) {
+        logger.debug("off: {} idx: {} total size: {}", offsetFrame, frame-offsetFrame, planes.size());
+        ImageWindowManagerFactory.showImage(planes.get(frame-this.offsetFrame));
+        ImageWindowManagerFactory.showImage(lcImages.get(frame-this.offsetFrame).setName("contrast. thld: "+this.localContrastThreshold));
+        double[] values = new double[lcImages.get(frame-this.offsetFrame).getSizeY()];
+        double[] valuesFsbf = new double[lcImages.get(frame-this.offsetFrame).getSizeY()];
+        double[] valuesF = new double[lcImages.get(frame-this.offsetFrame).getSizeY()];
+        double[] countsFsbf = new double[lcImages.get(frame-this.offsetFrame).getSizeY()];
+        double[] countsF = new double[lcImages.get(frame-this.offsetFrame).getSizeY()];
+        for (int i = 0; i<values.length; ++i) {
+            values[i] = this.getThreshold(frame, i);
+            countsFsbf[i] = slideByF.get(frame-this.offsetFrame)[i][1];
+            valuesFsbf[i] = slideByF.get(frame-this.offsetFrame)[i][0]/countsFsbf[i];
+            countsF[i] = stats.get(frame-this.offsetFrame)[i][1];
+            valuesF[i] = stats.get(frame-this.offsetFrame)[i][0]/countsF[i];
+        }
+        Utils.plotProfile("Thld@"+frame+" sbf", values);
+        Utils.plotProfile("raw values @"+frame, valuesF);
+        Utils.plotProfile("counts@"+frame+" sbf", countsFsbf);
+        Utils.plotProfile("values@"+frame+" sbf", valuesFsbf);
+        Utils.plotProfile("raw counts@"+frame+" ", countsF);
+    }
     @Override
     public void setAdaptativeByY(int yHalfWindow) {
         List<double[]> stats = Arrays.asList(getStatisticsLocalContrast(planes.subList(frameRange[0], frameRange[1]+1), lcImages.subList(frameRange[0], frameRange[1]+1), true, localContrastThreshold, true));

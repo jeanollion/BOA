@@ -94,7 +94,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BoundedNumberParameter adaptativeCoefficient = new BoundedNumberParameter("Adaptative coefficient", 2, 1, 0, 1);
     BoundedNumberParameter frameHalfWindow = new BoundedNumberParameter("Adaptative by Frame: half-window", 1, 25, 1, null);
     BoundedNumberParameter yHalfWindow = new BoundedNumberParameter("Adaptative by Y: half-window", 1, 15, 10, null);
-    BoundedNumberParameter contrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.05, 0.01, 0.2);
+    BoundedNumberParameter contrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.05, 0.00, 0.2);
     ChoiceParameter autothresholdMethod = new ChoiceParameter("Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod);
     
@@ -160,8 +160,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     // hidden parameters! 
     // sizeIncrement -> adaptative SI
     final static int sizeIncrementFrameNumber = 7; // number of frames for sizeIncrement computation
-    final static double significativeSIErrorThld = 0.3; // size increment difference > to this value lead to an error
-    final static double SIErrorValue=1; //0.9 -> less weight to sizeIncrement error / 1 -> same weight
+    final static double significativeSIErrorThld = 0.25; // size increment difference > to this value lead to an error
+    final static double SIErrorValue=2; //0.9 -> less weight to sizeIncrement error / 1 -> same weight
     final static double SIIncreaseThld = 0.1;
     final static double SIQuiescentThld = 1.05; // under this value we consider cells are not growing -> if break in lineage no error count (cell dies)
     final static boolean setSIErrorsAsErrors = false; // SI errors are set as tracking errors in object attributes
@@ -243,7 +243,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (threshold!=null) {
                     if (threshold.hasAdaptativeByY()) {
                         ((OverridableThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
-                        //if (frame==10) ImageWindowManagerFactory.showImage(threshold.getThresholdedPlane(frame, false));
+                        //if (frame==52) ImageWindowManagerFactory.showImage(threshold.getThresholdedPlane(frame, false));
                     }
                     else ((OverridableThreshold)s).setThresholdValue(threshold.getThreshold(frame));
                 } else ((OverridableThreshold)s).setThresholdValue(debugThreshold);
@@ -272,7 +272,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             if (debug || debugCorr) {
                 logger.debug("frame range: {}", fr);
-                for (int i = fr[0]; i<fr[1]; i+=100) logger.debug("thld={} F={}", threshold.getThreshold(i), i);
+                if (fr!=null) for (int i = fr[0]; i<fr[1]; i+=100) logger.debug("thld={} F={}", threshold.getThreshold(i), i);
             }
             if (fr !=null && thresholdMethod.getSelectedIndex()==2) { // adaptative by F & Y
                 ((ThresholdLocalContrast)threshold).setAdaptativeByFY(frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue()); // TODO parametrer!
@@ -1034,7 +1034,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             taCur.nPrev=a.objectCountPrev();
             taPrev.truncatedDivision = a.truncatedEndOfChannel();
             if (!taPrev.truncatedDivision) {
-                taCur.sizeIncrementError = a.significantSizeIncrementError();
+                taCur.sizeIncrementError = a.significantSizeIncrementError()>0;
                 taCur.sizeIncrement=taCur.getSize()/taPrev.getSize();
             } else taCur.sizeIncrement=Double.NaN;
             if (setSIErrorsAsErrors && taCur.sizeIncrementError && !taCur.errorPrev) taCur.errorPrev=true;
@@ -1053,7 +1053,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 ta.nPrev=a.objectCountPrev();
                 taPrev.truncatedDivision = a.truncatedEndOfChannel();
                 if (!taPrev.truncatedDivision) {
-                    ta.sizeIncrementError = a.significantSizeIncrementError();
+                    ta.sizeIncrementError = a.significantSizeIncrementError()>0;
                     ta.sizeIncrement = a.sizeNext / a.sizePrev;
                 } else ta.sizeIncrement=Double.NaN;
                 if (setSIErrorsAsErrors && ta.sizeIncrementError && !ta.errorPrev) ta.errorPrev=true;
@@ -1072,7 +1072,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             taCur.nPrev=a.objectCountPrev();
             boolean truncated = a.truncatedEndOfChannel();
             if (!truncated) {
-                taCur.sizeIncrementError = a.significantSizeIncrementError();
+                taCur.sizeIncrementError = a.significantSizeIncrementError()>0;
                 taCur.sizeIncrement=a.sizeNext/a.sizePrev;
             } else taCur.sizeIncrement=Double.NaN;
 

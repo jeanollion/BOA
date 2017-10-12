@@ -51,16 +51,19 @@ import plugins.plugins.segmenters.BacteriaTrans;
  */
 public class TestProcessBacteriaPhase {
     static double thld = Double.NaN;
+    static boolean setMask = false;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
 
         //String dbName = "MF1_170523";
+        //String dbName = "MutD5_141209";
         String dbName = "MutH_150324";
         int field = 0;
-        int microChannel =3;
-        int time =10;
-        //thld = 600;
+        int microChannel =1;
+        int time =52;
+        //setMask=true;
+        //thld = 776;
         
         //testSegBacteriesFromXP(dbName, field, time, microChannel);
         testSegBacteriesFromXP(dbName, field, microChannel, time, time);
@@ -131,12 +134,15 @@ public class TestProcessBacteriaPhase {
             StructureObject mc = root.getChildren(0).get(microChannel);
             parentTrack.add(mc);
             Image input = mc.getRawImage(1);
+            
             BacteriaTrans.debug=true;
             BacteriaTrans seg = new BacteriaTrans();
             if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
                 seg = (BacteriaTrans) mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
-                seg.setThresholdedImage((ImageInteger)ImageReader.openIJTif("/data/Images/MOP/ThldPlaneF10.tif")); //open radius = 3 ou appliquer le filtre pour objets phase ? 
+                if (setMask) seg.setThresholdedImage((ImageInteger)ImageReader.openIJTif("/data/Images/MOP/ThldPlaneF"+timePointMin+".tif")); //open radius = 3 ou appliquer le filtre pour objets phase ? 
                 logger.debug("using seg from XP: {}", seg);
+                if (!mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().getActivatedChildren().isEmpty()) ImageWindowManagerFactory.showImage(input);
+                input = mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().filter(input, mc).setName("preFiltered");
             }
             if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
             mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);

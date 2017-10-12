@@ -17,13 +17,16 @@
  */
 package plugins.plugins.thresholders;
 
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
+import image.ImageFloat;
 import image.ImageOperations;
 import java.util.List;
 import plugins.Thresholder;
+import plugins.plugins.preFilter.IJSubtractBackground;
 import processing.Filters;
 import processing.ImageFeatures;
 import utils.Utils;
@@ -44,11 +47,24 @@ public class LocalContrastThresholder implements Thresholder {
     }
     
     public static Image getLocalContrast(Image input, double scale) {
+        //input = IJSubtractBackground.filter(input, 0.3, true, false, true, false);
+        //ImageWindowManagerFactory.showImage(input.setName("sub"));
+        //double min = input.getMinAndMax(null)[0];
+        input = ImageOperations.normalize(input, null, null);
+        //ImageFloat inputMinusMean = ImageOperations.addValue(input, -min+1, new ImageFloat("", 0, 0, 0));
         Image localContrast=ImageFeatures.getGradientMagnitude(input, scale, false);
-        Image smooth = ImageFeatures.gaussianSmooth(input, scale, scale * input.getScaleXY() / input.getScaleZ() , false);
-        ImageOperations.divide(localContrast, smooth, localContrast);
+        //Image smooth = ImageFeatures.gaussianSmooth(input, scale, scale * input.getScaleXY() / input.getScaleZ() , false);
+        //ImageOperations.divide(localContrast, smooth, localContrast);
         return localContrast;
     }
+    /*public static Image[] getLocalContrastAndSmooth(Image input, double scale) {
+        double mean = ImageOperations.getMeanAndSigma(input, null)[0];
+        ImageFloat inputMinusMean = ImageOperations.addValue(input, -mean, new ImageFloat("", 0, 0, 0));
+        Image localContrast=ImageFeatures.getGradientMagnitude(inputMinusMean, scale, false);
+        Image smooth = ImageFeatures.gaussianSmooth(inputMinusMean, scale, scale * input.getScaleXY() / input.getScaleZ() , false);
+        ImageOperations.divide(localContrast, smooth, localContrast);
+        return new Image[] {localContrast,smooth};
+    }*/
     public static double getThreshold(Image input, double min, double scale) {
         final Image localContrast= getLocalContrast(input, scale);
         double[] meanCount = new double[2];

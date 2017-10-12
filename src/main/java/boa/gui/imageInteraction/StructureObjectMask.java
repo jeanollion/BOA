@@ -28,6 +28,7 @@ import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -73,16 +74,20 @@ public class StructureObjectMask extends ImageObjectInterface {
             offsets[0] = parent.getRelativeBoundingBox(parent).translate(additionalOffset);
         } else {
             objects = parents.get(0).getChildren(childStructureIdx);
-            if (objects==null) logger.error("no objects for parent: {}, structure: {}", parents.get(0), childStructureIdx);
-            offsets = new BoundingBox[objects.size()];
+            if (objects==null) {
+                logger.error("no objects for parent: {}, structure: {}", parents.get(0), childStructureIdx);
+                offsets= new BoundingBox[0];
+            }
+            else offsets = new BoundingBox[objects.size()];
             for (int i = 0; i < offsets.length; ++i) {
                 offsets[i] = objects.get(i).getRelativeBoundingBox(parent).translate(additionalOffset);
             }
         }
     }
 
-    @Override public ArrayList<Pair<StructureObject, BoundingBox>> getObjects() {
+    @Override public List<Pair<StructureObject, BoundingBox>> getObjects() {
         if (objects == null) reloadObjects();
+        if (objects==null) return Collections.EMPTY_LIST;
         getOffsets();
         ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>(objects.size());
         for (int i = 0; i < offsets.length; ++i) {

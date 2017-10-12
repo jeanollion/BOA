@@ -252,24 +252,27 @@ public class Assignment {
             //if ((!verifyInequality() || significantSizeIncrementError()) && !truncatedEndOfChannel()) ++res; // bad size increment
             if (!truncatedEndOfChannel()) {
                 if (!verifyInequality()) res+=1;
-                else if (significantSizeIncrementError()) res+=SIErrorValue;
+                else {
+                    int sig = significantSizeIncrementError();
+                    res+=sig*SIErrorValue;
+                }
             }
             if (notSameLineIsError && !prevFromSameLine()) ++res;
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, getError count: {}, errors: {}, truncated: {}", ta.verboseLevel, this, res, truncatedEndOfChannel());
             return res;        
         }
         
-        public boolean significantSizeIncrementError() {
+        public int significantSizeIncrementError() {
             if (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE) {
             double prevSizeIncrement = getPreviousSizeIncrement();
             if (Double.isNaN(prevSizeIncrement)) {
-                return !verifyInequality();
+                return verifyInequality() ? 0 : 1;
             } else {
                 double sizeIncrement = sizeNext/sizePrev;
                 if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}: {}, sizeIncrementError check: SI:{} lineage SI: {}, error: {}", ta.verboseLevel, this, sizeIncrement, prevSizeIncrement, Math.abs(prevSizeIncrement-sizeIncrement));
-                return Math.abs(prevSizeIncrement-sizeIncrement)>significativeSIErrorThld;
+                return (int)(Math.abs(prevSizeIncrement-sizeIncrement)/significativeSIErrorThld);
             }
-            } else return !verifyInequality();
+            } else return verifyInequality() ? 0:1;
         }
         public String toString(boolean size) {
             String res = "["+idxPrev+";"+(idxPrevEnd()-1)+"]->[" + idxNext+";"+(idxNextEnd()-1)+"]";
