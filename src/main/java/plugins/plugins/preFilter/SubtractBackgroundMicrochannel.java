@@ -43,7 +43,7 @@ import processing.ImageTransformation;
  *
  * @author jollion
  */
-public class SubtractBackgroundMicrochannel implements PreFilter, Filter {
+public class SubtractBackgroundMicrochannel implements PreFilter {
     BooleanParameter method = new BooleanParameter("Method", "Rolling Ball", "Sliding Paraboloid", false);
     BooleanParameter imageType = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
@@ -62,63 +62,22 @@ public class SubtractBackgroundMicrochannel implements PreFilter, Filter {
     public SubtractBackgroundMicrochannel(){}
     
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
-        // mirror image
+        // mirror image on both Y ends
         input = TypeConverter.toFloat(input, null);
-        ImageFloat toFilter = new ImageFloat("", input.getSizeX(), 2*input.getSizeY(), input.getSizeZ());
+        ImageFloat toFilter = new ImageFloat("", input.getSizeX(), 3*input.getSizeY(), input.getSizeZ());
         ImageOperations.pasteImage(input, toFilter, new BoundingBox(0, input.getSizeY(), 0));
         Image imageFlip = ImageTransformation.flip(input, ImageTransformation.Axis.Y);
         ImageOperations.pasteImage(imageFlip, toFilter, null);
-        toFilter = filter(toFilter, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected(), false);
+        ImageOperations.pasteImage(imageFlip, toFilter, new BoundingBox(0, 2*input.getSizeY(), 0));
+        toFilter = IJSubtractBackground.filter(toFilter, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected(), false);
         Image crop = toFilter.crop(new BoundingBox(0, input.getSizeX()-1, input.getSizeY(), 2*input.getSizeY()-1, 0, input.getSizeZ()-1));
         crop.setCalibration(input);
         crop.resetOffset().addOffset(input);
         return crop;
     }
-    /**
-     * IJ's subtrract background {@link ij.plugin.filter.BackgroundSubtracter#rollingBallBackground(ij.process.ImageProcessor, double, boolean, boolean, boolean, boolean, boolean) }
-     * @param input input image (will not be modified)
-     * @param radius
-     * @param doSlidingParaboloid
-     * @param lightBackground
-     * @param smooth
-     * @param corners
-     * @return subtracted image 
-     */
-    public static ImageFloat filter(Image input, double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {
-        return filter(input, radius, doSlidingParaboloid, lightBackground, smooth, corners, true);
-    }
-    public static ImageFloat filter(Image input, double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners, boolean duplicate) {
-        if (!(input instanceof ImageFloat)) input = TypeConverter.toFloat(input, null);
-        else if (duplicate) input = input.duplicate();
-        ImageStack ip = IJImageWrapper.getImagePlus(input).getImageStack();
-        for (int z = 0; z<input.getSizeZ(); ++z) new ij.plugin.filter.BackgroundSubtracter().rollingBallBackground(ip.getProcessor(z+1), radius, false, lightBackground, doSlidingParaboloid, smooth, corners);
-        return (ImageFloat)input;
-    }
-
+    
     public Parameter[] getParameters() {
         return parameters;
     }
 
-    public boolean does3D() {
-        return true;
-    }
-
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.SAME;
-    }
-
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {}
-
-    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return filter(image, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
-    }
-    
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return true;
-    }
-
-    public ArrayList getConfigurationData() {
-        return null;
-    }
-    
 }

@@ -71,8 +71,11 @@ public class IJSubtractBackground implements PreFilter, Filter {
      * @return subtracted image 
      */
     public static ImageFloat filter(Image input, double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {
+        return filter(input, radius, doSlidingParaboloid, lightBackground, smooth, corners, true);
+    }
+    public static ImageFloat filter(Image input, double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners, boolean duplicate) {
         if (!(input instanceof ImageFloat)) input = TypeConverter.toFloat(input, null);
-        else input = input.duplicate();
+        else if (duplicate) input = input.duplicate();
         ImageStack ip = IJImageWrapper.getImagePlus(input).getImageStack();
         for (int z = 0; z<input.getSizeZ(); ++z) new ij.plugin.filter.BackgroundSubtracter().rollingBallBackground(ip.getProcessor(z+1), radius, false, lightBackground, doSlidingParaboloid, smooth, corners);
         return (ImageFloat)input;

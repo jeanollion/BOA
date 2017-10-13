@@ -125,7 +125,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                         ic.zoomOut(image.getWidth() / 2, image.getHeight() / 2);
                     }
                 }
-                image.repaintWindow();
+                image.updateAndRepaintWindow();
                 return "";
             }
         };
@@ -253,7 +253,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             }
             ImagePlus ip = displayedImages.get(image);
             if (displayRange[0]<displayRange[1]) ip.setDisplayRange(displayRange[0], displayRange[1]);
-            ip.updateAndDraw();
+            ip.updateAndRepaintWindow();
         }
     }
     @Override public void updateImageRoiDisplay(Image image) {
