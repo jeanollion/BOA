@@ -275,7 +275,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (fr!=null) for (int i = fr[0]; i<fr[1]; i+=100) logger.debug("thld={} F={}", threshold.getThreshold(i), i);
             }
             if (fr !=null && thresholdMethod.getSelectedIndex()==2) { // adaptative by F & Y
-                ((ThresholdLocalContrast)threshold).setAdaptativeByFY(frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue()); // TODO parametrer!
+                ((ThresholdLocalContrast)threshold).setAdaptativeByFY(frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
             }            
             threshold.freeMemory();
         } else if (!Double.isNaN(debugThreshold)) {
@@ -290,7 +290,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             minT = threshold.getFrameRange()[0];
         }
         //logger.debug("minT: {}, maxT: {}", minT, maxT);
-        // get All Objects
+        
         
         List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
         subParentTrack.removeIf(o->o.getFrame()<minT||o.getFrame()>=maxT);
