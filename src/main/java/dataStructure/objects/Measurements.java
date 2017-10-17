@@ -87,7 +87,7 @@ public class Measurements implements Comparable<Measurements>, JSONSerializable{
         return id;
     }
 
-    public String getFieldName() {
+    public String getPosition() {
         return positionName;
     }
 
@@ -235,11 +235,15 @@ public class Measurements implements Comparable<Measurements>, JSONSerializable{
     @Override public String toString() {
         return "P:"+positionName+"/"+Selection.indicesToString(indices);
     }
-    private Measurements(String fieldName, int timePoint, int structureIdx, int[] indices) { // only for getParentMeasurementKey
-        this.positionName = fieldName;
-        this.frame = timePoint;
+    public Measurements(String positionName, int frame, int structureIdx, int[] indices) { // only for getParentMeasurementKey
+        this.positionName = positionName;
+        this.frame = frame;
         this.structureIdx = structureIdx;
         this.indices = indices;
+    }
+    public Measurements initValues() {
+        this.values=new HashMap<>();
+        return this;
     }
     
     public Measurements getParentMeasurementKey(int parentOrder) {

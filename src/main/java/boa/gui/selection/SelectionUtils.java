@@ -226,7 +226,7 @@ public class SelectionUtils {
         return parents;
     }
     public static List<StructureObject> getParents(Selection sel, String position, int parentStructureIdx, MasterDAO db) {
-        if (!db.getExperiment().isChildOf(parentStructureIdx, sel.getStructureIdx())) return Collections.EMPTY_LIST;
+        if (!(db.getExperiment().isChildOf(parentStructureIdx, sel.getStructureIdx())||parentStructureIdx==sel.getStructureIdx())) return Collections.EMPTY_LIST;
         int[] path = db.getExperiment().getPathToStructure(parentStructureIdx, sel.getStructureIdx());
         List<String> parentStrings = Utils.transform(sel.getElementStrings(position), s->Selection.getParent(s, path.length));
         Utils.removeDuplicates(parentStrings, false);

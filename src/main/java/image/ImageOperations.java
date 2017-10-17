@@ -675,6 +675,48 @@ public class ImageOperations {
         }
         return output;
     }
+    public static ImageFloat normalize(Image input, ImageMask mask, ImageFloat output, double pMin, double pMax, boolean saturate) {
+        if (pMin>=pMax) throw new IllegalArgumentException("pMin should be < pMax");
+        if (output==null || !output.sameSize(input)) output = new ImageFloat(input.getName()+" normalized", input);
+        double[] minAndMax = new double[2];
+        double[] mm = null;
+        if (pMin<=0) {
+            mm = input.getMinAndMax(mask);
+            minAndMax[0] = mm[0];
+        }
+        if (pMax>=1) {
+            if (mm==null) mm = input.getMinAndMax(mask);
+            minAndMax[1] = mm[1];
+        }
+        if (pMin>0 && pMax<1) {
+            minAndMax = getPercentile(input, mask, null, new double[]{pMin, pMax});
+        } else if (pMin>0) {
+            minAndMax[0] = getPercentile(input, mask, null, new double[]{pMin})[0];
+        } else if (pMax<0) {
+            minAndMax[1] = getPercentile(input, mask, null, new double[]{pMax})[1];
+        }
+        double scale = 1 / (minAndMax[1] - minAndMax[0]);
+        double offset = -minAndMax[0] * scale;
+        //logger.debug("normalize: min ({}) = {}, max ({}) = {}, scale: {}, offset: {}", pMin, minAndMax[0], pMax, minAndMax[1], scale, offset);
+        float[][] pixels = output.getPixelArray();
+        if (saturate) {
+            for (int z = 0; z < input.sizeZ; z++) {
+                for (int xy = 0; xy < input.sizeXY; xy++) {
+                    float res = (float) (input.getPixel(xy, z) * scale + offset);
+                    if (res<0) res = 0;
+                    if (res>1) res = 1;
+                    pixels[z][xy] = res;
+                }
+            }
+        } else {
+            for (int z = 0; z < input.sizeZ; z++) {
+                for (int xy = 0; xy < input.sizeXY; xy++) {
+                    pixels[z][xy] = (float) (input.getPixel(xy, z) * scale + offset);
+                }
+            }
+        }
+        return output;
+    }
     public static double getPercentile(Image image, double percent, ImageMask mask, BoundingBox limits) {
         double[] mm = image.getMinAndMax(mask);
         int[] histo = image.getHisto256(mm[0], mm[1], mask, limits);
@@ -692,6 +734,31 @@ public class ImageOperations {
         double idxInc = (histo[idx] != 0) ? (count - limit) / (histo[idx]) : 0; //lin approx
         //ij.IJ.log("percentile: bin:"+idx+ " inc:"+ idxInc+ " min:"+min+ " max:"+max);
         return (double) (idx + idxInc) * binSize + mm[0];
+    }
+    public static double[] getPercentile(Image image, ImageMask mask, BoundingBox limits, double... percent) {
+        double[] mm = image.getMinAndMax(mask);
+        int[] histo = image.getHisto256(mm[0], mm[1], mask, limits);
+        double binSize = (image instanceof ImageByte) ? 1: (mm[1]-mm[0]) / 256d;
+        int gcount = 0;
+        for (int i : histo) gcount += i;
+        double[] res = new double[percent.length];
+        for (int i = 0; i<res.length; ++i) {
+            int count = gcount;
+            double limit = count * (1-percent[i]);
+            if (limit >= count) {
+                res[i] = mm[0];
+                continue;
+            }
+            count = histo[255];
+            int idx = 255;
+            while (count < limit && idx > 0) {
+                idx--;
+                count += histo[idx];
+            }
+            double idxInc = (histo[idx] != 0) ? (count - limit) / (histo[idx]) : 0; //lin approx
+            res[i] = (double) (idx + idxInc) * binSize + mm[0];
+        }
+        return res;
     }
     
     public static Voxel getGlobalExtremum(Image image, BoundingBox area, boolean max) {

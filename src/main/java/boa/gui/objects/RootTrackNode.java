@@ -59,7 +59,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     private StructureObject parentTrackHead;
     int structureIdx;
     TrackExperimentNode parent;
-    String position;
+    final String position;
     Boolean containsErrors;
     final boolean root;
     public RootTrackNode(TrackTreeGenerator generator, StructureObject parentTrackHead, int structureIdx) {
@@ -76,7 +76,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
         this.position=position;
         this.structureIdx=structureIdx;
         root = true;
-        logger.trace("creating root track node for field: {} structure: {}", position, structureIdx);
+        logger.debug("creating root track node for field: {} structure: {}", position, structureIdx);
     }
 
     public String getFieldName() {

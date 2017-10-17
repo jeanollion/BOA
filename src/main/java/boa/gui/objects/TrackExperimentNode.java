@@ -46,7 +46,7 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     public List<RootTrackNode> getChildren() {
         if (children==null) {
             String[] fieldNames = generator.getExperiment().getPositionsAsString();
-            children= new ArrayList<RootTrackNode>(fieldNames.length);
+            children= new ArrayList<>(fieldNames.length);
             for (String fieldName : fieldNames) children.add(new RootTrackNode(this, fieldName, structureIdx));
         }
         return children;
@@ -54,7 +54,7 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     
     public RootTrackNode getRootNodeOf(StructureObject s) {
         for (RootTrackNode r : getChildren()) {
-            if (r.position.equals(s.getPositionName())) return r;
+            if (r!=null && r.position.equals(s.getPositionName())) return r;
         }
         return null;
     }

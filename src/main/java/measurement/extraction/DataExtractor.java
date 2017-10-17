@@ -77,11 +77,12 @@ public class DataExtractor {
     }
     protected StringBuilder getBaseLine(Measurements m, int pIdx) { // if add one key -> also add in the retrieved keys in DAO
         StringBuilder sb = new StringBuilder();
-        sb.append(m.getFieldName());
+        sb.append(m.getPosition());
         sb.append(separator);
         sb.append(pIdx);
         int[] idx = m.getIndices();
-        sb.append(Utils.toStringArray(idx, separator, "", Selection.indexSeparator));
+        sb.append(separator);
+        Utils.appendArray(idx, Selection.indexSeparator, sb); //sb.append(Utils.toStringArray(idx, separator, "", Selection.indexSeparator));
         for (int i : idx) { // also add in separated columns
             sb.append(separator);
             sb.append(i);

@@ -316,6 +316,15 @@ public class ImageReader {
     }
     
     public static Image openImage(String filePath, ImageIOCoordinates ioCoords) {
+        if (filePath.endsWith(".tif")) { // try with faster IJ's method
+            if (ioCoords.serie==0 && ioCoords.channel==0 && ioCoords.timePoint==0) {
+                Image res= openIJTif(filePath);
+                if (res!=null) {
+                    if (ioCoords.getBounds()!=null) return res.crop(ioCoords.getBounds());
+                    else return res;
+                }
+            }
+        }
         ImageReader reader = new ImageReader(filePath);
         Image im = reader.openImage(ioCoords);
         reader.closeReader();

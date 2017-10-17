@@ -330,6 +330,22 @@ public class Utils {
         sb.append(end);
         return sb;
     }
+    public static void appendArray(int[] array, String sep, StringBuilder sb) {
+        if (array.length==0) return;
+        for (int i = 0; i<array.length-1; ++i) {
+            sb.append(array[i]);
+            sb.append(sep);
+        }
+        sb.append(array[array.length-1]);
+    }
+    public static <T> void appendArray(Collection<T> array, Function<T, String> toString, String sep, StringBuilder sb) {
+        if (array.isEmpty()) return;
+        Iterator<T> it = array.iterator();
+        while (it.hasNext()) {
+            sb.append(toString.apply(it.next()));
+            if (it.hasNext()) sb.append(sep);
+        }
+    }
     
     public static<T> ArrayList<T> reverseOrder(ArrayList<T> arrayList) {
         ArrayList<T> res = new ArrayList<>(arrayList.size());
@@ -495,6 +511,24 @@ public class Utils {
         double[] x=new double[values.length];
         for (int i = 0; i<x.length; ++i) x[i]=i;
         new Plot(title, "coord", "value", x, values).show();
+    }
+    public static void plotProfile(String title, double[] values1, double[] values2, boolean sort) {
+        if (values1.length<=1) return;
+        double v = values1[0];
+        int idx = 0; 
+        while (idx<values1.length && values1[idx]==v) ++idx;
+        if (idx==values1.length) return; // cannot be ploted if one single value
+        double[] x1=new double[values1.length];
+        for (int i = 0; i<x1.length; ++i) x1[i]=i;
+        double[] x2=new double[values2.length];
+        for (int i = 0; i<x2.length; ++i) x2[i]=i;
+        if (sort) {
+            Arrays.sort(values1);
+            Arrays.sort(values2);
+        }
+        Plot p = new Plot(title, "coord", "value1", x1, values1);
+        p.addPoints(x2, values2, 5);
+        p.show();
     }
     
     public static void deleteDirectory(String dir) {
@@ -809,7 +843,7 @@ public class Utils {
         }
         return res;*/
     }
-    public static <T> T[] transform(T[] array, T[] outputArray, Function<T, T> func) {
+    public static <T, U> U[] transform(T[] array, U[] outputArray, Function<T, U> func) {
         if (array==null) return null;
         for (int i = 0; i<array.length; ++i) outputArray[i] = func.apply(array[i]);
         return outputArray;

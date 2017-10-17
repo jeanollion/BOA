@@ -99,7 +99,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (res==null) {
             synchronized(dbS) {
                 if (!dbS.containsKey(structureIdx)) {
-                    logger.debug("creating db: {} (From DAO: {}), readOnly: {}", getDBFile(structureIdx), this.hashCode(), readOnly);
+                    //logger.debug("creating db: {} (From DAO: {}), readOnly: {}", getDBFile(structureIdx), this.hashCode(), readOnly);
                     try {
                         res = createFileDB(getDBFile(structureIdx), readOnly);
                         dbS.put(structureIdx, res);
@@ -151,7 +151,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                         }
                     }
                     long t1 = System.currentTimeMillis();
-                    logger.debug("#{} (already: {}) objects from structure: {}, time {}", objectMap.size(), alreadyInCache.size(), key.value, t1-t0);
+                    //logger.debug("#{} (already: {}) objects from structure: {}, time {}", objectMap.size(), alreadyInCache.size(), key.value, t1-t0);
                 } else {
                     long t0 = System.currentTimeMillis();
                     try {
@@ -164,7 +164,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                             objectMap.put(o.id, o);
                         }
                         long t2 = System.currentTimeMillis();
-                        logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
+                        //logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
                     } catch(IOError|AssertionError|Exception e) {
                         logger.error("Corrupted DATA for structure: "+key.value+" parent: "+key.key, e);
                         allObjectsRetrievedInCache.put(key, true);

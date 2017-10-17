@@ -173,6 +173,10 @@ public abstract class Image implements ImageProperties {
      */
     public <T extends Image> T extend(BoundingBox extent) {
         BoundingBox resizeBB = new BoundingBox(extent.getxMin(), getSizeX()-1+extent.getxMax(), extent.getyMin(), getSizeY()-1+extent.getyMax(), extent.getzMin(), getSizeZ()-1+extent.getzMax());
+        if (this.getSizeZ()==1) {
+            resizeBB.zMin=0;
+            resizeBB.zMax=0;
+        }
         return crop(resizeBB);
     }
     public abstract void invert();

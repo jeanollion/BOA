@@ -1913,6 +1913,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private int navigateCount = 0;
     public void navigateToNextObjects(boolean next, boolean nextPosition, int structureDisplay, boolean setInteractiveStructure) {
         if (trackTreeController==null) this.loadObjectTrees();
+        int displaySIdx = 0;
         if (selectionList.getSelectedIndex()<0) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
         else {
             Selection sel = (Selection)selectionList.getSelectedValue();
@@ -1931,6 +1932,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             if (i==null || nextPosition) navigateCount=2;
             else {
                 i = fixIOI(i, sel.getStructureIdx());
+                if (i!=null) displaySIdx = i.getParent().getStructureIdx();
                 List<StructureObject> objects = Pair.unpairKeys(SelectionUtils.filterPairs(i.getObjects(), sel.getElementStrings(position)));
                 boolean move = ImageWindowManagerFactory.getImageManager().goToNextObject(null, objects, next);
                 if (move) {
@@ -1956,7 +1958,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 logger.debug("position: {}, #objects: {}, nav: {}, NextPosition? {}", position, position!=null ? l.size() : 0, navigateCount, nextPosition);
                 if (position==null) return;
                 this.trackTreeController.selectPosition(position);
-                List<StructureObject> parents = SelectionUtils.getParentTrackHeads(sel, position, db);
+                List<StructureObject> parents = SelectionUtils.getParentTrackHeads(sel, position, displaySIdx, db);
                 Collections.sort(parents);
                 int nextParentIdx = 0;
                 if (i!=null && !nextPosition) {
