@@ -55,6 +55,7 @@ public class ThresholdHisto extends Threshold {
     double[] thresholdF;
     double[] thldCoeffY;
     final List<int[]> histos;
+    final int[] histoAll;
     final AutoThresholder.Method thldMethod;
     final static AutoThresholder.Method saturateMethod = AutoThresholder.Method.Shanbhag; // Avec sub: shanbhag. Pas de sub: : MaxEntropy / Triangle
     final static double maxSaturationProportion = 0.03;
@@ -79,7 +80,7 @@ public class ThresholdHisto extends Threshold {
         minAndMax = new double[2];
         histos = ImageOperations.getHisto256AsList(planes, minAndMax);
         long t1 = System.currentTimeMillis();
-        int[] histoAll = new int[256];
+        histoAll = new int[256];
         for (int[] h : histos) ImageOperations.addHisto(h, histoAll, false);
         
         if (saturateHisto) { // saturate histogram to remove device aberations 

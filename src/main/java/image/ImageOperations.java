@@ -738,15 +738,18 @@ public class ImageOperations {
     public static double[] getPercentile(Image image, ImageMask mask, BoundingBox limits, double... percent) {
         double[] mm = image.getMinAndMax(mask);
         int[] histo = image.getHisto256(mm[0], mm[1], mask, limits);
-        double binSize = (image instanceof ImageByte) ? 1: (mm[1]-mm[0]) / 256d;
+        return getPercentile(histo, mm, image instanceof ImageByte, percent);
+    }
+    public static double[] getPercentile(int[] histo, double[] minAndMax, boolean byteHisto, double... percent) {
+        double binSize = byteHisto ? 1: (minAndMax[1]-minAndMax[0]) / 256d;
         int gcount = 0;
         for (int i : histo) gcount += i;
         double[] res = new double[percent.length];
         for (int i = 0; i<res.length; ++i) {
             int count = gcount;
-            double limit = count * (1-percent[i]);
+            double limit = count * (1-percent[i]); // 1- ?
             if (limit >= count) {
-                res[i] = mm[0];
+                res[i] = minAndMax[0];
                 continue;
             }
             count = histo[255];
@@ -756,7 +759,7 @@ public class ImageOperations {
                 count += histo[idx];
             }
             double idxInc = (histo[idx] != 0) ? (count - limit) / (histo[idx]) : 0; //lin approx
-            res[i] = (double) (idx + idxInc) * binSize + mm[0];
+            res[i] = (double) (idx + idxInc) * binSize + minAndMax[0];
         }
         return res;
     }

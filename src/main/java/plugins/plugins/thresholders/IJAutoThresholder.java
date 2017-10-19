@@ -68,6 +68,7 @@ public class IJAutoThresholder implements SimpleThresholder {
     }
     
     public static double runThresholder(Method method, int[] histogram, double[] minAndMax, boolean byteImage) {
+        if (method==null) return Double.NaN;
         AutoThresholder at = new AutoThresholder();
         double thld = at.getThreshold(method, histogram);
         if (byteImage) return thld;

@@ -741,6 +741,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     //public ObjectContainer getObjectContainer() {return objectContainer;}
     public void deleteMask(){if (objectContainer!=null) objectContainer.deleteObject();};
+    public void setRawImage(int structureIdx, Image image) {
+        int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
+        rawImagesC.set(image, channelIdx);
+    }
     @Override
     public Image getRawImage(int structureIdx) {
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);

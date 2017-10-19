@@ -37,6 +37,7 @@ import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
 import image.ImageMask;
+import image.ImageOperations;
 import image.ImageReader;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -52,6 +53,7 @@ import plugins.plugins.segmenters.BacteriaTrans;
 public class TestProcessBacteriaPhase {
     static double thld = Double.NaN;
     static boolean setMask = false;
+    static boolean normalize = false;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
@@ -143,6 +145,7 @@ public class TestProcessBacteriaPhase {
                 logger.debug("using seg from XP: {}", seg);
                 if (!mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().getActivatedChildren().isEmpty()) ImageWindowManagerFactory.showImage(input);
                 input = mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().filter(input, mc).setName("preFiltered");
+                if (normalize) input = ImageOperations.normalize(input, null, null);
             }
             if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
             mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);

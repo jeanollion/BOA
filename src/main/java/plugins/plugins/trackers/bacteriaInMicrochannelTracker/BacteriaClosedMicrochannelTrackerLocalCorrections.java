@@ -170,6 +170,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     final static int maxCorrectionLength = 1000;
     private static final double beheadedCellsSizeLimit = 300;
     final static boolean useVolumeAsSize=false; // if length -> length should be re-computed for merged objects and not just summed
+    
+    final static boolean normalize= true;
+    final static double globalContrastThreshold = 0;
     // functions for assigners
     
     Function<Object3D, Double> sizeFunction; 
@@ -249,22 +252,59 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 } else ((OverridableThreshold)s).setThresholdValue(debugThreshold);
             }
         };
+        // compute contrast on raw images
+        if (globalContrastThreshold>0) {
+            List<Image> planes = new ArrayList<>(parentsByF.size());
+            for (StructureObject o : this.parentsByF.values()) planes.add(o.getRawImage(structureIdx));
+            ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, false, null);
+            double[] minAndMax = ImageOperations.getPercentile(thresholdHisto.histoAll, thresholdHisto.minAndMax, thresholdHisto.byteHisto, 0.001, 0.999);
+            logger.debug("min and max for contrast: {}", minAndMax);
+            double contrast = (minAndMax[1]-minAndMax[0]) / Math.abs(minAndMax[1]+minAndMax[0]);
+            if (contrast<globalContrastThreshold) {
+                logger.info("contrast: {}<{} for: {}", contrast, globalContrastThreshold, this.parentsByF.values().iterator().next().getTrackHead());
+                this.setParentImages(true);
+                return;
+            } else logger.debug("global contrast: {}", contrast);
+        }
+        if (false && normalize) { 
+            // get gloabal percentiles and use them for normalization
+            List<Image> planes = new ArrayList<>(parentsByF.size());
+            for (int t = minT; t<maxT; ++t) planes.add(getImage(t));
+            ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, false, null);
+            boolean blackBackground = this.parentsByF.values().iterator().next().getExperiment().getStructure(structureIdx).isBrightObject();
+            double[] minAndMax = new double[2];
+            minAndMax[0] = thresholdHisto.minAndMax[0];
+            if (blackBackground) minAndMax[1] = ImageOperations.getPercentile(thresholdHisto.histoAll, thresholdHisto.minAndMax, thresholdHisto.byteHisto, 0.99)[0];
+            else minAndMax[1] = thresholdHisto.minAndMax[1];
+            thresholdHisto.freeMemory();
+            double scale = 1 / (minAndMax[1] - minAndMax[0]);
+            double offset = -minAndMax[0] * scale;
+            logger.debug("normalization: range: [{}-{}] scale: {} off: {}", minAndMax[0], minAndMax[1], scale, offset);
+            for (int t = minT; t<maxT; ++t) inputImages.put(t, ImageOperations.affineOperation(planes.get(t-minT), null, scale, offset));
+            this.setParentImages(false);
+            so.getPreFilters().removeAllElements();
+        }
+        
         if (Double.isNaN(debugThreshold) && this.thresholdMethod.getSelectedIndex()>0 && getSegmenter() instanceof OverridableThreshold) {
             List<Image> planes = new ArrayList<>(parentsByF.size());
             for (int t = minT; t<maxT; ++t) planes.add(((OverridableThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, getParent(t, true)));
             logger.debug("threshold method: {}. Adaptative coeff: {}, hwf: {}, hwy: {}", this.thresholdMethod.getSelectedItem(), adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
             //logger.debug("minF: [{}-{}], nb planes: {}, nbParents: {}", minT, maxT, planes.size(), this.parentsByF.size());
             int method = thresholdMethod.getSelectedIndex();
+            
             if (method==1 || method==2) {
                 threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue()); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
             } else {
                 if (debug || debugCorr) logger.debug("threshold method: {}", autothresholdMethod.getSelectedItem() );
                 threshold = new ThresholdHisto(planes, minT, true, AutoThresholder.Method.valueOf(autothresholdMethod.getSelectedItem()));
             }
-            if (method==1 || method==2 || method==3 || method==4) {
+            if (method==1 || method==2 || method==3 || method==4 || method==5) {
                 threshold.setAdaptativeThreshold(adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue()); 
             }
-            
+            BacteriaTrans.debug=true;
+            logger.debug("hasObjects: {}", this.hasNoObjects(so, 80)); 
+            //...same threshold does not apply -> problem with subtract background ? essayer d'afficher l'image de track avec images transformee
+            if (true) return;
             int[] fr = getFrameRangeContainingCells(so); // will use the adaptative threshold by Frame because global threshold not relevant for cell range computation if some channel are void
             if (fr!=null) {
                 threshold.setFrameRange(fr);
@@ -296,6 +336,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         subParentTrack.removeIf(o->o.getFrame()<minT||o.getFrame()>=maxT);
         Collections.sort(subParentTrack, (o1, o2)->Integer.compare(o1.getFrame(), o2.getFrame()));
         List<Pair<String, Exception>> l = so.segmentAndTrack(structureIdx, subParentTrack, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
+        this.setParentImages(true);
         for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);
         //for (StructureObject p : parents.subList(minT, maxT)) populations.get(p.getFrame()) = Utils.transform(p.getChildren(structureIdx), o->o.getObject());
         // trim empty frames
@@ -304,6 +345,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         //logger.debug("after seg: minT: {}, maxT: {}", minT, maxT);
         if (maxT-minT<=1) {
             for (StructureObject p : parentsByF.values()) p.setChildren(null, structureIdx);
+            this.setParentImages(true);
             return;
         } //else for (int t = maxT; t<parents.size(); ++t) if (populations.get(t]!=null) populations.get(t].clear();
         if (debugCorr||debug) logger.debug("Frame range: [{};{}]", minT, maxT);
@@ -369,6 +411,18 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         Collections.sort(parents);
         applyLinksToParents(parents);
     }
+    HashMap<Integer, Image> rawImages;
+    private void setParentImages(boolean resetRaw) {
+        if (resetRaw) {
+            if (rawImages==null) return;
+            for (Entry<Integer, Image> e : rawImages.entrySet()) parentsByF.get(e.getKey()).setRawImage(structureIdx, e.getValue());
+        } else {
+            // save raw images
+            rawImages = new HashMap<>();
+            for (StructureObject p : this.parentsByF.values()) rawImages.put(p.getFrame(), p.getRawImage(structureIdx));
+            for (StructureObject p : this.parentsByF.values()) p.setRawImage(structureIdx, getImage(p.getFrame()));
+        }
+    }
     private boolean hasNoObjects(SegmentOnly so, int f) {
         if (!parentsByF.containsKey(f)) return true;
         List<StructureObject> before = parentsByF.get(f).getChildren(structureIdx);
@@ -383,7 +437,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         int maxF = Collections.max(parentsByF.keySet());
         final int minFF=minF;
         final int maxFF = maxF;
-        while (minF<maxF && hasNoObjects(so, minF)) minF+=inc;
+        while (minF<maxF && hasNoObjects(so, minF)) {minF+=inc;}
         if (minF>=maxF) {
             if (debug || debugCorr) logger.debug("getFrameRange: [{}-{}]", minF, maxF);
             return null;

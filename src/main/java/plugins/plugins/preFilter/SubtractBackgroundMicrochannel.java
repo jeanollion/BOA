@@ -69,7 +69,10 @@ public class SubtractBackgroundMicrochannel implements PreFilter {
         Image imageFlip = ImageTransformation.flip(input, ImageTransformation.Axis.Y);
         ImageOperations.pasteImage(imageFlip, toFilter, null);
         ImageOperations.pasteImage(imageFlip, toFilter, new BoundingBox(0, 2*input.getSizeY(), 0));
-        toFilter = IJSubtractBackground.filter(toFilter, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected(), false);
+        double scale = radius.getValue().doubleValue();
+        scale = input.getSizeY();
+        //scale = 50;
+        toFilter = IJSubtractBackground.filter(toFilter, scale , !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected(), false);
         Image crop = toFilter.crop(new BoundingBox(0, input.getSizeX()-1, input.getSizeY(), 2*input.getSizeY()-1, 0, input.getSizeZ()-1));
         crop.setCalibration(input);
         crop.resetOffset().addOffset(input);

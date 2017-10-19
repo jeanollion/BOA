@@ -1014,7 +1014,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             //this.intensityMap=ImageFeatures.getGradientMagnitude(intensityMap, radiusXY, false);
             //Image smooth = ImageFeatures.gaussianSmooth(intensityMap, radiusXY, radiusZ, false);
             //ImageOperations.divide(this.intensityMap, smooth, this.intensityMap);
-            this.intensityMap = LocalContrastThresholder.getLocalContrast(intensityMap, radiusXY);
+            Image intensityNorm = ImageOperations.normalize(intensityMap, null, null, 0.01, 0.99, false);
+            //TODO voir si on peut simplement diviser la carte de contraste par le scale de normalisation
+            //TODO exclure pixels aux bords (tolerence -> 2)
+            this.intensityMap = LocalContrastThresholder.getLocalContrast(intensityNorm, radiusXY);
             if (debug) new IJImageDisplayer().showImage(this.intensityMap.setName("contrast map"));
         }
                 
