@@ -27,6 +27,7 @@ import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.IJImageWrapper;
 import image.Image;
@@ -37,6 +38,7 @@ import java.util.ArrayList;
 import plugins.Filter;
 import plugins.PreFilter;
 import plugins.TransformationTimeIndependent;
+import plugins.plugins.thresholders.IJAutoThresholder;
 import processing.ImageTransformation;
 
 /**
@@ -47,7 +49,7 @@ public class SubtractBackgroundMicrochannel implements PreFilter {
     BooleanParameter method = new BooleanParameter("Method", "Rolling Ball", "Sliding Paraboloid", false);
     BooleanParameter imageType = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
-    BooleanParameter corners = new BooleanParameter("Correct corners", true);
+    BooleanParameter corners = new BooleanParameter("Correct corners", false);
     NumberParameter radius = new BoundedNumberParameter("Radius", 2, 1000, 0.01, null);
     Parameter[] parameters = new Parameter[]{radius, method, imageType, smooth, corners};
     
@@ -69,11 +71,20 @@ public class SubtractBackgroundMicrochannel implements PreFilter {
         Image imageFlip = ImageTransformation.flip(input, ImageTransformation.Axis.Y);
         ImageOperations.pasteImage(imageFlip, toFilter, null);
         ImageOperations.pasteImage(imageFlip, toFilter, new BoundingBox(0, 2*input.getSizeY(), 0));
+        //ImageWindowManagerFactory.showImage(toFilter);
         double scale = radius.getValue().doubleValue();
         scale = input.getSizeY();
-        //scale = 50;
-        toFilter = IJSubtractBackground.filter(toFilter, scale , !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected(), false);
+        toFilter = IJSubtractBackground.filter(toFilter, scale , !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), false, false);
         Image crop = toFilter.crop(new BoundingBox(0, input.getSizeX()-1, input.getSizeY(), 2*input.getSizeY()-1, 0, input.getSizeZ()-1));
+        // adjust filtered image to get same center value as input image
+        double medF = ImageOperations.getMeanAndSigma(crop, null)[0]; // mean is more robust when no cell
+        double med = ImageOperations.getMeanAndSigma(input, null)[0];
+        //double medF = ImageOperations.getPercentile(crop, null, null, 0.5)[0];
+        //double med = ImageOperations.getPercentile(input, null, null, 0.5)[0];
+        //logger.debug("sub back micro adjust: {} ({} & {})", med-medF, med, medF);
+        if (medF!=med) {
+            ImageOperations.affineOperation(crop, crop, 1, med-medF);
+        } 
         crop.setCalibration(input);
         crop.resetOffset().addOffset(input);
         return crop;

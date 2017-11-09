@@ -90,12 +90,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
     BoundedNumberParameter endOfChannelContactThreshold = new BoundedNumberParameter("End of channel contact Threshold", 2, 0.45, 0, 1);
     
-    ChoiceParameter thresholdMethod = new ChoiceParameter("Threshold method", new String[]{"From Segmenter", "Local Contrast Adaptative By Frame", "Local Contrast Adaptative By Frame and Y", "Autothreshold", "Autothreshold Adaptative by Frame"}, "From Segmenter", false);
+    ChoiceParameter thresholdMethod = new ChoiceParameter("Threshold method", new String[]{"From Segmenter", "Local Contrast Adaptative By Frame", "Local Contrast Adaptative By Frame and Y", "Autothreshold", "Autothreshold Adaptative by Frame", "Autothreshold by Frame with global minimum"}, "From Segmenter", false);
     BoundedNumberParameter adaptativeCoefficient = new BoundedNumberParameter("Adaptative coefficient", 2, 1, 0, 1);
     BoundedNumberParameter frameHalfWindow = new BoundedNumberParameter("Adaptative by Frame: half-window", 1, 25, 1, null);
     BoundedNumberParameter yHalfWindow = new BoundedNumberParameter("Adaptative by Y: half-window", 1, 15, 10, null);
     BoundedNumberParameter contrastThreshold = new BoundedNumberParameter("Contrast Threshold", 3, 0.05, 0.00, 0.2);
     ChoiceParameter autothresholdMethod = new ChoiceParameter("Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
+    ChoiceParameter globalAutothresholdMethod = new ChoiceParameter("Global Threshold Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod);
     
     Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold, thresholdCond};
@@ -143,7 +144,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     //SegmenterSplitAndMerge[] segmenters;
     private boolean segment, correction;
     HashMap<Integer, Image> inputImages;
-    Map<Integer, StructureObject> parentsByF;
+    TreeMap<Integer, StructureObject> parentsByF;
     int structureIdx;
     int minT, maxT;
     double maxGR, minGR, costLim, cumCostLim;
@@ -156,12 +157,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     public static boolean debug=false, debugCorr=false;
     public static double debugThreshold = Double.NaN;
     public static int verboseLevelLimit=1;
-    
+    public static int bactTestIdx=-1;
     // hidden parameters! 
     // sizeIncrement -> adaptative SI
     final static int sizeIncrementFrameNumber = 7; // number of frames for sizeIncrement computation
     final static double significativeSIErrorThld = 0.25; // size increment difference > to this value lead to an error
-    final static double SIErrorValue=2; //0.9 -> less weight to sizeIncrement error / 1 -> same weight
+    final static double SIErrorValue=3; //WAS 2
     final static double SIIncreaseThld = 0.1;
     final static double SIQuiescentThld = 1.05; // under this value we consider cells are not growing -> if break in lineage no error count (cell dies)
     final static boolean setSIErrorsAsErrors = false; // SI errors are set as tracking errors in object attributes
@@ -185,6 +186,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         thresholdCond.setActionParameters("Local Contrast Adaptative By Frame and Y", new Parameter[]{contrastThreshold, adaptativeCoefficient, frameHalfWindow, yHalfWindow});
         thresholdCond.setActionParameters("Autothreshold", new Parameter[]{autothresholdMethod});
         thresholdCond.setActionParameters("Autothreshold Adaptative by Frame", new Parameter[]{autothresholdMethod, adaptativeCoefficient, frameHalfWindow});
+        thresholdCond.setActionParameters("Autothreshold by Frame with global minimum", new Parameter[]{autothresholdMethod, globalAutothresholdMethod});
     }
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections setSegmenter(SegmenterSplitAndMerge seg) {
@@ -252,11 +254,33 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 } else ((OverridableThreshold)s).setThresholdValue(debugThreshold);
             }
         };
+        boolean saturated = false;
+        boolean blackBackground = this.parentsByF.values().iterator().next().getExperiment().getStructure(structureIdx).isBrightObject();
+        if (!blackBackground) { // global saturate high values on raw images -> avoid big contrast differences when applying subtract background. Needed when applying subtractbackground microchannels if not big width differences
+            List<Image> planes = new ArrayList<>(parentsByF.size());
+            for (StructureObject o : this.parentsByF.values()) planes.add(o.getRawImage(structureIdx));
+            ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, null, AutoThresholder.Method.MaxEntropy);
+            double saturateValue = thresholdHisto.saturateValue;
+            logger.debug("saturate value: {}", saturateValue);
+            int idx = 0;
+            for (StructureObject o : this.parentsByF.values()) {
+                Image trans = planes.get(idx++);
+                trans = trans.duplicate();
+                ImageOperations.trimValues(trans, saturateValue, saturateValue, false);
+                trans = this.preFilters.filter(trans, o);
+                inputImages.put(o.getFrame(), trans);
+            }
+            //this.setParentImages(false);
+            so.getPreFilters().removeAllElements(); // preFilters already applied
+            saturated = true;
+        }
+        //this.setParentImages(false);
+        //if (true) return;
         // compute contrast on raw images
         if (globalContrastThreshold>0) {
             List<Image> planes = new ArrayList<>(parentsByF.size());
             for (StructureObject o : this.parentsByF.values()) planes.add(o.getRawImage(structureIdx));
-            ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, false, null);
+            ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, null, null);
             double[] minAndMax = ImageOperations.getPercentile(thresholdHisto.histoAll, thresholdHisto.minAndMax, thresholdHisto.byteHisto, 0.001, 0.999);
             logger.debug("min and max for contrast: {}", minAndMax);
             double contrast = (minAndMax[1]-minAndMax[0]) / Math.abs(minAndMax[1]+minAndMax[0]);
@@ -266,12 +290,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 return;
             } else logger.debug("global contrast: {}", contrast);
         }
-        if (false && normalize) { 
+        if (normalize) { // TODO normalise for local contrast thresholder ? 
             // get gloabal percentiles and use them for normalization
             List<Image> planes = new ArrayList<>(parentsByF.size());
             for (int t = minT; t<maxT; ++t) planes.add(getImage(t));
-            ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, false, null);
-            boolean blackBackground = this.parentsByF.values().iterator().next().getExperiment().getStructure(structureIdx).isBrightObject();
+            ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, null, null);
             double[] minAndMax = new double[2];
             minAndMax[0] = thresholdHisto.minAndMax[0];
             if (blackBackground) minAndMax[1] = ImageOperations.getPercentile(thresholdHisto.histoAll, thresholdHisto.minAndMax, thresholdHisto.byteHisto, 0.99)[0];
@@ -280,9 +303,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             double scale = 1 / (minAndMax[1] - minAndMax[0]);
             double offset = -minAndMax[0] * scale;
             logger.debug("normalization: range: [{}-{}] scale: {} off: {}", minAndMax[0], minAndMax[1], scale, offset);
-            for (int t = minT; t<maxT; ++t) inputImages.put(t, ImageOperations.affineOperation(planes.get(t-minT), null, scale, offset));
-            this.setParentImages(false);
-            so.getPreFilters().removeAllElements();
+            for (int t = minT; t<maxT; ++t) {
+                Image trans = ImageOperations.affineOperation(planes.get(t-minT), null, scale, offset);
+                inputImages.put(t, trans);
+            }
+            //this.setParentImages(false);
+            so.getPreFilters().removeAllElements(); // preFilters already applied
         }
         
         if (Double.isNaN(debugThreshold) && this.thresholdMethod.getSelectedIndex()>0 && getSegmenter() instanceof OverridableThreshold) {
@@ -294,17 +320,27 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             
             if (method==1 || method==2) {
                 threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue()); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
+            } else if (method==5) {
+                threshold = new IndividualThresholdWithGlobalAttributes(planes, minT, AutoThresholder.Method.valueOf(autothresholdMethod.getSelectedItem()), AutoThresholder.Method.valueOf(globalAutothresholdMethod.getSelectedItem()));
             } else {
                 if (debug || debugCorr) logger.debug("threshold method: {}", autothresholdMethod.getSelectedItem() );
-                threshold = new ThresholdHisto(planes, minT, true, AutoThresholder.Method.valueOf(autothresholdMethod.getSelectedItem()));
+                threshold = new ThresholdHisto(planes, minT, AutoThresholder.Method.valueOf(autothresholdMethod.getSelectedItem()), saturated?null:AutoThresholder.Method.Shanbhag);
             }
-            if (method==1 || method==2 || method==3 || method==4 || method==5) {
+            if (method==1 || method==2 || method==3 || method==4) {
                 threshold.setAdaptativeThreshold(adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue()); 
             }
-            BacteriaTrans.debug=true;
-            logger.debug("hasObjects: {}", this.hasNoObjects(so, 80)); 
-            //...same threshold does not apply -> problem with subtract background ? essayer d'afficher l'image de track avec images transformee
-            if (true) return;
+            
+            if (bactTestIdx>0) {
+                if (!inputImages.isEmpty()) this.setParentImages(false);
+                BacteriaTrans.debug=true;
+                List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
+                subParentTrack.removeIf(o->o.getFrame()<bactTestIdx||o.getFrame()>bactTestIdx);
+                ImageWindowManagerFactory.showImage(this.parentsByF.get(bactTestIdx).getRawImage(structureIdx));
+                so.segmentAndTrack(structureIdx, subParentTrack, null);
+                BacteriaTrans.debug=false;
+                return;
+            }
+            
             int[] fr = getFrameRangeContainingCells(so); // will use the adaptative threshold by Frame because global threshold not relevant for cell range computation if some channel are void
             if (fr!=null) {
                 threshold.setFrameRange(fr);
@@ -331,13 +367,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         //logger.debug("minT: {}, maxT: {}", minT, maxT);
         
-        
+        if (!inputImages.isEmpty()) this.setParentImages(false); // set filtered input images to parent 
         List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
         subParentTrack.removeIf(o->o.getFrame()<minT||o.getFrame()>=maxT);
-        Collections.sort(subParentTrack, (o1, o2)->Integer.compare(o1.getFrame(), o2.getFrame()));
         List<Pair<String, Exception>> l = so.segmentAndTrack(structureIdx, subParentTrack, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
-        this.setParentImages(true);
         for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);
+        this.setParentImages(true); // reset raw images to parents
         //for (StructureObject p : parents.subList(minT, maxT)) populations.get(p.getFrame()) = Utils.transform(p.getChildren(structureIdx), o->o.getObject());
         // trim empty frames
         while (minT<maxT && getObjects(minT).isEmpty()) ++minT;
@@ -345,7 +380,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         //logger.debug("after seg: minT: {}, maxT: {}", minT, maxT);
         if (maxT-minT<=1) {
             for (StructureObject p : parentsByF.values()) p.setChildren(null, structureIdx);
-            this.setParentImages(true);
             return;
         } //else for (int t = maxT; t<parents.size(); ++t) if (populations.get(t]!=null) populations.get(t].clear();
         if (debugCorr||debug) logger.debug("Frame range: [{};{}]", minT, maxT);
@@ -735,7 +769,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (preFilters==null) this.preFilters=new PreFilterSequence("");
         if (postFilters==null) this.postFilters=new PostFilterSequence("");
         this.segment=segment;
-        this.parentsByF = StructureObjectUtils.splitByFrame(parentTrack);
+        this.parentsByF = new TreeMap<>(StructureObjectUtils.splitByFrame(parentTrack));
         objectAttributeMap = new HashMap<>();
         populations = new HashMap<>(parentTrack.size());
         //if (segment) segmenters  = new SegmenterSplitAndMerge[timePointNumber];

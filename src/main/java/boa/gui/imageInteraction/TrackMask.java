@@ -164,7 +164,10 @@ public abstract class TrackMask extends ImageObjectInterface {
         if (executeInBackground) {
             DefaultWorker w = DefaultWorker.execute(t, trackObjects.length, null);
             ImageWindowManagerFactory.getImageManager().runningWorkers.put(displayImage, w);
-            w.setEndOfWork(()->{ ImageWindowManagerFactory.getImageManager().runningWorkers.remove(displayImage); });
+            w.setEndOfWork(()->{ 
+                ImageWindowManagerFactory.getImageManager().runningWorkers.remove(displayImage); 
+                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1])); 
+            });
         } else {
             DefaultWorker.executeInForeground(t, trackObjects.length);
         }

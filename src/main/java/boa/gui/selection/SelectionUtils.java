@@ -203,14 +203,16 @@ public class SelectionUtils {
         return p.get(idx);
     }
     public static Collection<Pair<StructureObject, BoundingBox>> filterPairs(List<Pair<StructureObject, BoundingBox>> objects, Collection<String> indices) {
-        Map<String, Pair<StructureObject, BoundingBox>> map = new HashMap<>(objects.size());
-        for (Pair<StructureObject, BoundingBox> o : objects) map.put(Selection.indicesString(o.key), o);
+        //Map<String, Pair<StructureObject, BoundingBox>> map = new HashMap<>(objects.size());
+        //for (Pair<StructureObject, BoundingBox> o : objects) map.put(Selection.indicesString(o.key), o);
+        Map<String, Pair<StructureObject, BoundingBox>> map = objects.stream().collect(Collectors.toMap(o->Selection.indicesString(o.key), o->o));
         map.keySet().retainAll(indices);
         return map.values();
     }
     public static Collection<StructureObject> filter(List<StructureObject> objects, Collection<String> indices) {
-        Map<String, StructureObject> map = new HashMap<>(objects.size());
-        for (StructureObject o : objects) map.put(Selection.indicesString(o), o);
+        //Map<String, StructureObject> map = new HashMap<>(objects.size());
+        //for (StructureObject o : objects) map.put(Selection.indicesString(o), o);
+        Map<String, StructureObject> map = objects.stream().collect(Collectors.toMap(o->Selection.indicesString(o), o->o));
         map.keySet().retainAll(indices);
         return map.values();
     }
@@ -228,13 +230,15 @@ public class SelectionUtils {
     public static List<StructureObject> getParents(Selection sel, String position, int parentStructureIdx, MasterDAO db) {
         if (!(db.getExperiment().isChildOf(parentStructureIdx, sel.getStructureIdx())||parentStructureIdx==sel.getStructureIdx())) return Collections.EMPTY_LIST;
         int[] path = db.getExperiment().getPathToStructure(parentStructureIdx, sel.getStructureIdx());
-        List<String> parentStrings = Utils.transform(sel.getElementStrings(position), s->Selection.getParent(s, path.length));
+        List<String> parentStrings = parentStructureIdx!=sel.getStructureIdx()?Utils.transform(sel.getElementStrings(position), s->Selection.getParent(s, path.length)):new ArrayList<>(sel.getElementStrings(position));
         Utils.removeDuplicates(parentStrings, false);
         List<StructureObject> allObjects = StructureObjectUtils.getAllObjects(db.getDao(position), parentStructureIdx);
+        //logger.debug("path: {}, parent strings: {} ({}), allObjects: {}", path, parentStrings.size(), parentStrings.subList(0, 2), allObjects.size());
         return new ArrayList<>(SelectionUtils.filter(allObjects, parentStrings));
     }
     public static List<StructureObject> getParentTrackHeads(Selection sel, String position, int parentStructureIdx, MasterDAO db) {
         List<StructureObject> parents = SelectionUtils.getParents(sel, position, parentStructureIdx, db);
+        //logger.debug("parents: {}", parents.size());
         parents = Utils.transform(parents, o -> o.getTrackHead());
         Utils.removeDuplicates(parents, false);
         return parents;

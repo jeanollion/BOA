@@ -539,9 +539,16 @@ public class GenerateXP {
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
                             .setSegmenter(new BacteriaTrans())
-                            .setCostParameters(1.5, 3).setThresholdParameters(0, 1, 25, 15) // was 2
-                    ).addPreFilters(new SubtractBackgroundMicrochannel()) // was not
+                            .setCostParameters(1.5, 3).setThresholdParameters(5, 1, 25, 15)
+                    ).addPreFilters(new SubtractBackgroundMicrochannel())
             );
+            /*bacteria.setProcessingScheme(
+                    new SegmentAndTrack(
+                            new BacteriaClosedMicrochannelTrackerLocalCorrections()
+                            .setSegmenter(new BacteriaTrans())
+                            .setCostParameters(1.5, 3).setThresholdParameters(0, 1, 25, 15) // was 2
+                    )) // was not
+            );*/
             bacteria.setManualSegmenter(new BacteriaTrans()
                     .setThreshold(new IJAutoThresholder().setMethod(AutoThresholder.Method.MaxEntropy))
                     .setObjectParameters(50, 1)

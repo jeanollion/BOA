@@ -526,33 +526,17 @@ public class ImageOperations {
         return output;
     }
     
-    public static void trimValues(Image image, float value, boolean zeroUnderValue, boolean strict) {
-        if (strict) {
-            if (zeroUnderValue) {
-                for (int z = 0; z<image.sizeZ; ++z) {
-                    for (int xy=0; xy<image.sizeXY; ++xy) {
-                        if (image.getPixel(xy, z)<value) image.setPixel(xy, z, 0);
-                    }
-                }
-            } else {
-                for (int z = 0; z<image.sizeZ; ++z) {
-                    for (int xy=0; xy<image.sizeXY; ++xy) {
-                        if (image.getPixel(xy, z)>value) image.setPixel(xy, z, 0);
-                    }
+    public static void trimValues(Image image, double value, double replacementValue, boolean trimUnderValue) {
+        if (trimUnderValue) {
+            for (int z = 0; z<image.sizeZ; ++z) {
+                for (int xy=0; xy<image.sizeXY; ++xy) {
+                    if (image.getPixel(xy, z)<value) image.setPixel(xy, z, replacementValue);
                 }
             }
         } else {
-            if (zeroUnderValue) {
-                for (int z = 0; z<image.sizeZ; ++z) {
-                    for (int xy=0; xy<image.sizeXY; ++xy) {
-                        if (image.getPixel(xy, z)<=value) image.setPixel(xy, z, 0);
-                    }
-                }
-            } else {
-                for (int z = 0; z<image.sizeZ; ++z) {
-                    for (int xy=0; xy<image.sizeXY; ++xy) {
-                        if (image.getPixel(xy, z)>=value) image.setPixel(xy, z, 0);
-                    }
+            for (int z = 0; z<image.sizeZ; ++z) {
+                for (int xy=0; xy<image.sizeXY; ++xy) {
+                    if (image.getPixel(xy, z)>value) image.setPixel(xy, z, replacementValue);
                 }
             }
         }
@@ -716,24 +700,6 @@ public class ImageOperations {
             }
         }
         return output;
-    }
-    public static double getPercentile(Image image, double percent, ImageMask mask, BoundingBox limits) {
-        double[] mm = image.getMinAndMax(mask);
-        int[] histo = image.getHisto256(mm[0], mm[1], mask, limits);
-        double binSize = (image instanceof ImageByte) ? 1: (mm[1]-mm[0]) / 256d;
-        int count = 0;
-        for (int i : histo) count += i;
-        double limit = count * percent;
-        if (limit >= count) return mm[0];
-        count = histo[255];
-        int idx = 255;
-        while (count < limit && idx > 0) {
-            idx--;
-            count += histo[idx];
-        }
-        double idxInc = (histo[idx] != 0) ? (count - limit) / (histo[idx]) : 0; //lin approx
-        //ij.IJ.log("percentile: bin:"+idx+ " inc:"+ idxInc+ " min:"+min+ " max:"+max);
-        return (double) (idx + idxInc) * binSize + mm[0];
     }
     public static double[] getPercentile(Image image, ImageMask mask, BoundingBox limits, double... percent) {
         double[] mm = image.getMinAndMax(mask);

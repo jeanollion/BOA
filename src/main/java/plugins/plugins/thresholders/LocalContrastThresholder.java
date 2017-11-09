@@ -47,7 +47,7 @@ public class LocalContrastThresholder implements Thresholder {
     }
     
     public static Image getLocalContrast(Image input, double scale) {
-        input = ImageOperations.normalize(input, null, null);
+        //input = ImageOperations.normalize(input, null, null);
         Image localContrast=ImageFeatures.getGradientMagnitude(input, scale, false);
         return localContrast;
     }

@@ -342,7 +342,7 @@ public class ImageFeatures {
         Image bcg = gaussianSmooth(image, scaleXYMax, scaleXYMax*ratioScaleZ, false);
         Image fore = scaleXYMin>0?gaussianSmooth(image, scaleXYMin, scaleXYMin*ratioScaleZ, false):image;
         ImageFloat res  = (ImageFloat)ImageOperations.addImage(fore, bcg, bcg, -1);
-        if (trimNegativeValues) ImageOperations.trimValues(res, 0, true, true);
+        if (trimNegativeValues) ImageOperations.trimValues(res, 0, 0, true);
         return res;
     }
     

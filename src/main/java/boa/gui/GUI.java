@@ -18,6 +18,7 @@
 package boa.gui;
 
 import boa.gui.configuration.ConfigurationTreeGenerator;
+import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageObjectInterfaceKey;
 import boa.gui.imageInteraction.ImageObjectListener;
@@ -1934,7 +1935,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 i = fixIOI(i, sel.getStructureIdx());
                 if (i!=null) displaySIdx = i.getParent().getStructureIdx();
                 List<StructureObject> objects = Pair.unpairKeys(SelectionUtils.filterPairs(i.getObjects(), sel.getElementStrings(position)));
-                boolean move = ImageWindowManagerFactory.getImageManager().goToNextObject(null, objects, next);
+                logger.debug("#objects from selection on current image: {} (display sIdx: {}, IOI: {}, sel: {})", objects.size(), displaySIdx, i.getChildStructureIdx(), sel.getStructureIdx());
+                boolean move = !objects.isEmpty() && ImageWindowManagerFactory.getImageManager().goToNextObject(null, objects, next);
                 if (move) {
                     navigateCount=0;
                 }
@@ -1960,6 +1962,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 this.trackTreeController.selectPosition(position);
                 List<StructureObject> parents = SelectionUtils.getParentTrackHeads(sel, position, displaySIdx, db);
                 Collections.sort(parents);
+                logger.debug("parent track heads: {} (sel: {}, displaySIdx: {})", parents.size(), sel.getStructureIdx(), displaySIdx);
                 int nextParentIdx = 0;
                 if (i!=null && !nextPosition) {
                     int idx = Collections.binarySearch(parents, i.getParent());
@@ -1981,15 +1984,38 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
                     ImageObjectInterface nextI = iwm.getImageTrackObjectInterface(track, sel.getStructureIdx());
                     Image im = iwm.getImage(nextI, false);
-                    if (im==null) iwm.addImage(nextI.generateRawImage(structureDisplay, true), nextI, structureDisplay, false, true);
+                    boolean newImage = im==null;
+                    if (im==null) {
+                        im = nextI.generateRawImage(structureDisplay, true);
+                        iwm.addImage(im, nextI, structureDisplay, false, true);
+                        
+                    }
                     else ImageWindowManagerFactory.getImageManager().setActive(im);
                     navigateCount=0;
-                    if (i==null && setInteractiveStructure) { // new image open -> set interactive structure & navigate to next object in newly opened image
+                    if (newImage && setInteractiveStructure) { // new image open -> set interactive structure & navigate to next object in newly opened image
                         setInteractiveStructureIdx(sel.getStructureIdx());
                         interactiveStructure.setSelectedIndex(sel.getStructureIdx());
                         interactiveStructureActionPerformed(null);
                     }
-                    navigateToNextObjects(next, false, structureDisplay, setInteractiveStructure);
+                    List<StructureObject> objects = Pair.unpairKeys(SelectionUtils.filterPairs(nextI.getObjects(), sel.getElementStrings(position)));
+                    logger.debug("#objects from selection on next image: {}/{} (display sIdx: {}, IOI: {}, sel: {}, im:{})", objects.size(), nextI.getObjects().size(), displaySIdx, nextI.getChildStructureIdx(), sel.getStructureIdx(), im!=null);
+                    if (!objects.isEmpty()) {
+                        // wait so that new image is displayed -> magnification issue -> window is not well computed
+                        if (iwm.getDisplayer() instanceof IJImageDisplayer) {
+                            int timeLimit = 4000;
+                            int time = 0;
+                            double m = ((IJImageDisplayer)iwm.getDisplayer()).getImage(im).getCanvas().getMagnification();
+                            while(m<1 && time<timeLimit) { 
+                                try { 
+                                    Thread.sleep(500);
+                                    time+=500;
+                                } catch (InterruptedException ex) {}
+                                m = ((IJImageDisplayer)iwm.getDisplayer()).getImage(im).getCanvas().getMagnification();
+                            }
+                        }
+                        ImageWindowManagerFactory.getImageManager().goToNextObject(im, objects, next);
+                        
+                    }
                 }
             }
         }
@@ -3036,7 +3062,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        navigateToNextObjects(false, false, interactiveStructure.getSelectedIndex(), false);
+        navigateToNextObjects(false, false, -1, true);
     }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
 
     private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
@@ -3057,7 +3083,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        navigateToNextObjects(true, false, interactiveStructure.getSelectedIndex(), false);
+        navigateToNextObjects(true, false, -1, true);
     }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
 
     private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed

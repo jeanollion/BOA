@@ -27,6 +27,7 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.ObjectPopulation.ContactBorder;
 import dataStructure.objects.ObjectPopulation.Filter;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
@@ -126,7 +127,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter fillHolesBackgroundContactProportion = new BoundedNumberParameter("Fill holes background contact proportion", 2, 0.25, 0, 1);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 5, 5, null); // too high -> bad separation, too low: objects shape too far away from bact -> random merging
     PluginParameter<Thresholder> threshold = new PluginParameter<>("Threshold (separation from background)", Thresholder.class, new LocalContrastThresholder() , false); // // // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 4, 0.02, 0.001, 0.999); //minFN=0.14 (150325/0/1/f=113/th=144) 0.199 (150324/0/0/tp44/th=318) / maxFP=0.071(141107/0/0/tp796/th=265)
+    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 4, 0.02, 0.001, 0.999).setToolTipText("CURRENTLY NOT USED"); //minFN=0.14 (150325/0/1/f=113/th=144) 0.199 (150324/0/0/tp44/th=318) / maxFP=0.071(141107/0/0/tp796/th=265)
     
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius, closeRadius, fillHolesBackgroundContactProportion, maxBorderArtefactThickness);
     
@@ -327,7 +328,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
 
     @Override public Parameter[] getParameters() {
         // set tool tips
-        this.thresholdContrast.setToolTipText("Higher value will remove objects with low local contrast at borders");
+        //this.thresholdContrast.setToolTipText("Higher value will remove objects with low local contrast at borders");
         return parameters;
     }
 
@@ -686,8 +687,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 pop1.relabel(false);
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER REMVOVE SMALL OBJECTS"));
                 //pop1.filter(new ContrastIntensity(-contrastThreshold, contrastRadius, 0, false, getIntensityMap()));
-                pop1.filter(new LocalContrast(contrastThreshold, contrastRadius, contrastRadius, getIntensityMap()));
-                if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
+                //pop1.filter(new LocalContrast(contrastThreshold, contrastRadius, contrastRadius, getIntensityMap()));
+                //if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
                 segMask = pop1.getLabelMap();
                 thresh = null; // no need to keep
             }
@@ -1010,13 +1011,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         
         public LocalContrast(double threshold, double radiusXY, double radiusZ, Image intensityMap) {
             this.threshold = threshold;
-            //this.intensityMap = Filters.sigmaMu(intensityMap, null, Filters.getNeighborhood(radiusXY, radiusZ, intensityMap));
-            //this.intensityMap=ImageFeatures.getGradientMagnitude(intensityMap, radiusXY, false);
-            //Image smooth = ImageFeatures.gaussianSmooth(intensityMap, radiusXY, radiusZ, false);
-            //ImageOperations.divide(this.intensityMap, smooth, this.intensityMap);
-            Image intensityNorm = ImageOperations.normalize(intensityMap, null, null, 0.01, 0.99, false);
+            Image intensityNorm = intensityMap;
             //TODO voir si on peut simplement diviser la carte de contraste par le scale de normalisation
-            //TODO exclure pixels aux bords (tolerence -> 2)
             this.intensityMap = LocalContrastThresholder.getLocalContrast(intensityNorm, radiusXY);
             if (debug) new IJImageDisplayer().showImage(this.intensityMap.setName("contrast map"));
         }
@@ -1026,9 +1022,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
 
         @Override
         public boolean keepObject(Object3D object) {
-            double value = BasicMeasurements.getMeanValue(object.getContour(), intensityMap, false);
-            if (debug) logger.debug("Local Contrast filter: object: {}, value: {}, thld: {}, keep? {}", object.getLabel(), value, threshold, value>threshold);
-            return value>threshold;
+            List<Voxel> contour = new ArrayList<>(object.getContour());
+            ContactBorder borderFilter = new ContactBorder(1, intensityMap, ContactBorder.Border.XY);
+            borderFilter.setTolerance(1);
+            contour.removeIf(v->borderFilter.contact(v));
+            double value = contour.size()<15? Double.NaN : BasicMeasurements.getMeanValue(contour, intensityMap, false);
+            if (debug) logger.debug("Local Contrast filter: object: {}, contour {} (after border remove: {}), value: {}, thld: {}, keep? {}", object.getLabel(), object.getContour().size(), contour.size(), value, threshold, Double.isNaN(value)||value>threshold);
+            return Double.isNaN(value)||value>threshold;
         }
         
     }

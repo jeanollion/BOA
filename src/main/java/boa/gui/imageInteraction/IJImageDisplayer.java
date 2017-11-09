@@ -112,7 +112,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 ImageCanvas ic = image.getCanvas();
                 if (ic==null) return "";
                 if (ic.getMagnification()==magnitude) return "";
-                try {Thread.sleep(500);}
+                try {Thread.sleep(500);} // TODO method that indicated if displayed ? 
                 catch(Exception e) {}
                 ic.zoom100Percent();
                 //IJ.runPlugIn("ij.plugin.Zoom", null);
@@ -252,14 +252,20 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 displayRange = minAndMax;
             }
             ImagePlus ip = displayedImages.get(image);
-            if (displayRange[0]<displayRange[1]) ip.setDisplayRange(displayRange[0], displayRange[1]);
-            ip.updateAndRepaintWindow();
+            synchronized(ip) {
+                if (displayRange[0]<displayRange[1]) ip.setDisplayRange(displayRange[0], displayRange[1]);
+                ip.updateAndRepaintWindow();
+                ip.updateAndDraw();
+            }
+            
         }
     }
     @Override public void updateImageRoiDisplay(Image image) {
         if (this.displayedImages.containsKey(image)) {
             ImagePlus ip = displayedImages.get(image);
-            ip.updateAndDraw();
+            synchronized(ip) {
+                ip.updateAndDraw();
+            }
         }
     }
 

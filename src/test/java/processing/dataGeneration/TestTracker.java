@@ -74,10 +74,12 @@ public class TestTracker {
         // Pour xp MF1_170519
         // P0 mc1 F39: ajouter terminaison comme option de scenario!
         //String dbName = "MutD5_141209"; //-> mc 0 -> cellules collees
-        String dbName = "MutH_150324";
+        //String dbName = "MutH_150324";
+        String dbName = "WT_150616";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
+        //String dbName = "MutD5_141202";
         int pIdx = 0;
-        int mcIdx =1; //9 
+        int mcIdx =5; //9 
         int structureIdx = 1;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -92,7 +94,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 1,1000); //  0,80);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,1000); //  0,80);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 520, 580); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {

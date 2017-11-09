@@ -452,7 +452,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         }
     }
     public static String getParent(String idx, int n) {
-        if (n==1) return idx;
+        if (n==0) return idx;
         int[] i = parseIndices(idx);
         if (i.length==2) {
             i[1]=0;

@@ -57,7 +57,7 @@ public class ThresholdHisto extends Threshold {
     final List<int[]> histos;
     final int[] histoAll;
     final AutoThresholder.Method thldMethod;
-    final static AutoThresholder.Method saturateMethod = AutoThresholder.Method.Shanbhag; // Avec sub: shanbhag. Pas de sub: : MaxEntropy / Triangle
+    //final static AutoThresholder.Method saturateMethod = AutoThresholder.Method.Shanbhag; // Avec sub: shanbhag. Pas de sub: : MaxEntropy / Triangle
     final static double maxSaturationProportion = 0.03;
     @Override public double getThreshold() {
         return thresholdValue;
@@ -71,7 +71,7 @@ public class ThresholdHisto extends Threshold {
         return getThreshold(frame) * thldCoeffY[y];
     }
     
-    public ThresholdHisto(List<Image> planes, int offsetFrame, boolean saturateHisto, AutoThresholder.Method method) {
+    public ThresholdHisto(List<Image> planes, int offsetFrame, AutoThresholder.Method method, AutoThresholder.Method saturateMethod) {
         super(planes, offsetFrame);
         thldMethod = method;
         this.frameRange=new int[]{0, planes.size()-1};
@@ -82,9 +82,8 @@ public class ThresholdHisto extends Threshold {
         long t1 = System.currentTimeMillis();
         histoAll = new int[256];
         for (int[] h : histos) ImageOperations.addHisto(h, histoAll, false);
-        
-        if (saturateHisto) { // saturate histogram to remove device aberations 
-            saturateValue256 = saturateHisto ? (int)IJAutoThresholder.runThresholder(saturateMethod, histoAll, minAndMax, true) : 255; // byteImage=true to get a 8-bit value
+        if (saturateMethod!=null) { // saturate histogram to remove device aberations 
+            saturateValue256 = (int)IJAutoThresholder.runThresholder(saturateMethod, histoAll, minAndMax, true); // byteImage=true to get a 8-bit value
             // limit to saturagePercentage
             int satPer = Percentage.getBinAtPercentage(histoAll, maxSaturationProportion);
             if (satPer>saturateValue256) saturateValue256 = satPer;
@@ -213,7 +212,5 @@ public class ThresholdHisto extends Threshold {
         if (hasAdaptativeByY()) ((OverridableThreshold)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
         else ((OverridableThreshold)s).setThresholdValue(getThreshold(o.getFrame()));
     }
-    
-    
     
 }
