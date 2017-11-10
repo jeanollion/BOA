@@ -99,8 +99,13 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
         Map<Integer, List<StructureObject>> map = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
+        
         logger.debug("tracking: {}", Utils.toStringList(map.entrySet(), e->"t:"+e.getKey()+"->"+e.getValue().size()));
         tmi.addObjects(map);
+        if (tmi.objectSpotMap.isEmpty()) {
+            logger.debug("No objects to track");
+            return;
+        }
         double meanWidth = Utils.flattenMap(map).stream().mapToDouble(o->o.getBounds().getSizeX()).average().getAsDouble()*parentTrack.get(0).getScaleXY();
         if (debug) logger.debug("mean width {}", meanWidth );
         double maxDistance = maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
@@ -144,6 +149,10 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             inputImages[idx]=null;
             segmenters[idx]=null;
         };
+        /*MicrochannelPhase2D.debug=true;
+        ta.run(parentTrack.get(0), structureIdx);
+        MicrochannelPhase2D.debug=false;
+        */
         List<Pair<String, Exception>> exceptions = ThreadRunner.execute(parentTrack, false, ta, executor, null);
         for (Pair<String, Exception> p : exceptions) logger.debug(p.key, p.value);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);

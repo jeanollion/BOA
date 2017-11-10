@@ -50,7 +50,7 @@ public class SubtractBackgroundMicrochannel implements PreFilter {
     BooleanParameter imageType = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
     BooleanParameter corners = new BooleanParameter("Correct corners", false);
-    NumberParameter radius = new BoundedNumberParameter("Radius", 2, 1000, 0.01, null);
+    NumberParameter radius = new BoundedNumberParameter("Radius", 2, 1000000, 0.01, null);
     Parameter[] parameters = new Parameter[]{radius, method, imageType, smooth, corners};
     
     public SubtractBackgroundMicrochannel(double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {
@@ -73,7 +73,7 @@ public class SubtractBackgroundMicrochannel implements PreFilter {
         ImageOperations.pasteImage(imageFlip, toFilter, new BoundingBox(0, 2*input.getSizeY(), 0));
         //ImageWindowManagerFactory.showImage(toFilter);
         double scale = radius.getValue().doubleValue();
-        scale = input.getSizeY();
+        //scale = input.getSizeY();
         toFilter = IJSubtractBackground.filter(toFilter, scale , !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), false, false);
         Image crop = toFilter.crop(new BoundingBox(0, input.getSizeX()-1, input.getSizeY(), 2*input.getSizeY()-1, 0, input.getSizeZ()-1));
         // adjust filtered image to get same center value as input image

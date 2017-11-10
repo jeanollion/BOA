@@ -54,7 +54,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     NumberParameter microChannelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
     NumberParameter microChannelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
     NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 30, 0, null);
-    NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 1, 10, 0, null);
+    NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 3, 10, 0, null).setToolTipText("Threshold for Microchannel border detection (peaks of 1st derivative in X-axis)");;
     Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, microChannelWidth, microChannelWidthMin, microChannelWidthMax, localDerExtremaThld, yEndMargin, xStart, xStop, yStart, yStop, number};
     public final static double betterPeakRelativeThreshold = 0.6;
     public CropMicroChannelBF2D(int margin, int cropMargin, int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax, int timePointNumber) {
@@ -113,7 +113,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         
         Image imDerY = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
         float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
-        int channelStartIdx = ArrayUtil.max(yProj, 0, (int)(yProj.length*0.75)); // limit to 
+        int channelStartIdx = ArrayUtil.max(yProj, 0, (int)(yProj.length*0.75)); // limit to channel start
 
         imCrop = image.crop(new BoundingBox(0, image.getSizeX()-1, channelStartIdx, aberrationStart, 0, image.getSizeZ()-1));
         float[] xProj = ImageOperations.meanProjection(imCrop, ImageOperations.Axis.X, null); 
@@ -201,7 +201,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         // precise Y-value within shift around channelStartIdx
         if (yStartAdjustWindow>0) {
             for (int[] peak : peaks) {
-                BoundingBox win = new BoundingBox(peak[0], peak[1], channelStartIdx-yStartAdjustWindow, channelStartIdx+yStartAdjustWindow, 0, 0);
+                BoundingBox win = new BoundingBox(peak[0], peak[1], Math.max(0, channelStartIdx-yStartAdjustWindow), Math.min(imDerY.getSizeY()-1, channelStartIdx+yStartAdjustWindow), 0, 0);
                 float[] proj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, win);
                 peak[2] = ArrayUtil.max(proj)-yStartAdjustWindow;
                 //if (debug) plotProfile("yProjDerAdjust", proj);

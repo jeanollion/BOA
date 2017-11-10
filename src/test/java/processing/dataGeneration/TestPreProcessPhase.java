@@ -54,16 +54,16 @@ public class TestPreProcessPhase {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName= "boa_phase140115mutH";
         //String dbName = "boa_phase150616wt";
-        String dbName = "boa_phase141107wt";
+        String dbName = "TestThomas";
         
-        boolean flip = false;
+        boolean flip = true;
         int field = 0;
-        String fieldName = "xy01";
-        int time = 795;
+        String fieldName = null;
+        int time = 0;
         //testRotation(dbName, 0, 0, time);
         //CropMicroChannelBF2D.debug=true;
-        testPreProcessing(dbName, field, 0, time, 0, 2);
-        //testCrop(dbName, field, fieldName, time, flip);
+        //testPreProcessing(dbName, field, 0, time, 0, 2);
+        testCrop(dbName, field, fieldName, time, flip);
         //testStabilizer(dbName, field, 0, 20, 19, flip);
     }
     
@@ -103,7 +103,7 @@ public class TestPreProcessPhase {
         MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = positionName ==null ? db.getExperiment().getPosition(fieldIdx): db.getExperiment().getPosition(positionName);
         f.getPreProcessingChain().removeAllTransformations();
-        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false)));
+        //f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false)));
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannelBF2D().setTimePointNumber(1));
         CropMicroChannelBF2D.debug=true;

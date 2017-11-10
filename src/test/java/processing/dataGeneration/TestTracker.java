@@ -63,7 +63,7 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-
+        
         //String dbName = "MF1_170523";
         // Optimier pur MF1_170523: P10 
         //mc7 62 ; 352 544-477: why not merge ? 
@@ -75,12 +75,14 @@ public class TestTracker {
         // P0 mc1 F39: ajouter terminaison comme option de scenario!
         //String dbName = "MutD5_141209"; //-> mc 0 -> cellules collees
         //String dbName = "MutH_150324";
-        String dbName = "WT_150616";
+        //String dbName = "WT_150616";
+        String dbName = "TestThomas";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx = 0;
-        int mcIdx =5; //9 
+        int mcIdx =0; //9 
         int structureIdx = 1;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=20;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
             return;

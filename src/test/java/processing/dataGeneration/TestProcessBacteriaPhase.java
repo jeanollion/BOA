@@ -60,10 +60,11 @@ public class TestProcessBacteriaPhase {
 
         //String dbName = "MF1_170523";
         //String dbName = "MutD5_141209";
-        String dbName = "MutH_150324";
+        //String dbName = "MutH_150324";
+        String dbName = "TestThomas";
         int field = 0;
-        int microChannel =1;
-        int time =52;
+        int microChannel =0;
+        int time =185;
         //setMask=true;
         //thld = 776;
         

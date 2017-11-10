@@ -625,7 +625,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 List<Object3D> list = ImageLabeller.labelImageListLowConnectivity(maskToSplit);
                 res = new ObjectPopulation(list, maskToSplit);
             } 
-            res = new MicrochannelPhaseArtifacts().setThickness(maxBorderThickness).runPostFilter(null, -1, res); // filter to remove channel border artifacts
+            //res = new MicrochannelPhaseArtifacts().setThickness(maxBorderThickness).runPostFilter(null, -1, res); // filter to remove channel border artifacts
             return res;
             /*   
             ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), true);

@@ -157,7 +157,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     public static boolean debug=false, debugCorr=false;
     public static double debugThreshold = Double.NaN;
     public static int verboseLevelLimit=1;
-    public static int bactTestIdx=-1;
+    public static int bactTestFrame=-1;
     // hidden parameters! 
     // sizeIncrement -> adaptative SI
     final static int sizeIncrementFrameNumber = 7; // number of frames for sizeIncrement computation
@@ -330,12 +330,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 threshold.setAdaptativeThreshold(adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue()); 
             }
             
-            if (bactTestIdx>0) {
+            if (bactTestFrame>0) {
                 if (!inputImages.isEmpty()) this.setParentImages(false);
                 BacteriaTrans.debug=true;
                 List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
-                subParentTrack.removeIf(o->o.getFrame()<bactTestIdx||o.getFrame()>bactTestIdx);
-                ImageWindowManagerFactory.showImage(this.parentsByF.get(bactTestIdx).getRawImage(structureIdx));
+                subParentTrack.removeIf(o->o.getFrame()<bactTestFrame||o.getFrame()>bactTestFrame);
+                ImageWindowManagerFactory.showImage(this.parentsByF.get(bactTestFrame).getRawImage(structureIdx));
                 so.segmentAndTrack(structureIdx, subParentTrack, null);
                 BacteriaTrans.debug=false;
                 return;

@@ -118,6 +118,7 @@ public class ImageFieldFactory {
         int digits=(int)(Math.log10(stc.length)+1);
         for (int[] tc:stc) {
             if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
+            else end = Utils.removeExtension(image.getName());
             if (tc[1]==xp.getChannelImageCount()) {
                 double[] scaleXYZ = reader.getScaleXYZ(1);
                 containersTC.add(new MultipleImageContainerSingleFile(end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4], scaleXYZ[0], scaleXYZ[2])); //Utils.removeExtension(image.getName())+"_"+
@@ -204,9 +205,20 @@ public class ImageFieldFactory {
         for (File f : files) filesMap.put(f.getName().substring(startIndex+1, f.getName().length()), f);*/
         
         // 3 split by position / channel (check number) / frames (check same number between channels & continity)
-        Pattern posPattern = Pattern.compile(".*("+positionKeywords[0]+"\\d+).*");
+        
         Pattern timePattern = Pattern.compile(".*"+timeKeywords[0]+"(\\d+).*");
-        Map<String, List<File>> filesByPosition = files.stream().collect(Collectors.groupingBy(f -> getAsString(f.getName(), posPattern)));
+        Map<String, List<File>> filesByPosition=null;
+        int p = 0;
+        while (p<positionKeywords.length && filesByPosition==null) {
+            Pattern posPattern = Pattern.compile(".*("+positionKeywords[p]+"\\d+).*");
+            try {filesByPosition = files.stream().collect(Collectors.groupingBy(f -> getAsString(f.getName(), posPattern)));}
+            catch (Exception e) {}
+            ++p;
+        }
+        if (filesByPosition==null) {
+            filesByPosition = new HashMap<>(1);
+            filesByPosition.put(, files); // GET UNVARIABLE NAME + remove time patters & channels pattern
+        }
         logger.debug("Dir: {} # positions: {}", input.getAbsolutePath(), filesByPosition.size());
         PosLoop : for (Entry<String, List<File>> positionFiles : filesByPosition.entrySet()) {
             Map<String, List<File>> filesByChannel = positionFiles.getValue().stream().collect(Collectors.groupingBy(f -> getKeyword(f.getName(), channelKeywords, "")));
