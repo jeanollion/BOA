@@ -284,19 +284,23 @@ public class DBMapMasterDAO implements MasterDAO {
     
     @Override
     public void updateExperiment() {
-        if (xp==null || readOnly) return;
+        if (xp==null) {
+            GUI.log("Could not update XP -> XP NULL ERROR");
+            logger.error("Cannot update XP -> XP NULL");
+        }
+        if (readOnly) return;
         if (this.xpFileLock==null) lockXP();
         updateXPFile();
     }
     private void updateXPFile() {
-        logger.debug("updating xp file..");
+        logger.debug("Updating xp file..");
         if (xp!=null && cfg!=null) {
             try {
                 FileIO.write(cfg, xp.toJSONEntry().toJSONString(), false);
             } catch (IOException ex) {
                 logger.error("Could not update experiment", ex);
             }
-        } else logger.error("could not update experiment");
+        } else logger.error("Could not update experiment");
         
         //FileIO.writeToFile(getConfigFile(dbName, false), Arrays.asList(new Experiment[]{xp}), o->o.toJSONEntry().toJSONString());
     }
@@ -305,6 +309,12 @@ public class DBMapMasterDAO implements MasterDAO {
     public void setExperiment(Experiment xp) {
         this.xp=xp;
         updateExperiment();
+    }
+    
+    @Override 
+    public boolean experimentChanged() {
+        Experiment xpFile = getXPFromFile();
+        return xpFile==null || xpFile.sameContent(xp);
     }
 
     protected String getOutputPath() {

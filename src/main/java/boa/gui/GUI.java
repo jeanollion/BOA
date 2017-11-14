@@ -141,7 +141,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private static GUI instance;
     
     // db-related attributes
-    MasterDAO db;
+    private MasterDAO db;
     
     // xp tree-related attributes
     ConfigurationTreeGenerator configurationTreeGenerator;
@@ -582,7 +582,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
     }
     
+    private void promptSaveUnsavedChanges() {
+        if (db==null) return;
+        if (db.experimentChanged()) {
+            boolean save = Utils.promptBoolean("Current configuration has unsaved changes. Save ? ", this);
+            if (save) db.updateExperiment();
+        }
+    }
+    
     private void unsetXP() {
+        promptSaveUnsavedChanges();
         String xp = db!=null ? db.getDBName() : null;
         if (db!=null) db.clearCache();
         db=null;

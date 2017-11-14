@@ -57,7 +57,7 @@ public interface MasterDAO {
     public Experiment getExperiment();
     public void updateExperiment();
     public void setExperiment(Experiment xp);
-    
+    public boolean experimentChanged();
     // selections
     public SelectionDAO getSelectionDAO();
     

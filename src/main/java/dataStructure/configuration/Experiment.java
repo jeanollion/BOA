@@ -28,8 +28,10 @@ import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ParameterUI;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
+import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ParameterListener;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.TextParameter;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ImageDAOFactory;
 import java.io.File;
@@ -64,6 +66,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<>("Positions", -1 , MicroscopyField.class);
     PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
+    TextParameter positionSeparator = new TextParameter("Position Separator", "xy", true);
+    ConditionalParameter importCond = new ConditionalParameter(importMethod).setActionParameters(ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION.getMethod(), new Parameter[]{positionSeparator});
     public enum ImageDAOTypes {LocalFileSystem};
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     ConfigurationTreeModel model;
@@ -78,7 +82,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         res.put("measurements", measurements.toJSONEntry());
         res.put("positions", fields.toJSONEntry());
         res.put("template", template.toJSONEntry());
-        res.put("importMethod", importMethod.toJSONEntry());
+        res.put("importMethod", importCond.toJSONEntry());
         return res;
     }
 
@@ -92,7 +96,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         measurements.initFromJSONEntry(jsonO.get("measurements"));
         fields.initFromJSONEntry(jsonO.get("positions"));
         template.initFromJSONEntry(jsonO.get("template"));
-        importMethod.initFromJSONEntry(jsonO.get("importMethod"));
+        if (jsonO.get("importMethod") instanceof JSONObject) importCond.initFromJSONEntry(jsonO.get("importMethod"));
+        else importMethod.initFromJSONEntry(jsonO.get("importMethod")); // RETRO COMPATIBILITY
         this.name="Configuration";
     }
     
@@ -126,7 +131,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     protected void initChildList() {
-        super.initChildren(importMethod, template, fields, channelImages, structures, measurements, outputPath, imagePath);
+        super.initChildren(importCond, template, fields, channelImages, structures, measurements, outputPath, imagePath);
     }
     
     protected void checkInit() {
@@ -178,6 +183,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public ImportImageMethod getImportImageMethod() {
         return ImportImageMethod.getValueOf(this.importMethod.getSelectedItem());
+    }
+    
+    public String getImportImagePositionSeparator() {
+        return positionSeparator.getValue();
     }
     
     public String getOutputDirectory() {

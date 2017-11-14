@@ -72,6 +72,11 @@ public class BasicMasterDAO implements MasterDAO {
     public void updateExperiment() {
     }
 
+    @Override 
+    public boolean experimentChanged() {
+        return false;
+    }
+    
     public void setExperiment(Experiment xp) {
         this.xp=xp;
     }

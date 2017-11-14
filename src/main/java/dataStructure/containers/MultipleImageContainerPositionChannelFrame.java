@@ -236,7 +236,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         Pattern timePattern = Pattern.compile(".*"+timeKeyword+"(\\d+).*");
         Map<Integer, List<File>> filesByChannel = files.stream().collect(Collectors.groupingBy(f -> getKeywordIdx(f.getName(), channelKeywords)));
         fileCT = new ArrayList<>(filesByChannel.size());
-        filesByChannel.entrySet().stream().sorted().forEach((channelFiles) -> {
+        filesByChannel.entrySet().stream().sorted((n1, n2)->Integer.compare(n1.getKey(), n2.getKey())).forEach((channelFiles) -> {
             Map<Integer, String> filesByTimePoint = channelFiles.getValue().stream().collect(Collectors.toMap(f -> get(f.getName(), timePattern), f -> f.getAbsolutePath()));
             fileCT.add(new ArrayList<>(new TreeMap(filesByTimePoint).values()).subList(0, frameNumber));
         });

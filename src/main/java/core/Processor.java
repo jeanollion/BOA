@@ -71,7 +71,7 @@ public class Processor {
         
     }*/
     public static void importFiles(Experiment xp, boolean relink, ProgressCallback pcb, String... selectedFiles) {
-        List<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
+        List<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp, pcb);
         int count=0, relinkCount=0;
         for (MultipleImageContainer c : images) {
             MicroscopyField f = xp.createPosition(c.getName());
