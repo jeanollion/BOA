@@ -54,8 +54,8 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         res.put("pluginName", pluginName);
         //res.put("pluginTypeName", pluginTypeName);
         res.put("activated", activated);
-        if (additionalParameters!=null && !additionalParameters.isEmpty()) res.put("addParams", JSONUtils.toJSON(additionalParameters));
-        if (pluginParameters!=null && !pluginParameters.isEmpty()) res.put("params", JSONUtils.toJSON(pluginParameters));
+        if (additionalParameters!=null && !additionalParameters.isEmpty()) res.put("addParams", JSONUtils.toJSONArrayMap(additionalParameters)); // was: toJSON
+        if (pluginParameters!=null && !pluginParameters.isEmpty()) res.put("params", JSONUtils.toJSONArrayMap(pluginParameters)); // was: toJSON
         return res;
     }
     @Override
@@ -64,14 +64,17 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         setPlugin((String)jsonO.get("pluginName"));
         activated = (Boolean)jsonO.get("activated");
         if (jsonO.containsKey("addParams") && additionalParameters!=null) {
-            if (!JSONUtils.fromJSON(additionalParameters, (JSONArray)jsonO.get("addParams"))) {
-                
-            }
+            Object o = jsonO.get("addParams");
+            boolean addParamSet;
+            if (JSONUtils.isJSONArrayMap(o)) addParamSet=JSONUtils.fromJSONArrayMap(additionalParameters, (JSONArray)o);
+            else addParamSet=JSONUtils.fromJSON(additionalParameters, (JSONArray)o);
         }
         if (jsonO.containsKey("params") && pluginParameters!=null) {
-            if (!JSONUtils.fromJSON(pluginParameters, (JSONArray)jsonO.get("params"))) {
-                logger.warn("Could not initialize plugin-parameter: {} plugin: {} type: {}, #parameters: {}, JSON parameters: {}", name, this.pluginName, this.pluginType, pluginParameters.size(), jsonO.get("params") );
-            }
+            boolean paramSet;
+            Object o = jsonO.get("params");
+            if (JSONUtils.isJSONArrayMap(o)) paramSet=JSONUtils.fromJSONArrayMap(pluginParameters, (JSONArray)o);
+            else paramSet=JSONUtils.fromJSON(pluginParameters, (JSONArray)o);
+            if (!paramSet) logger.warn("Could not initialize plugin-parameter: {} plugin: {} type: {}, #parameters: {}, JSON parameters: {}", name, this.pluginName, this.pluginType, pluginParameters.size(), jsonO.get("params") );
         }
     }
     

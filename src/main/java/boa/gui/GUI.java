@@ -584,6 +584,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     private void promptSaveUnsavedChanges() {
         if (db==null) return;
+        if (configurationTreeGenerator.getTree()!=null && ((Experiment)this.configurationTreeGenerator.getTree().getModel().getRoot())!=db.getExperiment()) {
+            GUI.log("WARNING: current modification cannot be saved");
+            return;
+        }
         if (db.experimentChanged()) {
             boolean save = Utils.promptBoolean("Current configuration has unsaved changes. Save ? ", this);
             if (save) db.updateExperiment();
@@ -2225,6 +2229,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 GUI.getInstance().setRunning(false);
                 GUI.getInstance().populateExperimentList();
                 db.updateExperiment();
+                updateConfigurationTree();
                 populateActionMicroscopyFieldList();
                 loadObjectTrees();
                 ImageWindowManagerFactory.getImageManager().flush();
@@ -2410,9 +2415,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             log("invalid task");
             return;
         }
-        t.execute();
-        db.getExperiment(); // lock (unlocked after run task)
         if (t.isPreProcess() || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
+        Task.executeTask(t, this, ()->{updateConfigurationTree();});
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
     private void importImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImagesMenuItemActionPerformed
@@ -2425,7 +2429,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             File dir = Utils.getOneDir(selectedFiles);
             if (dir!=null) PropertyUtils.set(PropertyUtils.LAST_IMPORT_IMAGE_DIR, dir.getAbsolutePath());
             db.updateExperiment(); //stores imported fields
-           
             populateActionMicroscopyFieldList();
             updateConfigurationTree();
         }
@@ -2709,6 +2712,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 GUI.getInstance().setRunning(false);
                 GUI.getInstance().populateExperimentList();
                 db.updateExperiment();
+                updateConfigurationTree();
                 populateActionMicroscopyFieldList();
                 loadObjectTrees();
                 ImageWindowManagerFactory.getImageManager().flush();

@@ -61,7 +61,7 @@ public class ImageTransformation {
         if (angle%90==0) {
             return turn(image, (int)angle/90, 0, 0);
         } else {
-            Image im =  rotate(image, angle, 0, 0, interpolation, false, true);
+            Image im =  rotate(image, angle, 0, 0, interpolation, !removeIncompleteRowsAndColumns, true);
             if (removeIncompleteRowsAndColumns) {
                 //int delta = (int)(Math.abs(Math.sin(angle*Math.PI/180d))*Math.max(im.getSizeX(), im.getSizeY()))+1; // cf Geages Debregas 
                 double[] deltas = new double[2];
@@ -83,8 +83,8 @@ public class ImageTransformation {
         //logger.debug("dX: {}, dY: {}", dX, dY);
     } 
     
-    public static Image rotate(Image image, double zAngle, double yAngle, double xAngle, InterpolationScheme scheme, boolean fit, boolean antialiasing) {
-        return ImagescienceWrapper.wrap((new  Rotate()).run(ImagescienceWrapper.getImagescience(image), zAngle, yAngle, xAngle, scheme.getValue(), fit, false, antialiasing)).setCalibration(image);
+    public static Image rotate(Image image, double zAngle, double yAngle, double xAngle, InterpolationScheme scheme, boolean adjustImageSize, boolean antialiasing) {
+        return ImagescienceWrapper.wrap((new  Rotate()).run(ImagescienceWrapper.getImagescience(image), zAngle, yAngle, xAngle, scheme.getValue(), adjustImageSize, false, antialiasing)).setCalibration(image);
     }
     
     public static Image turn(Image image, int times90z, int times90y, int times90x) {

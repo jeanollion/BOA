@@ -493,6 +493,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     }
     protected void store(Collection<StructureObject> objects, boolean commit) {
         if (readOnly) return;
+        if (objects==null || objects.isEmpty()) return;
         //logger.debug("storing: {} commit: {}", objects.size(), commit);
         List<StructureObject> upserMeas = new ArrayList<>(objects.size());
         for (StructureObject o : objects) o.dao=this;

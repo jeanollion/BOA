@@ -172,7 +172,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     private static final double beheadedCellsSizeLimit = 300;
     final static boolean useVolumeAsSize=false; // if length -> length should be re-computed for merged objects and not just summed
     
-    final static boolean normalize= true;
     final static double globalContrastThreshold = 0;
     // functions for assigners
     
@@ -290,7 +289,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 return;
             } else logger.debug("global contrast: {}", contrast);
         }
-        if (normalize) { // TODO normalise for local contrast thresholder ? 
+        // TODO: parameter for normalization..
+        if (!blackBackground) { // TODO normalise for local contrast thresholder ? 
             // get gloabal percentiles and use them for normalization
             List<Image> planes = new ArrayList<>(parentsByF.size());
             for (int t = minT; t<maxT; ++t) planes.add(getImage(t));

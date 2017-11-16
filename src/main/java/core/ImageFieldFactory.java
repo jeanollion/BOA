@@ -80,6 +80,7 @@ public class ImageFieldFactory {
                 ++idx;
             }
             if (countBlank>1) {
+                if (pcb!=null) pcb.log("When Experiement has several channels, one must specify channel keyword for this import method");
                 logger.error("When Experiement has several channels, one must specify channel keyword for this import method");
                 return res;
             }
@@ -96,17 +97,18 @@ public class ImageFieldFactory {
                 ImageFieldFactory.importImagesSingleFile(ff, xp, containersTC, pcb);
             }
         } else if (!isIgnoredExtension(f.getName())) {
-            addContainerSingleFile(f, xp, containersTC);
+            addContainerSingleFile(f, xp, containersTC, pcb);
         }
     }
     
-    protected static void addContainerSingleFile(File image, Experiment xp, ArrayList<MultipleImageContainer> containersTC) {
+    protected static void addContainerSingleFile(File image, Experiment xp, ArrayList<MultipleImageContainer> containersTC, ProgressCallback pcb) {
         String sep = xp.getImportImagePositionSeparator();
         ImageReader reader=null;
         long t0 = System.currentTimeMillis();
         try {
             reader = new ImageReader(image.getAbsolutePath());
         } catch(Exception e) {
+            if (pcb!=null) pcb.log("WARNING: Image: "+image.getAbsolutePath()+" could not be read");
             logger.warn("Image : {} could not be read", image.getAbsolutePath());
             return;
         }
@@ -124,6 +126,7 @@ public class ImageFieldFactory {
                 containersTC.add(new MultipleImageContainerSingleFile(end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4], scaleXYZ[0], scaleXYZ[2])); //Utils.removeExtension(image.getName())+"_"+
                 logger.info("image {} imported successfully", image.getAbsolutePath());
             } else {
+                if (pcb!=null) pcb.log("WARNING: Invalid Image: "+image.getAbsolutePath()+" has: "+tc[1]+" channels instead of: "+xp.getChannelImageCount());
                 logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageCount());
             }
             ++s;

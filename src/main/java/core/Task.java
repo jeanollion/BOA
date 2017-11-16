@@ -558,7 +558,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         publish(message);
     }
 
-    public static void executeTasks(List<Task> tasks, UserInterface ui) {
+    public static void executeTasks(List<Task> tasks, UserInterface ui, Runnable... endOfWork) {
         int totalSubtasks = 0;
         for (Task t : tasks) {
             if (!t.isValid()) {
@@ -576,6 +576,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             tasks.get(i).db=null;
             return "";
         }, tasks.size()).setEndOfWork(
-                ()->{for (Task t : tasks) t.publishErrors();});
+                ()->{for (Task t : tasks) t.publishErrors(); for (Runnable r : endOfWork) r.run();});
+    }
+    public static void executeTask(Task t, UserInterface ui, Runnable... endOfWork) {
+        executeTasks(new ArrayList<Task>(1){{add(t);}}, ui, endOfWork);
     }
 }

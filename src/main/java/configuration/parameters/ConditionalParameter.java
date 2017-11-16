@@ -42,9 +42,9 @@ public class ConditionalParameter extends SimpleContainerParameter {
     public Object toJSONEntry() {
         JSONObject res = new JSONObject();
         res.put("action", action.toJSONEntry());
-        if (defaultParameters!=null && !defaultParameters.isEmpty()) res.put("def", JSONUtils.toJSON(defaultParameters));
+        if (defaultParameters!=null && !defaultParameters.isEmpty()) res.put("def", JSONUtils.toJSONArrayMap(defaultParameters));
         JSONObject params = new JSONObject();
-        for (Entry<String, List<Parameter>> e : parameters.entrySet()) params.put(e.getKey(), JSONUtils.toJSON(e.getValue()));
+        for (Entry<String, List<Parameter>> e : parameters.entrySet()) params.put(e.getKey(), JSONUtils.toJSONArrayMap(e.getValue()));
         res.put("params", params);
         return res;
     }
@@ -54,10 +54,16 @@ public class ConditionalParameter extends SimpleContainerParameter {
         if (json instanceof JSONObject) {
             JSONObject jsonO = (JSONObject)json;
             action.initFromJSONEntry(jsonO.get("action"));
-            if (jsonO.containsKey("def") && defaultParameters!=null) JSONUtils.fromJSON(defaultParameters, (JSONArray)jsonO.get("def"));
+            if (jsonO.containsKey("def") && defaultParameters!=null) {
+                if (JSONUtils.isJSONArrayMap(jsonO.get("def"))) JSONUtils.fromJSONArrayMap(defaultParameters, (JSONArray)jsonO.get("def"));
+                else JSONUtils.fromJSON(defaultParameters, (JSONArray)jsonO.get("def"));
+            }
             JSONObject params = (JSONObject)jsonO.get("params");
             for (Entry<String, List<Parameter>> e : parameters.entrySet()) {
-                if (params.containsKey(e.getKey())) JSONUtils.fromJSON(e.getValue(), (JSONArray)params.get(e.getKey()));
+                if (params.containsKey(e.getKey())) {
+                    if (JSONUtils.isJSONArrayMap(params.get(e.getKey()))) JSONUtils.fromJSONArrayMap(e.getValue(), (JSONArray)params.get(e.getKey()));
+                    else JSONUtils.fromJSON(e.getValue(), (JSONArray)params.get(e.getKey()));
+                }
             }
         } else throw new IllegalArgumentException("JSON Entry is not JSONObject");
     }

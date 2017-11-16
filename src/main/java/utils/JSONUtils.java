@@ -17,6 +17,7 @@
  */
 package utils;
 
+import configuration.parameters.Parameter;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.Measurements;
 import dataStructure.objects.Selection;
@@ -27,6 +28,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
@@ -192,9 +196,73 @@ public class JSONUtils {
         for (JSONSerializable j : coll) res.add(j.toJSONEntry());
         return res;
     }
+    
     public static boolean fromJSON(List<? extends JSONSerializable> list, JSONArray json) {
-        if (list.size()!=json.size()) return false;
-        for (int i =0;i<list.size(); ++i) list.get(i).initFromJSONEntry(json.get(i));
-        return true;
+        if (list.size()!=json.size()) {
+            return false;
+        } else {
+            for (int i =0;i<list.size(); ++i) list.get(i).initFromJSONEntry(json.get(i));
+            return true;
+        }
+    }
+    
+    public static JSONArray toJSONArrayMap(Collection<? extends Parameter> coll) {
+        JSONArray res = new JSONArray();
+        for (Parameter j : coll) {
+            JSONObject o = new JSONObject();
+            o.put(j.getName(), j.toJSONEntry());
+            res.add(o);
+        }
+        return res;
+    }
+    public static boolean isJSONArrayMap(Object o) {
+        if (o instanceof JSONArray) {
+            for (Object oo : (JSONArray)o) {
+                if (!(oo instanceof JSONObject)) return false;
+                JSONObject jso = ((JSONObject)oo);
+                if (jso.size()!=1 || !(jso.keySet().iterator().next() instanceof String)) return false;
+            }
+            return true;
+        } else return false;
+    }
+    public static <P extends Parameter> boolean fromJSONArrayMap(List<P> list, JSONArray json) {
+        if (list.size()!=json.size()) {
+            int count = 0;
+            Map<String, P> recieveMap = list.stream().collect(Collectors.toMap(Parameter::getName, Function.identity()));
+            for (Object o : json) {
+                Entry e = (Entry)((JSONObject)o).entrySet().iterator().next();
+                Parameter r = recieveMap.get((String)e.getKey());
+                if (r!=null) {
+                    r.initFromJSONEntry(e.getValue());
+                    ++count;
+                    }
+            }
+            return count==json.size()||count==list.size();
+        } else { 
+            for (int i =0;i<list.size(); ++i) {
+                list.get(i).initFromJSONEntry(((JSONObject)json.get(i)).values().iterator().next());
+            }
+            return true;
+        }
+    }
+    
+    public static JSONObject toJSONMap(Collection<? extends Parameter> coll) {
+        JSONObject res = new JSONObject();
+        for (Parameter j : coll) res.put(j.getName(), j.toJSONEntry());
+        return res;
+    }
+    public static <P extends Parameter> boolean fromJSONMap(List<P> list, JSONObject json) {
+        int count = 0;
+        if (list==null || list.isEmpty()) return json==null||json.isEmpty();
+        if (json==null || json.isEmpty()) return false;
+        Map<String, P> recieveMap = list.stream().collect(Collectors.toMap(Parameter::getName, Function.identity()));
+        for (String s : (Set<String>)json.keySet()) {
+            if (recieveMap.containsKey(s)) {
+                Parameter r = recieveMap.get(s);
+                r.initFromJSONEntry(json.get(s));
+                ++count;
+            }
+        }
+        return count==json.size()||count==list.size();
     }
 }

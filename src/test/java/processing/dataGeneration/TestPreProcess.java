@@ -17,6 +17,7 @@
  */
 package processing.dataGeneration;
 
+import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.TransformationPluginParameter;
 import core.Processor;
@@ -34,6 +35,7 @@ import plugins.PluginFactory;
 import plugins.Transformation;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.transformations.AutoRotationXY;
+import plugins.plugins.transformations.CropMicroChannelBF2D;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
@@ -56,7 +58,7 @@ public class TestPreProcess {
         //String dbName= "boa_fluo160428";
         //String dbName= "fluo151127";
         //String dbName = "boa_fluo170117_GammeMutTrackStab";
-        String dbName = "fluo160501";
+        String dbName = "fluo171113_WT_15s";
         // 12 -> flip = true
         boolean flip = false;
         int field = 17;
@@ -65,9 +67,34 @@ public class TestPreProcess {
         //testCrop(dbName, field, 0, flip);
         //displayPreProcessed(dbName, field, 2, 0, 680);
         //testStabilizer(dbName, field, 0, 19, 0, flip);
-        testStabFromXP(dbName, field, 1, 500, 1000);
+        //testStabFromXP(dbName, field, 1, 500, 1000);
+        test(dbName, 0, null, 0);
     }
+    public static void test(String dbName, int posIdx, String positionName, int time) throws Exception {
+        MasterDAO db = new Task(dbName).getDB();
+        MicroscopyField f = positionName ==null ? db.getExperiment().getPosition(posIdx): db.getExperiment().getPosition(positionName);
+        List<TransformationPluginParameter<Transformation>> list = new ArrayList<>(f.getPreProcessingChain().getTransformations(false));
+        int cropIdx = -1;
+        int i = 0;
+        for (TransformationPluginParameter<Transformation> tpp : list) {
+            if (tpp.instanciatePlugin() instanceof CropMicroChannelFluo2D) cropIdx = i;
+            ++i;
+        }
+        if (cropIdx<0) {
+            logger.error("no crop defined");
+            return;
+        }
+        f.getPreProcessingChain().removeAllTransformations();
+        for (i = 0;i<=cropIdx; ++i) f.getPreProcessingChain().addTransformation(list.get(i).getInputChannel(), list.get(i).getOutputChannels(), list.get(i).instanciatePlugin());
+        
+        CropMicroChannelFluo2D.debug=true;
+        
+        IJImageDisplayer disp = new IJImageDisplayer();
+        disp.showImage(f.getInputImages().getImage(0, time).duplicate("input: f="+posIdx));
+        Processor.setTransformations(f, true);
+        disp.showImage(f.getInputImages().getImage(0, time).duplicate("output: f="+posIdx));
     
+    }
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) throws Exception {
        MasterDAO db = new Task(dbName).getDB();
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);

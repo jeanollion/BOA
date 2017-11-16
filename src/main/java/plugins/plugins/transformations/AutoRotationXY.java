@@ -19,6 +19,7 @@ package plugins.plugins.transformations;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.FilterSequence;
@@ -59,8 +60,9 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false);
     ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false);
     NumberParameter frameNumber = new BoundedNumberParameter("Number of frame", 0, 10, 0, null);
+    BooleanParameter removeIncompleteRowsAndColumns = new BooleanParameter("Remove Incomplete rows and columns", true);
     FilterSequence prefilters = new FilterSequence("Pre-Filters");
-    Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, prefilters}; // prefilters -> problem : parent?
+    Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, removeIncompleteRowsAndColumns, prefilters}; //  
     ArrayList<Double> internalParams=new ArrayList<Double>(1);
     public static boolean debug = false;
     public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation, SearchMethod method) {
@@ -111,7 +113,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return angle;
     }
     public Image rotate(Image image) {
-        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), getAngle(image), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), true);
+        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), getAngle(image), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
     }
     public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {     
         // TODO search for best image to Rotate ... better dispertion of signal ? using spatial moments? average on several frames ?
@@ -134,10 +136,10 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         internalParams = new ArrayList<Double>(1);
         internalParams.add(medianAngle);
     }
-
+    @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (internalParams==null || internalParams.isEmpty()) throw new Error("Autorotation not configured");
-        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), true);
+        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
     }
     
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {

@@ -184,10 +184,10 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         List<Integer> yMinsList = new ArrayList<>(yMins.length);
         for (int yMin : yMins) if (yMin!=Integer.MAX_VALUE) yMinsList.add(yMin);
         if (yMinsList.isEmpty()) return null;
-        Collections.sort(yMinsList);
-        int s = yMinsList.size();
-        int yMin =  (s%2 == 0) ? (int) (0.5d + (double)(yMinsList.get(s/2-1)+yMinsList.get(s/2)) /2d) : yMinsList.get(s/2);
-        if (debug) logger.debug("Ymin: {}, among: {} values : {}, shift: {}", yMin, yMinsList.size(), yMins, yShift);
+        //int yMin = (int)Math.round(ArrayUtil.medianInt(yMinsList));
+        //if (debug) logger.debug("Ymin: {}, among: {} values : {}, shift: {}", yMin, yMinsList.size(), yMins, yShift);
+        int yMin = Collections.min(yMinsList);
+        
         List<int[]> sortedMinMaxYShiftList = new ArrayList<>(xObjects.length);
         
         for (int i = 0; i<xObjects.length; ++i) {

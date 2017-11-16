@@ -75,10 +75,11 @@ public class Processor {
         int count=0, relinkCount=0;
         for (MultipleImageContainer c : images) {
             MicroscopyField f = xp.createPosition(c.getName());
-            if (c.getScaleXY()==1) {
+            if (c.getScaleXY()==1 || c.getScaleXY()==0) {
                 if (pcb!=null) pcb.log("Warning: no scale set for position: "+f.getName());
                 logger.info("no scale set for positon: "+f.getName());
             }
+            logger.debug("image: {} scale: {} frame: {}", c.getName(), c.getScaleXY(), c.getCalibratedTimePoint(1, 0, 0));
             if (f!=null) {
                 f.setImages(c); // TODO: bug when eraseAll from gui just after creation
                 count++;
@@ -135,8 +136,10 @@ public class Processor {
         List<StructureObject> res = dao.getRoots();
         if (res==null || res.isEmpty()) {
             res = dao.getExperiment().getPosition(dao.getPositionName()).createRootObjects(dao);
-            dao.store(res);
-            dao.setRoots(res);
+            if (res!=null && !res.isEmpty()) {
+                dao.store(res);
+                dao.setRoots(res);
+            }
         }
         return res;
     }

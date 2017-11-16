@@ -106,8 +106,9 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         if (f.exists()) {
             ImageReader reader = new ImageReader(path);
             int[][] STCXYZ = reader.getSTCXYZNumbers();
+            double[] scale = reader.getScaleXYZ(1);
             reader.closeReader();
-            return new BlankMask("", STCXYZ[0][2], STCXYZ[0][3], STCXYZ[0][4], 0, 0, 0, 0, 0);
+            return new BlankMask("", STCXYZ[0][2], STCXYZ[0][3], STCXYZ[0][4], 0, 0, 0, (float)scale[0], (float)scale[1]);
         } else {
             logger.error("getPreProcessedImageProperties: pre-processed image {} not found", path);
             return null;

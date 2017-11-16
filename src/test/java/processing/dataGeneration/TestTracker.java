@@ -76,13 +76,13 @@ public class TestTracker {
         //String dbName = "MutD5_141209"; //-> mc 0 -> cellules collees
         //String dbName = "MutH_150324";
         //String dbName = "WT_150616";
-        String dbName = "TestThomas";
+        String dbName = "fluo171113_WT_15s";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx = 0;
         int mcIdx =0; //9 
-        int structureIdx = 1;
-        BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=20;
+        int structureIdx = 0;
+        //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=20;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
             return;

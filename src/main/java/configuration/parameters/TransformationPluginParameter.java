@@ -157,9 +157,12 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         if (other instanceof TransformationPluginParameter && ((TransformationPluginParameter)other).getPluginType().equals(getPluginType())) {
             TransformationPluginParameter otherPP = (TransformationPluginParameter) other;
             this.configurationData=ParameterUtils.duplicateConfigurationDataList(otherPP.configurationData);
-            if (otherPP.outputChannel==null) this.outputChannel=null;
-            else this.outputChannel=otherPP.outputChannel.duplicate();
             inputChannel.setContentFrom(otherPP.inputChannel);
+            if (otherPP.outputChannel==null) this.outputChannel=null;
+            else {
+                this.outputChannel=otherPP.outputChannel.duplicate();
+                initChildList();
+            }
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     
