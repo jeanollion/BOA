@@ -227,7 +227,7 @@ public class TrackMateInterface<S extends Spot> {
      * @param edges
      * @param spots can be null 
      */
-    public void removeFromGraph(Collection<DefaultWeightedEdge> edges, Collection<S> spots) {
+    public void removeFromGraph(Collection<DefaultWeightedEdge> edges, Collection<S> spots, boolean removeUnlinkedVextices) {
         if (spots==null) {
             spots = new HashSet<S>();
             for (DefaultWeightedEdge e : edges) {
@@ -238,8 +238,10 @@ public class TrackMateInterface<S extends Spot> {
         //logger.debug("edges to remove :{}", Utils.toStringList(edges, e->graph.getEdgeSource(e)+"->"+graph.getEdgeTarget(e)));
         graph.removeAllEdges(edges);
         //logger.debug("spots to remove candidates :{}", spots);
-        for (Spot s : spots) { // also remove vertex that are not linked anymore
-            if (graph.edgesOf(s).isEmpty()) removeObject(spotObjectMap.get((S)s), (int)(double)s.getFeature(Spot.FRAME));
+        if (removeUnlinkedVextices) {
+            for (Spot s : spots) { // also remove vertex that are not linked anymore
+                if (graph.edgesOf(s).isEmpty()) removeObject(spotObjectMap.get((S)s), (int)(double)s.getFeature(Spot.FRAME));
+            }
         }
     }
     public void addEdge(S s, S t) {
@@ -266,7 +268,7 @@ public class TrackMateInterface<S extends Spot> {
         long t0 = System.currentTimeMillis();
         Set<S> toRemSpot = new HashSet<>();
         Set<SymetricalPair<DefaultWeightedEdge>> toRemove = getCrossingLinks(spatialTolerence, toRemSpot);
-        removeFromGraph(Pair.flatten(toRemove, null), toRemSpot);
+        removeFromGraph(Pair.flatten(toRemove, null), toRemSpot, false);
         long t1 = System.currentTimeMillis();
         logger.debug("number of edges after removing intersecting links: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
     }

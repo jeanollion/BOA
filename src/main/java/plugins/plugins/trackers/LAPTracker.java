@@ -321,7 +321,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
             addLQSpot(tmi, e, gapTolerance, start, end, toRemove, true);
         }
         tmi.logGraphStatus("before trim extremities ("+toRemove.size()+")", 0);
-        tmi.removeFromGraph(toRemove, null);
+        tmi.removeFromGraph(toRemove, null, false);
         long t1 = System.currentTimeMillis();
         tmi.logGraphStatus("trim extremities ("+toRemove.size()+")", t1-t0);
     }

@@ -388,7 +388,7 @@ public class ParameterUtils {
                                 if (psc instanceof SegmentOnly) so = (SegmentOnly)psc;
                                 else so = new SegmentOnly((Segmenter)ps).setPreFilters(psc.getPreFilters()).setPostFilters(psc.getPostFilters());
                                 StructureObject parent = (o.getStructureIdx()>parentStrutureIdx) ? o.getParent(parentStrutureIdx) : o.getChildren(parentStrutureIdx).get(0);
-                                Map<String, StructureObject> dupMap = StructureObjectUtils.duplicateRootTrackAndChangeDAO(false, parent); // ? true ? 
+                                Map<String, StructureObject> dupMap = StructureObjectUtils.duplicateRootTrackAndChangeDAO(true, parent);  
                                 parent = dupMap.get(parent.getId()); // don't modify object directly. 
                                 if (segParentStrutureIdx!=parentStrutureIdx && o.getStructureIdx()==segParentStrutureIdx) {
                                     final List<StructureObject> selF = sel;
