@@ -125,8 +125,8 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     
     
     public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, boolean vertical, boolean excludeZero, ImageInteger exclusionMask, int timePoint) {
-        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new Error("Image and exclusion signal should have same dimensions");
-        if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new Error("Image and exclusion mask should have same dimensions");
+        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new RuntimeException("Image and exclusion signal should have same dimensions");
+        if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new RuntimeException("Image and exclusion mask should have same dimensions");
         long t0 = System.currentTimeMillis();
         if (exclusionMask!=null) {
             ImageOperations.threshold(exclusionSignal, exclusionThreshold, false, true, true, exclusionMask);
@@ -153,7 +153,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     }
         
     public ImageFloat applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (meanSigmaT==null || meanSigmaT.isEmpty() || meanSigmaT.size()<timePoint) throw new Error("ScaleHistogram transformation not configured: "+ (meanSigmaT==null?"null":  meanSigmaT.size()));
+        if (meanSigmaT==null || meanSigmaT.isEmpty() || meanSigmaT.size()<timePoint) throw new RuntimeException("ScaleHistogram transformation not configured: "+ (meanSigmaT==null?"null":  meanSigmaT.size()));
         ArrayList<Double> muSig = this.meanSigmaT.get(timePoint);
         double alpha = muSig.get(1) / this.sigmaTh.getValue().doubleValue();
         double beta = muSig.get(0) - alpha * this.muTh.getValue().doubleValue();

@@ -358,7 +358,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             return cost;
         }
         /*
-        if (pv==null) throw new Error("Segment method have to be called before split method in order to initialize images");
+        if (pv==null) throw new RuntimeException("Segment method have to be called before split method in order to initialize images");
         synchronized(pv) {
             o.draw(pv.getSplitMask(), 1);
             ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.getSplitMask(), minSizePropagation.getValue().intValue(), 2, true);
@@ -438,7 +438,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         if (minCurv==Double.POSITIVE_INFINITY || minCurv==Double.NaN) return Double.POSITIVE_INFINITY;
         return getCost(minCurv, pv.curvatureThreshold, true);
         /*
-        if (pv==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
+        if (pv==null) throw new RuntimeException("Segment method have to be called before merge method in order to initialize images");
         if (objects.isEmpty() || objects.size()==1) return 0;
         synchronized(pv) {
             double minCurv = Double.POSITIVE_INFINITY;
@@ -648,7 +648,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         private ImageInteger getSegmentationMask() {
             if (segMask == null) {
-                if (thresh==null && Double.isNaN(threshold)) throw new Error("Threshold not set");
+                if (thresh==null && Double.isNaN(threshold)) throw new RuntimeException("Threshold not set");
                 IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 if (thresh==null) thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
                 if (debug) disp.showImage(thresh.duplicate("raw thresholded map"));

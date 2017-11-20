@@ -65,7 +65,7 @@ public class MutationSegmenterScaleSpace2 extends MutationSegmenterScaleSpace {
         return this;
     }
     public ObjectPopulation runPlane(Image input, ImageMask mask, ImageInteger compartimentMap) {
-        if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
+        if (input.getSizeZ()>1) throw new RuntimeException("MutationSegmenter: should be run on a 2D image");
         double[] radii = new double[]{2, 2.5, 3, 3.5}; 
         int maxScaleWSIdx=1;
         Image smooth = ImageFeatures.gaussianSmooth(input, 2, 2, false);

@@ -105,7 +105,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
     }
     
     public static Double[][] computeMeanX(Image image, Image exclusionSignal, double exclusionThreshold, boolean addGlobalMean) {
-        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new Error("Image and exclusion signal should have same dimensions");
+        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new RuntimeException("Image and exclusion signal should have same dimensions");
         //ImageWindowManagerFactory.showImage(exclusionMask.duplicate("excl mask"));
         int[] xyz = new int[3];
         Function<int[], Boolean> includeCoord = exclusionSignal==null? c->true : c -> exclusionSignal.getPixel(c[0], c[1], c[2])<exclusionThreshold;
@@ -165,7 +165,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
     }
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (meanTZY==null || meanTZY.isEmpty() || meanTZY.size()<timePoint) throw new Error("RemoveStripes transformation not configured: "+ (meanTZY==null?"null":  meanTZY.size()));
+        if (meanTZY==null || meanTZY.isEmpty() || meanTZY.size()<timePoint) throw new RuntimeException("RemoveStripes transformation not configured: "+ (meanTZY==null?"null":  meanTZY.size()));
         List<List<Double>> muZY = meanTZY.get(timePoint);
         
         //ImageFloat imTest = new ImageFloat("removeStripes", image);

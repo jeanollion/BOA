@@ -101,7 +101,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     }
     
     /*public static ObjectPopulation runPlane(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
-        if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
+        if (input.getSizeZ()>1) throw new RuntimeException("MutationSegmenter: should be run on a 2D image");
         double[] radii = new double[]{2, 2.5, 3, 3.5, 4.5, 7};
         int maxScaleIdx=radii.length-1-2;
         double scale =2;
@@ -125,7 +125,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     
     /*
     public static ObjectPopulation runPlaneMono(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
-        if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
+        if (input.getSizeZ()>1) throw new RuntimeException("MutationSegmenter: should be run on a 2D image");
         double[] radii = new double[]{2, 2.5, 3, 3.5, 4.5, 7};
         int wsPlane=1;
         int maxScaleIdx=radii.length-1-2;
@@ -152,7 +152,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     }*/
     
     public ObjectPopulation runPlaneHybrid(Image input, ImageMask mask) {
-        if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
+        if (input.getSizeZ()>1) throw new RuntimeException("MutationSegmenter: should be run on a 2D image");
         double[] radii = new double[]{2, 2.5, 3, 3.5, 6, 7}; // 5,7 ??
         int maxScaleIdx=radii.length-1-2;
         int maxScaleWSIdx=1;

@@ -96,7 +96,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
         @Override
         protected void apply(List<Object3D> currentObjects) {
             int i = currentObjects.indexOf(source);
-            if (i<0) throw new Error("add split "+(frame)+" object not found");
+            if (i<0) throw new RuntimeException("add split "+(frame)+" object not found");
             currentObjects.set(i, values.get(0));
             currentObjects.add(i+1, values.get(1)); 
         }
@@ -132,8 +132,8 @@ public abstract class ObjectModifier extends CorrectionScenario {
         protected void apply(List<Object3D> currentObjects) {
             int i = currentObjects.indexOf(source.key);
             int i2 = currentObjects.indexOf(source.value);
-            if (i<0) throw new Error("ObjectModifier Error: frame:"+(frame)+" object 1 not found");
-            if (i2<0) throw new Error("ObjectModifier Error: frame:"+(frame)+" object 2 not found");
+            if (i<0) throw new RuntimeException("ObjectModifier Error: frame:"+(frame)+" object 1 not found");
+            if (i2<0) throw new RuntimeException("ObjectModifier Error: frame:"+(frame)+" object 2 not found");
             currentObjects.set(Math.min(i, i2), value);
             currentObjects.remove(Math.max(i, i2));
         }

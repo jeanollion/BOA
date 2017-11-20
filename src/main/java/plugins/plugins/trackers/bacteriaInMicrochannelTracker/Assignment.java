@@ -192,7 +192,7 @@ public class Assignment {
                 if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} start increment: {}", ta.verboseLevel, this);
                 if (!verifyInequality()) return;
             } else change = ta.checkNextIncrement();
-            if (ta.currentAssignment!=this) throw new Error("TA's currentAssignment should be calling assignment");
+            if (ta.currentAssignment!=this) throw new RuntimeException("TA's currentAssignment should be calling assignment");
             while (ta.allowRecurstiveNextIncrementCheck() && change && this.idxPrev<=cellNumberLimitForAssignment) change = ta.checkNextIncrement();
         }
                 

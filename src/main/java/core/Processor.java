@@ -262,7 +262,7 @@ public class Processor {
             return errors;
         }
         Map<StructureObject, List<StructureObject>> rootTrack = new HashMap<>(1); rootTrack.put(roots.get(0), roots);
-        
+        boolean containsObjects=false;
         for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
             Map<StructureObject, List<StructureObject>> allParentTracks;
             if (e.getKey()==-1) {
@@ -281,6 +281,7 @@ public class Processor {
                 }
             }
             if (pcb!=null) pcb.log("Executing: #"+actionPool.size()+" measurements");
+            if (!actionPool.isEmpty()) containsObjects=true;
             List<Pair<String, Exception>> errorsLocal = ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
             errors.addAll(errorsLocal);
 
@@ -296,7 +297,7 @@ public class Processor {
         }
         logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getPositionName(), t1-t0, allModifiedObjects.size());
         dao.upsertMeasurements(allModifiedObjects);
-        if (allModifiedObjects.isEmpty()) errors.add(new Pair(dao.getPositionName(), new Error("No Measurement preformed")));
+        if (containsObjects && allModifiedObjects.isEmpty()) errors.add(new Pair(dao.getPositionName(), new Exception("No Measurement preformed")));
         return errors;
     }
     

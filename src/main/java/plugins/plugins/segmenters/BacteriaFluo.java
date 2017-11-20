@@ -272,7 +272,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             pop.translate(o.getBounds(), true);
             return cost;
         }
-        /*if (pv==null) throw new Error("Segment method have to be called before split method in order to initialize maps");
+        /*if (pv==null) throw new RuntimeException("Segment method have to be called before split method in order to initialize maps");
         synchronized(pv) {
             o.draw(pv.getSplitMask(), 1);
             //ObjectPopulation pop = WatershedObjectSplitter.splitInTwo(pv.intensityMap, pv.splitMask, false, minSize.getValue().intValue(), false);
@@ -317,7 +317,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         if (maxCost==Double.MIN_VALUE) return Double.POSITIVE_INFINITY;
         return BacteriaTrans.getCost(maxCost, pv.splitThresholdValue, false);
         /*
-        if (pv==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
+        if (pv==null) throw new RuntimeException("Segment method have to be called before merge method in order to initialize images");
         if (objects.isEmpty() || objects.size()==1) return 0;
         synchronized(pv) {
             double maxCost = Double.NEGATIVE_INFINITY;

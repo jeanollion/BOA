@@ -530,7 +530,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     @Override 
     public void done() {
         //logger.debug("EXECUTING DONE FOR : {}", this.toJSON().toJSONString());
-        this.publish("Job done. Errors: "+this.errors.size());
+        this.publish("Job done.");
         publishErrors();
         this.printErrors();
         this.publish("------------------");
@@ -576,7 +576,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             tasks.get(i).db=null;
             return "";
         }, tasks.size()).setEndOfWork(
-                ()->{for (Task t : tasks) t.publishErrors(); for (Runnable r : endOfWork) r.run();});
+                ()->{for (Task t : tasks) t.done(); for (Runnable r : endOfWork) r.run();});
     }
     public static void executeTask(Task t, UserInterface ui, Runnable... endOfWork) {
         executeTasks(new ArrayList<Task>(1){{add(t);}}, ui, endOfWork);

@@ -96,6 +96,7 @@ public class TrackMaskX extends TrackMask {
     public int getClosestFrame(int x, int y) {
         int i = Arrays.binarySearch(trackOffset, new BoundingBox(x, x, 0, 0, 0, 0), new bbComparatorX());
         if (i<0) i=-i-2; // element inférieur à x puisqu'on compare les xmin des bounding box
+        if (i<0) logger.error("get closest frame: x:{}, trackOffset:[{}, {}]",x, trackOffset[0], trackOffset[trackOffset.length-1]);
         return trackObjects[i].parent.getFrame();
     }
 

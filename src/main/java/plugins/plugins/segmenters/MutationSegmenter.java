@@ -228,7 +228,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         }
     }
     public ObjectPopulation runPlane(Image input, StructureObjectProcessing parent, double scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
-        if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
+        if (input.getSizeZ()>1) throw new RuntimeException("MutationSegmenter: should be run on a 2D image");
         this.pv.initPV(input, parent.getMask(), scale);
         
         // TODO: test is Use Scale is taken into acount.

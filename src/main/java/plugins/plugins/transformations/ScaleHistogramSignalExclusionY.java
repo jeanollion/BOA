@@ -141,8 +141,8 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
     
     
     public static Double[][] computeMeanSigmaY(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, boolean includeZero, double signalMaxThreshold, ImageInteger exclusionMask, int windowSize, int timePoint) {
-        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new Error("Image and exclusion signal should have same dimensions");
-        if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new Error("Image and exclusion mask should have same dimensions");
+        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new RuntimeException("Image and exclusion signal should have same dimensions");
+        if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new RuntimeException("Image and exclusion mask should have same dimensions");
         long t0 = System.currentTimeMillis();
         if (exclusionMask!=null) {
             ImageOperations.threshold(exclusionSignal, exclusionThreshold, !underThreshold, true, true, exclusionMask);
@@ -213,7 +213,7 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
     }
     
     public ImageFloat applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (meanSigmaTY==null || meanSigmaTY.isEmpty() || meanSigmaTY.size()<timePoint) throw new Error("ScaleHistogram transformation not configured: "+ (meanSigmaTY==null?"null":  meanSigmaTY.size()));
+        if (meanSigmaTY==null || meanSigmaTY.isEmpty() || meanSigmaTY.size()<timePoint) throw new RuntimeException("ScaleHistogram transformation not configured: "+ (meanSigmaTY==null?"null":  meanSigmaTY.size()));
         ArrayList<ArrayList<Double>> muSigY = this.meanSigmaTY.get(timePoint);
         double[] alphaY = new double[muSigY.size()];
         double[] betaY = new double[muSigY.size()];

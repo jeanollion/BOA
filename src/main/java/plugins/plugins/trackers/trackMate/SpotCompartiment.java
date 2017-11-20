@@ -191,7 +191,7 @@ public class SpotCompartiment {
                 return getPole(o, yApprox, (int)Math.round(yApprox+marginYUp), (int)Math.round(yApprox+marginYDown));
             }
         }
-        throw new Error("get Division middle : limit unreached");
+        throw new RuntimeException("get Division middle : limit unreached");
     }
     
     private static double[] getYPositionWithinCompartimentByCount(Object3D o, int... limit) {
@@ -213,7 +213,7 @@ public class SpotCompartiment {
                 }
             }
         }
-        throw new Error("get Division middle : limit unreached");
+        throw new RuntimeException("get Division middle : limit unreached");
     }
     
     /*protected double[] getPoleDivisionOffsetUp(SpotCompartiment previousCompartiment) {
@@ -224,7 +224,7 @@ public class SpotCompartiment {
             if (sibling!=null) {
                 compartimentOffsetDivisionUp = getPole(sibling.getObject(), poleMargin, true);
             } else {
-                throw new Error("SpotWithinCompartment :: no offset Found: "+compartiment.toString());
+                throw new RuntimeException("SpotWithinCompartment :: no offset Found: "+compartiment.toString());
                 //compartimentOffsetDivision = new double[]{}; // to signal no sibling was found
             }
         }

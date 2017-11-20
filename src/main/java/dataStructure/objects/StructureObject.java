@@ -771,7 +771,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                         } else { // check track image
                             Image trackImage = getTrackImage(structureIdx);
                             if (trackImage!=null) {
-                                //logger.debug("object: {}, channel: {}, open from trackImage", this, channelIdx);
+                                //logger.debug("object: {}, channel: {}, open from trackImage: offset:{}", this, channelIdx, offsetInTrackImage);
                                 Image image = trackImage.crop(getBounds().duplicate().translateToOrigin().translate(offsetInTrackImage));
                                 image.resetOffset().addOffset(getBounds());
                                 rawImagesC.set(image, channelIdx);
@@ -810,7 +810,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return rawImagesC.get(channelIdx);
     }
-
     public Image getTrackImage(int structureIdx) {
         //logger.debug("get Track image for : {}, id: {}, thId: {}, isTH?: {}, th: {}", this, id, this.trackHeadId, isTrackHead, this.trackHead);
         //logger.debug("get Track Image for: {} th {}", this, getTrackHead());
@@ -822,11 +821,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                         Image im = getExperiment().getImageDAO().openTrackImage(this, channelIdx);
                         if (im!=null) { // set image && set offsets for all track
                             im.setCalibration(getScaleXY(), getScaleZ());
-                            trackImagesC.setQuick(im, channelIdx);
                             List<StructureObject> track = StructureObjectUtils.getTrack(this, false);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().generateTrackMask(track, structureIdx); // not saved in image window manager to avoid memory leaks
                             List<Pair<StructureObject, BoundingBox>> off = i.pairWithOffset(track);
                             for (Pair<StructureObject, BoundingBox> p : off) p.key.offsetInTrackImage=p.value;
+                            //logger.debug("get track image: track:{}(id: {}/trackImageCId: {}) length: {}, chId: {}", this, this.hashCode(), trackImagesC.hashCode(), track.size(), channelIdx);
+                            //logger.debug("offsets: {}", Utils.toStringList(track, o->o+"->"+o.offsetInTrackImage));
+                            trackImagesC.setQuick(im, channelIdx); // set after offset is set if not offset could be null
                         }
                     }
                 }

@@ -171,7 +171,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
             for (I i : interfaces) logger.debug("interface: {}", i);
             for (E e : interfaceByElement.keySet()) logger.debug("Element: {}, interfaces: {}", e, interfaceByElement.get(e));
         }
-        if (interSize!=interfaces.size()) throw new Error("Error INCONSITENCY BETWEEN COMPARE AND EQUALS METHOD FOR INTERFACE CLASS: "+interfaces.iterator().next().getClass().getSimpleName());
+        if (interSize!=interfaces.size()) throw new RuntimeException("Error INCONSITENCY BETWEEN COMPARE AND EQUALS METHOD FOR INTERFACE CLASS: "+interfaces.iterator().next().getClass().getSimpleName());
         Iterator<I> it = interfaces.iterator();
         while (it.hasNext() && interfaces.size()>numberOfInterfacesToKeep && allElements.size()>numberOfElementsToKeep) {
             I i = it.next();
