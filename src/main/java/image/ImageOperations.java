@@ -814,6 +814,7 @@ public class ImageOperations {
     
     public static double[] getMeanAndSigma(Image image, ImageMask mask) {
         if (mask==null) mask = new BlankMask(image);
+        else if (!mask.sameSize(image)) throw new IllegalArgumentException("Mask should be of same size as image");
         double mean = 0;
         double count = 0;
         double values2 = 0;

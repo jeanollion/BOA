@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers;
 
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
@@ -32,6 +33,7 @@ import fiji.plugin.trackmate.Spot;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
+import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +57,7 @@ import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MicrochannelSegmenter;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import plugins.plugins.trackers.trackMate.TrackMateInterface;
+import plugins.plugins.transformations.CropMicroChannelBF2D;
 import plugins.plugins.transformations.CropMicroChannels.Result;
 import utils.ArrayUtil;
 import utils.HashMapGetCreate;
@@ -145,7 +148,8 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
             boundingBoxes[idx] = segmenters[idx].segment(inputImages[idx]);
             if (boundingBoxes[idx]==null) parent.setChildren(new ArrayList<>(), structureIdx); // if not set and call to getChildren() -> DAO will set old children
-            else parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
+            //else parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards // TODO if post filter remove objects or modify -> how to link with result object??
+            else parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx); // no Y - shift here because the mean shift is added afterwards
             inputImages[idx]=null;
             segmenters[idx]=null;
         };
@@ -153,10 +157,14 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         ta.run(parentTrack.get(0), structureIdx);
         MicrochannelPhase2D.debug=false;
         */
+        
         List<Pair<String, Exception>> exceptions = ThreadRunner.execute(parentTrack, false, ta, executor, null);
         for (Pair<String, Exception> p : exceptions) logger.debug(p.key, p.value);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
+        if (debug) {
+            for (int i = 0; i<boundingBoxes[0].size(); ++i) logger.debug("bb {}-> {}",i, boundingBoxes[0].getBounds(i, true));
+        }
         // tracking
         if (debug) logger.debug("mc2: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         track(structureIdx, parentTrack);
@@ -203,9 +211,32 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             for (int i = 0; i<track.size(); ++i) {
                 StructureObject o = track.get(i);
                 BoundingBox b = o.getBounds();
-                int offX = (int)Math.round(b.getXMean()-width/2d + Double.MIN_VALUE); // if width change -> offset X change
-                int offY = b.getyMin() + shift; // shift was not included before
                 BoundingBox parentBounds = o.getParent().getBounds();
+                int offY = b.getyMin() + shift; // shift was not included before
+                int offX; // if width change -> offset X change
+                //int offX = (int)Math.round( b.getXMean()-width/2d ); 
+                double offXd = b.getXMean()-(width-1d)/2d;
+                double offXdr = offXd-(int)offXd;
+                if (false && offXdr==0) offX=(int)offXd;
+                else { // adjust localy: compare light in both cases
+                    BoundingBox bLeft = new BoundingBox((int)offXd, (int)offXd+width-1, offY, offY+b.getSizeY()-1, b.getzMin(), b.getzMax());
+                    BoundingBox bRight = bLeft.duplicate().translate(1, 0, 0);
+                    BoundingBox bLeft2 = bLeft.duplicate().translate(-1, 0, 0);
+                    bLeft.contract(parentBounds);
+                    bRight.contract(parentBounds);
+                    bLeft2.contract(parentBounds);
+                    Image r = o.getParent().getRawImage(structureIdx);
+                    double valueLeft = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft.getImageProperties(1, 1), null)[0];
+                    double valueLeft2 = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft2.getImageProperties(1, 1), null)[0];
+                    double valueRight = ImageOperations.getMeanAndSigmaWithOffset(r, bRight.getImageProperties(1, 1), null)[0];
+                    if (valueLeft2>valueRight && valueLeft2>valueLeft2) offX=(int)offXd-1;
+                    else if (valueRight>valueLeft && valueRight>valueLeft2) offX=(int)offXd+1;
+                    else offX=(int)offXd;
+                    //logger.debug("offX for element: {}, width:{}>{}, left:{}={}, right:{}={} left2:{}={}", o, b, width, bLeft, valueLeft, bRight, valueRight, bLeft2, valueLeft2);
+                }
+                
+                
+                
                 if (width+offX>parentBounds.getxMax() || offX<0) {
                     if (debug) logger.debug("remove out of bound track: {}", track.get(0).getTrackHead());
                     toRemove.addAll(track);

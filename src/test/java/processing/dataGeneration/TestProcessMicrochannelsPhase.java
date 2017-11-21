@@ -40,11 +40,11 @@ public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        int time =1;
+        int time =0;
         int field = 0;
         //String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141129wt";
-        String dbName = "TestThomas";
+        String dbName = "TestThomasRawStacks";
         testSegMicrochannelsFromXP(dbName, field, time);
     }
     

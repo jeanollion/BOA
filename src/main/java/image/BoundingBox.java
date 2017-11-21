@@ -335,16 +335,16 @@ public class BoundingBox implements JSONSerializable {
     }
     
     public double getXMean() {
-        return xMin+getSizeX()/2.0;
+        return (xMin+xMax)/2.0;
     }
     
     public double getYMean() {
-        return yMin+getSizeY()/2.0;
+        return (yMin+yMax)/2.0;
     }
     
     public double getZMean() {
         if (getSizeZ()<=1) return zMin;
-        return zMin+getSizeZ()/2.0;
+        return (zMin+zMax)/2.0;
     }
     
     public double getDistance(BoundingBox other) {

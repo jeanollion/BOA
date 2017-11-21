@@ -33,11 +33,13 @@ public class BlankMask extends ImageInteger implements ImageMask {
         return new BlankMask(name, sizeX, sizeY, 1, offsetX, offsetY, offsetZ+idxZ, scaleXY, scaleZ);
     }
 
+    @Override
     public boolean insideMask(int x, int y, int z) {
         //return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
         return true;
     }
 
+    @Override
     public boolean insideMask(int xy, int z) {
         return true;
     }

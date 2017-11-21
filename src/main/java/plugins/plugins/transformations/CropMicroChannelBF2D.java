@@ -99,8 +99,8 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     }
     public static Result segmentMicroChannels(Image image, boolean opticalAberration, int margin, int channelWidth, int widthMin, int widthMax, int yStartAdjustWindow, double localExtremaThld, int yMarginEndChannel) {
         double derScale = 2;
-        int xErode = Math.max(1, (int)(derScale/2d + 0.5+Double.MIN_VALUE));
-        
+        int xErode = Math.max(1, (int)(derScale/2d));
+        if (debug) logger.debug("xErode: {}", xErode);
         /*
         1) search for optical aberation + crop
         2) search for y-start of MC using Y-proj of d/dy image global max (projection from yE[0; y-aberation]
@@ -207,8 +207,9 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
                 //if (debug) plotProfile("yProjDerAdjust", proj);
             }
         }
-        return new Result(peaks, channelStartIdx, aberrationStart);
-        
+        Result r= new Result(peaks, channelStartIdx, aberrationStart);
+        if (debug) for (int i = 0; i<r.size(); ++i) logger.debug("mc: {} -> {}", i, r.getBounds(i, true));
+        return r;
     }
     
     private static int getNextMinIdx(final float[] derMap, final List<Integer> localMin, final List<Integer> localMax, final int maxIdx, int lastMinIdx, final double widthMin, final double widthMax, Comparator<int[]> segmentScoreComparator) {

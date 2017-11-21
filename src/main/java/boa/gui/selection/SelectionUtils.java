@@ -191,6 +191,7 @@ public class SelectionUtils {
                 if (idx>0) idx--;
                 else return null;
             }
+            if (idx>=p.size()) return next ? p.get(0) : p.get(p.size()-1);
         } else {
             if (next) {
                 if (idx==p.size()-1) return null;
