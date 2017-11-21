@@ -79,11 +79,11 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 100, 50, null);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 50, 1, null);
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 10, 0, null);
-    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 1, 5);
-    NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 40, 5, null);
+    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 0, 5).setToolTipText("Scale for median filtering (remove high frequency noise). If value <1 no smooth is applied");
+    NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 40, 0, null).setToolTipText("Scale for low frequency filtering. If value ==0 no filter is applied ");
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6);
     NumberParameter hessianThresholdFactor = new BoundedNumberParameter("Hessian threshold factor", 1, 1, 0, 5);
-    NumberParameter thresholdForEmptyChannel = new BoundedNumberParameter("Threshold for empty channel", 1, 2, 0, null);
+    NumberParameter thresholdForEmptyChannel = new BoundedNumberParameter("Threshold for empty channel", 3, 2, 0, null);
     NumberParameter manualSegPropagationHessianThreshold = new BoundedNumberParameter("Manual Segmentation: Propagation NormedHessian Threshold", 3, 0.2, 0, null);
     
     Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, hessianScale, hessianThresholdFactor, thresholdForEmptyChannel, openRadius, manualSegPropagationHessianThreshold};
@@ -131,16 +131,20 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     @Override public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         pv = initializeVariables(input);
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
-        double threshold = IJAutoThresholder.runThresholder(pv.getIntensityMap(), parent.getMask(), null, AutoThresholder.Method.Otsu, 0);
-        
+        double threshold = dogScale.getValue().doubleValue()==0 ? IJAutoThresholder.runThresholder(pv.getIntensityMap(), parent.getMask(), null, AutoThresholder.Method.Otsu, 0) : 0;
+        if (debug) disp.showImage(pv.getIntensityMap().duplicate("intensityMap"));
         // criterion for empty channel: 
-        double[] musigmaOver = getMeanAndSigma(pv.getIntensityMap(), parent.getMask(), 0, true);
-        double[] musigmaUnder = getMeanAndSigma(pv.getIntensityMap(), parent.getMask(), 0, false);
-        if (musigmaOver[2]==0 || musigmaUnder[2]==0) return new ObjectPopulation(input);
+        double[] musigmaOver = getMeanAndSigma(pv.getIntensityMap(), parent.getMask(), threshold, true);
+        double[] musigmaUnder = getMeanAndSigma(pv.getIntensityMap(), parent.getMask(), threshold, false);
+        if (debug) logger.debug("test empty channel: thld: {} mean over: {} mean under: {}, crit: {} thld: {}", threshold, musigmaOver[0], musigmaUnder[0], musigmaOver[0] - musigmaUnder[0], thresholdForEmptyChannel.getValue().doubleValue());
+        if (musigmaOver[2]==0 || musigmaUnder[2]==0) {
+            if (debug) logger.debug("no pixel {} thld", musigmaOver[2]==0?"over":"under");
+            return new ObjectPopulation(input);
+        }
         else {            
             if (musigmaOver[0] - musigmaUnder[0]<thresholdForEmptyChannel.getValue().doubleValue()) return new ObjectPopulation(input);
         }
-        ObjectPopulation pop1 = SimpleThresholder.run(pv.getIntensityMap(), 0);
+        ObjectPopulation pop1 = SimpleThresholder.run(pv.getIntensityMap(), threshold, parent.getMask());
         double openRadius = this.openRadius.getValue().doubleValue();
         if (openRadius>=1) {
             for (Object3D o : pop1.getObjects()) {
@@ -431,9 +435,15 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         
         public Image getIntensityMap() {
             if (intensityMap == null) {
-                ImageFloat dog = ImageFeatures.differenceOfGaussians(rawIntensityMap, 0, dogScale, 1, false).setName("DoG");
+                Image dog = rawIntensityMap;
+                Image dest = null;
+                if (dogScale>0) {
+                    dog = ImageFeatures.differenceOfGaussians(rawIntensityMap, 0, dogScale, 1, false).setName("DoG");
+                    dest = dog;
+                }
                 //Image dog = BandPass.filter(rawIntensityMap, 0, dogScale, 0, 0);
-                intensityMap= Filters.median(dog, dog, Filters.getNeighborhood(smoothScale, smoothScale, dog)).setName("DoG+Smoothed");
+                intensityMap = dog;
+                if (smoothScale>0) intensityMap= Filters.median(dog, dest, Filters.getNeighborhood(smoothScale, smoothScale, dog)).setName(dog.getName()+"+Smoothed");
             }
             return intensityMap;
         }

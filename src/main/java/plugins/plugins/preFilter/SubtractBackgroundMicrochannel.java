@@ -24,17 +24,23 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.containers.InputImages;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObjectPreProcessing;
+import dataStructure.objects.Voxel;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.AutoThresholder;
+import image.BlankMask;
 import image.BoundingBox;
 import image.IJImageWrapper;
 import image.Image;
 import image.ImageFloat;
+import image.ImageInteger;
+import image.ImageLabeller;
 import image.ImageOperations;
 import image.TypeConverter;
 import java.util.ArrayList;
+import java.util.List;
 import plugins.Filter;
 import plugins.PreFilter;
 import plugins.TransformationTimeIndependent;
@@ -63,9 +69,27 @@ public class SubtractBackgroundMicrochannel implements PreFilter {
     
     public SubtractBackgroundMicrochannel(){}
     
+    @Override 
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+        input = TypeConverter.toFloat(input, null); // automaticaly copies data
+        // remove pixels in corners if corners are detected
+        ImageInteger cornerMask = ImageOperations.andNot(new BlankMask(input), structureObject.getMask(), null);
+        List<Object3D> corners = ImageLabeller.labelImageList(cornerMask);
+        if (!corners.isEmpty()) {
+            //ImageWindowManagerFactory.showImage(input.duplicate("before corner"));
+            List<Voxel> contour = structureObject.getObject().duplicate().translate(structureObject.getObject().getBounds().duplicate().reverseOffset()).getContour();
+            for (Object3D o : corners) {
+                for (Voxel v : o.getVoxels()) {
+                    Voxel closest = Voxel.getClosest(v, contour);
+                    //logger.debug("v: {}={}->{}={}", v, input.getPixel(v.x, v.y, v.z), closest, input.getPixel(closest.x, closest.y, closest.z));
+                    input.setPixel(v.x, v.y, v.z, input.getPixel(closest.x, closest.y, closest.z));
+                    
+                }
+            }
+            //ImageWindowManagerFactory.showImage(input.duplicate("after corner"));
+        }
+        
         // mirror image on both Y ends
-        input = TypeConverter.toFloat(input, null);
         ImageFloat toFilter = new ImageFloat("", input.getSizeX(), 3*input.getSizeY(), input.getSizeZ());
         ImageOperations.pasteImage(input, toFilter, new BoundingBox(0, input.getSizeY(), 0));
         Image imageFlip = ImageTransformation.flip(input, ImageTransformation.Axis.Y);

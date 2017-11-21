@@ -18,6 +18,7 @@ import image.ImageByte;
 import image.ImageInteger;
 import image.ImageMask;
 import image.ImageProperties;
+import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -239,7 +240,12 @@ public class Object3D {
     }
     
     public synchronized void addVoxels(List<Voxel> voxelsToAdd) {
-        this.voxels.addAll(voxelsToAdd);
+        this.getVoxels().addAll(voxelsToAdd);
+        this.bounds=null;
+        this.mask=null;
+    }
+    public synchronized void removeVoxels(List<Voxel> voxelsToRemove) {
+        this.getVoxels().removeAll(voxelsToRemove);
         this.bounds=null;
         this.mask=null;
     }

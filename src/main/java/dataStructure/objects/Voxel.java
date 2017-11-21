@@ -1,6 +1,7 @@
 package dataStructure.objects;
 
 import static dataStructure.objects.Object3D.logger;
+import java.util.Collection;
 import java.util.Comparator;
 
 
@@ -136,5 +137,8 @@ public class Voxel implements Comparable<Voxel> {
     public double getDistance(Voxel other) {
         return Math.sqrt((x-other.x)*(x-other.x) + (y-other.y)*(y-other.y) + (z-other.z)*(z-other.z));
     }
-    
+    public static Voxel getClosest(Voxel v, Collection<? extends Voxel> collection) {
+        if (collection==null || collection.isEmpty()) return null;
+        return collection.stream().min((v1, v2)->Double.compare(v.getDistanceSquare(v1), v.getDistanceSquare(v2))).get();
+    }
 }

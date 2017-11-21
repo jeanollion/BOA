@@ -27,9 +27,13 @@ import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import ij.ImageJ;
 import image.Image;
+import java.util.ArrayList;
+import java.util.Arrays;
 import plugins.PluginFactory;
 import plugins.ProcessingScheme;
+import plugins.ProcessingSchemeWithTracking;
 import plugins.Segmenter;
+import plugins.plugins.postFilters.FitMicrochannelHeadToGradient;
 import plugins.plugins.segmenters.MicrochannelPhase2D;
 
 /**
@@ -58,7 +62,13 @@ public class TestProcessMicrochannelsPhase {
         MicrochannelPhase2D.debug=true;
         //MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
+        input = mDAO.getExperiment().getStructure(0).getProcessingScheme().getPreFilters().filter(input, root);
         ObjectPopulation pop = s.runSegmenter(input, 0, root);
+        FitMicrochannelHeadToGradient.debug=true;
+        if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
+            ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters().filter(0, Arrays.asList(new StructureObject[]{root}), null);
+            pop = root.getObjectPopulation(0);
+        }
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);

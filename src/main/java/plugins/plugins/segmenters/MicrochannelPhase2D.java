@@ -18,6 +18,7 @@
 package plugins.plugins.segmenters;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
@@ -25,6 +26,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
+import dataStructure.objects.Voxel;
 import ij.process.AutoThresholder;
 import image.BlankMask;
 import image.BoundingBox;
@@ -34,13 +36,18 @@ import image.ImageInteger;
 import image.ImageLabeller;
 import image.ImageOperations;
 import static image.ImageOperations.threshold;
+import image.ObjectFactory;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import plugins.Segmenter;
 import plugins.plugins.transformations.CropMicroChannelBF2D;
 import plugins.plugins.transformations.CropMicroChannels.Result;
 import processing.Filters;
 import processing.ImageFeatures;
+import processing.WatershedTransform;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import utils.ArrayUtil;
 import static utils.Utils.plotProfile;
@@ -78,12 +85,13 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
         for (int idx = 0; idx<r.xMax.length; ++idx) objects.add(new Object3D(new BlankMask("mask of microchannel:" + idx+1, r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1));
         return new ObjectPopulation(objects, input);
     }
+    
     @Override
     public Result segment(Image input) {
         CropMicroChannelBF2D.debug=debug;
-        return  CropMicroChannelBF2D.segmentMicroChannels(input, false, 0, channelWidth.getValue().intValue(), channelWidthMin.getValue().intValue(), channelWidthMax.getValue().intValue(), yStartAdjustWindow.getValue().intValue(), localDerExtremaThld.getValue().doubleValue(), 0);
+        Result r =   CropMicroChannelBF2D.segmentMicroChannels(input, false, 0, channelWidth.getValue().intValue(), channelWidthMin.getValue().intValue(), channelWidthMax.getValue().intValue(), yStartAdjustWindow.getValue().intValue(), localDerExtremaThld.getValue().doubleValue(), 0);
+        return r;
     }
-    
     
     @Override public Parameter[] getParameters() {
         return parameters;

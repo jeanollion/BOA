@@ -68,6 +68,7 @@ import plugins.OverridableThreshold;
 import plugins.ParameterSetup;
 import plugins.ParameterSetupTracker;
 import plugins.plugins.processingScheme.SegmentOnly;
+import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriaTrans;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.TrackAssigner.compareScores;
 import utils.ArrayUtil;
@@ -290,6 +291,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             } else logger.debug("global contrast: {}", contrast);
         }
         // TODO: parameter for normalization..
+        boolean invert = !blackBackground && (getSegmenter() instanceof BacteriaFluo); // todo : parameter
         if (!blackBackground) { // TODO normalise for local contrast thresholder ? 
             // get gloabal percentiles and use them for normalization
             List<Image> planes = new ArrayList<>(parentsByF.size());
@@ -302,6 +304,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             thresholdHisto.freeMemory();
             double scale = 1 / (minAndMax[1] - minAndMax[0]);
             double offset = -minAndMax[0] * scale;
+            if (invert) {
+                scale = -scale;
+                offset = 1 - offset;
+            }
             logger.debug("normalization: range: [{}-{}] scale: {} off: {}", minAndMax[0], minAndMax[1], scale, offset);
             for (int t = minT; t<maxT; ++t) {
                 Image trans = ImageOperations.affineOperation(planes.get(t-minT), null, scale, offset);
@@ -329,18 +335,22 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (method==1 || method==2 || method==3 || method==4) {
                 threshold.setAdaptativeThreshold(adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue()); 
             }
-            
-            if (bactTestFrame>0) {
-                if (!inputImages.isEmpty()) this.setParentImages(false);
+            if (bactTestFrame>=0) {
+                logger.debug("test frame: {}", bactTestFrame);
+                if (!inputImages.isEmpty()) {
+                    this.setParentImages(false);
+                    logger.debug("set parent images");
+                }
                 BacteriaTrans.debug=true;
+                BacteriaFluo.debug=true;
                 List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
                 subParentTrack.removeIf(o->o.getFrame()<bactTestFrame||o.getFrame()>bactTestFrame);
                 ImageWindowManagerFactory.showImage(this.parentsByF.get(bactTestFrame).getRawImage(structureIdx));
                 so.segmentAndTrack(structureIdx, subParentTrack, null);
                 BacteriaTrans.debug=false;
+                BacteriaFluo.debug=false;
                 return;
             }
-            
             int[] fr = getFrameRangeContainingCells(so); // will use the adaptative threshold by Frame because global threshold not relevant for cell range computation if some channel are void
             if (fr!=null) {
                 threshold.setFrameRange(fr);
@@ -357,7 +367,22 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         } else if (!Double.isNaN(debugThreshold)) {
             logger.debug("Threshold used: {}", debugThreshold);
         }
-        
+        if (bactTestFrame>=0) {
+            logger.debug("test frame: {}, ", bactTestFrame);
+            if (!inputImages.isEmpty()) {
+                this.setParentImages(false);
+                logger.debug("set parent images");
+            }
+            BacteriaTrans.debug=true;
+            BacteriaFluo.debug=true;
+            List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
+            subParentTrack.removeIf(o->o.getFrame()<bactTestFrame||o.getFrame()>bactTestFrame);
+            ImageWindowManagerFactory.showImage(this.parentsByF.get(bactTestFrame).getRawImage(structureIdx));
+            so.segmentAndTrack(structureIdx, subParentTrack, null);
+            BacteriaTrans.debug=false;
+            BacteriaFluo.debug=false;
+            return;
+        }
         
         //if (true) return;
         // 1) segment. Limit to first continuous segment of cells

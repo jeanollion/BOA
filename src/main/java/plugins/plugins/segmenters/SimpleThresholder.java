@@ -72,22 +72,24 @@ public class SimpleThresholder implements Segmenter {
     
     public static ObjectPopulation run(Image input, Thresholder thresholder, StructureObjectProcessing structureObject) {
         double thresh = thresholder.runThresholder(input, structureObject);
-        return run(input, thresh); 
+        return run(input, thresh, structureObject.getMask()); 
     }
     
     public static ObjectPopulation run(Image input, ImageMask mask, Thresholder thresholder) {
         double thresh = thresholder.runThresholder(input, new BlankStructureObject(mask));
-        return run(input, thresh); 
+        return run(input, thresh, mask); 
     }
     
-    public static ObjectPopulation run(Image input, double threhsold) {
-        ImageInteger mask = ImageOperations.threshold(input, threhsold, true, false, false, null);
-        Object3D[] objects = ImageLabeller.labelImage(mask);
+    public static ObjectPopulation run(Image input, double threhsold, ImageMask mask) {
+        ImageInteger maskR = ImageOperations.threshold(input, threhsold, true, false, false, null);
+        if (mask!=null) ImageOperations.and(maskR, mask, maskR);
+        Object3D[] objects = ImageLabeller.labelImage(maskR);
         return new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
     }
-    public static ObjectPopulation runUnder(Image input, double threhsold) {
-        ImageInteger mask = ImageOperations.threshold(input, threhsold, false, false, false, null);
-        Object3D[] objects = ImageLabeller.labelImage(mask);
+    public static ObjectPopulation runUnder(Image input, double threhsold, ImageMask mask) {
+        ImageInteger maskR = ImageOperations.threshold(input, threhsold, false, false, false, null);
+        if (mask!=null) ImageOperations.and(maskR, mask, maskR);
+        Object3D[] objects = ImageLabeller.labelImage(maskR);
         return new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
     }
 
