@@ -443,7 +443,7 @@ public class ImageOperations {
     }
     
     public static ImageInteger andWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
-        if (output==null) output = new ImageByte("or", source1);
+        if (output==null) output = new ImageByte("and", source1);
         final ImageInteger out = output;
         BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
         loopBound.loop(new LoopFunction() {

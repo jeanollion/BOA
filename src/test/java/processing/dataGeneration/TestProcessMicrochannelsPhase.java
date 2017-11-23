@@ -20,6 +20,7 @@ package processing.dataGeneration;
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
@@ -44,12 +45,12 @@ public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        int time =0;
+        int time =256;
         int field = 0;
-        //String dbName = "boa_phase150616wt";
-        //String dbName = "boa_phase141129wt";
-        String dbName = "TestThomasRawStacks";
-        testSegMicrochannelsFromXP(dbName, field, time);
+        //String dbName = "TestThomasRawStacks";
+        String dbName = "MutH_150324";
+        //testSegMicrochannelsFromXP(dbName, field, time);
+        testPostProcessTracking(dbName, field, time);
     }
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
@@ -73,6 +74,30 @@ public class TestProcessMicrochannelsPhase {
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelMap());
+        logger.debug("{} objects found", pop.getObjects().size());
+        // test split
+        //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
+        //disp.showImage(popSplit.getLabelImage());
+    }
+    
+    public static void testPostProcessTracking(String dbName, int fieldNumber, int timePoint) {
+        MasterDAO mDAO =new Task(dbName).getDB();
+        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
+        StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
+        if (root==null) root = f.createRootObjects(mDAO.getDao(f.getName())).get(timePoint);
+        logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
+        Image input = root.getRawImage(0);
+        ImageWindowManagerFactory.showImage(input);
+        ObjectPopulation pop = root.getObjectPopulation(0);
+        ImageWindowManagerFactory.showImage(pop.getLabelMap());
+        FitMicrochannelHeadToGradient.debug=true;
+        if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
+            ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters().filter(0, Arrays.asList(new StructureObject[]{root}), null);
+            pop = root.getObjectPopulation(0);
+        } else return;
+        //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
+        
+        ImageWindowManagerFactory.showImage(pop.getLabelMap());
         logger.debug("{} objects found", pop.getObjects().size());
         // test split
         //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));

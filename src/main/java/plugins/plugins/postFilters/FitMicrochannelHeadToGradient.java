@@ -27,9 +27,13 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
 import image.Image;
+import image.ImageByte;
+import image.ImageLabeller;
+import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.List;
 import plugins.PostFilter;
+import processing.Filters;
 import processing.ImageFeatures;
 import processing.WatershedTransform;
 
@@ -53,12 +57,12 @@ public class FitMicrochannelHeadToGradient implements PostFilter {
     public static void fitHead(Image input, double gradientScale, ObjectPopulation inputPop) {
         Image grad = ImageFeatures.getGradientMagnitude(input, gradientScale, false).setName("grad");
         if (debug) ImageWindowManagerFactory.showImage(grad);
-        for (Object3D o : inputPop.getObjects()) cutHead(grad, o);
+        for (Object3D o : inputPop.getObjects()) cutHead(grad, gradientScale, o);
         inputPop.redrawLabelMap(true);
         if (debug && !inputPop.getObjects().isEmpty()) logger.debug("object mask type: {}", inputPop.getObjects().get(0).getMask().getClass().getSimpleName());
     }
     
-    private static void cutHead(Image grad, Object3D object) {
+    private static void cutHead(Image grad, double gradientScale, Object3D object) {
         BoundingBox b = object.getBounds();
         BoundingBox head = new BoundingBox(b.getxMin(), b.getxMax(), b.getyMin(), b.getyMin()+b.getSizeX(), b.getzMin(), b.getzMax());
         Image gradLocal = grad.crop(head);
@@ -70,7 +74,16 @@ public class FitMicrochannelHeadToGradient implements PostFilter {
         Voxel corner2 = new Voxel(gradLocal.getSizeX()-1, 0, 0);
         seeds.add(new Object3D(corner1, ++label, (float)scaleXY, (float)scaleZ));
         seeds.add(new Object3D(corner2, ++label, (float)scaleXY, (float)scaleZ));
-        seeds.add(new Object3D(new Voxel((gradLocal.getSizeX()-1)/2, (gradLocal.getSizeY()-1)/2, 0), ++label, (float)scaleXY, (float)scaleZ));
+        // add all local min within innerHead
+        int margin =(int)Math.round(gradientScale+0.5)+1;
+        if (margin*2>=b.getSizeX()-2) margin = Math.max(1, b.getSizeX()/4);
+        BoundingBox innerHead = new BoundingBox(margin, head.getSizeX()-1-margin,margin, head.getSizeY()-1-margin, 0, head.getSizeZ()-1);
+        ImageByte maxL = Filters.localExtrema(gradLocal, null, false, Filters.getNeighborhood(1.5, 1.5, gradLocal)).resetOffset();
+        if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds before and"));
+        ImageOperations.andWithOffset(maxL, innerHead.getImageProperties(1, 1), maxL);
+        if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));
+        seeds.addAll(ImageLabeller.labelImageList(maxL));
+        //seeds.add(new Object3D(new Voxel((gradLocal.getSizeX()-1)/2, (gradLocal.getSizeY()-1)/2, 0), ++label, (float)scaleXY, (float)scaleZ));
         ObjectPopulation pop = WatershedTransform.watershed(gradLocal, null, seeds, false, null, null, false);
         pop.getObjects().removeIf(o->!o.getVoxels().contains(corner1)&&!o.getVoxels().contains(corner2));
         pop.translate(head, true);

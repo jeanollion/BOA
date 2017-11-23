@@ -249,7 +249,15 @@ public class Object3D {
         this.bounds=null;
         this.mask=null;
     }
-    
+    public synchronized void resetVoxels() {
+        if (mask==null) throw new IllegalArgumentException("Cannot reset voxels if no mask is present");
+        voxels = null;
+    }
+    public synchronized void resetMask() {
+        if (voxels==null) throw new IllegalArgumentException("Cannot reset voxels if no mask is present");
+        mask = null;
+        this.bounds=null;
+    }
     protected void createMask() {
         ImageByte mask_ = new ImageByte("", getBounds().getImageProperties(scaleXY, scaleZ));
         for (Voxel v : voxels) {

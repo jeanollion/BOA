@@ -589,8 +589,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             return;
         }
         if (db.experimentChanged()) {
-            boolean save = Utils.promptBoolean("Current configuration has unsaved changes. Save ? ", this);
-            if (save) db.updateExperiment();
+            if (db.isReadOnly()) {
+                this.setMessage("Configuration have changed but canno't be saved in read-only mode");
+            } else {
+                boolean save = Utils.promptBoolean("Current configuration has unsaved changes. Save ? ", this);
+                if (save) db.updateExperiment();
+            }
         }
     }
     
