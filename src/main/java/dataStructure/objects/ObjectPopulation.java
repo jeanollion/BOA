@@ -406,7 +406,7 @@ public class ObjectPopulation {
             bounds.expandZ(bounds.getzMax() + marginZ);
             bounds = bounds.getIntersection(intensity.getBoundingBox().translateToOrigin());
             double thld = runThresholder(intensity, background, bounds, Otsu, 1);
-            //logger.debug("local threshold: object: {}, thld: {} with bounds: {}, thld with bcg bounds: {}, 2: {}", o.getLabel(), thld, bounds, runThresholder(intensity, background, bounds, Otsu, 1), runThresholder(intensity, background, bounds, Otsu, 2));
+            //logger.debug("local threshold: object: {}, thld: {} with bounds: {}, thld with bcg bounds: {}, 2: {}", o.getLabel(), thld, bounds, runSimpleThresholder(intensity, background, bounds, Otsu, 1), runSimpleThresholder(intensity, background, bounds, Otsu, 2));
             o.draw(background, 0);
             localThreshold(o, intensity, thld);
         }

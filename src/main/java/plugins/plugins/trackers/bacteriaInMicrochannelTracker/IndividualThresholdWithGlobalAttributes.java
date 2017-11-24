@@ -40,7 +40,7 @@ public class IndividualThresholdWithGlobalAttributes extends ThresholdHisto {
         this.localMethod=localMethod;
         this.thresholdF = new double[planes.size()];
         for (int i = 0; i<thresholdF.length; ++i) {
-            double thld = IJAutoThresholder.runThresholder(localMethod, this.histos.get(i), minAndMax, byteHisto);
+            double thld = IJAutoThresholder.runThresholder(localMethod, this.histos.get(i));
             thresholdF[i] = Math.min(thresholdValue, thld);
         }
     }

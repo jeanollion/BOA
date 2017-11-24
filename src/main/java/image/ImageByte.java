@@ -214,7 +214,8 @@ public class ImageByte extends ImageInteger {
             }
         }
     }
-    public int[] getHisto256(ImageMask mask, BoundingBox limits) {
+    @Override
+    public Histogram getHisto256(ImageMask mask, BoundingBox limits) {
         if (mask==null) mask=new BlankMask("", this);
         if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
         int[] histo = new int[256];
@@ -227,10 +228,14 @@ public class ImageByte extends ImageInteger {
                 }
             }
         }
-        return histo;
+        int min = 0; 
+        if (histo[min]==0) while(min<255 && histo[min+1]==0) ++min;
+        int max = 255; 
+        if (histo[max]==0) while(max>0 && histo[max-1]==0) --max;
+        return new Histogram(histo, true, new double[]{min, max});
     }
     
-    @Override public int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit) {return getHisto256(mask);}
+    @Override public Histogram getHisto256(double min, double max, ImageMask mask, BoundingBox limit) {return getHisto256(mask);}
 
     @Override public int getBitDepth() {return 8;}
 

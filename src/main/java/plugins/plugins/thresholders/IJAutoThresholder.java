@@ -24,6 +24,7 @@ import ij.process.AutoThresholder;
 import ij.process.AutoThresholder.Method;
 import image.BlankMask;
 import image.BoundingBox;
+import image.Histogram;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
@@ -45,13 +46,13 @@ public class IJAutoThresholder implements SimpleThresholder {
     }
     
     @Override 
-    public double runThresholder(Image input) {
-        return runThresholder(input, null);
+    public double runSimpleThresholder(Image input, ImageMask mask) {
+        return runThresholder(input, mask, Method.valueOf(method.getSelectedItem()));
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
         ImageMask mask = structureObject!=null?structureObject.getMask():new BlankMask(input);
-        return runThresholder(input, mask, Method.valueOf(method.getSelectedItem()));
+        return runSimpleThresholder(input, mask);
     }
     
     public static double runThresholder(Image input, ImageMask mask, Method method) {
@@ -60,38 +61,21 @@ public class IJAutoThresholder implements SimpleThresholder {
     
     public static double runThresholder(Image input, ImageMask mask, BoundingBox limits, Method method, double percentageSuplementalBackground) {
         if (mask==null) mask=new BlankMask("", input);
-        int[] histo = input.getHisto256(mask, limits);
-        histo[0]+=(int)(percentageSuplementalBackground * input.getSizeXYZ()+0.5);
+        Histogram histo = input.getHisto256(mask, limits);
+        histo.data[0]+=(int)(percentageSuplementalBackground * input.getSizeXYZ()+0.5);
         AutoThresholder at = new AutoThresholder();
-        double thld = at.getThreshold(method, histo);
-        return convertHisto256Threshold(thld, input, mask, limits);
+        double thld = at.getThreshold(method, histo.data);
+        return Histogram.convertHisto256Threshold(thld, input, mask, limits);
     }
     
-    public static double runThresholder(Method method, int[] histogram, double[] minAndMax, boolean byteImage) {
+    public static double runThresholder(Method method, Histogram histo) {
         if (method==null) return Double.NaN;
         AutoThresholder at = new AutoThresholder();
-        double thld = at.getThreshold(method, histogram);
-        if (byteImage) return thld;
-        else return convertHisto256Threshold(thld, minAndMax);
+        double thld = at.getThreshold(method, histo.data);
+        return histo.getValueFromIdx(thld);
     }
     
-    public static double convertHisto256Threshold(double threshold256, double[] minAndMax) {
-        return threshold256 * (minAndMax[1] - minAndMax[0]) / 256.0 + minAndMax[0];
-    }
-    
-    public static int convertTo256Threshold(double threshold, double[] minAndMax) {
-        int res = (int)Math.round((threshold - minAndMax[0])* 256 / ((minAndMax[1] - minAndMax[0])));
-        if (res>=256) res = 255;
-        return res;
-    }
-    
-    public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, BoundingBox limits) {
-        if (mask == null) mask = new BlankMask("", input);
-        double[] mm = input.getMinAndMax(mask, limits);
-        if (input instanceof ImageByte) return threshold256;
-        else  return convertHisto256Threshold(threshold256, mm);
-    }
-    
+    @Override    
     public Parameter[] getParameters() {
         return new Parameter[]{method};
     }

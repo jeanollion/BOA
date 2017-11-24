@@ -22,6 +22,7 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
 import image.BlankMask;
+import image.Histogram;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
@@ -41,12 +42,12 @@ public class BackgroundFit implements SimpleThresholder, Thresholder {
     NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 3, 0.01, null);
     
     @Override
-    public double runThresholder(Image input) {
-        return runThresholder(input, null);
+    public double runSimpleThresholder(Image input, ImageMask mask) {
+        return backgroundFitHalf(input, mask, sigmaFactor.getValue().doubleValue(), null);
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
-        return backgroundFitHalf(input, structureObject!=null?structureObject.getMask():null, sigmaFactor.getValue().doubleValue(), null);
+        return runSimpleThresholder(input, structureObject.getMask() );
     }
     public static float[] smooth(int[] data, double scale) {
         ImageFloat image = new ImageFloat("", data.length, 1, 1);
@@ -70,14 +71,12 @@ public class BackgroundFit implements SimpleThresholder, Thresholder {
     }
     public static double backgroundFitHalf(Image input, ImageMask mask, double sigmaFactor, double[] meanSigma) {
         if (mask==null) mask = new BlankMask(input);
-        int[] histo = input.getHisto256(mask);
-        double[] mm = input.getMinAndMax(mask, null);
-        return backgroundFitHalf(histo, mm, input instanceof ImageByte, sigmaFactor, meanSigma);
+        return backgroundFitHalf(input.getHisto256(mask), sigmaFactor, meanSigma);
     }
-    public static double backgroundFitHalf(int[] histo, double[] minAndMax, boolean byteImage, double sigmaFactor, double[] meanSigma) {
+    public static double backgroundFitHalf(Histogram histo, double sigmaFactor, double[] meanSigma) {
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
         //fillZeros(histo);
-        float[] histoSmooth = smooth(histo, 3); //2 ou 3
+        float[] histoSmooth = smooth(histo.data, 3); //2 ou 3
         
         // fit on whole histogram
         double[] fit = ArrayUtil.gaussianFit(histoSmooth, 0);
@@ -87,7 +86,7 @@ public class BackgroundFit implements SimpleThresholder, Thresholder {
         double[] subset = new double[mode+1];
         for (int i = 0;i<=mode;++i) subset[i]=histoSmooth[i];
         if (debug) {
-            Utils.plotProfile("gauss fit: histo", histo);
+            Utils.plotProfile("gauss fit: histo", histo.data);
             Utils.plotProfile("gauss fit: histo smooth", histoSmooth);
             Utils.plotProfile("gauss fit: histo smooth sub", subset);
         }
@@ -96,8 +95,8 @@ public class BackgroundFit implements SimpleThresholder, Thresholder {
         double threshold = mode + sigmaFactor * fit[1];
         
         
-        double binSize = byteImage ? 1 : (minAndMax[1] - minAndMax[0]) / 256.0;
-        double min = byteImage ? 0 : minAndMax[0];
+        double binSize = histo.getBinSize();
+        double min =histo.getHistoMinBreak();
         threshold = threshold * binSize + min;
         if (meanSigma!=null) {
             meanSigma[0] = fit[0] * binSize + min;
@@ -112,9 +111,9 @@ public class BackgroundFit implements SimpleThresholder, Thresholder {
     public static double backgroundFit(Image input, ImageMask mask, double sigmaFactor, double[] meanSigma) {
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
         if (mask==null) mask = new BlankMask(input);
-        int[] histo = input.getHisto256(mask);
+        Histogram histo = input.getHisto256(mask);
         //fillZeros(histo);
-        float[] histoSmooth = smooth(histo, 3); //2 ou 3
+        float[] histoSmooth = smooth(histo.data, 3); //2 ou 3
         
         // fit on whole histogram
         double[] fit = ArrayUtil.gaussianFit(histoSmooth, 0);
@@ -122,7 +121,7 @@ public class BackgroundFit implements SimpleThresholder, Thresholder {
         if (debug) logger.debug("first fit: {}", fit);
         //int mode = ArrayUtil.max(histo);
         if (debug) {
-            Utils.plotProfile("gauss fit: histo", histo);
+            Utils.plotProfile("gauss fit: histo", histo.data);
             Utils.plotProfile("gauss fit: histo smooth", histoSmooth);
         }
         double threshold = mode + sigmaFactor * fit[1];

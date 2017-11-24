@@ -18,11 +18,12 @@
 package plugins;
 
 import image.Image;
+import image.ImageMask;
 
 /**
  *
  * @author jollion
  */
 public interface SimpleThresholder extends Thresholder {
-    public double runThresholder(Image image);
+    public double runSimpleThresholder(Image image, ImageMask mask);
 }

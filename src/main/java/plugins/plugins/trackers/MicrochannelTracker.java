@@ -141,7 +141,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             }
             Image globalImage = Image.mergeZPlanes(Arrays.asList(inputImagesToThld));
             plugins.SimpleThresholder t = ((OverridableThresholdWithSimpleThresholder)segmenters[0]).getThresholder();
-            double globalThld = t.runThresholder(globalImage);
+            double globalThld = t.runSimpleThresholder(globalImage, null);
             for (int i = 0; i<parentTrack.size(); ++i) ((OverridableThresholdWithSimpleThresholder)segmenters[i]).setThresholdValue(globalThld);
             logger.debug("MicrochannelTracker on {}: global Treshold = {}", parentTrack.get(0), globalThld);
         }

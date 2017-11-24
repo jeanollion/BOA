@@ -26,32 +26,64 @@ import configuration.parameters.ScaleXYZParameter;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
+import image.ImageFloat;
 import image.ImageOperations;
 import plugins.PreFilter;
+import static plugins.plugins.preFilter.ImageFeature.Feature.GAUSS;
+import static plugins.plugins.preFilter.ImageFeature.Feature.GRAD;
+import static plugins.plugins.preFilter.ImageFeature.Feature.HessianDet;
+import static plugins.plugins.preFilter.ImageFeature.Feature.HessianMax;
+import static plugins.plugins.preFilter.ImageFeature.Feature.HessianMaxNorm;
+import static plugins.plugins.preFilter.ImageFeature.Feature.HessianMin;
+import static plugins.plugins.preFilter.ImageFeature.Feature.LoG;
 import processing.ImageFeatures;
+import utils.Utils;
 
 /**
  *
  * @author jollion
  */
 public class ImageFeature implements PreFilter {
-    ChoiceParameter feature = new ChoiceParameter("Feature", new String[]{"Gaussian Smooth", "Gradient", "Laplacian", "Hessian Det", "Hessian Max", "Normalized Hessian Max"}, "Gaussian Smooth", false);
+    public static enum Feature {
+        GAUSS("Gaussian Smooth"),
+        GRAD("Gradient"), 
+        LoG("Laplacian"), 
+        HessianDet("Hessian Det"), 
+        HessianMax("Hessian Max"),
+        HessianMin("Hessian Min"),
+        HessianMaxNorm("Normalized Hessian Max");
+        final String name;
+        Feature(String name) {
+            this.name=name;
+        }
+    }
+    ChoiceParameter feature = new ChoiceParameter("Feature", Utils.transform(Feature.values(), new String[Feature.values().length], f->f.name), Feature.GAUSS.name, false);
     ScaleXYZParameter scale = new ScaleXYZParameter("Scale", 2.5, 1, true);
     BoundedNumberParameter normScale = new BoundedNumberParameter("Normalization Scale (pix)", 2, 3, 1, null);
     ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setActionParameters("Normalized Hessian Max", new Parameter[]{scale, normScale});
 
+    public ImageFeature() {}
+    public ImageFeature setFeature(Feature f) {
+        this.feature.setValue(f.name);
+        return this;
+    }
+    @Override
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
         logger.debug("ImageFeature: feature equasl: {}, scale equals: {}, normScale equals: {}", feature==cond.getActionableParameter(), scale == cond.getCurrentParameters().get(0), normScale == cond.getParameters("Normalized Hessian Max").get(1));
         logger.debug("ImageFeauture: feature: {}, scale: {}, scaleZ: {} normScale: {}", feature.getSelectedItem(), scale.getScaleXY(), scale.getScaleZ(structureObject.getScaleXY(), structureObject.getScaleZ()), normScale.getValue());
         String f = feature.getSelectedItem();
         double scaleXY = scale.getScaleXY();
         double scaleZ = scale.getScaleZ(structureObject.getScaleXY(), structureObject.getScaleZ());
-        if ("Gaussian Smooth".equals(f)) return ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
-        else if ("Gradient".equals(f)) return ImageFeatures.getGradientMagnitude(input, scaleXY, true);
-        else if ("Laplacian".equals(f)) return ImageFeatures.getLaplacian(input, scaleXY, true, true);
-        else if ("Hessian Det".equals(f)) return ImageFeatures.getHessianMaxAndDeterminant(input, scaleXY, true)[1];
-        else if ("Hessian Max".equals(f)) return ImageFeatures.getHessian(input, scaleXY, true)[0];
-        else if ("Normalized Hessian Max".equals(f)) {
+        if (GAUSS.name.equals(f)) return ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
+        else if (GRAD.name.equals(f)) return ImageFeatures.getGradientMagnitude(input, scaleXY, true);
+        else if (LoG.name.equals(f)) return ImageFeatures.getLaplacian(input, scaleXY, true, true);
+        else if (HessianDet.name.equals(f)) return ImageFeatures.getHessianMaxAndDeterminant(input, scaleXY, true)[1];
+        else if (HessianMax.name.equals(f)) return ImageFeatures.getHessian(input, scaleXY, true)[0];
+        else if (HessianMin.name.equals(f)) {
+            ImageFloat[] hess = ImageFeatures.getHessian(input, scaleXY, true);
+            return hess[hess.length-1];
+        }
+        else if (HessianMaxNorm.name.equals(f)) {
             Image hess  = ImageFeatures.getHessian(input, scaleXY, true)[0];
             Image norm = ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
             ImageOperations.divide(hess, norm, hess);

@@ -266,9 +266,10 @@ public abstract class Image implements ImageProperties {
         }
         return new double[]{min, max};
     }
-    public abstract int[] getHisto256(ImageMask mask, BoundingBox bounds);
-    public int[] getHisto256(ImageMask mask) {return getHisto256(mask, null);}
-    public abstract int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit);
+
+    public abstract Histogram getHisto256(ImageMask mask, BoundingBox bounds);
+    public Histogram getHisto256(ImageMask mask) {return getHisto256(mask, null);}
+    public abstract Histogram getHisto256(double min, double max, ImageMask mask, BoundingBox limit);
     
     protected Image cropIWithOffset(BoundingBox bounds) {
         return cropI(bounds.duplicate().translate(getBoundingBox().reverseOffset()));

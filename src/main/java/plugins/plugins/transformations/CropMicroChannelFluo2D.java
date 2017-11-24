@@ -93,7 +93,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     }
     @Override
     public BoundingBox getBoundingBox(Image image) {
-        double thld = this.threshold.instanciatePlugin().runThresholder(image);
+        double thld = this.threshold.instanciatePlugin().runSimpleThresholder(image, null);
         return getBoundingBox(image, null, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), thld, fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
     }
     
@@ -124,7 +124,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         3) computation of Y start using the minimal Y of objects within the selected channels from step 2 (median value of yMins)
         */
         
-        if (Double.isNaN(thld) && thresholdedImage==null) thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3, null);//IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
+        if (Double.isNaN(thld) && thresholdedImage==null) thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3, null);//IJAutoThresholder.runSimpleThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
         if (debug) logger.debug("crop micochannels threshold : {}", thld);
         ImageInteger mask = thresholdedImage == null ? ImageOperations.threshold(image, thld, true, true) : thresholdedImage;
         Filters.binaryClose(mask, mask, Filters.getNeighborhood(1, 0, image)); // case of low intensity signal -> noisy. // remove small objects?

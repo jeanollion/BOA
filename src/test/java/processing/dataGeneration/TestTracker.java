@@ -118,7 +118,7 @@ public class TestTracker {
             Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(roots, 0);
             logger.debug("all tracks: {}", allTracks.size());
             for (StructureObject th : allTracks.keySet()) {
-                if (th.getIdx()==mcIdx && th.getFrame()<tEnd) {
+                if (th.getIdx()==mcIdx && th.getFrame()<=tEnd) {
                     if (parentTrack==null || parentTrack.isEmpty()) {
                         parentTrack = allTracks.get(th);
                         parentTrack.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);

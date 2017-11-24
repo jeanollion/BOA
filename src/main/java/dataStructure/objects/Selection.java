@@ -308,30 +308,33 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     public void addElement(StructureObject elementToAdd) {
         if (this.structureIdx==-1) structureIdx=elementToAdd.getStructureIdx();
         else if (structureIdx!=elementToAdd.getStructureIdx()) return;
-        
-        Set<StructureObject> list = getElements(elementToAdd.getPositionName());
-        if (list==null) {
-            list=new HashSet<StructureObject>();
-            retrievedElements.put(elementToAdd.getPositionName(), list);
-        }
-        if (!list.contains(elementToAdd)) {
-            list.add(elementToAdd);
-            
-            // update DB refs
-            Collection<String> els = get(elementToAdd.getPositionName(), true);
-            els.add(indicesString(elementToAdd));
-            if (false && els.size()!=list.size()) {
-                logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
-                if (els.size()<=10) {
-                    for (StructureObject o : list) logger.debug("bact: {},  object: {}", StructureObjectUtils.getIndexTree(o), o);
-                    for (String elt : els) logger.debug("elt: {}", elt);
+        if (this.retrievedElements.containsKey(elementToAdd.getPositionName())) {
+            Set<StructureObject> list = getElements(elementToAdd.getPositionName());
+            if (!list.contains(elementToAdd)) {
+                list.add(elementToAdd);
+                // update DB refs
+                Collection<String> els = get(elementToAdd.getPositionName(), true);
+                els.add(indicesString(elementToAdd));
+                if (false && els.size()!=list.size()) {
+                    logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
                 }
             }
-        }
+        } else this.addElement(elementToAdd.getPositionName(), indicesString(elementToAdd));
+    }
+    public void addElement(String positionName, String el) {
+        Collection<String> els = get(positionName, true);
+        if (!els.contains(el)) els.add(el);
     }
     public synchronized Selection addElements(Collection<StructureObject> elementsToAdd) {
         if (elementsToAdd==null || elementsToAdd.isEmpty()) return this;
-        for (StructureObject o : elementsToAdd) addElement(o);
+        Map<String, List<StructureObject>> elByPos = StructureObjectUtils.splitByPosition(elementsToAdd);
+        for (String pos : elByPos.keySet()) {
+            if (this.retrievedElements.containsKey(pos)) for (StructureObject o : elementsToAdd) addElement(o);
+            else {
+                List<String> els = Utils.transform(elByPos.get(pos), o->indicesString(o));
+                addElements(pos, els);
+            }
+        }
         return this;
     }
     

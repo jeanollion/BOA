@@ -22,12 +22,11 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
 import image.BlankMask;
+import image.Histogram;
 import image.Image;
 import image.ImageByte;
 import image.ImageMask;
 import plugins.SimpleThresholder;
-import plugins.Thresholder;
-import static plugins.plugins.thresholders.IJAutoThresholder.convertHisto256Threshold;
 
 /**
  * Adapted from Implementation of Kappa Sigma Clipping algorithm by Gaëtan Lehmann, http://www.insight-journal.org/browse/publication/132. 
@@ -54,19 +53,18 @@ public class BackgroundThresholder implements SimpleThresholder {
     }
     
     @Override 
-    public double runThresholder(Image input) {
-        return runThresholder(input, null);
+    public double runSimpleThresholder(Image input, ImageMask mask) {
+        return runThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
         ImageMask mask = structureObject!=null?structureObject.getMask():null;
-        //return BackgroundThresholder.runThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
-        return runThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
+        //return BackgroundThresholder.runSimpleThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
+        return runSimpleThresholder(input , mask);
     }
     public static double runThresholderHisto(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
-        double[] mm = input.getMinAndMax(mask);
-        int[] histo = input.getHisto256(mm[0], mm[1], mask, null);
-        return BackgroundThresholder.runThresholder(histo, mm, input instanceof ImageByte, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
+        Histogram histo = input.getHisto256(mask, null);
+        return BackgroundThresholder.runThresholder(histo, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
     }
     public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations) {
         return runThresholder(input,mask, sigmaFactor, lastSigmaFactor, iterations, null);
@@ -110,11 +108,9 @@ public class BackgroundThresholder implements SimpleThresholder {
         }
         return lastThreshold;
     }
-    public static double runThresholder(int[] histogram, double[] minAndMax, boolean byteImage, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
-        double thld = getHistogramIdx(histogram, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
-        //logger.debug("idx: {}", thld);
-        if (byteImage) return thld;
-        else return convertHisto256Threshold(thld, minAndMax);
+    public static double runThresholder(Histogram histo, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
+        double thld = getHistogramIdx(histo.data, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
+        return histo.getValueFromIdx(thld);
     }
     private static double getHistogramIdx(int[] histogram, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");

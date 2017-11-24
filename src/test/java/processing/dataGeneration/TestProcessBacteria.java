@@ -40,10 +40,11 @@ public class TestProcessBacteria {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         int time =0;
-        int microChannel =4;
+        int microChannel =0;
         int field = 0;
         //String dbName = "fluo160501";
-        String dbName = "MF1_170519";
+        //String dbName = "MF1_170519";
+        String dbName = "TestThomasRawStacks";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     

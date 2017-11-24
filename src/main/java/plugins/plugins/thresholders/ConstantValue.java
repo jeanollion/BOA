@@ -21,6 +21,7 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
+import image.ImageMask;
 import plugins.SimpleThresholder;
 import plugins.Thresholder;
 
@@ -48,7 +49,7 @@ public class ConstantValue implements SimpleThresholder, Thresholder {
         return value.getValue().doubleValue();
     }
     @Override
-    public double runThresholder(Image input) {
+    public double runSimpleThresholder(Image input, ImageMask mask) {
         return value.getValue().doubleValue();
     }
 }

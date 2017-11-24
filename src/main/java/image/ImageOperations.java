@@ -45,36 +45,7 @@ public class ImageOperations {
         for (Object3D o : toRemove) o.draw(output, 0);
         return l;
     }
-    /**
-     *
-     * @param images
-     * @param minAndMax the method will output min and max values in this array, except if minAndMax[0]<minAndMax[1] -> in this case will use these values for histogram
-     * @return
-     */
-    public static int[] getHisto256(List<Image> images, double[] minAndMax) {
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = getMinAndMax(images);
-            minAndMax[0] = mm[0]; minAndMax[1]=mm[1];
-        }
-        int[] histo = new int[256];
-        for (Image im : images) {
-            int[] h = im.getHisto256(minAndMax[0], minAndMax[1], null, null);
-            for (int i = 0; i < 256; ++i) {
-                histo[i] += h[i];
-            }
-        }
-        return histo;
-    }
 
-    public static List<int[]> getHisto256AsList(List<Image> images, double[] minAndMax) {
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = getMinAndMax(images);
-            minAndMax[0] = mm[0]; minAndMax[1]=mm[1];
-        }
-        List<int[]> res = new ArrayList<>(images.size());
-        for (Image im : images) res.add(im.getHisto256(minAndMax[0], minAndMax[1], null, null));
-        return res;
-    }
 
     public static double[] getMinAndMax(List<Image> images) {
         if (images.isEmpty()) {
@@ -92,10 +63,6 @@ public class ImageOperations {
             }
         }
         return minAndMax;
-    }
-    public static void addHisto(int[] source, int[] dest, boolean remove) {
-        if (remove) for (int i =0; i<source.length; ++i) dest[i]-=source[i];
-        else for (int i =0; i<source.length; ++i) dest[i]+=source[i];
     }
     
     public static enum Axis {X, Y, Z;}
@@ -703,29 +670,29 @@ public class ImageOperations {
     }
     public static double[] getPercentile(Image image, ImageMask mask, BoundingBox limits, double... percent) {
         double[] mm = image.getMinAndMax(mask);
-        int[] histo = image.getHisto256(mm[0], mm[1], mask, limits);
-        return getPercentile(histo, mm, image instanceof ImageByte, percent);
+        Histogram histo = image.getHisto256(mm[0], mm[1], mask, limits);
+        return getPercentile(histo, percent);
     }
-    public static double[] getPercentile(int[] histo, double[] minAndMax, boolean byteHisto, double... percent) {
-        double binSize = byteHisto ? 1: (minAndMax[1]-minAndMax[0]) / 256d;
+    public static double[] getPercentile(Histogram histo, double... percent) {
+        double binSize = histo.getBinSize();
         int gcount = 0;
-        for (int i : histo) gcount += i;
+        for (int i : histo.data) gcount += i;
         double[] res = new double[percent.length];
         for (int i = 0; i<res.length; ++i) {
             int count = gcount;
             double limit = count * (1-percent[i]); // 1- ?
             if (limit >= count) {
-                res[i] = minAndMax[0];
+                res[i] = histo.minAndMax[0];
                 continue;
             }
-            count = histo[255];
+            count = histo.data[255];
             int idx = 255;
             while (count < limit && idx > 0) {
                 idx--;
-                count += histo[idx];
+                count += histo.data[idx];
             }
-            double idxInc = (histo[idx] != 0) ? (count - limit) / (histo[idx]) : 0; //lin approx
-            res[i] = (double) (idx + idxInc) * binSize + minAndMax[0];
+            double idxInc = (histo.data[idx] != 0) ? (count - limit) / (histo.data[idx]) : 0; //lin approx
+            res[i] = (double) (idx + idxInc) * binSize + histo.getHistoMinBreak();
         }
         return res;
     }

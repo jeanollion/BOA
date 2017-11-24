@@ -26,6 +26,7 @@ import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
 import ij.gui.Plot;
 import image.BlankMask;
+import image.Histogram;
 import image.Image;
 import image.ImageByte;
 import image.ImageMask;
@@ -97,7 +98,7 @@ public class ObjectCountThresholder implements Thresholder {
             @Override
             public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
                 double v = bright ? Math.max(currentVox.value, nextVox.value) : Math.min(currentVox.value, nextVox.value);
-                int idx = byteImage ? (int)v : IJAutoThresholder.convertTo256Threshold(v, mm);
+                int idx = byteImage ? (int)v : Histogram.convertTo256Threshold(v, mm);
                 if (objectHisto[idx]==0) objectHisto[idx] = getSpotNumber(instance, v, bright);
                 if (objectHisto[idx]>=max) { // stop propagation
                     instance.getHeap().clear();
@@ -111,15 +112,15 @@ public class ObjectCountThresholder implements Thresholder {
             double[] values = new double[256];
             double[] counts = new double[256];
             for (int i = 0; i<256; ++i) {
-                values[i] = byteImage ? i : IJAutoThresholder.convertHisto256Threshold(i, mm);
+                values[i] = byteImage ? i : Histogram.convertHisto256Threshold(i, mm);
                 counts[i] = objectHisto[i];
             }
             new Plot("Object Count", "intensity", "count", values, counts).show();
         }
         int i = ArrayUtil.getFirstOccurence(objectHisto, 255, 0, max, false, false);
         if (objectHisto[i]==max && i<255) ++i;
-        double value = byteImage ? i : IJAutoThresholder.convertHisto256Threshold(i, mm);
-        if (i<255) value =  (value + (byteImage ? i+1 : IJAutoThresholder.convertHisto256Threshold(i+1, mm))) / 2;
+        double value = byteImage ? i : Histogram.convertHisto256Threshold(i, mm);
+        if (i<255) value =  (value + (byteImage ? i+1 : Histogram.convertHisto256Threshold(i+1, mm))) / 2;
         if (debug) logger.debug("thld: {} (idx:{})", value, i);
         return value;
     }

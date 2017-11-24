@@ -120,8 +120,8 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         if (Double.isFinite(thld)) SaturateHistogram.saturate(thld, thld, im);
     }
     private static double getThld(Image im, double proportionThld, SimpleThresholder thlderBack, SimpleThresholder thlderHyper, ImageInteger backThld, int minimumCount, int idx) {
-        double thldBack = thlderBack.runThresholder(im);
-        double thldHyper = thlderHyper.runThresholder(im);
+        double thldBack = thlderBack.runSimpleThresholder(im, null);
+        double thldHyper = thlderHyper.runSimpleThresholder(im, null);
         backThld=ImageOperations.threshold(im, thldBack, true, true, false, backThld);
         ImageMask hyperThld = new ThresholdMask(im, thldHyper, true, true);
         // remove small obejcts (if background is too low isolated pixels)

@@ -90,7 +90,7 @@ public class AnalyseHyperFluoBacterias {
     }
     private static ImageByte saturateAndThld(Image image) {
         new SaturateHistogramHyperfluoBacteria().saturateHistogram(image);
-        //double thld = IJAutoThresholder.runThresholder(image, null, null, AutoThresholder.Method.Otsu, 0);
+        //double thld = IJAutoThresholder.runSimpleThresholder(image, null, null, AutoThresholder.Method.Otsu, 0);
         double thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3);
         return ImageOperations.threshold(image, thld, true, true);
     }

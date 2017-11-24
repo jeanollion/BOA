@@ -141,12 +141,12 @@ public class ImageFloat extends Image {
     }
 
     @Override
-    public int[] getHisto256(ImageMask mask, BoundingBox limit) {
+    public Histogram getHisto256(ImageMask mask, BoundingBox limit) {
         if (mask == null) mask = new BlankMask("", this);
         double[] minAndMax = getMinAndMax(mask);
         return getHisto256(minAndMax[0], minAndMax[1], mask, limit);
     }
-    @Override public int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {
+    @Override public Histogram getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {
         if (mask == null) mask = new BlankMask("", this);
         if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
         double coeff = 256d / (max - min);
@@ -162,7 +162,7 @@ public class ImageFloat extends Image {
                 }
             }
         }
-        return histo;
+        return new Histogram(histo, false, new double[]{min, max});
     }
     @Override public int getBitDepth() {return 32;}
 }

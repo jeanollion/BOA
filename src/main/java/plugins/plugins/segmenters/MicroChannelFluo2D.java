@@ -97,7 +97,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableTh
     
     @Override
     public Result segment(Image input) {
-        double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runThresholder(input, null) : thresholdValue;
+        double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runSimpleThresholder(input, null) : thresholdValue;
         Result r = segmentMicroChannels(input, thresholdedImage, 0, yShift.getValue().intValue(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
         return r;
     }
