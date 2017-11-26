@@ -61,7 +61,7 @@ public class IJSubtractBackground implements PreFilter, Filter {
         return filter(input, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
     }
     /**
-     * IJ's subtrract background {@link ij.plugin.filter.BackgroundSubtracter#rollingBallBackground(ij.process.ImageProcessor, double, boolean, boolean, boolean, boolean, boolean) }
+     * IJ's subtract background {@link ij.plugin.filter.BackgroundSubtracter#rollingBallBackground(ij.process.ImageProcessor, double, boolean, boolean, boolean, boolean, boolean) }
      * @param input input image (will not be modified)
      * @param radius
      * @param doSlidingParaboloid
@@ -106,5 +106,6 @@ public class IJSubtractBackground implements PreFilter, Filter {
     public ArrayList getConfigurationData() {
         return null;
     }
-    
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

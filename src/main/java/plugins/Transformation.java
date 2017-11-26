@@ -43,4 +43,5 @@ public interface Transformation extends ImageProcessingPlugin {
      */
     public List getConfigurationData();
     public SelectionMode getOutputChannelSelectionMode();
+    public void setTestMode(boolean debug);
 }

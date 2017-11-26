@@ -104,5 +104,6 @@ public class SimpleCrop implements Transformation {
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }
-    
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

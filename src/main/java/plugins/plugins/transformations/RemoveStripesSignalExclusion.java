@@ -34,6 +34,7 @@ import image.ImageMask;
 import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -71,9 +72,10 @@ public class RemoveStripesSignalExclusion implements Transformation {
         this.signalExclusionThreshold.setPlugin(thlder);
         return this;
     }
-    
+    Map<Integer, Image> testMasks;
     @Override
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  throws Exception {
+        if (testMode) testMasks = new HashMap<>();
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = chExcl>=0?signalExclusionThreshold.instanciatePlugin().runThresholder(inputImages.getImage(chExcl, inputImages.getDefaultTimePoint())):Double.NaN;
         final boolean addGlobalMean = this.addGlobalMean.getSelected();
@@ -84,11 +86,17 @@ public class RemoveStripesSignalExclusion implements Transformation {
             tr.threads[i] = new Thread(
                     new Runnable() {  
                     public void run() {
-                        for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
+                        for (int frame = tr.ai.getAndIncrement(); frame<tr.end; frame = tr.ai.getAndIncrement()) {
                             Image signalExclusion=null;
-                            if (chExcl>=0) signalExclusion = inputImages.getImage(chExcl, idx);
-                            meanX[idx] = computeMeanX(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, addGlobalMean);
-                            if (idx%100==0) logger.debug("tp: {} {}", idx, Utils.getMemoryUsage());
+                            if (chExcl>=0) {
+                                signalExclusion = inputImages.getImage(chExcl, frame);
+                                if (testMode) {
+                                    Image mask = ImageOperations.threshold(signalExclusion, exclThld, true, true, true, null);
+                                    testMasks.put(frame, mask);
+                                }
+                            }
+                            meanX[frame] = computeMeanX(inputImages.getImage(channelIdx, frame), signalExclusion, exclThld, addGlobalMean);
+                            if (frame%100==0) logger.debug("tp: {} {}", frame, Utils.getMemoryUsage());
                         }
                     }
                 }
@@ -101,6 +109,12 @@ public class RemoveStripesSignalExclusion implements Transformation {
             List<List<Double>> resL = new ArrayList<>(meanX[f].length);
             for (Double[] meanY : meanX[f]) resL.add(Arrays.asList(meanY));
             meanTZY.add(resL);
+        }
+        if (testMode && !testMasks.isEmpty()) {
+            Image[][] maskTC = new Image[testMasks.size()][1];
+            for (Map.Entry<Integer, Image> e : testMasks.entrySet()) maskTC[e.getKey()][0] = e.getValue();
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Exclusion signal mask", maskTC);
+            testMasks.clear();
         }
     }
     
@@ -189,4 +203,6 @@ public class RemoveStripesSignalExclusion implements Transformation {
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
         return meanTZY!=null && meanTZY.size()==totalTimePointNumber;
     }
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

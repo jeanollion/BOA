@@ -85,5 +85,6 @@ public class SimpleTranslation implements TransformationTimeIndependent {
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         
     }
-    
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }
