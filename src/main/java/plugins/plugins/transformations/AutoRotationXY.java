@@ -64,7 +64,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     FilterSequence prefilters = new FilterSequence("Pre-Filters");
     Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, removeIncompleteRowsAndColumns, prefilters}; //  
     ArrayList<Double> internalParams=new ArrayList<Double>(1);
-    public static boolean debug = false;
+    public boolean testMode = false;
     public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation, SearchMethod method) {
         this.minAngle.setValue(minAngle);
         this.maxAngle.setValue(maxAngle);
@@ -146,17 +146,17 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return internalParams!=null && !internalParams.isEmpty();
     }
     
-    public static double[] computeRotationAngleXY(Image image, int z, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {
+    public double[] computeRotationAngleXY(Image image, int z, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {
 
         // initial search
         double[] angles = getAngleArray(ang1, ang2, stepsize);
         double[] angleMax=new double[]{angles[0], angles[0]};
         double max=-1;
         ImageFloat sinogram = null;
-        if (debug) sinogram = new ImageFloat("sinogram search angles: ["+ang1+";"+ang2+"]", angles.length, proj.length, 1);
+        if (testMode) sinogram = new ImageFloat("sinogram search angles: ["+ang1+";"+ang2+"]", angles.length, proj.length, 1);
         for (int angleIdx = 0; angleIdx<angles.length; ++angleIdx) { // first search
             radonProject(image, z, angles[angleIdx]+90, proj);
-            if (debug) paste(proj, sinogram, angleIdx);
+            if (testMode) paste(proj, sinogram, angleIdx);
             //if (filterScale>0) filter(filterScale, proj);
             double tempMax = var?RadonProjection.var(proj):RadonProjection.max(proj);
             if (tempMax > max) {
@@ -168,13 +168,13 @@ public class AutoRotationXY implements TransformationTimeIndependent {
             }
             //logger.trace("radon projection: computeRotationAngleXY: {}", angleMax);
         }
-        if (debug) ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(sinogram);
+        if (testMode) ImageWindowManagerFactory.showImage(sinogram);
         angleMax[0] = - angleMax[0];
         angleMax[1] = - angleMax[1];
         return angleMax;
     }
     
-    public static double computeRotationAngleXY(Image image, int z , double ang1, double ang2, double stepsize1, double stepsize2, boolean var, boolean rotate90, double filterScale) {
+    public double computeRotationAngleXY(Image image, int z , double ang1, double ang2, double stepsize1, double stepsize2, boolean var, boolean rotate90, double filterScale) {
         // first search:
         //float[] proj = new float[(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())];
         float[] proj = new float[Math.min(image.getSizeX(),image.getSizeY())];
@@ -213,5 +213,5 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         }
         
     }
-    
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

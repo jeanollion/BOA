@@ -43,6 +43,7 @@ public class BandPass implements PreFilter, Filter {
     ChoiceParameter removeStripes = new ChoiceParameter("Remove Stripes", new String[]{"None", "Horizontal", "Vertical"}, "None", false);
     NumberParameter stripeTolerance = new BoundedNumberParameter("Stripes tolerance (%)", 1, 100, 0, 100);
     Parameter[] parameters = new Parameter[]{min, max, removeStripes, stripeTolerance};
+    
     public BandPass() {}
     public BandPass(double min, double max) {
         this(min, max, 0, 0);
@@ -84,5 +85,6 @@ public class BandPass implements PreFilter, Filter {
     @Override public ArrayList getConfigurationData() {
         return null;
     }
-    
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

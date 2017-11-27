@@ -18,6 +18,7 @@
 package plugins.plugins.transformations;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChannelImageParameter;
@@ -35,6 +36,8 @@ import image.ImageWriter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import static plugins.Plugin.logger;
 import plugins.Transformation;
 import utils.ThreadRunner;
@@ -73,8 +76,10 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
         this.signalExclusionThreshold.setValue(thld);
         return this;
     }
+    Map<Integer, Image> testMasks;
     @Override 
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  throws Exception {
+        if (testMode) testMasks = new HashMap<>(inputImages.getFrameNumber());
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();
         final double signalMaxThreshold = this.signalMaxThreshold.getValue().doubleValue();
@@ -111,42 +116,22 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
             meanSigmaTY.add(al);
             for (Double[] dd : d) al.add(new ArrayList<Double>(Arrays.asList(dd)));
         }
-    }
-    
-    /*private Double[][] getTheoricalMuSigma(double blinkMuThld, int windowSize, Double[][] muSigma) {
-        Double[][] res = new Double[muSigma.length][2];
-        int lastUnBlinkIdx, nextUnBlinkIdx;
-        for (int i = 0; i<muSigma.length; ++i) {
-            if (muSigma[i][0]<=blinkMuThld) lastUnBlinkIdx=i;
-            else { // blinking
-                //look for next BlinkIdx
-                nextUnBlinkIdx=i+1;
-                while (nextUnBlinkIdx<muSigma.length && muSigma[nextUnBlinkIdx][0]>blinkMuThld) ++nextUnBlinkIdx;
-                
-                // look for windowSize/2 previous elements 
-                int unBlinkCount=0;
-                int unBlinkPrevIdx;
-                // look for windowSize-unBlinkCount next elements
-                
-                // look for windowSize-unBlinkCount previous elements
-            }
-        }3
-    }
-    
-    private double[] getNext(Double[][] muSigma, int startIdx, int length, boolean next) { // actual length, sumMu, sumSigma
-        if (next) {
-            while(startIdx)
+        if (testMode && !testMasks.isEmpty()) {
+            Image[][] maskTC = new Image[testMasks.size()][1];
+            for (Map.Entry<Integer, Image> e : testMasks.entrySet()) maskTC[e.getKey()][0] = e.getValue();
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Exclusion signal mask", maskTC);
+            testMasks.clear();
         }
-    }*/
+    }
     
-    
-    public static Double[][] computeMeanSigmaY(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, boolean includeZero, double signalMaxThreshold, ImageInteger exclusionMask, int windowSize, int timePoint) {
+    public Double[][] computeMeanSigmaY(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, boolean includeZero, double signalMaxThreshold, ImageInteger exclusionMask, int windowSize, int timePoint) {
         if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new RuntimeException("Image and exclusion signal should have same dimensions");
         if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new RuntimeException("Image and exclusion mask should have same dimensions");
         long t0 = System.currentTimeMillis();
         if (exclusionMask!=null) {
             ImageOperations.threshold(exclusionSignal, exclusionThreshold, !underThreshold, true, true, exclusionMask);
             homogenizeVerticalLines(exclusionMask);
+            if (testMode) testMasks.put(timePoint, exclusionMask.duplicate());
         }
         else exclusionMask = new BlankMask(image);
         Double[][] res=  getMeanAndSigmaExcludeZeroY(image, exclusionMask,includeZero, signalMaxThreshold, windowSize) ;
@@ -262,4 +247,6 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
     public Parameter[] getParameters() {
         return parameters;
     }
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

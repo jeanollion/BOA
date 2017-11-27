@@ -61,7 +61,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Typical Width (pixels)", 0, 20, 5, null);
     NumberParameter channelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
     NumberParameter channelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
-    NumberParameter yStartAdjustWindow = new BoundedNumberParameter("Y-Start Adjust Window (pixels)", 0, 5, 0, null);
+    NumberParameter yStartAdjustWindow = new BoundedNumberParameter("Y-Start Adjust Window (pixels)", 0, 5, 0, null).setToolTipText("Window within which y-coordinate of start of microchannel will be refined (in pixels)");
     NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 3, 10, 0, null).setToolTipText("Threshold for Microchannel border detection (peaks of 1st derivative in X-axis)");
     Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, localDerExtremaThld};
     public static boolean debug = false;
@@ -88,8 +88,9 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
     
     @Override
     public Result segment(Image input) {
-        CropMicroChannelBF2D.debug=debug;
-        Result r =   CropMicroChannelBF2D.segmentMicroChannels(input, false, 0, channelWidth.getValue().intValue(), channelWidthMin.getValue().intValue(), channelWidthMax.getValue().intValue(), yStartAdjustWindow.getValue().intValue(), localDerExtremaThld.getValue().doubleValue(), 0);
+        CropMicroChannelBF2D cropper = new CropMicroChannelBF2D().setChannelWidth(channelWidth.getValue().intValue(), channelWidthMin.getValue().intValue(), channelWidthMax.getValue().intValue()).setLocalDerivateXThld(localDerExtremaThld.getValue().doubleValue());
+        cropper.setTestMode(debug);
+        Result r =   cropper.segmentMicroChannels(input, false, 0, yStartAdjustWindow.getValue().intValue(), 0);
         return r;
     }
     

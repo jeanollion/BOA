@@ -63,7 +63,8 @@ public class KalmanFilter implements Transformation {
    private static double defgain = 0.8;;
    public static final Logger logger = LoggerFactory.getLogger(KalmanFilter.class);
 
-   
+   boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
    
    
    

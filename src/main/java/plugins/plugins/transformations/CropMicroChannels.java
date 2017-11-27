@@ -33,10 +33,6 @@ import java.util.List;
 import plugins.Cropper;
 import static plugins.Plugin.logger;
 import plugins.Transformation;
-import plugins.TransformationTimeIndependent;
-import plugins.plugins.trackers.ObjectIdxTracker;
-import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
-import static plugins.plugins.transformations.CropMicroChannelFluo2D.getBoundingBox;
 import utils.ArrayUtil;
 
 /**
@@ -184,4 +180,6 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
             return new ObjectPopulation(l, im);
         }
     }
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

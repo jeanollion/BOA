@@ -124,5 +124,6 @@ public class ScaleHistogram implements Transformation {
     public Parameter[] getParameters() {
         return parameters;
     }
-    
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

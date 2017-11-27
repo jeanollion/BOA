@@ -74,13 +74,23 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         this.number.setValue(timePointNumber);
         return this;
     }
-    
+    public CropMicroChannelBF2D setChannelWidth(int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax) {
+        this.microChannelWidth.setValue(microChannelWidth);
+        this.microChannelWidthMin.setValue(microChannelWidthMin);
+        this.microChannelWidthMax.setValue(microChannelWidthMax);
+        return this;
+    }
+    public CropMicroChannelBF2D setLocalDerivateXThld(double thld) {
+        this.localDerExtremaThld.setValue(thld);
+        return this;
+    }
     @Override public BoundingBox getBoundingBox(Image image) {
-        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), microChannelWidthMin.getValue().intValue(), microChannelWidthMax.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), 0, localDerExtremaThld.getValue().doubleValue(), yEndMargin.getValue().intValue());
+        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(),xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), 0, yEndMargin.getValue().intValue());
     }
     
-    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, int channelWidth, int widthMin, int widthMax, int xStart, int xStop, int yStart, int yStop, int yStartAdjustWindow, double localExtremaThld, int yMarginEndChannel) {
-        Result r = segmentMicroChannels(image, true, margin, channelWidth, widthMin, widthMax, yStartAdjustWindow, localExtremaThld, yMarginEndChannel);
+    public BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight,  int xStart, int xStop, int yStart, int yStop, int yStartAdjustWindow, int yMarginEndChannel) {
+        if (debug) testMode = true;
+        Result r = segmentMicroChannels(image, true, margin, yStartAdjustWindow, yMarginEndChannel);
         if (r==null || r.xMax.length==0) return null;
         int yMin = r.getYMin();
         int yMax = r.getYMax();
@@ -93,14 +103,20 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         
         //xStart = Math.max(xStart, r.getXMin()-cropMargin);
         //xStop = Math.min(xStop, r.getXMax() + cropMargin);
-        if (debug) logger.debug("Xmin: {}, Xmax: {}", r.getXMin(), r.getXMax());
+        if (testMode) logger.debug("Xmin: {}, Xmax: {}", r.getXMin(), r.getXMax());
         return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
         
     }
-    public static Result segmentMicroChannels(Image image, boolean opticalAberration, int margin, int channelWidth, int widthMin, int widthMax, int yStartAdjustWindow, double localExtremaThld, int yMarginEndChannel) {
+    public Result segmentMicroChannels(Image image, boolean opticalAberration, int margin, int yStartAdjustWindow, int yMarginEndChannel) {
+        if (debug) testMode = true;
+        int channelWidth = this.microChannelWidth.getValue().intValue(); 
+        int widthMin = this.microChannelWidthMin.getValue().intValue(); 
+        int widthMax = this.microChannelWidthMax.getValue().intValue();
+        double localExtremaThld = this.localDerExtremaThld.getValue().doubleValue();
+        
         double derScale = 2;
         int xErode = Math.max(1, (int)(derScale/2d));
-        if (debug) logger.debug("xErode: {}", xErode);
+        if (testMode) logger.debug("xErode: {}", xErode);
         /*
         1) search for optical aberation + crop
         2) search for y-start of MC using Y-proj of d/dy image global max (projection from yE[0; y-aberation]
@@ -127,7 +143,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
             if (xProjDer[i]>0 && i>xShift && i<xProjDerNorm.length-xShift) xProjDerNorm[i] = xProjDer[i] / xProj[i-xShift];
             else xProjDerNorm[i] = xProjDer[i] / xProj[i];
         }*/
-        if (debug) {
+        if (testMode) {
             //plotProfile("XProjDer", xProjDer);
             //plotProfile("XProj smoothed", xProj);
             new IJImageDisplayer().showImage(imDerY);
@@ -159,7 +175,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
             return comp;
         };
         
-        if (debug) {
+        if (testMode) {
             logger.debug("{} max found, {} min found", localMax.size(), localMin.size());
             logger.debug("max: {}", localMax);
             logger.debug("min: {}", localMin);
@@ -169,7 +185,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         int lastMinIdx = 0;
         int maxIdx = 0;
         while (maxIdx<localMax.size()) {
-            if (debug) logger.debug("VALID MAX: {}", localMax.get(maxIdx));
+            if (testMode) logger.debug("VALID MAX: {}", localMax.get(maxIdx));
             int minIdx = getNextMinIdx(derMap, localMin, localMax, maxIdx, lastMinIdx, widthMin,widthMax, segmentScoreComparator);
             if (minIdx>=0 ) {
                 // check all valid max between current max and min
@@ -182,13 +198,13 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
                             if (comp>0) {
                                 maxIdx = nextMaxIdx;
                                 minIdx = nextMinIdx;
-                                if (debug) logger.debug("BETTER VALID MAX: {}, d: {}", localMax.get(maxIdx), localMin.get(minIdx) - localMax.get(maxIdx));
+                                if (testMode) logger.debug("BETTER VALID MAX: {}, d: {}", localMax.get(maxIdx), localMin.get(minIdx) - localMax.get(maxIdx));
                             }
                         }
                     }
                     ++nextMaxIdx;
                 }
-                if (debug) {
+                if (testMode) {
                     int x1 = localMax.get(maxIdx);
                     int x2 = localMin.get(minIdx);
                     logger.debug("Peak found X: [{};{}], distance: {}, value: [{};{}], normedValue: [{};{}]", x1, x2, localMin.get(minIdx) - localMax.get(maxIdx), xProjDer[x1], xProjDer[x2], xProjDer[x1]/xProj[x1], xProjDer[x2]/xProj[x2]);
@@ -208,29 +224,30 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
             }
         }
         Result r= new Result(peaks, channelStartIdx, aberrationStart);
-        if (debug) for (int i = 0; i<r.size(); ++i) logger.debug("mc: {} -> {}", i, r.getBounds(i, true));
+        if (testMode) for (int i = 0; i<r.size(); ++i) logger.debug("mc: {} -> {}", i, r.getBounds(i, true));
         return r;
     }
     
-    private static int getNextMinIdx(final float[] derMap, final List<Integer> localMin, final List<Integer> localMax, final int maxIdx, int lastMinIdx, final double widthMin, final double widthMax, Comparator<int[]> segmentScoreComparator) {
+    private int getNextMinIdx(final float[] derMap, final List<Integer> localMin, final List<Integer> localMax, final int maxIdx, int lastMinIdx, final double widthMin, final double widthMax, Comparator<int[]> segmentScoreComparator) {
+        if (debug) testMode = true;
         int minIdx = lastMinIdx;
         while(minIdx<localMin.size()) {
             int d = localMin.get(minIdx) - localMax.get(maxIdx);
             //if (debug) logger.debug("Test MIN: {}, d: {}", localMin.get(minIdx), d);
             if (d>=widthMin && d<=widthMax) {
-                if (debug) logger.debug("VALID MIN: {}, d: {}", localMin.get(minIdx), d);
+                if (testMode) logger.debug("VALID MIN: {}, d: {}", localMin.get(minIdx), d);
                 // see if next mins yield to better segmentation
                 boolean better=true;
                 while(better) {
                     better=false;
                     if (minIdx+1<localMin.size() && Math.abs(derMap[localMin.get(minIdx+1)])>Math.abs(derMap[localMin.get(minIdx)])*betterPeakRelativeThreshold) {
                         int d2 = localMin.get(minIdx+1) - localMax.get(maxIdx);
-                        if (debug) logger.debug("Test BETTER VALID MIN: {}, d: {}", localMin.get(minIdx), d2);
+                        if (testMode) logger.debug("Test BETTER VALID MIN: {}, d: {}", localMin.get(minIdx), d2);
                         if (d2>=widthMin && d2<=widthMax) {
                             if (segmentScoreComparator.compare(new int[]{maxIdx, minIdx}, new int[]{maxIdx, minIdx+1})>0) {
                                 ++minIdx;
                                 better = true;
-                                if (debug) logger.debug("BETTER VALID MIN: {}, d: {}", localMin.get(minIdx), d2);
+                                if (testMode) logger.debug("BETTER VALID MIN: {}, d: {}", localMin.get(minIdx), d2);
                             } 
                         }
                     }
@@ -244,7 +261,8 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     }
        
     
-    public static int searchYLimWithOpticalAberration(Image image, double peakProportion, int margin) {
+    public int searchYLimWithOpticalAberration(Image image, double peakProportion, int margin) {
+        if (debug) testMode = true;
         //int slidingSigmaWindow = 10;
         // aberation is @ higher Y coord that microchannels
         /*
@@ -274,7 +292,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         // autre stratégie: valeur constante
         int startOfMicroChannel = endOfPeakIdx - margin;
         
-        if (debug) {
+        if (testMode) {
             new IJImageDisplayer().showImage(image);
             Utils.plotProfile("yProj", yProj);
             //Utils.plotProfile("Sliding sigma", slidingSigma);
@@ -286,4 +304,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     public Parameter[] getParameters() {
         return parameters;
     }
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
+
 }

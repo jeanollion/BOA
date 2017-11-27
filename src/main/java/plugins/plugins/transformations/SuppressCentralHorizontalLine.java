@@ -70,5 +70,6 @@ public class SuppressCentralHorizontalLine implements Transformation {
     public boolean does3D() {
         return true;
     }
-    
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

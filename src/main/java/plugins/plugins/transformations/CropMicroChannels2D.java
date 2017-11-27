@@ -31,6 +31,8 @@ import image.ImageLabeller;
 import image.ImageOperations;
 import static image.ImageOperations.threshold;
 import java.util.ArrayList;
+import static plugins.Plugin.logger;
+import plugins.Transformation.SelectionMode;
 import plugins.TransformationTimeIndependent;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import processing.Filters;
@@ -44,7 +46,7 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class CropMicroChannels2D implements TransformationTimeIndependent {
+public class CropMicroChannels2D {//implements TransformationTimeIndependent {
     public static boolean debug = false;
     ArrayList<Integer> configurationData=new ArrayList<Integer>(4); // xMin/xMax/yMin/yMax
     NumberParameter xStart = new NumberParameter("X start", 0, 0);

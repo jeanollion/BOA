@@ -215,7 +215,7 @@ public class TestPreProcess {
         f.getPreProcessingChain().addTransformation(bactChann, null, new IJSubtractBackground(20, true, false, true, false));
         f.getPreProcessingChain().addTransformation(bactChann, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
         if (flip) f.getPreProcessingChain().addTransformation(bactChann, null, new Flip(ImageTransformation.Axis.Y));
-        f.getPreProcessingChain().addTransformation(bactChann, null, new CropMicroChannels2D());
+        //f.getPreProcessingChain().addTransformation(bactChann, null, new CropMicroChannels2D());
         setTransformations(f, true);
         
         InputImagesImpl images = f.getInputImages();

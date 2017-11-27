@@ -91,9 +91,7 @@ public class TestPreProcessPhase {
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
         AutoRotationXY t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false));
-        
-        AutoRotationXY.debug=true;
-        
+        t.setTestMode(true);
         t.computeConfigurationData(channelIdx, images);
         Image res = t.applyTransformation(channelIdx, time, im);
         IJImageDisplayer disp = new IJImageDisplayer();

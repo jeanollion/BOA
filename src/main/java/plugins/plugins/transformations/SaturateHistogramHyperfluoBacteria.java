@@ -66,6 +66,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
     NumberParameter minimumVolume = new BoundedNumberParameter("Minimum volume of signal (pixels)", 0, 10000, 1, null);
     Parameter[] parameters = new Parameter[]{thresholdBck, thresholdHyper, foregroundProportion, minimumVolume};
     ArrayList<Double> configData = new ArrayList<>(2);
+    
     public SaturateHistogramHyperfluoBacteria setForegroundProportion(double proportion) {
         this.foregroundProportion.setValue(proportion);
         return this;
@@ -119,7 +120,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         double thld = getThld(im, this.foregroundProportion.getValue().doubleValue(), this.thresholdBck.instanciatePlugin(), this.thresholdHyper.instanciatePlugin(), null, this.minimumVolume.getValue().intValue(), 0);
         if (Double.isFinite(thld)) SaturateHistogram.saturate(thld, thld, im);
     }
-    private static double getThld(Image im, double proportionThld, SimpleThresholder thlderBack, SimpleThresholder thlderHyper, ImageInteger backThld, int minimumCount, int idx) {
+    private double getThld(Image im, double proportionThld, SimpleThresholder thlderBack, SimpleThresholder thlderHyper, ImageInteger backThld, int minimumCount, int idx) {
         double thldBack = thlderBack.runSimpleThresholder(im, null);
         double thldHyper = thlderHyper.runSimpleThresholder(im, null);
         backThld=ImageOperations.threshold(im, thldBack, true, true, false, backThld);
@@ -129,12 +130,12 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         double count = backThld.count();
         if (count<minimumCount) return Double.POSITIVE_INFINITY;
         double countHyper = hyperThld.count();
-        //logger.debug("thldBack:{} hyper: {}, count back: {}, hyper: {}, prop: {}", thldBack, thldHyper, count, countHyper, countHyper / count);
+        if (testMode) logger.debug("thldBack:{} hyper: {}, count back: {}, hyper: {}, prop: {}", thldBack, thldHyper, count, countHyper, countHyper / count);
         double proportion = countHyper / count;
         if (proportion<proportionThld && count-countHyper>minimumCount) { // recompute hyper thld within seg bact
             ImageMask thldMask = new ThresholdMask(im, thldBack, true, true);
             double thldHyper2 = IJAutoThresholder.runThresholder(im, thldMask, AutoThresholder.Method.Otsu);
-            //logger.debug("SaturateHisto: {} proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {})", idx, proportion, count/im.getSizeXYZ(), thldBack, thldHyper2, thldHyper);
+            if (testMode) logger.debug("SaturateHisto: {} proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {})", idx, proportion, count/im.getSizeXYZ(), thldBack, thldHyper2, thldHyper);
             return thldHyper2;
         }
         else return Double.POSITIVE_INFINITY;
@@ -167,5 +168,6 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
     public Parameter[] getParameters() {
         return parameters;
     }
-    
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

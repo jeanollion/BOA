@@ -110,6 +110,7 @@ public class ImageStabilizerXY implements Transformation {
     
     @Override
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
+        if (debug) testMode = true;
         long tStart = System.currentTimeMillis();
         final int tRef = inputImages.getDefaultTimePoint();
         //final int tRef=0;
@@ -385,5 +386,6 @@ public class ImageStabilizerXY implements Transformation {
         }
         
     }
-    
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

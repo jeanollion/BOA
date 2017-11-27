@@ -48,10 +48,7 @@ import plugins.OverridableThreshold;
 import plugins.OverridableThresholdWithSimpleThresholder;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.IJAutoThresholder;
-import plugins.plugins.trackers.ObjectIdxTracker;
-import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
-import static plugins.plugins.transformations.CropMicroChannelFluo2D.segmentMicroChannels;
 import plugins.plugins.transformations.CropMicroChannels;
 import plugins.plugins.transformations.CropMicroChannels.Result;
 import processing.Filters;
@@ -90,7 +87,8 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableTh
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runThresholder(input, parent) : thresholdValue;
         logger.debug("thresholder: {} : {}", threshold.getPluginName(), threshold.getParameters());
-        Result r = segmentMicroChannels(input, thresholdedImage, 0, yShift.getValue().intValue(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
+        CropMicroChannelFluo2D cropper = new CropMicroChannelFluo2D().setChannelDim(this.channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue()).setParameters(this.minObjectSize.getValue().intValue());
+        Result r = cropper.segmentMicroChannels(input, thresholdedImage, 0, yShift.getValue().intValue(), channelWidth.getValue().intValue(), thld);
         if (r==null) return null;
         else return r.getObjectPopulation(input, true);
     }
@@ -98,7 +96,8 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableTh
     @Override
     public Result segment(Image input) {
         double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runSimpleThresholder(input, null) : thresholdValue;
-        Result r = segmentMicroChannels(input, thresholdedImage, 0, yShift.getValue().intValue(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
+        CropMicroChannelFluo2D cropper = new CropMicroChannelFluo2D().setChannelDim(this.channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue()).setParameters(this.minObjectSize.getValue().intValue());
+        Result r = cropper.segmentMicroChannels(input, thresholdedImage, 0, yShift.getValue().intValue(), channelWidth.getValue().intValue(), thld);
         return r;
     }
     
