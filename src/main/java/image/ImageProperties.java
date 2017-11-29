@@ -8,6 +8,7 @@ public interface ImageProperties {
     public int getSizeXY();
     public int getSizeXYZ();
     public int getOffsetX();
+    public int getOffsetXY();
     public int getOffsetY();
     public int getOffsetZ();
     public float getScaleXY();

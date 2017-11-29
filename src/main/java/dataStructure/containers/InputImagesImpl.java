@@ -19,9 +19,11 @@ package dataStructure.containers;
 
 import image.Image;
 import static image.Image.logger;
+import plugins.Autofocus;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 import utils.ArrayUtil;
+import utils.Pair;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 
@@ -33,11 +35,18 @@ public class InputImagesImpl implements InputImages {
     InputImage[][] imageCT;
     int defaultTimePoint;
     int frameNumber;
-    
-    public InputImagesImpl(InputImage[][] imageCT, int defaultTimePoint) {
+    int autofocusChannel=-1;
+    Autofocus autofocusAlgo = null;
+    Integer[] autofocusPlanes;
+    public InputImagesImpl(InputImage[][] imageCT, int defaultTimePoint, Pair<Integer, Autofocus> autofocusConfig) {
         this.imageCT = imageCT;
         this.defaultTimePoint= defaultTimePoint;
         for (int c = 0; c<imageCT.length; ++c) if (imageCT[c].length>frameNumber) frameNumber = imageCT[c].length;
+        if (autofocusConfig!=null) {
+            this.autofocusChannel=autofocusConfig.key;
+            this.autofocusAlgo=autofocusConfig.value;
+        }
+        autofocusPlanes = new Integer[frameNumber];
     }
     
     public InputImagesImpl duplicate() {
@@ -46,9 +55,17 @@ public class InputImagesImpl implements InputImages {
             imageCTDup[i] = new InputImage[imageCT[i].length];
             for (int j = 0; j<imageCT[i].length; ++j) imageCTDup[i][j] = imageCT[i][j].duplicate();
         }
-        return new InputImagesImpl(imageCTDup, defaultTimePoint);
+        return new InputImagesImpl(imageCTDup, defaultTimePoint, new Pair<>(autofocusChannel, autofocusAlgo));
     }
-    
+    @Override public int getBestFocusPlane(int timePoint) {
+        if (autofocusChannel>=0 && autofocusAlgo!=null) {
+            if (autofocusPlanes[timePoint]==null) {
+                Image im = this.getImage(autofocusChannel, timePoint);
+                autofocusPlanes[timePoint] = autofocusAlgo.getBestFocusPlane(im, null);
+            } 
+            return autofocusPlanes[timePoint];
+        } else return -1;
+    }
     @Override public int getFrameNumber() {return frameNumber;}
     @Override public int getChannelNumber() {return imageCT.length;}
     @Override public int getDefaultTimePoint() {return defaultTimePoint;}

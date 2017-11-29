@@ -80,6 +80,11 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
             List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, numb);
             for (int f : frames) {
                 image = inputImages.getImage(channelIdx, f);
+                if (image.getSizeZ()>1) {
+                    int plane = inputImages.getBestFocusPlane(f);
+                    if (plane<0) throw new RuntimeException("CropMicrochannel can only be run on 2D images AND no autofocus algorithm was set");
+                    image = image.splitZPlanes().get(plane);
+                }
                 BoundingBox bb = getBoundingBox(image);
                 if (bb==null) continue;
                 if (b==null) b = bb;
@@ -171,12 +176,14 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
         public BoundingBox getBounds(int idx, boolean includeYMinShift) {
             return new BoundingBox(xMin[idx], xMax[idx], yMin+(includeYMinShift?yMinShift[idx]:0), yMax, 0, 0);
         }
-        public Object3D getObject3D(int idx, float scaleXY, float scaleZ, boolean includeYMinShift) {
-            return new Object3D(new BlankMask("mask of:" + idx+1, getBounds(idx, includeYMinShift).getImageProperties(scaleXY, scaleZ)), idx+1);
+        public Object3D getObject3D(int idx, float scaleXY, float scaleZ, boolean includeYMinShift, int zMax) {
+            BoundingBox bds = getBounds(idx, includeYMinShift);
+            if (zMax>1) bds.expandZ(zMax);
+            return new Object3D(new BlankMask("mask of:" + idx+1, bds.getImageProperties(scaleXY, scaleZ)), idx+1);
         }
         public ObjectPopulation getObjectPopulation(ImageProperties im, boolean includeYMinShift) {
             List<Object3D> l = new ArrayList<>(xMin.length);
-            for (int i = 0; i<xMin.length; ++i) l.add(getObject3D(i, im.getScaleXY(), im.getScaleZ(), includeYMinShift));
+            for (int i = 0; i<xMin.length; ++i) l.add(getObject3D(i, im.getScaleXY(), im.getScaleZ(), includeYMinShift, im.getSizeZ()));
             return new ObjectPopulation(l, im);
         }
     }

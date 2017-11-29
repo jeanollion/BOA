@@ -20,25 +20,31 @@ package plugins.plugins.transformations;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
 import dataStructure.containers.InputImages;
 import image.Image;
+import image.ImageMask;
 import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
+import plugins.SimpleThresholder;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
+import plugins.plugins.thresholders.BackgroundThresholder;
 import processing.ImageFeatures;
 import utils.ThreadRunner;
-
+import image.ThresholdMask;
+import java.util.List;
+import plugins.Autofocus;
 /**
  *
  * @author jollion
  */
-public class SelectBestFocusPlane implements Transformation {
+public class SelectBestFocusPlane implements Transformation, Autofocus {
     ArrayList<Integer> bestFocusPlaneIdxT = new ArrayList<Integer>();
     NumberParameter gradientScale = new BoundedNumberParameter("Gradient Scale", 0, 3, 1, 10);
-    Parameter[] parameters = new Parameter[]{gradientScale};
-    
+    PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new BackgroundThresholder(2.5, 3, 3), true); //new ConstantValue(150)    Parameter[] parameters = new Parameter[]{gradientScale};
+    Parameter[] parameters = new Parameter[]{gradientScale, signalExclusionThreshold};
     public SelectBestFocusPlane() {}
     public SelectBestFocusPlane(double gradientScale) {
         this.gradientScale.setValue(gradientScale);
@@ -61,17 +67,9 @@ public class SelectBestFocusPlane implements Transformation {
                                 Image image = inputImages.getImage(channelIdx, t);
                                 if (image.getSizeZ()>1) {
                                     ArrayList<Image> planes = image.splitZPlanes();
-                                    double maxValues = eval(planes.get(0), scale);
-                                    int max=0;
-                                    for (int z = 1; z<planes.size(); ++z) {
-                                        double temp = eval(planes.get(z), scale);
-                                        if (temp>maxValues) {
-                                            maxValues = temp;
-                                            max = z;
-                                        }
-                                    }
-                                    conf[t] = max;
-                                    logger.debug("select best focus plane: time:{}, plane: {}", t, max);
+                                    SimpleThresholder thlder = signalExclusionThreshold.instanciatePlugin();
+                                    conf[t] = getBestFocusPlane(planes, scale, thlder, null);
+                                    logger.debug("select best focus plane: time:{}, plane: {}", t, conf[t]);
                                 }
                             }
                         }
@@ -85,9 +83,40 @@ public class SelectBestFocusPlane implements Transformation {
     }
     
     
-    private static double eval(Image plane, double scale) {
+    @Override
+    public int getBestFocusPlane(Image image, ImageMask mask) {
+        if (image.getSizeZ()<=1) return 0;
+        return getBestFocusPlane(image.splitZPlanes(), this.gradientScale.getValue().doubleValue(), this.signalExclusionThreshold.instanciatePlugin(), mask);
+    }
+    
+    public static int getBestFocusPlane(List<Image> planes, double scale, SimpleThresholder thlder, ImageMask globalMask) {
+        double maxValues = -Double.MAX_VALUE;
+        ImageMask mask = null;
+        int max=-1;
+        for (int zz = 0; zz<planes.size(); ++zz) {
+            if (thlder!=null) {
+                final ImageMask maskThld = new ThresholdMask(planes.get(zz), thlder.runSimpleThresholder(planes.get(zz), globalMask), true, false);
+                final int zzz = zz;
+                if (globalMask!=null) mask = new ThresholdMask(planes.get(zz), (x, y, z)->globalMask.insideMask(x, y, zzz)&&maskThld.insideMask(x, y, z), (xy, z)->globalMask.insideMask(xy, zzz)&&maskThld.insideMask(xy, z));
+                else mask = maskThld;
+                if (mask.count()==0) continue;
+            } else if (globalMask!=null) {
+                final int zzz = zz;
+                mask = new ThresholdMask(planes.get(zz), (x, y, z)->globalMask.insideMask(x, y, zzz), (xy, z)->globalMask.insideMask(xy, zzz));
+            }
+            double temp = evalPlane(planes.get(zz), scale, mask);
+            if (temp>maxValues) {
+                maxValues = temp;
+                max = zz;
+            }
+        }
+        logger.debug("get best focus plane: {}/{}", max, planes.size());
+        if (max==-1) max = planes.size()/2;
+        return max;
+    }
+    public static double evalPlane(Image plane, double scale, ImageMask mask) {
         Image gradient = ImageFeatures.getGradientMagnitude(plane, scale, false);
-        return ImageOperations.getMeanAndSigma(gradient, null, null)[0];
+        return ImageOperations.getMeanAndSigma(gradient, mask, null)[0];
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
@@ -113,4 +142,6 @@ public class SelectBestFocusPlane implements Transformation {
     }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
+
+    
 }

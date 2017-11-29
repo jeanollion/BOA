@@ -73,7 +73,7 @@ import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import plugins.plugins.transformations.SaturateHistogram;
 import plugins.plugins.transformations.SaturateHistogramHyperfluoBacteria;
-import plugins.plugins.transformations.ScaleHistogramSignalExclusionY;
+import plugins.legacy.ScaleHistogramSignalExclusionY;
 import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;

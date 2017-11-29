@@ -37,7 +37,7 @@ import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannelBF2D;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
-import plugins.plugins.transformations.CropMicroChannels2D;
+import plugins.legacy.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerCore;
 import plugins.plugins.transformations.ImageStabilizerXY;

@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.transformations;
+package plugins.legacy;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BoundedNumberParameter;
@@ -33,7 +33,7 @@ import plugins.Transformation;
  *
  * @author jollion
  */
-public class SuppressCentralHorizontalLine implements Transformation {
+public class SuppressCentralHorizontalLine  implements Transformation {
     NumberParameter pixelNumber = new BoundedNumberParameter("Number of pixel to erase", 0, 8, 1, null);
     
     public SuppressCentralHorizontalLine(){};

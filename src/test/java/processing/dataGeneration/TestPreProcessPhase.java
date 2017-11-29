@@ -38,7 +38,7 @@ import plugins.plugins.preFilter.TopHat;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannelBF2D;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
-import plugins.plugins.transformations.CropMicroChannels2D;
+import plugins.legacy.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerCore;
 import static plugins.plugins.transformations.ImageStabilizerXY.testTranslate;

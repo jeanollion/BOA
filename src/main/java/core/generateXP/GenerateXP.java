@@ -81,18 +81,18 @@ import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannelBF2D;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
 import plugins.plugins.transformations.CropMicroChannels;
-import plugins.plugins.transformations.CropMicroChannels2D;
+import plugins.legacy.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import plugins.plugins.transformations.RemoveStripesSignalExclusion;
 import plugins.plugins.transformations.SaturateHistogram;
 import plugins.plugins.transformations.SaturateHistogramHyperfluoBacteria;
-import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
-import plugins.plugins.transformations.ScaleHistogramSignalExclusionY;
+import plugins.legacy.ScaleHistogramSignalExclusion;
+import plugins.legacy.ScaleHistogramSignalExclusionY;
 import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;
-import plugins.plugins.transformations.SuppressCentralHorizontalLine;
+import plugins.legacy.SuppressCentralHorizontalLine;
 import processing.ImageTransformation;
 
 

@@ -28,7 +28,9 @@ import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ParameterUI;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
+import configuration.parameters.ChannelImageParameter;
 import configuration.parameters.ConditionalParameter;
+import configuration.parameters.GroupParameter;
 import configuration.parameters.ParameterListener;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.TextParameter;
@@ -46,8 +48,11 @@ import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import org.apache.commons.lang.ArrayUtils;
 import org.json.simple.JSONObject;
+import plugins.Autofocus;
 import plugins.Measurement;
+import plugins.plugins.transformations.SelectBestFocusPlane;
 import utils.HashMapGetCreate;
+import utils.Pair;
 import utils.Utils;
 import static utils.Utils.toArray;
 
@@ -68,6 +73,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
     TextParameter positionSeparator = new TextParameter("Position Separator", "xy", true);
     ConditionalParameter importCond = new ConditionalParameter(importMethod).setActionParameters(ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION.getMethod(), new Parameter[]{positionSeparator});
+    ChannelImageParameter bestFocusPlaneChannel = new ChannelImageParameter("Channel", 0, true).setToolTipText("Channel for best focus plane computation");
+    PluginParameter<Autofocus> autofocus = new PluginParameter<>("Algorithm", Autofocus.class, new SelectBestFocusPlane(), true);
+    GroupParameter bestFocusPlane = new GroupParameter("Best Focus plane computation", new Parameter[]{bestFocusPlaneChannel, autofocus});
+    
     public enum ImageDAOTypes {LocalFileSystem};
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     ConfigurationTreeModel model;
@@ -83,6 +92,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         res.put("positions", fields.toJSONEntry());
         res.put("template", template.toJSONEntry());
         res.put("importMethod", importCond.toJSONEntry());
+        res.put("bestFocusPlane", bestFocusPlane.toJSONEntry());
         return res;
     }
 
@@ -98,6 +108,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         template.initFromJSONEntry(jsonO.get("template"));
         if (jsonO.get("importMethod") instanceof JSONObject) importCond.initFromJSONEntry(jsonO.get("importMethod"));
         else importMethod.initFromJSONEntry(jsonO.get("importMethod")); // RETRO COMPATIBILITY
+        bestFocusPlane.initFromJSONEntry(jsonO.get("bestFocusPlane"));
         this.name="Configuration";
     }
     
@@ -131,7 +142,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     protected void initChildList() {
-        super.initChildren(importCond, template, fields, channelImages, structures, measurements, outputPath, imagePath);
+        super.initChildren(importCond, template, fields, channelImages, structures, measurements, outputPath, imagePath, bestFocusPlane);
     }
     
     protected void checkInit() {
@@ -168,6 +179,11 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public List<MicroscopyField> getPositions() {
         return fields.getChildren();
+    }
+    
+    public Pair<Integer, Autofocus> getFocusChannelAndAlgorithm() {
+        if (this.bestFocusPlaneChannel.getSelectedIndex()<0 || !autofocus.isOnePluginSet()) return null;
+        return new Pair<>(this.bestFocusPlaneChannel.getSelectedIndex(), this.autofocus.instanciatePlugin());
     }
     
     public void flushImages(boolean raw, boolean preProcessed, String... excludePositions) {

@@ -145,7 +145,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                     int defTp = defaultTimePoint.getSelectedTimePoint()-tpOff;
                     if (defTp<0) defTp=0;
                     if (defTp>=tpNp) defTp=tpNp-1;   
-                    inputImages = new InputImagesImpl(res, defTp);
+                    inputImages = new InputImagesImpl(res, defTp, getExperiment().getFocusChannelAndAlgorithm());
                 }
             }
             //logger.debug("creation input images: def tp: {}, total: {}, tp: {}",defaultTimePoint.getSelectedTimePoint(),images.getTimePointNumber(), inputImages.getDefaultTimePoint());

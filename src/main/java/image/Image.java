@@ -349,6 +349,10 @@ public abstract class Image implements ImageProperties {
     public int getOffsetX() {
         return offsetX;
     }
+    
+    public int getOffsetXY() {
+        return offsetXY;
+    }
 
     public int getOffsetY() {
         return offsetY;

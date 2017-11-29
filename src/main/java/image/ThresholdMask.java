@@ -17,8 +17,6 @@
  */
 package image;
 
-import image.BoundingBox.LoopFunction2;
-
 /**
  *
  * @author jollion
@@ -26,27 +24,29 @@ import image.BoundingBox.LoopFunction2;
 public class ThresholdMask implements ImageMask {
     final InsideMaskFunction insideMask;
     final InsideMaskXYFunction insideMaskXY;
-    final Image image;
-    final double threshold;
-    public ThresholdMask(Image imageToThreshold, double thld, boolean foregroundOverthreshold, boolean strict) {
+    final ImageProperties image;
+    public ThresholdMask(Image imageToThreshold, double threshold, boolean foregroundOverthreshold, boolean strict) {
         this.image = imageToThreshold;
-        this.threshold=thld;
         if (foregroundOverthreshold) {
-            if (strict) insideMask = (x, y, z) -> image.getPixel(x, y, z)>threshold;
-            else insideMask = (x, y, z) -> image.getPixel(x, y, z)>threshold;
+            if (strict) insideMask = (x, y, z) -> imageToThreshold.getPixel(x, y, z)>threshold;
+            else insideMask = (x, y, z) -> imageToThreshold.getPixel(x, y, z)>threshold;
         } else {
-            if (strict) insideMask = (x, y, z) -> image.getPixel(x, y, z)<threshold;
-            else insideMask = (x, y, z) -> image.getPixel(x, y, z)<=threshold;
+            if (strict) insideMask = (x, y, z) -> imageToThreshold.getPixel(x, y, z)<threshold;
+            else insideMask = (x, y, z) -> imageToThreshold.getPixel(x, y, z)<=threshold;
         }
         if (foregroundOverthreshold) {
-            if (strict) insideMaskXY = (xy, z) -> image.getPixel(xy, z)>threshold;
-            else insideMaskXY = (xy, z) -> image.getPixel(xy, z)>threshold;
+            if (strict) insideMaskXY = (xy, z) -> imageToThreshold.getPixel(xy, z)>threshold;
+            else insideMaskXY = (xy, z) -> imageToThreshold.getPixel(xy, z)>threshold;
         } else {
-            if (strict) insideMaskXY = (xy, z) -> image.getPixel(xy, z)<threshold;
-            else insideMaskXY = (xy, z) -> image.getPixel(xy, z)<=threshold;
+            if (strict) insideMaskXY = (xy, z) -> imageToThreshold.getPixel(xy, z)<threshold;
+            else insideMaskXY = (xy, z) -> imageToThreshold.getPixel(xy, z)<=threshold;
         }
     }
-    
+    public ThresholdMask(ImageProperties imageProperties, InsideMaskFunction insideMask, InsideMaskXYFunction insideMaskXY) {
+        this.image=imageProperties;
+        this.insideMask=insideMask;
+        this.insideMaskXY=insideMaskXY;
+    }
     @Override
     public boolean insideMask(int x, int y, int z) {
         return insideMask.insideMask(x, y, z);
@@ -59,19 +59,19 @@ public class ThresholdMask implements ImageMask {
 
     @Override
     public boolean insideMaskWithOffset(int x, int y, int z) {
-        return insideMask.insideMask(x-image.offsetX, y-image.offsetY, z-image.offsetZ);
+        return insideMask.insideMask(x-image.getOffsetX(), y-image.getOffsetY(), z-image.getOffsetZ());
     }
 
     @Override
     public boolean insideMaskWithOffset(int xy, int z) {
-        return insideMaskXY.insideMask(xy-image.offsetXY, z-image.offsetZ);
+        return insideMaskXY.insideMask(xy-image.getOffsetX(), z-image.getOffsetZ());
     }
 
     @Override
     public int count() {
         int count = 0;
-        for (int z = 0; z< image.sizeZ; ++z) {
-            for (int xy=0; xy<image.sizeXY; ++xy) {
+        for (int z = 0; z< image.getScaleZ(); ++z) {
+            for (int xy=0; xy<image.getSizeXY(); ++xy) {
                 if (insideMask(xy, z)) ++count;
             }
         }
@@ -111,6 +111,11 @@ public class ThresholdMask implements ImageMask {
     @Override
     public int getOffsetX() {
         return image.getOffsetX();
+    }
+    
+    @Override
+    public int getOffsetXY() {
+        return image.getOffsetXY();
     }
 
     @Override
@@ -157,10 +162,10 @@ public class ThresholdMask implements ImageMask {
     public ImageProperties getProperties() {
         return image.getProperties();
     }
-    private interface InsideMaskFunction {
+    public interface InsideMaskFunction {
         public boolean insideMask(int x, int y, int z);
     }
-    private interface InsideMaskXYFunction {
+    public interface InsideMaskXYFunction {
         public boolean insideMask(int xy, int z);
     }
 }

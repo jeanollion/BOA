@@ -68,6 +68,7 @@ public class GroupParameter extends SimpleContainerParameter {
 
     @Override
     public void initFromJSONEntry(Object jsonEntry) {
+        if (jsonEntry==null) return;
         if (JSONUtils.isJSONArrayMap(jsonEntry)) JSONUtils.fromJSONArrayMap(parameters, (JSONArray)jsonEntry);
         else JSONUtils.fromJSON(parameters, (JSONArray)jsonEntry);
     }

@@ -126,6 +126,11 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         for (int f : frames) {
             Image image = inputImages.getImage(channelIdx, f);
             image = prefilters.filter(image);
+            if (image.getSizeZ()>1) {
+                int plane = inputImages.getBestFocusPlane(f);
+                if (plane<0) throw new RuntimeException("Autorotation can only be run on 2D images AND no autofocus algorithm was set");
+                image = image.splitZPlanes().get(plane);
+            }
             double angle=getAngle(image);
             angles.add(angle);
         }

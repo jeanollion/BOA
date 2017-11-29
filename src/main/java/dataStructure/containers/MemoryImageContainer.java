@@ -102,6 +102,6 @@ public class MemoryImageContainer extends MultipleImageContainer {
                 inputCT[c][t] = new InputImage(c, t, t, position, this, null);
             }
         }
-        return new InputImagesImpl(inputCT, 0);
+        return new InputImagesImpl(inputCT, 0, null);
     }
 }

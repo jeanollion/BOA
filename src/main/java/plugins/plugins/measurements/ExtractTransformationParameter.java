@@ -30,7 +30,7 @@ import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import plugins.Measurement;
 import plugins.Transformation;
-import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
+import plugins.legacy.ScaleHistogramSignalExclusion;
 
 /**
  *

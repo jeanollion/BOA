@@ -467,8 +467,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
 
     @Override
     public boolean canBeTested(String p) {
-        String n = p;
-        return n.equals(spotQualityThreshold.getName()) || n.equals(maxGap.getName());
+        if (p==null) return false;
+        return p.equals(spotQualityThreshold.getName()) || p.equals(maxGap.getName());
     }
     String testParam;
     @Override

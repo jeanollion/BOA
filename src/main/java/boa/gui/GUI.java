@@ -584,9 +584,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     private void promptSaveUnsavedChanges() {
         if (db==null) return;
+        logger.debug("WARNING: current modification cannot be saved"+ " experiment edited: "+((Experiment)this.configurationTreeGenerator.getTree().getModel().getRoot()).hashCode()+ " current experiment: "+db.getExperiment().hashCode());
         if (configurationTreeGenerator.getTree()!=null && ((Experiment)this.configurationTreeGenerator.getTree().getModel().getRoot())!=db.getExperiment()) {
             GUI.log("WARNING: current modification cannot be saved");
-            return;
+            //return;
         }
         if (db.experimentChanged()) {
             if (db.isReadOnly()) {
@@ -2410,6 +2411,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
         if (!checkConnection()) return;
+        logger.debug("will run ... unsaved changes in config: {}", db==null? false : db.experimentChanged());
+        promptSaveUnsavedChanges();
+        
         Task t = getCurrentJob(null);
         if (t==null) {
             log("Could not define job");
@@ -2420,6 +2424,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             return;
         }
         if (t.isPreProcess() || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
+        
         Task.executeTask(t, this, ()->{updateConfigurationTree();});
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
