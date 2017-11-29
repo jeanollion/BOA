@@ -93,6 +93,7 @@ import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;
 import plugins.legacy.SuppressCentralHorizontalLine;
+import plugins.plugins.transformations.AutoFlipY;
 import processing.ImageTransformation;
 
 
@@ -419,10 +420,10 @@ public class GenerateXP {
         xp.getStructures().insert(mc, bacteria, mutation);
         setParametersFluo(xp, true, true);
         
-        if (setUpPreProcessing) setPreprocessingFluo(xp.getPreProcessingTemplate(), flip, trimFramesStart, trimFramesEnd, scaleXY, crop);
+        if (setUpPreProcessing) setPreprocessingFluo(xp.getPreProcessingTemplate(), trimFramesStart, trimFramesEnd, scaleXY, crop);
         return xp;
     }
-    public static void setPreprocessingFluo(PreProcessingChain ps, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
+    public static void setPreprocessingFluo(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
         ps.setFrameDuration(120);
         ps.removeAllTransformations();
             ps.setFrameDuration(120);
@@ -433,11 +434,12 @@ public class GenerateXP {
             ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
             ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
             ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
-            ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
-            ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
+            ps.addTransformation(0, null, new AutoFlipY());
+            //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
+            //ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             CropMicroChannels cropper = new CropMicroChannelFluo2D(0, 45, 200, 0.5, 10);
             ps.addTransformation(0, null, cropper).setActivated(true);
-            ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, flip?-1:1).setCropper(cropper)).setActivated(false); // additional translation to correct chromatic shift
+            ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, 0).setCropper(cropper)).setActivated(false); // additional translation to correct chromatic shift
     }
     public static void setPreprocessingTrans(PreProcessingChain ps, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.setFrameDuration(4);

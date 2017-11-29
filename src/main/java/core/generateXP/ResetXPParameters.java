@@ -80,9 +80,9 @@ public class ResetXPParameters {
         if (positionIndices.length==2 && positionIndices[1]<0) {
             positionIndices = ArrayUtil.generateIntegerArray(positionIndices[0], db.getExperiment().getPositionCount());
         } 
-        if (positionIndices.length==0) GenerateXP.setPreprocessingFluo(db.getExperiment().getPreProcessingTemplate(), flip, trimeStart, trimEnd, scaleXY, null);
+        if (positionIndices.length==0) GenerateXP.setPreprocessingFluo(db.getExperiment().getPreProcessingTemplate(), trimeStart, trimEnd, scaleXY, null);
         else {
-            for (int i : positionIndices) GenerateXP.setPreprocessingFluo(db.getExperiment().getPosition(i).getPreProcessingChain(), flip, trimeStart, trimEnd, scaleXY, null);
+            for (int i : positionIndices) GenerateXP.setPreprocessingFluo(db.getExperiment().getPosition(i).getPreProcessingChain(), trimeStart, trimEnd, scaleXY, null);
         }
         db.updateExperiment();
     }

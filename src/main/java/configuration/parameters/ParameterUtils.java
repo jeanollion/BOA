@@ -493,6 +493,7 @@ public class ParameterUtils {
                             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("before: "+tpp.getPluginName(), imagesTC);
                         }
                         Transformation transfo = tpp.instanciatePlugin();
+                        transfo.setTestMode(i==transfoIdx);
                         logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
                         try {
                             transfo.computeConfigurationData(tpp.getInputChannel(), images);
@@ -562,7 +563,7 @@ public class ParameterUtils {
                 }
 
                 logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), input, output, transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
-
+                transfo.setTestMode(true);
                 try {
                     transfo.computeConfigurationData(input, images);
                 } catch (Exception ex) {
