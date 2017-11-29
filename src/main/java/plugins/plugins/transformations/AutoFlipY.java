@@ -61,12 +61,13 @@ public class AutoFlipY implements Transformation {
     ChoiceParameter method = new ChoiceParameter("Method", Utils.transform(AutoFlipMethod.values(), new String[AutoFlipMethod.values().length], f->f.name), FLUO.name, false);
     PluginParameter<SimpleThresholder> fluoThld = new PluginParameter<>("Threshold for bacteria Segmentation", SimpleThresholder.class, new BackgroundThresholder(2.5, 3, 3), false); 
     ConditionalParameter cond = new ConditionalParameter(method).setActionParameters("Bacteria Fluo", new Parameter[]{fluoThld});
-    List<Boolean> config = new ArrayList<>(1);
+    List config = new ArrayList(1);
     
     public AutoFlipY() {}
     
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {
+        config = new ArrayList(1);
         if (method.getSelectedItem().equals(FLUO.name)) { 
             // rough segmentation and get side where cells are better aligned
             List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 9);
@@ -98,7 +99,7 @@ public class AutoFlipY implements Transformation {
         ImageMask mask = new ThresholdMask(image, thlder.runSimpleThresholder(image, null), true, true);
         List<Object3D> objects = ImageLabeller.labelImageList(mask);
         objects.removeIf(o->o.getSize()<10);
-        logger.debug("objects: {}", objects.size());
+        if (testMode) logger.debug("objects: {}", objects.size());
         if (objects.isEmpty() || objects.size()<=2) return null;
         Map<Object3D, BoundingBox> xBounds = objects.stream().collect(Collectors.toMap(o->o, o->new BoundingBox(o.getBounds().getxMin(), o.getBounds().getxMax(), 0, 1, 0, 1)));
         Iterator<Object3D> it = objects.iterator();
@@ -115,15 +116,18 @@ public class AutoFlipY implements Transformation {
         }
         if (testMode) {
             ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(mask, null, 1).setName("Segmentation mask"));
-            ImageWindowManagerFactory.showImage(new ObjectPopulation(objects, image).getLabelMap().setName("Segmented Objects"));
+            ImageWindowManagerFactory.showImage(new ObjectPopulation(yMinOs, image).getLabelMap().setName("Upper Objects"));
+            ImageWindowManagerFactory.showImage(new ObjectPopulation(yMaxOs, image).getLabelMap().setName("Lower Objects"));
         }
         List<Integer> yMins = Utils.transform(yMinOs, o->o.getBounds().getyMin());
         double sigmaMin = getSigma(yMins);
         List<Integer> yMaxs = Utils.transform(yMaxOs, o->o.getBounds().getyMax());
         double sigmaMax = getSigma(yMaxs);
-        logger.debug("yMins sigma: {}: {}", sigmaMin, Utils.toStringList(yMins));
-        logger.debug("yMaxs sigma {}: {}", sigmaMax, Utils.toStringList(yMaxs));
-        logger.debug("flip: {}", sigmaMin>sigmaMax);
+        if (testMode) {
+            logger.debug("yMins sigma: {}: {}", sigmaMin, Utils.toStringList(yMins));
+            logger.debug("yMaxs sigma {}: {}", sigmaMax, Utils.toStringList(yMaxs));
+            logger.debug("flip: {}", sigmaMin>sigmaMax);
+        }
         return sigmaMin>sigmaMax;
     }
     
@@ -143,10 +147,19 @@ public class AutoFlipY implements Transformation {
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
         return (config.size()==1);
     }
-
+    private Boolean getFlip() {
+        if (config.isEmpty()) return null;
+        Object o = config.get(0);
+        logger.debug("flip config: {} ({})", o, o.getClass().getSimpleName());
+        if (o instanceof Boolean) return (Boolean)o;
+        else if (o instanceof String) return Boolean.parseBoolean((String)o);
+        else return null;
+    }
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) throws Exception {
-        if (config.get(0)) ImageTransformation.flip(image, ImageTransformation.Axis.Y);
+        Boolean flip = getFlip();
+        logger.debug("get flip config: {} ({})",flip , flip.getClass().getSimpleName());
+        if (flip) return ImageTransformation.flip(image, ImageTransformation.Axis.Y);
         return image;
     }
 
