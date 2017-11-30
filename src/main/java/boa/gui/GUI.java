@@ -729,7 +729,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             this.microscopyFieldList.setModel(actionMicroscopyFieldModel);
         } else actionMicroscopyFieldModel.removeAllElements();
         if (db!=null) {
-            for (int i =0; i<db.getExperiment().getPositionCount(); ++i) actionMicroscopyFieldModel.addElement(db.getExperiment().getPosition(i).getName());
+            for (int i =0; i<db.getExperiment().getPositionCount(); ++i) actionMicroscopyFieldModel.addElement(db.getExperiment().getPosition(i).getName()+" (#"+i+")");
             Utils.setSelectedValues(sel, microscopyFieldList, actionMicroscopyFieldModel);
         }
     }
@@ -743,7 +743,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     public List<String> getSelectedPositions(boolean returnAllIfNoneSelected) {
         if (returnAllIfNoneSelected && microscopyFieldList.getSelectedIndex()<0) return new ArrayList<String>(Arrays.asList(db.getExperiment().getPositionsAsString()));
-        else return microscopyFieldList.getSelectedValuesList();
+        else return Utils.transform((List<String>)microscopyFieldList.getSelectedValuesList(), s->s.substring(0, s.indexOf(" ")));
     }
     
     public void setSelectedTab(int tabIndex) {

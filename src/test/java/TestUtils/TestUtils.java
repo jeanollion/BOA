@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author nasique
  */
-public class Utils {
+public class TestUtils {
     public static final Logger logger = LoggerFactory.getLogger(ProcessingTest.class);
     public static void showImageIJ(Image image) {
         if (IJ.getInstance()==null) new ImageJ();

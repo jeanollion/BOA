@@ -17,7 +17,7 @@
  */
 package processing.dataGeneration;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageDisplayer;
@@ -50,10 +50,10 @@ public class TestProcessMicrochannels {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        int time =0;
-        int field = 0;
-        String dbName = "fluo170517_MutH";
-        //String dbName = "fluo160408_MutH";
+        int time =8;
+        int field = 21;
+        //String dbName = "TestThomasRawStacks";
+        String dbName = "fluo171127_WT_750ms";
         testSegMicrochannelsFromXP(dbName, field, time);
         //testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 700);
     }

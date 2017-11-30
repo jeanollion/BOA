@@ -17,7 +17,7 @@
  */
 package processing.dataGeneration;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import boa.gui.GUI;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
@@ -77,12 +77,12 @@ public class TestTracker {
         //String dbName = "MutH_150324";
         //String dbName = "WT_150616";
         //String dbName = "fluo171113_WT_180s";
-        String dbName = "TestThomasRawStacks";
+        String dbName = "fluo171127_WT_750ms";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
-        int pIdx = 0;
+        int pIdx = 38;
         int mcIdx =2;
-        int structureIdx = 1;
+        int structureIdx = 0;
         BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);

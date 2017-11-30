@@ -123,7 +123,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
     }
     public void saturateHistogram(Image im) {
         double thld = getThld(im, this.foregroundProportion.getValue().doubleValue(), this.thresholdBck.instanciatePlugin(), this.thresholdHyper.instanciatePlugin(), null, this.minimumVolume.getValue().intValue(), 0);
-        if (Double.isFinite(thld)) SaturateHistogram.saturate(thld, thld, im);
+        if (!Double.isNaN(thld) && Double.isFinite(thld)) SaturateHistogram.saturate(thld, thld, im);
     }
     private double getThld(Image im, double proportionThld, SimpleThresholder thlderBack, SimpleThresholder thlderHyper, ImageInteger backThld, int minimumCount, int idx) {
         double thldBack = thlderBack.runSimpleThresholder(im, null);

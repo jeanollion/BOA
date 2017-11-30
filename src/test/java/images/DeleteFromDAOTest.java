@@ -18,7 +18,7 @@
 package images;
 
 import static TestUtils.GenerateSyntheticData.generateImages;
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import core.Processor;
 import core.Task;
 import dataStructure.configuration.ChannelImage;

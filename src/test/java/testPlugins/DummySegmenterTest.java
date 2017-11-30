@@ -17,7 +17,7 @@
  */
 package testPlugins;
 
-import TestUtils.Utils;
+import TestUtils.TestUtils;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import image.ImageByte;
@@ -47,7 +47,7 @@ public class DummySegmenterTest {
         
         // reconstruction de l'image
         ImageInteger res2 = ImageInteger.mergeBinary(in, obs[0].getMask(), obs[1].getMask());
-        Utils.assertImage((ImageByte)res2, (ImageByte)image, 0);
+        TestUtils.assertImage((ImageByte)res2, (ImageByte)image, 0);
         
     }
 }

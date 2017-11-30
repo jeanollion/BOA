@@ -378,6 +378,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         for (StructureObject o : elementsToRemove) removeElement(o);
     }
     public synchronized void removeChildrenOf(List<StructureObject> parents) { // currently supports only direct children
+        if (structureIdx==-1) return;
         Map<String, List<StructureObject>> parentsByPosition = StructureObjectUtils.splitByPosition(parents);
         for (String position : parentsByPosition.keySet()) {
             Set<String> elements = getElementStrings(position);

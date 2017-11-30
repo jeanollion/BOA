@@ -53,17 +53,22 @@ public class SaturateHistogram implements Transformation {
         double maxObs = image.getMinAndMax(null)[1];
         if (maxObs<=thldMax || maxObs<=thld) return;
         
-        final double factor = (thldMax - thld) / (maxObs - thld);
-        final double add = thld * (1 - factor);
+        if (thldMax>thld) {
+            final double factor = (thldMax - thld) / (maxObs - thld);
+            final double add = thld * (1 - factor);
 
-        image.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
-            public void loop(int x, int y, int z) {
-                float value = image.getPixel(x, y, z);
-                if (value>thld) {
-                    image.setPixel(x, y, z, value * factor + add);
+            image.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
+                public void loop(int x, int y, int z) {
+                    float value = image.getPixel(x, y, z);
+                    if (value>thld) image.setPixel(x, y, z, value * factor + add);
                 }
-            }
-        });
+            });
+        } else {
+            image.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
+                float value = image.getPixel(x, y, z);
+                if (value>thld) image.setPixel(x, y, z, thld);
+            });
+        }
     }
 
     public ArrayList getConfigurationData() {

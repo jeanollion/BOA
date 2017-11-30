@@ -17,7 +17,7 @@
  */
 package processing;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;

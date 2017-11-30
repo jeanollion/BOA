@@ -17,7 +17,7 @@
  */
 package processing.dataGeneration;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import boa.gui.ConsoleUserInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.PreFilterSequence;

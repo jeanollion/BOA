@@ -18,8 +18,10 @@
 package plugins.plugins.transformations;
 
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ConditionalParameter;
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import dataStructure.containers.InputImages;
@@ -43,6 +45,7 @@ import plugins.Transformation;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import static plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.FLUO;
 import processing.ImageTransformation;
+import utils.Pair;
 import utils.Utils;
 
 /**
@@ -60,7 +63,8 @@ public class AutoFlipY implements Transformation {
     }
     ChoiceParameter method = new ChoiceParameter("Method", Utils.transform(AutoFlipMethod.values(), new String[AutoFlipMethod.values().length], f->f.name), FLUO.name, false);
     PluginParameter<SimpleThresholder> fluoThld = new PluginParameter<>("Threshold for bacteria Segmentation", SimpleThresholder.class, new BackgroundThresholder(4, 5, 3), false); 
-    ConditionalParameter cond = new ConditionalParameter(method).setActionParameters("Bacteria Fluo", new Parameter[]{fluoThld});
+    NumberParameter minObjectSize = new BoundedNumberParameter("Minimal Object Size", 1, 100, 10, null).setToolTipText("Object under this size (in pixels) will be removed");
+    ConditionalParameter cond = new ConditionalParameter(method).setActionParameters("Bacteria Fluo", new Parameter[]{fluoThld, minObjectSize});
     List config = new ArrayList(1);
     
     public AutoFlipY() {}
@@ -73,7 +77,7 @@ public class AutoFlipY implements Transformation {
         config = new ArrayList(1);
         if (method.getSelectedItem().equals(FLUO.name)) { 
             // rough segmentation and get side where cells are better aligned
-            List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 9);
+            List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 5);
             int countFlip = 0;
             int countNoFlip = 0;
             for (int f: frames) {
@@ -89,7 +93,9 @@ public class AutoFlipY implements Transformation {
                     else ++countNoFlip;
                 }
             }
-            config.add(countFlip>countNoFlip);
+            boolean flip = countFlip>countNoFlip;
+            logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
+            config.add(flip);
         } /*else if (method.getSelectedItem().equals(PHASE.name)) { 
             // detection of optical abberation
             // comparison of signal above & under using gradient filer
@@ -98,10 +104,11 @@ public class AutoFlipY implements Transformation {
     }
     
     private Boolean isFlipFluo(Image image) {
+        int minSize = minObjectSize.getValue().intValue();
         SimpleThresholder thlder = fluoThld.instanciatePlugin();
         ImageMask mask = new ThresholdMask(image, thlder.runSimpleThresholder(image, null), true, true);
         List<Object3D> objects = ImageLabeller.labelImageList(mask);
-        objects.removeIf(o->o.getSize()<10);
+        objects.removeIf(o->o.getSize()<minSize);
         if (testMode) logger.debug("objects: {}", objects.size());
         if (objects.isEmpty() || objects.size()<=2) return null;
         Map<Object3D, BoundingBox> xBounds = objects.stream().collect(Collectors.toMap(o->o, o->new BoundingBox(o.getBounds().getxMin(), o.getBounds().getxMax(), 0, 1, 0, 1)));
@@ -122,9 +129,9 @@ public class AutoFlipY implements Transformation {
             ImageWindowManagerFactory.showImage(new ObjectPopulation(yMinOs, image).getLabelMap().setName("Upper Objects"));
             ImageWindowManagerFactory.showImage(new ObjectPopulation(yMaxOs, image).getLabelMap().setName("Lower Objects"));
         }
-        List<Integer> yMins = Utils.transform(yMinOs, o->o.getBounds().getyMin());
+        List<Pair<Integer, Integer>> yMins = Utils.transform(yMinOs, o->new Pair<>(o.getBounds().getyMin(), o.getSize()));
         double sigmaMin = getSigma(yMins);
-        List<Integer> yMaxs = Utils.transform(yMaxOs, o->o.getBounds().getyMax());
+        List<Pair<Integer, Integer>> yMaxs = Utils.transform(yMaxOs, o->new Pair<>(o.getBounds().getyMax(), o.getSize()));
         double sigmaMax = getSigma(yMaxs);
         if (testMode) {
             logger.debug("yMins sigma: {}: {}", sigmaMin, Utils.toStringList(yMins));
@@ -134,15 +141,18 @@ public class AutoFlipY implements Transformation {
         return sigmaMin>sigmaMax;
     }
     
-    private static double getSigma(List<Integer> l) {
+    private static double getSigma(List<Pair<Integer, Integer>> l) {
         double values2 = 0;
         double sum = 0;
-        for (int i : l) {
-            values2 += i*i;
-            sum+=i;
+        double count = 0;
+        for (Pair<Integer, Integer> p : l) {
+            double pr = p.key*p.value;
+            values2 += pr*pr;
+            sum+=pr;
+            count+=p.value;
         }
-        values2/=(double)l.size();
-        sum/=(double)l.size();
+        values2/=count;
+        sum/=count;
         return Math.sqrt(values2 - sum * sum);
     }
     
@@ -153,7 +163,7 @@ public class AutoFlipY implements Transformation {
     private Boolean getFlip() {
         if (config.isEmpty()) return null;
         Object o = config.get(0);
-        logger.debug("flip config: {} ({})", o, o.getClass().getSimpleName());
+        //logger.debug("flip config: {} ({})", o, o.getClass().getSimpleName());
         if (o instanceof Boolean) return (Boolean)o;
         else if (o instanceof String) return Boolean.parseBoolean((String)o);
         else return null;
@@ -161,8 +171,10 @@ public class AutoFlipY implements Transformation {
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) throws Exception {
         Boolean flip = getFlip();
-        logger.debug("get flip config: {} ({})",flip , flip.getClass().getSimpleName());
-        if (flip) return ImageTransformation.flip(image, ImageTransformation.Axis.Y);
+        if (flip) {
+            ///logger.debug("AutoFlipY: flipping (flip config: {} ({}))", flip, flip.getClass().getSimpleName());
+            return ImageTransformation.flip(image, ImageTransformation.Axis.Y);
+        } //else logger.debug("AutoFlipY: no flip");
         return image;
     }
 

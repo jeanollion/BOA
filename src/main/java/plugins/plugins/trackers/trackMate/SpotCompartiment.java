@@ -92,7 +92,10 @@ public class SpotCompartiment {
         if (next.size()==1) {
             //logger.debug("div next frame for {}->{}: attibute: {}, size {}, sizePrev*0.8:{} eocp: {}, eoc:{}", prev, next.get(0), (Boolean)next.get(0).getAttribute("TruncatedDivision"), (double)next.get(0).getObject().getSize() , prev.getObject().getSize() * sizeProportion, isEndOfChannel(prev) , isEndOfChannel(next.get(0)));
             Object o = next.get(0).getAttribute("TruncatedDivision");
-            if (o!=null) return (Boolean)o;
+            if (o!=null) {
+                //if (o instanceof String) return Boolean.parseBoolean((String)o);
+                return (Boolean)o;
+            }
             if (!isEndOfChannel(prev) || !isEndOfChannel(next.get(0))) return false; // only end of channel
             return (double)next.get(0).getObject().getSize() < prev.getObject().getSize() * sizeProportion;
         } else return false;

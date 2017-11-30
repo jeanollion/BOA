@@ -17,7 +17,7 @@
  */
 package processing.dataGeneration;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import core.Task;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;

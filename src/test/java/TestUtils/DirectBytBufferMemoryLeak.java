@@ -17,7 +17,7 @@
  */
 package TestUtils;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;

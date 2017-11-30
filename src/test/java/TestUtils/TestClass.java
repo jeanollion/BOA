@@ -17,7 +17,7 @@
  */
 package TestUtils;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import dataStructure.containers.ImportImageUtils;
 import dataStructure.objects.Voxel;
 import image.ImageReader;

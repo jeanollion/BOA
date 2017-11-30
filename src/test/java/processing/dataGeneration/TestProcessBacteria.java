@@ -17,7 +17,7 @@
  */
 package processing.dataGeneration;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import core.Task;

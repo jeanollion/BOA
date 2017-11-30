@@ -17,7 +17,7 @@
  */
 package dataStructure;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.Structure;

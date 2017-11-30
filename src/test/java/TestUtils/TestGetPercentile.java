@@ -17,7 +17,7 @@
  */
 package TestUtils;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import image.Image;
 import image.ImageFloat;
 import image.ImageOperations;

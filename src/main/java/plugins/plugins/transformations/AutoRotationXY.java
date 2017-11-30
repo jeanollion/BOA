@@ -57,7 +57,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);
     NumberParameter precision2 = new BoundedNumberParameter("Angular Precision", 2, 0.1, 0, 1);
     //NumberParameter filterScale = new BoundedNumberParameter("Object Scale", 0, 15, 2, null); //TODO: conditional parameter
-    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false);
+    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.LINEAR.toString(), false); // linear is default : so that when saturated histogram, no value above is created
     ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false);
     NumberParameter frameNumber = new BoundedNumberParameter("Number of frame", 0, 10, 0, null);
     BooleanParameter removeIncompleteRowsAndColumns = new BooleanParameter("Remove Incomplete rows and columns", true);

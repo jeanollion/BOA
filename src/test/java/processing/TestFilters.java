@@ -17,8 +17,8 @@
  */
 package processing;
 
-import TestUtils.Utils;
-import static TestUtils.Utils.logger;
+import TestUtils.TestUtils;
+import static TestUtils.TestUtils.logger;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -73,7 +73,7 @@ public class TestFilters {
     public void testMean() {
         //logger.info("byte value: 61.4 {} 61.5 {} 61.6 {} 255 {}, 255.5 {}, 256 {}", new Float(61.4).byteValue(), new Float(61.5).byteValue()&0xff, new Float(61.6).byteValue()&0xff, new Float(255).byteValue()&0xff, new Float(255.5).byteValue()&0xff, new Float(256).byteValue()&0xff);
         Neighborhood n = new EllipsoidalNeighborhood(7, 4, false);
-        Image test = Utils.generateRandomImage(20, 20, 20, new ImageByte("", 0, 0, 0));
+        Image test = TestUtils.generateRandomImage(20, 20, 20, new ImageByte("", 0, 0, 0));
         long t1 = System.currentTimeMillis();
         Prefs.setThreads(1);
         Image resIJ = IJImageWrapper.wrap(new ImagePlus("", ij.plugin.Filters3D.filter(IJImageWrapper.getImagePlus(test).getImageStack(), ij.plugin.Filters3D.MEAN, 7, 7, 4)));
@@ -81,22 +81,22 @@ public class TestFilters {
         Image res = Filters.mean(test, test, n);
         long t3 = System.currentTimeMillis();
         logger.info("processing time IJ: {} lib: {}", (t2-t1), t3-t2);
-        Utils.assertImage(resIJ, res, 0);
+        TestUtils.assertImage(resIJ, res, 0);
         
-        test = Utils.generateRandomImage(20, 20, 20, new ImageShort("", 0, 0, 0));
+        test = TestUtils.generateRandomImage(20, 20, 20, new ImageShort("", 0, 0, 0));
         resIJ = IJImageWrapper.wrap(new ImagePlus("", ij.plugin.Filters3D.filter(IJImageWrapper.getImagePlus(test).getImageStack(), ij.plugin.Filters3D.MEAN, 7, 7, 4)));
         res = Filters.mean(test, test, n);
-        Utils.assertImage(resIJ, res, 0);
+        TestUtils.assertImage(resIJ, res, 0);
         
-        test = Utils.generateRandomImage(20, 20, 20, new ImageFloat("", 0, 0, 0));
+        test = TestUtils.generateRandomImage(20, 20, 20, new ImageFloat("", 0, 0, 0));
         resIJ = IJImageWrapper.wrap(new ImagePlus("", ij.plugin.Filters3D.filter(IJImageWrapper.getImagePlus(test).getImageStack(), ij.plugin.Filters3D.MEAN, 7, 7, 4)));
         res = Filters.mean(test, test, n);
-        Utils.assertImage(resIJ, res, 0);
+        TestUtils.assertImage(resIJ, res, 0);
         
         
         // test 2D
         n = new EllipsoidalNeighborhood(1, false);
-        test = Utils.generateRandomImage(100, 100, 1, new ImageByte("", 0, 0, 0));
+        test = TestUtils.generateRandomImage(100, 100, 1, new ImageByte("", 0, 0, 0));
         resIJ=test.duplicate("res IJ");
         t1 = System.currentTimeMillis();
         new ij.plugin.filter.RankFilters().rank(IJImageWrapper.getImagePlus(resIJ).getProcessor(), 0.5, ij.plugin.filter.RankFilters.MEAN);
@@ -111,7 +111,7 @@ public class TestFilters {
     @Test
     public void testMedian() {
         Neighborhood n = new EllipsoidalNeighborhood(6, 6, false);
-        Image test = Utils.generateRandomImage(20, 20, 20, new ImageByte("", 0, 0, 0));
+        Image test = TestUtils.generateRandomImage(20, 20, 20, new ImageByte("", 0, 0, 0));
         long t1 = System.currentTimeMillis();
         Prefs.setThreads(1);
         Image resIJ = IJImageWrapper.wrap(new ImagePlus("", ij.plugin.Filters3D.filter(IJImageWrapper.getImagePlus(test).getImageStack(), ij.plugin.Filters3D.MEDIAN, 6,6,6)));
@@ -120,16 +120,16 @@ public class TestFilters {
         long t3 = System.currentTimeMillis();
         logger.info("processing time IJ: {} lib: {}", (t2-t1), t3-t2);
         
-        Utils.assertImage(resIJ, res, 0);
+        TestUtils.assertImage(resIJ, res, 0);
         
-        test = Utils.generateRandomImage(20, 20, 20, new ImageShort("", 0, 0, 0));
+        test = TestUtils.generateRandomImage(20, 20, 20, new ImageShort("", 0, 0, 0));
         resIJ = IJImageWrapper.wrap(new ImagePlus("", ij.plugin.Filters3D.filter(IJImageWrapper.getImagePlus(test).getImageStack(), ij.plugin.Filters3D.MEDIAN, 6,6,6)));
         res = Filters.median(test, test, n);
-        Utils.assertImage(resIJ, res, 0);
+        TestUtils.assertImage(resIJ, res, 0);
         
-        test = Utils.generateRandomImage(20, 20, 20, new ImageFloat("", 0, 0, 0));
+        test = TestUtils.generateRandomImage(20, 20, 20, new ImageFloat("", 0, 0, 0));
         resIJ = IJImageWrapper.wrap(new ImagePlus("", ij.plugin.Filters3D.filter(IJImageWrapper.getImagePlus(test).getImageStack(), ij.plugin.Filters3D.MEDIAN, 6,6,6)));
         res = Filters.median(test, test, n);
-        Utils.assertImage(resIJ, res, 0);
+        TestUtils.assertImage(resIJ, res, 0);
     }
 }

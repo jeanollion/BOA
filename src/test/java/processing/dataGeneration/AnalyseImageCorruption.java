@@ -17,7 +17,7 @@
  */
 package processing.dataGeneration;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.InputImage;

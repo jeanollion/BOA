@@ -17,8 +17,8 @@
  */
 package dataStructure;
 
-import TestUtils.Utils;
-import static TestUtils.Utils.logger;
+import TestUtils.TestUtils;
+import static TestUtils.TestUtils.logger;
 import configuration.parameters.NumberParameter;
 import core.Processor;
 import static dataStructure.ProcessingTest.createDummyImagesTC;
@@ -153,14 +153,14 @@ public class TestDataStructure {
         }
 
         for (int t = 1; t<rootTrack.size(); ++t) {
-            Utils.logger.trace("root track: {}->{} / expected: {} / actual: {}", t-1, t, rootTrack.get(t), rootTrack.get(t-1).getNext());
+            TestUtils.logger.trace("root track: {}->{} / expected: {} / actual: {}", t-1, t, rootTrack.get(t), rootTrack.get(t-1).getNext());
             assertEquals("root track:"+(t-1)+"->"+t, rootTrack.get(t), rootTrack.get(t-1).getNext());
             assertEquals("root track:"+(t)+"->"+(t-1), rootTrack.get(t-1), rootTrack.get(t).getPrevious());
         }
         StructureObject[][] microChannels = new StructureObject[rootTrack.size()][];
         assertEquals("number of track heads for microchannels", 2, dao.getTrackHeads(rootTrack.get(0), 0).size());
         for (StructureObject mcTh : dao.getTrackHeads(rootTrack.get(0), 0)) {
-            Utils.logger.debug("mc TH: {}  parent: {}", mcTh, mcTh.getParent());
+            TestUtils.logger.debug("mc TH: {}  parent: {}", mcTh, mcTh.getParent());
         }
         for (int t = 0; t<rootTrack.size(); ++t) microChannels[t] = rootTrack.get(t).getChildObjects(0).toArray(new StructureObject[0]);
         for (int t = 0; t<rootTrack.size(); ++t) assertEquals("number of microchannels @t:"+t, 2, microChannels[t].length);
@@ -175,7 +175,7 @@ public class TestDataStructure {
             StructureObject[][] bactos = new StructureObject[rootTrack.size()][];
             for (int t = 0; t<rootTrack.size(); ++t) {
                 bactos[t] = microChannels[t][i].getChildObjects(1).toArray(new StructureObject[0]);
-                Utils.logger.debug("parent: {}, children: {}, trackHead: {}", microChannels[t][i], toStringArray(bactos[t], o->o.toString()+"/"+o.getId()), toStringArray(bactos[t], o->o.getTrackHead().toString()+"/"+o.getTrackHeadId()));
+                TestUtils.logger.debug("parent: {}, children: {}, trackHead: {}", microChannels[t][i], toStringArray(bactos[t], o->o.toString()+"/"+o.getId()), toStringArray(bactos[t], o->o.getTrackHead().toString()+"/"+o.getTrackHeadId()));
             }
             for (int t = 0; t<rootTrack.size(); ++t) assertEquals("number of bacteries @t:"+t+" @mc:"+i, 3, bactos[t].length);
             for (int b = 0; b<bactos[0].length; ++b) {

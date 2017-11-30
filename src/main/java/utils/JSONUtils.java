@@ -59,7 +59,7 @@ public class JSONUtils {
         else if (o instanceof double[]) return toJSONArray((double[])o);
         else if (o instanceof int[]) return toJSONArray((int[])o);
         else if (o instanceof Number) return o;
-        else if (o instanceof Boolean) return o.toString();
+        else if (o instanceof Boolean) return o;
         else if (o instanceof String) return o;
         else if (o instanceof List) {
             JSONArray l = new JSONArray();

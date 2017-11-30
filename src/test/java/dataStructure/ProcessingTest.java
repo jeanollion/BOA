@@ -17,7 +17,7 @@
  */
 package dataStructure;
 
-import TestUtils.Utils;
+import TestUtils.TestUtils;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -94,7 +94,7 @@ public class ProcessingTest {
         assertEquals("number of fields detected", 6-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)
         assertTrue("field non null", xp.getPosition(title)!=null);
         assertTrue("images non null", xp.getPosition(title).getInputImages()!=null);
-        Utils.assertImage("import field test", images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
+        TestUtils.assertImage("import field test", images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
     }
     
     @Test
@@ -128,7 +128,7 @@ public class ProcessingTest {
         
         Processor.importFiles(xp, true, null, folder.getAbsolutePath());
         assertEquals("number of fields detected", 6-1-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
-        Utils.assertImage("test import field keyword", images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
+        TestUtils.assertImage("test import field keyword", images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
     }
     
     @Test
@@ -173,7 +173,7 @@ public class ProcessingTest {
         assertTrue("Image saved in DAO", image!=null);
         SimpleTranslation tInv = new SimpleTranslation(-1, -1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.LINEAR);
         Image imageInv = tInv.applyTransformation(0, 0, image);
-        Utils.assertImage("preProcessing: simple translation", images[0][0], TypeConverter.toByte(imageInv, null), 0);
+        TestUtils.assertImage("preProcessing: simple translation", images[0][0], TypeConverter.toByte(imageInv, null), 0);
     }
     
     /*private static ImageByte getMask(StructureObject root, int[] pathToRoot) {

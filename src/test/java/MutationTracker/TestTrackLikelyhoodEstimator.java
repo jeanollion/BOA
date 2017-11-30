@@ -17,7 +17,7 @@
  */
 package MutationTracker;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

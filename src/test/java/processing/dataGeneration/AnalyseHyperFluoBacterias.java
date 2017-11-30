@@ -17,7 +17,7 @@
  */
 package processing.dataGeneration;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;

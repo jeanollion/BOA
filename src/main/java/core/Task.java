@@ -539,8 +539,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     public void publishErrors() {
         this.publish("Errors: "+this.errors.size()+ " For JOB: "+this.toString());
         for (Pair<String, Exception> e : errors) {
-            publish("Error @"+e.key);
-            publish(e.value.toString());
+            publish("Error @"+e.key+(e.value==null?"null":e.value.toString()));
             for (StackTraceElement s : e.value.getStackTrace()) {
                 String ss = s.toString();
                 if (toPrint(ss)) publish(s.toString());

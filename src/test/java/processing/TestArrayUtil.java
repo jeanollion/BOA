@@ -17,7 +17,7 @@
  */
 package processing;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import static org.junit.Assert.assertArrayEquals;
 import org.junit.Test;
 import utils.ArrayUtil;

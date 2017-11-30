@@ -17,6 +17,7 @@
  */
 package image;
 
+import static image.Image.logger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -122,5 +123,25 @@ public class Histogram {
         List<Histogram> res = new ArrayList<>(images.size());
         for (Image im : images) res.add(im.getHisto256(minAndMax[0], minAndMax[1], null, null));
         return res;
+    }
+    public int count() {
+        int sum = 0;
+        for (int i : data) sum+=i;
+        return sum;
+    }
+    public void removeSaturatingValue(double countThlFactor) {
+        if (this.byteHisto) {
+            int i = 256;
+            while(i>0 && data[i-1]==0) --i;
+            if (i>0) {
+                logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
+                if (data[i]>data[i-1]*countThlFactor) data[i]=0;
+            }
+        } else {
+            logger.debug("remove saturating value: {} (prev: {})", data[255], data[254]);
+            if (data[255]>data[254]*countThlFactor) {
+                data[255]=0;
+            }
+        }
     }
 }

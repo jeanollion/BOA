@@ -17,7 +17,7 @@
  */
 package images;
 
-import static TestUtils.Utils.logger;
+import static TestUtils.TestUtils.logger;
 import image.Image;
 import image.ImageIOCoordinates;
 import image.ImageReader;

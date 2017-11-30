@@ -17,8 +17,8 @@
  */
 package images;
 
-import TestUtils.Utils;
-import static TestUtils.Utils.logger;
+import TestUtils.TestUtils;
+import static TestUtils.TestUtils.logger;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.ImageProcessor;
@@ -455,7 +455,7 @@ public class ImageIOTest {
         
         for (int t = 0; t<timePoint; t++) {
             for (int c = 0; c<channel;c++) {
-                Utils.assertImage(images[t][c], (ImageByte)reader.openImage(new ImageIOCoordinates(0, c, t)), 0);
+                TestUtils.assertImage(images[t][c], (ImageByte)reader.openImage(new ImageIOCoordinates(0, c, t)), 0);
             }
         }
     }

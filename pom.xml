@@ -60,7 +60,12 @@
             <groupId>net.imagej</groupId>
             <artifactId>ij</artifactId>
             <version>1.51k</version>
-        </dependency>  
+        </dependency>
+        <dependency>
+            <groupId>net.imagej</groupId>
+            <artifactId>imagej</artifactId>
+            <version>2.0.0-rc-62-SNAPSHOT</version>
+        </dependency>
         <dependency>
             <groupId>ome</groupId>
             <artifactId>formats-gpl</artifactId>
