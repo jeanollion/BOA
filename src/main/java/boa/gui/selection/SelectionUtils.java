@@ -434,7 +434,7 @@ public class SelectionUtils {
                 List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
                 for (Selection s : selectedValues ) {
                     int[] structureIdx = s.getStructureIdx()==-1 ? new int[0] : new int[]{s.getStructureIdx()};
-                    List<StructureObject> objects = new ArrayList<StructureObject>(sel);
+                    List<StructureObject> objects = new ArrayList<>(sel);
                     StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel, structureIdx);
                     s.addElements(objects);
                     dao.store(s);

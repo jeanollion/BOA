@@ -434,7 +434,7 @@ public class GenerateXP {
             ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
             ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
             ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
-            ps.addTransformation(0, null, new AutoFlipY());
+            ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.FLUO));
             //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
             //ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             CropMicroChannels cropper = new CropMicroChannelFluo2D(0, 45, 200, 0.5, 10);

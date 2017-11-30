@@ -59,12 +59,15 @@ public class AutoFlipY implements Transformation {
         }
     }
     ChoiceParameter method = new ChoiceParameter("Method", Utils.transform(AutoFlipMethod.values(), new String[AutoFlipMethod.values().length], f->f.name), FLUO.name, false);
-    PluginParameter<SimpleThresholder> fluoThld = new PluginParameter<>("Threshold for bacteria Segmentation", SimpleThresholder.class, new BackgroundThresholder(2.5, 3, 3), false); 
+    PluginParameter<SimpleThresholder> fluoThld = new PluginParameter<>("Threshold for bacteria Segmentation", SimpleThresholder.class, new BackgroundThresholder(4, 5, 3), false); 
     ConditionalParameter cond = new ConditionalParameter(method).setActionParameters("Bacteria Fluo", new Parameter[]{fluoThld});
     List config = new ArrayList(1);
     
     public AutoFlipY() {}
-    
+    public AutoFlipY setMethod(AutoFlipMethod method) {
+        this.method.setValue(method.name);
+        return this;
+    }
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {
         config = new ArrayList(1);

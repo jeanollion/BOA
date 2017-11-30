@@ -327,6 +327,14 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     }
     public synchronized Selection addElements(Collection<StructureObject> elementsToAdd) {
         if (elementsToAdd==null || elementsToAdd.isEmpty()) return this;
+        Map<Integer, List<StructureObject>> objectBySIdx = StructureObjectUtils.splitByStructureIdx(elementsToAdd);
+        if (this.getStructureIdx()==-1) {
+            if (objectBySIdx.size()>1) throw new IllegalArgumentException("Cannot add objects from several strucutres");
+            this.structureIdx=objectBySIdx.keySet().iterator().next();
+        } else if (objectBySIdx.size()>1) {
+            elementsToAdd = objectBySIdx.get(this.structureIdx);
+            if (elementsToAdd==null) return this;
+        } 
         Map<String, List<StructureObject>> elByPos = StructureObjectUtils.splitByPosition(elementsToAdd);
         for (String pos : elByPos.keySet()) {
             if (this.retrievedElements.containsKey(pos)) for (StructureObject o : elementsToAdd) addElement(o);
