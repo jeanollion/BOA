@@ -47,7 +47,7 @@ public class XZSlope implements Measurement {
 
     @Override
     public List<MeasurementKey> getMeasurementKeys() {
-        return new ArrayList<MeasurementKey>(){{add(new MeasurementKeyObject("XZSlope", 0));}};
+        return new ArrayList<MeasurementKey>(){{add(new MeasurementKeyObject("XZSlope", 0));add(new MeasurementKeyObject("FocusPlane", 0));}};
     }
 
     @Override
@@ -63,6 +63,8 @@ public class XZSlope implements Measurement {
         logger.debug("focus plane left: {} right: {} value: {} (scale XY: {}, Z: {})", left, right, value, object.getScaleXY(), object.getScaleZ());
         oLeft.getMeasurements().setValue("XZSlope", value);
         oRight.getMeasurements().setValue("XZSlope", value);
+        oLeft.getMeasurements().setValue("FocusPlane", left);
+        oRight.getMeasurements().setValue("FocusPlane", right);
     }
 
     @Override

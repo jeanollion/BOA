@@ -38,7 +38,9 @@ import image.ImageOperations;
 import image.ThresholdMask;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import measurement.BasicMeasurements;
 import plugins.SimpleThresholder;
 import plugins.Thresholder;
 import plugins.Transformation;
@@ -140,8 +142,13 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         if (proportion<proportionThld && count-countHyper>minimumCount) { // recompute hyper thld within seg bact
             ImageMask thldMask = new ThresholdMask(im, thldBack, true, true);
             double thldHyper2 = IJAutoThresholder.runThresholder(im, thldMask, AutoThresholder.Method.Otsu);
-            if (testMode) logger.debug("SaturateHisto: {} proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {})", idx, proportion, count/im.getSizeXYZ(), thldBack, thldHyper2, thldHyper);
-            return thldHyper2;
+            // ThldHyper is over-estimated. ThldHyper = maximum value of objects that do not contain pixel over ThldHyp +1
+            List<Object3D> objects = ImageLabeller.labelImageList(thldMask);
+            List<Double> maxValues = Utils.transform(objects, o->BasicMeasurements.getMaxValue(o, im, false));
+            maxValues.removeIf(v->v>=thldHyper2);
+            double thldHyper3 = maxValues.isEmpty() ? thldHyper2 : Math.min(Collections.max(maxValues)*1.15, thldHyper2);
+            if (testMode) logger.debug("SaturateHisto: {} proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {}), max values of non-saturated objects: {}", idx, proportion, count/im.getSizeXYZ(), thldBack, thldHyper2, thldHyper,thldHyper3);
+            return thldHyper3;
         }
         else return Double.POSITIVE_INFINITY;
     }

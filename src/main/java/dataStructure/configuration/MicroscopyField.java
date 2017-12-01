@@ -236,7 +236,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     
     @Override
     public String toString() {
-        if (images!=null) return name;// + " number of time points: "+images.getTimePointNumber();
+        if (images!=null) return name+ "(#"+getIndex()+")";// + " number of time points: "+images.getTimePointNumber();
         return name + " no selected images";
     }
     

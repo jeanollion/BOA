@@ -45,6 +45,7 @@ import plugins.Transformation;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import static plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.FLUO;
 import processing.ImageTransformation;
+import utils.ArrayUtil;
 import utils.Pair;
 import utils.Utils;
 
@@ -72,10 +73,16 @@ public class AutoFlipY implements Transformation {
         this.method.setValue(method.name);
         return this;
     }
+    List<Image> upperObjectsTest, lowerObjectsTest;
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {
-        config = new ArrayList(1);
+        config.clear();
+        
         if (method.getSelectedItem().equals(FLUO.name)) { 
+            if (testMode) {
+                upperObjectsTest=new ArrayList<>();
+                lowerObjectsTest=new ArrayList<>();
+            }
             // rough segmentation and get side where cells are better aligned
             List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 5);
             int countFlip = 0;
@@ -93,6 +100,12 @@ public class AutoFlipY implements Transformation {
                     else ++countNoFlip;
                 }
             }
+            if (testMode) {
+                ImageWindowManagerFactory.showImage(Image.mergeZPlanes(upperObjectsTest).setName("Upper Objects"));
+                ImageWindowManagerFactory.showImage(Image.mergeZPlanes(lowerObjectsTest).setName("Lower Objects"));
+                upperObjectsTest.clear();
+                lowerObjectsTest.clear();
+            }
             boolean flip = countFlip>countNoFlip;
             logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
             config.add(flip);
@@ -109,7 +122,11 @@ public class AutoFlipY implements Transformation {
         ImageMask mask = new ThresholdMask(image, thlder.runSimpleThresholder(image, null), true, true);
         List<Object3D> objects = ImageLabeller.labelImageList(mask);
         objects.removeIf(o->o.getSize()<minSize);
-        if (testMode) logger.debug("objects: {}", objects.size());
+        // filter by median sizeY
+        Map<Object3D, Integer> sizeY = objects.stream().collect(Collectors.toMap(o->o, o->o.getBounds().getSizeY()));
+        double medianSizeY = ArrayUtil.medianInt(sizeY.values());
+        objects.removeIf(o->sizeY.get(o)<medianSizeY/2);
+        if (testMode) logger.debug("objects: {}, minSize: {}, minSizeY: {} (median sizeY: {})", objects.size(), minSize, medianSizeY/2, medianSizeY);
         if (objects.isEmpty() || objects.size()<=2) return null;
         Map<Object3D, BoundingBox> xBounds = objects.stream().collect(Collectors.toMap(o->o, o->new BoundingBox(o.getBounds().getxMin(), o.getBounds().getxMax(), 0, 1, 0, 1)));
         Iterator<Object3D> it = objects.iterator();
@@ -124,14 +141,20 @@ public class AutoFlipY implements Transformation {
             objects.removeAll(inter);
             it = objects.iterator();
         }
+        // filter outliers with distance to median value
+        double yMinMed = ArrayUtil.medianInt(Utils.transform(yMinOs, o->o.getBounds().getyMin()));
+        yMinOs.removeIf(o->Math.abs(o.getBounds().getyMin()-yMinMed)>o.getBounds().getSizeY()/4);
+        double yMaxMed = ArrayUtil.medianInt(Utils.transform(yMaxOs, o->o.getBounds().getyMax()));
+        yMaxOs.removeIf(o->Math.abs(o.getBounds().getyMax()-yMaxMed)>o.getBounds().getSizeY()/4);
+        
         if (testMode) {
-            ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(mask, null, 1).setName("Segmentation mask"));
-            ImageWindowManagerFactory.showImage(new ObjectPopulation(yMinOs, image).getLabelMap().setName("Upper Objects"));
-            ImageWindowManagerFactory.showImage(new ObjectPopulation(yMaxOs, image).getLabelMap().setName("Lower Objects"));
+            //ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(mask, null, 1).setName("Segmentation mask"));
+            this.upperObjectsTest.add(new ObjectPopulation(yMinOs, image).getLabelMap().setName("Upper Objects"));
+            this.lowerObjectsTest.add(new ObjectPopulation(yMaxOs, image).getLabelMap().setName("Lower Objects"));
         }
-        List<Pair<Integer, Integer>> yMins = Utils.transform(yMinOs, o->new Pair<>(o.getBounds().getyMin(), o.getSize()));
+        List<Pair<Integer, Integer>> yMins = Utils.transform(yMinOs, o->new Pair<>(o.getBounds().getyMin(), o.getBounds().getSizeY()));
         double sigmaMin = getSigma(yMins);
-        List<Pair<Integer, Integer>> yMaxs = Utils.transform(yMaxOs, o->new Pair<>(o.getBounds().getyMax(), o.getSize()));
+        List<Pair<Integer, Integer>> yMaxs = Utils.transform(yMaxOs, o->new Pair<>(o.getBounds().getyMax(), o.getBounds().getSizeY()));
         double sigmaMax = getSigma(yMaxs);
         if (testMode) {
             logger.debug("yMins sigma: {}: {}", sigmaMin, Utils.toStringList(yMins));
@@ -142,18 +165,16 @@ public class AutoFlipY implements Transformation {
     }
     
     private static double getSigma(List<Pair<Integer, Integer>> l) {
-        double values2 = 0;
-        double sum = 0;
+        double mean = 0;
+        for (Pair<Integer, Integer> p : l) mean +=p.key;
+        mean/=(double)l.size();
+        double mean2 = 0;
         double count = 0;
         for (Pair<Integer, Integer> p : l) {
-            double pr = p.key*p.value;
-            values2 += pr*pr;
-            sum+=pr;
+            mean2 += Math.pow(p.key-mean, 2) * p.value;
             count+=p.value;
         }
-        values2/=count;
-        sum/=count;
-        return Math.sqrt(values2 - sum * sum);
+        return mean2/count;
     }
     
     @Override

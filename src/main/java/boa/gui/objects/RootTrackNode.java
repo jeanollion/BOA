@@ -76,7 +76,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
         this.position=position;
         this.structureIdx=structureIdx;
         root = true;
-        logger.debug("creating root track node for field: {} structure: {}", position, structureIdx);
+        //logger.debug("creating root track node for field: {} structure: {}", position, structureIdx);
     }
 
     public String getFieldName() {
@@ -260,10 +260,11 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     
     class RootTrackNodeUI {
         JMenuItem openRawAllFrames, openPreprocessedAllFrames;
+        JMenu rawSubMenu, createSelectionSubMenu;
         Object[] actions;
-        JMenuItem[] openRaw;
+        JMenuItem[] openRaw, createSelection;
         public RootTrackNodeUI() {
-            this.actions = new JMenuItem[3];
+            this.actions = new JMenuItem[4];
             
             openRawAllFrames = new JMenuItem("Open Raw Input Frames");
             actions[0] = openRawAllFrames;
@@ -286,7 +287,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                 }
             );
             
-            JMenu rawSubMenu = new JMenu("Open Raw Track Image");
+            rawSubMenu = new JMenu("Open Raw Track Image");
             actions[2] = rawSubMenu;
             List<String> directRootChild = new ArrayList<String>();
             for (int sIdx = 0; sIdx<generator.db.getExperiment().getStructureCount(); ++sIdx) {
@@ -309,10 +310,36 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                 );
                 rawSubMenu.add(openRaw[i]);
             }
+            createSelectionSubMenu = new JMenu("Create Selection");
+            actions[3] = createSelectionSubMenu;
+            createSelection = new JMenuItem[directRootChild.size()];
+            for (int i = 0; i < createSelection.length; i++) {
+                createSelection[i] = new JMenuItem(directRootChild.get(i));
+                createSelection[i].setAction(new AbstractAction(directRootChild.get(i)) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            int structureIdx = generator.getExperiment().getStructureIdx(ae.getActionCommand());
+                            logger.debug("create selectionfor structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
+                            List<RootTrackNode> selectedNodes = generator.getSelectedRootTrackNodes();
+                            List<StructureObject> objectsToAdd = new ArrayList<StructureObject>();
+                            for (RootTrackNode rtn : selectedNodes) {
+                                objectsToAdd.addAll(StructureObjectUtils.getAllObjects(generator.db.getDao(rtn.position), structureIdx));
+                            }
+                            Selection s = generator.db.getSelectionDAO().getOrCreate(ae.getActionCommand(), true);
+                            s.addElements(objectsToAdd);
+                            s.setIsDisplayingObjects(true);
+                            s.setColor("Grey");
+                            generator.db.getSelectionDAO().store(s);
+                            GUI.getInstance().populateSelections();
+                        }
+                    }
+                );
+                createSelectionSubMenu.add(createSelection[i]);
+            }
         }
         public Object[] getDisplayComponent(boolean multipleSelection) {
             if (multipleSelection) {
-                return new JMenuItem[]{};
+                return new Object[]{createSelectionSubMenu};
             } else return actions;
         }
         

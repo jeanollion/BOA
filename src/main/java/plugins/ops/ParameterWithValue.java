@@ -17,12 +17,12 @@
  */
 package plugins.ops;
 
-import net.imagej.ops.OpService;
+import configuration.parameters.Parameter;
 
 /**
  *
  * @author jollion
  */
-public interface OpWrapper {
-    public void setOpService(OpService os);
+public interface ParameterWithValue extends Parameter {
+    public Object getValue();
 }

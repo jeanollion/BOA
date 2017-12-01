@@ -22,6 +22,7 @@ import ij.gui.Plot;
 import ij.measure.CurveFitter;
 import image.ImageFloat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -391,14 +392,16 @@ public class ArrayUtil {
         for (int i = 0; i<size; ++i) res[i]=i;
         return res;
     }
-    public static double median(List<Double> list) {
-        if (list.isEmpty()) return Double.NaN;
+    public static double median(Collection<Double> col) {
+        if (col.isEmpty()) return Double.NaN;
+        List<Double> list = new ArrayList<>(col);
         Collections.sort(list);
         if (list.size()%2==1) return list.get(list.size()/2);
         else return (list.get(list.size()/2)+list.get(list.size()/2-1))/2.0;
     }
-    public static double medianInt(List<Integer> list) {
-        if (list.isEmpty()) return Double.NaN;
+    public static double medianInt(Collection<Integer> col) {
+        if (col.isEmpty()) return Double.NaN;
+        List<Integer> list = new ArrayList<>(col);
         Collections.sort(list);
         if (list.size()%2==1) return list.get(list.size()/2);
         else return (list.get(list.size()/2)+list.get(list.size()/2-1))/2.0;

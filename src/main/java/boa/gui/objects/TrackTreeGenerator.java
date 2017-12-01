@@ -338,6 +338,20 @@ public class TrackTreeGenerator {
         return res;
     }
     
+    public List<RootTrackNode> getSelectedRootTrackNodes() {
+        if (tree==null) return Collections.EMPTY_LIST;
+        int sel = tree.getSelectionCount();
+        if (sel==0) return Collections.EMPTY_LIST;
+        ArrayList<RootTrackNode> res = new ArrayList<>(sel);
+        for (TreePath p : tree.getSelectionPaths()) {
+            if (p.getLastPathComponent() instanceof RootTrackNode) {
+                res.add(((RootTrackNode)p.getLastPathComponent()));
+            }
+        }
+        logger.debug("getSelectedRootTrackNodes: count: {}", res.size());
+        return res;
+    }
+    
     public List<List<StructureObject>> getSelectedTracks(boolean extended) {
         List<TrackNode> nodes = getSelectedTrackNodes();
         List<List<StructureObject>> res = new ArrayList<List<StructureObject>>(nodes.size());

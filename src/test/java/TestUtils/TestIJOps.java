@@ -38,7 +38,7 @@ import net.imglib2.type.numeric.real.FloatType;
 import org.scijava.module.MethodCallException;
 import org.scijava.module.Module;
 import org.scijava.module.ModuleItem;
-import plugins.ops.OpWrapper;
+import plugins.ops.OpHelpers;
 import utils.Utils;
 /**
  *
@@ -48,13 +48,13 @@ public class TestIJOps {
     public static void main(String[] args) {
         final ImageJ ij = new ImageJ();
         //ij.launch(args);
-        
+        ij.op
         logger.debug("ops: {}", ij.op().ops());
         Collection<OpInfo> thlds = ij.op().infos();
         thlds.removeIf(o->!o.isNamespace("threshold"));
         logger.debug("thld methods: {}", Utils.toStringList(thlds, o->o.getName()));
         Collection<OpInfo> filters = ij.op().infos();
-        filters.removeIf(ij.op().matcher().typesMatch(candidate) // see DefaultOpMatchingService to get all unary operators? see also inplace ? 
+        //filters.removeIf(ij.op().matcher().typesMatch(candidate) // see DefaultOpMatchingService to get all unary operators? see also inplace ? 
         if (true) return;
         logger.debug("dog: {}", ij.op().help("dog"));
         String opName = ij.op().ops().iterator().next();
@@ -65,7 +65,7 @@ public class TestIJOps {
         logger.debug("dog: {}", info);
         logger.debug("inputs : {} ", Utils.toStringList(info.inputs(), o->o.getType()+ " Name:"+o.getName()+ " is double:"+(o.getGenericType()==double.class)));
         for (ModuleItem i : info.inputs()) {
-            if (i.getType()==double.class) logger.debug("parameter: {} (style: {}", OpWrapper.mapParameter(i), i.getWidgetStyle());
+            if (i.getType()==double.class) logger.debug("parameter: {} (style: {}", OpHelpers.mapParameter(i), i.getWidgetStyle());
             if (i.getType()==net.imglib2.outofbounds.OutOfBoundsFactory.class) {
                 logger.debug("ofb: style: {}, def: {}", i.getWidgetStyle());
             }

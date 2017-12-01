@@ -162,7 +162,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         for (Pair<String, Exception> p : exceptions) logger.debug(p.key, p.value);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
-        if (debug) {
+        if (debug && boundingBoxes.length>0) {
             for (int i = 0; i<boundingBoxes[0].size(); ++i) logger.debug("bb {}-> {}",i, boundingBoxes[0].getBounds(i, true));
         }
         // tracking

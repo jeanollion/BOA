@@ -57,12 +57,13 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);
     NumberParameter precision2 = new BoundedNumberParameter("Angular Precision", 2, 0.1, 0, 1);
     //NumberParameter filterScale = new BoundedNumberParameter("Object Scale", 0, 15, 2, null); //TODO: conditional parameter
-    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.LINEAR.toString(), false); // linear is default : so that when saturated histogram, no value above is created
+    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false); 
     ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false);
     NumberParameter frameNumber = new BoundedNumberParameter("Number of frame", 0, 10, 0, null);
     BooleanParameter removeIncompleteRowsAndColumns = new BooleanParameter("Remove Incomplete rows and columns", true);
     FilterSequence prefilters = new FilterSequence("Pre-Filters");
-    Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, removeIncompleteRowsAndColumns, prefilters}; //  
+    BooleanParameter maintainMaximum = new BooleanParameter("Maintain Maximum Value", true).setToolTipText("In case of saturated value & interpolation with polynomes of degree>1, higher values than maximal value can be created, which can be an issue in case of a saturated image. This option will saturate the rotated image to the old maximal value");
+    Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, removeIncompleteRowsAndColumns, maintainMaximum, prefilters}; //  
     ArrayList<Double> internalParams=new ArrayList<Double>(1);
     public boolean testMode = false;
     public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation, SearchMethod method) {
@@ -115,8 +116,13 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     public Image rotate(Image image) {
         return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), getAngle(image), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
     }
+    List<Image> sinogram1Test, sinogram2Test;
     public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {     
-        // TODO search for best image to Rotate ... better dispertion of signal ? using spatial moments? average on several frames ?
+        if (testMode) {
+            sinogram1Test = new ArrayList<>();
+            sinogram2Test = new ArrayList<>();
+        }
+        // TODO search for best image to Rotate ... better dispertion of signal ? using spatial moments? average     on several frames ?
         int fn = Math.min(frameNumber.getValue().intValue(), inputImages.getFrameNumber());
         List<Integer> frames;
         if (fn<=1) frames = new ArrayList<Integer>(1){{add(inputImages.getDefaultTimePoint());}};
@@ -134,8 +140,12 @@ public class AutoRotationXY implements TransformationTimeIndependent {
             double angle=getAngle(image);
             angles.add(angle);
         }
-        //ImageFloat sin = RadonProjection.getSinogram(image, minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), Math.min(image.getSizeX(), image.getSizeY())); //(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())
-        //new IJImageDisplayer().showImage(sin);
+        if (testMode) {
+            ImageWindowManagerFactory.showImage(Image.mergeZPlanes(sinogram1Test).setName("Sinogram: first search"));
+            ImageWindowManagerFactory.showImage(Image.mergeZPlanes(sinogram2Test).setName("Sinogram: second search"));
+            sinogram1Test.clear();
+            sinogram2Test.clear();
+        }
         double medianAngle = ArrayUtil.median(angles);
         logger.debug("autorotation: median angle: {} among: {}", medianAngle, Utils.toStringList(Utils.toList(ArrayUtil.generateIntegerArray(fn)), i->"f:"+frames.get(i)+"->"+angles.get(i)));
         internalParams = new ArrayList<Double>(1);
@@ -144,7 +154,12 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (internalParams==null || internalParams.isEmpty()) throw new RuntimeException("Autorotation not configured");
-        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
+        Image res = ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
+        if (maintainMaximum.getSelected() && interpolation.getSelectedIndex()>1) {
+            double oldMax = image.getMinAndMax(null)[1];
+            SaturateHistogram.saturate(oldMax, oldMax, res);
+        }
+        return res;
     }
     
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
@@ -173,7 +188,10 @@ public class AutoRotationXY implements TransformationTimeIndependent {
             }
             //logger.trace("radon projection: computeRotationAngleXY: {}", angleMax);
         }
-        if (testMode) ImageWindowManagerFactory.showImage(sinogram);
+        if (testMode) {
+            if (sinogram1Test.size()<=sinogram2Test.size()) sinogram1Test.add(sinogram);
+            else sinogram2Test.add(sinogram);
+        }
         angleMax[0] = - angleMax[0];
         angleMax[1] = - angleMax[1];
         return angleMax;
