@@ -58,7 +58,7 @@ public class ImageFeature implements PreFilter {
         }
     }
     ChoiceParameter feature = new ChoiceParameter("Feature", Utils.transform(Feature.values(), new String[Feature.values().length], f->f.name), Feature.GAUSS.name, false);
-    ScaleXYZParameter scale = new ScaleXYZParameter("Scale", 2.5, 1, true);
+    ScaleXYZParameter scale = new ScaleXYZParameter("Scale", 2, 1, true);
     BoundedNumberParameter normScale = new BoundedNumberParameter("Normalization Scale (pix)", 2, 3, 1, null);
     ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setActionParameters("Normalized Hessian Max", new Parameter[]{scale, normScale});
 
@@ -69,8 +69,8 @@ public class ImageFeature implements PreFilter {
     }
     @Override
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
-        logger.debug("ImageFeature: feature equasl: {}, scale equals: {}, normScale equals: {}", feature==cond.getActionableParameter(), scale == cond.getCurrentParameters().get(0), normScale == cond.getParameters("Normalized Hessian Max").get(1));
-        logger.debug("ImageFeauture: feature: {}, scale: {}, scaleZ: {} normScale: {}", feature.getSelectedItem(), scale.getScaleXY(), scale.getScaleZ(structureObject.getScaleXY(), structureObject.getScaleZ()), normScale.getValue());
+        //logger.debug("ImageFeature: feature equasl: {}, scale equals: {}, normScale equals: {}", feature==cond.getActionableParameter(), scale == cond.getCurrentParameters().get(0), normScale == cond.getParameters("Normalized Hessian Max").get(1));
+        logger.debug("ImageFeauture: feature: {}, scale: {}, scaleZ: {} (from image: {}) normScale: {}", feature.getSelectedItem(), scale.getScaleXY(), scale.getScaleZ(structureObject.getScaleXY(), structureObject.getScaleZ()), scale.getUseImageCalibration(), normScale.getValue());
         String f = feature.getSelectedItem();
         double scaleXY = scale.getScaleXY();
         double scaleZ = scale.getScaleZ(structureObject.getScaleXY(), structureObject.getScaleZ());

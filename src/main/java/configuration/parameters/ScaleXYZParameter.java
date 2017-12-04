@@ -30,7 +30,7 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("ScaleXY (pix)", 3, 1, 0, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("ScaleZ (pix)", 3, 1, 0, null);
     BooleanParameter useImageCalibration = new BooleanParameter("Use image calibration for Z-scale", true);
-    ConditionalParameter cond; // init occurs @ construction or @ postLoad
+    ConditionalParameter cond = new ConditionalParameter(useImageCalibration).setActionParameters("false", new Parameter[]{scaleZ}, false);
     
     @Override
     public Object toJSONEntry() {
@@ -47,26 +47,18 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
         scaleXY.initFromJSONEntry(jsonO.get("scaleXY"));
         scaleZ.initFromJSONEntry(jsonO.get("scaleZ"));
         useImageCalibration.initFromJSONEntry(jsonO.get("useImageCalibration"));
-        init();
     }
     
     public ScaleXYZParameter(String name) {
         super(name);
-        init();
     }
     public ScaleXYZParameter(String name, double scaleXY, double scaleZ, boolean useCalibration) {
         super(name);
         this.scaleXY.setValue(scaleXY);
         this.scaleZ.setValue(scaleZ);
         useImageCalibration.setSelected(useCalibration);
-        init();
     }
-    protected void init() { 
-        cond = new ConditionalParameter(useImageCalibration);
-        cond.setParent(this);
-        cond.setActionParameters("false", new Parameter[]{scaleZ}, false);
-        //logger.debug("init scaleXYZParameter:{} XY:{}, Z:{}, use: {}", this.hashCode(), scaleXY.getValue(), scaleZ.getValue(), useImageCalibration.getValue());
-    }
+
     @Override
     protected void initChildList() {
         super.initChildren(scaleXY, cond);

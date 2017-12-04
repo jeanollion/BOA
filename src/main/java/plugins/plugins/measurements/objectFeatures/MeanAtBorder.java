@@ -17,31 +17,31 @@
  */
 package plugins.plugins.measurements.objectFeatures;
 
+import plugins.objectFeature.IntensityMeasurement;
 import dataStructure.objects.Object3D;
+import dataStructure.objects.Voxel;
 import image.BoundingBox;
-import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
-import utils.Utils;
+import image.Image;
 
 /**
  *
  * @author jollion
  */
-public class IntensityRatio extends SNR {
-    
-    
-    @Override public double performMeasurement(Object3D object, BoundingBox offset) {
-        if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
-        Object3D parentObject; 
-        if (childrenParentMap==null) parentObject = super.parent.getObject();
-        else parentObject=this.childrenParentMap.get(object);
-        if (parentObject==null) return 0;
-        IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, null);
-        double fore = super.core.getIntensityMeasurements(object, offset).mean;
-        return fore/iParent.mean ;
+public class MeanAtBorder extends IntensityMeasurement {
+    @Override
+    public double performMeasurement(Object3D object, BoundingBox offset) {
+        Image im = core.getIntensityMap(true);
+        if (offset==null) offset=new BoundingBox(0, 0, 0);
+        int offX=offset.getxMin()-intensityMap.getOffsetX();
+        int offY=offset.getyMin()-intensityMap.getOffsetY();
+        int offZ=offset.getzMin()-intensityMap.getOffsetZ();
+        double sum = 0;
+        for (Voxel v : object.getContour()) sum += im.getPixel(v.x+offX, v.y+offY, v.z+offZ);
+        return sum/=object.getContour().size();
     }
-
-    @Override public String getDefaultName() {
-        return "intensity ratio";
+    @Override
+    public String getDefaultName() {
+        return "MeanIntensityBorder";
     }
     
 }

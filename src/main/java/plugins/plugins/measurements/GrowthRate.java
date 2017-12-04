@@ -91,7 +91,7 @@ public class GrowthRate implements Measurement {
         final ArrayList<ObjectFeatureCore> cores = new ArrayList<>();
         HashMapGetCreate<StructureObject, ObjectFeature> ofMap = new HashMapGetCreate<>(p -> {
             ObjectFeature of = feature.instanciatePlugin().setUp(p, bIdx, p.getObjectPopulation(bIdx));
-            if (of instanceof ObjectFeatureWithCore) ((ObjectFeatureWithCore)of).setUpOrAddCore(cores);
+            if (of instanceof ObjectFeatureWithCore) ((ObjectFeatureWithCore)of).setUpOrAddCore(cores, null);
             return of;
         });
         List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);

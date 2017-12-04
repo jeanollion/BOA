@@ -17,6 +17,7 @@
  */
 package plugins.objectFeature;
 
+import configuration.parameters.PreFilterSequence;
 import java.util.List;
 
 /**
@@ -24,5 +25,5 @@ import java.util.List;
  * @author jollion
  */
 public interface ObjectFeatureWithCore {
-    public void setUpOrAddCore(List<ObjectFeatureCore> availableCores);
+    public void setUpOrAddCore(List<ObjectFeatureCore> availableCores, PreFilterSequence preFilters);
 }

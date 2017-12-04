@@ -94,6 +94,7 @@ import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;
 import plugins.legacy.SuppressCentralHorizontalLine;
 import plugins.plugins.transformations.AutoFlipY;
+import plugins.plugins.transformations.RemoveDeadPixels;
 import processing.ImageTransformation;
 
 
@@ -432,6 +433,7 @@ public class GenerateXP {
             ps.setTrimFrames(trimFramesStart, trimFramesEnd);
             ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false));
             ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
+            ps.addTransformation(1, null, new RemoveDeadPixels());
             ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
             ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
             ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.FLUO));

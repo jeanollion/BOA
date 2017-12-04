@@ -17,6 +17,7 @@
  */
 package plugins.objectFeature;
 
+import configuration.parameters.PreFilterSequence;
 import static core.Processor.logger;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
@@ -34,14 +35,16 @@ import plugins.plugins.measurements.objectFeatures.LocalSNR;
  * @author jollion
  */
 public class IntensityMeasurementCore implements ObjectFeatureCore {
-    Image intensityMap;
-    HashMap<Object3D, IntensityMeasurements> values = new HashMap<Object3D, IntensityMeasurements>();
+    Image intensityMap, transformedMap;
+    HashMap<Object3D, IntensityMeasurements> values = new HashMap<>();
     
-    public void setUp(Image intensityMap) {
+    public void setUp(Image intensityMap, StructureObject parent , PreFilterSequence preFilters) {
         this.intensityMap=intensityMap;    
+        if (preFilters==null) this.transformedMap=intensityMap;
+        else transformedMap = preFilters.filter(intensityMap, parent);
     }
-    public Image getIntensityMap() {
-        return intensityMap;
+    public Image getIntensityMap(boolean transformed) {
+        return transformed ? transformedMap : intensityMap;
     }
     public IntensityMeasurements getIntensityMeasurements(Object3D o, BoundingBox offset) {
         IntensityMeasurements i = values.get(o);
@@ -67,21 +70,21 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
                 int offY=offset.getyMin()-intensityMap.getOffsetY();
                 int offZ=offset.getzMin()-intensityMap.getOffsetZ();
                 //logger.debug("intensity measurements: offX: {}, offY: {}, offZ: {}", offX, offY, offZ);
-                for (Voxel v : o.getVoxels()) increment(intensityMap.getPixel(v.x+offX, v.y+offY, v.z+offZ), v.x, v.y, v.z);
+                for (Voxel v : o.getVoxels()) increment(transformedMap.getPixel(v.x+offX, v.y+offY, v.z+offZ), v.x, v.y, v.z);
                 maxCoords[0]+=offset.getxMin();
                 maxCoords[1]+=offset.getyMin();
                 maxCoords[2]+=offset.getzMin();
                 
             } else {
                 ImageInteger mask = o.getMask();
-                int offX = offset.getxMin()+mask.getOffsetX()-intensityMap.getOffsetX();
-                int offY = offset.getyMin()+mask.getOffsetY()-intensityMap.getOffsetY();
-                int offZ = offset.getzMin()+mask.getOffsetZ()-intensityMap.getOffsetZ();
+                int offX = offset.getxMin()+mask.getOffsetX()-transformedMap.getOffsetX();
+                int offY = offset.getyMin()+mask.getOffsetY()-transformedMap.getOffsetY();
+                int offZ = offset.getzMin()+mask.getOffsetZ()-transformedMap.getOffsetZ();
                 //logger.debug("intensity measurements: offXY: {}, offZ: {}", offXY, offZ);
                 for (int z= 0; z<mask.getSizeZ(); ++z) {
                     for (int y= 0; y<mask.getSizeY(); ++y) {
                         for (int x= 0; x<mask.getSizeX(); ++x) {
-                            if (mask.insideMask(x, y, z)) increment(intensityMap.getPixel(x+offX, y+offY, z+offZ), x, y, z);
+                            if (mask.insideMask(x, y, z)) increment(transformedMap.getPixel(x+offX, y+offY, z+offZ), x, y, z);
                         }
                     }
                 }

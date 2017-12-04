@@ -18,6 +18,7 @@
 package plugins.objectFeature;
 
 import configuration.parameters.Parameter;
+import configuration.parameters.PreFilterSequence;
 import configuration.parameters.StructureParameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
@@ -38,7 +39,7 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
     protected IntensityMeasurementCore core;
     protected StructureParameter intensity = new StructureParameter("Intensity").setAutoConfiguration(true);
     protected Image intensityMap;
-    
+    protected StructureObject parent;
     public IntensityMeasurement setIntensityStructure(int structureIdx) {
         this.intensity.setSelectedStructureIdx(structureIdx);
         return this;
@@ -46,6 +47,7 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
     
     @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
         super.setUp(parent, childStructureIdx, childPopulation);
+        this.parent=parent;
         if (intensity.getSelectedIndex()==-1) intensity.setSelectedIndex(childStructureIdx);
         this.intensityMap=parent.getRawImage(intensity.getSelectedIndex());
         return this;
@@ -53,11 +55,12 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
     
     @Override public Parameter[] getParameters() {return new Parameter[]{intensity};}
 
-    public void setUpOrAddCore(List<ObjectFeatureCore> availableCores) {
+    @Override
+    public void setUpOrAddCore(List<ObjectFeatureCore> availableCores, PreFilterSequence preFilters) {
         IntensityMeasurementCore newCore = null;
         if (availableCores!=null) {
             for (ObjectFeatureCore c : availableCores) {
-                if (c instanceof IntensityMeasurementCore && ((IntensityMeasurementCore)c).getIntensityMap()==intensityMap) {
+                if (c instanceof IntensityMeasurementCore && ((IntensityMeasurementCore)c).getIntensityMap(false)==intensityMap) {
                     newCore=(IntensityMeasurementCore)c;
                     break;
                 }
@@ -66,7 +69,7 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
         if (newCore==null) {
             if (core==null) {
                 core = new IntensityMeasurementCore();
-                core.setUp(intensityMap);
+                core.setUp(intensityMap, parent, preFilters);
             }
             if (availableCores!=null) availableCores.add(core);
         } else core=newCore;

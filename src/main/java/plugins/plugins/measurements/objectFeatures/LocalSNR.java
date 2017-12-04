@@ -59,7 +59,7 @@ public class LocalSNR extends SNR {
         return this;
     }
     @Override public double performMeasurement(final Object3D object, BoundingBox offset) {
-        if (core==null) synchronized(this) {setUpOrAddCore(null);}
+        if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
         if (offset==null) offset=new BoundingBox(0, 0, 0);
         final Object3D parentObject; 
         if (childrenParentMap==null) parentObject = super.parent.getObject();

@@ -136,7 +136,7 @@ public class SNR extends IntensityMeasurement {
     @Override
     public double performMeasurement(Object3D object, BoundingBox offset) {
         
-        if (core==null) synchronized(this) {setUpOrAddCore(null);}
+        if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
         Object3D parentObject; 
         if (childrenParentMap==null) parentObject = super.parent.getObject();
         else parentObject=this.childrenParentMap.get(object);

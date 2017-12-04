@@ -20,6 +20,7 @@ package plugins.plugins.measurements;
 import configuration.parameters.Parameter;
 import configuration.parameters.ParameterListener;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.PreFilterSequence;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
 import configuration.parameters.TextParameter;
@@ -41,7 +42,8 @@ public class ObjectFeatures implements Measurement {
     StructureParameter structure = new StructureParameter("Structure", -1, false, false);
     PluginParameter<ObjectFeature> def = new PluginParameter<>("Feature", ObjectFeature.class, false).setAdditionalParameters(new TextParameter("Key", "", false));
     SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<>("Features", 0, def);
-    Parameter[] parameters = new Parameter[]{structure, features};
+    PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters").setToolTipText("Pre-Filters that will be used by all intensity measurement");
+    Parameter[] parameters = new Parameter[]{structure, preFilters, features};
     public ObjectFeatures() {
         def.addListener((Parameter sourceParameter) -> {
             PluginParameter<ObjectFeature> s = (PluginParameter<ObjectFeature>)sourceParameter;
@@ -80,7 +82,7 @@ public class ObjectFeatures implements Measurement {
     }
 
     public List<MeasurementKey> getMeasurementKeys() {
-        ArrayList<MeasurementKey> res=  new ArrayList<MeasurementKey>(features.getChildCount());
+        ArrayList<MeasurementKey> res=  new ArrayList<>(features.getChildCount());
         for (PluginParameter<ObjectFeature> ofp : features.getActivatedChildren()) res.add(new MeasurementKeyObject(((TextParameter)ofp.getAdditionalParameters().get(0)).getValue(), structure.getSelectedIndex()));
         return res;
     }
@@ -93,7 +95,7 @@ public class ObjectFeatures implements Measurement {
             ObjectFeature f = ofp.instanciatePlugin();
             if (f!=null) {
                 f.setUp(object, structureIdx, object.getObjectPopulation(structureIdx));
-                if (f instanceof ObjectFeatureWithCore) ((ObjectFeatureWithCore)f).setUpOrAddCore(cores);
+                if (f instanceof ObjectFeatureWithCore) ((ObjectFeatureWithCore)f).setUpOrAddCore(cores, preFilters);
                 for (StructureObject o : object.getChildren(structureIdx)) {
                     double m = f.performMeasurement(o.getObject(), null); 
                     o.getMeasurements().setValue(((TextParameter)ofp.getAdditionalParameters().get(0)).getValue(), m);
