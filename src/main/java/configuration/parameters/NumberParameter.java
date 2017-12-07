@@ -19,13 +19,14 @@ package configuration.parameters;
 
 import configuration.parameters.ui.NumberParameterUI;
 import configuration.parameters.ui.ParameterUI;
+import plugins.ops.OpParameter;
 import plugins.ops.ParameterWithValue;
 
 /**
  *
  * @author jollion
  */
-public class NumberParameter extends SimpleParameter implements ParameterWithValue {
+public class NumberParameter extends SimpleParameter implements OpParameter {
     //@Transient NumberParameterUI ui;
     Number value;
     int decimalPlaces;

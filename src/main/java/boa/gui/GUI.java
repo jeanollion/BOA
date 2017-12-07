@@ -19,6 +19,7 @@ package boa.gui;
 
 import boa.gui.configuration.ConfigurationTreeGenerator;
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.IJVirtualStack;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageObjectInterfaceKey;
 import boa.gui.imageInteraction.ImageObjectListener;
@@ -217,6 +218,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
             localDBMenu.setEnabled(true);
         }
+        ButtonGroup limitDispGroup = new ButtonGroup();
+        limitDispGroup.add(limitDispNoLimit);
+        limitDispGroup.add(limitDisp1);
+        limitDispGroup.add(limitDisp2);
+        limitDispGroup.add(limitDisp5);
+        limitDispGroup.add(limitDisp10);
+        PropertyUtils.setPersistant(limitDispGroup, "limitDispImage", 2);
+        if (limitDisp1.isSelected()) ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(1);
+        else if (limitDisp2.isSelected()) ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(2);
+        else if (limitDisp5.isSelected()) ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(5);
+        else if (limitDisp10.isSelected()) ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(10);
+        else if (limitDispNoLimit.isSelected()) ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(-1);
         // import / export options
         PropertyUtils.setPersistant(importConfigMenuItem, "import_config", true);
         PropertyUtils.setPersistant(importSelectionsMenuItem, "import_selections", true);
@@ -1039,6 +1052,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         clearMemoryMenuItem = new javax.swing.JMenuItem();
         clearPPImageMenuItem = new javax.swing.JMenuItem();
         clearTrackImagesMenuItem = new javax.swing.JMenuItem();
+        jMenu1 = new javax.swing.JMenu();
+        limitDispNoLimit = new javax.swing.JRadioButtonMenuItem();
+        limitDisp1 = new javax.swing.JRadioButtonMenuItem();
+        limitDisp2 = new javax.swing.JRadioButtonMenuItem();
+        limitDisp5 = new javax.swing.JRadioButtonMenuItem();
+        limitDisp10 = new javax.swing.JRadioButtonMenuItem();
         logMenu = new javax.swing.JMenu();
         setLogFileMenuItem = new javax.swing.JMenuItem();
         activateLoggingMenuItem = new javax.swing.JCheckBoxMenuItem();
@@ -1826,6 +1845,55 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         miscMenu.add(clearTrackImagesMenuItem);
 
+        jMenu1.setText("Limit Number of opened Images");
+
+        limitDispNoLimit.setSelected(true);
+        limitDispNoLimit.setText("No Limit");
+        limitDispNoLimit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                limitDispNoLimitActionPerformed(evt);
+            }
+        });
+        jMenu1.add(limitDispNoLimit);
+
+        limitDisp1.setSelected(true);
+        limitDisp1.setText("1");
+        limitDisp1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                limitDisp1ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(limitDisp1);
+
+        limitDisp2.setSelected(true);
+        limitDisp2.setText("2");
+        limitDisp2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                limitDisp2ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(limitDisp2);
+
+        limitDisp5.setSelected(true);
+        limitDisp5.setText("5");
+        limitDisp5.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                limitDisp5ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(limitDisp5);
+
+        limitDisp10.setSelected(true);
+        limitDisp10.setText("10");
+        limitDisp10.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                limitDisp10ActionPerformed(evt);
+            }
+        });
+        jMenu1.add(limitDisp10);
+
+        miscMenu.add(jMenu1);
+
         logMenu.setText("Log");
 
         setLogFileMenuItem.setText("Set Log File");
@@ -1902,7 +1970,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     public void navigateToNextImage(boolean next) {
         if (trackTreeController==null) this.loadObjectTrees();
         ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
-        if (i==null) return;
+        if (i==null) { // input image ?
+            Object activeImage = ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage();
+            if (activeImage == null) return;
+            String position = ImageWindowManagerFactory.getImageManager().getPositionOfInputImage(activeImage);
+            if (position == null) return;
+            else {
+                int pIdx = db.getExperiment().getPositionIdx(position);
+                int nIdx = pIdx + (next?1:-1);
+                if (nIdx<0) return;
+                if (nIdx>=db.getExperiment().getPositionCount()) return;
+                String nextPosition = db.getExperiment().getPosition(nIdx).getName();
+                ImageWindowManager.RegisteredImageType r = ImageWindowManagerFactory.getImageManager().getRegisterType(activeImage);
+                boolean pp = ImageWindowManager.RegisteredImageType.PreProcessed.equals(r);
+                IJVirtualStack.openVirtual(db.getExperiment(), nextPosition, pp);
+            }
+            return;
+        }
         // get next parent
         StructureObject nextParent = null;
         if (i.getParent().isRoot()) return;
@@ -3135,6 +3219,26 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         this.db.getSelectionDAO().store(sel);
         populateSelections();
     }//GEN-LAST:event_createSelectionButtonActionPerformed
+
+    private void limitDispNoLimitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_limitDispNoLimitActionPerformed
+        ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(-1);
+    }//GEN-LAST:event_limitDispNoLimitActionPerformed
+
+    private void limitDisp1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_limitDisp1ActionPerformed
+        ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(1);
+    }//GEN-LAST:event_limitDisp1ActionPerformed
+
+    private void limitDisp2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_limitDisp2ActionPerformed
+        ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(2);
+    }//GEN-LAST:event_limitDisp2ActionPerformed
+
+    private void limitDisp5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_limitDisp5ActionPerformed
+        ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(5);
+    }//GEN-LAST:event_limitDisp5ActionPerformed
+
+    private void limitDisp10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_limitDisp10ActionPerformed
+        ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(10);
+    }//GEN-LAST:event_limitDisp10ActionPerformed
     
     public void addToSelectionActionPerformed() {
         if (!this.checkConnection()) return;
@@ -3370,9 +3474,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JComboBox interactiveStructure;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JSplitPane jSplitPane3;
+    private javax.swing.JRadioButtonMenuItem limitDisp1;
+    private javax.swing.JRadioButtonMenuItem limitDisp10;
+    private javax.swing.JRadioButtonMenuItem limitDisp2;
+    private javax.swing.JRadioButtonMenuItem limitDisp5;
+    private javax.swing.JRadioButtonMenuItem limitDispNoLimit;
     private javax.swing.JButton linkObjectsButton;
     private javax.swing.JMenu localDBMenu;
     private javax.swing.JRadioButtonMenuItem localFileSystemDatabaseRadioButton;

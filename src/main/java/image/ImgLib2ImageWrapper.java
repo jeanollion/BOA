@@ -19,12 +19,17 @@ package image;
 
 import ij.ImagePlus;
 import static image.IJImageWrapper.getImagePlus;
+import java.util.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.histogram.Histogram1d;
+import net.imglib2.histogram.Integer1dBinMapper;
 import net.imglib2.img.ImagePlusAdapter;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.ops.operation.iterableinterval.unary.MakeHistogram;
+import net.imglib2.type.numeric.IntegerType;
 import net.imglib2.type.numeric.RealType;
 
 /**
@@ -41,4 +46,13 @@ public class ImgLib2ImageWrapper {
     public static <T extends RealType<T>> Img<T> getImage(Image image) {
         return ImagePlusAdapter.wrapReal(IJImageWrapper.getImagePlus(image));
     }
+    /*public static <T extends RealType<T>> Histogram1d<T> getHistogram(Img<T> img) {
+        if (img.firstElement() instanceof IntegerType) {
+            ((Img<IntegerType>)img)
+        }
+        //TODO : utiliser ops qui construit l'histogram!
+        Histogram1d<IntegerType> hist=new Histogram1d<T>(new Integer1dBinMapper<T>(0,255,false)); 
+        RandomAccess<LongType> raHist=hist.randomAccess();
+        new MakeHistogram<T>((int)hist.getBinCount()).compute(input,hist);
+    }*/
 }

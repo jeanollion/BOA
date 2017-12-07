@@ -47,6 +47,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -77,6 +79,7 @@ import utils.Utils;
  * @param <V> track ROI class
  */
 public abstract class ImageWindowManager<T, U, V> {
+    public static enum RegisteredImageType { Interactive, RawInput, PreProcessed; }
     public static boolean displayTrackMode;
     public final static Color[] palette = new Color[]{new Color(166, 206, 227, 150), new Color(31,120,180, 150), new Color(178,223,138, 150), new Color(51,160,44, 150), new Color(251,154,153, 150), new Color(253,191,111, 150), new Color(255,127,0, 150), new Color(255,255,153, 150), new Color(177,89,40, 150)};
     public final static Color defaultRoiColor = new Color(255, 0, 255, 150);
@@ -91,10 +94,13 @@ public abstract class ImageWindowManager<T, U, V> {
     protected final HashMap<Image, ImageObjectInterfaceKey> imageObjectInterfaceMap;
     protected final HashMap<Image, Boolean> isLabelImage;
     protected final HashMapGetCreate<StructureObject, List<List<StructureObject>>> trackHeadTrackMap;
+    protected final LinkedHashMap<String, T> displayedRawInputFrames = new LinkedHashMap<>();
+    protected final LinkedHashMap<String, T> displayedPrePocessedFrames = new LinkedHashMap<>();
+    protected final LinkedList<Image> displayedInteractiveImages = new LinkedList<>();
     final ImageObjectListener listener;
     final ImageDisplayer<T> displayer;
     int interactiveStructureIdx;
-    
+    int displayedImageNumber = 20;
     // displayed objects 
     protected final Map<Pair<StructureObject, BoundingBox>, U> objectRoiMap = new HashMap<Pair<StructureObject, BoundingBox>, U>();
     protected final Map<Pair<StructureObject, StructureObject>, V> parentTrackHeadTrackRoiMap=new HashMap<Pair<StructureObject, StructureObject>, V>();
@@ -112,6 +118,17 @@ public abstract class ImageWindowManager<T, U, V> {
         isLabelImage = new HashMap<Image, Boolean>();
         imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
         trackHeadTrackMap = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());
+    }
+    public void setDisplayImageLimit(int limit) {
+        this.displayedImageNumber=limit;
+    }
+    public RegisteredImageType getRegisterType(Object image) {
+        if (image instanceof Image && displayedInteractiveImages.contains((Image)image)) return RegisteredImageType.Interactive;
+        else {
+            for (T im : this.displayedRawInputFrames.values()) if (im==image) return RegisteredImageType.RawInput;
+            for (T im : this.displayedPrePocessedFrames.values()) if (im==image) return RegisteredImageType.PreProcessed;
+            return null;
+        }
     }
     public Map<Image, DefaultWorker> getRunningWorkers() {
         return runningWorkers;
@@ -137,8 +154,13 @@ public abstract class ImageWindowManager<T, U, V> {
         imageObjectInterfaceMap.clear();
         isLabelImage.clear();
         trackHeadTrackMap.clear();
+        displayedRawInputFrames.clear();
+        displayedPrePocessedFrames.clear();
+        displayedInteractiveImages.clear();
     }
-    public abstract void closeNonInteractiveWindows();
+    public void closeNonInteractiveWindows() {
+        closeLastInputImages(0);
+    }
     public ImageDisplayer<T> getDisplayer() {return displayer;}
     
     //protected abstract T getImage(Image image);
@@ -168,7 +190,10 @@ public abstract class ImageWindowManager<T, U, V> {
         else return list.get(0);
     }
     
-    public abstract void setActive(Image image);
+    public void setActive(Image image) {
+        boolean b =  displayedInteractiveImages.remove(image);
+        if (b) displayedInteractiveImages.add(image);
+    }
     
     public void addImage(Image image, ImageObjectInterface i, int displayedStructureIdx, boolean labelImage, boolean displayImage) {
         if (image==null) return;
@@ -186,31 +211,70 @@ public abstract class ImageWindowManager<T, U, V> {
     
     public void displayImage(Image image, ImageObjectInterface i) {
         displayer.showImage(image);
+        displayedInteractiveImages.add(image);
         addMouseListener(image);
         // if image is being generated -> add a close listener
-        addWindowListener(image, new WindowListener() {
-            @Override
-            public void windowOpened(WindowEvent e) { }
-            @Override
-            public void windowClosing(WindowEvent e) {}
-            @Override
-            public void windowClosed(WindowEvent e) {
-                DefaultWorker w = runningWorkers.get(image);
-                if (w!=null) {
-                    logger.debug("interruptin generation of closed image: {}", image.getName());
-                    w.cancel(true);
-                }
+        addWindowClosedListener(image, e-> {
+            DefaultWorker w = runningWorkers.get(image);
+            if (w!=null) {
+                logger.debug("interruptin generation of closed image: {}", image.getName());
+                w.cancel(true);
             }
-            @Override
-            public void windowIconified(WindowEvent e) { }
-            @Override
-            public void windowDeiconified(WindowEvent e) { }
-            @Override
-            public void windowActivated(WindowEvent e) { }
-            @Override
-            public void windowDeactivated(WindowEvent e) { }
+            displayedInteractiveImages.remove(image);
+            return null;
         });
         GUI.updateRoiDisplayForSelections(image, i);
+        closeLastActiveImages(displayedImageNumber);
+    }
+    public String getPositionOfInputImage(T image) {
+        String pos = Utils.getOneKey(displayedRawInputFrames, image);
+        if (pos!=null) return pos;
+        return Utils.getOneKey(displayedPrePocessedFrames, image);
+    }
+    public void addInputImage(String position, T image, boolean raw) {
+        if (image==null) return;
+        addWindowClosedListener(image, e-> {
+            if (raw) displayedRawInputFrames.remove(position);
+            else displayedPrePocessedFrames.remove(position);
+            return null;
+        });
+        if (raw) displayedRawInputFrames.put(position, image);
+        else displayedPrePocessedFrames.put(position,  image);
+        closeLastInputImages(displayedImageNumber);
+    }
+    public void closeLastActiveImages(int numberOfKeptImages) {
+        logger.debug("close active images: total opened {} limit: {}", displayedInteractiveImages.size(), numberOfKeptImages);
+        if (numberOfKeptImages<0) return;
+        if (displayedInteractiveImages.size()>numberOfKeptImages) {
+            Iterator<Image> it = displayedInteractiveImages.iterator();
+            while(displayedInteractiveImages.size()>numberOfKeptImages && it.hasNext()) {
+                Image next = it.next();
+                it.remove();
+                displayer.close(next);
+            }
+        }
+    }
+    public void closeLastInputImages(int numberOfKeptImages) {
+        //logger.debug("close input images: raw: {} pp: {} limit: {}", displayedRawInputFrames.size(), displayedPrePocessedFrames.size(), numberOfKeptImages);
+        if (numberOfKeptImages<0) return;
+        if (displayedRawInputFrames.size()>numberOfKeptImages) {
+            Iterator<String> it = displayedRawInputFrames.keySet().iterator();
+            while(displayedRawInputFrames.size()>numberOfKeptImages && it.hasNext()) {
+                String i = it.next();
+                T im = displayedRawInputFrames.get(i);
+                it.remove();
+                displayer.close(im);
+            }
+        }
+        if (displayedPrePocessedFrames.size()>numberOfKeptImages) {
+            Iterator<String> it = displayedPrePocessedFrames.keySet().iterator();
+            while(displayedPrePocessedFrames.size()>numberOfKeptImages && it.hasNext()) {
+                String i = it.next();
+                T im = displayedPrePocessedFrames.get(i);
+                it.remove();
+                displayer.close(im);
+            }
+        }
     }
     
     public void resetImageObjectInterface(StructureObject parent, int childStructureIdx) {
@@ -372,8 +436,8 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     public abstract void addMouseListener(Image image);
-    public abstract void addWindowListener(Image image, WindowListener wl);
-    public void addWindowClosedListener(Image image, Function<WindowEvent, Void> closeFunction) {
+    public abstract void addWindowListener(Object image, WindowListener wl);
+    public void addWindowClosedListener(Object image, Function<WindowEvent, Void> closeFunction) {
         addWindowListener(image, new WindowListener() {
             @Override
             public void windowOpened(WindowEvent e) { }
@@ -798,7 +862,7 @@ public abstract class ImageWindowManager<T, U, V> {
             if (trackImage==null) return;
         }
         ImageObjectInterface i = this.getImageObjectInterface(trackImage);
-        if (!i.isTimeImage()) {
+        if (i==null || !i.isTimeImage()) {
             logger.warn("selected image is not a track image");
             return;
         }

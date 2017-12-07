@@ -23,6 +23,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 import net.imagej.ops.OpInfo;
 import net.imagej.ops.OpService;
+import net.imglib2.RandomAccessible;
 import org.scijava.ItemIO;
 import org.scijava.module.ModuleItem;
 import org.slf4j.Logger;
@@ -40,23 +41,41 @@ public class OpHelpers {
     public OpHelpers(OpService service) {
         this.service=service;
     }
-    public ParameterWithValue[] getParameters(OpInfo info) {
+    public static OpParameter[] getParameters(OpInfo info) {
         List<ModuleItem<?>> params = info.inputs();
         params.removeIf(p->!p.isPersisted()||p.getIOType()!=ItemIO.INPUT);
-        List<Parameter> res = Utils.transform(params, p->mapParameter(p));
+        List<OpParameter> res = Utils.transform(params, p->mapParameter(p));
         res.removeIf(o->o==null);
-        return res.toArray(new ParameterWithValue[res.size()]);
+        return res.toArray(new OpParameter[res.size()]);
     }
-    public static ParameterWithValue mapParameter(ModuleItem<?> param) {
-        if (param.getType()==double.class) { // get generic type ? 
+    public static OpParameter mapParameter(ModuleItem<?> param) {
+        OpParameter res=null;
+        if (param.getType()==double.class || param.getType()==Double.class) { // get generic type ? 
             Double lower = (Double)param.getMinimumValue();
             Double upper = (Double)param.getMaximumValue();
             logger.debug("lower: {} upper: {}, default: {}", param.getMinimumValue(), param.getMaximumValue(), param.getDefaultValue());
-            return new BoundedNumberParameter(param.getName(), 5, (Double)param.getDefaultValue(), lower, upper);
+            res =  new BoundedNumberParameter(param.getName(), 10, (Double)param.getDefaultValue(), lower, upper);
+        } if (param.getType()==long.class || param.getType()==Long.class) { // get generic type ? 
+            Long lower = (Long)param.getMinimumValue();
+            Long upper = (Long)param.getMaximumValue();
+            logger.debug("lower: {} upper: {}, default: {}", param.getMinimumValue(), param.getMaximumValue(), param.getDefaultValue());
+            res =  new BoundedNumberParameter(param.getName(), 0, (Long)param.getDefaultValue(), lower, upper);
+        } if (param.getType()==int.class || param.getType()==Integer.class) { // get generic type ? 
+            Integer lower = (Integer)param.getMinimumValue();
+            Integer upper = (Integer)param.getMaximumValue();
+            logger.debug("lower: {} upper: {}, default: {}", param.getMinimumValue(), param.getMaximumValue(), param.getDefaultValue());
+            res =  new BoundedNumberParameter(param.getName(), 0, (Integer)param.getDefaultValue(), lower, upper);
         }
         // TODO make ints, boolean, string, choice, Arrays! (fixed or user defined size? list?) make special for outofbounds: type choice parameter that can create an outofbound factory
-        return null;
+        if (res!=null) res.setModuleItem(param);
+        logger.debug("param: {} ({}), could be converted ? {}", param.getName(), param.getType().getSimpleName(), res!=null);
+        return res;
     }
     // TODO: make populate arguments, including non parameters (input). 
     // TODO: make a function for filters (Binary), thresholds (Unary), segmenters? (Binary)
+    
+    public static boolean isImage(ModuleItem<?> param) {
+        return RandomAccessible.class.isAssignableFrom(param.getType());
+    }
+    
 }

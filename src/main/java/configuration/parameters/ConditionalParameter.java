@@ -83,6 +83,10 @@ public class ConditionalParameter extends SimpleContainerParameter {
     public ConditionalParameter setActionParameters(String actionValue, Parameter[] parameters) {
         return setActionParameters(actionValue, parameters, false);
     }
+    public List<Parameter> getActionParameters(String actionValue) {
+        if (parameters.containsKey(actionValue)) return parameters.get(actionValue);
+        else return defaultParameters;
+    }
     
     public ConditionalParameter setActionParameters(String actionValue, Parameter[] parameters, boolean setContentFromAlreadyPresent) {
         List<Parameter> paramToSet = Arrays.asList(parameters);
@@ -149,6 +153,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
         if (actionValue==null) return;
         currentValue = actionValue;
         if (!action.getValue().equals(actionValue)) this.action.setValue(actionValue); // avoid loop
+        fireListeners();
         initChildList();
         //logger.debug("setActionValue: {} value: {}, class: {}, children: {}, allActions: {}",this.hashCode(), actionValue, actionValue.getClass().getSimpleName(), getCurrentParameters()==null ? "null" : getCurrentParameters().size(), this.parameters.keySet());
     }

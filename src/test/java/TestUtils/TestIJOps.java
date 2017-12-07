@@ -48,7 +48,7 @@ public class TestIJOps {
     public static void main(String[] args) {
         final ImageJ ij = new ImageJ();
         //ij.launch(args);
-        ij.op
+        
         logger.debug("ops: {}", ij.op().ops());
         Collection<OpInfo> thlds = ij.op().infos();
         thlds.removeIf(o->!o.isNamespace("threshold"));

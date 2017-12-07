@@ -26,11 +26,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JMenuItem;
 
 /**
  *
@@ -77,12 +81,19 @@ public class PropertyUtils {
         if (value!=null) getProps().setProperty(key, value);
         saveParamChanges();
     }
+    public static void set(String key, int value) {
+        getProps().setProperty(key, Integer.toString(value));
+        saveParamChanges();
+    }
     public static void remove(String key) {
         getProps().remove(key);
         saveParamChanges();
     }
     public static boolean get(String key, boolean defaultValue) {
         return Boolean.parseBoolean(getProps().getProperty(key, Boolean.toString(defaultValue)));
+    }
+    public static int get(String key, int defaultValue) {
+        return Integer.parseInt(getProps().getProperty(key, Integer.toString(defaultValue)));
     }
     public static void set(String key, boolean value) {
         getProps().setProperty(key, Boolean.toString(value));
@@ -148,8 +159,22 @@ public class PropertyUtils {
         return f;
     }
     
-    public static void setPersistant(JCheckBoxMenuItem item, String key, boolean defaultValue) {
+    public static void setPersistant(JMenuItem item, String key, boolean defaultValue) {
         item.setSelected(PropertyUtils.get(key, defaultValue));
-        item.addActionListener((java.awt.event.ActionEvent evt) -> { PropertyUtils.set(key, item.isSelected()); });
+        item.addActionListener((java.awt.event.ActionEvent evt) -> { logger.debug("item: {} persistSel {}", key, item.isSelected());PropertyUtils.set(key, item.isSelected()); });
+    }
+    public static int setPersistant(ButtonGroup group, String key, int defaultSelectedIdx) {
+        Enumeration<AbstractButton> enume = group.getElements();
+        int idxSel = get(key, defaultSelectedIdx);
+        int idx= 0;
+        logger.debug("set persistant: {} #={} current Sel: {}", key, group.getButtonCount(), idxSel);
+        while (enume.hasMoreElements()) {
+            AbstractButton b = enume.nextElement();
+            b.setSelected(idx == idxSel);
+            final int currentIdx = idx;
+            b.addActionListener((java.awt.event.ActionEvent evt) -> { logger.debug("item: {} persistSel {}", b, b.isSelected()); PropertyUtils.set(key, currentIdx); });
+            ++idx;
+        }
+        return idxSel;
     }
 }

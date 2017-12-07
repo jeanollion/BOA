@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
+import org.scijava.module.ModuleItem;
 
 /**
  *
@@ -172,5 +173,8 @@ public abstract class SimpleParameter implements Parameter {
     public void fireListeners() {
         if (listeners != null) for (ParameterListener pl : listeners) pl.fire(this);
     }
-    
+    // op
+    ModuleItem<?> param;
+    public void setModuleItem(ModuleItem<?> param) {this.param=param;}
+    public ModuleItem<?> getModuleItem(){return param;}
 }

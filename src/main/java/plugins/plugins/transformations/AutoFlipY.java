@@ -27,6 +27,7 @@ import configuration.parameters.PluginParameter;
 import dataStructure.containers.InputImages;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import image.ImageLabeller;
@@ -44,6 +45,7 @@ import plugins.SimpleThresholder;
 import plugins.Transformation;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import static plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.FLUO;
+import static plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE;
 import processing.ImageTransformation;
 import utils.ArrayUtil;
 import utils.Pair;
@@ -55,20 +57,33 @@ import utils.Utils;
  */
 public class AutoFlipY implements Transformation {
     public static enum AutoFlipMethod {
-        FLUO("Bacteria Fluo");
+        FLUO("Bacteria Fluo", "Detects side where bacteria are more aligned -> should be the upper side"),
+        FLUO_HALF_IMAGE("Bacteria Fluo: Upper Half of Image", "Bacteria should be present in upper half of the image");
         //PHASE("Phase Optical Aberration");
         final String name;
-        AutoFlipMethod(String name) {
+        final String toolTip;
+        AutoFlipMethod(String name, String toolTip) {
             this.name=name;
+            this.toolTip=toolTip;
+        }
+        public static AutoFlipMethod getMethod(String name) {
+            for (AutoFlipMethod m : AutoFlipMethod.values()) if (m.name.equals(name)) return m;
+            return null;
         }
     }
-    ChoiceParameter method = new ChoiceParameter("Method", Utils.transform(AutoFlipMethod.values(), new String[AutoFlipMethod.values().length], f->f.name), FLUO.name, false);
+    ChoiceParameter method = new ChoiceParameter("Method", Utils.transform(AutoFlipMethod.values(), new String[AutoFlipMethod.values().length], f->f.name), FLUO_HALF_IMAGE.name, false);
     PluginParameter<SimpleThresholder> fluoThld = new PluginParameter<>("Threshold for bacteria Segmentation", SimpleThresholder.class, new BackgroundThresholder(4, 5, 3), false); 
     NumberParameter minObjectSize = new BoundedNumberParameter("Minimal Object Size", 1, 100, 10, null).setToolTipText("Object under this size (in pixels) will be removed");
     ConditionalParameter cond = new ConditionalParameter(method).setActionParameters("Bacteria Fluo", new Parameter[]{fluoThld, minObjectSize});
     List config = new ArrayList(1);
     
-    public AutoFlipY() {}
+    public AutoFlipY() {
+        cond.addListener(p->{ 
+            AutoFlipMethod m = AutoFlipMethod.getMethod(method.getSelectedItem());
+            if (m!=null) cond.setToolTipText(m.toolTip);
+            else cond.setToolTipText("Choose autoflip algorithm");
+        });
+    }
     public AutoFlipY setMethod(AutoFlipMethod method) {
         this.method.setValue(method.name);
         return this;
@@ -77,7 +92,6 @@ public class AutoFlipY implements Transformation {
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {
         config.clear();
-        
         if (method.getSelectedItem().equals(FLUO.name)) { 
             if (testMode) {
                 upperObjectsTest=new ArrayList<>();
@@ -109,13 +123,42 @@ public class AutoFlipY implements Transformation {
             boolean flip = countFlip>countNoFlip;
             logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
             config.add(flip);
-        } /*else if (method.getSelectedItem().equals(PHASE.name)) { 
+        } else if (method.getSelectedItem().equals(FLUO_HALF_IMAGE.name)) { 
+            // compares signal in upper half & lower half -> signal should be in upper half
+            List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 1);
+            int countFlip = 0;
+            int countNoFlip = 0;
+            for (int f: frames) {
+                Image image = inputImages.getImage(channelIdx, f);
+                if (image.getSizeZ()>1) {
+                    int plane = inputImages.getBestFocusPlane(f);
+                    if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
+                    image = image.splitZPlanes().get(plane);
+                }
+                Boolean flip = isFlipFluoUpperHalf(image);
+                if (flip!=null) {
+                    if (flip) ++countFlip;
+                    else ++countNoFlip;
+                }
+            }
+            boolean flip = countFlip>countNoFlip;
+            logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
+            config.add(flip);
+        } /*else if (method.getSelectedItem().equals(PHASE.name)) {
             // detection of optical abberation
             // comparison of signal above & under using gradient filer
-            
         }*/
     }
-    
+    private Boolean isFlipFluoUpperHalf(Image image) {
+        ImageMask upper = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        ImageMask lower = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY()+image.getSizeY()/2, image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null)[0];
+        double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null)[0];
+        if (testMode) logger.debug("AutoFlipY: upper half mean {} lower: {}", upperMean, lowerMean);
+        if (upperMean>lowerMean) return false;
+        else if (lowerMean>upperMean) return true;
+        else return null;
+    }
     private Boolean isFlipFluo(Image image) {
         int minSize = minObjectSize.getValue().intValue();
         SimpleThresholder thlder = fluoThld.instanciatePlugin();

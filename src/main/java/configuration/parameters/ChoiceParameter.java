@@ -51,6 +51,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
         this.selectedIndex=Utils.getIndex(listChoice, selectedItem);
         if (selectedIndex==-1) this.selectedItem = "no item selected";
         else this.selectedItem=selectedItem;
+        fireListeners();
         setCondValue();
     }
     
@@ -62,6 +63,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
             selectedIndex=-1;
             selectedItem="no item selected";
         }
+        fireListeners();
         setCondValue();
     }
     

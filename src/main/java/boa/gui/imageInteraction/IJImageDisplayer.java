@@ -52,8 +52,8 @@ import javax.swing.SwingUtilities;
  * @author jollion
  */
 public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
-    protected HashMap<Image, ImagePlus> displayedImages=new HashMap<Image, ImagePlus>();
-    protected HashMap<ImagePlus, Image> displayedImagesInv=new HashMap<ImagePlus, Image>();
+    protected HashMap<Image, ImagePlus> displayedImages=new HashMap<>();
+    protected HashMap<ImagePlus, Image> displayedImagesInv=new HashMap<>();
     @Override public ImagePlus showImage(Image image, double... displayRange) {
         /*if (IJ.getInstance()==null) {
             ij.ImageJ.main(new String[0]);
@@ -83,6 +83,11 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         return ip;
     }
     
+    @Override
+    public boolean isDisplayed(ImagePlus ip) {
+        return ip!=null && ip.isVisible();
+    }
+    
     public void flush() {
         for (ImagePlus ip : displayedImages.values()) if (ip.isVisible()) ip.close();
         displayedImages.clear();
@@ -96,6 +101,12 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             imp.close();
             this.displayedImagesInv.remove(imp);
         }
+    }
+    @Override public void close(ImagePlus image) {
+        if (image==null) return;
+        Image im = this.displayedImagesInv.remove(image);
+        if (im!=null) this.displayedImages.remove(im);
+        image.close();
     }
     /*@Override public boolean isVisible(Image image) {
         return displayedImages.containsKey(image) && displayedImages.get(image).isVisible();
@@ -192,6 +203,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ip.setCalibration(cal);
         ip.show();
         logger.debug("image: {}, isDisplayedAsHyperStack: {}, is HP: {}, dim: {}", title, ip.isDisplayedHyperStack(), ip.isHyperStack(), ip.getDimensions());
+        displayedImages.put(imageTC[0][0], ip);
+        displayedImagesInv.put(ip, imageTC[0][0]);
         return ip;
     }
     

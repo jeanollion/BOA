@@ -22,12 +22,17 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
+import ij.process.AutoThresholder;
+import image.Histogram;
+import image.Image;
+import image.ThresholdMask;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import plugins.TrackPostFilter;
+import plugins.plugins.thresholders.IJAutoThresholder;
 
 /**
  *
@@ -35,8 +40,8 @@ import plugins.TrackPostFilter;
  */
 public class RemoveSaturatedMicrochannels implements TrackPostFilter {
     
-    BoundedNumberParameter minPercentageOfSaturatedObjects = new BoundedNumberParameter("Min. percentage of track", 0, 0, 0, 100).setToolTipText("If the track has more than this proportion of saturated objects, it will be removed");
-    BoundedNumberParameter minPercentageOfSaturatedPixels = new BoundedNumberParameter("Min. percentage of saturated pixel", 0, 0, 1, 100).setToolTipText("If an object has more than this proportion of saturated pixel it will be considered as a saturated object");
+    BoundedNumberParameter minPercentageOfSaturatedObjects = new BoundedNumberParameter("Min. percentage of track", 0, 10, 0, 100).setToolTipText("If the track has more than this proportion of saturated objects, it will be removed");
+    BoundedNumberParameter minPercentageOfSaturatedPixels = new BoundedNumberParameter("Min. percentage of saturated pixel", 0, 10, 1, 100).setToolTipText("If an object has more than this proportion of saturated pixel it will be considered as a saturated object");
     Parameter[] parameters = new Parameter[]{minPercentageOfSaturatedPixels, minPercentageOfSaturatedObjects};
     public RemoveSaturatedMicrochannels() {}
     public RemoveSaturatedMicrochannels(double percentageOfSaturatedObjects, double percentageOfSaturatedPixels) {
@@ -66,12 +71,22 @@ public class RemoveSaturatedMicrochannels implements TrackPostFilter {
         return false;
     }
     private boolean isSaturated(StructureObject o) {
-        
+        // get mask of bacteria using Otsu threshold
+        Image image = o.getRawImage(o.getStructureIdx());
+        double thld = IJAutoThresholder.runThresholder(image, o.getMask(), AutoThresholder.Method.Otsu);
+        ThresholdMask mask = new ThresholdMask(image, thld, true, false);
+        double stauratedPixelsThld =  mask.count() * minPercentageOfSaturatedPixels.getValue().doubleValue() / 100d;
+        Histogram hist = image.getHisto256(mask);
+        int i = 256;
+        while(i>0 && hist.data[i-1]==0) --i;
+        if (testMode) logger.debug("test saturated object: {}: total bact pixels: {} (thld: {}) sat pixel limit: {}, max value count: {} max value: {} ", o, mask.count(), thld, stauratedPixelsThld, i>0?hist.data[i]:0, hist.getValueFromIdx(i) );
+        return (i>0 && hist.data[i]>stauratedPixelsThld);
     }
 
     @Override
     public Parameter[] getParameters() {
         return parameters;
     }
-    
+    boolean testMode;
+    public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

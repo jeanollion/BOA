@@ -101,9 +101,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         return IJImageWrapper.getImagePlus(image);
     }*/
     @Override 
-    public void addWindowListener(Image image, WindowListener wl) {
-        final ImagePlus ip = displayer.getImage(image);
-        if (ip!=null) ip.getWindow().addWindowListener(wl);
+    public void addWindowListener(Object image, WindowListener wl) {
+        if (image instanceof Image) image = displayer.getImage((Image)image);
+        if (image instanceof ImagePlus) ((ImagePlus)image).getWindow().addWindowListener(wl);
     }
     @Override
     public void addMouseListener(final Image image) {
@@ -259,6 +259,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     }
     
     @Override public void closeNonInteractiveWindows() {
+        super.closeNonInteractiveWindows();
         String[] names = WindowManager.getImageTitles();
         if (names==null) return;
         for (String s : names) {
@@ -270,8 +271,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     }
     
     @Override public void setActive(Image image) {
+        super.setActive(image);
         ImagePlus ip = this.displayer.getImage(image);
-        if (ip!=null && ip.isVisible()) {
+        if (displayer.isDisplayed(ip)) {
             IJ.selectWindow(image.getName());
         } else { // not visible -> show image
             displayer.showImage(image);

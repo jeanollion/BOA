@@ -33,8 +33,10 @@ import java.util.function.Function;
  */
 public interface ImageDisplayer<T> {
     public static double zoomMagnitude=1;
+    public boolean isDisplayed(T image);
     public T showImage(Image image, double... displayRange);
     public void close(Image image);
+    public void close(T image);
     public T getImage(Image image);
     public Image getImage(T image);
     public void updateImageDisplay(Image image, double... displayRange);
