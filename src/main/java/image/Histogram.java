@@ -131,8 +131,8 @@ public class Histogram {
     }
     public void removeSaturatingValue(double countThlFactor) {
         if (this.byteHisto) {
-            int i = 256;
-            while(i>0 && data[i-1]==0) --i;
+            int i = 255;
+            if (data[i]==0) while(i>0 && data[i-1]==0) --i;
             if (i>0) {
                 logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
                 if (data[i]>data[i-1]*countThlFactor) data[i]=0;
