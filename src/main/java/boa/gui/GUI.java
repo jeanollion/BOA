@@ -1094,6 +1094,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         actionMicroscopyFieldJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Positions"));
 
+        microscopyFieldList.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                microscopyFieldListMousePressed(evt);
+            }
+        });
         actionMicroscopyFieldJSP.setViewportView(microscopyFieldList);
 
         actionJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Jobs"));
@@ -1989,6 +1994,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 String nextPosition = db.getExperiment().getPosition(nIdx).getName();
                 ImageWindowManager.RegisteredImageType r = ImageWindowManagerFactory.getImageManager().getRegisterType(activeImage);
                 boolean pp = ImageWindowManager.RegisteredImageType.PreProcessed.equals(r);
+                db.getExperiment().flushImages(true, true, nextPosition);
                 IJVirtualStack.openVirtual(db.getExperiment(), nextPosition, pp);
             }
             return;
@@ -3262,6 +3268,37 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void limitDisp10ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_limitDisp10ActionPerformed
         ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(10);
     }//GEN-LAST:event_limitDisp10ActionPerformed
+
+    private void microscopyFieldListMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_microscopyFieldListMousePressed
+        if (!this.checkConnection()) return;
+        if (SwingUtilities.isRightMouseButton(evt)) {
+            List<String> positions = this.getSelectedPositions(false);
+            if (positions.size()==1) {
+                String position = positions.get(0);
+                JPopupMenu menu = new JPopupMenu();
+                Action openRaw = new AbstractAction("Open Raw Images") {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        db.getExperiment().flushImages(true, true, position);
+                        IJVirtualStack.openVirtual(db.getExperiment(), position, false);
+                    }
+                };
+                menu.add(openRaw);
+                Action openPP = new AbstractAction("Open Pre-Processed Images") {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        db.getExperiment().flushImages(true, true, position);
+                        IJVirtualStack.openVirtual(db.getExperiment(), position, true);
+                    }
+                };
+                openPP.setEnabled(db.getExperiment().getImageDAO().getPreProcessedImageProperties(position)!=null);
+                menu.add(openPP);
+                menu.show(this.microscopyFieldList, evt.getX(), evt.getY());
+                
+            }
+        }
+        
+    }//GEN-LAST:event_microscopyFieldListMousePressed
     
     public void addToSelectionActionPerformed() {
         if (!this.checkConnection()) return;

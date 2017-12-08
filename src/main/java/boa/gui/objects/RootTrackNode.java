@@ -286,7 +286,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                     }
                 }
             );
-            
+            openPreprocessedAllFrames.setEnabled(generator.getExperiment().getImageDAO().getPreProcessedImageProperties(position)!=null);
             rawSubMenu = new JMenu("Open Raw Track Image");
             actions[2] = rawSubMenu;
             List<String> directRootChild = new ArrayList<String>();

@@ -322,6 +322,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                     }
                 }
             );
+            openPreprocessedAllFrames.setEnabled(getExperiment().getImageDAO().getPreProcessedImageProperties(name)!=null);
+
         }
         public Object[] getDisplayComponent() {
             return actions;
