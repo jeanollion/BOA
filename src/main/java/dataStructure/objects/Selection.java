@@ -53,7 +53,8 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     boolean displayingTracks=false;
     boolean displayingObjects=false;
     boolean highlightingTracks=false;
-    
+    boolean navigate = false;
+    boolean addObjects = false;
     
     
     public final static String indexSeparator ="-";
@@ -107,6 +108,22 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
 
     public void setHighlightingTracks(boolean highlightingTracks) {
         this.highlightingTracks = highlightingTracks;
+    }
+
+    public boolean isNavigate() {
+        return navigate;
+    }
+
+    public boolean isAddObjects() {
+        return addObjects;
+    }
+
+    public void setNavigate(boolean navigate) {
+        this.navigate = navigate;
+    }
+
+    public void setAddObjects(boolean addObjects) {
+        this.addObjects = addObjects;
     }
     
     public void setColor(String color) {

@@ -389,7 +389,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 nextTrackErrorButtonActionPerformed(e);
             }
         });
-        
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Add to selection") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -402,6 +401,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             public void actionPerformed(ActionEvent e) {
                 logger.debug("Z pressed (alt)");
                 removeFromSelectionActionPerformed();
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.ALT_GRAPH_DOWN_MASK), new AbstractAction("Remove from selection") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("Z pressed (alt gr)");
+                removeAllFromSelectionActionPerformed();
             }
         });
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Open Next Image") {
@@ -2017,9 +2023,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     public void navigateToNextObjects(boolean next, boolean nextPosition, int structureDisplay, boolean setInteractiveStructure) {
         if (trackTreeController==null) this.loadObjectTrees();
         int displaySIdx = 0;
-        if (selectionList.getSelectedIndex()<0) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
+        Selection sel = getNavigatingSelection();
+        if (sel==null) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
         else {
-            Selection sel = (Selection)selectionList.getSelectedValue();
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
             if (i!=null && i.getParent().getExperiment()!=db.getExperiment()) i=null;
             if (structureDisplay==-1 && i!=null) {
@@ -2121,6 +2127,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 }
             }
         }
+    }
+    private Selection getNavigatingSelection() {
+        List<Selection> res = getSelections();
+        res.removeIf(s->!s.isNavigate());
+        if (res.isEmpty()) {
+            if (selectionList.getSelectedIndex()>=0) return (Selection)selectionList.getSelectedValue();
+            else return null;
+        } else if (res.size()==1) return res.get(0);
+        else return null;
+    }
+    private List<Selection> getAddObjectsSelection() {
+        List<Selection> res = getSelections();
+        res.removeIf(s->!s.isAddObjects());
+        if (res.isEmpty()) {
+            if (selectionList.getSelectedIndex()>=0) return selectionList.getSelectedValuesList();
+            else return Collections.EMPTY_LIST;
+        } else return res;
     }
     private static String createSubdir(String path, String dbName) {
         if (!new File(path).isDirectory()) return null;
@@ -3242,31 +3265,25 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     public void addToSelectionActionPerformed() {
         if (!this.checkConnection()) return;
-        List<Selection> selList = this.getSelectedSelections(false);
-        if (selList.size()!=1) return;
-        Selection s = selList.get(0);
-        List<StructureObject> objects = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (objects.isEmpty()) return;
-        int sIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
-        logger.debug("idx : {} ({})", sIdx, s.getStructureIdx());
-        if (sIdx == s.getStructureIdx() || s.getStructureIdx()==-1) {
-            s.addElements(objects);
-        }
-        db.getSelectionDAO().store(s);
+        List<Selection> selList = this.getAddObjectsSelection();
+        if (selList.isEmpty()) return;
+        SelectionUtils.addCurrentObjectsToSelections(selList, db.getSelectionDAO());
         selectionList.updateUI();
         GUI.updateRoiDisplayForSelections(null, null);
     }
     
     public void removeFromSelectionActionPerformed() {
         if (!this.checkConnection()) return;
-        List<Selection> selList = this.getSelectedSelections(false);
-        if (selList.size()!=1) return;
-        Selection s = selList.get(0);
-        List<StructureObject> objects = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (objects.isEmpty()) return;
-        int sIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
-        if (sIdx == s.getStructureIdx()) s.removeElements(objects);
-        db.getSelectionDAO().store(s);
+        List<Selection> selList = this.getAddObjectsSelection();
+        SelectionUtils.removeCurrentObjectsFromSelections(selList, db.getSelectionDAO());
+        selectionList.updateUI();
+        GUI.updateRoiDisplayForSelections(null, null);
+    }
+    
+    public void removeAllFromSelectionActionPerformed() {
+        if (!this.checkConnection()) return;
+        List<Selection> selList = this.getAddObjectsSelection();
+        SelectionUtils.removeAllCurrentImageObjectsFromSelections(selList, db.getSelectionDAO());
         selectionList.updateUI();
         GUI.updateRoiDisplayForSelections(null, null);
     }

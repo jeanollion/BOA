@@ -337,13 +337,16 @@ public class SelectionUtils {
     private static JPopupMenu generateMenu(final JList list) {
         JPopupMenu menu = new JPopupMenu("");
         final List<Selection> selectedValues = list.getSelectedValuesList();
+        final List<Selection> allSelections = Utils.asList(list.getModel());
         int dispObjects=0;
         int dispTracks = 0;
         int highTracks = 0;
+        int addObjects = 0;
         for (Selection s : selectedValues) {
             if (s.isDisplayingObjects()) dispObjects++;
             if (s.isDisplayingTracks()) dispTracks++;
             if (s.isHighlightingTracks()) highTracks++;
+            if (s.isAddObjects()) addObjects++;
         }
         final SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
         if (selectedValues.size()==1) {
@@ -398,6 +401,26 @@ public class SelectionUtils {
             }
         });
         menu.add(highlightTracks);
+        final JCheckBoxMenuItem navigateMI = new JCheckBoxMenuItem("Navigate within this selection");
+        if (selectedValues.size()==1) navigateMI.setSelected(selectedValues.get(0).isNavigate());
+        navigateMI.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (selectedValues.isEmpty()) return;
+                if (selectedValues.size()==1) {
+                    selectedValues.get(0).setNavigate(navigateMI.isSelected());
+                    for (Selection s : allSelections ) if (s!=selectedValues.get(0)) s.setNavigate(false);
+                } else for (Selection s : allSelections ) s.setNavigate(false);
+            }
+        });
+        menu.add(navigateMI);
+        final JCheckBoxMenuItem addObjectsMI = new JCheckBoxMenuItem("Add Objects to this Selection with shortcut Z");
+        addObjectsMI.setSelected(addObjects==selectedValues.size());
+        addObjectsMI.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                for (Selection s : selectedValues ) s.setAddObjects(addObjectsMI.isSelected());
+            }
+        });
+        menu.add(addObjectsMI);
         
         menu.add(new JSeparator());
         JMenu colorMenu = new JMenu("Set Color");
@@ -431,14 +454,7 @@ public class SelectionUtils {
         add.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-                for (Selection s : selectedValues ) {
-                    int[] structureIdx = s.getStructureIdx()==-1 ? new int[0] : new int[]{s.getStructureIdx()};
-                    List<StructureObject> objects = new ArrayList<>(sel);
-                    StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel, structureIdx);
-                    s.addElements(objects);
-                    dao.store(s);
-                }
+                addCurrentObjectsToSelections(selectedValues, dao);
                 list.updateUI();
                 GUI.updateRoiDisplayForSelections(null, null);
             }
@@ -449,11 +465,7 @@ public class SelectionUtils {
         remove.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-                for (Selection s : selectedValues ) {
-                    s.removeElements(sel);
-                    dao.store(s);
-                }
+                removeCurrentObjectsFromSelections(selectedValues, dao);
                 GUI.updateRoiDisplayForSelections(null, null);
                 list.updateUI();
             }
@@ -464,13 +476,7 @@ public class SelectionUtils {
         removeFromParent.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                ImageObjectInterface ioi = ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
-                if (ioi==null) return;
-                List<StructureObject> parents = ioi.getParents();
-                for (Selection s : selectedValues ) {
-                    s.removeChildrenOf(parents);
-                    dao.store(s);
-                }
+                removeAllCurrentImageObjectsFromSelections(selectedValues, dao);
                 GUI.updateRoiDisplayForSelections(null, null);
                 list.updateUI();
             }
@@ -530,5 +536,34 @@ public class SelectionUtils {
         }
         return menu;
     }
-    
+    public static void addCurrentObjectsToSelections(Collection<Selection> selections, SelectionDAO dao) {
+        if (selections.isEmpty()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        for (Selection s : selections ) {
+            int[] structureIdx = s.getStructureIdx()==-1 ? new int[0] : new int[]{s.getStructureIdx()};
+            List<StructureObject> objects = new ArrayList<>(sel);
+            StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel, structureIdx);
+            s.addElements(objects);
+            dao.store(s);
+        }
+    }
+    public static void removeCurrentObjectsFromSelections(Collection<Selection> selections, SelectionDAO dao) {
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        for (Selection s : selections ) {
+            if (s.getStructureIdx()==-1) continue;
+            List<StructureObject> currentList = new ArrayList<>(sel);
+            StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(currentList, s.getStructureIdx());
+            s.removeElements(currentList);
+            dao.store(s);
+        }
+    }
+    public static void removeAllCurrentImageObjectsFromSelections(Collection<Selection> selections, SelectionDAO dao) {
+        ImageObjectInterface ioi = ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
+        if (ioi==null) return;
+        List<StructureObject> parents = ioi.getParents();
+        for (Selection s : selections ) {
+            s.removeChildrenOf(parents);
+            dao.store(s);
+        }
+    }
 }
