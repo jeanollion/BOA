@@ -65,6 +65,8 @@ public class ConditionalParameter extends SimpleContainerParameter {
                     else JSONUtils.fromJSON(e.getValue(), (JSONArray)params.get(e.getKey()));
                 }
             }
+        } else if (json instanceof String && action instanceof ChoiceParameter && Arrays.asList(((ChoiceParameter)action).listChoice).contains((String)json)) { // only action
+            action.initFromJSONEntry(json);
         } else throw new IllegalArgumentException("JSON Entry is not JSONObject");
     }
     

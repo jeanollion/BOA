@@ -93,6 +93,7 @@ import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;
 import plugins.legacy.SuppressCentralHorizontalLine;
+import plugins.plugins.trackPostFilter.RemoveSaturatedMicrochannels;
 import plugins.plugins.transformations.AutoFlipY;
 import plugins.plugins.transformations.RemoveDeadPixels;
 import processing.ImageTransformation;
@@ -432,7 +433,7 @@ public class GenerateXP {
         if (crop!=null) ps.addTransformation(0, null, new SimpleCrop(crop));
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
         ps.addTransformation(1, null, new RemoveDeadPixels());
-        ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false));
+        ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false).setTrimNegativeValues(true)); // TODO test trim negative values. make it more sensitive because sd of background is rediced -> modify otsu thld. advantage: after transformations, convertion to 16 bit trim values.
         ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
         ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
         ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
@@ -469,7 +470,8 @@ public class GenerateXP {
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
                     ).addTrackPostFilters(new TrackLengthFilter().setMinSize(100), 
-                            new RemoveTracksStartingAfterFrame())
+                            new RemoveTracksStartingAfterFrame(), 
+                            new RemoveSaturatedMicrochannels())
             );
             bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
             //mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));

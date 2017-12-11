@@ -20,6 +20,7 @@ package boa.gui.imageInteraction;
 import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.ObjectPopulation.Filter;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import image.Image;
@@ -45,8 +46,8 @@ public class FreeLineSplitter implements ObjectSplitter {
     final int[] xPoints, yPoints;
     public FreeLineSplitter(Collection<Pair<StructureObject, BoundingBox>> objects, int[] xPoints, int[] yPoints) {
         if (xPoints.length!=yPoints.length) throw new IllegalArgumentException("xPoints & yPoints should have same length");
-        logger.debug("xPoints: {}", xPoints);
-        logger.debug("yPoints: {}", yPoints);
+        //logger.debug("xPoints: {}", xPoints);
+        //logger.debug("yPoints: {}", yPoints);
         this.xPoints=xPoints;
         this.yPoints=yPoints;
         offsetMap = new HashMap<>(objects.size());
@@ -72,6 +73,8 @@ public class FreeLineSplitter implements ObjectSplitter {
         }
         List<Object3D> objects = ImageLabeller.labelImageListLowConnectivity(splitMask);
         ObjectPopulation res = new ObjectPopulation(objects, input);
+        res.filterAndMergeWithConnected(o->o.getSize()>1); // connect 1-pixels objects, artifacts of low connectivity labelling
+
         // relabel removed pixels
         if (objects.size()==2) {
             splitMask = res.getLabelMap();

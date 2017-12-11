@@ -424,21 +424,21 @@ public class ObjectPopulation {
         }
     }
     
-    public ObjectPopulation filter(Filter filter) {
+    public ObjectPopulation filter(SimpleFilter filter) {
         return filter(filter, null);
     }
     
-    public ObjectPopulation filterAndMergeWithConnected(Filter filter) {
+    public ObjectPopulation filterAndMergeWithConnected(SimpleFilter filter) {
         List<Object3D> removed = new ArrayList<Object3D>();
         filter(filter, removed);
         if (!removed.isEmpty()) mergeWithConnected(removed);
         return this;
     }
     
-    public ObjectPopulation filter(Filter filter, List<Object3D> removedObjects) {
+    public ObjectPopulation filter(SimpleFilter filter, List<Object3D> removedObjects) {
         //int objectNumber = objects.size();
         if (removedObjects==null) removedObjects=new ArrayList<>();
-        filter.init(this);
+        if (filter instanceof Filter) ((Filter)filter).init(this);
         for (Object3D o : getObjects()) {
             if (!filter.keepObject(o)) removedObjects.add(o);
         }
@@ -593,8 +593,10 @@ public class ObjectPopulation {
         }
     }
     
-    public static interface Filter {
+    public static interface Filter extends SimpleFilter {
         public void init(ObjectPopulation population);
+    }
+    public static interface SimpleFilter {
         public boolean keepObject(Object3D object);
     }
 
