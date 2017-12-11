@@ -93,7 +93,9 @@ import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;
 import plugins.legacy.SuppressCentralHorizontalLine;
+import plugins.plugins.postFilters.RemoveEndofChannelBacteria;
 import plugins.plugins.trackPostFilter.RemoveSaturatedMicrochannels;
+import plugins.plugins.trackPostFilter.SegmentationPostFilter;
 import plugins.plugins.transformations.AutoFlipY;
 import plugins.plugins.transformations.RemoveDeadPixels;
 import processing.ImageTransformation;
@@ -473,12 +475,16 @@ public class GenerateXP {
                             new RemoveTracksStartingAfterFrame(), 
                             new RemoveSaturatedMicrochannels())
             );
-            bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
+            bacteria.setProcessingScheme(
+                    new SegmentAndTrack(
+                            new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo().setContactLimit(0)).setCostParameters(0.1, 0.5)
+                    ).addTrackPostFilters(new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria()))
+            );
             //mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
             mutation.setProcessingScheme(new SegmentAndTrack(
                     new LAPTracker().setCompartimentStructure(1).setSegmenter(
                         new MutationSegmenter(0.9, 0.75, 0.9).setScale(2)  // was 1.5, 1, 1.25
-                ).setSpotQualityThreshold(2) // was 2
+                ).setSpotQualityThreshold(2) // 1.5 for WT
                             .setLinkingMaxDistance(0.8, 0.82).setGapParameters(0.8, 0.15, 3).setTrackLength(8, 14)
             ).addPreFilters(new BandPass(0, 8, 0, 5) 
             ).addPostFilters(new FeatureFilter(new Quality(), 0.8, true, true))); // was 1.5

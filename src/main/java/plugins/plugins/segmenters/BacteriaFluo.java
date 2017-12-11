@@ -99,6 +99,10 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         this.minSize.setValue(minSize);
         return this;
     }
+    public BacteriaFluo setContactLimit(int contactLimit) {
+        this.contactLimit.setValue(contactLimit);
+        return this;
+    }
     public BacteriaFluo setSmoothScale(double smoothScale) {
         this.smoothScale.setValue(smoothScale);
         return this;

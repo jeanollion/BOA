@@ -27,7 +27,9 @@ import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
 import image.ImageLabeller;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +76,17 @@ public class FreeLineSplitter implements ObjectSplitter {
         List<Object3D> objects = ImageLabeller.labelImageListLowConnectivity(splitMask);
         ObjectPopulation res = new ObjectPopulation(objects, input);
         res.filterAndMergeWithConnected(o->o.getSize()>1); // connect 1-pixels objects, artifacts of low connectivity labelling
-
+        if (objects.size()>2) { // merge smaller & connected
+            // islate bigger object and try to merge others
+            Object3D biggest = Collections.max(objects, (o1, o2)->Integer.compare(o1.getSize(), o2.getSize()));
+            List<Object3D> toMerge = new ArrayList<>(objects);
+            toMerge.remove(biggest);
+            ObjectPopulation mergedPop =  new ObjectPopulation(toMerge, input);
+            mergedPop.mergeAllConnected();
+            objects = mergedPop.getObjects();
+            objects.add(biggest);
+            res = new ObjectPopulation(objects, input);
+        }
         // relabel removed pixels
         if (objects.size()==2) {
             splitMask = res.getLabelMap();

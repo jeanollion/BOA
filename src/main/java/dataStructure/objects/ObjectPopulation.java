@@ -299,7 +299,7 @@ public class ObjectPopulation {
     public void translate(BoundingBox bounds, boolean absoluteLandmark) {
         for (Object3D o : getObjects()) {
             o.translate(bounds);
-            if (absoluteLandmark) o.setIsAbsoluteLandmark(true);
+            o.setIsAbsoluteLandmark(absoluteLandmark);
         }
         this.absoluteLandmark=absoluteLandmark;
     }
@@ -551,7 +551,7 @@ public class ObjectPopulation {
     public void mergeWithConnected(Collection<Object3D> objectsToMerge) {
         // create a new list, with objects to merge at the end, and record the last label to merge
         ArrayList<Object3D> newObjects = new ArrayList<Object3D>();
-        Set<Object3D> toMerge=  new HashSet<Object3D>(objectsToMerge);
+        Set<Object3D> toMerge=  new HashSet<>(objectsToMerge);
         for (Object3D o : objects) if (!objectsToMerge.contains(o)) newObjects.add(o);
         int labelToMerge = newObjects.size()+1;
         newObjects.addAll(toMerge);
