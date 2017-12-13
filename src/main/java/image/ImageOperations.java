@@ -671,31 +671,9 @@ public class ImageOperations {
     public static double[] getPercentile(Image image, ImageMask mask, BoundingBox limits, double... percent) {
         double[] mm = image.getMinAndMax(mask);
         Histogram histo = image.getHisto256(mm[0], mm[1], mask, limits);
-        return getPercentile(histo, percent);
+        return histo.getPercentile(percent);
     }
-    public static double[] getPercentile(Histogram histo, double... percent) {
-        double binSize = histo.getBinSize();
-        int gcount = 0;
-        for (int i : histo.data) gcount += i;
-        double[] res = new double[percent.length];
-        for (int i = 0; i<res.length; ++i) {
-            int count = gcount;
-            double limit = count * (1-percent[i]); // 1- ?
-            if (limit >= count) {
-                res[i] = histo.minAndMax[0];
-                continue;
-            }
-            count = histo.data[255];
-            int idx = 255;
-            while (count < limit && idx > 0) {
-                idx--;
-                count += histo.data[idx];
-            }
-            double idxInc = (histo.data[idx] != 0) ? (count - limit) / (histo.data[idx]) : 0; //lin approx
-            res[i] = (double) (idx + idxInc) * binSize + histo.getHistoMinBreak();
-        }
-        return res;
-    }
+    
     
     public static Voxel getGlobalExtremum(Image image, BoundingBox area, boolean max) {
         float extrema = image.getPixel(area.getxMin(), area.getyMin(), area.getzMin());

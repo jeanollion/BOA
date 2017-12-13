@@ -19,6 +19,7 @@ package image;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Voxel;
 import dataStructure.objects.Voxel;
 import image.BlankMask;
@@ -30,8 +31,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import processing.WatershedTransform;
 
 /**
  *
@@ -88,7 +91,37 @@ public class ImageLabeller {
     public static List<Object3D> labelImageListLowConnectivity(ImageMask mask) {
         return new ArrayList<>(Arrays.asList(labelImageLowConnectivity(mask)));
     }
-    
+    /**
+     * 
+     * @param seeds seeds contained by final objects 
+     * @param mask label mask
+     * @return  Label objects starting from {@param seeds} that have same value on {@param mask} as the seed's value. If two object that have same seed value meet, they will be merged
+     */
+    public static ObjectPopulation labelImage(List<Voxel> seeds, Image mask, boolean lowConnectivity) {
+        WatershedTransform.PropagationCriterion prop = new WatershedTransform.PropagationCriterion() {
+            @Override
+            public void setUp(WatershedTransform instance) {}
+
+            @Override
+            public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
+                return mask.getPixel(nextVox.x, nextVox.y, nextVox.z) == mask.getPixel(currentVox.x, currentVox.y, currentVox.z);
+            }
+        };
+        WatershedTransform.FusionCriterion fus = new WatershedTransform.FusionCriterion() {
+
+            @Override
+            public void setUp(WatershedTransform instance) {}
+
+            @Override
+            public boolean checkFusionCriteria(WatershedTransform.Spot s1, WatershedTransform.Spot s2, Voxel currentVoxel) {
+                Voxel v1 = s1.voxels.get(0);
+                Voxel v2 = s2.voxels.get(0);
+                return mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(v2.x, v2.y, v2.z) && mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(currentVoxel.x, currentVoxel.y, currentVoxel.z);
+            }
+        };
+        ObjectPopulation pop = WatershedTransform.watershed(mask, null, WatershedTransform.createSeeds(seeds, mask.getScaleXY(), mask.getScaleZ()), false, prop, fus, lowConnectivity);
+        return pop;
+    }
     protected Object3D[] getObjects() {
         Object3D[] res = new Object3D[spots.size()];
         int label = 0;

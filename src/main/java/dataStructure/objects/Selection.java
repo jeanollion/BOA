@@ -501,9 +501,9 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         res.put("name", name);
         res.put("structureIdx", structureIdx);
         res.put("color", color);
-        res.put("displayingTracks", displayingTracks);
+        /*res.put("displayingTracks", displayingTracks);
         res.put("displayingObjects", displayingObjects);
-        res.put("highlightingTracks", highlightingTracks);
+        res.put("highlightingTracks", highlightingTracks);*/
         return res;
     }
 
@@ -516,11 +516,8 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         if (!jo.containsKey("structureIdx")) structureIdx = ((Number)jo.get("structure_idx")).intValue();
         else structureIdx = ((Number)jo.get("structureIdx")).intValue();
         if (jo.containsKey("color")) color = (String)jo.get("color");
-        if (!jo.containsKey("displayingTracks") && jo.containsKey("displaying_tracks")) displayingTracks = (Boolean)jo.get("displaying_tracks");
-        else if (jo.containsKey("displayingTracks")) displayingTracks = (Boolean)jo.get("displayingTracks");
-        if (!jo.containsKey("displayingObjects") && jo.containsKey("displaying_objects")) displayingObjects = (Boolean)jo.get("displaying_objects");
-        else  if (jo.containsKey("displayingObjects")) displayingObjects = (Boolean)jo.get("displayingObjects");
-        if (!jo.containsKey("highlightingTracks") && jo.containsKey("highlighting_tracks")) highlightingTracks = (Boolean)jo.get("highlighting_tracks");
-        else  if (jo.containsKey("highlightingTracks")) highlightingTracks = (Boolean)jo.get("highlightingTracks");
+        /*if (jo.containsKey("displayingTracks")) displayingTracks = (Boolean)jo.get("displayingTracks");
+        if (jo.containsKey("displayingObjects")) displayingObjects = (Boolean)jo.get("displayingObjects");
+        if (jo.containsKey("highlightingTracks")) highlightingTracks = (Boolean)jo.get("highlightingTracks");*/
     }
 }

@@ -2003,7 +2003,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         StructureObject nextParent = null;
         if (i.getParent().isRoot()) return;
         List<StructureObject> siblings = i.getParent().getSiblings();
-        int idx = siblings.indexOf(i.getParent()) + (next ? 1 : -1) ;
+        int idx = siblings.indexOf(i.getParent());
+        // current image structure: 
+        ImageObjectInterfaceKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage2());
+        int currentImageStructure = key ==null ? i.getChildStructureIdx() : key.displayedStructureIdx;
+        if (i.getChildStructureIdx() == currentImageStructure) idx += (next ? 1 : -1) ; // only increment if same structure
+        logger.debug("current inter: {}, current image child: {}",interactiveStructure.getSelectedIndex(), currentImageStructure);
         if (siblings.size()==idx || idx<0) { // next position
             List<String> positions = Arrays.asList(i.getParent().getExperiment().getPositionsAsString());
             int idxP = positions.indexOf(i.getParent().getPositionName()) + (next ? 1 : -1);
@@ -2625,7 +2630,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         String defDir = PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), new File(db.getExperiment().getOutputDirectory()).getParent());
         File outputDir = Utils.chooseFile("Choose directory", defDir, FileChooser.FileChooserOption.DIRECTORIES_ONLY, this);
         if (outputDir!=null) {
-            String file = outputDir.getAbsolutePath()+File.separator+db.getDBName()+"_Selections.xls";
+            String file = outputDir.getAbsolutePath()+File.separator+db.getDBName()+"_Selections.csv";
             SelectionExtractor.extractSelections(db, getSelectedSelections(true), file);
             PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), outputDir.getAbsolutePath());
             PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR, outputDir.getAbsolutePath());

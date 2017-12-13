@@ -63,7 +63,7 @@ public class IJAutoThresholder implements SimpleThresholder {
         if (mask==null) mask=new BlankMask("", input);
         Histogram histo = input.getHisto256(mask, limits);
         histo.data[0]+=(int)(percentageSuplementalBackground * input.getSizeXYZ()+0.5);
-        histo.removeSaturatingValue(4);
+        histo.removeSaturatingValue(4, true);
         AutoThresholder at = new AutoThresholder();
         double thld = at.getThreshold(method, histo.data);
         return Histogram.convertHisto256Threshold(thld, input, mask, limits);

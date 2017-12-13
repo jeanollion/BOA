@@ -64,15 +64,15 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             displayedImages.remove(image);
         }
         ImagePlus ip = getImage(image);
-        if (displayRange.length==0) displayRange = image.getMinAndMax(null);
+        if (displayRange.length==0) displayRange = ImageDisplayer.getDisplayRange(image, null);
         else if (displayRange.length==1) {
-            double[] minAndMax = image.getMinAndMax(null);
-            minAndMax[0]=displayRange[0];
-            displayRange=minAndMax;
+            double[] dispRange = ImageDisplayer.getDisplayRange(image, null);
+            dispRange[0]=displayRange[0];
+            displayRange=dispRange;
         } else if (displayRange.length>=2) {
             if (displayRange[1]<=displayRange[0]) {
-                double[] minAndMax = image.getMinAndMax(null);
-                displayRange[1] = minAndMax[1];
+                double[] dispRange = ImageDisplayer.getDisplayRange(image, null);
+                displayRange[1] = dispRange[1];
             }
         }
         ip.setDisplayRange(displayRange[0], displayRange[1]);
@@ -180,8 +180,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         if (IJ.getInstance()==null) new ImageJ();
         /*Image5D res = new Image5D(title, getImageStack(imageTC), imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
         for (int i = 0; i < imageTC[0].length; i++) {
-            float[] minAndMax = imageTC[0][i].getMinAndMax(null);
-            res.setChannelMinMax(i + 1, minAndMax[0], minAndMax[1]);
+            float[] dispRange = imageTC[0][i].getMinAndMax(null);
+            res.setChannelMinMax(i + 1, dispRange[0], dispRange[1]);
             res.setDefaultChannelNames();
         }*/
         /*for (int i = 0; i < images.length; i++) { // set colors of channels
@@ -201,6 +201,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         cal.pixelHeight=imageTC[0][0].getScaleXY();
         cal.pixelDepth=imageTC[0][0].getScaleZ();
         ip.setCalibration(cal);
+        // TODO: set display range ?
+        
         ip.show();
         logger.debug("image: {}, isDisplayedAsHyperStack: {}, is HP: {}, dim: {}", title, ip.isDisplayedHyperStack(), ip.isHyperStack(), ip.getDimensions());
         displayedImages.put(imageTC[0][0], ip);
@@ -258,9 +260,9 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     @Override public void updateImageDisplay(Image image, double... displayRange) {
         if (this.displayedImages.containsKey(image)) {
             if (displayRange.length == 0) {
-                displayRange = image.getMinAndMax(null);
+                displayRange = ImageDisplayer.getDisplayRange(image, null);
             } else if (displayRange.length == 1) {
-                double[] minAndMax = image.getMinAndMax(null);
+                double[] minAndMax = ImageDisplayer.getDisplayRange(image, null);
                 minAndMax[0] = displayRange[0];
                 displayRange = minAndMax;
             }

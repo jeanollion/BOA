@@ -94,6 +94,7 @@ import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;
 import plugins.legacy.SuppressCentralHorizontalLine;
 import plugins.plugins.postFilters.RemoveEndofChannelBacteria;
+import plugins.plugins.trackPostFilter.RemoveMicrochannelsTouchingBackgroundOnSides;
 import plugins.plugins.trackPostFilter.RemoveSaturatedMicrochannels;
 import plugins.plugins.trackPostFilter.SegmentationPostFilter;
 import plugins.plugins.transformations.AutoFlipY;
@@ -434,7 +435,8 @@ public class GenerateXP {
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
         if (crop!=null) ps.addTransformation(0, null, new SimpleCrop(crop));
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
-        ps.addTransformation(1, null, new RemoveDeadPixels());
+        ps.addTransformation(1, null, new RemoveDeadPixels(20, 4)); // for reminiscent pixels
+        ps.addTransformation(1, null, new RemoveDeadPixels(35, 1)); // for non-reminiscent pixels
         ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false).setTrimNegativeValues(true)); // TODO test trim negative values. make it more sensitive because sd of background is rediced -> modify otsu thld. advantage: after transformations, convertion to 16 bit trim values.
         ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
         ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
@@ -471,7 +473,8 @@ public class GenerateXP {
                     new MicrochannelTracker().setSegmenter(
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
-                    ).addTrackPostFilters(new TrackLengthFilter().setMinSize(100), 
+                    ).addTrackPostFilters(new RemoveMicrochannelsTouchingBackgroundOnSides(2),
+                            new TrackLengthFilter().setMinSize(100), 
                             new RemoveTracksStartingAfterFrame(), 
                             new RemoveSaturatedMicrochannels())
             );

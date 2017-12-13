@@ -281,7 +281,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<Image> planes = new ArrayList<>(parentsByF.size());
             for (StructureObject o : this.parentsByF.values()) planes.add(o.getRawImage(structureIdx));
             ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, null, null);
-            double[] minAndMax = ImageOperations.getPercentile(thresholdHisto.histoAll, 0.001, 0.999);
+            double[] minAndMax = thresholdHisto.histoAll.getPercentile(0.001, 0.999);
             logger.debug("min and max for contrast: {}", minAndMax);
             double contrast = (minAndMax[1]-minAndMax[0]) / Math.abs(minAndMax[1]+minAndMax[0]);
             if (contrast<globalContrastThreshold) {
@@ -299,7 +299,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, null, null);
             double[] minAndMax = new double[2];
             minAndMax[0] = thresholdHisto.histoAll.minAndMax[0];
-            if (blackBackground) minAndMax[1] = ImageOperations.getPercentile(thresholdHisto.histoAll, 0.99)[0];
+            if (blackBackground) minAndMax[1] = thresholdHisto.histoAll.getPercentile( 0.99)[0];
             else minAndMax[1] = thresholdHisto.histoAll.minAndMax[1];
             thresholdHisto.freeMemory();
             double scale = 1 / (minAndMax[1] - minAndMax[0]);

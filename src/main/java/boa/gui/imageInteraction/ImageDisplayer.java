@@ -18,9 +18,12 @@
 package boa.gui.imageInteraction;
 
 import image.BoundingBox;
+import image.Histogram;
 import static image.IJImageWrapper.getStackIndex;
 import image.Image;
 import static image.Image.logger;
+import image.ImageMask;
+import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -69,5 +72,11 @@ public interface ImageDisplayer<T> {
             }
         }
         return resTC;
+    }
+    public static double[] getDisplayRange(Image im, ImageMask mask) {
+        Histogram hist = im.getHisto256(mask);
+        hist.removeSaturatingValue(5, true);
+        hist.removeSaturatingValue(5, false);
+        return hist.getPercentile(0.0001, 0.9999);
     }
 }

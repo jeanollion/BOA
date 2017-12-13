@@ -213,7 +213,7 @@ public class Filters {
             return (float)(Math.sqrt(values2 - mean * mean) / mean);
         }
     }
-    private static class Median extends Filter {
+    public static class Median extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
             neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;

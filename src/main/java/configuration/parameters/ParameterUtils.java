@@ -358,9 +358,10 @@ public class ParameterUtils {
         public boolean isConfigurable(Parameter p);
     }
     static Pair<Image, ImageObjectInterface> lastTest;
-    public static JMenu getTestMenu(String name, final ParameterSetup ps, Parameter parameter, final Parameter[] parameters, int structureIdx) {
+    public static JMenu getTestMenu(String name, final ParameterSetup ps, Parameter parameter, Parameter[] params, int structureIdx) {
         JMenu subMenu = new JMenu(name);
         List<JMenuItem> items = new ArrayList<>();
+        final Parameter[] parameters = params==null? new Parameter[0] : params;
         for (int i = 0; i<parameters.length; ++i) { // todo: case of parameters with subparameters -> plain...
             final int idx = i;
             if (ps.canBeTested(parameters[idx].getName())) {

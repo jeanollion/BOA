@@ -24,6 +24,9 @@ import java.util.List;
 /**
  *
  * @author jollion
+ * @param <E> Element to slide
+ * @param <A> Accumulator
+ * @param <R> Result
  */
 public interface SlidingOperator<E, A, R> {
     public A instanciateAccumulator();
@@ -103,11 +106,10 @@ public interface SlidingOperator<E, A, R> {
         for (int i = list.size()-halfWindow; i<list.size(); ++i) res.add(end);
         return res;
     }
-    public static <E, A, R> List<R> performSlideLeft(List<E> list, int halfWindow, SlidingOperator<E, A, R> operator) {
+    public static <E, A, R> List<R> performSlideLeft(List<E> list, int window, SlidingOperator<E, A, R> operator) {
         if (list.isEmpty()) return Collections.EMPTY_LIST;
         A acc = operator.instanciateAccumulator();
         List<R> res = new ArrayList<>(list.size());
-        int window = 2*halfWindow + 1;
         if (list.size()<window) {
             for (int i = 0; i<list.size(); ++i) operator.slide(null, list.get(i), acc);
             R start = operator.compute(acc);
