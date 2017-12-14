@@ -19,6 +19,7 @@ package plugins.plugins.segmenters;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import configuration.parameters.ArrayNumberParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
@@ -44,6 +45,7 @@ import image.ImageShort;
 import image.ObjectFactory;
 import image.TypeConverter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +89,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     public List<Image> intermediateImages;
     public static boolean debug = false;
     public static boolean displayImages = false;
-    NumberParameter scale = new BoundedNumberParameter("Scale", 1, 2, 1, 5);
+    ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true);
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
     NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 0.6);
     //PluginParameter<Thresholder> thresholdLow = new PluginParameter<Thresholder>("Threshold for propagation", Thresholder.class, new ObjectCountThresholder(20), false);
@@ -120,7 +122,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         return this;
     }
     
-    public MutationSegmenter setScale(double scale) {
+    public MutationSegmenter setScale(double... scale) {
         this.scale.setValue(scale);
         return this;
     }
@@ -137,16 +139,16 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return run(input, parent, scale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
+        return run(input, parent, scale.getArrayDouble(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
     }
     
-    public ObjectPopulation run(Image input, StructureObjectProcessing parent, double scale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
+    public ObjectPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             // tester sur average, max, ou plan par plan
             ArrayList<Image> planes = input.splitZPlanes();
             ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
             for (Image plane : planes) {
-                ObjectPopulation obj = runPlane(plane, parent, scale, minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
+                ObjectPopulation obj = runPlane(plane, parent, scale[0], minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
                 //if (true) return obj;
                 if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
             }
@@ -155,7 +157,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             ObjectPopulation pop = populations.remove(populations.size()-1);
             pop.combine(populations);
             return pop;
-        } else return runPlane(input, parent, scale, minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
+        } else return runPlane(input, parent, scale[0], minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
     }
     private static class ProcessingVariables {
         Image input;
@@ -229,6 +231,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     }
     public ObjectPopulation runPlane(Image input, StructureObjectProcessing parent, double scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new RuntimeException("MutationSegmenter: should be run on a 2D image");
+        //Arrays.sort(scale);
         this.pv.initPV(input, parent.getMask(), scale);
         
         // TODO: test is Use Scale is taken into acount.
@@ -328,7 +331,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
 
     @Override
     public Image[] computeMaps(Image rawSource, Image filteredSource) {
-        double scale = this.scale.getValue().doubleValue();
+        double scale = this.scale.getArrayDouble()[0];
         Image smooth = ImageFeatures.gaussianSmooth(filteredSource, scale, scale, false).setName("gaussian: "+scale);
         Image lap = ImageFeatures.getLaplacian(filteredSource, scale, true, false).setName("laplacian: "+scale);
         return new Image[]{smooth, lap};
@@ -364,8 +367,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         if (ms[2]==0) ms = ImageOperations.getMeanAndSigmaWithOffset(input, parent.getMask(), v -> true);
         if (verboseManualSeg) logger.debug("thld: {} mean & sigma: {}", thld, ms);
         Image scaledInput = ImageOperations.affineOperation2WithOffset(input, null, 1/ms[1], -ms[0]);
-        Image lap = ImageFeatures.getLaplacian(scaledInput, scale.getValue().doubleValue(), true, false).setName("laplacian: "+scale);
-        Image smooth = ImageFeatures.gaussianSmooth(scaledInput, scale.getValue().doubleValue(), scale.getValue().doubleValue(), false).setName("gaussian: "+scale.getValue().doubleValue());
+        Image lap = ImageFeatures.getLaplacian(scaledInput, scale.getArrayDouble()[0], true, false).setName("laplacian: "+scale);
+        Image smooth = ImageFeatures.gaussianSmooth(scaledInput, scale.getArrayDouble()[0], scale.getArrayDouble()[0], false).setName("gaussian: "+scale.getArrayDouble()[0]);
         ObjectPopulation pop =  watershed(lap, parent.getMask(), seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
         SubPixelLocalizator.setSubPixelCenter(smooth, pop.getObjects(), true);
         for (Object3D o : pop.getObjects()) { // quality criterion : smooth * lap
@@ -376,8 +379,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
             for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
             ImageWindowManagerFactory.showImage(seedMap);
-            ImageWindowManagerFactory.showImage(lap.setName("Laplacian (watershedMap). Scale: "+scale.getValue().doubleValue()));
-            ImageWindowManagerFactory.showImage(smooth.setName("Smmothed Scale: "+scale.getValue().doubleValue()));
+            ImageWindowManagerFactory.showImage(lap.setName("Laplacian (watershedMap). Scale: "+scale.getArrayDouble()[0]));
+            ImageWindowManagerFactory.showImage(smooth.setName("Smmothed Scale: "+scale.getArrayDouble()[0]));
             ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
         }
         return pop;

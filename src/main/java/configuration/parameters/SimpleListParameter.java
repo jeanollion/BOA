@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
@@ -49,7 +50,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     
     protected ListParameterUI ui;
     protected ContainerParameter parent;
-    
+    protected Function<Integer, String> newInstanceNameFunction = i->"new "+childClass.getSimpleName();
     
     @Override
     public JSONAware toJSONEntry() {
@@ -62,11 +63,17 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
 
     @Override
     public void initFromJSONEntry(Object json) {
-        JSONObject jsonO = (JSONObject)json;
-        JSONArray list = (JSONArray)jsonO.get("list");
-        for (Object o : list) {
+        if (json instanceof JSONObject && ((JSONObject)json).containsKey("list")) {
+            JSONObject jsonO = (JSONObject)json;
+            JSONArray list = (JSONArray)jsonO.get("list");
+            for (Object o : list) {
+                T newI = createChildInstance();
+                newI.initFromJSONEntry(o);
+                insert(newI);
+            }
+        } else { // try to init with one single element (if element was replaced by list)
             T newI = createChildInstance();
-            newI.initFromJSONEntry((JSONAware)o);
+            newI.initFromJSONEntry(json);
             insert(newI);
         }
     }
@@ -145,7 +152,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         if (childInstance == null && getChildClass() != null) {
             try {
                 T instance;
-                instance = childClass.getDeclaredConstructor(String.class).newInstance("new " + childClass.getSimpleName());
+                instance = childClass.getDeclaredConstructor(String.class).newInstance(this.newInstanceNameFunction.apply(getChildCount()));
                 return instance;
             } catch (NoSuchMethodException ex) {
                 logger.error("duplicate error", ex);
@@ -268,6 +275,16 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
                 ui=null;
             }
         } else throw new IllegalArgumentException("wrong parameter type");
+    }
+    
+    protected void setChildrenNumber(int number) {
+        if (this.getChildCount()>number) {
+            int c = this.getChildCount();
+            for (int i = c; i>number; --i) remove(i-1);
+        } else if (this.getChildCount()<number) {
+            int c = this.getChildCount();
+            for (int i = c; i<number; ++i) this.insert(createChildInstance());
+        }
     }
     
     public void setUnmutableIndex(int unMutableIndex) {
