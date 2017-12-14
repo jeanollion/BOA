@@ -2518,6 +2518,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 int[] selectedStructures = ArrayUtil.generateIntegerArray(t.getDB().getExperiment().getStructureCount());
                 for (int sIdx : selectedStructures) t.addExtractMeasurementDir(t.getDB().getDir(), sIdx);
             }
+            t.getDB().clearCache(); 
         } else return null;
         t.setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages);
         if (export) t.setExportData(this.exportPPImagesMenuItem.isSelected(), this.exportTrackImagesMenuItem.isSelected(), this.exportObjectsMenuItem.isSelected(), this.exportConfigMenuItem.isSelected(), this.exportSelectionsMenuItem.isSelected());
@@ -2543,7 +2544,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
         if (t.isPreProcess() || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
         
-        Task.executeTask(t, this, ()->{updateConfigurationTree();});
+        Task.executeTask(t, this, ()->{updateConfigurationTree();}); // update config because cache will be cleared
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
     private void importImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImagesMenuItemActionPerformed

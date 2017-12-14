@@ -50,7 +50,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     
     protected ListParameterUI ui;
     protected ContainerParameter parent;
-    protected Function<Integer, String> newInstanceNameFunction = i->"new "+childClass.getSimpleName();
+    protected Function<Integer, String> newInstanceNameFunction;
     
     @Override
     public JSONAware toJSONEntry() {
@@ -152,7 +152,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         if (childInstance == null && getChildClass() != null) {
             try {
                 T instance;
-                instance = childClass.getDeclaredConstructor(String.class).newInstance(this.newInstanceNameFunction.apply(getChildCount()));
+                instance = childClass.getDeclaredConstructor(String.class).newInstance(newInstanceNameFunction!=null ? newInstanceNameFunction.apply(getChildCount()) : "new "+childClass.getSimpleName());
                 return instance;
             } catch (NoSuchMethodException ex) {
                 logger.error("duplicate error", ex);
@@ -168,7 +168,9 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
                 logger.error("duplicate error", ex);
             }
         } else if (childInstance != null) {
-            return (T)childInstance.duplicate();
+            T res =  (T)childInstance.duplicate();
+            if (newInstanceNameFunction!=null) res.setName(newInstanceNameFunction.apply(getChildCount()));
+            return res;
             //if (res instanceof SimpleContainerParameter) ((SimpleContainerParameter)res).setListeners(((SimpleContainerParameter)childInstance).listeners);
         }
         return null;

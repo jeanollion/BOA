@@ -301,7 +301,7 @@ public class ImageFeatures {
     public static Image getScaleSpaceGaussian(Image plane, double[] scales) {
         if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
         ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
-        for (double s : scales) planes.add(ImageFeatures.gaussianSmooth(plane, s, 1, false));
+        for (double s : scales) planes.add(ImageFeatures.gaussianSmooth(plane, s, plane.getScaleXY()*s/plane.getScaleZ(), false));
         return Image.mergeZPlanes(planes).setName("Gaussian Scale-Space");
     }
     

@@ -185,8 +185,8 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
         }
         
         
-        ObjectPopulation pop =  MultiScaleWatershedTransform.watershed(wsMaps, mask, seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdLow.getValue().doubleValue()), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize.getValue().intValue()));// minSpotSize->1 //, new MultiScaleWatershedTransform.MonotonalPropagation()
-        
+        ObjectPopulation[] pops =  MultiScaleWatershedTransform.watershed(wsMaps, mask, seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdLow.getValue().doubleValue()), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize.getValue().intValue()));// minSpotSize->1 //, new MultiScaleWatershedTransform.MonotonalPropagation()
+        ObjectPopulation pop = MultiScaleWatershedTransform.combine(pops);
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize.getValue().intValue()));
         return pop;

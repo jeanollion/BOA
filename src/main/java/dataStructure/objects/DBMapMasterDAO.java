@@ -67,6 +67,10 @@ public class DBMapMasterDAO implements MasterDAO {
         //lockXP();
     }
 
+    public boolean xpFileLock() {
+        return xpFileLock!=null;
+    }
+    
     @Override
     public boolean isReadOnly() {
         if (cfg==null) this.getExperiment(); // try to get lock 
@@ -165,6 +169,7 @@ public class DBMapMasterDAO implements MasterDAO {
             try {
                 logger.debug("realising lock: {}", xpFileLock);
                 xpFileLock.release();
+                logger.debug("lock realeased: {} ", !xpFileLock.isValid());
                 xpFileLock = null;
             } catch (IOException ex) {
                 logger.debug("error realeasing xp lock", ex);
