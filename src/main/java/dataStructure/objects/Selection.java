@@ -56,7 +56,17 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     boolean navigate = false;
     boolean addObjects = false;
     
-    
+    public boolean[] getState() {
+        return new boolean[]{displayingObjects, displayingTracks, highlightingTracks, navigate, addObjects};
+    }
+    public void setState(boolean[] state) {
+        if (state == null) return;
+        displayingObjects = state[0];
+        displayingTracks = state[1];
+        highlightingTracks = state[2];
+        navigate = state[3];
+        addObjects = state[4];
+    }
     public final static String indexSeparator ="-";
     Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
     MasterDAO mDAO;

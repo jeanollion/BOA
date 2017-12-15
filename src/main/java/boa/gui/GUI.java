@@ -657,6 +657,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     public void populateSelections() {
         List<Selection> selectedValues = selectionList.getSelectedValuesList();
+        
+        Map<String, boolean[]> state = selectionModel.isEmpty() ? Collections.EMPTY_MAP : Utils.asList(selectionModel).stream().collect(Collectors.toMap(s->s.getName(), s->s.getState()));
         this.selectionModel.removeAllElements();
         if (!checkConnection()) return;
         SelectionDAO dao = this.db.getSelectionDAO();
@@ -667,6 +669,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         List<Selection> sels = dao.getSelections();
         for (Selection sel : sels) {
             selectionModel.addElement(sel);
+            sel.setState(state.get(sel.getName()));
             //logger.debug("Selection : {}, displayingObjects: {} track: {}", sel.getName(), sel.isDisplayingObjects(), sel.isDisplayingTracks());
         }
         Utils.setSelectedValues(selectedValues, selectionList, selectionModel);
