@@ -149,7 +149,10 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     public int getStructureIdx() {
         return structureIdx;
     }
-    
+    public boolean contains(StructureObject o) {
+        if (elements.containsKey(o.getPositionName())) return elements.get(o.getPositionName()).contains(indicesString(o));
+        else return false;
+    }
     public Set<String> getElementStrings(String position) {
         if (elements.containsKey(position)) return new HashSet(this.elements.get(position));
         else return Collections.EMPTY_SET;
