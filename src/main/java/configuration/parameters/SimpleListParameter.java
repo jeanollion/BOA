@@ -296,7 +296,12 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     public int getUnMutableIndex() {
         return unMutableIndex;
     }
-    
+    public void resetName(Function<Integer, String> nameFunction) {
+        if (nameFunction==null && this.newInstanceNameFunction==null) return;
+        if (nameFunction!=null) this.newInstanceNameFunction=nameFunction;
+        int count = 0;
+        for (T t : this.children) t.setName(newInstanceNameFunction.apply(count++));
+    }
     
     @Override
     public String toString() {return name;}

@@ -67,7 +67,7 @@ public class FileIO {
         //clearRAF(raf);
         if (append) {
             raf.seek(raf.length());
-            raf.writeBytes("\n");
+            if (raf.length()>0) raf.writeBytes("\n");
             raf.writeBytes(write);
         } else {
             raf.setLength(0);

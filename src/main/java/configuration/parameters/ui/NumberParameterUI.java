@@ -23,6 +23,7 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.ParameterUtils;
 import boa.gui.configuration.ConfigurationTreeModel;
 import configuration.parameters.ListParameter;
+import configuration.parameters.SimpleListParameter;
 import java.awt.Dimension;
 import java.math.BigDecimal;
 import javax.swing.JSlider;
@@ -121,7 +122,10 @@ public class NumberParameterUI implements ParameterUI {
     private void updateNode() {
         if (model != null) {
             model.nodeChanged(parameter);
-            if (parameter.getParent() instanceof ListParameter )  model.nodeStructureChanged(parameter.getParent());
+            if (parameter.getParent() instanceof ListParameter ) {
+                model.nodeStructureChanged(parameter.getParent());
+                if (parameter.getParent() instanceof SimpleListParameter ) ((SimpleListParameter)parameter.getParent()).resetName(null);
+            }
         }
     }
     

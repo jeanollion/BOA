@@ -2342,7 +2342,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //w.close();
         // export config as text file, without positions
         String save = f.getAbsolutePath();
-        if (save.endsWith(".txt")) save+=".txt";
+        if (!save.endsWith(".txt")) save+=".txt";
         Experiment dup = db.getExperiment().duplicate();
         dup.clearPositions();
         try {
@@ -2706,6 +2706,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         exportSelectedExperiments(true, true, true, false, false, false);
     }//GEN-LAST:event_exportXPObjectsMenuItemActionPerformed
     private void exportSelectedExperiments(boolean config, boolean objects, boolean selections, boolean preProcessedImages, boolean trackImages, boolean eraseXP) {
+        if (config) this.promptSaveUnsavedChanges();
         final List<String> xps = getSelectedExperiments();
         final List<String> positions = new ArrayList<>();
         if (xps.size()<=1) {

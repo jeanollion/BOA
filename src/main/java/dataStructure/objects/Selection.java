@@ -368,10 +368,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         Map<String, List<StructureObject>> elByPos = StructureObjectUtils.splitByPosition(elementsToAdd);
         for (String pos : elByPos.keySet()) {
             if (this.retrievedElements.containsKey(pos)) for (StructureObject o : elementsToAdd) addElement(o);
-            else {
-                List<String> els = Utils.transform(elByPos.get(pos), o->indicesString(o));
-                addElements(pos, els);
-            }
+            addElements(pos, Utils.transform(elByPos.get(pos), o->indicesString(o)));
         }
         return this;
     }
