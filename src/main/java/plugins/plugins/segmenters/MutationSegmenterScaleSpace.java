@@ -208,7 +208,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
         return Filters.localExtrema(scaleSpace, null, true, thresholdSeeds, new CylindricalNeighborhood(radius, 1, false)).setName("seedsSP");
     }
     
-    protected static void combineSeeds(ImageByte input, ImageByte output, Image watershedMap, double scale) { // seeds from other plane do not necessaryly correspond to a local max in the current plane
+    protected static void combineSeeds(ImageByte input, ImageByte output, Image watershedMap, double scale) { // seeds from other plane do not necessarily correspond to a local max in the current plane
         ObjectPopulation seedPop0 = new ObjectPopulation(input, false);
         EllipsoidalNeighborhood n = new EllipsoidalNeighborhood(scale, false);
         for (Object3D o : seedPop0.getObjects()) {

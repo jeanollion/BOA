@@ -25,7 +25,9 @@ import image.ImageByte;
 import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  *
@@ -51,43 +53,35 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
             double r = radiusZ>0 ? (double) radius / radiusZ : 0;
             int rad = (int) (radius + 0.5f);
             int radZ = (int) (radiusZ + 0.5f);
-            int[][] temp = new int[3][(2 * rad + 1) * (2 * rad + 1) * (2 * radZ + 1)];
-            final float[] tempDist = new float[temp[0].length];
-            int count         = 0;
+            List<double[]> coordsXYZD = new ArrayList<>();
             double rad2 = radius * radius;
             for (int zz = -radZ; zz <= radZ; zz++) {
                 for (int yy = -rad; yy <= rad; yy++) {
                     for (int xx = -rad; xx <= rad; xx++) {
                         double d2 = zz * r * zz * r + yy * yy + xx * xx;
                         if (d2 <= rad2 && (!excludeCenter || d2 > 0)) {	//exclusion du point central
-                            temp[0][count] = xx;
-                            temp[1][count] = yy;
-                            temp[2][count] = zz;
-                            tempDist[count] = (float) Math.sqrt(d2);
-                            count++;
+                            double[] coords = new double[4];
+                            coordsXYZD.add(coords);
+                            coords[0] = xx;
+                            coords[1]= yy;
+                            coords[2]= zz;
+                            coords[3] = Math.sqrt(d2);
                         }
                     }
                 }
             }
-
-
-            Integer[] indicies = new Integer[count]; for (int i = 0; i <indicies.length; i++) indicies[i]=i;
-            Comparator<Integer> compDistance = new Comparator<Integer>() {
-                @Override public int compare(Integer arg0, Integer arg1) {
-                    return Float.compare(tempDist[arg0], tempDist[arg1]);
-                }
-            };
-            Arrays.sort(indicies, compDistance);
-            distances = new float[count];
-            dx= new int[count];
-            dy= new int[count];
-            dz= new int[count];
-            values=new float[count];
-            for (int i = 0; i<count; ++i) {
-                dx[i] = temp[0][indicies[i]];
-                dy[i] = temp[1][indicies[i]];
-                dz[i] = temp[2][indicies[i]];
-                distances[i] = tempDist[indicies[i]];
+            Collections.sort(coordsXYZD, (a1, a2)->Double.compare(a1[3], a2[3]));
+            distances = new float[coordsXYZD.size()];
+            dx= new int[coordsXYZD.size()];
+            dy= new int[coordsXYZD.size()];
+            dz= new int[coordsXYZD.size()];
+            values=new float[coordsXYZD.size()];
+            for (int i = 0; i<coordsXYZD.size(); ++i) {
+                double[] c = coordsXYZD.get(i);
+                dx[i] = (int)c[0];
+                dy[i] = (int)c[1];
+                dz[i] = (int)c[2];
+                distances[i] = (float)c[3];
             }
         }
     }
@@ -105,37 +99,31 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
         this.radiusZ=0;
         is3D=false;
         int rad = (int) (radius + 0.5f);
-        int[][] temp = new int[2][(2 * rad + 1) * (2 * rad + 1)];
-        final float[] tempDist = new float[temp[0].length];
-        int count = 0;
+        List<double[]> coordsXYD = new ArrayList<>();
         double rad2 = radius * radius;
         for (int yy = -rad; yy <= rad; yy++) {
             for (int xx = -rad; xx <= rad; xx++) {
                 float d2 = yy * yy + xx * xx;
                 if (d2 <= rad2 && (!excludeCenter || d2 > 0)) {	//exclusion du point central
-                    temp[0][count] = xx;
-                    temp[1][count] = yy;
-                    tempDist[count] = (float) Math.sqrt(d2);
-                    count++;
+                    double[] coords = new double[3];
+                    coordsXYD.add(coords);
+                    coords[0] = xx;
+                    coords[1]= yy;
+                    coords[2]= Math.sqrt(d2);
                 }
             }
         }
-        Integer[] indicies = new Integer[count]; for (int i = 0; i <indicies.length; i++) indicies[i]=i;
-        Comparator<Integer> compDistance = new Comparator<Integer>() {
-            @Override public int compare(Integer arg0, Integer arg1) {
-                return Float.compare(tempDist[arg0], tempDist[arg1]);
-            }
-        };
-        Arrays.sort(indicies, compDistance);
-        distances = new float[count];
-        dx= new int[count];
-        dy= new int[count];
-        dz= new int[count];
-        values=new float[count];
-        for (int i = 0; i<count; ++i) {
-            dx[i] = temp[0][indicies[i]];
-            dy[i] = temp[1][indicies[i]];
-            distances[i] = tempDist[indicies[i]];
+        Collections.sort(coordsXYD, (a1, a2)->Double.compare(a1[2], a2[2]));
+        distances = new float[coordsXYD.size()];
+        dx= new int[coordsXYD.size()];
+        dy= new int[coordsXYD.size()];
+        dz= new int[coordsXYD.size()];
+        values=new float[coordsXYD.size()];
+        for (int i = 0; i<coordsXYD.size(); ++i) {
+            double[] c = coordsXYD.get(i);
+            dx[i] = (int)c[0];
+            dy[i] = (int)c[1];
+            distances[i] = (float)c[2];
         }
     }
 

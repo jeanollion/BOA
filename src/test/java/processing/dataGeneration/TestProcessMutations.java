@@ -39,6 +39,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import plugins.ObjectFeature;
 import plugins.PluginFactory;
+import plugins.Segmenter;
+import plugins.UseMaps;
 import plugins.plugins.segmenters.MutationSegmenter;
 import utils.Utils;
 
@@ -52,14 +54,14 @@ public class TestProcessMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        String dbName = "fluo151127";
+        String dbName = "fluo171204_WT_750ms_paramOptimization";
         //final String dbName = "boa_fluo151127_test";
-        int fIdx = 4;
-        int mcIdx =1;
+        int fIdx = 0;
+        int mcIdx =0;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName, null);
-        t.testSegMutationsFromXP(fIdx, mcIdx, false, 307,307);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,15);
     }
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -73,21 +75,20 @@ public class TestProcessMutations {
         //if (parent.getIdx()==2) MutationSegmenter.debug=true;
         //else MutationSegmenter.debug=false;
         //LocalSNR.debug=true;
-        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(1.25).setThresholdSeeds(1).setThresholdPropagation(1.5).setScale(2);
+        Segmenter seg = parent.getExperiment().getStructure(2).getProcessingScheme().getSegmenter();
+        //MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(1.25).setThresholdSeeds(1).setThresholdPropagation(1.5).setScale(2);
         //seg.getPostFilters().removeAllElements();
+        if (seg instanceof UseMaps) {
+            UseMaps s = (UseMaps)seg;
+            Image[] maps = s.computeMaps(input, input);
+            if (!input.sameSize(parent.getMask())) maps = Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(parent.getBounds()));
+            s.setMaps(maps);
+            
+        }
+        ((MutationSegmenter)seg).intermediateImages=intermediateImages;
         
-        Image[] maps = seg.computeMaps(input, input);
-        if (!input.sameSize(parent.getMask())) maps = Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(parent.getBounds()));
-        seg.setMaps(maps);
-        
-        seg.intermediateImages=intermediateImages;
         ObjectPopulation pop = seg.runSegmenter(localInput, 2, parent);
         
-        if (false && parent.getIdx()==3) {
-            seg.printSubLoc("input", localInput, maps[0], maps[1], pop, input.getBoundingBox() );
-            seg.printSubLoc("smooth", maps[0], maps[0], maps[1], pop , input.getBoundingBox());
-            seg.printSubLoc("lap", maps[1], maps[0], maps[1], pop, input.getBoundingBox() );
-        }
         
         PostFilterSequence pf = new PostFilterSequence("pf"); 
         //pf.add(new FeatureFilter(new LocalSNR().setLocalBackgroundRadius(6).setBackgroundObjectStructureIdx(1).setRadii(2, 2), 1, true, true));
@@ -110,6 +111,7 @@ public class TestProcessMutations {
     
     public void init(String dbName, String dir) {
         db = new Task(dbName, dir).getDB();
+        db.setReadOnly(true);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, int time) {
@@ -154,9 +156,10 @@ public class TestProcessMutations {
         mcMaskUnique.addAll(mcMask);
         logger.debug("number of bacteries: {}, number of distinct microchannels: {}", parentMask.size(), mcMaskUnique.size());
         for (ImageMask m : mcMaskUnique) {
-            if (ySize<m.getSizeY()) ySize = m.getSizeY();
+            if (ySize<(m.getSizeY())) ySize = m.getSizeY();
             xSize+=intervalX+m.getSizeX();
         }
+        ySize+=100;
         xSize-=intervalX;
         Image inputPaste = Image.createEmptyImage("input", input.get(0), new BlankMask("", xSize, ySize, input.get(0).getSizeZ(), 0, 0, 0, 1, 1));
         Image outputLabelPaste = Image.createEmptyImage("labels", outputLabel.get(0), new BlankMask("", xSize, ySize, outputLabel.get(0).getSizeZ(), 0, 0, 0, 1, 1));

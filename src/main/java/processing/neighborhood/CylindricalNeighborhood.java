@@ -25,7 +25,9 @@ import image.ImageByte;
 import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 /**
  *
@@ -53,9 +55,7 @@ public class CylindricalNeighborhood extends DisplacementNeighborhood {
         int rad = (int) (radius + 0.5d);
         int radZUp = (int) (radiusZUp + 0.5d);
         int radZDown = (int) (radiusZDown + 0.5d);
-        int[][] temp = new int[3][(2 * rad + 1) * (2 * rad + 1) * (radZUp + radZDown + 1)];
-        final float[] tempDist = new float[temp[0].length];
-        int count         = 0;
+        List<double[]> coordsXYZD = new ArrayList<>();
         double rad2 = radius * radius;
         for (int yy = -rad; yy <= rad; yy++) {
             for (int xx = -rad; xx <= rad; xx++) {
@@ -63,35 +63,30 @@ public class CylindricalNeighborhood extends DisplacementNeighborhood {
                 if (d2 <= rad2) {
                     for (int zz = -radZDown; zz <= radZUp; zz++) {
                         if (!excludeCenter || d2 > 0 || zz!=0) {//exclusion du point central
-                            temp[0][count] = xx;
-                            temp[1][count] = yy;
-                            temp[2][count] = zz;
-                            tempDist[count] = (float) Math.sqrt(d2+zz*zz);
-                            count++;
+                            double[] coords = new double[4];
+                            coordsXYZD.add(coords);
+                            coords[0] = xx;
+                            coords[1]= yy;
+                            coords[2]= zz;
+                            coords[3] =  Math.sqrt(d2+zz*zz); // take into acount zz to sort from center
                         }
                     }
                 }
             }
         }
 
-        
-        Integer[] indicies = new Integer[count]; for (int i = 0; i <indicies.length; i++) indicies[i]=i;
-        Comparator<Integer> compDistance = new Comparator<Integer>() {
-            @Override public int compare(Integer arg0, Integer arg1) {
-                return Float.compare(tempDist[arg0], tempDist[arg1]);
-            }
-        };
-        Arrays.sort(indicies, compDistance);
-        distances = new float[count];
-        dx= new int[count];
-        dy= new int[count];
-        dz= new int[count];
-        values=new float[count];
-        for (int i = 0; i<count; ++i) {
-            dx[i] = temp[0][indicies[i]];
-            dy[i] = temp[1][indicies[i]];
-            dz[i] = temp[2][indicies[i]];
-            distances[i] = tempDist[indicies[i]];
+        Collections.sort(coordsXYZD, (a1, a2)->Double.compare(a1[3], a2[3]));
+        distances = new float[coordsXYZD.size()];
+        dx= new int[coordsXYZD.size()];
+        dy= new int[coordsXYZD.size()];
+        dz= new int[coordsXYZD.size()];
+        values=new float[coordsXYZD.size()];
+        for (int i = 0; i<coordsXYZD.size(); ++i) {
+            double[] c = coordsXYZD.get(i);
+            dx[i] = (int)c[0];
+            dy[i] = (int)c[1];
+            dz[i] = (int)c[2];
+            distances[i] = (float)c[3];
         }
     }
     

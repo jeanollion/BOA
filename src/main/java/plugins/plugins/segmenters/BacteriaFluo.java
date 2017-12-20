@@ -75,7 +75,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     
     // configuration-related attributes
     NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 0, 0, null);
-    NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.12, 0, 1);
+    NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.3, 0, 1); // TODO was 0.12 before change of scale (hess *= sqrt(2pi)-> *2.5 // verifier si toujours ok
     NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 100, 50, null);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 50, 1, null);
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 10, 0, null);

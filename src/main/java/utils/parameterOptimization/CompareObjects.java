@@ -40,6 +40,7 @@ import java.util.logging.Logger;
 import measurement.GeometricalMeasurements;
 import org.slf4j.LoggerFactory;
 import plugins.PluginFactory;
+import utils.ArrayUtil;
 import utils.FileIO;
 import utils.JSONUtils;
 import utils.ThreadRunner;
@@ -59,21 +60,18 @@ public class CompareObjects {
         String configFolder = "/data/Images/Fluo/fluo171204_WT_750ms_paramOptimization/configSet/";
         String outputFile = "/data/Images/Fluo/fluo171204_WT_750ms_paramOptimization/ParamOptimizationOutput.txt";
         int structureIdx = 2;
-        double distCC = 0.1;
+        double distCC = 0.1; // TODO test influence of distCC with only base
         String unshureSel = "unshureMutations";
         CompareObjects comp = new CompareObjects(ref, db, structureIdx, distCC, unshureSel);
-        comp.setOutputFile(outputFile, false);
-        //comp.scanConfigurationFolderAndRunAndCount(configFolder, 0);
-        comp.enableSelection();
-        comp.setConfig(configFolder + "base.txt");
-        comp.processPositions(0);
-        comp.runOnPositions(0);
-        logger.debug("false positive: {}, false negative: {}", comp.getFalsePositive(), comp.getFalseNegative());
-        comp.close();
+        comp.setOutputFile(outputFile, true);
+        //comp.scanConfigurationFolderAndRunAndCount(configFolder);
+        comp.setConfigAndRun(configFolder + "base.txt", true);
+        
     }
+
     final MasterDAO dbRef, db;
     final double distCCThldSq;
-    int falsePositive, falseNegative;
+    int falsePositive, falseNegative, totalRef;
     final Object countLock = new Object();
     Selection unshureObjects, fp, fn;
     final int structureIdx, parentStructureIdx;
@@ -91,21 +89,46 @@ public class CompareObjects {
             logger.debug("unshure objects: {}", unshureObjects.count());
         }
     }
-    public void enableSelection() {
-        fp= db.getSelectionDAO().getOrCreate("falsePositives", true);
-        fn = db.getSelectionDAO().getOrCreate("falseNegatives", true);
+    public void enableSelection(boolean eraseIfExisting) {
+        fp= db.getSelectionDAO().getOrCreate("falsePositives", eraseIfExisting);
+        fn = db.getSelectionDAO().getOrCreate("falseNegatives", eraseIfExisting);
+    }
+    public void resetCounts() {
+        falseNegative=0;
+        falsePositive=0;
+        totalRef = 0;
+        if (fp!=null) fp.clear();
+        if (fn!=null) fn.clear();
+    }
+    public void setConfigAndRun(String confFile, boolean eraseSelectionsIfExisting, int... positions) {
+        enableSelection(eraseSelectionsIfExisting);
+        setConfig(confFile);
+        processPositions(positions);
+        runOnPositions(positions);
+        logger.debug("false positive: {}, false negative: {}, total: {} unshure: {}", getFalsePositive(), getFalseNegative(), totalRef, getUnshureSpotsCount() );
+        close();
+    }
+    public int getUnshureSpotsCount() {
+        return this.unshureObjects==null ? 0 : this.unshureObjects.count();
     }
     public void scanConfigurationFolderAndRunAndCount(String folder, int... positions) {
         if (output==null) throw new IllegalArgumentException("No output file set");
         File[] configs = new File(folder).listFiles(f->f.getName().endsWith(".txt"));
+        boolean first = true;
         for (File f : configs) {
             if (setConfig(f.getAbsolutePath())) {
                 logger.debug("config: {}", f.getAbsolutePath());
+                resetCounts();
                 processPositions(positions);
                 runOnPositions(positions);
+                if (first) {
+                    appendRefCount();
+                    first = false;
+                }
                 appendToOutputFile();
             }
         }
+        close();
     }
     public void close() {
         dbRef.clearCache();
@@ -124,6 +147,19 @@ public class CompareObjects {
             throw new RuntimeException("Could not create output file @ "+file);
         }
     }
+    public void appendRefCount() {
+        if (output==null) throw new RuntimeException("No output file set");
+        StringBuilder sb = new StringBuilder();
+        sb.append("Total reference objects: ");
+        sb.append(totalRef);
+        sb.append(" unshure objects: ");
+        sb.append(unshureObjects==null ? 0 : unshureObjects.count());
+        try {
+            FileIO.write(output, sb.toString(), true);
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not append to output file "+ex.getLocalizedMessage());
+        }
+    }
     public void appendToOutputFile() {
         if (output==null) throw new RuntimeException("No output file set");
         StringBuilder sb = new StringBuilder();
@@ -132,6 +168,7 @@ public class CompareObjects {
         sb.append("; ");
         sb.append(this.falseNegative);
         sb.append("]");
+        
         if (configName!=null) {
             sb.append(" for Config: ");
             sb.append(configName);
@@ -144,6 +181,7 @@ public class CompareObjects {
     }
     public boolean setConfig(Experiment config) {
         db.getExperiment().getStructure(structureIdx).setContentFrom(config.getStructure(structureIdx));
+        db.updateExperiment();
         return true;
     }
     public boolean setConfig(String configFile) {
@@ -208,7 +246,7 @@ public class CompareObjects {
         Collections.sort(thRef);
         List<StructureObject> th = new ArrayList<>(parentTrack.keySet());
         Collections.sort(th);
-        int[] falsePositiveAndNegative = new int[2];
+        int[] falsePositiveAndNegative = new int[3];
         List<StructureObject> fpObjects = this.fp!=null ? new ArrayList<>() : null;
         List<StructureObject> fnObjects = this.fn!=null ? new ArrayList<>() : null;
         for (int pIdx = 0; pIdx<parentTrackRef.size(); ++pIdx) {
@@ -220,6 +258,7 @@ public class CompareObjects {
         synchronized(countLock) {
             falsePositive+=falsePositiveAndNegative[0];
             falseNegative+=falsePositiveAndNegative[1];
+            totalRef+=falsePositiveAndNegative[2];
             if (fnObjects!=null && !fnObjects.isEmpty()) {
                 db.getDao(positionName).store(fnObjects);
                 fn.addElements(fnObjects);
@@ -230,6 +269,7 @@ public class CompareObjects {
     protected void compareObjects(StructureObject pRef, StructureObject p, int[] fpn, List<StructureObject> fp, List<StructureObject> fn) {
         List<StructureObject> objects = p.getChildren(structureIdx);
         List<StructureObject> ref = new ArrayList<>(pRef.getChildren(structureIdx));
+        fpn[2]+=ref.size();
         //if (!objects.isEmpty() || !ref.isEmpty() ) logger.debug("compare objects: {}={} & {}={}", pRef, ref.size(), p, objects.size());
         for (StructureObject o : objects) {
             if (ref.isEmpty()) { // false positive spot

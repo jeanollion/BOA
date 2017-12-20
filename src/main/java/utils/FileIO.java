@@ -66,8 +66,9 @@ public class FileIO {
     public static void write(RandomAccessFile raf, String write, boolean append) throws IOException  {
         //clearRAF(raf);
         if (append) {
+            long l = raf.length();
             raf.seek(raf.length());
-            if (raf.length()>0) raf.writeBytes("\n");
+            if (l>0) raf.writeBytes("\n");
             raf.writeBytes(write);
         } else {
             raf.setLength(0);
@@ -76,9 +77,9 @@ public class FileIO {
         }
     }
     public static void clearRAF(RandomAccessFile raf) throws IOException {
-        long l = raf.length();
+        //long l = raf.length();
         raf.setLength(0);
-        raf.setLength(l);
+        //raf.setLength(l);
     }
     
     

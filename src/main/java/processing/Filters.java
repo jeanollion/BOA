@@ -283,16 +283,17 @@ public class Filters {
             this.threshold=threshold;
         }
         @Override public float applyFilter(int x, int y, int z) {
+            if (image.getPixel(x, y, z)<threshold) return 0;
             neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             float max = neighborhood.getPixelValues()[0];
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) return 0;
-            if (max<threshold) return 0;
             return 1;
         }
     }
     private static class LocalMin extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
+           
             neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             float min = neighborhood.getPixelValues()[0];
@@ -306,11 +307,11 @@ public class Filters {
             this.threshold=threshold;
         }
         @Override public float applyFilter(int x, int y, int z) {
+            if (image.getPixel(x, y, z)>threshold) return 0;
             neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             float min = neighborhood.getPixelValues()[0];
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;
-            if (min>threshold) return 0;
             return 1;
         }
     }

@@ -81,7 +81,9 @@ import processing.WatershedTransform.ThresholdPropagationOnWatershedMap;
 import static processing.WatershedTransform.watershed;
 import processing.neighborhood.ConditionalNeighborhoodZ;
 import processing.neighborhood.CylindricalNeighborhood;
+import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.EllipsoidalSubVoxNeighborhood;
+import processing.neighborhood.Neighborhood;
 import utils.Utils;
 
 /**
@@ -95,10 +97,10 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 5);
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 0.6);
+    NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 2.25);
     //PluginParameter<Thresholder> thresholdLow = new PluginParameter<Thresholder>("Threshold for propagation", Thresholder.class, new ObjectCountThresholder(20), false);
-    NumberParameter thresholdLow = new NumberParameter("Threshold for propagation", 2, 0.5);
-    NumberParameter intensityThreshold = new NumberParameter("Intensity Threshold for Seeds", 2, 0.35);
+    NumberParameter thresholdLow = new NumberParameter("Threshold for propagation", 2, 1.63);
+    NumberParameter intensityThreshold = new NumberParameter("Intensity Threshold for Seeds", 2, 1.8); // 
     Parameter[] parameters = new Parameter[]{scale, smoothScale, minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold};
     ProcessingVariables pv = new ProcessingVariables();
     
@@ -176,8 +178,10 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         Image smooth;
         boolean lapScaled, smoothScaled;
         double[] ms;
-        public void initPV(Image input, ImageMask mask) {
+        double smoothScale;
+        public void initPV(Image input, ImageMask mask, double smoothScale) {
             this.input=input;
+            this.smoothScale=smoothScale;
             //BackgroundFit.debug=debug;
             ms = new double[2];
             //double thld = BackgroundFit.backgroundFitHalf(input, mask, 2, ms);
@@ -196,7 +200,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         protected Image getSmoothedMap() {
             if (smooth==null) throw new RuntimeException("Smooth map not initialized");
             if (!smoothScaled) {
-                ImageOperations.affineOperation2WithOffset(smooth, smooth, 1/ms[1], -ms[0]);
+                ImageOperations.affineOperation2WithOffset(smooth, smooth, smoothScale/ms[1], -ms[0]);
                 smoothScaled=true;
             }
             return smooth;
@@ -214,7 +218,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     public ObjectPopulation runPlane(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new RuntimeException("MutationSegmenter: should be run on a 2D image");
         //Arrays.sort(scale);
-        this.pv.initPV(input, parent.getMask()) ;
+        this.pv.initPV(input, parent.getMask(), smoothScale.getValue().doubleValue()) ;
         if (pv.smooth==null || pv.lap==null) setMaps(computeMaps(input, input));
         // TODO: test is Use Scale is taken into acount.
         //Image smooth = ImageFeatures.gaussianSmooth(sub, scale, scale, false);
@@ -223,18 +227,36 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         Image smooth = pv.getSmoothedMap();
         Image[] lap = pv.getLaplacianMap();
         Image lapSP = Image.mergeZPlanes(Arrays.asList(lap));
-        
-        ImageByte seedsSP = Filters.localExtrema(lapSP, null, true, thresholdSeeds, new CylindricalNeighborhood(1.5, 1, false)).setName("seedsSP"); // TODO: also exclude big sizes ?
+        double[] radii = new double[scale.length];
+        for (int z = 0; z<radii.length; ++z) radii[z] = Math.max(1, scale[z]-0.5);
+        Neighborhood n = processing.neighborhood.ConicalNeighborhood.generateScaleSpaceNeighborhood(radii, false);
+        //Neighborhood n = new CylindricalNeighborhood(1.5, lap.length, false);
+        //Neighborhood n = new CylindricalNeighborhood(1.5, 1, false);
+        ImageByte seedsSP = Filters.localExtrema(lapSP, null, true, thresholdSeeds, n).setName("seedsSP"); // TODO: also exclude big sizes ?
         //ImageByte seeds = Filters.localExtrema(lap, null, true, thresholdSeeds, Filters.getNeighborhood(scale, scale, input));
         for (int z = 0; z<seedsSP.getSizeZ(); ++z) { // filter for smooth value
             for (int xy = 0; xy<seedsSP.getSizeXY(); ++xy) {
-                if (seedsSP.insideMask(xy, z) && smooth.getPixel(xy, 0)<intensityThreshold) seedsSP.setPixel(xy, z, 0);
+                if (seedsSP.insideMask(xy, z) && (smooth.getPixel(xy, 0)<intensityThreshold || !parent.getMask().insideMask(xy, 0))) seedsSP.setPixel(xy, z, 0);
             }
         }
         if (intermediateImages!=null) {
-            intermediateImages.add(lapSP.setName("lap scale sapce"));
+            
+            //intermediateImages.add(lapSP.setName("lap scale sapce"));
             intermediateImages.add(seedsSP.setName("seed scale sapce"));
             intermediateImages.add(pv.getScaledInput());
+            intermediateImages.add(smooth.setName("gaussian"));
+            // display gaussian scale space & laplacian scale space
+            //Image[] gauss = new Image[scale.length+1];
+            Image[] lapWithInput = new Image[lap.length+1];
+            for (int i = 0; i<scale.length; ++i) {
+                //gauss[i+1] = ImageFeatures.gaussianSmoothScaleIndep(pv.getScaledInput(), scale[i], scale[i], false).setName("gaussian: "+scale[i]);
+                lapWithInput[i+1] = lap[i];
+            }
+            //gauss[0] = pv.getScaledInput();
+            lapWithInput[0] = pv.getScaledInput();
+            //intermediateImages.add(Image.mergeZPlanes(Arrays.asList(gauss)).setName("Gaussian scale space"));
+            intermediateImages.add(Image.mergeZPlanes(Arrays.asList(lapWithInput)).setName("Laplacian scale space"));
+            
         }
         ImageByte[] seedMaps = seedsSP.splitZPlanes().toArray(new ImageByte[0]);
         ObjectPopulation[] pops =  MultiScaleWatershedTransform.watershed(lap, parent.getMask(), seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdPropagation), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize));
@@ -243,7 +265,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         SubPixelLocalizator.debug=debug;
         for (int i = 0; i<lap.length; ++i) {
             SubPixelLocalizator.setSubPixelCenter(lap[i], pops[i].getObjects(), true); // lap -> better in case of close objects
-            for (Object3D o : pops[i].getObjects()) { // quality criterion : smooth * lap
+            for (Object3D o : pops[i].getObjects()) { // quality criterion : sqrt (smooth * lap)
                 if (o.getQuality()==0) { // localizator didnt work
                     double[] center = o.getMassCenter(lap[i], false);
                     if (center[0]>lap[i].getSizeX()-1) center[0] = lap[i].getSizeX()-1;
@@ -273,6 +295,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             if (testParam.equals(this.scale.getName()) || testParam.equals(this.intensityThreshold.getName())) ImageWindowManagerFactory.showImage(pv.getSmoothedMap().setName("IntensityMap"));
             logger.debug("Quality: {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()+""));
             ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("segmented image"));
+            
+            
         }
         
         return pop;
@@ -313,10 +337,11 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         double[] scale = getScale();
         double smoothScale = this.smoothScale.getValue().doubleValue();
         Image[] maps = new Image[scale.length+1];
-        maps[0] = ImageFeatures.gaussianSmooth(filteredSource, smoothScale, smoothScale, false).setName("gaussian: "+smoothScale);
+        maps[0] = ImageFeatures.gaussianSmooth(filteredSource, smoothScale, smoothScale, false).setName("gaussian: "+smoothScale); //
         for (int i = 0; i<scale.length; ++i) {
             maps[i+1] = ImageFeatures.getLaplacian(filteredSource, scale[i], true, false).setName("laplacian: "+scale[i]);
         }
+        
         return maps;
     }
     
@@ -345,7 +370,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         if (verboseManualSeg) logger.debug("thld: {} mean & sigma: {}", thld, ms);
         Image scaledInput = ImageOperations.affineOperation2WithOffset(input, null, 1/ms[1], -ms[0]);
         Image lap = ImageFeatures.getLaplacian(scaledInput, scale.getArrayDouble()[0], true, false).setName("laplacian: "+scale);
-        Image smooth = ImageFeatures.gaussianSmooth(scaledInput, scale.getArrayDouble()[0], scale.getArrayDouble()[0], false).setName("gaussian: "+scale.getArrayDouble()[0]);
+        Image smooth = ImageFeatures.gaussianSmoothScaleIndep(scaledInput, smoothScale.getValue().doubleValue(), smoothScale.getValue().doubleValue(), false).setName("gaussian: "+scale.getArrayDouble()[0]); // scale indep ? 
         ObjectPopulation pop =  watershed(lap, parent.getMask(), seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
         SubPixelLocalizator.setSubPixelCenter(smooth, pop.getObjects(), true);
         for (Object3D o : pop.getObjects()) { // quality criterion : smooth * lap
