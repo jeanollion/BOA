@@ -1,6 +1,7 @@
 package image;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import org.slf4j.Logger;
@@ -126,7 +127,36 @@ public abstract class Image implements ImageProperties {
             return null;
         }
     }
-    
+    /**
+     * 
+     * @param <T> images type
+     * @param images images to merge
+     * @return array of image, dimention of array = z dimention of original image, each image has the corresponding z plane of each image of {@param images}
+     */
+    public static <T extends Image> Image[] mergeImagesInZ(List<T> images) {
+        if (images==null || images.isEmpty()) return null;
+        if (!sameSize(images)) throw new IllegalArgumentException("All images should have same size");
+        int sizeZ = images.get(0).getSizeZ();
+        if (sizeZ==1) return new Image[]{mergeZPlanes(images)};
+        else {
+            Image[] res = new Image[sizeZ];
+            for (int z = 0; z<sizeZ; ++z) {
+                final int zz = z;
+                List<T> planes = Utils.transform(images, i->i.getZPlane(zz));
+                res[z] = mergeZPlanes(planes);
+            }
+            return res;
+        }
+    }
+    public static <T extends Image> boolean sameSize(Collection<T> images) {
+        if (images==null || images.isEmpty()) return true;
+        Iterator<T> it = images.iterator();
+        T ref=it.next();
+        while(it.hasNext()) {
+            if (!it.next().sameSize(ref)) return false;
+        }
+        return true;
+    }
     @Override
     public boolean sameSize(ImageProperties other) {
         return sizeX==other.getSizeX() && sizeY==other.getSizeY() && sizeZ==other.getSizeZ();

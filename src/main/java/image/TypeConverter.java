@@ -136,4 +136,35 @@ public class TypeConverter {
             return (T)toFloat(source, (ImageFloat)output);
         } else throw new IllegalArgumentException("Output should be of type byte, short, or float, but is: {}"+ output.getClass().getSimpleName());
     }
+
+    public static void homogenizeBitDepth(Image[][] images) {
+        boolean shortIm = false;
+        boolean floatIm = false;
+        for (Image[] im : images) {
+            for (Image i : im) {
+                if (i instanceof ImageShort) {
+                    shortIm = true;
+                } else if (i instanceof ImageFloat) {
+                    floatIm = true;
+                }
+            }
+        }
+        if (floatIm) {
+            for (int i = 0; i < images.length; i++) {
+                for (int j = 0; j < images[i].length; j++) {
+                    if (images[i][j] instanceof ImageByte || images[i][j] instanceof ImageShort) {
+                        images[i][j] = TypeConverter.toFloat(images[i][j], null);
+                    }
+                }
+            }
+        } else if (shortIm) {
+            for (int i = 0; i < images.length; i++) {
+                for (int j = 0; j < images[i].length; j++) {
+                    if (images[i][j] instanceof ImageByte) {
+                        images[i][j] = TypeConverter.toShort(images[i][j], null);
+                    }
+                }
+            }
+        }
+    }
 }

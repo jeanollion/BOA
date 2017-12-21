@@ -178,7 +178,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     
     @Override public ImagePlus showImage5D(String title, Image[][] imageTC) {
         if (IJ.getInstance()==null) new ImageJ();
-        /*Image5D res = new Image5D(title, getImageStack(imageTC), imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
+        /*Image5D res = new Image5D(title, getImagePlus(imageTC), imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
         for (int i = 0; i < imageTC[0].length; i++) {
             float[] dispRange = imageTC[0][i].getMinAndMax(null);
             res.setChannelMinMax(i + 1, dispRange[0], dispRange[1]);
@@ -191,16 +191,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         }*/
         //res.setDisplayMode(ChannelControl.OVERLAY);
         //res.show();
-        ImageStack stack = getImageStack(imageTC);
-        ImagePlus ip = new ImagePlus();
+        ImagePlus ip = IJImageWrapper.getImagePlus(imageTC, -1);
         ip.setTitle(title);
-        ip.setStack(stack, imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
-        ip.setOpenAsHyperStack(true);
-        Calibration cal = new Calibration();
-        cal.pixelWidth=imageTC[0][0].getScaleXY();
-        cal.pixelHeight=imageTC[0][0].getScaleXY();
-        cal.pixelDepth=imageTC[0][0].getScaleZ();
-        ip.setCalibration(cal);
         // TODO: set display range ?
         
         ip.show();
@@ -210,53 +202,6 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         return ip;
     }
     
-    protected static ImageStack getImageStack(Image[][] imageTC) { // suppose same number of channel & sizeZ for all channels & times
-        homogenizeBitDepth(imageTC);
-        int sizeZ=imageTC[0][0].getSizeZ();
-        int sizeC=imageTC[0].length;
-        ImageStack is = new ImageStack(imageTC[0][0].getSizeX(), imageTC[0][0].getSizeY(), sizeZ * imageTC.length * sizeC);
-        int count = 1;
-        for (int z = 0; z < sizeZ; ++z) {
-            for (int t = 0; t < imageTC.length; ++t) {
-                for (int c = 0; c < imageTC[0].length; ++c) {
-                    is.setPixels(imageTC[t][c].getPixelArray()[z], count++);
-                }
-            }
-        }
-        return is;
-    }
-    
-    public static void homogenizeBitDepth(Image[][] images) {
-        boolean shortIm = false;
-        boolean floatIm = false;
-        for (Image[] im : images) {
-            for (Image i:im) {
-                if (i instanceof ImageShort) {
-                    shortIm = true;
-                } else if (i instanceof ImageFloat) {
-                    floatIm = true;
-                }
-            }
-        }
-        if (floatIm) {
-            for (int i = 0; i < images.length; i++) {
-                for (int j = 0; j<images[i].length; j++) {
-                    if (images[i][j] instanceof ImageByte || images[i][j] instanceof ImageShort) {
-                        images[i][j] = TypeConverter.toFloat(images[i][j], null);
-                    }
-                }
-            }
-        } else if (shortIm) {
-            for (int i = 0; i < images.length; i++) {
-                for (int j = 0; j<images[i].length; j++) {
-                    if (images[i][j] instanceof ImageByte) {
-                        images[i][j] = TypeConverter.toShort(images[i][j], null);
-                    }
-                }
-            }
-        }
-    }
-
     @Override public void updateImageDisplay(Image image, double... displayRange) {
         if (this.displayedImages.containsKey(image)) {
             if (displayRange.length == 0) {

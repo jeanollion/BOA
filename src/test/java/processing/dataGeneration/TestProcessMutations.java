@@ -61,7 +61,7 @@ public class TestProcessMutations {
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName, null);
-        t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,15);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 8,8);
     }
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -159,7 +159,7 @@ public class TestProcessMutations {
             if (ySize<(m.getSizeY())) ySize = m.getSizeY();
             xSize+=intervalX+m.getSizeX();
         }
-        ySize+=100;
+        ySize+=50; // bug -> remove microchannel offsetY ? 
         xSize-=intervalX;
         Image inputPaste = Image.createEmptyImage("input", input.get(0), new BlankMask("", xSize, ySize, input.get(0).getSizeZ(), 0, 0, 0, 1, 1));
         Image outputLabelPaste = Image.createEmptyImage("labels", outputLabel.get(0), new BlankMask("", xSize, ySize, outputLabel.get(0).getSizeZ(), 0, 0, 0, 1, 1));

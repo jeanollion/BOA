@@ -268,13 +268,18 @@ public class Filters {
             return neighborhood.getMax(x, y, z, image);
         }
     }
-    private static class LocalMax extends Filter {
+    public static class LocalMax extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
             neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
-            float max = neighborhood.getPixelValues()[0];
-            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) max=neighborhood.getPixelValues()[i];
-            return max==image.getPixel(x, y, z)?1:0;
+            float max = neighborhood.getPixelValues()[0]; // coords are sorted by distance, first is center
+            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) return 0;
+            return 1;
+        }
+        public boolean isLocalMax(float value, int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image);
+            for (int i = 0; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>value) return false;
+            return true;
         }
     }
     private static class LocalMaxThreshold extends Filter {
@@ -293,7 +298,6 @@ public class Filters {
     }
     private static class LocalMin extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
-           
             neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             float min = neighborhood.getPixelValues()[0];

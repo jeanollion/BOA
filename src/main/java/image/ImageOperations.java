@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 import processing.Filters;
+import utils.Utils;
 
 /**
  *
@@ -45,7 +46,14 @@ public class ImageOperations {
         for (Object3D o : toRemove) o.draw(output, 0);
         return l;
     }
-
+    public static Image performPlaneByPlane(Image image, Function<Image, Image> function) {
+        if (image.getSizeZ()==1) return function.apply(image);
+        else {
+            List<Image> planes = image.splitZPlanes();
+            planes = Utils.transform(planes, function);
+            return Image.mergeZPlanes(planes);
+        }
+    }
 
     public static double[] getMinAndMax(List<Image> images) {
         if (images.isEmpty()) {
