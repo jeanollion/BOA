@@ -299,7 +299,7 @@ public class ObjectPopulation {
     public void translate(BoundingBox bounds, boolean absoluteLandmark) {
         for (Object3D o : getObjects()) {
             o.translate(bounds);
-            if (absoluteLandmark) o.setIsAbsoluteLandmark(true);
+            o.setIsAbsoluteLandmark(absoluteLandmark);
         }
         this.absoluteLandmark=absoluteLandmark;
     }
@@ -424,21 +424,21 @@ public class ObjectPopulation {
         }
     }
     
-    public ObjectPopulation filter(Filter filter) {
+    public ObjectPopulation filter(SimpleFilter filter) {
         return filter(filter, null);
     }
     
-    public ObjectPopulation filterAndMergeWithConnected(Filter filter) {
+    public ObjectPopulation filterAndMergeWithConnected(SimpleFilter filter) {
         List<Object3D> removed = new ArrayList<Object3D>();
         filter(filter, removed);
         if (!removed.isEmpty()) mergeWithConnected(removed);
         return this;
     }
     
-    public ObjectPopulation filter(Filter filter, List<Object3D> removedObjects) {
+    public ObjectPopulation filter(SimpleFilter filter, List<Object3D> removedObjects) {
         //int objectNumber = objects.size();
         if (removedObjects==null) removedObjects=new ArrayList<>();
-        filter.init(this);
+        if (filter instanceof Filter) ((Filter)filter).init(this);
         for (Object3D o : getObjects()) {
             if (!filter.keepObject(o)) removedObjects.add(o);
         }
@@ -551,7 +551,7 @@ public class ObjectPopulation {
     public void mergeWithConnected(Collection<Object3D> objectsToMerge) {
         // create a new list, with objects to merge at the end, and record the last label to merge
         ArrayList<Object3D> newObjects = new ArrayList<Object3D>();
-        Set<Object3D> toMerge=  new HashSet<Object3D>(objectsToMerge);
+        Set<Object3D> toMerge=  new HashSet<>(objectsToMerge);
         for (Object3D o : objects) if (!objectsToMerge.contains(o)) newObjects.add(o);
         int labelToMerge = newObjects.size()+1;
         newObjects.addAll(toMerge);
@@ -593,8 +593,10 @@ public class ObjectPopulation {
         }
     }
     
-    public static interface Filter {
+    public static interface Filter extends SimpleFilter {
         public void init(ObjectPopulation population);
+    }
+    public static interface SimpleFilter {
         public boolean keepObject(Object3D object);
     }
 

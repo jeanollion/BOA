@@ -18,8 +18,10 @@
 package TestUtils;
 
 import static TestUtils.TestUtils.logger;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.containers.ImportImageUtils;
 import dataStructure.objects.Voxel;
+import ij.ImageJ;
 import image.ImageReader;
 import java.io.File;
 import java.util.ArrayList;
@@ -35,6 +37,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import static plugins.plugins.measurements.BacteriaLineageMeasurements.getTrackHeadName;
+import processing.neighborhood.ConditionalNeighborhoodZ;
+import processing.neighborhood.ConicalNeighborhood;
 import testPlugins.dummyPlugins.DummySegmenter;
 import utils.ArrayUtil;
 import utils.Pair;
@@ -47,8 +51,14 @@ import static utils.Utils.removeFromMap;
  */
 public class TestClass {
     public static void main(String[] args) {
-        for (int i = 0; i<100; ++i) {
-            logger.debug("i: {}->{} ", i, getTrackHeadName(i));
+        new ImageJ();
+        //ConicalNeighborhood n = new ConicalNeighborhood(2, new double[]{1, 1.5}, new double[]{2, 2.5}, true);
+        //ImageWindowManagerFactory.showImage(n.drawNeighborhood(null));
+        double[] scales = new double[]{1, 1.5, 2.5, 3, 3.5, 4};
+        ConditionalNeighborhoodZ c = ConicalNeighborhood.generateScaleSpaceNeighborhood(new double[]{1, 1.5, 2.5, 3, 3.5, 4}, 6, 6, false);
+        for (int z = 0; z<scales.length; ++z) {
+            ConicalNeighborhood n  = (ConicalNeighborhood)c.getNeighborhood(z);
+            ImageWindowManagerFactory.showImage(n.drawNeighborhood(null));
         }
     }
     //@Test

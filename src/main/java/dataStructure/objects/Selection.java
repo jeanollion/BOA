@@ -56,7 +56,17 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     boolean navigate = false;
     boolean addObjects = false;
     
-    
+    public boolean[] getState() {
+        return new boolean[]{displayingObjects, displayingTracks, highlightingTracks, navigate, addObjects};
+    }
+    public void setState(boolean[] state) {
+        if (state == null) return;
+        displayingObjects = state[0];
+        displayingTracks = state[1];
+        highlightingTracks = state[2];
+        navigate = state[3];
+        addObjects = state[4];
+    }
     public final static String indexSeparator ="-";
     Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
     MasterDAO mDAO;
@@ -139,7 +149,10 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     public int getStructureIdx() {
         return structureIdx;
     }
-    
+    public boolean contains(StructureObject o) {
+        if (elements.containsKey(o.getPositionName())) return elements.get(o.getPositionName()).contains(indicesString(o));
+        else return false;
+    }
     public Set<String> getElementStrings(String position) {
         if (elements.containsKey(position)) return new HashSet(this.elements.get(position));
         else return Collections.EMPTY_SET;
@@ -355,10 +368,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         Map<String, List<StructureObject>> elByPos = StructureObjectUtils.splitByPosition(elementsToAdd);
         for (String pos : elByPos.keySet()) {
             if (this.retrievedElements.containsKey(pos)) for (StructureObject o : elementsToAdd) addElement(o);
-            else {
-                List<String> els = Utils.transform(elByPos.get(pos), o->indicesString(o));
-                addElements(pos, els);
-            }
+            addElements(pos, Utils.transform(elByPos.get(pos), o->indicesString(o)));
         }
         return this;
     }
@@ -501,9 +511,9 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         res.put("name", name);
         res.put("structureIdx", structureIdx);
         res.put("color", color);
-        res.put("displayingTracks", displayingTracks);
+        /*res.put("displayingTracks", displayingTracks);
         res.put("displayingObjects", displayingObjects);
-        res.put("highlightingTracks", highlightingTracks);
+        res.put("highlightingTracks", highlightingTracks);*/
         return res;
     }
 
@@ -516,11 +526,8 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         if (!jo.containsKey("structureIdx")) structureIdx = ((Number)jo.get("structure_idx")).intValue();
         else structureIdx = ((Number)jo.get("structureIdx")).intValue();
         if (jo.containsKey("color")) color = (String)jo.get("color");
-        if (!jo.containsKey("displayingTracks") && jo.containsKey("displaying_tracks")) displayingTracks = (Boolean)jo.get("displaying_tracks");
-        else if (jo.containsKey("displayingTracks")) displayingTracks = (Boolean)jo.get("displayingTracks");
-        if (!jo.containsKey("displayingObjects") && jo.containsKey("displaying_objects")) displayingObjects = (Boolean)jo.get("displaying_objects");
-        else  if (jo.containsKey("displayingObjects")) displayingObjects = (Boolean)jo.get("displayingObjects");
-        if (!jo.containsKey("highlightingTracks") && jo.containsKey("highlighting_tracks")) highlightingTracks = (Boolean)jo.get("highlighting_tracks");
-        else  if (jo.containsKey("highlightingTracks")) highlightingTracks = (Boolean)jo.get("highlightingTracks");
+        /*if (jo.containsKey("displayingTracks")) displayingTracks = (Boolean)jo.get("displayingTracks");
+        if (jo.containsKey("displayingObjects")) displayingObjects = (Boolean)jo.get("displayingObjects");
+        if (jo.containsKey("highlightingTracks")) highlightingTracks = (Boolean)jo.get("highlightingTracks");*/
     }
 }

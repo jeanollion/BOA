@@ -45,12 +45,12 @@ public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        int time =8;
-        int field = 21;
+        int time =1;
+        int field = 294;
         //String dbName = "TestThomasRawStacks";
-        String dbName = "fluo171127_WT_750ms";
-        //testSegMicrochannelsFromXP(dbName, field, time);
-        testPostProcessTracking(dbName, field, time);
+        String dbName = "fluo171204_WT_750ms";
+        testSegMicrochannelsFromXP(dbName, field, time);
+        //testPostProcessTracking(dbName, field, time);
     }
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {

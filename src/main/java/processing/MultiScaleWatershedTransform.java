@@ -53,17 +53,17 @@ public class MultiScaleWatershedTransform {
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
     
-    public static ObjectPopulation watershed(Image[] watershedMaps, ImageMask mask, List<Object3D>[] regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+    public static ObjectPopulation[] watershed(Image[] watershedMaps, ImageMask mask, List<Object3D>[] regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         MultiScaleWatershedTransform wt = new MultiScaleWatershedTransform(watershedMaps, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion);
         wt.run();
         return wt.getObjectPopulation();
     }
     
-    public static ObjectPopulation watershed(Image[] watershedMaps, ImageMask mask, ImageMask[] seeds, boolean decreasingPropagation) {
+    public static ObjectPopulation[] watershed(Image[] watershedMaps, ImageMask mask, ImageMask[] seeds, boolean decreasingPropagation) {
         if (watershedMaps.length!=seeds.length) throw new IllegalArgumentException("seeds and watershed maps should be within same scale-space");
         return watershed(watershedMaps, mask, getRegionalExtrema(seeds), decreasingPropagation, null, null);
     }
-    public static ObjectPopulation watershed(Image[] watershedMaps, ImageMask mask, ImageMask[] seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+    public static ObjectPopulation[] watershed(Image[] watershedMaps, ImageMask mask, ImageMask[] seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         return watershed(watershedMaps, mask, getRegionalExtrema(seeds), decreasingPropagation, propagationCriterion, fusionCriterion);
     }
     
@@ -74,6 +74,7 @@ public class MultiScaleWatershedTransform {
     }
     
     public MultiScaleWatershedTransform(Image[] watershedMaps, ImageMask mask, List<Object3D>[] regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+        if (watershedMaps.length!= regionalExtrema.length) throw new IllegalArgumentException("Watershed maps should have same number of planes as seeds");
         if (mask==null) mask=new BlankMask("", watershedMaps[0]);
         this.decreasingPropagation = decreasingPropagation;
         heap = decreasingPropagation ? new TreeSet<Voxel>(Voxel.getInvertedComparator()) : new TreeSet<Voxel>();
@@ -129,13 +130,19 @@ public class MultiScaleWatershedTransform {
     
     public ImageInteger getLabelImage() {return segmentedMap;}
     
-    public ObjectPopulation getObjectPopulation() {
-        //int nb = 0;
-        //for (Spot s : wt.spots) if (s!=null) nb++;
-        ArrayList<Object3D> res = new ArrayList<Object3D>(spotNumber);
+    public ObjectPopulation[] getObjectPopulation() {
+        ObjectPopulation[] res = new ObjectPopulation[this.watershedMaps.length];
+        ArrayList<Object3D>[] objects = new ArrayList[watershedMaps.length];
+        for (int i = 0; i<watershedMaps.length; ++i) objects[i] = new ArrayList<>();
         int label = 1;
-        for (Spot s : spots) if (s!=null) res.add(s.toObject3D(label++));
-        return new ObjectPopulation(res, mask);
+        for (Spot s : spots) if (s!=null) objects[s.scale].add(s.toObject3D(label++));
+        for (int i = 0; i<watershedMaps.length; ++i) res[i] = new ObjectPopulation(objects[i], mask);
+        return res;
+    }
+    public static ObjectPopulation combine(ObjectPopulation[] pops) {
+        ArrayList<Object3D> allObjects = new ArrayList<>();
+        for (int i = 0; i<pops.length; ++i) allObjects.addAll(pops[i].getObjects());
+        return new ObjectPopulation(allObjects, pops[0].getImageProperties());
     }
     
     protected Spot propagate(Spot currentSpot, Voxel currentVoxel, Voxel nextVox) { /// nextVox.value = 0 at this step

@@ -294,7 +294,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
                     }
                 }
             }
-            List<Double> SIMedian = SlidingOperator.performSlideLeft(SIList, 3, SlidingOperator.slidingMedian(5));
+            List<Double> SIMedian = SlidingOperator.performSlideLeft(SIList, 7, SlidingOperator.slidingMedian(5));
             // Replace values where NaN obseved
             double lastNonNan=Double.NaN;
             for (int i = 0; i<SIMedian.size(); ++i) {

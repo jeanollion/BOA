@@ -55,6 +55,7 @@ public class NumberParameter extends SimpleParameter implements OpParameter {
     
     public void setValue(Number value) {
         this.value=value;
+        this.fireListeners();
     }
     
     @Override

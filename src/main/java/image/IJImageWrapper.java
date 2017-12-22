@@ -17,6 +17,7 @@
  */
 package image;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.measure.Calibration;
@@ -91,9 +92,9 @@ public class IJImageWrapper {
                 st.setPixels(pixels[z], z + 1);
             }
         } else if (image instanceof ImageInt) {
-            return getImagePlus(TypeConverter.toFloat(image, null));
+            return IJImageWrapper.getImagePlus(TypeConverter.toFloat(image, null));
         } else if (image instanceof ImageMask) {
-            return getImagePlus(TypeConverter.toByteMask((ImageMask)image, null, 255));
+            return IJImageWrapper.getImagePlus(TypeConverter.toByteMask((ImageMask)image, null, 255));
         }
         ImagePlus ip= new ImagePlus(image.getName(), st);
         Calibration cal = new Calibration();
@@ -138,5 +139,31 @@ public class IJImageWrapper {
     }
     public static Function<Integer, int[]> getStackIndexFunctionRev(final int[] FCZCount) {
         return idx -> convertIndex(idx, FCZCount);
+    }
+
+    public static ImagePlus getImagePlus(Image[][] imageTC, double frameInterval) {
+        TypeConverter.homogenizeBitDepth(imageTC);
+        int sizeZ = imageTC[0][0].getSizeZ();
+        int sizeC = imageTC[0].length;
+        ImageStack is = new ImageStack(imageTC[0][0].getSizeX(), imageTC[0][0].getSizeY(), sizeZ * imageTC.length * sizeC);
+        int count = 1;
+        for (int z = 0; z < sizeZ; ++z) {
+            for (int t = 0; t < imageTC.length; ++t) {
+                for (int c = 0; c < imageTC[0].length; ++c) {
+                    is.setPixels(imageTC[t][c].getPixelArray()[z], count++);
+                }
+            }
+        }
+        ImagePlus ip = new ImagePlus();
+        
+        ip.setStack(is, imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
+        ip.setOpenAsHyperStack(true);
+        Calibration cal = new Calibration();
+        cal.pixelWidth=imageTC[0][0].getScaleXY();
+        cal.pixelHeight=imageTC[0][0].getScaleXY();
+        cal.pixelDepth=imageTC[0][0].getScaleZ();
+        if (frameInterval>0) cal.frameInterval = frameInterval;
+        ip.setCalibration(cal);
+        return ip;
     }
 }

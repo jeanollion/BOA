@@ -64,6 +64,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -589,6 +591,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         reloadObjectTrees=true;
         populateSelections();
         updateDisplayRelatedToXPSet();
+        experimentListValueChanged(null);
     }
     
     private void updateConfigurationTree() {
@@ -634,6 +637,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         tabs.setSelectedIndex(0);
         ImageWindowManagerFactory.getImageManager().flush();
         if (xp!=null) setMessage("XP: "+xp+ " closed");
+        experimentListValueChanged(null);
     }
     
     private void updateDisplayRelatedToXPSet() {
@@ -657,6 +661,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     public void populateSelections() {
         List<Selection> selectedValues = selectionList.getSelectedValuesList();
+        
+        Map<String, boolean[]> state = selectionModel.isEmpty() ? Collections.EMPTY_MAP : Utils.asList(selectionModel).stream().collect(Collectors.toMap(s->s.getName(), s->s.getState()));
         this.selectionModel.removeAllElements();
         if (!checkConnection()) return;
         SelectionDAO dao = this.db.getSelectionDAO();
@@ -667,6 +673,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         List<Selection> sels = dao.getSelections();
         for (Selection sel : sels) {
             selectionModel.addElement(sel);
+            sel.setState(state.get(sel.getName()));
             //logger.debug("Selection : {}, displayingObjects: {} track: {}", sel.getName(), sel.isDisplayingObjects(), sel.isDisplayingTracks());
         }
         Utils.setSelectedValues(selectedValues, selectionList, selectionModel);
@@ -1114,6 +1121,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         experimentList.setBackground(new java.awt.Color(254, 254, 254));
         experimentList.setBorder(null);
+        experimentList.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                experimentListValueChanged(evt);
+            }
+        });
         experimentJSP.setViewportView(experimentList);
 
         actionPoolJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Job Pool"));
@@ -2003,7 +2015,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         StructureObject nextParent = null;
         if (i.getParent().isRoot()) return;
         List<StructureObject> siblings = i.getParent().getSiblings();
-        int idx = siblings.indexOf(i.getParent()) + (next ? 1 : -1) ;
+        int idx = siblings.indexOf(i.getParent());
+        // current image structure: 
+        ImageObjectInterfaceKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage2());
+        int currentImageStructure = key ==null ? i.getChildStructureIdx() : key.displayedStructureIdx;
+        if (i.getChildStructureIdx() == currentImageStructure) idx += (next ? 1 : -1) ; // only increment if same structure
+        logger.debug("current inter: {}, current image child: {}",interactiveStructure.getSelectedIndex(), currentImageStructure);
         if (siblings.size()==idx || idx<0) { // next position
             List<String> positions = Arrays.asList(i.getParent().getExperiment().getPositionsAsString());
             int idxP = positions.indexOf(i.getParent().getPositionName()) + (next ? 1 : -1);
@@ -2316,13 +2333,24 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void exportXPConfigMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportXPConfigMenuItemActionPerformed
         if (!checkConnection()) return;
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        String dir = promptDir("Choose output directory", defDir, true);
-        if (dir==null) return;
+        File f = Utils.chooseFile("Write config to...", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
+        if (f==null || !f.getParentFile().isDirectory()) return;
+        promptSaveUnsavedChanges();
         //CommandExecuter.dump(getCurrentHostNameOrDir(), db.getDBName(), "Experiment", dir, jsonFormatMenuItem.isSelected());
-        ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
-        ImportExportJSON.exportConfig(w, db);
-        w.close();
-        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
+        //ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
+        //ImportExportJSON.exportConfig(w, db);
+        //w.close();
+        // export config as text file, without positions
+        String save = f.getAbsolutePath();
+        if (!save.endsWith(".txt")) save+=".txt";
+        Experiment dup = db.getExperiment().duplicate();
+        dup.clearPositions();
+        try {
+            FileIO.write(new RandomAccessFile(save, "rw"), dup.toJSONEntry().toJSONString(), false);
+        } catch (IOException ex) {
+            GUI.log("Error while exporting config to: "+f.getAbsolutePath()+ ": "+ex.getLocalizedMessage());
+        }
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getParent());
     }//GEN-LAST:event_exportXPConfigMenuItemActionPerformed
 
     private void importPositionsToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importPositionsToCurrentExperimentMenuItemActionPerformed
@@ -2513,6 +2541,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 int[] selectedStructures = ArrayUtil.generateIntegerArray(t.getDB().getExperiment().getStructureCount());
                 for (int sIdx : selectedStructures) t.addExtractMeasurementDir(t.getDB().getDir(), sIdx);
             }
+            t.getDB().clearCache(); 
         } else return null;
         t.setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages);
         if (export) t.setExportData(this.exportPPImagesMenuItem.isSelected(), this.exportTrackImagesMenuItem.isSelected(), this.exportObjectsMenuItem.isSelected(), this.exportConfigMenuItem.isSelected(), this.exportSelectionsMenuItem.isSelected());
@@ -2538,7 +2567,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
         if (t.isPreProcess() || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
         
-        Task.executeTask(t, this, ()->{updateConfigurationTree();});
+        Task.executeTask(t, this, ()->{updateConfigurationTree();}); // update config because cache will be cleared
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
     private void importImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImagesMenuItemActionPerformed
@@ -2625,7 +2654,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         String defDir = PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), new File(db.getExperiment().getOutputDirectory()).getParent());
         File outputDir = Utils.chooseFile("Choose directory", defDir, FileChooser.FileChooserOption.DIRECTORIES_ONLY, this);
         if (outputDir!=null) {
-            String file = outputDir.getAbsolutePath()+File.separator+db.getDBName()+"_Selections.xls";
+            String file = outputDir.getAbsolutePath()+File.separator+db.getDBName()+"_Selections.csv";
             SelectionExtractor.extractSelections(db, getSelectedSelections(true), file);
             PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), outputDir.getAbsolutePath());
             PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR, outputDir.getAbsolutePath());
@@ -2677,6 +2706,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         exportSelectedExperiments(true, true, true, false, false, false);
     }//GEN-LAST:event_exportXPObjectsMenuItemActionPerformed
     private void exportSelectedExperiments(boolean config, boolean objects, boolean selections, boolean preProcessedImages, boolean trackImages, boolean eraseXP) {
+        if (config) this.promptSaveUnsavedChanges();
         final List<String> xps = getSelectedExperiments();
         final List<String> positions = new ArrayList<>();
         if (xps.size()<=1) {
@@ -3298,6 +3328,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         }
     }//GEN-LAST:event_microscopyFieldListMousePressed
+
+    private void experimentListValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_experimentListValueChanged
+        List<String> sel = getSelectedExperiments();
+        if (this.db==null) {
+            if (sel.size()==1) setSelectedExperimentMenuItem.setText("Open Experiment: "+sel.get(0));
+            else setSelectedExperimentMenuItem.setText("--");
+        } else {
+            if (sel.size()==1 && !sel.get(0).equals(db.getDBName())) setSelectedExperimentMenuItem.setText("Open Experiment: "+sel.get(0));
+            else setSelectedExperimentMenuItem.setText("Close Experiment: "+db.getDBName());
+            
+        }
+    }//GEN-LAST:event_experimentListValueChanged
     
     public void addToSelectionActionPerformed() {
         if (!this.checkConnection()) return;

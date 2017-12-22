@@ -50,10 +50,10 @@ public class TestProcessMicrochannels {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        int time =8;
-        int field = 21;
+        int time =1;
+        int field = 294;
         //String dbName = "TestThomasRawStacks";
-        String dbName = "fluo171127_WT_750ms";
+        String dbName = "fluo171204_WT_750ms";
         testSegMicrochannelsFromXP(dbName, field, time);
         //testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 700);
     }

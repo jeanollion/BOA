@@ -50,6 +50,7 @@ import image.BoundingBox;
 import image.IJImageWrapper;
 import image.Image;
 import image.ImageInteger;
+import image.ImageMask;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Component;
@@ -138,7 +139,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 //boolean ctrl = (IJ.isMacOSX() || IJ.isMacintosh()) ? e.isAltDown() : e.isControlDown(); // for mac: ctrl + clik = right click -> alt instead of ctrl
                 boolean freeHandSplit = ( IJ.getToolName().equals("freeline")) && ctrl;
                 boolean strechObjects = (IJ.getToolName().equals("line")) && ctrl;
-                //logger.debug("ctrl: {}, tool : {}, freeHandSplit: {}", ctrl, IJ.getToolName(), freeHandSplit);
+                logger.debug("ctrl: {}, tool : {}, freeHandSplit: {}", ctrl, IJ.getToolName(), freeHandSplit);
                 boolean addToSelection = e.isShiftDown() && (!freeHandSplit || !strechObjects);
                 boolean displayTrack = displayTrackMode;
                 //logger.debug("button ctrl: {}, shift: {}, alt: {}, meta: {}, altGraph: {}, alt: {}", e.isControlDown(), e.isShiftDown(), e.isAltDown(), e.isMetaDown(), e.isAltGraphDown(), displayTrackMode);
@@ -171,24 +172,23 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     //logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
                     if (r.getType()==Roi.RECTANGLE || r.getType()==Roi.LINE || removeAfterwards) {
                         fromSelection=true;
-                        Rectangle rect = r.getBounds();
+                        Rectangle rect = removeAfterwards ? r.getPolygon().getBounds() : r.getBounds();
                         if (rect.height==0 || rect.width==0) removeAfterwards=false;
                         BoundingBox selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
                         if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
                         i.addClickedObjects(selection, selectedObjects);
                         //logger.debug("before remove, contained: {}, rect: {}, selection: {}", selectedObjects.size(), rect, selection);
                         if (removeAfterwards) {
-                            Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
-                            while (it.hasNext()) {
-                                Pair<StructureObject, BoundingBox> p= it.next();
-                                Polygon poly = r.getPolygon();
-                                //logger.debug("poly {}, nPoints: {}, x:{}, y:{}", poly, poly.npoints, poly.xpoints, poly.ypoints);
-                                Rectangle oRect = new Rectangle(p.value.getxMin(), p.value.getyMin(), p.key.getBounds().getSizeX(), p.key.getBounds().getSizeY());
-                                if (!poly.intersects(oRect)) it.remove();
-                                    
+                            Polygon poly = r.getPolygon();
+                                Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
+                                while (it.hasNext()) {
+                                    Pair<StructureObject, BoundingBox> p= it.next();
+                                    //logger.debug("poly {}, nPoints: {}, x:{}, y:{}", poly, poly.npoints, poly.xpoints, poly.ypoints);
+                                    Rectangle oRect = new Rectangle(p.value.getxMin(), p.value.getyMin(), p.key.getBounds().getSizeX(), p.key.getBounds().getSizeY());
+                                    if ((poly.npoints>1 && !poly.intersects(oRect)) || !insideMask(p.key.getMask(), p.value, poly)) it.remove();
+                                }
+                                //logger.debug("interactive selection after remove, contained: {}", selectedObjects.size());
                             }
-                            //logger.debug("after remove, contained: {}", selectedObjects.size());
-                        }
                         if (!freeHandSplit || !strechObjects) ip.deleteRoi();
                     }
                 }
@@ -269,7 +269,15 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             if (!imageObjectInterfaceMap.keySet().contains(im)) ip.close();
         }
     }
-    
+    private boolean insideMask(ImageMask mask, BoundingBox offsetMask, Polygon selection) {
+        for (int i = 0; i<selection.npoints; ++i) {
+            int x= selection.xpoints[i] - offsetMask.getxMin();
+            int y = selection.ypoints[i] - offsetMask.getyMin();
+            int z = offsetMask.getzMin();
+            if (mask.contains(x, y, z) && mask.insideMask(x, y, z)) return true;
+        }
+        return false;
+    }
     @Override public void setActive(Image image) {
         super.setActive(image);
         ImagePlus ip = this.displayer.getImage(image);

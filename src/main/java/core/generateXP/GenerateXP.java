@@ -93,6 +93,10 @@ import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;
 import plugins.legacy.SuppressCentralHorizontalLine;
+import plugins.plugins.postFilters.RemoveEndofChannelBacteria;
+import plugins.plugins.trackPostFilter.RemoveMicrochannelsTouchingBackgroundOnSides;
+import plugins.plugins.trackPostFilter.RemoveSaturatedMicrochannels;
+import plugins.plugins.trackPostFilter.SegmentationPostFilter;
 import plugins.plugins.transformations.AutoFlipY;
 import plugins.plugins.transformations.RemoveDeadPixels;
 import processing.ImageTransformation;
@@ -431,8 +435,9 @@ public class GenerateXP {
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
         if (crop!=null) ps.addTransformation(0, null, new SimpleCrop(crop));
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
-        ps.addTransformation(1, null, new RemoveDeadPixels());
-        ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false));
+        ps.addTransformation(1, null, new RemoveDeadPixels(20, 4)); // for reminiscent pixels
+        ps.addTransformation(1, null, new RemoveDeadPixels(35, 1)); // for non-reminiscent pixels
+        ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false).setTrimNegativeValues(true)); // TODO test trim negative values. make it more sensitive because sd of background is rediced -> modify otsu thld. advantage: after transformations, convertion to 16 bit trim values.
         ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
         ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
         ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
@@ -468,15 +473,21 @@ public class GenerateXP {
                     new MicrochannelTracker().setSegmenter(
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
-                    ).addTrackPostFilters(new TrackLengthFilter().setMinSize(100), 
-                            new RemoveTracksStartingAfterFrame())
+                    ).addTrackPostFilters(new RemoveMicrochannelsTouchingBackgroundOnSides(2),
+                            new TrackLengthFilter().setMinSize(100), 
+                            new RemoveTracksStartingAfterFrame(), 
+                            new RemoveSaturatedMicrochannels())
             );
-            bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
+            bacteria.setProcessingScheme(
+                    new SegmentAndTrack(
+                            new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo().setContactLimit(0)).setCostParameters(0.1, 0.5)
+                    ).addTrackPostFilters(new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria()))
+            );
             //mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
             mutation.setProcessingScheme(new SegmentAndTrack(
                     new LAPTracker().setCompartimentStructure(1).setSegmenter(
                         new MutationSegmenter(0.9, 0.75, 0.9).setScale(2)  // was 1.5, 1, 1.25
-                ).setSpotQualityThreshold(2) // was 2
+                ).setSpotQualityThreshold(2) // 1.5 for WT
                             .setLinkingMaxDistance(0.8, 0.82).setGapParameters(0.8, 0.15, 3).setTrackLength(8, 14)
             ).addPreFilters(new BandPass(0, 8, 0, 5) 
             ).addPostFilters(new FeatureFilter(new Quality(), 0.8, true, true))); // was 1.5

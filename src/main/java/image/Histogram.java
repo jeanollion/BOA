@@ -129,19 +129,58 @@ public class Histogram {
         for (int i : data) sum+=i;
         return sum;
     }
-    public void removeSaturatingValue(double countThlFactor) {
-        if (this.byteHisto) {
-            int i = 255;
-            if (data[i]==0) while(i>0 && data[i-1]==0) --i;
-            if (i>0) {
-                logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
-                if (data[i]>data[i-1]*countThlFactor) data[i]=0;
+    public void removeSaturatingValue(double countThlFactor, boolean highValues) {
+        if (highValues) {
+            if (this.byteHisto) {
+                int i = 255;
+                if (data[i]==0) while(i>0 && data[i-1]==0) --i;
+                if (i>0) {
+                    //logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
+                    if (data[i]>data[i-1]*countThlFactor) data[i]=0;
+                }
+            } else {
+                //logger.debug("remove saturating value: {} (prev: {})", data[255], data[254]);
+                if (data[255]>data[254]*countThlFactor) {
+                    data[255]=0;
+                }
             }
         } else {
-            logger.debug("remove saturating value: {} (prev: {})", data[255], data[254]);
-            if (data[255]>data[254]*countThlFactor) {
-                data[255]=0;
+            if (this.byteHisto) {
+                int i = 0;
+                if (data[i]==0) while(i>0 && data[i+1]==0) ++i;
+                if (i<255) {
+                    //logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
+                    if (data[i]>data[i+1]*countThlFactor) data[i]=0;
+                }
+            } else {
+                //logger.debug("remove saturating value: {} (prev: {})", data[255], data[254]);
+                if (data[0]>data[1]*countThlFactor) {
+                    data[0]=0;
+                }
             }
         }
+    }
+    public double[] getPercentile(double... percent) {
+        double binSize = getBinSize();
+        int gcount = 0;
+        for (int i : data) gcount += i;
+        double[] res = new double[percent.length];
+        for (int i = 0; i<res.length; ++i) {
+            int count = gcount;
+            double limit = count * (1-percent[i]); // 1- ?
+            if (limit >= count) {
+                res[i] = minAndMax[0];
+                continue;
+            }
+            count = data[255];
+            int idx = 255;
+            while (count < limit && idx > 0) {
+                idx--;
+                count += data[idx];
+            }
+            double idxInc = (data[idx] != 0) ? (count - limit) / (data[idx]) : 0; //lin approx
+            res[i] = (double) (idx + idxInc) * binSize + getHistoMinBreak();
+        }
+        return res;
     }
 }

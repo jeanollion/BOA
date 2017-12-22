@@ -57,8 +57,14 @@ public class WatershedTransform {
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
     public static List<Object3D> duplicateSeeds(List<Object3D> seeds) {
-        List<Object3D> res = new ArrayList<Object3D>(seeds.size());
+        List<Object3D> res = new ArrayList<>(seeds.size());
         for (Object3D o : seeds) res.add(new Object3D(new ArrayList<Voxel>(o.getVoxels()), o.getLabel(), o.getScaleXY(), o.getScaleZ()));
+        return res;
+    }
+    public static List<Object3D> createSeeds(List<Voxel> seeds, float scaleXY, float scaleZ) {
+        List<Object3D> res = new ArrayList<>(seeds.size());
+        int label = 1;
+        for (Voxel v : seeds) res.add(new Object3D(new ArrayList<Voxel>(){{add(v);}}, label++, scaleXY, scaleZ));
         return res;
     }
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
@@ -147,6 +153,10 @@ public class WatershedTransform {
                 if (mask.contains(next.x, next.y, next.z) && mask.insideMask(next.x, next.y, next.z)) currentSpot=propagate(currentSpot,v, next);
             }
         }
+    }
+
+    public Image getWatershedMap() {
+        return watershedMap;
     }
     
     public ImageInteger getLabelImage() {return segmentedMap;}

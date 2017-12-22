@@ -20,13 +20,16 @@ package boa.gui.imageInteraction;
 import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.ObjectPopulation.Filter;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
 import image.ImageLabeller;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,8 +48,8 @@ public class FreeLineSplitter implements ObjectSplitter {
     final int[] xPoints, yPoints;
     public FreeLineSplitter(Collection<Pair<StructureObject, BoundingBox>> objects, int[] xPoints, int[] yPoints) {
         if (xPoints.length!=yPoints.length) throw new IllegalArgumentException("xPoints & yPoints should have same length");
-        logger.debug("xPoints: {}", xPoints);
-        logger.debug("yPoints: {}", yPoints);
+        //logger.debug("xPoints: {}", xPoints);
+        //logger.debug("yPoints: {}", yPoints);
         this.xPoints=xPoints;
         this.yPoints=yPoints;
         offsetMap = new HashMap<>(objects.size());
@@ -72,6 +75,18 @@ public class FreeLineSplitter implements ObjectSplitter {
         }
         List<Object3D> objects = ImageLabeller.labelImageListLowConnectivity(splitMask);
         ObjectPopulation res = new ObjectPopulation(objects, input);
+        res.filterAndMergeWithConnected(o->o.getSize()>1); // connect 1-pixels objects, artifacts of low connectivity labelling
+        if (objects.size()>2) { // merge smaller & connected
+            // islate bigger object and try to merge others
+            Object3D biggest = Collections.max(objects, (o1, o2)->Integer.compare(o1.getSize(), o2.getSize()));
+            List<Object3D> toMerge = new ArrayList<>(objects);
+            toMerge.remove(biggest);
+            ObjectPopulation mergedPop =  new ObjectPopulation(toMerge, input);
+            mergedPop.mergeAllConnected();
+            objects = mergedPop.getObjects();
+            objects.add(biggest);
+            res = new ObjectPopulation(objects, input);
+        }
         // relabel removed pixels
         if (objects.size()==2) {
             splitMask = res.getLabelMap();

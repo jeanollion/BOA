@@ -131,7 +131,7 @@ public abstract class TrackMask extends ImageObjectInterface {
         else structureName= structureIdx+"";
         final Image displayImage =  generateEmptyImage("Track: Parent:"+parents.get(0)+" Raw Image of"+structureName, image0);
         pasteImage(image0, displayImage, trackOffset[0]);
-        final double[] minAndMax = image0.getMinAndMax(null);
+        //final double[] minAndMax = image0.getMinAndMax(null);
         //long[] totalTime = new long[1];
         // draw image in another thread..
         // update display every paste...
@@ -142,15 +142,15 @@ public abstract class TrackMask extends ImageObjectInterface {
                 //long t0 = System.currentTimeMillis();
                 Image image = trackObjects[i].generateRawImage(structureIdx, false);
                 //long t1 = System.currentTimeMillis();
-                double[] mm = image.getMinAndMax(null);
-                if (mm[0]<minAndMax[0]) minAndMax[0]=mm[0];
-                if (mm[1]>minAndMax[1]) minAndMax[1]=mm[1];
+                //double[] mm = image.getMinAndMax(null);
+                //if (mm[0]<minAndMax[0]) minAndMax[0]=mm[0];
+                //if (mm[1]>minAndMax[1]) minAndMax[1]=mm[1];
                 //long t2 = System.currentTimeMillis();
                 pasteImage(image, displayImage, trackOffset[i]);
                 //long t3 = System.currentTimeMillis();
                 //long t4=t3;
                 if (count>=updateImageFrequency || i==trackObjects.length-1) {
-                    ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1]));
+                    ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage); //, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1])
                     //t4 = System.currentTimeMillis();
                     count=0;
                 } else count++;
@@ -166,7 +166,7 @@ public abstract class TrackMask extends ImageObjectInterface {
             ImageWindowManagerFactory.getImageManager().runningWorkers.put(displayImage, w);
             w.setEndOfWork(()->{ 
                 ImageWindowManagerFactory.getImageManager().runningWorkers.remove(displayImage); 
-                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1])); 
+                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);  //, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1])
             });
         } else {
             DefaultWorker.executeInForeground(t, trackObjects.length);

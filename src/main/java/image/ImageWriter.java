@@ -89,6 +89,10 @@ public class ImageWriter {
      */
     public static void writeToFile(String folderPath, String fileName, ImageFormat extension, Image[][]... imageTC) {
         //if (!extension.getSupportMultipleTimeAndChannel() && imageTC.length>1 || imageTC[0].length>1) throw new IllegalArgumentException("the format does not support multiple time points and channels");
+        if (extension.equals(ImageFormat.TIF)) { // write as IJ tif
+            
+            return;
+        }
         try {
             //System.out.println("series:"+imageTC.length);
             for (int s = 0; s<imageTC.length; ++s) logger.trace("ImageWriter: serie #:"+s+ " time points: "+imageTC[s].length+ " channels: "+imageTC[s][0].length);
@@ -192,7 +196,25 @@ public class ImageWriter {
         }
         return meta;
     }
-    
+    public static void writeToFileTIF(Image[][] imageTC, double frameInterval, String fullPath) {
+        ImagePlus img = IJImageWrapper.getImagePlus(imageTC, frameInterval);
+        //System.out.println("image cal: x:"+img.getCalibration().pixelWidth+ " z:"+img.getCalibration().pixelDepth);
+        FileInfo fi = img.getFileInfo();
+        fi.info = img.getInfoProperty();
+        FileSaver fs = new FileSaver(img);
+        fi.description = fs.getDescriptionString();
+        fi.sliceLabels = img.getStack().getSliceLabels();
+        //System.out.println("fi image cal: x:"+fi.pixelWidth+ " z:"+fi.pixelDepth+ " nimages:"+fi.nImages);
+        TiffEncoder te = new TiffEncoder(fi);
+        try {
+            DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(fullPath)));
+            te.write(out);
+            out.close();
+        } catch (IOException ex) {
+            logger.debug("Error writing ij tif", ex);
+        }
+        
+    }
     private static void writeToFileTIF(Image image, String fullPath) {
         ImagePlus img = IJImageWrapper.getImagePlus(image);
         //System.out.println("image cal: x:"+img.getCalibration().pixelWidth+ " z:"+img.getCalibration().pixelDepth);

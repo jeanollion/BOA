@@ -116,6 +116,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         for (Pair<String, Exception> e : exceptions) logger.error(e.key, e.value);
         List<Double> thldsList = new ArrayList<>(Arrays.asList(thlds));
         thldsList.removeIf(d -> Double.isInfinite(d) || Double.isNaN(d));
+        if (testMode) logger.debug("SaturateHisto: #satu: {},, list: {}", thldsList.size(), thldsList);
         double thld = ArrayUtil.median(thldsList);
         //double thld = Arrays.stream(thlds).min((d1, d2)->Double.compare(d1, d2)).get();
         long t1 = System.currentTimeMillis();
@@ -133,11 +134,11 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         backThld=ImageOperations.threshold(im, thldBack, true, true, false, backThld);
         ImageMask hyperThld = new ThresholdMask(im, thldHyper, true, true);
         // remove small obejcts (if background is too low isolated pixels)
-        ImageOperations.filterObjects(backThld, backThld, o->o.getSize()<1);
+        ImageOperations.filterObjects(backThld, backThld, o->o.getSize()<=1);
         double count = backThld.count();
         if (count<minimumCount) return Double.POSITIVE_INFINITY;
         double countHyper = hyperThld.count();
-        if (testMode) logger.debug("thldBack:{} hyper: {}, count back: {}, hyper: {}, prop: {}", thldBack, thldHyper, count, countHyper, countHyper / count);
+        if (testMode) logger.debug("idx:{} thldBack:{} hyper: {}, count back: {}, hyper: {}, prop: {}", idx, thldBack, thldHyper, count, countHyper, countHyper / count);
         double proportion = countHyper / count;
         if (proportion<proportionThld && count-countHyper>minimumCount) { // recompute hyper thld within seg bact
             ImageMask thldMask = new ThresholdMask(im, thldBack, true, true);

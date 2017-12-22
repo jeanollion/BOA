@@ -27,6 +27,7 @@ import boa.gui.PropertyUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static core.TaskRunner.logger;
 import dataStructure.configuration.PreProcessingChain;
+import dataStructure.objects.DBMapMasterDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
 import ij.IJ;
@@ -286,7 +287,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         public boolean isValid() {
             initDB();
-            if (db.isReadOnly()) {
+            if (db.isReadOnly()) { // except if only extract measurement or data
                 publish("db is read only! task cannot be run");
                 return false;
             }
@@ -315,9 +316,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
             }
             if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages && !exportData) errors.add(new Pair(dbName, new Exception("No action to run!")));
-            db.clearCache(); // unlock
             printErrors();
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
+            db.clearCache(); // unlock if (unlock) 
             return errors.isEmpty();
         }
         private void checkArray(int[] array, int maxValue, String message) {
@@ -348,6 +349,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             count+=extractMeasurementDir.size();
             if (this.exportObjects || this.exportPreProcessedImages || this.exportTrackImages) count+=positions.size();
+            db.clearCache(); // avoid lock issues
             return count;
         }
         public void setSubtaskNumber(int[] taskCounter) {
@@ -496,7 +498,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         if (positions!=null) res+="/positions:"+ArrayUtils.toString(positions)+"/";
         if (!extractMeasurementDir.isEmpty()) {
             res+= "/Extract: ";
-            for (Pair<String, int[]> p : this.extractMeasurementDir) res+=(p.key==null?dir:p.key)+ "="+ArrayUtils.toString(res);
+            for (Pair<String, int[]> p : this.extractMeasurementDir) res+=(p.key==null?dir:p.key)+ "="+ArrayUtils.toString(p.value);
             res+="/";
         }
         if (exportData) {
@@ -560,11 +562,13 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     public static void executeTasks(List<Task> tasks, UserInterface ui, Runnable... endOfWork) {
         int totalSubtasks = 0;
         for (Task t : tasks) {
+            logger.debug("checking task: {}", t);
             if (!t.isValid()) {
                 if (ui!=null) ui.setMessage("Invalid task: "+t.toString());
                 return;
             } 
             totalSubtasks+=t.countSubtasks();
+            logger.debug("check ok: current task number: {}");
         }
         if (ui!=null) ui.setMessage("Total subTasks: "+totalSubtasks);
         int[] taskCounter = new int[]{0, totalSubtasks};

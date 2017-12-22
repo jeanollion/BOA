@@ -53,6 +53,9 @@ public class GeometricalMeasurements {
     public static double getDistance(Object3D o1, Object3D o2) {
         return getDistance(o1.getGeomCenter(false), o2.getGeomCenter(false), o1.getScaleXY(), o1.getScaleZ());
     }
+    public static double getDistanceSquare(Object3D o1, Object3D o2) {
+        return getDistanceSquare(o1.getGeomCenter(false), o2.getGeomCenter(false), o1.getScaleXY(), o1.getScaleZ());
+    }
     public static double getDistanceBB(Object3D o1, Object3D o2, boolean scaled) {
         double dMin = Double.POSITIVE_INFINITY;
         double sXY = scaled ? o1.getScaleXY():1;
@@ -71,6 +74,9 @@ public class GeometricalMeasurements {
     
     public static double getDistance(double[] c1, double[] c2, double scaleXY, double scaleZ) {
         return Math.sqrt(Math.pow((c1[0]-c2[0])*scaleXY, 2) + Math.pow((c1[1]-c2[1])*scaleXY, 2) + Math.pow((c1[2]-c2[2])*scaleZ, 2));
+    }
+    public static double getDistanceSquare(double[] c1, double[] c2, double scaleXY, double scaleZ) {
+        return Math.pow((c1[0]-c2[0])*scaleXY, 2) + Math.pow((c1[1]-c2[1])*scaleXY, 2) + Math.pow((c1[2]-c2[2])*scaleZ, 2);
     }
 
     public static double meanThicknessZ(Object3D object) {

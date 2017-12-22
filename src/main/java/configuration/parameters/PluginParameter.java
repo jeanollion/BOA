@@ -119,7 +119,9 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public PluginParameter<T> setPlugin(T pluginInstance) {
         if (pluginInstance==null) setPlugin(NO_SELECTION);
         else {
-            this.pluginParameters=new ArrayList<>(Arrays.asList(pluginInstance.getParameters()));
+            Parameter[] parameters = pluginInstance.getParameters();
+            if (parameters ==null) parameters = new Parameter[0];
+            this.pluginParameters=new ArrayList<>(Arrays.asList(parameters));
             initChildList();
             this.pluginName=pluginInstance.getClass().getSimpleName();
         }
@@ -172,6 +174,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         //Parameter.logger.debug("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
+        if (params ==null) params = new Parameter[0];
         ParameterUtils.setContent(Arrays.asList(params), pluginParameters);
         for (Parameter p : params) p.setParent(this);
         return instance;
