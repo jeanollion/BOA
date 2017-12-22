@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.HashMapGetCreate;
 
 /**
@@ -34,15 +36,16 @@ import utils.HashMapGetCreate;
  * @author jollion
  */
 public class ChangeDimentionality {
+    public static final Logger logger = LoggerFactory.getLogger(ChangeDimentionality.class);
     public static void main(String[] args) {
-        String input = "/data/Images/Fluo/fluo171219_WT_750ms/input/171219_WT05_03_R3D.dv";
-        String dFolder = "/data/Images/Fluo/fluo171219_WT_750ms/input/converted";
+        String input = "/data/Images/Fluo/fluo171219_WT_750ms/input/testArrange3D/171219_WT05_03_R3D.dv";
+        String dFolder = "/data/Images/Fluo/fluo171219_WT_750ms/input/testArrange3D/converted";
         fromTToZT(input, dFolder, 3);
     }
     private static void fromTToZT(String input, String destFolder, int sizeZ) {
         ImageReader reader = new ImageReader(input);
         int[] tcxyz = reader.getSTCXYZNumbers()[0];
-        
+        logger.debug("image dims fcxyz: {}", tcxyz);
         if (tcxyz[0]%sizeZ!=0) throw new IllegalArgumentException("Image has "+tcxyz[0]+ " frames, not a multiple of sizeZ: "+sizeZ+ " Image: "+input);
         int tp = tcxyz[0]/sizeZ;
         Image[][] imageTC = new Image[tp][tcxyz[1]];

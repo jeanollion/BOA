@@ -33,6 +33,8 @@ import static image.Image.logger;
 import java.awt.Font;
 import java.awt.image.ColorModel;
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -60,29 +62,36 @@ public class IJVirtualStack extends VirtualStack {
         if (imageCT[fcz[1]][fcz[0]]==null) {
             imageCT[fcz[1]][fcz[0]] = imageOpenerCT.apply(fcz[1], fcz[0]);
         }
+        if (fcz[2]>=imageCT[fcz[1]][fcz[0]].getSizeZ()) {
+            if (imageCT[fcz[1]][fcz[0]].getSizeZ()==1) fcz[2]=0; // case of reference images 
+            else throw new IllegalArgumentException("Wrong Z size for channel: "+fcz[1]);
+        }
         return IJImageWrapper.getImagePlus(imageCT[fcz[1]][fcz[0]].getZPlane(fcz[2])).getProcessor();
     }
     public static void openVirtual(Experiment xp, String position, boolean output) {
         MicroscopyField f = xp.getPosition(position);
         int channels = xp.getChannelImageCount();
         int frames = f.getTimePointNumber(false);
-        Image bds= output ? xp.getImageDAO().getPreProcessedImageProperties(position) : f.getInputImages().getImage(0, 0);
-        if (bds==null) {
+        Image[] bdsC = new Image[xp.getChannelImageCount()];
+        for (int c = 0; c<bdsC.length; ++c) bdsC[c]= output ? xp.getImageDAO().openPreProcessedImage(c, 0, position) : f.getInputImages().getImage(c, 0);
+        if (bdsC[0]==null) {
             GUI.log("No "+(output ? "preprocessed " : "input")+" images found for position: "+position);
             return;
         }
-        logger.debug("scale: {}", bds.getScaleXY());
-        int[] fcz = new int[]{frames, channels, bds.getSizeZ()};
+        logger.debug("scale: {}", bdsC[0].getScaleXY());
+        // case of reference image with only one Z -> duplicate
+        int maxZ = Collections.max(Arrays.asList(bdsC), (b1, b2)->Integer.compare(b1.getSizeZ(), b2.getSizeZ())).getSizeZ();
+        int[] fcz = new int[]{frames, channels, maxZ};
         BiFunction<Integer, Integer, Image> imageOpenerCT  = output ? (c, t) -> xp.getImageDAO().openPreProcessedImage(c, t, position) : (c, t) -> f.getInputImages().getImage(c, t);
-        IJVirtualStack s = new IJVirtualStack(bds.getSizeX(), bds.getSizeY(), fcz, IJImageWrapper.getStackIndexFunctionRev(fcz), imageOpenerCT);
+        IJVirtualStack s = new IJVirtualStack(bdsC[0].getSizeX(), bdsC[0].getSizeY(), fcz, IJImageWrapper.getStackIndexFunctionRev(fcz), imageOpenerCT);
         ImagePlus ip = new ImagePlus();
         ip.setTitle((output ? "PreProcessed Images of position: " : "Input Images of position: ")+position);
-        ip.setStack(s, channels, bds.getSizeZ(), frames);
+        ip.setStack(s, channels,maxZ, frames);
         ip.setOpenAsHyperStack(true);
         Calibration cal = new Calibration();
-        cal.pixelWidth=bds.getScaleXY();
-        cal.pixelHeight=bds.getScaleXY();
-        cal.pixelDepth=bds.getScaleZ();
+        cal.pixelWidth=bdsC[0].getScaleXY();
+        cal.pixelHeight=bdsC[0].getScaleXY();
+        cal.pixelDepth=bdsC[0].getScaleZ();
         ip.setCalibration(cal);
         ip.show();
         
