@@ -3297,7 +3297,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 
             }
         }
-        
     }//GEN-LAST:event_microscopyFieldListMousePressed
     
     public void addToSelectionActionPerformed() {
