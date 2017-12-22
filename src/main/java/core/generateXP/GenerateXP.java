@@ -93,7 +93,9 @@ import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;
 import plugins.legacy.SuppressCentralHorizontalLine;
+import plugins.plugins.measurements.objectFeatures.MeanAtBorder;
 import plugins.plugins.postFilters.RemoveEndofChannelBacteria;
+import plugins.plugins.preFilter.ImageFeature;
 import plugins.plugins.trackPostFilter.RemoveMicrochannelsTouchingBackgroundOnSides;
 import plugins.plugins.trackPostFilter.RemoveSaturatedMicrochannels;
 import plugins.plugins.trackPostFilter.SegmentationPostFilter;
@@ -474,7 +476,7 @@ public class GenerateXP {
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
                     ).addTrackPostFilters(new RemoveMicrochannelsTouchingBackgroundOnSides(2),
-                            new TrackLengthFilter().setMinSize(100), 
+                            new TrackLengthFilter().setMinSize(5), 
                             new RemoveTracksStartingAfterFrame(), 
                             new RemoveSaturatedMicrochannels())
             );
@@ -483,19 +485,20 @@ public class GenerateXP {
                             new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo().setContactLimit(0)).setCostParameters(0.1, 0.5)
                     ).addTrackPostFilters(new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria()))
             );
-            //mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
+            // modification of scaling: lap * 2.5, gauss * scale (=2) quality * 2.23
             mutation.setProcessingScheme(new SegmentAndTrack(
                     new LAPTracker().setCompartimentStructure(1).setSegmenter(
-                        new MutationSegmenter(0.9, 0.75, 0.9).setScale(2)  // was 1.5, 1, 1.25
-                ).setSpotQualityThreshold(2) // 1.5 for WT
+                        new MutationSegmenter(2.25, 1.625, 1.8).setScale(2.5, 3)  // was 0.9, 0.65, 0.9, scale was 2 for mutH
+                ).setSpotQualityThreshold(3.122) // 4.46 for mutH ? 
                             .setLinkingMaxDistance(0.8, 0.82).setGapParameters(0.8, 0.15, 3).setTrackLength(8, 14)
-            ).addPreFilters(new BandPass(0, 8, 0, 5) 
-            ).addPostFilters(new FeatureFilter(new Quality(), 0.8, true, true))); // was 1.5
+            ).addPreFilters(new BandPass(0, 10, 0, 5) // was 10
+            ).addPostFilters(new FeatureFilter(new Quality(), 2.23, true, true))); // was 1
         }
         if (measurements) {
             xp.clearMeasurements();
             xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));
             xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Size().setScale(true), new FeretMax().setScale(true), new Mean().setIntensityStructure(1)));
+            xp.addMeasurement(new ObjectFeatures(1).addFeature(new MeanAtBorder().setIntensityStructure(1), "GradientMean").addPreFilter(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2.5)));
             xp.addMeasurement(new MutationTrackMeasurements(1, 2));
             xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));
             xp.addMeasurement(new ObjectFeatures(2).addFeatures(new Quality()));

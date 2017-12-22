@@ -67,6 +67,18 @@ public class ImageFeature implements PreFilter {
         this.feature.setValue(f.name);
         return this;
     }
+    public ImageFeature setScale(double scale) {
+        this.scale.setScaleXY(scale);
+        this.scale.setUseImageCalibration(true);
+        return this;
+    }
+    public ImageFeature setScale(double scaleXY, double scaleZ) {
+        this.scale.setScaleXY(scaleXY);
+        this.scale.setScaleZ(scaleZ);
+        this.scale.setUseImageCalibration(false);
+        return this;
+    }
+    
     @Override
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
         //logger.debug("ImageFeature: feature equasl: {}, scale equals: {}, normScale equals: {}", feature==cond.getActionableParameter(), scale == cond.getCurrentParameters().get(0), normScale == cond.getParameters("Normalized Hessian Max").get(1));

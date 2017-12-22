@@ -41,6 +41,7 @@ import core.ProgressCallback;
 import core.PythonGateway;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
+import dataStructure.configuration.PreProcessingChain;
 import dataStructure.configuration.Structure;
 import dataStructure.containers.ImageDAO;
 import dataStructure.objects.BasicMasterDAO;
@@ -2505,7 +2506,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (f==null) return;
         int response = JOptionPane.showConfirmDialog(this, "This will erase configutation on current xp", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (response != JOptionPane.YES_OPTION) return;
+        PreProcessingChain oldppTemplate = db.getExperiment().getPreProcessingTemplate().duplicate();
         ImportExportJSON.importConfigurationFromFile(f.getAbsolutePath(), db, true, true);
+        if (db.getExperiment().getPositionCount()>0 && !db.getExperiment().getPreProcessingTemplate().sameContent(oldppTemplate)) {
+            response = JOptionPane.showConfirmDialog(this, "Also copy pre-processing chain to all positions?", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if (response == JOptionPane.YES_OPTION) {
+                for (MicroscopyField p : db.getExperiment().getPositions()) p.getPreProcessingChain().setContentFrom(db.getExperiment().getPreProcessingTemplate());
+            }
+        }
         db.updateExperiment();
         updateConfigurationTree();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());

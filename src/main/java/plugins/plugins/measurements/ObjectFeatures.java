@@ -31,6 +31,7 @@ import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import plugins.Measurement;
 import plugins.ObjectFeature;
+import plugins.PreFilter;
 import plugins.objectFeature.ObjectFeatureCore;
 import plugins.objectFeature.ObjectFeatureWithCore;
 
@@ -72,7 +73,10 @@ public class ObjectFeatures implements Measurement {
         this.features.insert(f);
         return this;
     }
-    
+    public ObjectFeatures addPreFilter(PreFilter... prefilters) {
+        this.preFilters.add(prefilters);
+        return this;
+    }
     public int getCallStructure() {
         return structure.getParentStructureIdx();
     }

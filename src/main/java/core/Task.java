@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionService;
@@ -61,6 +62,7 @@ import utils.FileIO;
 import utils.FileIO.ZipWriter;
 import utils.ImportExportJSON;
 import utils.JSONUtils;
+import utils.MultipleException;
 import utils.Pair;
 import utils.Utils;
 
@@ -533,12 +535,27 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     public void done() {
         //logger.debug("EXECUTING DONE FOR : {}", this.toJSON().toJSONString());
         this.publish("Job done.");
+        unrollMultipleExceptions();
         publishErrors();
         this.printErrors();
         this.publish("------------------");
         if (ui!=null) ui.setRunning(false);
     }
+    private void unrollMultipleExceptions() {
+        // check for multiple exceptions and unroll them
+        List<Pair<String, Exception>> errorsToAdd = new ArrayList<>();
+        Iterator<Pair<String, Exception>> it = errors.iterator();
+        while(it.hasNext()) {
+            Pair<String, Exception> e = it.next();
+            if (e.value instanceof MultipleException) {
+                it.remove();
+                errorsToAdd.addAll(((MultipleException)e.value).getExceptions());
+            }
+        }
+        this.errors.addAll(errorsToAdd);
+    }
     public void publishErrors() {
+        
         this.publish("Errors: "+this.errors.size()+ " For JOB: "+this.toString());
         for (Pair<String, Exception> e : errors) {
             publish("Error @"+e.key+(e.value==null?"null":e.value.toString()));

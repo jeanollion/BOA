@@ -73,7 +73,7 @@ public class RemoveDeadPixels implements Transformation {
         configDataFXYZV.clear();
         configMapF = new HashMapGetCreate<>(new HashMapGetCreate.SetFactory<>());
         Image median = new ImageFloat("", inputImages.getImage(channelIdx, 0));
-        Neighborhood n = median.getSizeZ()>1 ? new EllipsoidalNeighborhood(1.5, 1, true) : new EllipsoidalNeighborhood(1.5, true); // excludes center pixel
+        Neighborhood n =  new EllipsoidalNeighborhood(1.5, true); // excludes center pixel // only on same plane
         double thld= threshold.getValue().doubleValue();
         int frameRadius = this.frameRadius.getValue().intValue();
         double fRd= (double)frameRadius;
