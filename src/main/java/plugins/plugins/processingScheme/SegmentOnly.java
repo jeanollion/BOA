@@ -136,7 +136,7 @@ public class SegmentOnly implements ProcessingScheme {
             }
             if (applyToSegmenter!=null) applyToSegmenter.apply(subParent, seg);
             Image input = inputImages.getAndCreateIfNecessarySyncOnKey(globalParent);
-            if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds():subParent.getBounds().duplicate().fitToImageZ(input));
+            if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
             ObjectPopulation pop = seg.runSegmenter(input, structureIdx, subParent);
             pop = postFilters.filter(pop, structureIdx, subParent);
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);

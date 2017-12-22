@@ -220,7 +220,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         }
     }
     public ObjectPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
-        //Arrays.sort(scale);
+        Arrays.sort(scale);
         ImageMask parentMask = parent.getMask().getSizeZ()!=input.getSizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
         if (pv.smooth==null || pv.lap==null) setMaps(computeMaps(input, input));
@@ -263,7 +263,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         ObjectPopulation[] pops =  MultiScaleWatershedTransform.watershed(wsMap, parentMask, seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdPropagation), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize));
         //ObjectPopulation pop =  watershed(lap, parent.getMask(), seedPop.getObjects(), true, new ThresholdPropagationOnWatershedMap(thresholdPropagation), new SizeFusionCriterion(minSpotSize), false);
         SubPixelLocalizator.debug=debug;
-        for (int i = 0; i<pops.length; ++i) {
+        for (int i = 0; i<pops.length; ++i) { // TODO voir si en 3D pas mieux avec gaussian
             int z = i/scale.length;
             SubPixelLocalizator.setSubPixelCenter(wsMap[i], pops[i].getObjects(), true); // lap -> better in case of close objects
             for (Object3D o : pops[i].getObjects()) { // quality criterion : sqrt (smooth * lap)
@@ -332,12 +332,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             return res;
         } else return Image.mergeImagesInZ(Arrays.asList(spZ));
     }
-    private static int getWSPlaneIdx(int z, int sp, int spSize) { // first sp varies then z
-        return z*spSize+sp;
-    }
-    private static int[] getZAndSPIdx(int wsPlaneIdx, int spSize) {
-        return new int[]{ wsPlaneIdx/spSize, wsPlaneIdx%spSize};
-    }
+    
     public void printSubLoc(String name, Image locMap, Image smooth, Image lap, ObjectPopulation pop, BoundingBox globBound) {
         BoundingBox b = locMap.getBoundingBox().translate(globBound.reverseOffset());
         List<Object3D> objects = pop.getObjects();

@@ -64,25 +64,12 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         
-        //String dbName = "MF1_170523";
-        // Optimier pur MF1_170523: P10 
-        //mc7 62 ; 352 544-477: why not merge ? 
-        // mc12 346
-        // mc12: bcp de terminaisons évidentes
-        // mc 16: 70 pk pas split ? 
-        // mc 16 : 93 fragmentation
-        // Pour xp MF1_170519
-        // P0 mc1 F39: ajouter terminaison comme option de scenario!
-        //String dbName = "MutD5_141209"; //-> mc 0 -> cellules collees
-        //String dbName = "MutH_150324";
-        //String dbName = "WT_150616";
-        //String dbName = "fluo171113_WT_180s";
-        String dbName = "fluo171204_WT_750ms";
+        String dbName = "fluo171219_WT_750ms";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
-        int pIdx = 294;
-        int mcIdx =2;
-        int structureIdx = 0;
+        int pIdx = 0;
+        int mcIdx =3;
+        int structureIdx = 2;
         BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -97,7 +84,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,1000); //  0,80);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,8); //  0,80);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 520, 580); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {

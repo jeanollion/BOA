@@ -65,6 +65,7 @@ import plugins.plugins.trackers.trackMate.TrackMateInterface.SpotFactory;
 import static plugins.plugins.trackers.trackMate.TrackMateInterface.logger;
 import utils.ArrayFileWriter;
 import utils.HashMapGetCreate;
+import utils.MultipleException;
 import utils.Pair;
 import utils.SlidingOperator;
 import utils.SymetricalPair;
@@ -132,7 +133,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
         long t0 = System.currentTimeMillis();
         SegmentOnly ps = new SegmentOnly(segmenter.instanciatePlugin()).setPreFilters(preFilters).setPostFilters(postFilters);
         List<Pair<String, Exception>> ex = ps.segmentAndTrack(structureIdx, parentTrack, executor);
-        for (Pair<String, Exception> p : ex) logger.debug(p.key, p.value);
+        if (!ex.isEmpty()) throw new MultipleException(ex);
         long t1= System.currentTimeMillis();
         track(structureIdx, parentTrack, true);
     }
