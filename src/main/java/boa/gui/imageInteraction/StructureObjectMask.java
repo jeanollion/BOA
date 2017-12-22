@@ -99,7 +99,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     @Override
     public Pair<StructureObject, BoundingBox> getClickedObject(int x, int y, int z) {
         if (objects == null) reloadObjects();
-        if (is2D) {
+        if (is2D()) {
             z = 0;
         }
         getOffsets();
@@ -115,7 +115,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     
     @Override
     public void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list) {
-        if (is2D && selection.getSizeZ()>0) selection=new BoundingBox(selection.getxMin(), selection.getxMax(), selection.getyMin(), selection.getyMax(), 0, 0);
+        if (is2D() && selection.getSizeZ()>0) selection=new BoundingBox(selection.getxMin(), selection.getxMax(), selection.getyMin(), selection.getyMax(), 0, 0);
         getObjects();
         for (int i = 0; i < offsets.length; ++i) {
             if (offsets[i].hasIntersection(selection)) {

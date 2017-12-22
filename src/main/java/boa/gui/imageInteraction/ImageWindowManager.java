@@ -213,7 +213,6 @@ public abstract class ImageWindowManager<T, U, V> {
         displayer.showImage(image);
         displayedInteractiveImages.add(image);
         addMouseListener(image);
-        // if image is being generated -> add a close listener
         addWindowClosedListener(image, e-> {
             DefaultWorker w = runningWorkers.get(image);
             if (w!=null) {
@@ -539,7 +538,7 @@ public abstract class ImageWindowManager<T, U, V> {
     
     public abstract void displayObject(T image, U roi);
     public abstract void hideObject(T image, U roi);
-    protected abstract U generateObjectRoi(Pair<StructureObject, BoundingBox> object, boolean image2D, Color color);
+    protected abstract U generateObjectRoi(Pair<StructureObject, BoundingBox> object, Color color);
     protected abstract void setObjectColor(U roi, Color color);
     
     public void setRoiModifier(RoiModifier<U> modifier) {this.roiModifier=modifier;}
@@ -565,7 +564,7 @@ public abstract class ImageWindowManager<T, U, V> {
             //logger.debug("getting mask of object: {}", o);
             U roi=map.get(p);
             if (roi==null) {
-                roi = generateObjectRoi(p, image.getSizeZ()<=1, color);
+                roi = generateObjectRoi(p, color);
                 map.put(p, roi);
                 //if (!labileObjects) logger.debug("add non labile object: {}, found by keyonly? {}", p.key, map.containsKey(new Pair(p.key, null)));
             } else {
@@ -666,7 +665,7 @@ public abstract class ImageWindowManager<T, U, V> {
     
     protected abstract void displayTrack(T image, V roi);
     protected abstract void hideTrack(T image, V roi);
-    protected abstract V generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, boolean image2D, Color color);
+    protected abstract V generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, Color color);
     protected abstract void setTrackColor(V roi, Color color);
     public void displayTracks(Image image, ImageObjectInterface i, Collection<List<StructureObject>> tracks, boolean labile) {
         if (image==null) {
@@ -719,7 +718,7 @@ public abstract class ImageWindowManager<T, U, V> {
             if (labile) disp = displayedLabileTrackRois.getAndCreateIfNecessary(image);
             V roi = map.get(key);
             if (roi==null) {
-                roi = generateTrackRoi(track, i.is2D, color);
+                roi = generateTrackRoi(track, color);
                 map.put(key, roi);
             } else setTrackColor(roi, color);
             if (disp==null || !disp.contains(roi)) displayTrack(dispImage, roi);

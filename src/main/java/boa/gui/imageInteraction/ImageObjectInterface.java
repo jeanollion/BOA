@@ -37,7 +37,7 @@ public abstract class ImageObjectInterface {
     final protected List<StructureObject> parents;
     final protected int parentStructureIdx;
     final protected int childStructureIdx;
-    final protected boolean is2D;
+    private Boolean is2D=null;
     protected boolean guiMode = true;
     public ImageObjectInterface(List<StructureObject> parents, int childStructureIdx) {
         if (parents.isEmpty()) throw new IllegalArgumentException("Empty parent list");
@@ -46,7 +46,14 @@ public abstract class ImageObjectInterface {
         if (parentStructureIdx>childStructureIdx) throw new IllegalArgumentException("Structure: "+childStructureIdx +" cannot be child of structure: "+parents.get(0).getStructureIdx());
         this.parents = parents;
         this.childStructureIdx = childStructureIdx;
-        is2D = this.parents.get(0).is2D();
+    }
+    public boolean is2D() {
+        if (is2D==null) {
+            this.getObjects();
+            if (!getObjects().isEmpty()) is2D = getObjects().get(0).key.is2D();
+            else is2D=false;
+        }
+        return is2D;
     }
     public StructureObject getParent() {return parents.get(0);}
     public List<StructureObject> getParents() {return parents;}

@@ -75,7 +75,7 @@ public class TrackMaskY extends TrackMask {
     
     @Override
     public Pair<StructureObject, BoundingBox> getClickedObject(int x, int y, int z) {
-        if (is2D) z=0; //do not take in account z in 2D case.
+        if (is2D()) z=0; //do not take in account z in 2D case.
         // recherche du parent: 
         int i = Arrays.binarySearch(trackOffset, new BoundingBox(0, 0, y, y, 0, 0), new bbComparatorY());
         if (i<0) i=-i-2; // element inférieur à x puisqu'on compare les xmin des bounding box
@@ -86,7 +86,7 @@ public class TrackMaskY extends TrackMask {
     
     @Override
     public void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list) {
-        if (is2D && selection.getSizeZ()>0) selection=new BoundingBox(selection.getxMin(), selection.getxMax(), selection.getyMin(), selection.getyMax(), 0, 0);
+        if (is2D() && selection.getSizeZ()>0) selection=new BoundingBox(selection.getxMin(), selection.getxMax(), selection.getyMin(), selection.getyMax(), 0, 0);
         int iMin = Arrays.binarySearch(trackOffset, new BoundingBox(0, 0, selection.getyMin(), selection.getyMin(), 0, 0), new bbComparatorY());
         if (iMin<0) iMin=-iMin-2; // element inférieur à x puisqu'on compare les xmin des bounding box
         int iMax = Arrays.binarySearch(trackOffset, new BoundingBox(0, 0, selection.getyMax(), selection.getyMax(), 0, 0), new bbComparatorY());

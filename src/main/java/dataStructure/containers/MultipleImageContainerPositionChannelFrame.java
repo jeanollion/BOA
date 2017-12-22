@@ -106,7 +106,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         //else initTimePointMap();         
     }
     protected MultipleImageContainerPositionChannelFrame() {super(1, 1);} // JSON init
-    public MultipleImageContainerPositionChannelFrame(String inputDir, String extension, String positionKey, String timeKeyword, String[] channelKeywords, int frameNumber, double scaleXY, double scaleZ) {
+    public MultipleImageContainerPositionChannelFrame(String inputDir, String extension, String positionKey, String timeKeyword, String[] channelKeywords, int[] sizeZC, int frameNumber, double scaleXY, double scaleZ) {
         super(scaleXY, scaleZ);
         this.inputDir = inputDir;
         this.extension = extension;
@@ -114,8 +114,18 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         this.channelKeywords = channelKeywords;
         this.timeKeyword = timeKeyword;
         this.frameNumber = frameNumber;
-        for (int c = 0; c<channelKeywords.length; ++c) getSizeZ(c); // init sizeZC
         initTimePointMap();
+        if (sizeZC==null) {
+            sizeZC = new int[channelKeywords.length]; 
+            for (int channelNumber=0; channelNumber<sizeZC.length; ++channelNumber) {
+                ImageReader reader = new ImageReader(fileCT.get(channelNumber).get(0));
+                sizeZC[channelNumber] = reader.getSTCXYZNumbers()[0][4];
+                reader.closeReader();
+            }
+        } else this.sizeZC=sizeZC;
+    }
+    public MultipleImageContainerPositionChannelFrame(String inputDir, String extension, String positionKey, String timeKeyword, String[] channelKeywords, int frameNumber, double scaleXY, double scaleZ) {
+        this(inputDir, extension, positionKey, timeKeyword, channelKeywords, null, frameNumber, scaleXY, scaleZ);
     }
     
     @Override public double getCalibratedTimePoint(int t, int c, int z) {
@@ -171,18 +181,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     }
 
     @Override
-    public int getSizeZ(int channelNumber) {
-        if (fileCT==null) {
-            synchronized(this) {
-                if (fileCT==null) createFileMap();
-            }
-        }
-        if (sizeZC==null) sizeZC = new int[channelKeywords.length]; 
-        if (sizeZC[channelNumber]==0) {
-            ImageReader reader = new ImageReader(fileCT.get(channelNumber).get(0));
-            sizeZC[channelNumber] = reader.getSTCXYZNumbers()[0][4];
-            reader.closeReader();
-        } 
+    public int getSizeZ(int channelNumber) { 
         return sizeZC[channelNumber];
     }
 
@@ -224,9 +223,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
 
     @Override
     public MultipleImageContainer duplicate() {
-        MultipleImageContainerPositionChannelFrame res = new MultipleImageContainerPositionChannelFrame(inputDir, extension, positionKey, timeKeyword, ArrayUtil.duplicate(channelKeywords), frameNumber, scaleXY, scaleZ);
-        if (sizeZC!=null) res.sizeZC=ArrayUtil.duplicate(sizeZC);
-        return res;
+        return new MultipleImageContainerPositionChannelFrame(inputDir, extension, positionKey, timeKeyword, ArrayUtil.duplicate(channelKeywords), ArrayUtil.duplicate(sizeZC), frameNumber, scaleXY, scaleZ);
     }
     
     private void createFileMap() {

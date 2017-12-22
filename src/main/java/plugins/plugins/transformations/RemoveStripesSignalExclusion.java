@@ -144,9 +144,13 @@ public class RemoveStripesSignalExclusion implements Transformation {
     }
     
     public static Double[][] computeMeanX(Image image, Image exclusionSignal, double exclusionThreshold, boolean addGlobalMean) {
-        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new RuntimeException("Image and exclusion signal should have same dimensions");
+        boolean ref2D = exclusionSignal.getSizeZ()==1;
+        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) {
+            // allow reference image of zSize 1
+            if (!(exclusionSignal.getSizeZ()==1 && image.getSizeZ()!=1 && image.getSizeX()==exclusionSignal.getSizeX() && image.getSizeY()==exclusionSignal.getSizeY())) throw new RuntimeException("Image and exclusion signal should have same dimensions");
+        }
         int[] xyz = new int[3];
-        Function<int[], Boolean> includeCoord = exclusionSignal==null? c->true : c -> exclusionSignal.getPixel(c[0], c[1], c[2])<exclusionThreshold;
+        Function<int[], Boolean> includeCoord = exclusionSignal==null? c->true : c -> exclusionSignal.getPixel(c[0], c[1], ref2D?0:c[2])<exclusionThreshold;
         Double[][] res = new Double[image.getSizeZ()][image.getSizeY()];
         double globalSum=0;
         double globalCount=0;

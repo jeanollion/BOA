@@ -852,8 +852,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     public boolean is2D() {
-        //return getExperiment().getMicroscopyField(positionName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1; //TODO no reliable if a transformation removes planes
-        return this.getMask().getSizeZ()==1;
+        return getExperiment().getPosition(getPositionName()).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1; 
+        //return this.getMask().getSizeZ()==1;
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {

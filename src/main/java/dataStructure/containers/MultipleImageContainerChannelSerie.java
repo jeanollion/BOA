@@ -170,8 +170,8 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     
     @Override
     public int getSizeZ(int channelNumber) {
-        if (sizeZC==null) sizeZC = new int[filePathC.length]; // temporary, for retrocompatibility
-        if (sizeZC[channelNumber]==0) sizeZC[channelNumber] = getReader(channelNumber).getSTCXYZNumbers()[0][4]; // temporary, for retrocompatibility
+        //if (sizeZC==null) sizeZC = new int[filePathC.length]; // temporary, for retrocompatibility
+        //if (sizeZC[channelNumber]==0) sizeZC[channelNumber] = getReader(channelNumber).getSTCXYZNumbers()[0][4]; // temporary, for retrocompatibility
         return sizeZC[channelNumber];
     }
     

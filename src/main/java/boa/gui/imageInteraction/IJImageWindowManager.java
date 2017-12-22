@@ -312,11 +312,14 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             o=new Overlay();
             image.setOverlay(o);
         }
-        for (Roi r : roi.values()) {
-            o.add(r);
-            //if (r instanceof TextRoi) logger.debug("add text roi: {}", ((TextRoi)r).getText());
-            //logger.debug("add Roi loc: [{}, {}], type: {}", r.getBounds().x, r.getBounds().y, r.getTypeAsString());
-        }
+        if (image.getNSlices()>1 && roi.is2D) roi.duplicateROIUntilZ(image.getNSlices());
+        if (image.getNSlices()>1) {
+            for (Roi r : roi.values()) {
+                o.add(r);
+                //if (r instanceof TextRoi) logger.debug("add text roi: {}", ((TextRoi)r).getText());
+                //logger.debug("add Roi loc: [{}, {}], type: {}", r.getBounds().x, r.getBounds().y, r.getTypeAsString());
+            }
+        } else if (roi.containsKey(0)) o.add(roi.get(0));
     }
 
     @Override
@@ -328,9 +331,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     }
 
     @Override
-    public Roi3D generateObjectRoi(Pair<StructureObject, BoundingBox> object, boolean image2D, Color color) {
+    public Roi3D generateObjectRoi(Pair<StructureObject, BoundingBox> object, Color color) {
         if (object.key.getMask().getSizeZ()<=0 || object.key.getMask().getSizeXY()<=0) logger.error("wrong object dim: o:{} {}", object.key, object.key.getBounds());
-        Roi3D r =  createRoi(object.key.getMask(), object.value, !image2D);
+        Roi3D r =  createRoi(object.key.getMask(), object.value, !object.key.is2D());
         setObjectColor(r, color);
         return r;
     }
@@ -348,7 +351,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
      * @param mask
      * @param offset
      * @param is3D
-     * @return maping of Roi to Z-slice (taking into account the provided offset)
+     * @return mapping of Roi to Z-slice (taking into account the provided offset)
      */
     public static Roi3D createRoi(ImageInteger mask, BoundingBox offset, boolean is3D) { 
         if (offset==null) {
@@ -382,7 +385,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 if (bds==null) continue;
                 roi.setLocation(bds.x+offset.getxMin(), bds.y+offset.getyMin());
                 if (is3D) roi.setPosition(z+1+offset.getzMin());
-                res.put(z+mask.getOffsetZ(), roi);
+                res.put(z+offset.getzMin(), roi);
             }
         }
         return res;
@@ -397,6 +400,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             image.setOverlay(o);
         }
         for (Roi r : roi) o.add(r);
+        if (roi.is2D && image.getZ()>1) {
+            for (int z = 1; z<image.getNSlices(); ++z) {
+                for (Roi r : roi.duplicateForZ(z)) o.add(r);
+            }
+        }
     }
 
     @Override
@@ -404,12 +412,17 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         Overlay o = image.getOverlay();
         if (o!=null) {
             for (Roi r : roi) o.remove(r);
+            if (image.getNSlices()>1) {
+                for (TrackRoi tr : roi.sliceDuplicates.values()) {
+                    for (Roi r : tr) o.remove(r);
+                }
+            }
         }
     }
 
     @Override
-    public TrackRoi generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, boolean image2D, Color color) {
-        return createTrackRoi(track, color, image2D);
+    public TrackRoi generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, Color color) {
+        return createTrackRoi(track, color);
     }
     
     @Override
@@ -417,9 +430,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         for (Roi r : roi) if (r.getStrokeColor()!=ImageWindowManager.trackCorrectionColor && r.getStrokeColor()!=ImageWindowManager.trackErrorColor) r.setStrokeColor(color);
     }
     
-    protected static TrackRoi createTrackRoi(List<Pair<StructureObject, BoundingBox>> track, Color color, boolean is2D) {
+    protected static TrackRoi createTrackRoi(List<Pair<StructureObject, BoundingBox>> track, Color color) {
         TrackRoi trackRoi= new TrackRoi();
         Pair<StructureObject, BoundingBox> o1 = track.get(0);
+        trackRoi.setIs2D(o1.key.is2D());
         int idxMin = track.size()==1 ? 0 : 1; // display tracks with only 1 object as arrow head
         Pair<StructureObject, BoundingBox> o2;
         for (int idx = idxMin; idx<track.size(); ++idx) {
@@ -440,31 +454,31 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 Color c = error ? ImageWindowManager.trackErrorColor : ImageWindowManager.trackCorrectionColor;
                 trackRoi.add(getErrorArrow(arrow.x1, arrow.y1, arrow.x2, arrow.y2, c, color));
             } 
-            
-            int zMin = Math.max(o1.value.getzMin(), o2.value.getzMin());
-            int zMax = Math.min(o1.value.getzMax(), o2.value.getzMax());
-            if (zMin==zMax) {
-                if (!is2D) arrow.setPosition(zMin+1);
-                trackRoi.add(arrow);
-                //logger.debug("add arrow: {}", arrow);
+            if (!trackRoi.is2D) { // in 3D -> display on all slices between slice min & slice max
+                int zMin = Math.max(o1.value.getzMin(), o2.value.getzMin());
+                int zMax = Math.min(o1.value.getzMax(), o2.value.getzMax());
+                if (zMin==zMax) {
+                    arrow.setPosition(zMin+1);
+                    trackRoi.add(arrow);
+                    //logger.debug("add arrow: {}", arrow);
+                } else {
+                    // TODO debug
+                    //logger.error("Display Track error. objects: {} & {} bounds: {} & {}, image bounds: {} & {}", o1, o2, o1.getBounds(), o2.getBounds(), b1, b2);
+                    //if (true) return;
+                    if (zMin>zMax) {
+
+                        logger.error("DisplayTrack error: Zmin>Zmax: o1: {}, o2: {}", o1.key, o2.key);
+                    }
+                    for (int z = zMin; z <= zMax; ++z) {
+                        Arrow dup = (Arrow)arrow.clone();
+                        dup.setPosition(z+1);
+                        trackRoi.add(dup);
+                        //logger.debug("add arrow (z): {}", arrow);
+                    }
+                }
             } else {
-                // TODO debug
-                //logger.error("Display Track error. objects: {} & {} bounds: {} & {}, image bounds: {} & {}", o1, o2, o1.getBounds(), o2.getBounds(), b1, b2);
-                //if (true) return;
-                if (zMin>zMax) {
-                    /*int tmp = zMax;
-                    zMax=zMin<(ip.getNSlices()-1)?zMin+1:zMin;
-                    zMin=tmp>0?tmp-1:tmp;*/
-                    logger.error("DisplayTrack error: Zmin>Zmax: o1: {}, o2: {}", o1.key, o2.key);
-                }
-                for (int z = zMin; z <= zMax; ++z) {
-                    Arrow dup = (Arrow)arrow.clone();
-                    dup.setPosition(z+1);
-                    trackRoi.add(dup);
-                    //logger.debug("add arrow (z): {}", arrow);
-                }
+                trackRoi.add(arrow);
             }
-            
               
             o1=o2;
         }
@@ -501,18 +515,44 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
 
     
     public static class Roi3D extends HashMap<Integer, Roi> {
+        boolean is2D;
         public Roi3D(int bucketSize) {
             super(bucketSize);
         }
+        public Roi3D setIs2D(boolean is2D) {this.is2D=is2D; return this;}
         public boolean contained(Overlay o) {
             for (Roi r : values()) if (o.contains(r)) return true;
             return false;
         }
+        public void duplicateROIUntilZ(int zMax) {
+            if (size()>1 || !containsKey(0)) return;
+            Roi r = this.get(0);
+            for (int z = 1; z<zMax; ++z) {
+                Roi dup = (Roi)r.clone();
+                dup.setPosition(z+1);
+                this.put(z, dup);
+            }
+        }
     }
     public static class TrackRoi extends ArrayList<Roi> {
+        boolean is2D;
+        Map<Integer, TrackRoi> sliceDuplicates= new HashMap<>(); // if Roi from 2D ref displayed on 3D image
         public boolean contained(Overlay o) {
             for (Roi r : this) if (o.contains(r)) return true;
             return false;
+        }
+        public TrackRoi setIs2D(boolean is2D) {this.is2D=is2D; return this;}
+        public TrackRoi duplicateForZ(int z) {
+            if (!sliceDuplicates.containsKey(z)) {
+                TrackRoi res = new TrackRoi();
+                for (Roi r : this) {
+                    Roi dup = (Roi)r.clone();
+                    dup.setPosition(z+1);
+                    res.add(dup);
+                }
+                sliceDuplicates.put(z, res);
+            }
+            return sliceDuplicates.get(z);
         }
     }
 }

@@ -22,6 +22,7 @@ import ij.gui.Plot;
 import ij.measure.CurveFitter;
 import image.ImageFloat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -301,26 +302,21 @@ public class ArrayUtil {
         ImageFloat im = new ImageFloat("array", array.length, new float[][]{array});
         ImageFeatures.gaussianSmooth(im, scale, scale, true);
     }
-    public static String[] duplicate(String[] array) {
-        String[] res = new String[array.length];
-        System.arraycopy(array, 0, res, 0, array.length);
-        return res;
+    public static <T> T[] duplicate(T[] array) {
+        if (array==null) return null;
+        return Arrays.copyOf(array, array.length);
     }
     public static int[] duplicate(int[] array) {
-        int[] res = new int[array.length];
-        System.arraycopy(array, 0, res, 0, array.length);
-        return res;
+        if (array==null) return null;
+        return Arrays.copyOf(array, array.length);
     }
     public static float[] duplicate(float[] array) {
-        float[] res = new float[array.length];
-        System.arraycopy(array, 0, res, 0, array.length);
-        return res;
+        if (array==null) return null;
+        return Arrays.copyOf(array, array.length);
     }
     public static double[] duplicate(double[] array) {
         if (array==null) return null;
-        double[] res = new double[array.length];
-        System.arraycopy(array, 0, res, 0, array.length);
-        return res;
+        return Arrays.copyOf(array, array.length);
     }
     
     public static double[] gaussianFit(int[] data, int replicate) {
