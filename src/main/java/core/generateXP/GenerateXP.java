@@ -69,7 +69,6 @@ import plugins.plugins.segmenters.BacteriaTrans;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MutationSegmenter;
-import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackPostFilter.RemoveTracksStartingAfterFrame;
 import plugins.plugins.trackPostFilter.TrackLengthFilter;

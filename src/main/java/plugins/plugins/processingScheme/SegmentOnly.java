@@ -21,6 +21,7 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
+import dataStructure.configuration.Experiment;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
@@ -115,10 +116,10 @@ public class SegmentOnly implements ProcessingScheme {
         
         HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parentTrack.size(), parent->preFilters.filter(parent.getRawImage(structureIdx), parent));
         HashMapGetCreate<StructureObject, Image[]> subMaps = useMaps? new HashMapGetCreate<>(parentTrack.size(), parent->((UseMaps)segmenter.instanciatePlugin()).computeMaps(parent.getRawImage(structureIdx), inputImages.getAndCreateIfNecessarySyncOnKey(parent))) : null; //
-        
         // segment in direct parents
         List<StructureObject> allParents = singleFrame ? StructureObjectUtils.getAllChildren(parentTrack.subList(0, 1), segParentStructureIdx) : StructureObjectUtils.getAllChildren(parentTrack, segParentStructureIdx);
         Collections.shuffle(allParents); // reduce thread blocking
+        final boolean ref2D= !allParents.isEmpty() && allParents.get(0).is2D() && parentTrack.get(0).getRawImage(structureIdx).getSizeZ()>1;
         List<Pair<String, Exception>> errors = new ArrayList<>();
         long t0 = System.currentTimeMillis();
         for (StructureObject p : parentTrack) p.getRawImage(structureIdx);
@@ -131,11 +132,11 @@ public class SegmentOnly implements ProcessingScheme {
             Segmenter seg = segmenter.instanciatePlugin();
             if (useMaps) {
                 Image[] maps = subMaps.getAndCreateIfNecessarySyncOnKey(globalParent);
-                ((UseMaps)seg).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(subParent.getBounds())));
+                ((UseMaps)seg).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(ref2D? subParent.getBounds().duplicate().fitToImageZ(i):subParent.getBounds())));
             }
             if (applyToSegmenter!=null) applyToSegmenter.apply(subParent, seg);
             Image input = inputImages.getAndCreateIfNecessarySyncOnKey(globalParent);
-            if (subSegmentation) input = input.cropWithOffset(subParent.getBounds());
+            if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds():subParent.getBounds().duplicate().fitToImageZ(input));
             ObjectPopulation pop = seg.runSegmenter(input, structureIdx, subParent);
             pop = postFilters.filter(pop, structureIdx, subParent);
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);

@@ -79,7 +79,7 @@ public class Processor {
                 if (pcb!=null) pcb.log("Warning: no scale set for position: "+f.getName());
                 logger.info("no scale set for positon: "+f.getName());
             }
-            logger.debug("image: {} scale: {} frame: {}", c.getName(), c.getScaleXY(), c.getCalibratedTimePoint(1, 0, 0));
+            logger.debug("image: {} scale: {}, scaleZ: {} frame: {}", c.getName(), c.getScaleXY(), c.getScaleZ(), c.getCalibratedTimePoint(1, 0, 0));
             if (f!=null) {
                 f.setImages(c); // TODO: bug when eraseAll from gui just after creation
                 count++;

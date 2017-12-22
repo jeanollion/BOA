@@ -462,7 +462,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         }
         private Image getNormalizedHessian() {
             if (normalizedHessian==null) {
-                Image gauss = ImageFeatures.gaussianSmooth(rawIntensityMap, smoothScale, smoothScale*rawIntensityMap.getScaleXY()/rawIntensityMap.getScaleZ(), false);
+                Image gauss = ImageFeatures.gaussianSmooth(rawIntensityMap, smoothScale, false);
                 normalizedHessian=ImageOperations.divide(getHessian(), gauss, null).setName("NormalizedHessian");
             } 
             return normalizedHessian;

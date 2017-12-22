@@ -46,7 +46,7 @@ public class ImageOperations {
         for (Object3D o : toRemove) o.draw(output, 0);
         return l;
     }
-    public static Image performPlaneByPlane(Image image, Function<Image, Image> function) {
+    public static Image applyPlaneByPlane(Image image, Function<Image, Image> function) {
         if (image.getSizeZ()==1) return function.apply(image);
         else {
             List<Image> planes = image.splitZPlanes();

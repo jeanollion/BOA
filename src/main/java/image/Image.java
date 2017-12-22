@@ -133,18 +133,19 @@ public abstract class Image implements ImageProperties {
      * @param images images to merge
      * @return array of image, dimention of array = z dimention of original image, each image has the corresponding z plane of each image of {@param images}
      */
-    public static <T extends Image> Image[] mergeImagesInZ(List<T> images) {
+    public static <T extends Image> List<T> mergeImagesInZ(List<T> images) {
         if (images==null || images.isEmpty()) return null;
         if (!sameSize(images)) throw new IllegalArgumentException("All images should have same size");
         int sizeZ = images.get(0).getSizeZ();
-        if (sizeZ==1) return new Image[]{mergeZPlanes(images)};
+        if (sizeZ==1) return new ArrayList<T>(){{add(mergeZPlanes(images));}};
         else {
-            Image[] res = new Image[sizeZ];
+            List<T> res = new ArrayList<>(sizeZ);
             for (int z = 0; z<sizeZ; ++z) {
                 final int zz = z;
                 List<T> planes = Utils.transform(images, i->i.getZPlane(zz));
-                res[z] = mergeZPlanes(planes);
+                res.add(mergeZPlanes(planes));
             }
+            
             return res;
         }
     }

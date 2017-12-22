@@ -27,6 +27,7 @@ import image.Image;
 import image.ImageInteger;
 import image.ImageLabeller;
 import image.ImageMask;
+import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -47,7 +48,7 @@ public class MultiScaleWatershedTransform {
     protected int spotNumber;
     final protected Image[] watershedMaps;
     final protected ImageInteger segmentedMap;
-    final protected ImageMask mask;
+    final protected ImageMask mask; // can be ref2D
     final boolean is3D;
     final boolean decreasingPropagation;
     PropagationCriterion propagationCriterion;
@@ -75,6 +76,7 @@ public class MultiScaleWatershedTransform {
     
     public MultiScaleWatershedTransform(Image[] watershedMaps, ImageMask mask, List<Object3D>[] regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         if (watershedMaps.length!= regionalExtrema.length) throw new IllegalArgumentException("Watershed maps should have same number of planes as seeds");
+        if (!Image.sameSize(Arrays.asList(watershedMaps))) throw new IllegalArgumentException("WatershedMaps should be of same dimensions");
         if (mask==null) mask=new BlankMask("", watershedMaps[0]);
         this.decreasingPropagation = decreasingPropagation;
         heap = decreasingPropagation ? new TreeSet<Voxel>(Voxel.getInvertedComparator()) : new TreeSet<Voxel>();
@@ -83,7 +85,7 @@ public class MultiScaleWatershedTransform {
         spotNumber = 0;
         for (List<Object3D> l : regionalExtrema) spotNumber += l.size();
         spots = new Spot[spotNumber+1];
-        segmentedMap = ImageInteger.createEmptyLabelImage("segmentationMap", spots.length, mask);
+        segmentedMap = ImageInteger.createEmptyLabelImage("segmentationMap", spots.length, watershedMaps[0]);
         int spotIdx = 1;
         for (int i = 0; i<regionalExtrema.length; ++i) {
             for (Object3D o : regionalExtrema[i]) {
@@ -115,7 +117,7 @@ public class MultiScaleWatershedTransform {
         for (Spot s : spots) {
             if (s!=null) for (Voxel v : s.voxels) heap.add(v);
         }
-        EllipsoidalNeighborhood neigh = mask.getSizeZ()>1?new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
+        EllipsoidalNeighborhood neigh = segmentedMap.getSizeZ()>1?new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
         while (!heap.isEmpty()) {
             Voxel v = heap.pollFirst();
             Spot currentSpot = spots[segmentedMap.getPixelInt(v.x, v.y, v.z)];
@@ -123,7 +125,7 @@ public class MultiScaleWatershedTransform {
             for (int i = 0; i<neigh.getSize(); ++i) {
                 next = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]);
                 //logger.trace("voxel: {} next: {}, mask contains: {}, insideMask: {}",v, next, mask.contains(next.x, next.y, next.getZ()) , mask.insideMask(next.x, next.y, next.getZ()));
-                if (mask.contains(next.x, next.y, next.z) && mask.insideMask(next.x, next.y, next.z)) currentSpot=propagate(currentSpot,v, next);
+                if (segmentedMap.contains(next.x, next.y, next.z) && mask.insideMask(next.x, next.y, next.z)) currentSpot=propagate(currentSpot,v, next);
             }
         }
     }
@@ -136,13 +138,13 @@ public class MultiScaleWatershedTransform {
         for (int i = 0; i<watershedMaps.length; ++i) objects[i] = new ArrayList<>();
         int label = 1;
         for (Spot s : spots) if (s!=null) objects[s.scale].add(s.toObject3D(label++));
-        for (int i = 0; i<watershedMaps.length; ++i) res[i] = new ObjectPopulation(objects[i], mask);
+        for (int i = 0; i<watershedMaps.length; ++i) res[i] = new ObjectPopulation(objects[i], segmentedMap);
         return res;
     }
-    public static ObjectPopulation combine(ObjectPopulation[] pops) {
+    public static ObjectPopulation combine(ObjectPopulation[] pops, ImageProperties ip) {
         ArrayList<Object3D> allObjects = new ArrayList<>();
         for (int i = 0; i<pops.length; ++i) allObjects.addAll(pops[i].getObjects());
-        return new ObjectPopulation(allObjects, pops[0].getImageProperties());
+        return new ObjectPopulation(allObjects, ip);
     }
     
     protected Spot propagate(Spot currentSpot, Voxel currentVoxel, Voxel nextVox) { /// nextVox.value = 0 at this step

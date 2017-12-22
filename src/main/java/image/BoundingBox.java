@@ -151,6 +151,11 @@ public class BoundingBox implements JSONSerializable {
         }
         return this;
     }
+    public BoundingBox fitToImageZ(ImageProperties im) {
+        this.zMin = im.getOffsetZ();
+        this.zMax = im.getOffsetZ()+im.getSizeZ()-1;
+        return this;
+    }
     public BoundingBox contractX(int xm, int xM) {
         if (xm > xMin) {
             xMin = xm;

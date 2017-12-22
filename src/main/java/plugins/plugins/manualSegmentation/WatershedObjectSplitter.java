@@ -60,7 +60,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
     
     public ObjectPopulation splitObject(Image input, Object3D object) {
         double sScale = smoothScale.getValue().doubleValue();
-        if (sScale>0) input = ImageFeatures.gaussianSmooth(input, sScale, sScale * input.getScaleXY() / input.getScaleZ(), false);
+        if (sScale>0) input = ImageFeatures.gaussianSmooth(input, sScale, false);
         return splitInTwo(input, object.getMask(), true, keepOnlyTwoSeeds.getSelected(), splitVerbose);
     }
     

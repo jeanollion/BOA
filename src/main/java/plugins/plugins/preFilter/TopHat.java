@@ -67,7 +67,7 @@ public class TopHat implements PreFilter, Filter {
     
     public static Image filter(Image input, double radiusXY, double radiusZ, boolean darkBackground, boolean smooth) {
         Neighborhood n = Filters.getNeighborhood(radiusXY, radiusZ, input);
-        Image smoothed = smooth ? ImageFeatures.gaussianSmooth(input, 1.5, 1.5, false) : input ;
+        Image smoothed = smooth ? ImageFeatures.gaussianSmooth(input, 1.5, false) : input ;
         Image bck =darkBackground ? open(smoothed, smooth ? smoothed : null, n) : close(smoothed, smooth ? smoothed : null, n);
         ImageOperations.addImage(input, bck, bck, -1); //1-bck
         bck.resetOffset().addOffset(input);

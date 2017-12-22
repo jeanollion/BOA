@@ -276,7 +276,7 @@ public class Filters {
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) return 0;
             return 1;
         }
-        public boolean isLocalMax(float value, int x, int y, int z) {
+        public boolean hasValueNoOver(float value, int x, int y, int z) {
             neighborhood.setPixels(x, y, z, image);
             for (int i = 0; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>value) return false;
             return true;

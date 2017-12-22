@@ -54,20 +54,23 @@ public class TestProcessMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        String dbName = "fluo171204_WT_750ms_paramOptimization";
+        //String dbName = "fluo171204_WT_750ms_paramOptimization";
+        String dbName = "fluo171219_WT_750ms";
         //final String dbName = "boa_fluo151127_test";
         int fIdx = 0;
-        int mcIdx =0;
+        int mcIdx =3;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName, null);
-        t.testSegMutationsFromXP(fIdx, mcIdx, false, 8,8);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 4,4);
     }
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         
         ImageInteger parentMask = parent.getMask();
-        Image localInput = input.sameSize(parent.getMask()) ? input : input.cropWithOffset(parent.getBounds());
+        BoundingBox parentBounds = parent.getBounds();
+        if (parentBounds.getSizeZ()==1 && input.getSizeZ()>1) parentBounds.fitToImageZ(input); // case of 2D ref image
+        Image localInput = input.sameSize(parentBounds.getImageProperties()) ? input : input.cropWithOffset(parentBounds);
         
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         MutationSegmenter.debug=true;
@@ -81,7 +84,7 @@ public class TestProcessMutations {
         if (seg instanceof UseMaps) {
             UseMaps s = (UseMaps)seg;
             Image[] maps = s.computeMaps(input, input);
-            if (!input.sameSize(parent.getMask())) maps = Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(parent.getBounds()));
+            if (!input.sameSize(parentBounds.getImageProperties())) maps = Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(parentBounds));
             s.setMaps(maps);
             
         }
@@ -161,11 +164,11 @@ public class TestProcessMutations {
         }
         ySize+=50; // bug -> remove microchannel offsetY ? 
         xSize-=intervalX;
-        Image inputPaste = Image.createEmptyImage("input", input.get(0), new BlankMask("", xSize, ySize, input.get(0).getSizeZ(), 0, 0, 0, 1, 1));
-        Image outputLabelPaste = Image.createEmptyImage("labels", outputLabel.get(0), new BlankMask("", xSize, ySize, outputLabel.get(0).getSizeZ(), 0, 0, 0, 1, 1));
-        Image maskPaste = Image.createEmptyImage("mc mask", mcMask.get(0), new BlankMask("", xSize, ySize, mcMask.get(0).getSizeZ(), 0, 0, 0, 1, 1));
+        Image inputPaste = Image.createEmptyImage("input", input.get(0), new BlankMask("", xSize, ySize, input.get(0).getSizeZ(), 0, 0, 0, input.get(0).getScaleXY(), input.get(0).getScaleZ()));
+        Image outputLabelPaste = Image.createEmptyImage("labels", outputLabel.get(0), new BlankMask("", xSize, ySize, outputLabel.get(0).getSizeZ(), 0, 0, 0, outputLabel.get(0).getScaleXY(), outputLabel.get(0).getScaleZ()));
+        Image maskPaste = Image.createEmptyImage("mc mask", mcMask.get(0), new BlankMask("", xSize, ySize, mcMask.get(0).getSizeZ(), 0, 0, 0, mcMask.get(0).getScaleXY(), mcMask.get(0).getScaleZ()));
         ArrayList<Image> intermediateImagesList = new ArrayList<Image>();
-        for (int i = 0; i<intermediateImages.get(0).size(); ++i) intermediateImagesList.add(Image.createEmptyImage(intermediateImages.get(0).get(i).getName(), intermediateImages.get(0).get(i), new BlankMask("", xSize, ySize, intermediateImages.get(0).get(i).getSizeZ(), 0, 0, 0, 1, 1)));
+        for (int i = 0; i<intermediateImages.get(0).size(); ++i) intermediateImagesList.add(Image.createEmptyImage(intermediateImages.get(0).get(i).getName(), intermediateImages.get(0).get(i), new BlankMask("", xSize, ySize, intermediateImages.get(0).get(i).getSizeZ(), 0, 0, 0, intermediateImages.get(0).get(i).getScaleXY(), intermediateImages.get(0).get(i).getScaleZ())));
         BoundingBox offset = new BoundingBox(0, 0, 0);
         ImageInteger lastMask = mcMask.get(0);
         BoundingBox mcOffInv = lastMask.getBoundingBox().reverseOffset();

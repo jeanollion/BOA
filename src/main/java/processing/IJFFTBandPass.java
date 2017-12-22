@@ -17,11 +17,13 @@
  */
 package processing;
 
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
 import image.IJImageWrapper;
 import image.Image;
 import image.ImageFloat;
+import image.ImageOperations;
 
 /**
  *
@@ -29,6 +31,9 @@ import image.ImageFloat;
  */
 public class IJFFTBandPass {
     public static Image bandPass(Image input, double min, double max, int stripes, double stripeTolerance) {
+        return ImageOperations.applyPlaneByPlane(input, i->bandPass2D(i, min, max, stripes, stripeTolerance));
+    }
+    private static Image bandPass2D(Image input, double min, double max, int stripes, double stripeTolerance) {
         ImagePlus ip = IJImageWrapper.getImagePlus(input);
         FftBandPassFilter fftBandPassFilter = new FftBandPassFilter(ip, min, max, stripes, stripeTolerance);
         

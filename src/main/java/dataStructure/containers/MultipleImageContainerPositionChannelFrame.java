@@ -116,16 +116,33 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         this.frameNumber = frameNumber;
         initTimePointMap();
         if (sizeZC==null) {
+            int maxZ = -1;
             sizeZC = new int[channelKeywords.length]; 
             for (int channelNumber=0; channelNumber<sizeZC.length; ++channelNumber) {
                 ImageReader reader = new ImageReader(fileCT.get(channelNumber).get(0));
                 sizeZC[channelNumber] = reader.getSTCXYZNumbers()[0][4];
+                if (scaleXY<=0 && sizeZC[channelNumber]>maxZ) {
+                    maxZ =  sizeZC[channelNumber];
+                    double[] sXYZ = reader.getScaleXYZ(1);
+                    this.scaleXY = sXYZ[0];
+                    this.scaleZ = sXYZ[2];
+                    logger.debug("pos: {}, scale: {}", this.positionKey, sXYZ);
+                } 
                 reader.closeReader();
             }
         } else this.sizeZC=sizeZC;
+        if (this.scaleXY<=0) {
+            ImageReader reader = new ImageReader(fileCT.get( ArrayUtil.max(sizeZC)).get(0));
+            double[] sXYZ = reader.getScaleXYZ(1);
+            this.scaleXY = sXYZ[0];
+            this.scaleZ = sXYZ[2];
+            reader.closeReader();
+        }
+        
+        
     }
-    public MultipleImageContainerPositionChannelFrame(String inputDir, String extension, String positionKey, String timeKeyword, String[] channelKeywords, int frameNumber, double scaleXY, double scaleZ) {
-        this(inputDir, extension, positionKey, timeKeyword, channelKeywords, null, frameNumber, scaleXY, scaleZ);
+    public MultipleImageContainerPositionChannelFrame(String inputDir, String extension, String positionKey, String timeKeyword, String[] channelKeywords, int frameNumber) {
+        this(inputDir, extension, positionKey, timeKeyword, channelKeywords, null, frameNumber, -1, -1);
     }
     
     @Override public double getCalibratedTimePoint(int t, int c, int z) {

@@ -84,9 +84,7 @@ public interface ImageDisplayer<T> {
             per[0] = hist.minAndMax[0];
             per[1] = hist.minAndMax[1];
         }
-        if (per[0]==per[1] && per[0] == 1 &&  im instanceof ImageInteger) { // possibly a label image
-            per[0] = 0;
-        }
+        if (per[0]>0 &&  im instanceof ImageInteger) per[0] -= 1; // possibly a label image
         return per;
     }
 }

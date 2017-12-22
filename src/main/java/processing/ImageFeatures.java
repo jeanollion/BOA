@@ -321,7 +321,9 @@ public class ImageFeatures {
     private static double sqrt(double number) {
         return number>=0?Math.sqrt(number):-Math.sqrt(-number);
     }
-    
+    public static ImageFloat gaussianSmooth(Image image, double scaleXY, boolean overrideIfFloat) {
+        return gaussianSmooth(image, scaleXY, scaleXY*image.getScaleXY()/image.getScaleZ(), overrideIfFloat);
+    }
     public static ImageFloat gaussianSmooth(Image image, double scaleXY, double scaleZ, boolean overrideIfFloat) {
         if (image.getSizeZ()>1 && scaleZ<=0) throw new IllegalArgumentException("Scale Z should be >0 ");
         else if (scaleZ<=0) scaleZ=1;
