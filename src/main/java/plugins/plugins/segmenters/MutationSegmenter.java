@@ -194,7 +194,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             //ms = ImageOperations.getMeanAndSigmaWithOffset(input, mask, v->v<=t);
             //if (ms[2]==0) thld = BackgroundThresholder.runThresholder(input, mask, 3, 3, 2, ms);
             
-            double thld = BackgroundThresholder.runThresholder(input, mask, 3, 3, 2, ms);
+            double thld = BackgroundThresholder.runThresholder(input, mask, 3, 3, 2, Double.MAX_VALUE, ms);
             
             if (debug) logger.debug("scaling thld: {} mean & sigma: {}", thld, ms); //if (debug) 
         }

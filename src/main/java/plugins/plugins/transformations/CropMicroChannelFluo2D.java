@@ -135,7 +135,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         3) computation of Y start using the minimal Y of objects within the selected channels from step 2 (median value of yMins)
         */
         
-        if (Double.isNaN(thld) && thresholdedImage==null) thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3, null);//IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
+        if (Double.isNaN(thld) && thresholdedImage==null) thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3, Double.MAX_VALUE, null);//IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
         if (testMode) logger.debug("crop micochannels threshold : {}", thld);
         ImageInteger mask = thresholdedImage == null ? ImageOperations.threshold(image, thld, true, true) : thresholdedImage;
         Filters.binaryClose(mask, mask, Filters.getNeighborhood(1, 0, image)); // case of low intensity signal -> noisy. // remove small objects?

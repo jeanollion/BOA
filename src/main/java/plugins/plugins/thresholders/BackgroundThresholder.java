@@ -20,6 +20,7 @@ package plugins.plugins.thresholders;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
 import dataStructure.objects.StructureObjectProcessing;
 import image.BlankMask;
 import image.Histogram;
@@ -42,7 +43,8 @@ public class BackgroundThresholder implements SimpleThresholder {
     NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 2.5, 0.01, null);
     NumberParameter finalSigmaFactor = new BoundedNumberParameter("Final Sigma factor", 2, 4, 0.01, null);
     NumberParameter iterations = new BoundedNumberParameter("Iteration number", 0, 2, 1, null);
-    Parameter[] parameters = new Parameter[]{sigmaFactor, finalSigmaFactor, iterations};
+    PluginParameter<SimpleThresholder> startingPoint = new PluginParameter<>("Starting value", SimpleThresholder.class, true);
+    Parameter[] parameters = new Parameter[]{sigmaFactor, finalSigmaFactor, iterations, startingPoint};
     
     public BackgroundThresholder() {}
     
@@ -51,10 +53,17 @@ public class BackgroundThresholder implements SimpleThresholder {
         this.finalSigmaFactor.setValue(finalSigmaFactor);
         this.iterations.setValue(iterations);
     }
-    
+    public BackgroundThresholder setStartingValue(SimpleThresholder thlder) {
+        this.startingPoint.setPlugin(thlder);
+        return this;
+    }
     @Override 
     public double runSimpleThresholder(Image input, ImageMask mask) {
-        return runThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
+        double firstValue = Double.MAX_VALUE;
+        if (this.startingPoint.isOnePluginSet()) {
+            firstValue = startingPoint.instanciatePlugin().runSimpleThresholder(input, mask);
+        }
+        return runThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), firstValue, null);
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
@@ -66,13 +75,14 @@ public class BackgroundThresholder implements SimpleThresholder {
         Histogram histo = input.getHisto256(mask, null);
         return BackgroundThresholder.runThresholder(histo, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
     }
-    public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations) {
-        return runThresholder(input,mask, sigmaFactor, lastSigmaFactor, iterations, null);
+    public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double firstValue) {
+        return runThresholder(input,mask, sigmaFactor, lastSigmaFactor, iterations, firstValue, null);
     }
-    public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
+    public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double firstValue, double[] meanSigma) {
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
         if (mask==null) mask = new BlankMask(input);
-        double lastThreshold = Double.MAX_VALUE;
+        if (firstValue==Double.NaN) firstValue = Double.MAX_VALUE;
+        double lastThreshold = firstValue;
         double count, mean, mean2, sigma;
         if (iterations<=0) iterations=1;
         for (int i = 0; i<iterations; i++) {

@@ -66,7 +66,7 @@ public interface InputImages {
         double[] count = new double[3];
         double sTot = images.get(0).getSizeXYZ();
         for (int t = 0; t<images.size(); ++t) {
-            BackgroundThresholder.runThresholder(images.get(t), null, 2.5, 4, 2, count);
+            BackgroundThresholder.runThresholder(images.get(t), null, 2.5, 4, 2, Double.MAX_VALUE, count);
             signal.add(new Pair(t, (sTot - count[2]) /  sTot ));
         }
         Collections.sort(signal, (p1, p2)->Double.compare(p1.value, p2.value));

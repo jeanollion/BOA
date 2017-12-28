@@ -36,6 +36,7 @@ import static plugins.plugins.preFilter.ImageFeature.Feature.HessianMax;
 import static plugins.plugins.preFilter.ImageFeature.Feature.HessianMaxNorm;
 import static plugins.plugins.preFilter.ImageFeature.Feature.HessianMin;
 import static plugins.plugins.preFilter.ImageFeature.Feature.LoG;
+import static plugins.plugins.preFilter.ImageFeature.Feature.StructureMax;
 import processing.ImageFeatures;
 import utils.Utils;
 
@@ -51,7 +52,8 @@ public class ImageFeature implements PreFilter {
         HessianDet("Hessian Det"), 
         HessianMax("Hessian Max"),
         HessianMin("Hessian Min"),
-        HessianMaxNorm("Normalized Hessian Max");
+        HessianMaxNorm("Normalized Hessian Max"), 
+        StructureMax("Structure Max"),;
         final String name;
         Feature(String name) {
             this.name=name;
@@ -59,8 +61,9 @@ public class ImageFeature implements PreFilter {
     }
     ChoiceParameter feature = new ChoiceParameter("Feature", Utils.transform(Feature.values(), new String[Feature.values().length], f->f.name), Feature.GAUSS.name, false);
     ScaleXYZParameter scale = new ScaleXYZParameter("Scale", 2, 1, true);
+    ScaleXYZParameter smoothScale = new ScaleXYZParameter("Smooth Scale", 1, 1, true);
     BoundedNumberParameter normScale = new BoundedNumberParameter("Normalization Scale (pix)", 2, 3, 1, null);
-    ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setActionParameters("Normalized Hessian Max", new Parameter[]{scale, normScale});
+    ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setActionParameters(HessianMaxNorm.name, new Parameter[]{scale, normScale}).setActionParameters(StructureMax.name, new Parameter[]{scale, smoothScale});
 
     public ImageFeature() {}
     public ImageFeature setFeature(Feature f) {
@@ -70,6 +73,11 @@ public class ImageFeature implements PreFilter {
     public ImageFeature setScale(double scale) {
         this.scale.setScaleXY(scale);
         this.scale.setUseImageCalibration(true);
+        return this;
+    }
+    public ImageFeature setSmoothScale(double scale) {
+        this.smoothScale.setScaleXY(scale);
+        this.smoothScale.setUseImageCalibration(true);
         return this;
     }
     public ImageFeature setScale(double scaleXY, double scaleZ) {
@@ -100,6 +108,8 @@ public class ImageFeature implements PreFilter {
             Image norm = ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
             ImageOperations.divide(hess, norm, hess);
             return hess;
+        } else if (StructureMax.name.equals(f)) {
+            return ImageFeatures.getStructure(input, smoothScale.getScaleXY(), scale.getScaleXY(), false)[0];
         } else throw new IllegalArgumentException("No selected feature");
     }
 

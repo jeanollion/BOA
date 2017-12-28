@@ -44,7 +44,7 @@ public class TestProcessBacteria {
         int field = 0;
         //String dbName = "fluo160501";
         //String dbName = "MF1_170519";
-        String dbName = "TestThomasRawStacks";
+        String dbName = "fluo171219_WT_750ms";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     
