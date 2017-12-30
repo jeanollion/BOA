@@ -82,7 +82,7 @@ public class AnalyseHyperFluoBacterias {
     
     
     private static Image removeStripes(Image input) {
-        return RemoveStripesSignalExclusion.removeStripes(input, input, BackgroundThresholder.runThresholder(input, null, 2.5, 3, 3, null), false);
+        return RemoveStripesSignalExclusion.removeStripes(input, input, BackgroundThresholder.runThresholder(input, null, 2.5, 3, 3, Double.MAX_VALUE, null), false);
     }
     private static void testSaturate(List<Image> ultra, String name) {
         List<ImageByte> ultraThld = Utils.transform(ultra, i->saturateAndThld(i));
@@ -91,7 +91,7 @@ public class AnalyseHyperFluoBacterias {
     private static ImageByte saturateAndThld(Image image) {
         new SaturateHistogramHyperfluoBacteria().saturateHistogram(image);
         //double thld = IJAutoThresholder.runSimpleThresholder(image, null, null, AutoThresholder.Method.Otsu, 0);
-        double thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3);
+        double thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3, Double.MAX_VALUE);
         return ImageOperations.threshold(image, thld, true, true);
     }
     /*private static void testSaturate() {
@@ -151,7 +151,7 @@ public class AnalyseHyperFluoBacterias {
         
     }
     private static double getThreshold(Image i) {
-        return BackgroundThresholder.runThresholder(i, null, 3, 6, 3, null);
+        return BackgroundThresholder.runThresholder(i, null, 3, 6, 3, Double.MAX_VALUE, null);
         //return BackgroundFit.backgroundFit(i, null, 3, null);
     }
     private static double analyse(Image i, List<ImageInteger> masks, boolean hyper) {
