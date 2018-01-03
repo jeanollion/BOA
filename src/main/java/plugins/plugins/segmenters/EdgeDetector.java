@@ -31,6 +31,7 @@ import ij.process.AutoThresholder;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
+import image.ImageInteger;
 import image.ImageMask;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,6 +53,28 @@ public class EdgeDetector implements Segmenter {
     public PluginParameter<Thresholder> threshold = new PluginParameter("Threshold", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     BooleanParameter applyThresholderOnValueMap = new BooleanParameter("Apply Threshold on value map", true);
     boolean testMode;
+    
+    // variables
+    Image wsMap;
+    ImageInteger seedMap;
+    public Image getWsMap(Image input, StructureObjectProcessing parent) {
+        if (wsMap==null) wsMap = watershedMap.filter(input, parent);
+        return wsMap;
+    }
+
+    public ImageInteger getSeedMap(Image input, StructureObjectProcessing parent) {
+        if (seedMap==null) seedMap = Filters.localExtrema(getWsMap(input, parent), null, false, Filters.getNeighborhood(1, 1, getWsMap(input, parent)));
+        return seedMap;
+    }
+
+    public void setWsMap(Image wsMap) {
+        this.wsMap = wsMap;
+    }
+
+    public void setSeedMap(ImageInteger seedMap) {
+        this.seedMap = seedMap;
+    }
+    
     public EdgeDetector setPreFilters(PreFilter... prefilters) {
         this.watershedMap.removeAllElements();;
         this.watershedMap.add(prefilters);
@@ -67,15 +90,10 @@ public class EdgeDetector implements Segmenter {
     }
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        Image wsMap = watershedMap.filter(input, parent);
-        return runOnWsMap(input, wsMap, parent);
-    }
-    public ObjectPopulation runOnWsMap(Image input, Image wsMap, StructureObjectProcessing parent) {
-        ImageByte seeds = Filters.localExtrema(wsMap, null, false, Filters.getNeighborhood(1, 1, wsMap));
-        ObjectPopulation allRegions = WatershedTransform.watershed(wsMap, parent.getMask(), seeds, false, true);
+        ObjectPopulation allRegions = WatershedTransform.watershed(getWsMap(input, parent), parent.getMask(), getSeedMap(input, parent), false, true);
         if (testMode) {
             ImageWindowManagerFactory.showImage(allRegions.getLabelMap().duplicate("Segmented Regions"));
-            ImageWindowManagerFactory.showImage(seeds.setName("Seeds"));
+            ImageWindowManagerFactory.showImage(seedMap.setName("Seeds"));
             ImageWindowManagerFactory.showImage(wsMap.setName("Watershed Map"));
         }
         if (this.applyThresholderOnValueMap.getSelected()) {

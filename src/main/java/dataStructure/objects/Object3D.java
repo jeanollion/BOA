@@ -525,6 +525,31 @@ public class Object3D {
         
     }
     
+    public List<Object3D> getIncludedObjects(List<Object3D> candidates) {
+        ArrayList<Object3D> res = new ArrayList<>();
+        for (Object3D c : candidates) if (c.intersect(this)) res.add(c); // strict inclusion?
+        return res;
+    }
+    
+    public Object3D getContainer(List<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
+        if (parents.isEmpty()) return null;
+        Object3D currentParent=null;
+        int currentIntersection=-1;
+        for (Object3D p : parents) {
+            int inter = getIntersectionCountMaskMask(p, offset, offsetParent);
+            if (inter>0) {
+                if (currentParent==null) {
+                    currentParent = p;
+                    currentIntersection = inter;
+                } else if (inter>currentIntersection) { // in case of conflict: keep parent that intersect most
+                    currentIntersection=inter;
+                    currentParent=p;
+                }
+            }
+        }
+        return currentParent;
+    }
+    
     public void merge(Object3D other) {
         //int nb = getVoxels().size();
         this.getVoxels().addAll(other.getVoxels()); // TODO check for duplicates?

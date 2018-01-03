@@ -196,7 +196,7 @@ public class GenerateMutationDynamicsXP {
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-            xp.getPreProcessingTemplate().addTransformation(bactChan, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
+            xp.getPreProcessingTemplate().addTransformation(bactChan, null, new CropMicroChannelFluo2D(410, 30, 45, 200, 0.6, 5));
             if (!stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, new int[]{bactChan}, new SimpleTranslation(-1, -1, 0)); // 0.19 microns en Z
             if (stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, null, new ImageStabilizerXY(4, 2000, 1e-12, 5).setAdditionalTranslation(bactChan, -1, -1)); // additional translation to correct chromatic shift
         }

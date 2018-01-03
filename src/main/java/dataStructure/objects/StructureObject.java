@@ -252,7 +252,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     StructureObject commonParent = this.getParent(commonParentIdx);
                     List<StructureObject> candidates = commonParent.getChildren(structureIdx);
                     //if (this.frame==0) logger.debug("structure: {}, child: {}, commonParentIdx: {}, object: {}, path: {}, candidates: {}", this.structureIdx, structureIdx, commonParentIdx, commonParent, getExperiment().getPathToStructure(commonParentIdx, structureIdx), candidates.size());
-                    return StructureObjectUtils.getIncludedObjects(candidates, this);
+                    return StructureObjectUtils.getIncludedStructureObjects(candidates, this);
                 } else return StructureObjectUtils.getAllObjects(this, path);
             }
         }else return res;

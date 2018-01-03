@@ -198,29 +198,16 @@ public class StructureObjectUtils {
         }
     }
     
-    public static List<StructureObject> getIncludedObjects(List<StructureObject> candidates, StructureObject container) {
+    public static List<StructureObject> getIncludedStructureObjects(List<StructureObject> candidates, StructureObject container) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
         for (StructureObject c : candidates) if (c.getObject().intersect(container.getObject())) res.add(c); // strict inclusion?
         return res;
     }
     
+    // TODO remove this method
     public static Object3D getInclusionParent(Object3D children, List<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
         if (parents.isEmpty() || children==null) return null;
-        Object3D currentParent=null;
-        int currentIntersection=-1;
-        for (Object3D p : parents) {
-            int inter = children.getIntersectionCountMaskMask(p, offset, offsetParent);
-            if (inter>0) {
-                if (currentParent==null) {
-                    currentParent = p;
-                    currentIntersection = inter;
-                } else if (inter>currentIntersection) { // in case of conflict: keep parent that intersect most
-                    currentIntersection=inter;
-                    currentParent=p;
-                }
-            }
-        }
-        return currentParent;
+        return children.getContainer(parents, offset, offsetParent); 
     }
     
     public static StructureObject getInclusionParent(Object3D children, Collection<StructureObject> parents, BoundingBox offset) {

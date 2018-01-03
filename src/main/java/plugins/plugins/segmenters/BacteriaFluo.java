@@ -27,6 +27,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
+import dataStructure.objects.StructureObjectUtils;
 import dataStructure.objects.Voxel;
 import ij.process.AutoThresholder;
 import image.BlankMask;
@@ -35,6 +36,7 @@ import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
 import image.ImageInteger;
+import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageOperations;
 import image.ObjectFactory;
@@ -46,6 +48,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import measurement.BasicMeasurements;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
@@ -61,6 +64,7 @@ import processing.ImageFeatures;
 import processing.SplitAndMerge;
 import processing.WatershedTransform;
 import utils.ArrayUtil;
+import utils.HashMapGetCreate;
 import utils.Utils;
 import utils.clustering.Object3DCluster;
 
@@ -77,7 +81,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 100, 50, null);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 50, 1, null);
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 10, 0, null);
-    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 0, 5).setToolTipText("Scale for median filtering (remove high frequency noise). If value <1 no smooth is applied");
+    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 0, 5).setToolTipText("Scale for median filtering (remove high frequency noise). If value <1 no smooth is applied");
     NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 40, 0, null).setToolTipText("Scale for low frequency filtering. If value ==0 no filter is applied ");
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6);
     NumberParameter hessianThresholdFactor = new BoundedNumberParameter("Hessian threshold factor", 1, 1, 0, 5);
@@ -88,7 +92,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     
     //segmentation-related attributes (kept for split and merge methods)
     SplitAndMerge splitAndMerge;
-    Image intensityMap, normalizedHessian;
+    Image smoothed, DoG, normalizedHessian;
     
     public BacteriaFluo setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
@@ -132,9 +136,14 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         res.setTestMode(debug);
         return res;
     }
-    
-    public Image getIntensityMap(Image input) {
-        if (intensityMap == null) {
+    private Image getSmoothed(Image input) {
+        if (smoothed==null) {
+            if (smoothScale.getValue().doubleValue()>=1) smoothed = ImageFeatures.gaussianSmooth(input, smoothScale.getValue().doubleValue(), false);
+        }
+        return smoothed;
+    }
+    private Image getDoG(Image input) {
+        if (DoG == null) {
             Image dog = input;
             Image dest = null;
             if (dogScale.getValue().doubleValue()>0) {
@@ -142,10 +151,13 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
                 dest = dog;
             }
             //Image dog = BandPass.filter(rawIntensityMap, 0, dogScale, 0, 0);
-            intensityMap = dog;
-            if (smoothScale.getValue().doubleValue()>0) intensityMap= Filters.median(dog, dest, Filters.getNeighborhood(smoothScale.getValue().doubleValue(), 1, dog)).setName(dog.getName()+"+Smoothed");
+            this.DoG = dog;
+            if (smoothScale.getValue().doubleValue()>0) {
+                this.DoG = ImageFeatures.gaussianSmooth(dog, smoothScale.getValue().doubleValue(), dog==dest);
+                //this.DoG= Filters.median(dog, dest, Filters.getNeighborhood(smoothScale.getValue().doubleValue(), 1, dog)).setName(dog.getName()+"+Smoothed");
+            }
         }
-        return intensityMap;
+        return DoG;
     }
     public Image getNormalizedHessian(Image input) {
         if (normalizedHessian==null) {
@@ -157,12 +169,11 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     
     @Override public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         splitAndMerge = initializeSplitAndMerge(input);
-        ImageDisplayer disp=debug?new IJImageDisplayer():null;
-        double threshold = dogScale.getValue().doubleValue()==0 ? IJAutoThresholder.runThresholder(getIntensityMap(input), parent.getMask(), null, AutoThresholder.Method.Otsu, 0) : 0;
-        if (debug) disp.showImage(getIntensityMap(input).duplicate("intensityMap"));
-        // criterion for empty channel: 
-        double[] musigmaOver = getMeanAndSigma(getIntensityMap(input), parent.getMask(), threshold, true);
-        double[] musigmaUnder = getMeanAndSigma(getIntensityMap(input), parent.getMask(), threshold, false);
+        double threshold = dogScale.getValue().doubleValue()==0 ? IJAutoThresholder.runThresholder(getDoG(input), parent.getMask(), null, AutoThresholder.Method.Otsu, 0) : 0;
+        //if (debug) disp.showImage(getIntensityMap(input).duplicate("intensityMap"));
+        // criterion for empty channel: // TODO revoir si besoin de intensity map (DOG + median )ou simple smooth ok
+        double[] musigmaOver = getMeanAndSigma(getDoG(input), parent.getMask(), threshold, true);
+        double[] musigmaUnder = getMeanAndSigma(getDoG(input), parent.getMask(), threshold, false);
         if (debug) logger.debug("test empty channel: thld: {} mean over: {} mean under: {}, crit: {} thld: {}", threshold, musigmaOver[0], musigmaUnder[0], musigmaOver[0] - musigmaUnder[0], thresholdForEmptyChannel.getValue().doubleValue());
         if (musigmaOver[2]==0 || musigmaUnder[2]==0) {
             if (debug) logger.debug("no pixel {} thld", musigmaOver[2]==0?"over":"under");
@@ -197,7 +208,6 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             res.relabel(true);
         }
         */
-        boolean wsOnGradient = true;
         EdgeDetector seg = new EdgeDetector(); // keep defaults parameters ? 
         seg.setTestMode(debug);
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2));
@@ -205,9 +215,8 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         seg.setApplyThresholdOnValueMap(true);
         seg.setThresholder(new BackgroundThresholder(3, 3, 2).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)));
         //seg.setThresholder(new ConstantValue(50));
-        
-        ObjectPopulation splitPop = wsOnGradient ? seg.runSegmenter(input, structureIdx, parent) : seg.runOnWsMap(input, splitAndMerge.getHessian(), parent);
-        if (false && wsOnGradient) { // when done on gradient -> intermediate regions are kept -> remove using hessian value
+        ObjectPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
+        if (false) { // when done on gradient -> intermediate regions are kept -> remove using hessian value
             double thresholdHess = IJAutoThresholder.runThresholder(splitAndMerge.getHessian(), parent.getMask(), AutoThresholder.Method.Otsu);
             if (debug) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(splitPop, splitAndMerge.getHessian()).setName("Hessian Value Map. Threshold: "+thresholdHess));
             splitPop.filter(new ObjectPopulation.MeanIntensity(thresholdHess, false, splitAndMerge.getHessian()));
@@ -216,20 +225,44 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         splitAndMerge = initializeSplitAndMerge(input);
         ObjectPopulation res = splitAndMerge.splitAndMerge(splitPop.getLabelMap(), minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 0);
         
-        // local threshold on each cell // TODO: MOP: teser la robustesse des differentes methodes en mesurant le sigma du growth rate
-        Image erodeMap = ImageFeatures.gaussianSmooth(input, 2, false);
-        for (Object3D o : res.getObjects()) {
-            List<Voxel> contour = o.getContour();
-            //double thld = ArrayUtil.quantile(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)), 0.25);
-            //double thld = ArrayUtil.mean(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)));
-            double[] ms = ArrayUtil.meanSigma(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)));
-            double thld = ms[0]-0.5*ms[1];
-            o.erodeContours(erodeMap, thld, true, contour);
-        }
+        // second run: watershed with all seeds except those included in objects: only one per object
         
+        /*ObjectPopulation allSeeds = new ObjectPopulation(seg.getSeedMap(input, parent), false);
+        logger.debug("SEEDS BEFORE REMOVE: {}", allSeeds.getObjects().size());
+        for (Object3D o : res.getObjects()) {
+            List<Object3D> includedSeeds = o.getIncludedObjects(allSeeds.getObjects());
+            //logger.debug("seeds for: {} =#{}", o.getLabel(), includedSeeds.size());
+            if (includedSeeds.isEmpty()) continue;
+            Object3D min = Collections.max(includedSeeds, (o1, o2)->Double.compare(BasicMeasurements.getMeanValue(o1, getSmoothed(input), false), BasicMeasurements.getMeanValue(o2, getSmoothed(input), false)));
+            includedSeeds.remove(min);
+            allSeeds.getObjects().removeAll(includedSeeds);
+        }
+        logger.debug("SEEDS AFTER REMOVE: {}", allSeeds.getObjects().size());
+        allSeeds.relabel(true);
+        seg.setSeedMap(allSeeds.getLabelMap());
+        res = seg.runSegmenter(input, structureIdx, parent);
+        if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After second ws"));
+        */
+        boolean localThreshold = true;
+        if (localThreshold) {
+            // TODO LOG TO FILE NE FCT PLUS!!
+            // local threshold on each cell // TODO: MOP: teser la robustesse des differentes methodes en mesurant le sigma du growth rate
+            // TOOD: seulement local threshold depuis les frontières avec d''autres cellules. Thld calculé sur le border - les frontières (ou tout s'il ne reste presque rien lorsqu'on enleve les frontières)
+            Image erodeMap = getSmoothed(input);
+            for (Object3D o : res.getObjects()) {
+                List<Voxel> contour = o.getContour();
+                double thld = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.075);
+                //double thld = ArrayUtil.mean(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)));
+                //double[] ms = ArrayUtil.meanSigma(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)));
+                //double thld = ms[0]-0.5*ms[1];
+                o.erodeContours(erodeMap, thld, true, contour);
+            }
+            res.redrawLabelMap(true);
+            if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
+        
+        }
         res.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         res.filter(new ObjectPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
-        
         
         if (testParameter!=null) {
             logger.debug("testParameter: {}", testParameter);

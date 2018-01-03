@@ -44,7 +44,7 @@ public class TestStabilizerFromSavedPreProcessed {
         MemoryImageContainer cont = new MemoryImageContainer(imCT);
         InputImagesImpl in = cont.getInputImages("18");
         logger.debug("Frames: {}", in.getFrameNumber());
-        ImageStabilizerXY stab = new ImageStabilizerXY(1, 1000, 1e-12, 20).setAdditionalTranslation(1, 1, 1).setCropper(new CropMicroChannelFluo2D(30, 45, 200, 0.5, 10));
+        ImageStabilizerXY stab = new ImageStabilizerXY(1, 1000, 1e-12, 20).setAdditionalTranslation(1, 1, 1).setCropper(new CropMicroChannelFluo2D(410, 30, 45, 200, 0.5, 10));
         ImageStabilizerXY.debug=true;
         
         stab.computeConfigurationData(0, in);
