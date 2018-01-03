@@ -57,12 +57,12 @@ public class TestProcessMutations {
         //String dbName = "fluo171204_WT_750ms_paramOptimization";
         String dbName = "fluo171219_WT_750ms";
         //final String dbName = "boa_fluo151127_test";
-        int fIdx = 339;
-        int mcIdx =0;
+        int fIdx = 348;
+        int mcIdx =9;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName, null);
-        t.testSegMutationsFromXP(fIdx, mcIdx, false, 4,4);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,8);
     }
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {

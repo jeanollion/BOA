@@ -82,7 +82,8 @@ public class SubPixelLocalizator {
         if (debug) {
             logger.debug("num peaks: {}, refined: {}", peaks.size(), refined.size());
             logger.debug("peaks: {}", Utils.toStringList(peaks, p->p.toString()));
-            logger.debug("refined: {}", Utils.toStringList(refined, p->p.toString()));
+            logger.debug("refined: {}", Utils.toStringList(refined, p->p.getValue()==0? "NaN" : p.toString()));
+            //logger.debug("refined: {}", Utils.toStringList(refined, p->"["+p.getDoublePosition(0)+"; "+p.getDoublePosition(1)+(img.getSizeZ()>1? ";"+p.getDoublePosition(2): "")+"]"));
         }
         for (RefinedPeak< Point > r : refined) {
             Object3D o = objects.get(peaks.indexOf(r.getOriginalPeak()));

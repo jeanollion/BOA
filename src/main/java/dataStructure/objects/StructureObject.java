@@ -92,7 +92,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.structureIdx = -1;
         this.idx = 0;
         this.dao=dao;
-        this.is2D=true; // must define is2D
     }
     public StructureObject duplicate() {
         return duplicate(false);
@@ -856,10 +855,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public boolean is2D() {
         if (is2D==null) {
-            synchronized(this) {
-                if (is2D==null) {
-                    is2D = getExperiment().getPosition(getPositionName()).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
-                } 
+            if (isRoot()) is2D=true;
+            else {
+                synchronized(this) {
+                    if (is2D==null) {
+                        is2D = getExperiment().getPosition(getPositionName()).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
+                    } 
+                }
             }
         }
         return is2D;

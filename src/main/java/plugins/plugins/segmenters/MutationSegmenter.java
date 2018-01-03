@@ -274,7 +274,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
                     o.setCenter(center);
                     //o.setQuality(lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0));
                 }
-                o.setQuality(Math.sqrt(wsMap[i].getPixel(o.getCenter()[0], o.getCenter()[1], 0) * smooth.getPixel(o.getCenter()[0], o.getCenter()[1], z)));
+                double zz = o.getCenter().length>2?o.getCenter()[2]:z;
+                o.setQuality(Math.sqrt(wsMap[i].getPixel(o.getCenter()[0], o.getCenter()[1], zz) * smooth.getPixel(o.getCenter()[0], o.getCenter()[1], zz)));
                 if (planeByPlane && lapSPZ.length>1) { // keep track of z coordinate
                     o.setCenter(new double[]{o.getCenter()[0], o.getCenter()[1], 0}); // adding z dimention
                     o.translate(0, 0, z);

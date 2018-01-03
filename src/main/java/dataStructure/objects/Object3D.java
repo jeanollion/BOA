@@ -52,7 +52,6 @@ public class Object3D {
     protected double[] center;
     protected boolean is2D=false;
     /**
-     * Voxel
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
      */
     public Object3D(ImageInteger mask, int label) {
@@ -266,7 +265,7 @@ public class Object3D {
     protected void createMask() {
         ImageByte mask_ = new ImageByte("", getBounds().getImageProperties(scaleXY, scaleZ));
         for (Voxel v : voxels) {
-            //if (!mask_.containsWithOffset(v.x, v.y, v.z)) logger.error("voxel out of bounds: {}", v); // can happen if bounds were not updated before the object was saved
+            if (!mask_.containsWithOffset(v.x, v.y, v.z)) logger.error("voxel out of bounds: {}, bounds: {}", v, mask_.getBoundingBox()); // can happen if bounds were not updated before the object was saved
             mask_.setPixelWithOffset(v.x, v.y, v.z, 1);
         }
         //if (currentOffset!=null) mask_.translate(currentOffset);
@@ -310,7 +309,7 @@ public class Object3D {
     public ImageInteger getMask() {
         if (mask==null && voxels!=null) {
             synchronized(this) { // "Double-Checked Locking"
-                if (mask==null && voxels!=null) {
+                if (mask==null) {
                     createMask();
                 }
             }
@@ -674,7 +673,7 @@ public class Object3D {
     }
     
     public boolean is2D() {
-        return !is2D;
+        return is2D;
         //return getBounds().getSizeZ()>1;
     }
     

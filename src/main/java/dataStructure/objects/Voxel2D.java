@@ -64,6 +64,6 @@ public class Voxel2D extends Voxel {
     
     @Override
     public String toString() {
-        return "Voxel2D{" + "x=" + x + ", y=" + y + ", value=" + value + '}';
+        return "Voxel2D{" + "x=" + x + ", y=" + y + ", z=" + z + ", value=" + value + '}';
     }
 }
