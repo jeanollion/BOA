@@ -68,7 +68,7 @@ public class TestTracker {
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx = 0;
-        int mcIdx =3;
+        int mcIdx =1;
         int structureIdx = 1;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {

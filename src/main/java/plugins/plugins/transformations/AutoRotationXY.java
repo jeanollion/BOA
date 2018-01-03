@@ -83,6 +83,10 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         this.frameNumber.setValue(frameNumber);
         return this;
     }
+    public AutoRotationXY setRemoveIncompleteRowsAndColumns(boolean remove) {
+        this.removeIncompleteRowsAndColumns.setSelected(remove);
+        return this;
+    }
     public AutoRotationXY() {}
     
     public boolean isTimeDependent() {

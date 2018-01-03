@@ -388,6 +388,23 @@ public class ArrayUtil {
         for (int i = 0; i<size; ++i) res[i]=i;
         return res;
     }
+    public static double mean(Collection<Double> col) {
+        if (col.isEmpty()) return Double.NaN;
+        double res = 0;
+        for (Double d : col) res+=d;
+        return res/col.size();
+    }
+    public static double[] meanSigma(Collection<Double> col) {
+        if (col.isEmpty()) return new double[]{Double.NaN, Double.NaN};
+        double sum = 0, sum2=0;
+        for (Double d : col) {
+            sum+=d;
+            sum2+=d*d;
+        }
+        sum/=col.size();
+        sum2 = Math.sqrt(sum2 / col.size() - sum * sum);
+        return new double[]{sum, sum2};
+    }
     public static double median(Collection<Double> col) {
         if (col.isEmpty()) return Double.NaN;
         List<Double> list = new ArrayList<>(col);

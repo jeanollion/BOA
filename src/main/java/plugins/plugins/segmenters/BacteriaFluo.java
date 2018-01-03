@@ -60,6 +60,7 @@ import processing.Filters;
 import processing.ImageFeatures;
 import processing.SplitAndMerge;
 import processing.WatershedTransform;
+import utils.ArrayUtil;
 import utils.Utils;
 import utils.clustering.Object3DCluster;
 
@@ -196,22 +197,36 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             res.relabel(true);
         }
         */
-        boolean wsOnGradient = true; // essayer sur hessian avec scale 1.5
+        boolean wsOnGradient = true;
         EdgeDetector seg = new EdgeDetector(); // keep defaults parameters ? 
         seg.setTestMode(debug);
-        seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1).setSmoothScale(1.5));
+        //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2));
+        seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(2).setSmoothScale(2)); // min scale = 1.5 min smooth scale = 2
         seg.setApplyThresholdOnValueMap(true);
         seg.setThresholder(new BackgroundThresholder(3, 3, 2).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)));
         //seg.setThresholder(new ConstantValue(50));
         
         ObjectPopulation splitPop = wsOnGradient ? seg.runSegmenter(input, structureIdx, parent) : seg.runOnWsMap(input, splitAndMerge.getHessian(), parent);
-        if (wsOnGradient) { // when done on gradient -> intermediate regions are kept -> remove using hessian value
+        if (false && wsOnGradient) { // when done on gradient -> intermediate regions are kept -> remove using hessian value
             double thresholdHess = IJAutoThresholder.runThresholder(splitAndMerge.getHessian(), parent.getMask(), AutoThresholder.Method.Otsu);
             if (debug) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(splitPop, splitAndMerge.getHessian()).setName("Hessian Value Map. Threshold: "+thresholdHess));
             splitPop.filter(new ObjectPopulation.MeanIntensity(thresholdHess, false, splitAndMerge.getHessian()));
         }
+        
         splitAndMerge = initializeSplitAndMerge(input);
         ObjectPopulation res = splitAndMerge.splitAndMerge(splitPop.getLabelMap(), minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 0);
+        
+        // local threshold on each cell // TODO: MOP: teser la robustesse des differentes methodes en mesurant le sigma du growth rate
+        Image erodeMap = ImageFeatures.gaussianSmooth(input, 2, false);
+        for (Object3D o : res.getObjects()) {
+            List<Voxel> contour = o.getContour();
+            //double thld = ArrayUtil.quantile(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)), 0.25);
+            //double thld = ArrayUtil.mean(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)));
+            double[] ms = ArrayUtil.meanSigma(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)));
+            double thld = ms[0]-0.5*ms[1];
+            o.erodeContours(erodeMap, thld, true, contour);
+        }
+        
         res.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         res.filter(new ObjectPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
         

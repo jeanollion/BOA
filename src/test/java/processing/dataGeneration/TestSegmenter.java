@@ -48,7 +48,7 @@ public class TestSegmenter {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         
-        String dbName = "TestThomasRawStacks";
+        String dbName = "fluo171219_WT_750ms";
         int pIdx = 0;
         int mcIdx =0;
         int frame = 0;

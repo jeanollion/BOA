@@ -441,7 +441,7 @@ public class GenerateXP {
         ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false).setTrimNegativeValues(true)); // TODO test trim negative values. make it more sensitive because sd of background is rediced -> modify otsu thld. advantage: after transformations, convertion to 16 bit trim values.
         ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
         ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
-        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
+        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR).setRemoveIncompleteRowsAndColumns(false));
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE));
         //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
         //ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
