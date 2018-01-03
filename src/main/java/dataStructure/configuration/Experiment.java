@@ -111,6 +111,9 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         bestFocusPlane.initFromJSONEntry(jsonO.get("bestFocusPlane"));
         this.name="Configuration";
     }
+    public Experiment(){
+        this("");
+    }
     
     public Experiment(String name) {
         super(name);
@@ -145,10 +148,6 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         super.initChildren(importCond, template, fields, channelImages, structures, measurements, outputPath, imagePath, bestFocusPlane);
     }
     
-    protected void checkInit() {
-        if (children==null) initChildList();
-    }
-    
     public PreProcessingChain getPreProcessingTemplate() {
         return template;
     }
@@ -159,7 +158,6 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @return a new MicroscopyField if no MicroscopyField named {@param fieldName} are already existing, null if not. 
      */
     public MicroscopyField createPosition(String fieldName) {
-        checkInit();
         if (getPosition(fieldName)!=null) return null;
         MicroscopyField res =fields.createChildInstance(fieldName);
         fields.insert(res);
@@ -168,12 +166,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public MicroscopyField getPosition(String fieldName) {
-        checkInit();
         return fields.getChildByName(fieldName);
     }
     
     public MicroscopyField getPosition(int fieldIdx) {
-        checkInit();
         return fields.getChildAt(fieldIdx);
     }
     
@@ -193,7 +189,6 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
    
     public SimpleListParameter<ChannelImage> getChannelImages() {
-        checkInit();
         return channelImages;
     }
     
@@ -247,22 +242,19 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return res;
     }
     
-    public int getChannelImageIdx(int structureIdx) {checkInit(); return getStructure(structureIdx).getChannelImage();}
+    public int getChannelImageIdx(int structureIdx) {return getStructure(structureIdx).getChannelImage();}
     
-    public SimpleListParameter<Structure> getStructures() {checkInit(); return structures;}
+    public SimpleListParameter<Structure> getStructures() {return structures;}
     
     public Structure getStructure(int structureIdx) {
-        checkInit();
         return structures.getChildAt(structureIdx);
     }
     
     public int getStructureCount() {
-        checkInit();
         return structures.getChildCount();
     }
     
     public int getStructureIdx(String name) {
-        checkInit();
         int i = 0;
         for (Structure s: structures.getChildren()) {
             if (s.getName().equals(name)) return i;
@@ -444,7 +436,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     // measurement-related methods
-    public SimpleListParameter<PluginParameter<Measurement>> getMeasurements() {checkInit(); return measurements;}
+    public SimpleListParameter<PluginParameter<Measurement>> getMeasurements() { return measurements;}
     public List<MeasurementKey> getAllMeasurementKeys() {
         if (this.measurements.getChildCount()==0) return Collections.emptyList();
         else {
@@ -544,7 +536,5 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         }*/
     }
     
-    // morphium
-    public Experiment(){}
-    public void callLazyLoading(){}
+    
 }

@@ -96,7 +96,7 @@ public class SpotWithinCompartment extends Spot {
     
    
     public void setRadius() {
-        double radius = object.is3D() ? Math.pow(3 * object.getSize() / (4 * Math.PI) , 1d/3d) : Math.sqrt(object.getSize() / (2 * Math.PI)) ;
+        double radius = !object.is2D() ? Math.pow(3 * object.getSize() / (4 * Math.PI) , 1d/3d) : Math.sqrt(object.getSize() / (2 * Math.PI)) ;
         getFeatures().put(Spot.RADIUS, radius);
     }
     

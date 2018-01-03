@@ -325,7 +325,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                             BlankMask m = new BlankMask("", xSize, ySize+offY>=parent.getBounds().getSizeY()?parent.getBounds().getSizeY()-offY:ySize, zSize, offX, offY, offZ, ref.getScaleXY(), ref.getScaleZ());
                             BoundingBox bds = m.getBoundingBox();
                             int maxIntersect = parent.getChildren(structureIdx).stream().mapToInt(o->o.getBounds().getIntersection(bds).getSizeXYZ()).max().getAsInt();
-                            if (!bds.isIncluded(parent.getBounds()) || maxIntersect>0) {
+                            if (!bds.isIncluded2D(parent.getBounds()) || maxIntersect>0) {
                                 if (debug) {
                                     logger.debug("stop filling gap! parent:{}, gapfilled:{}, maxIntersect: {} erase from: {} to {}", parent.getBounds(), m.getBoundingBox(), maxIntersect, gcPrev, prev);
                                     logger.debug("ref: {} ({}), prev:{}({})", ref, ref.getBounds(), ref.getPrevious(), ref.getPrevious().getBounds());

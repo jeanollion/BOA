@@ -75,7 +75,8 @@ public class FillHoles2D {
     public static void fillHoles(ObjectPopulation pop) {
         for (Object3D o : pop.getObjects()) {
             fillHoles(o.getMask(), 2);
-            o.createVoxels();
+            o.resetVoxels();
+            o.getVoxels();
         }
         pop.relabel(true);
     }

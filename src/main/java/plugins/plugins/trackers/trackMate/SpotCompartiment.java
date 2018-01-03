@@ -49,7 +49,7 @@ public class SpotCompartiment {
     public double sizeIncrement=Double.NaN;
     public static double yLengthForXMeanComputation = 0.2; 
     public SpotCompartiment(StructureObject o) {
-        long t0 = System.currentTimeMillis();
+        //long t0 = System.currentTimeMillis();
         object = o;
         double[][] poles = getPoles(object.getObject(), 0.5, yLengthForXMeanComputation);
         offsetUp = poles[0];
@@ -62,7 +62,7 @@ public class SpotCompartiment {
         //if (object.getNext()!=null && object.getNext().getDivisionSiblings(false)!=null) divisionAtNextTimePoint = true;
         //previousDivisionTime = object.getPreviousDivisionTimePoint();
         truncated = isTruncated(object);
-        long t1 = System.currentTimeMillis();
+        //long t1 = System.currentTimeMillis();
         //logger.debug("spotCompartiment: {}, creation time: {}", this, t0-t1);
     }
     

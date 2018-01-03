@@ -179,7 +179,7 @@ public class StructureObjectUtils {
             StructureObject currentParent=null;
             int currentIntersection=-1;
             for (StructureObject p : parent) {
-                if (p.getBounds().hasIntersection(b)) {
+                if (p.getObject().intersect(c.getObject())) {
                     if (currentParent==null) {
                         currentParent = p;
                     }
@@ -200,8 +200,7 @@ public class StructureObjectUtils {
     
     public static List<StructureObject> getIncludedObjects(List<StructureObject> candidates, StructureObject container) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
-        BoundingBox containerBox = container.getBounds();
-        for (StructureObject c : candidates) if (c.getBounds().hasIntersection(containerBox)) res.add(c); // strict inclusion?
+        for (StructureObject c : candidates) if (c.getObject().intersect(container.getObject())) res.add(c); // strict inclusion?
         return res;
     }
     

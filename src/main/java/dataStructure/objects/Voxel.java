@@ -25,12 +25,14 @@ public class Voxel implements Comparable<Voxel> {
         this(x, y, z);
         this.value = value;
     }
-    
+    public Voxel2D toVoxel2D() {
+        return new Voxel2D(x, y, z, value);
+    }
     @Override
     public boolean equals(Object other) {
         if (other instanceof Voxel) {
             Voxel otherV = (Voxel)other;
-            return x==otherV.x && y==otherV.y && z==otherV.z;
+            return x==otherV.x && y==otherV.y && ( other instanceof Voxel2D || z==otherV.z);
         } else return false;
     }
 

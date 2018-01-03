@@ -169,6 +169,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
                 StructureObject parent = parentsByF.get(frame);
                 List<StructureObject> candidates = parent.getChildren(compartimentStructure);
                 StructureObject compartimentSO = StructureObjectUtils.getInclusionParent(o, candidates, null); 
+                //if (compartimentSO==null) return null;
                 SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(compartimentSO);
                 if (compartiment==null) return null;
                 double[] center = o.getCenter();

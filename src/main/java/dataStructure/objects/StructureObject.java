@@ -45,6 +45,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected int idx;
     protected transient final SmallArray<List<StructureObject>> childrenSM=new SmallArray<List<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
     protected transient ObjectDAO dao;
+    private Boolean is2D=null;
     
     // track-related attributes
     protected int timePoint;
@@ -91,6 +92,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.structureIdx = -1;
         this.idx = 0;
         this.dao=dao;
+        this.is2D=true; // must define is2D
     }
     public StructureObject duplicate() {
         return duplicate(false);
@@ -111,6 +113,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         res.rawImagesC=rawImagesC.duplicate();
         res.trackImagesC=trackImagesC.duplicate();
         res.offsetInTrackImage=offsetInTrackImage;
+        res.is2D=is2D;
         if (attributes!=null && !attributes.isEmpty()) { // deep copy of attributes
             res.attributes=new HashMap<>(attributes.size());
             for (Entry<String, Object> e : attributes.entrySet()) {
@@ -703,8 +706,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (object==null) {
             synchronized(this) {
                 if (object==null) {
-                    object=objectContainer.getObject();
-                    object.setIsAbsoluteLandmark(true);
+                    object=objectContainer.getObject().setIsAbsoluteLandmark(true).setIs2D(is2D());
                     if (attributes!=null) {
                         if (attributes.containsKey("Quality")) object.setQuality((Double)attributes.get("Quality"));
                         if (attributes.containsKey("Center")) object.setCenter(JSONUtils.fromDoubleArray((List)attributes.get("Center")));
@@ -851,8 +853,16 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             }
         }
     }
+    
     public boolean is2D() {
-        return getExperiment().getPosition(getPositionName()).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1; 
+        if (is2D==null) {
+            synchronized(this) {
+                if (is2D==null) {
+                    is2D = getExperiment().getPosition(getPositionName()).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
+                } 
+            }
+        }
+        return is2D;
         //return this.getMask().getSizeZ()==1;
     }
     

@@ -32,7 +32,7 @@ public class GeometricalMeasurements {
     
     public static double getVolume(Object3D o) {
         int count = o.getVoxels().size();
-        if (o.is3D()) return count * o.getScaleXY() * o.getScaleXY() * o.getScaleZ();
+        if (!o.is2D()) return count * o.getScaleXY() * o.getScaleXY() * o.getScaleZ();
         else  return count * o.getScaleXY() * o.getScaleXY();
     }
     public static double getFeretMax(Object3D o) {

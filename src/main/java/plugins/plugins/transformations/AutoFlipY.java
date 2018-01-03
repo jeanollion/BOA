@@ -178,7 +178,7 @@ public class AutoFlipY implements Transformation {
         while(it.hasNext()) {
             Object3D o = it.next();
             List<Object3D> inter = new ArrayList<>(objects);
-            inter.removeIf(oo->!xBounds.get(oo).hasIntersection(xBounds.get(o)));
+            inter.removeIf(oo->!xBounds.get(oo).intersect2D(xBounds.get(o)));
             yMinOs.add(Collections.min(inter, (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin())));
             yMaxOs.add(Collections.max(inter, (o1, o2)->Integer.compare(o1.getBounds().getyMax(), o2.getBounds().getyMax())));
             objects.removeAll(inter);

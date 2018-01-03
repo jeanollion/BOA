@@ -356,12 +356,18 @@ public class BoundingBox implements JSONSerializable {
         return Math.sqrt(Math.pow(this.getXMean()-other.getXMean(), 2) + Math.pow(this.getYMean()-other.getYMean(), 2) + Math.pow(this.getZMean()-other.getZMean(), 2));
     }
     
-    public boolean hasIntersection(BoundingBox other) {
+    public boolean intersect2D(BoundingBox other) {
+        return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax);
+    }
+    
+    public boolean intersect(BoundingBox other) {
         if (getSizeZ()<=1 && other.getSizeZ()<=1) return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax);
         else return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax) && Math.max(zMin, other.zMin)<=Math.min(zMax, other.zMax);
     }
-    
-    public boolean hasIntersection(BoundingBox other, int tolerance) {
+    public boolean intersect2D(BoundingBox other, int tolerance) {
+        return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax)+tolerance && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax)+tolerance;
+    }
+    public boolean intersect(BoundingBox other, int tolerance) {
         if (getSizeZ()<=1 && other.getSizeZ()<=1) return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax)+tolerance && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax)+tolerance;
         else return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax)+tolerance && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax)+tolerance && Math.max(zMin, other.zMin)<=Math.min(zMax, other.zMax)+tolerance;
     }
@@ -392,9 +398,41 @@ public class BoundingBox implements JSONSerializable {
         return new BoundingBox(xm, xM, ym, yM, zm, zM);
     }
     
+    /**
+     * 
+     * @param other
+     * @return intersection bounding box. If the size in one direction is negative => there are no intersection in this direction
+     */
+    public BoundingBox getIntersection2D(BoundingBox other) {
+        int xm = Math.max(xMin, other.xMin);
+        int xM = Math.min(xMax, other.xMax);
+        if (xm>xM) {
+            xm = (int)(xM+xm)/2;
+            xM=xm-1;
+        }
+        int ym = Math.max(yMin, other.yMin);
+        int yM = Math.min(yMax, other.yMax);
+        if (ym>yM) {
+            ym = (int)(yM+ym)/2;
+            yM=ym-1;
+        }
+        return new BoundingBox(xm, xM, ym, yM, 0, 0);
+    }
+    /**
+     * 
+     * @param container
+     * @return 3D inclusion
+     */
     public boolean isIncluded(BoundingBox container) {
-        if (getSizeZ()==container.getSizeZ() && getSizeZ()<=1) return xMin>=container.xMin && xMax<=container.xMax && yMin>=container.yMin && yMax<=container.yMax;
-        else return xMin>=container.xMin && xMax<=container.xMax && yMin>=container.yMin && yMax<=container.yMax && zMin>=container.zMin && zMax<=container.zMax;
+        return xMin>=container.xMin && xMax<=container.xMax && yMin>=container.yMin && yMax<=container.yMax && zMin>=container.zMin && zMax<=container.zMax;
+    }
+    /**
+     * 
+     * @param container
+     * @return 2D inclusion
+     */
+    public boolean isIncluded2D(BoundingBox container) {
+        return xMin>=container.xMin && xMax<=container.xMax && yMin>=container.yMin && yMax<=container.yMax;
     }
     
     @Override

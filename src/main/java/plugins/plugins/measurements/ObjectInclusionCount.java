@@ -95,7 +95,7 @@ public class ObjectInclusionCount implements Measurement {
         Object3D containerObject = container.getObject();
         for (StructureObject o : toCount) {
             if (onlyTrackHeads && !o.isTrackHead()) continue;
-            if (o.getBounds().hasIntersection(containerObject.getBounds())) {
+            if (o.getObject().intersect(containerObject)) {
                 if (proportionInclusion==0) ++count;
                 else {
                     if (o.getObject().getVoxels().isEmpty()) continue;

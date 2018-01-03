@@ -50,7 +50,7 @@ public class Size implements ObjectFeature {
         double size = object.getSize();
         if (scaled.getSelectedIndex()==1) {
             size*=Math.pow(object.getScaleXY(), 2);
-            if (object.is3D()) size*=object.getScaleZ();
+            if (!object.is2D()) size*=object.getScaleZ();
         }
         return size;
     }

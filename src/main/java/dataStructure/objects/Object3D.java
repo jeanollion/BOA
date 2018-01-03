@@ -17,6 +17,7 @@ import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
 import image.ImageMask;
+import image.ImageMask2D;
 import image.ImageProperties;
 import image.TypeConverter;
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class Object3D {
     protected boolean absoluteLandmark=false; // false = coordinates relative to the direct parent
     protected double quality=Double.NaN;
     protected double[] center;
-    
+    protected boolean is2D=false;
     /**
      * Voxel
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
@@ -79,6 +80,10 @@ public class Object3D {
     
     public Object3D setIsAbsoluteLandmark(boolean absoluteLandmark) {
         this.absoluteLandmark = absoluteLandmark;
+        return this;
+    }
+    public Object3D setIs2D(boolean is2D) {
+        this.is2D = is2D;
         return this;
     }
     
@@ -254,7 +259,7 @@ public class Object3D {
         voxels = null;
     }
     public synchronized void resetMask() {
-        if (voxels==null) throw new IllegalArgumentException("Cannot reset voxels if no mask is present");
+        if (voxels==null) throw new IllegalArgumentException("Cannot reset mask if no voxels are present");
         mask = null;
         this.bounds=null;
     }
@@ -268,15 +273,25 @@ public class Object3D {
         this.mask=mask_;
     }
 
-    public void createVoxels() {
+    private void createVoxels() {
         //logger.debug("create voxels: mask offset: {}", mask.getBoundingBox());
         if (mask.getPixelArray()==null) logger.debug("mask pixel null for object: {}", this);
         ArrayList<Voxel> voxels_=new ArrayList<Voxel>();
-        for (int z = 0; z < mask.getSizeZ(); ++z) {
+        if (is2D()) {
             for (int y = 0; y < mask.getSizeY(); ++y) {
                 for (int x = 0; x < mask.getSizeX(); ++x) {
-                    if (mask.insideMask(x, y, z)) {
-                        voxels_.add( new Voxel(x + mask.getOffsetX(), y + mask.getOffsetY(), z + mask.getOffsetZ()));
+                    if (mask.insideMask(x, y, 0)) {
+                        voxels_.add( new Voxel2D(x + mask.getOffsetX(), y + mask.getOffsetY(), mask.getOffsetZ()));
+                    }
+                }
+            }
+        } else {
+            for (int z = 0; z < mask.getSizeZ(); ++z) {
+                for (int y = 0; y < mask.getSizeY(); ++y) {
+                    for (int x = 0; x < mask.getSizeX(); ++x) {
+                        if (mask.insideMask(x, y, z)) {
+                            voxels_.add( new Voxel(x + mask.getOffsetX(), y + mask.getOffsetY(), z + mask.getOffsetZ()));
+                        }
                     }
                 }
             }
@@ -331,7 +346,7 @@ public class Object3D {
     public List<Voxel> getContour() {
         ArrayList<Voxel> res = new ArrayList<Voxel>();
         ImageMask mask = getMask();
-        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true); // 1 and not 1.5 -> diagonal
+        EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true); // 1 and not 1.5 -> diagonal
         int xx, yy, zz;
         for (int i = 0; i<neigh.dx.length; ++i) {
             neigh.dx[i]-=mask.getOffsetX();
@@ -361,7 +376,7 @@ public class Object3D {
     public void erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, List<Voxel> contour) {
         if (contour==null || contour.isEmpty()) contour = getContour();
         Set<Voxel> heap = new HashSet<>(contour);
-        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
+        EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
         ImageInteger mask = getMask();
         int xx, yy, zz;
         while(!heap.isEmpty()) {
@@ -374,7 +389,10 @@ public class Object3D {
                     xx=v.x+neigh.dx[i];
                     yy=v.y+neigh.dy[i];
                     zz=v.z+neigh.dz[i];
-                    if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) heap.add(new Voxel(xx, yy, zz));
+                    if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) {
+                        if (is2D()) heap.add(new Voxel2D(xx, yy, zz));
+                        else heap.add(new Voxel2D(xx, yy, zz));
+                    }
                 }
             }
         }
@@ -385,7 +403,7 @@ public class Object3D {
     public void dilateContours(Image image, double threshold, boolean addIfHigherThanThreshold, List<Voxel> contour) {
         if (contour==null || contour.isEmpty()) contour = getContour();
         Set<Voxel> heap = new HashSet<>(contour);
-        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
+        EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
         ImageInteger mask = getMask();
         int xx, yy, zz;
         while(!heap.isEmpty()) {
@@ -398,7 +416,10 @@ public class Object3D {
                     xx=v.x+neigh.dx[i];
                     yy=v.y+neigh.dy[i];
                     zz=v.z+neigh.dz[i];
-                    if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && !mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) heap.add(new Voxel(xx, yy, zz));
+                    if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && !mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) {
+                        if (is2D()) heap.add(new Voxel2D(xx, yy, zz));
+                        else heap.add(new Voxel(xx, yy, zz));
+                    }
                 }
             }
         }
@@ -433,8 +454,18 @@ public class Object3D {
     }
     
     public Set<Voxel> getIntersection(Object3D other) {
-        if (!this.getBounds().hasIntersection(other.getBounds())) return Collections.emptySet();
-        else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
+        if (!intersect(other)) return Collections.emptySet(); 
+        if (other.is2D()!=is2D()) { // should not take into acount z for intersection -> cast to voxel2D (even for the 2D object to enshure voxel2D), and return voxels from the 3D objects
+            Set s1 = Sets.newHashSet(Utils.transform(getVoxels(), v->v.toVoxel2D()));
+            Set s2 = Sets.newHashSet(Utils.transform(other.getVoxels(), v->v.toVoxel2D()));
+            if (is2D()) {
+                s2.retainAll(s1);
+                return Sets.newHashSet(Utils.transform(s2, v->((Voxel2D)v).toVoxel()));
+            } else {
+                s1.retainAll(s2);
+                return Sets.newHashSet(Utils.transform(s1, v->((Voxel2D)v).toVoxel()));
+            }
+        } else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
     }
     /*
     // TODO faire une methode plus optimisée qui utilise les masques uniquement
@@ -453,6 +484,10 @@ public class Object3D {
             return count;
         }
     }*/
+    public boolean intersect(Object3D other) {
+        if (is2D()||other.is2D()) return getBounds().intersect2D(other.getBounds());
+        else return getBounds().intersect(other.getBounds());
+    }
     /**
      * 
      * @param other
@@ -463,27 +498,32 @@ public class Object3D {
     public int getIntersectionCountMaskMask(Object3D other, BoundingBox offset, BoundingBox offsetOther) {
         BoundingBox otherBounds = offsetOther==null? other.getBounds() : other.getBounds().duplicate().translate(offsetOther);
         BoundingBox thisBounds = offset==null? getBounds() : getBounds().duplicate().translate(offset);
-        if (!thisBounds.hasIntersection(otherBounds)) return 0;
-        else {
-            //logger.debug("off: {}, otherOff: {}", thisBounds, otherBounds);
-            final ImageMask mask = getMask();
-            BoundingBox inter = thisBounds.getIntersection(otherBounds);
-            final ImageMask m = other.getMask();
-            final int count[] = new int[1];
-            final int offX = thisBounds.getxMin();
-            final int offY = thisBounds.getyMin();
-            final int offZ = thisBounds.getzMin();
-            final int otherOffX = otherBounds.getxMin();
-            final int otherOffY = otherBounds.getyMin();
-            final int otherOffZ = otherBounds.getzMin();
-            inter.loop(new LoopFunction2() {
-                int c;
-                public void loop(int x, int y, int z) {if (mask.insideMask(x-offX, y-offY, z-offZ) && m.insideMask(x-otherOffX, y-otherOffY, z-otherOffZ)) c++;}
-                public void setUp() {c = 0;}
-                public void tearDown() {count[0]=c;}
-            });
-            return count[0];
+        final boolean inter2D = is2D() || other.is2D();
+        if (inter2D) {
+            if (!thisBounds.intersect2D(otherBounds)) return 0;
+        } else {
+            if (!thisBounds.intersect(otherBounds)) return 0;
         }
+        //logger.debug("off: {}, otherOff: {}", thisBounds, otherBounds);
+        
+        final ImageMask mask = is2D() && !other.is2D() ? new ImageMask2D(getMask()) : getMask();
+        final ImageMask m = other.is2D() && !is2D() ? new ImageMask2D(other.getMask()) : other.getMask();
+        BoundingBox inter = inter2D ? thisBounds.getIntersection2D(otherBounds) : thisBounds.getIntersection(otherBounds);
+        final int count[] = new int[1];
+        final int offX = thisBounds.getxMin();
+        final int offY = thisBounds.getyMin();
+        final int offZ = thisBounds.getzMin();
+        final int otherOffX = otherBounds.getxMin();
+        final int otherOffY = otherBounds.getyMin();
+        final int otherOffZ = otherBounds.getzMin();
+        inter.loop(new LoopFunction2() {
+            int c;
+            public void loop(int x, int y, int z) {if (mask.insideMask(x-offX, y-offY, z-offZ) && m.insideMask(x-otherOffX, y-otherOffY, z-otherOffZ)) c++;}
+            public void setUp() {c = 0;}
+            public void tearDown() {count[0]=c;}
+        });
+        return count[0];
+        
     }
     
     public void merge(Object3D other) {
@@ -615,11 +655,11 @@ public class Object3D {
     }
     
     private boolean voxelsSizeOverLimit(boolean emb) {
-        int limit = emb? (is3D() ? MAX_VOX_3D_EMB :MAX_VOX_2D_EMB) : (is3D() ? MAX_VOX_3D :MAX_VOX_2D);
+        int limit = emb? (!is2D() ? MAX_VOX_3D_EMB :MAX_VOX_2D_EMB) : (!is2D() ? MAX_VOX_3D :MAX_VOX_2D);
         return getVoxels().size()>limit;
     }
     private boolean maskSizeOverLimit(boolean emb) {
-        int limit = emb? (is3D() ? MAX_VOX_3D_EMB :MAX_VOX_2D_EMB) : (is3D() ? MAX_VOX_3D :MAX_VOX_2D);
+        int limit = emb? (!is2D() ? MAX_VOX_3D_EMB :MAX_VOX_2D_EMB) : (!is2D() ? MAX_VOX_3D :MAX_VOX_2D);
         int count = 0;
         for (int z = 0; z < mask.getSizeZ(); ++z) {
             for (int y = 0; y < mask.getSizeY(); ++y) {
@@ -633,8 +673,9 @@ public class Object3D {
         return false;
     }
     
-    public boolean is3D() {
-        return getBounds().getSizeZ()>1;
+    public boolean is2D() {
+        return !is2D;
+        //return getBounds().getSizeZ()>1;
     }
     
     public Object3D translate(int offsetX, int offsetY, int offsetZ) {

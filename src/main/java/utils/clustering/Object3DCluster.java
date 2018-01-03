@@ -189,7 +189,15 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
         super.setOverrideCheckFusionFunction(f);
     }
     private static Object3D containsPoint(Object3D o, List<Object3D> points) {
-        for (Object3D p : points) if (p.getBounds().isIncluded(o.getBounds())) return p;
+        if (o.is2D()) {
+            for (Object3D p : points) if (p.getBounds().isIncluded2D(o.getBounds())) return p;
+        } else {
+            for (Object3D p : points) {
+                if (o.is2D()) {
+                    if (p.getBounds().isIncluded2D(o.getBounds())) return p;
+                } else if (p.getBounds().isIncluded(o.getBounds())) return p;
+            }
+        }
         return null;
     }
     @Override public List<Object3D> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {

@@ -21,6 +21,7 @@ import dataStructure.objects.Object3D;
 import static dataStructure.objects.Object3D.logger;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
+import dataStructure.objects.Voxel2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,7 +56,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
     }
 
     private void createCoordsArrays(Object3D object) {
-        if (object.is3D()) {
+        if (!object.is2D()) {
             List<Voxel> voxels = object.getVoxels();
             x = new int[voxels.size()];
             y = new int[voxels.size()];
@@ -84,15 +85,15 @@ public class ObjectContainerVoxels extends ObjectContainer {
             return new ArrayList(0);
         }
         if (z != null) {
-            ArrayList<Voxel> voxels = new ArrayList<Voxel>(x.length);
+            ArrayList<Voxel> voxels = new ArrayList<>(x.length);
             for (int i = 0; i < x.length; ++i) {
                 voxels.add(new Voxel(x[i], y[i], z[i]));
             }
             return voxels;
         } else {
-            ArrayList<Voxel> voxels = new ArrayList<Voxel>(x.length);
+            ArrayList<Voxel> voxels = new ArrayList<>(x.length);
             for (int i = 0; i < x.length; ++i) {
-                voxels.add(new Voxel(x[i], y[i], 0));
+                voxels.add(new Voxel2D(x[i], y[i]));
             }
             return voxels;
         }

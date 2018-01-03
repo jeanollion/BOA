@@ -25,6 +25,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
+import dataStructure.objects.Voxel2D;
 import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
