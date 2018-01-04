@@ -131,7 +131,7 @@ public class Console implements PlugIn {
         } else {
             ui.setMessage("Watch Directory: "+watchDir);
         }
-        d = new Daemon(new LogUserInterface(ui));
+        d = new Daemon(ui);
         d.watchDirectory(watchDir);
     }
     

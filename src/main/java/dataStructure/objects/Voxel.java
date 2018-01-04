@@ -32,7 +32,7 @@ public class Voxel implements Comparable<Voxel> {
     public boolean equals(Object other) {
         if (other instanceof Voxel) {
             Voxel otherV = (Voxel)other;
-            return x==otherV.x && y==otherV.y && ( other instanceof Voxel2D || z==otherV.z);
+            return x==otherV.x && y==otherV.y && ( z==otherV.z || other instanceof Voxel2D);
         } else return false;
     }
 

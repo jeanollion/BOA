@@ -81,7 +81,6 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         MasterDAO db;
         int[] taskCounter;
         UserInterface ui;
-        File logFile;
         public JSONObject toJSON() {
             JSONObject res=  new JSONObject();
             res.put("dbName", dbName); 
@@ -357,9 +356,6 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         public void setSubtaskNumber(int[] taskCounter) {
             this.taskCounter=taskCounter;
         }
-        public void setLogFile(String path) {
-            this.logFile= new File(path);
-        }
         public void runTask() {
             if (ui!=null) ui.setRunning(true);
             publish("Run task: "+this.toString());
@@ -584,6 +580,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 if (ui!=null) ui.setMessage("Invalid task: "+t.toString());
                 return;
             } 
+            t.setUI(ui);
             totalSubtasks+=t.countSubtasks();
             logger.debug("check ok: current task number: {}");
         }

@@ -21,6 +21,7 @@ import image.ImageMask2D;
 import image.ImageProperties;
 import image.TypeConverter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -276,7 +277,7 @@ public class Object3D {
         //logger.debug("create voxels: mask offset: {}", mask.getBoundingBox());
         if (mask.getPixelArray()==null) logger.debug("mask pixel null for object: {}", this);
         ArrayList<Voxel> voxels_=new ArrayList<Voxel>();
-        if (is2D()) {
+        /*if (is2D()) {
             for (int y = 0; y < mask.getSizeY(); ++y) {
                 for (int x = 0; x < mask.getSizeX(); ++x) {
                     if (mask.insideMask(x, y, 0)) {
@@ -284,7 +285,7 @@ public class Object3D {
                     }
                 }
             }
-        } else {
+        } else {*/
             for (int z = 0; z < mask.getSizeZ(); ++z) {
                 for (int y = 0; y < mask.getSizeY(); ++y) {
                     for (int x = 0; x < mask.getSizeX(); ++x) {
@@ -294,7 +295,7 @@ public class Object3D {
                     }
                 }
             }
-        }
+        //}
         voxels=voxels_;
     }
     
@@ -341,9 +342,12 @@ public class Object3D {
     public boolean voxelsCreated() {
         return voxels!=null;
     }
-    
+    /**
+     * 
+     * @return subset of object's voxels that are in contact with background, edge or other object
+     */
     public List<Voxel> getContour() {
-        ArrayList<Voxel> res = new ArrayList<Voxel>();
+        ArrayList<Voxel> res = new ArrayList<>();
         ImageMask mask = getMask();
         EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true); // 1 and not 1.5 -> diagonal
         int xx, yy, zz;
@@ -372,9 +376,16 @@ public class Object3D {
         voxels = null; // reset voxels
         // TODO reset bounds?
     }
-    public void erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, List<Voxel> contour) {
-        if (contour==null || contour.isEmpty()) contour = getContour();
-        Set<Voxel> heap = new HashSet<>(contour);
+    /**
+     * 
+     * @param image
+     * @param threshold
+     * @param removeIfLowerThanThreshold
+     * @param contour will be modified if a set
+     */
+    public void erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, Set<Voxel> contour) {
+        if (contour==null || contour.isEmpty()) contour = new HashSet<>(getContour());
+        Set<Voxel> heap = contour;
         EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
         ImageInteger mask = getMask();
         int xx, yy, zz;
@@ -389,8 +400,7 @@ public class Object3D {
                     yy=v.y+neigh.dy[i];
                     zz=v.z+neigh.dz[i];
                     if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) {
-                        if (is2D()) heap.add(new Voxel2D(xx, yy, zz));
-                        else heap.add(new Voxel2D(xx, yy, zz));
+                        heap.add(new Voxel(xx, yy, zz));
                     }
                 }
             }
@@ -416,8 +426,7 @@ public class Object3D {
                     yy=v.y+neigh.dy[i];
                     zz=v.z+neigh.dz[i];
                     if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && !mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) {
-                        if (is2D()) heap.add(new Voxel2D(xx, yy, zz));
-                        else heap.add(new Voxel(xx, yy, zz));
+                        heap.add(new Voxel(xx, yy, zz));
                     }
                 }
             }

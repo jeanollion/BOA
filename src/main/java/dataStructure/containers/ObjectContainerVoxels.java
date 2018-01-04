@@ -84,19 +84,13 @@ public class ObjectContainerVoxels extends ObjectContainer {
         if (x == null || y == null) {
             return new ArrayList(0);
         }
+        ArrayList<Voxel> voxels = new ArrayList<>(x.length);
         if (z != null) {
-            ArrayList<Voxel> voxels = new ArrayList<>(x.length);
-            for (int i = 0; i < x.length; ++i) {
-                voxels.add(new Voxel(x[i], y[i], z[i]));
-            }
-            return voxels;
+            for (int i = 0; i < x.length; ++i) voxels.add(new Voxel(x[i], y[i], z[i]));
         } else {
-            ArrayList<Voxel> voxels = new ArrayList<>(x.length);
-            for (int i = 0; i < x.length; ++i) {
-                voxels.add(new Voxel2D(x[i], y[i]));
-            }
-            return voxels;
+            for (int i = 0; i < x.length; ++i) voxels.add(new Voxel(x[i], y[i], 0));
         }
+        return voxels;
     }
 
     public Object3D getObject() {

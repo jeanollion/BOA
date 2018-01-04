@@ -2553,10 +2553,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         } else return null;
         t.setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages);
         if (export) t.setExportData(this.exportPPImagesMenuItem.isSelected(), this.exportTrackImagesMenuItem.isSelected(), this.exportObjectsMenuItem.isSelected(), this.exportConfigMenuItem.isSelected(), this.exportSelectionsMenuItem.isSelected());
-        if (logFile!=null && activateLoggingMenuItem.isSelected()) {
-            log("Setting log file:" +logFile);
-            t.setLogFile(logFile);
-        }
+        
         return t;
     }
     private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
@@ -2575,7 +2572,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
         if (t.isPreProcess() || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
         
-        Task.executeTask(t, this, ()->{updateConfigurationTree();}); // update config because cache will be cleared
+        Task.executeTask(t, getUserInterface(), ()->{updateConfigurationTree();}); // update config because cache will be cleared
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
     private void importImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImagesMenuItemActionPerformed
@@ -2625,7 +2622,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         unsetXP();
         List<Task> tasks = new ArrayList<>(xps.size());
         for (String xp : xps) tasks.add(getCurrentJob(xp));
-        Task.executeTasks(tasks, this);
+        Task.executeTasks(tasks, getUserInterface());
     }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
 
     private void closeAllWindowsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeAllWindowsMenuItemActionPerformed
@@ -2692,10 +2689,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     private void setLogFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setLogFileMenuItemActionPerformed
         File f = Utils.chooseFile("Save Log As...", hostName.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, jLabel1);
-        if (f==null) return;
-        if (f.isDirectory()) return;
-        setLogFile(f.getAbsolutePath());
-        PropertyUtils.set(PropertyUtils.LOG_FILE, f.getAbsolutePath());
+        if (f==null) {
+            PropertyUtils.set(PropertyUtils.LOG_FILE, null);
+            setLogFile(null);
+        } else {
+            if (f.isDirectory()) f = new File(f.getAbsolutePath()+File.separator+"Log.txt");
+            setLogFile(f.getAbsolutePath());
+            PropertyUtils.set(PropertyUtils.LOG_FILE, f.getAbsolutePath());
+        }
     }//GEN-LAST:event_setLogFileMenuItemActionPerformed
 
     private void activateLoggingMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_activateLoggingMenuItemActionPerformed
@@ -3016,12 +3017,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                         else {
                             Task t = new Task().fromJSON(o);
                             jobs.add(t);
-                            if (logFile!=null && activateLoggingMenuItem.isSelected()) t.setLogFile(logFile);
                         }
                     }
                     if (!jobs.isEmpty()) {
                         unsetXP(); // avoid lock problems
-                        Task.executeTasks(jobs, GUI.getInstance());
+                        Task.executeTasks(jobs, getUserInterface());
                     }
                 }
             };
@@ -3031,7 +3031,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             menu.show(this.actionPoolList, evt.getX(), evt.getY());
         }
     }//GEN-LAST:event_actionPoolListMousePressed
-
+    private UserInterface getUserInterface() {
+        if (activateLoggingMenuItem.isSelected()) {
+            String log = logFile==null ? db.getDir()+File.separator+"Log.txt" : logFile;
+            LogUserInterface logUI = new LogUserInterface();
+            logUI.setLogFile(log, !appendToFileMenuItem.isSelected());
+            return new MultiUserInterface(this, logUI);
+        } else return this;
+    }
     private void hostNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_hostNameActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_hostNameActionPerformed

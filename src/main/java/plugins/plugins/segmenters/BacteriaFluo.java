@@ -247,17 +247,20 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         if (localThreshold) {
             // TODO LOG TO FILE NE FCT PLUS!!
             // local threshold on each cell // TODO: MOP: teser la robustesse des differentes methodes en mesurant le sigma du growth rate
-            // TOOD: seulement local threshold depuis les frontières avec d''autres cellules. Thld calculé sur le border - les frontières (ou tout s'il ne reste presque rien lorsqu'on enleve les frontières)
             Image erodeMap = getSmoothed(input);
+            Object3DCluster<SplitAndMerge.Interface> inter = splitAndMerge.getInterfaces(res, false);
             for (Object3D o : res.getObjects()) {
-                List<Voxel> contour = o.getContour();
-                double thld = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.075);
-                //double thld = ArrayUtil.mean(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)));
-                //double[] ms = ArrayUtil.meanSigma(Utils.transform(contour, v->(double)input.getPixel(v.x, v.y, v.z)));
-                //double thld = ms[0]-0.5*ms[1];
-                o.erodeContours(erodeMap, thld, true, contour);
+                Set<Voxel> contour = new HashSet<>(o.getContour());
+                Set<SplitAndMerge.Interface> inters = inter.getInterfaces(o);
+                Set<Voxel> interVox = new HashSet<>();
+                for (SplitAndMerge.Interface i : inters) interVox.addAll(i.getVoxels());
+                interVox.retainAll(contour);
+                contour.removeAll(interVox);
+                double thld = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.075); // TODO set quantile as parameter
+                o.erodeContours(erodeMap, thld, true, interVox);
             }
             res.redrawLabelMap(true);
+            res = new ObjectPopulation(res.getLabelMap(), true); // update bounds of objects
             if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
         
         }

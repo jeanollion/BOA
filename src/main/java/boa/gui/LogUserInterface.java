@@ -24,22 +24,19 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import utils.FileIO;
+import utils.Utils;
 
 /**
  *
  * @author jollion
  */
 public class LogUserInterface implements UserInterface {
-    final UserInterface parentUI;
     File logFile;
     FileLock xpFileLock;
     RandomAccessFile logFileWriter;
     
-    public LogUserInterface(UserInterface parentUI) {
-        this.parentUI = parentUI;
-    }
-    public UserInterface getParentUI() {
-        return parentUI;
+    public LogUserInterface() {
+
     }
     private synchronized void lockLogFile() {
         if (xpFileLock!=null) return;
@@ -62,7 +59,7 @@ public class LogUserInterface implements UserInterface {
     public synchronized void unlockLogFile() {
         if (this.xpFileLock!=null) {
             try {
-                setMessage("realising lock: "+ xpFileLock);
+                //setMessage("realising lock: "+ xpFileLock);
                 xpFileLock.release();
             } catch (IOException ex) {
                 setMessage("error realeasing xp lock");
@@ -80,31 +77,33 @@ public class LogUserInterface implements UserInterface {
             }
         }
     }
-    public boolean setLogFile(String dir, boolean clearIfExisting) {
+    public void setLogFile(String dir, boolean clearIfExisting) {
         if (dir==null) {
             this.unlockLogFile();
-            return true;
+            return;
         }
         logFile = new File(dir);
-        lockLogFile();
-        if (this.logFileWriter!=null && clearIfExisting) {
-            try {
-                FileIO.clearRAF(logFileWriter);
-            } catch (IOException ex) { }
+        if (clearIfExisting && logFile.exists()) {
+            lockLogFile();
+            if (this.logFileWriter!=null && clearIfExisting) {
+                try {
+                    FileIO.clearRAF(logFileWriter);
+                } catch (IOException ex) { }
+            }
+            unlockLogFile();
         }
-        return logFileWriter!=null;
     }
     
     @Override
     public void setProgress(int i) {
-        parentUI.setProgress(i);
+        setMessage("Progress: "+i+"%");
     }
 
     @Override
     public void setMessage(String message) {
         if (logFileWriter!=null) {
             try {
-                FileIO.write(logFileWriter, message, true);
+                FileIO.write(logFileWriter, Utils.getFormattedTime()+": "+message, true);
             } catch (IOException ex) {
                 System.out.println(">cannot log to file:"+logFile.getAbsolutePath());
             }
@@ -113,7 +112,8 @@ public class LogUserInterface implements UserInterface {
 
     @Override
     public void setRunning(boolean running) {
-        
+        if (running) this.lockLogFile();
+        else this.unlockLogFile();
     }
     
 }

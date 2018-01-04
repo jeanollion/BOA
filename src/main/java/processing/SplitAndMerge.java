@@ -104,6 +104,10 @@ public class SplitAndMerge {
         if (testMode) ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map"));
         return popWS;
     }
+    public Object3DCluster<Interface> getInterfaces(ObjectPopulation population, boolean lowConnectivity) {
+        return new Object3DCluster<>(population, false, lowConnectivity, getFactory());
+    }
+    
 
     public ClusterCollection.InterfaceFactory<Object3D, Interface> getFactory() {
         if (factory==null) factory = (Object3D e1, Object3D e2, Comparator<? super Object3D> elementComparator) -> new Interface(e1, e2);

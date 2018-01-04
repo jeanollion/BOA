@@ -33,7 +33,7 @@ import utils.JSONUtils;
  * @author jollion
  */
 public class TransformationPluginParameter<T extends Transformation> extends PluginParameter<T> {
-    List configurationData;
+    //List configurationData;
     ChannelImageParameter inputChannel = new ChannelImageParameter("Configuration Channel", -1);
     ChannelImageParameter outputChannel = null;
     //Parameter inputTimePoints;
@@ -43,7 +43,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         JSONObject res = super.toJSONEntry();
         res.put("inputChannel", inputChannel.toJSONEntry());
         if (outputChannel!=null) res.put("outputChannel", outputChannel.toJSONEntry());
-        if (configurationData!=null && !configurationData.isEmpty()) res.put("configurationData", JSONUtils.toJSONList(configurationData));
+        //if (configurationData!=null && !configurationData.isEmpty()) res.put("configurationData", JSONUtils.toJSONList(configurationData));
         return res;
     }
     @Override
@@ -55,7 +55,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             if (outputChannel==null) outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
             outputChannel.initFromJSONEntry(jsonO.get(("outputChannel")));
         }
-        if (jsonO.containsKey("configurationData")) configurationData = (List)jsonO.get("configurationData");
+        //if (jsonO.containsKey("configurationData")) configurationData = (List)jsonO.get("configurationData");
     }
     
     public TransformationPluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
@@ -82,12 +82,12 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             else outputChannel=null;
         }
         super.setPlugin(pluginInstance);
-        configurationData = ParameterUtils.duplicateConfigurationDataList(pluginInstance.getConfigurationData());
+        //configurationData = ParameterUtils.duplicateConfigurationDataList(pluginInstance.getConfigurationData());
         return this;
     }
     
     public void setConfigurationData(List configurationData) {
-        this.configurationData = ParameterUtils.duplicateConfigurationDataList(configurationData);
+        //this.configurationData = ParameterUtils.duplicateConfigurationDataList(configurationData);
     }
     
     public void setOutputChannel(int... channelIdx) { // null -> all selected OR same channel selected
@@ -129,8 +129,8 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     public T instanciatePlugin() {
         T instance = super.instanciatePlugin();
         if (instance!=null) {
-            List target = instance.getConfigurationData();
-            if (target!=null && configurationData!=null) for (Object o : configurationData) target.add(ParameterUtils.duplicateConfigurationData(o));
+            //List target = instance.getConfigurationData();
+            //if (target!=null && configurationData!=null) for (Object o : configurationData) target.add(ParameterUtils.duplicateConfigurationData(o));
             //logger.debug("copied configuration data to transformation: {}: config:{}", instance.getClass().getSimpleName(), instance.getConfigurationData());
         }
         return instance;
@@ -156,7 +156,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         super.setContentFrom(other);
         if (other instanceof TransformationPluginParameter && ((TransformationPluginParameter)other).getPluginType().equals(getPluginType())) {
             TransformationPluginParameter otherPP = (TransformationPluginParameter) other;
-            this.configurationData=ParameterUtils.duplicateConfigurationDataList(otherPP.configurationData);
+            //this.configurationData=ParameterUtils.duplicateConfigurationDataList(otherPP.configurationData);
             inputChannel.setContentFrom(otherPP.inputChannel);
             if (otherPP.outputChannel==null) this.outputChannel=null;
             else {

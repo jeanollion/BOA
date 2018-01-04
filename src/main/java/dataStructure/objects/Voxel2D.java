@@ -59,6 +59,7 @@ public class Voxel2D extends Voxel {
         int hash = 7;
         hash = 97 * hash + this.x;
         hash = 97 * hash + this.y;
+        //hash = 97 * hash + 0; 
         return hash;
     }
     

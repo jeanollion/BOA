@@ -47,7 +47,8 @@ import utils.JSONUtils;
  * @author jollion
  */
 public class Daemon {
-    LogUserInterface ui;
+    UserInterface ui;
+    LogUserInterface logUI;
     String watchDir;
     File parsedJobDir, errorDir, logDir;
     boolean watching, running;
@@ -57,7 +58,7 @@ public class Daemon {
     final Map<Task, File> taskFileNameMap = new HashMap<>();
     final Map<File, Boolean> fileNameErrorMap = new HashMap<>();
     final Set<File> oneJobHasBeenRun = new HashSet<>();
-    public Daemon(LogUserInterface ui) {
+    public Daemon(UserInterface ui) {
         this.ui=ui;
     }
 
@@ -102,13 +103,13 @@ public class Daemon {
                     Task t = jobQueue.poll();
                     if (t!=null) {
                         
-                        ui.setLogFile(logDir.getAbsolutePath()+File.separator+taskFileNameMap.get(t).getName().replace(".json", ".txt"), !oneJobHasBeenRun.contains(taskFileNameMap.get(t)));
+                        logUI.setLogFile(logDir.getAbsolutePath()+File.separator+taskFileNameMap.get(t).getName().replace(".json", ".txt"), !oneJobHasBeenRun.contains(taskFileNameMap.get(t)));
                         t.publishMemoryUsage("");
-                        ui.getParentUI().setMessage("Running Job: "+t+" remaining jobs: "+jobQueue.size());
+                        ui.setMessage("Running Job: "+t+" remaining jobs: "+jobQueue.size());
                         t.runTask();
                         t.publishErrors();
                         if (!t.errors.isEmpty()) fileNameErrorMap.put(taskFileNameMap.get(t), true);
-                        ui.setLogFile(null, true);
+                        logUI.setLogFile(null, false);
                         oneJobHasBeenRun.add(taskFileNameMap.get(t));
                         taskFileNameMap.remove(t);
                         moveFiles();
