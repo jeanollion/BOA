@@ -50,22 +50,20 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     int structureIdx;
     Map<String, List<String>> elements; // stored as list for simplicity
     String color="Green";
+    // volatile state
     boolean displayingTracks=false;
     boolean displayingObjects=false;
     boolean highlightingTracks=false;
     boolean navigate = false;
-    boolean addObjects = false;
+    int addObjects = -1;
     
-    public boolean[] getState() {
-        return new boolean[]{displayingObjects, displayingTracks, highlightingTracks, navigate, addObjects};
-    }
-    public void setState(boolean[] state) {
-        if (state == null) return;
-        displayingObjects = state[0];
-        displayingTracks = state[1];
-        highlightingTracks = state[2];
-        navigate = state[3];
-        addObjects = state[4];
+    public void setState(Selection other) {
+        if (other == null) return;
+        displayingObjects = other.displayingObjects;
+        displayingTracks = other.displayingTracks;
+        highlightingTracks = other.highlightingTracks;
+        navigate = other.navigate;
+        addObjects = other.addObjects;
     }
     public final static String indexSeparator ="-";
     Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
@@ -124,15 +122,15 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         return navigate;
     }
 
-    public boolean isAddObjects() {
-        return addObjects;
+    public boolean isAddObjects(int selNumber) {
+        return addObjects==selNumber;
     }
 
     public void setNavigate(boolean navigate) {
         this.navigate = navigate;
     }
 
-    public void setAddObjects(boolean addObjects) {
+    public void setAddObjects(int addObjects) {
         this.addObjects = addObjects;
     }
     

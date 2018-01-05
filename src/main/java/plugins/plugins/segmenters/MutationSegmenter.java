@@ -322,6 +322,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         }
         return pop;
     }
+    
     private static <T extends Image> List<T> arrangeSpAndZPlanes(T[] spZ, boolean ZbyZ) {
         if (ZbyZ) {
             List<T> res = new ArrayList<>(spZ.length * spZ[0].getSizeZ());
@@ -363,7 +364,20 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     public Parameter[] getParameters() {
         return parameters;
     }
-
+    public void setQuality(List<Object3D> objects, BoundingBox offset, Image input, ImageMask parentMask) {
+        if (objects.isEmpty()) return;
+        if (offset==null) offset = new BoundingBox();
+        this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
+        for (Object3D o : objects) {
+            double[] center = o.getCenter();
+            if (center==null) throw new IllegalArgumentException("No center for object: "+o);
+            double smooth = pv.getSmoothedMap().getPixel(center[0]-offset.getxMin(), center[1]-offset.getyMin(), center.length>2?center[2]-offset.getzMin():0);
+            List<Double> lapValues = new ArrayList<>(pv.getLaplacianMap().length);
+            for (Image lap : pv.getLaplacianMap()) lapValues.add((double)lap.getPixel(center[0]-offset.getxMin(), center[1]-offset.getyMin(), center.length>2?center[2]-offset.getzMin():0));
+            o.setQuality(Math.sqrt(smooth * Collections.max(lapValues)));
+            //logger.debug("object: {} smooth: {} lap: {} q: {}", o.getCenter(), smooth, Collections.max(lapValues), o.getQuality());
+        }
+    }
     @Override
     public Image[] computeMaps(Image rawSource, Image filteredSource) {
         double[] scale = getScale();
@@ -408,7 +422,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         ObjectPopulation pop =  watershed(lap, parent.getMask(), seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
         SubPixelLocalizator.setSubPixelCenter(smooth, pop.getObjects(), true);
         for (Object3D o : pop.getObjects()) { // quality criterion : smooth * lap
-            o.setQuality(Math.sqrt(o.getQuality() * lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)));
+            o.setQuality(Math.sqrt(smooth.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0) * lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)));
         }
         
         if (verboseManualSeg) {

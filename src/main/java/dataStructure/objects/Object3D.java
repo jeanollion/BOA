@@ -540,7 +540,7 @@ public class Object3D {
         return res;
     }
     
-    public Object3D getContainer(List<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
+    public Object3D getContainer(Collection<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
         if (parents.isEmpty()) return null;
         Object3D currentParent=null;
         int currentIntersection=-1;

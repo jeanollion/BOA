@@ -19,6 +19,7 @@ package plugins.plugins.measurements;
 
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.ChoiceParameter;
+import configuration.parameters.ConditionalParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
 import configuration.parameters.TextParameter;
@@ -38,9 +39,10 @@ import utils.ArrayUtil;
 public class RelativePosition implements Measurement {
     protected StructureParameter objects = new StructureParameter("Structure", -1, false, false);
     protected StructureParameter reference = new StructureParameter("Reference Structure", -1, true, false);
-    ChoiceParameter objectCenter= new ChoiceParameter("Object center", new String[]{"Mass", "Geometrical", "From segmentation"}, "Mass", false);
-    ChoiceParameter refPoint = new ChoiceParameter("Reference Point", new String[]{"Center of Mass", "Geometrical Center", "Corner"}, "Center of Mass", false);
+    ChoiceParameter objectCenter= new ChoiceParameter("Object Point", new String[]{"Mass", "Geometrical", "From segmentation", "Upper Left Corner"}, "Mass", false);
+    ChoiceParameter refPoint = new ChoiceParameter("Reference Point", new String[]{"Center of Mass", "Geometrical Center", "Upper Left Corner"}, "Center of Mass", false).setToolTipText("If no reference structure is selected the reference point will automatically be the upper left corner of the image");;
     TextParameter key = new TextParameter("Key Name", "RelativeCoord", false);
+    //ConditionalParameter refCond = new ConditionalParameter(reference); structure param not actionable...
     protected Parameter[] parameters = new Parameter[]{objects, reference, objectCenter, refPoint, key};
     
     public RelativePosition() {}
@@ -95,13 +97,15 @@ public class RelativePosition implements Measurement {
         if (refObject == null && reference.getSelectedStructureIdx()>=0) return;
         double[] objectCenter=null;
         int ctype= this.objectCenter.getSelectedIndex();
-        if (ctype==0) objectCenter = object.getObject().getMassCenter(object.getParent().getRawImage(object.getStructureIdx()), true);
-        else if (ctype==1) objectCenter = object.getObject().getGeomCenter(true);
-        else if (ctype==2) {
+        if (ctype==0) objectCenter = object.getObject().getMassCenter(object.getParent().getRawImage(object.getStructureIdx()), true); // mass center
+        else if (ctype==1) objectCenter = object.getObject().getGeomCenter(true); // geom center
+        else if (ctype==2) { // from segmentation
             objectCenter = ArrayUtil.duplicate(object.getObject().getCenter());
             objectCenter[0]*=object.getObject().getScaleXY();
             objectCenter[1]*=object.getObject().getScaleXY();
             if (objectCenter.length>2) objectCenter[2]*=object.getObject().getScaleZ();
+        } else if (ctype==3) { // corner
+            objectCenter = new double[]{object.getObject().getBounds().getxMin(), object.getObject().getBounds().getyMin(), object.getObject().getBounds().getzMin()};
         }
         if (objectCenter==null) return;
         double[] refPoint;
@@ -114,7 +118,7 @@ public class RelativePosition implements Measurement {
                 refPoint[1] = refObject.getBounds().getyMin() * refObject.getScaleXY();
                 if (objectCenter.length>2) refPoint[2] = refObject.getBounds().getzMin() * refObject.getScaleZ();
             }
-        } else refPoint = new double[3];
+        } else refPoint = new double[3]; // absolute
         object.getMeasurements().setValue(getKey("X"), (objectCenter[0]-refPoint[0]));
         object.getMeasurements().setValue(getKey("Y"), (objectCenter[1]-refPoint[1]));
         if (objectCenter.length>2) object.getMeasurements().setValue(getKey("Z"), (objectCenter[2]-refPoint[2]));

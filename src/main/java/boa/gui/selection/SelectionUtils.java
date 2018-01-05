@@ -341,172 +341,150 @@ public class SelectionUtils {
         int dispObjects=0;
         int dispTracks = 0;
         int highTracks = 0;
-        int addObjects = 0;
+        int addObjects0 = 0;
+        int addObjects1 = 0;
         for (Selection s : selectedValues) {
             if (s.isDisplayingObjects()) dispObjects++;
             if (s.isDisplayingTracks()) dispTracks++;
             if (s.isHighlightingTracks()) highTracks++;
-            if (s.isAddObjects()) addObjects++;
+            if (s.isAddObjects(0)) addObjects0++;
+            if (s.isAddObjects(1)) addObjects1++;
         }
         final SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
         if (selectedValues.size()==1) {
             final JCheckBoxMenuItem showImage = new JCheckBoxMenuItem("Display Selection as an Image");
-            showImage.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    SelectionUtils.displaySelection(selectedValues.get(0), -2, ImageWindowManagerFactory.getImageManager().getInteractiveStructure());
-                }
+            showImage.addActionListener((ActionEvent e) -> {
+                SelectionUtils.displaySelection(selectedValues.get(0), -2, ImageWindowManagerFactory.getImageManager().getInteractiveStructure());
             });
             menu.add(showImage);
         }
         final JCheckBoxMenuItem displayObjects = new JCheckBoxMenuItem("Display Objects");
         displayObjects.setSelected(dispObjects==selectedValues.size());
-        displayObjects.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                for (Selection s : selectedValues ) {
-                    s.setIsDisplayingObjects(displayObjects.isSelected());
-                    dao.store(s); // optimize if necessary -> update
-                }
-                GUI.updateRoiDisplayForSelections(null, null);
+        displayObjects.addActionListener((ActionEvent e) -> {
+            if (selectedValues.isEmpty()) return;
+            for (Selection s : selectedValues ) {
+                s.setIsDisplayingObjects(displayObjects.isSelected());
+                //dao.store(s); // optimize if necessary -> update
             }
+            GUI.updateRoiDisplayForSelections(null, null);
         });
         menu.add(displayObjects);
         
         final JCheckBoxMenuItem displayTracks = new JCheckBoxMenuItem("Display Tracks");
         displayTracks.setSelected(dispTracks==selectedValues.size());
-        displayTracks.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                for (Selection s : selectedValues ) {
-                    s.setIsDisplayingTracks(displayTracks.isSelected());
-                    dao.store(s); // optimize if necessary -> update
-                }
-                GUI.updateRoiDisplayForSelections(null, null);
+        displayTracks.addActionListener((ActionEvent e) -> {
+            if (selectedValues.isEmpty()) return;
+            for (Selection s : selectedValues ) {
+                s.setIsDisplayingTracks(displayTracks.isSelected());
+                //dao.store(s); // optimize if necessary -> update
             }
+            GUI.updateRoiDisplayForSelections(null, null);
         });
         menu.add(displayTracks);
         
         final JCheckBoxMenuItem highlightTracks = new JCheckBoxMenuItem("Highlight in Track-Tree");
         highlightTracks.setSelected(highTracks==selectedValues.size());
-        highlightTracks.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                //Set<Selection> switched = new HashSet<Selection>(selectedValues.size());
-                for (Selection s : selectedValues ) {
-                    //if (s.isHighlightingTracks()!=highlightTracks.isSelected()) switched.add(s);
-                    s.setHighlightingTracks(highlightTracks.isSelected());
-                    dao.store(s); // optimize if necessary -> update
-                }
-                GUI.getInstance().resetSelectionHighlight();
+        highlightTracks.addActionListener((ActionEvent e) -> {
+            if (selectedValues.isEmpty()) return;
+            //Set<Selection> switched = new HashSet<Selection>(selectedValues.size());
+            for (Selection s : selectedValues ) {
+                //if (s.isHighlightingTracks()!=highlightTracks.isSelected()) switched.add(s);
+                s.setHighlightingTracks(highlightTracks.isSelected());
+                //dao.store(s); // optimize if necessary -> update
             }
+            GUI.getInstance().resetSelectionHighlight();
         });
         menu.add(highlightTracks);
         final JCheckBoxMenuItem navigateMI = new JCheckBoxMenuItem("Navigate within this selection");
         if (selectedValues.size()==1) navigateMI.setSelected(selectedValues.get(0).isNavigate());
-        navigateMI.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                if (selectedValues.size()==1) {
-                    selectedValues.get(0).setNavigate(navigateMI.isSelected());
-                    for (Selection s : allSelections ) if (s!=selectedValues.get(0)) s.setNavigate(false);
-                } else for (Selection s : allSelections ) s.setNavigate(false);
-            }
+        navigateMI.addActionListener((ActionEvent e) -> {
+            if (selectedValues.isEmpty()) return;
+            if (selectedValues.size()==1) {
+                selectedValues.get(0).setNavigate(navigateMI.isSelected());
+                for (Selection s : allSelections ) if (s!=selectedValues.get(0)) s.setNavigate(false);
+            } else for (Selection s : allSelections ) s.setNavigate(false);
         });
         menu.add(navigateMI);
-        final JCheckBoxMenuItem addObjectsMI = new JCheckBoxMenuItem("Add Objects to this Selection with shortcut Z");
-        addObjectsMI.setSelected(addObjects==selectedValues.size());
-        addObjectsMI.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                for (Selection s : selectedValues ) s.setAddObjects(addObjectsMI.isSelected());
-            }
-        });
-        menu.add(addObjectsMI);
-        
+        final JCheckBoxMenuItem addObjects0MI = new JCheckBoxMenuItem("Active Selection with shortcut Z");
+        addObjects0MI.setSelected(addObjects0==selectedValues.size());
+        addObjects0MI.addActionListener((ActionEvent e) -> { for (Selection s : selectedValues ) s.setAddObjects(addObjects0MI.isSelected()?0:-1);});
+        menu.add(addObjects0MI);
+        final JCheckBoxMenuItem addObjects1MI = new JCheckBoxMenuItem("Active Selection with shortcut E");
+        addObjects1MI.setSelected(addObjects1==selectedValues.size());
+        addObjects1MI.addActionListener((ActionEvent e) -> {for (Selection s : selectedValues ) s.setAddObjects(addObjects1MI.isSelected()?1:-1);});
+        menu.add(addObjects1MI);
         menu.add(new JSeparator());
         JMenu colorMenu = new JMenu("Set Color");
         for (String s : colors.keySet()) {
             final String colorName = s;
             JMenuItem color = new JMenuItem(s);
             colorMenu.add(color);
-            color.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    if (selectedValues.isEmpty()) return;
-                    for (Selection s : selectedValues ) {
-                        s.setColor(colorName);
-                        
-                        dao.store(s); // optimize if necessary -> update
-                        if (s.isDisplayingObjects()) {
-                            hideObjects(s, null);
-                            displayObjects(s, null);
-                        }
-                        if (s.isDisplayingTracks()) {
-                            hideTracks(s, null);
-                            displayTracks(s, null);
-                        }
+            color.addActionListener((ActionEvent e) -> {
+                if (selectedValues.isEmpty()) return;
+                for (Selection s1 : selectedValues) {
+                    s1.setColor(colorName);
+                    dao.store(s1); // optimize if necessary -> update
+                    if (s1.isDisplayingObjects()) {
+                        hideObjects(s1, null);
+                        displayObjects(s1, null);
                     }
-                    list.updateUI();
+                    if (s1.isDisplayingTracks()) {
+                        hideTracks(s1, null);
+                        displayTracks(s1, null);
+                    }
                 }
+                list.updateUI();
             });
         }
         menu.add(colorMenu);
         menu.add(new JSeparator());
         JMenuItem add = new JMenuItem("Add objects selected on Current Image");
-        add.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                addCurrentObjectsToSelections(selectedValues, dao);
-                list.updateUI();
-                GUI.updateRoiDisplayForSelections(null, null);
-            }
+        add.addActionListener((ActionEvent e) -> {
+            if (selectedValues.isEmpty()) return;
+            addCurrentObjectsToSelections(selectedValues, dao);
+            list.updateUI();
+            GUI.updateRoiDisplayForSelections(null, null);
         });
         menu.add(add);
         
         JMenuItem remove = new JMenuItem("Remove objects selected on Current Image");
-        remove.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                removeCurrentObjectsFromSelections(selectedValues, dao);
-                GUI.updateRoiDisplayForSelections(null, null);
-                list.updateUI();
-            }
+        remove.addActionListener((ActionEvent e) -> {
+            if (selectedValues.isEmpty()) return;
+            removeCurrentObjectsFromSelections(selectedValues, dao);
+            GUI.updateRoiDisplayForSelections(null, null);
+            list.updateUI();
         });
         menu.add(remove);
         
         JMenuItem removeFromParent = new JMenuItem("Remove all Objects from Current Image");
-        removeFromParent.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                removeAllCurrentImageObjectsFromSelections(selectedValues, dao);
-                GUI.updateRoiDisplayForSelections(null, null);
-                list.updateUI();
-            }
+        removeFromParent.addActionListener((ActionEvent e) -> {
+            if (selectedValues.isEmpty()) return;
+            removeAllCurrentImageObjectsFromSelections(selectedValues, dao);
+            GUI.updateRoiDisplayForSelections(null, null);
+            list.updateUI();
         });
         menu.add(removeFromParent);
         
         JMenuItem clear = new JMenuItem("Clear");
-        clear.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                for (Selection s : selectedValues ) {
-                    s.clear();
-                    dao.store(s);
-                }
-                list.updateUI();
-                GUI.updateRoiDisplayForSelections(null, null);
+        clear.addActionListener((ActionEvent e) -> {
+            if (selectedValues.isEmpty()) return;
+            for (Selection s : selectedValues ) {
+                s.clear();
+                dao.store(s);
             }
+            list.updateUI();
+            GUI.updateRoiDisplayForSelections(null, null);
         });
         menu.add(clear);
         
         JMenuItem delete = new JMenuItem("Delete Selection");
-        delete.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                DefaultListModel<Selection> model = (DefaultListModel<Selection>)list.getModel();
-                for (Selection s : selectedValues ) dao.delete(s);
-                for (Selection s : selectedValues) model.removeElement(s);
-                list.updateUI();
-                GUI.updateRoiDisplayForSelections(null, null);
-            }
+        delete.addActionListener((ActionEvent e) -> {
+            if (selectedValues.isEmpty()) return;
+            DefaultListModel<Selection> model = (DefaultListModel<Selection>)list.getModel();
+            for (Selection s : selectedValues ) dao.delete(s);
+            for (Selection s : selectedValues) model.removeElement(s);
+            list.updateUI();
+            GUI.updateRoiDisplayForSelections(null, null);
         });
         menu.add(delete);
         menu.add(new JSeparator());

@@ -212,22 +212,9 @@ public class StructureObjectUtils {
     
     public static StructureObject getInclusionParent(Object3D children, Collection<StructureObject> parents, BoundingBox offset) {
         if (parents.isEmpty() || children==null) return null;
-        StructureObject currentParent=null;
-        int currentIntersection=-1;
-        for (StructureObject p : parents) {
-            int inter = children.getIntersectionCountMaskMask(p.getObject(), offset, null);
-            //logger.debug("parent: {}, inter: {}", p, inter);
-            if (inter>0) {
-                if (currentParent==null) {
-                    currentParent = p;
-                    currentIntersection = inter;
-                } else if (inter>currentIntersection) { // in case of conflict: keep parent that intersect most
-                    currentIntersection=inter;
-                    currentParent=p;
-                }
-            }
-        }
-        return currentParent;
+        Map<Object3D, StructureObject> soOMap = parents.stream().collect(Collectors.toMap(o->o.getObject(), o->o));
+        Object3D parentObject = children.getContainer(soOMap.keySet(), offset, null); 
+        return soOMap.get(parentObject);
     }
     
     public static Map<StructureObject, StructureObject> getInclusionParentMap(Collection<StructureObject> objectsFromSameStructure, int inclusionStructureIdx) {

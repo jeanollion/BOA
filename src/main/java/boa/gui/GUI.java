@@ -392,25 +392,60 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 nextTrackErrorButtonActionPerformed(e);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Add to selection") {
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Add to selection 0") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 logger.debug("Z pressed");
-                addToSelectionActionPerformed();
+                addToSelectionActionPerformed(0);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Remove from selection") {
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Remove from selection 0") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 logger.debug("Z pressed (alt)");
-                removeFromSelectionActionPerformed();
+                removeFromSelectionActionPerformed(0);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.ALT_GRAPH_DOWN_MASK), new AbstractAction("Remove from selection") {
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.ALT_GRAPH_DOWN_MASK), new AbstractAction("Remove All from selection 0") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 logger.debug("Z pressed (alt gr)");
-                removeAllFromSelectionActionPerformed();
+                removeAllFromSelectionActionPerformed(0);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.SHIFT_DOWN_MASK), new AbstractAction("Toggle display selection 0") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("Z pressed (shift)");
+                toggleDisplaySelection(0);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Add to selection 1") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("E pressed");
+                addToSelectionActionPerformed(1);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Remove from selection 1") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("E pressed (alt)");
+                removeFromSelectionActionPerformed(1);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.ALT_GRAPH_DOWN_MASK), new AbstractAction("Remove All from selection 1") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("E pressed (alt gr)");
+                removeAllFromSelectionActionPerformed(1);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.SHIFT_DOWN_MASK), new AbstractAction("Toggle display selection 1") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("E pressed (shift)");
+                toggleDisplaySelection(1);
             }
         });
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Open Next Image") {
@@ -663,7 +698,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     public void populateSelections() {
         List<Selection> selectedValues = selectionList.getSelectedValuesList();
         
-        Map<String, boolean[]> state = selectionModel.isEmpty() ? Collections.EMPTY_MAP : Utils.asList(selectionModel).stream().collect(Collectors.toMap(s->s.getName(), s->s.getState()));
+        Map<String, Selection> state = selectionModel.isEmpty() ? Collections.EMPTY_MAP : Utils.asList(selectionModel).stream().collect(Collectors.toMap(s->s.getName(), s->s));
         this.selectionModel.removeAllElements();
         if (!checkConnection()) return;
         SelectionDAO dao = this.db.getSelectionDAO();
@@ -1076,6 +1111,31 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         setLogFileMenuItem = new javax.swing.JMenuItem();
         activateLoggingMenuItem = new javax.swing.JCheckBoxMenuItem();
         appendToFileMenuItem = new javax.swing.JCheckBoxMenuItem();
+        ShortcutMenu = new javax.swing.JMenu();
+        ActiveSelMenu = new javax.swing.JMenu();
+        jMenuItem20 = new javax.swing.JMenuItem();
+        jMenuItem1 = new javax.swing.JMenuItem();
+        jMenuItem2 = new javax.swing.JMenuItem();
+        jMenuItem3 = new javax.swing.JMenuItem();
+        jMenuItem4 = new javax.swing.JMenuItem();
+        jMenu4 = new javax.swing.JMenu();
+        jMenuItem13 = new javax.swing.JMenuItem();
+        jMenuItem14 = new javax.swing.JMenuItem();
+        jMenuItem7 = new javax.swing.JMenuItem();
+        jMenuItem8 = new javax.swing.JMenuItem();
+        jMenuItem21 = new javax.swing.JMenuItem();
+        jMenuItem9 = new javax.swing.JMenuItem();
+        jMenuItem10 = new javax.swing.JMenuItem();
+        jMenuItem17 = new javax.swing.JMenuItem();
+        jMenuItem18 = new javax.swing.JMenuItem();
+        jMenu3 = new javax.swing.JMenu();
+        jMenuItem5 = new javax.swing.JMenuItem();
+        jMenuItem19 = new javax.swing.JMenuItem();
+        jMenuItem6 = new javax.swing.JMenuItem();
+        jMenuItem11 = new javax.swing.JMenuItem();
+        jMenuItem12 = new javax.swing.JMenuItem();
+        jMenuItem15 = new javax.swing.JMenuItem();
+        jMenuItem16 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
@@ -1950,6 +2010,85 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         mainMenu.add(miscMenu);
 
+        ShortcutMenu.setText("Shortcuts");
+
+        ActiveSelMenu.setText("Active Selection");
+
+        jMenuItem20.setText("Active selections are set through right-clik menu on selections");
+        ActiveSelMenu.add(jMenuItem20);
+
+        jMenuItem1.setText("Shit + Z/E : Toggle Display Objects");
+        ActiveSelMenu.add(jMenuItem1);
+
+        jMenuItem2.setText("Ctrl + Z/E : Add selected object(s) to active selection(s)");
+        ActiveSelMenu.add(jMenuItem2);
+
+        jMenuItem3.setText("Alt + Z/E: Remove selected object(s) from active selection(s)");
+        ActiveSelMenu.add(jMenuItem3);
+
+        jMenuItem4.setText("AltGr + Z/E: Remove all objects of active image from active selection(s)");
+        ActiveSelMenu.add(jMenuItem4);
+
+        ShortcutMenu.add(ActiveSelMenu);
+
+        jMenu4.setText("Navigation / Display");
+
+        jMenuItem13.setText("Ctrl + A : Display all objects on active image");
+        jMenu4.add(jMenuItem13);
+
+        jMenuItem14.setText("Ctrl + Q : Display all tracks on active image");
+        jMenu4.add(jMenuItem14);
+
+        jMenuItem7.setText("Ctrl + X: navigate to next objects of active selection or selected selection if no active selection");
+        jMenu4.add(jMenuItem7);
+
+        jMenuItem8.setText("Ctrl + W: navigate to previous objects of active selection or selected selection if no active selection");
+        jMenu4.add(jMenuItem8);
+
+        jMenuItem21.setText("Navigation selection is set through right-click menu on selections");
+        jMenu4.add(jMenuItem21);
+
+        jMenuItem9.setText("Alt + X: open next image");
+        jMenu4.add(jMenuItem9);
+
+        jMenuItem10.setText("Alt + W: open previous image");
+        jMenu4.add(jMenuItem10);
+
+        jMenuItem17.setText("Ctrl + T: toggle display object/track on click");
+        jMenu4.add(jMenuItem17);
+
+        jMenuItem18.setText("Ctrl + I: change interactive structure");
+        jMenu4.add(jMenuItem18);
+
+        ShortcutMenu.add(jMenu4);
+
+        jMenu3.setText("Object Modifications");
+
+        jMenuItem5.setText("Ctrl + D: delete object(s) selected on active image");
+        jMenu3.add(jMenuItem5);
+
+        jMenuItem19.setText("Ctrl + P: prune track starting from selected object(s)");
+        jMenu3.add(jMenuItem19);
+
+        jMenuItem6.setText("Ctrl + S: split object(s)");
+        jMenu3.add(jMenuItem6);
+
+        jMenuItem11.setText("Ctrl + M: merge objects");
+        jMenu3.add(jMenuItem11);
+
+        jMenuItem12.setText("Ctrl + C: create object(s) from selected point(s)");
+        jMenu3.add(jMenuItem12);
+
+        jMenuItem15.setText("Ctrl + R: reset track links of selected object(s)");
+        jMenu3.add(jMenuItem15);
+
+        jMenuItem16.setText("Ctrl + L: link / unlink selected objects");
+        jMenu3.add(jMenuItem16);
+
+        ShortcutMenu.add(jMenu3);
+
+        mainMenu.add(ShortcutMenu);
+
         setJMenuBar(mainMenu);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -2161,13 +2300,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         } else if (res.size()==1) return res.get(0);
         else return null;
     }
-    private List<Selection> getAddObjectsSelection() {
+    private List<Selection> getAddObjectsSelection(int selNumber) {
         List<Selection> res = getSelections();
-        res.removeIf(s->!s.isAddObjects());
-        if (res.isEmpty()) {
-            if (selectionList.getSelectedIndex()>=0) return selectionList.getSelectedValuesList();
-            else return Collections.EMPTY_LIST;
-        } else return res;
+        res.removeIf(s->!s.isAddObjects(selNumber));
+        return res;
     }
     private static String createSubdir(String path, String dbName) {
         if (!new File(path).isDirectory()) return null;
@@ -3356,28 +3492,34 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
     }//GEN-LAST:event_experimentListValueChanged
     
-    public void addToSelectionActionPerformed() {
+    public void addToSelectionActionPerformed(int selNumber) {
         if (!this.checkConnection()) return;
-        List<Selection> selList = this.getAddObjectsSelection();
+        List<Selection> selList = this.getAddObjectsSelection(selNumber);
         if (selList.isEmpty()) return;
         SelectionUtils.addCurrentObjectsToSelections(selList, db.getSelectionDAO());
         selectionList.updateUI();
         GUI.updateRoiDisplayForSelections(null, null);
     }
     
-    public void removeFromSelectionActionPerformed() {
+    public void removeFromSelectionActionPerformed(int selNumber) {
         if (!this.checkConnection()) return;
-        List<Selection> selList = this.getAddObjectsSelection();
+        List<Selection> selList = this.getAddObjectsSelection(selNumber);
         SelectionUtils.removeCurrentObjectsFromSelections(selList, db.getSelectionDAO());
         selectionList.updateUI();
         GUI.updateRoiDisplayForSelections(null, null);
     }
     
-    public void removeAllFromSelectionActionPerformed() {
+    public void removeAllFromSelectionActionPerformed(int selNumber) {
         if (!this.checkConnection()) return;
-        List<Selection> selList = this.getAddObjectsSelection();
+        List<Selection> selList = this.getAddObjectsSelection(selNumber);
         SelectionUtils.removeAllCurrentImageObjectsFromSelections(selList, db.getSelectionDAO());
         selectionList.updateUI();
+        GUI.updateRoiDisplayForSelections(null, null);
+    }
+    public void toggleDisplaySelection(int selNumber) {
+        if (!this.checkConnection()) return;
+        List<Selection> selList = this.getAddObjectsSelection(selNumber);
+        for (Selection s : selList) s.setIsDisplayingObjects(!s.isDisplayingObjects());
         GUI.updateRoiDisplayForSelections(null, null);
     }
     
@@ -3519,8 +3661,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenu ActiveSelMenu;
     private javax.swing.JMenuItem CloseNonInteractiveWindowsMenuItem;
     private javax.swing.JPanel ControlPanel;
+    private javax.swing.JMenu ShortcutMenu;
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JScrollPane actionJSP;
     private javax.swing.JScrollPane actionMicroscopyFieldJSP;
@@ -3586,6 +3730,29 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
+    private javax.swing.JMenu jMenu3;
+    private javax.swing.JMenu jMenu4;
+    private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JMenuItem jMenuItem10;
+    private javax.swing.JMenuItem jMenuItem11;
+    private javax.swing.JMenuItem jMenuItem12;
+    private javax.swing.JMenuItem jMenuItem13;
+    private javax.swing.JMenuItem jMenuItem14;
+    private javax.swing.JMenuItem jMenuItem15;
+    private javax.swing.JMenuItem jMenuItem16;
+    private javax.swing.JMenuItem jMenuItem17;
+    private javax.swing.JMenuItem jMenuItem18;
+    private javax.swing.JMenuItem jMenuItem19;
+    private javax.swing.JMenuItem jMenuItem2;
+    private javax.swing.JMenuItem jMenuItem20;
+    private javax.swing.JMenuItem jMenuItem21;
+    private javax.swing.JMenuItem jMenuItem3;
+    private javax.swing.JMenuItem jMenuItem4;
+    private javax.swing.JMenuItem jMenuItem5;
+    private javax.swing.JMenuItem jMenuItem6;
+    private javax.swing.JMenuItem jMenuItem7;
+    private javax.swing.JMenuItem jMenuItem8;
+    private javax.swing.JMenuItem jMenuItem9;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JSplitPane jSplitPane3;
     private javax.swing.JRadioButtonMenuItem limitDisp1;
