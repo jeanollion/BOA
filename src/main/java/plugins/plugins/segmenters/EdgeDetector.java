@@ -90,7 +90,7 @@ public class EdgeDetector implements Segmenter {
     }
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        ObjectPopulation allRegions = WatershedTransform.watershed(getWsMap(input, parent), parent.getMask(), getSeedMap(input, parent), false, true);
+        ObjectPopulation allRegions = WatershedTransform.watershed(getWsMap(input, parent), parent.getMask(), getSeedMap(input, parent), false, false);
         if (testMode) {
             ImageWindowManagerFactory.showImage(allRegions.getLabelMap().duplicate("Segmented Regions"));
             ImageWindowManagerFactory.showImage(seedMap.setName("Seeds"));

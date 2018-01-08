@@ -39,12 +39,12 @@ public class TestProcessBacteria {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        int time =0;
-        int microChannel =1;
-        int field = 325;
-        //String dbName = "fluo160501";
-        //String dbName = "MF1_170519";
-        String dbName = "fluo171219_WT_750ms";
+        int field = 0;
+        int time =257;
+        int microChannel =4;
+        
+        //String dbName = "fluo171219_WT_750ms";
+        String dbName = "fluo170512_WT";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     

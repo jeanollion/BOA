@@ -527,12 +527,12 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="jMenuItem1">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Shit + Z/E : Toggle Display Objects"/>
+                    <Property name="text" type="java.lang.String" value="Ctrl + Z/E : Toggle Display Objects"/>
                   </Properties>
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="jMenuItem2">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Ctrl + Z/E : Add selected object(s) to active selection(s)"/>
+                    <Property name="text" type="java.lang.String" value="Shift + Z/E : Add selected object(s) to active selection(s)"/>
                   </Properties>
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="jMenuItem3">

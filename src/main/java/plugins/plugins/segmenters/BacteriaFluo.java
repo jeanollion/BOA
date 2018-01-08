@@ -213,7 +213,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2));
         seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(2).setSmoothScale(2)); // min scale = 1.5 min smooth scale = 2
         seg.setApplyThresholdOnValueMap(true);
-        seg.setThresholder(new BackgroundThresholder(3, 3, 2).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)));
+        seg.setThresholder(new BackgroundThresholder(4, 4, 1).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)));
         //seg.setThresholder(new ConstantValue(50));
         ObjectPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
         if (false) { // when done on gradient -> intermediate regions are kept -> remove using hessian value
@@ -258,6 +258,8 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
                 contour.removeAll(interVox);
                 double thld = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.075); // TODO set quantile as parameter
                 o.erodeContours(erodeMap, thld, true, interVox);
+                double thld2 = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.025); // case of first and last cells
+                o.erodeContours(erodeMap, thld2, true, contour);
             }
             res.redrawLabelMap(true);
             res = new ObjectPopulation(res.getLabelMap(), true); // update bounds of objects

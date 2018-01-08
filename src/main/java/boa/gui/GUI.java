@@ -392,10 +392,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 nextTrackErrorButtonActionPerformed(e);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Add to selection 0") {
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.SHIFT_DOWN_MASK), new AbstractAction("Add to selection 0") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                logger.debug("Z pressed");
+                logger.debug("Z pressed (shift)");
                 addToSelectionActionPerformed(0);
             }
         });
@@ -413,17 +413,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 removeAllFromSelectionActionPerformed(0);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.SHIFT_DOWN_MASK), new AbstractAction("Toggle display selection 0") {
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Toggle display selection 0") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                logger.debug("Z pressed (shift)");
+                logger.debug("Z pressed (ctrl)");
                 toggleDisplaySelection(0);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Add to selection 1") {
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.SHIFT_DOWN_MASK), new AbstractAction("Add to selection 1") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                logger.debug("E pressed");
+                logger.debug("E pressed (shift)");
                 addToSelectionActionPerformed(1);
             }
         });
@@ -441,10 +441,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 removeAllFromSelectionActionPerformed(1);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.SHIFT_DOWN_MASK), new AbstractAction("Toggle display selection 1") {
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Toggle display selection 1") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                logger.debug("E pressed (shift)");
+                logger.debug("E pressed (ctrl)");
                 toggleDisplaySelection(1);
             }
         });
@@ -2017,10 +2017,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         jMenuItem20.setText("Active selections are set through right-clik menu on selections");
         ActiveSelMenu.add(jMenuItem20);
 
-        jMenuItem1.setText("Shit + Z/E : Toggle Display Objects");
+        jMenuItem1.setText("Ctrl + Z/E : Toggle Display Objects");
         ActiveSelMenu.add(jMenuItem1);
 
-        jMenuItem2.setText("Ctrl + Z/E : Add selected object(s) to active selection(s)");
+        jMenuItem2.setText("Shift + Z/E : Add selected object(s) to active selection(s)");
         ActiveSelMenu.add(jMenuItem2);
 
         jMenuItem3.setText("Alt + Z/E: Remove selected object(s) from active selection(s)");

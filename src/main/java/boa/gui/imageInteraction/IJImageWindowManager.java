@@ -436,6 +436,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         trackRoi.setIs2D(o1.key.is2D());
         int idxMin = track.size()==1 ? 0 : 1; // display tracks with only 1 object as arrow head
         Pair<StructureObject, BoundingBox> o2;
+        double arrowSize = track.size()==1 ? 1 : 0.5;
         for (int idx = idxMin; idx<track.size(); ++idx) {
             o2 = track.get(idx);
             if (o1==null || o2==null) continue;
@@ -445,7 +446,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             //arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);
             arrow.setStrokeColor(color);
             arrow.setStrokeWidth(trackArrowStrokeWidth);
-            arrow.setHeadSize(trackArrowStrokeWidth*1.5);
+            arrow.setHeadSize(trackArrowStrokeWidth*arrowSize);
             
             //if (o1.getNext()==o2) arrow.setDoubleHeaded(true);
             

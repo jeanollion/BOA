@@ -377,10 +377,12 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             }
                             Selection s = root.generator.db.getSelectionDAO().getOrCreate(ae.getActionCommand(), true);
                             s.addElements(objectsToAdd);
-                            s.setIsDisplayingObjects(true);
                             s.setColor("Grey");
                             root.generator.db.getSelectionDAO().store(s);
                             GUI.getInstance().populateSelections();
+                            List<Selection> sels = GUI.getInstance().getSelections();
+                            sels.removeIf(ss->!ss.getName().equals(ae.getActionCommand()));
+                            sels.get(0).setIsDisplayingObjects(true);
                         }
                     }
                 );

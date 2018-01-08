@@ -16,6 +16,7 @@ import image.BoundingBox.LoopFunction2;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
+import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageMask2D;
 import image.ImageProperties;
@@ -36,6 +37,8 @@ import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
 import utils.ArrayUtil;
 import utils.Utils;
+import static utils.Utils.comparator;
+import static utils.Utils.comparatorInt;
 /**
  * 
  * @author jollion
@@ -404,6 +407,12 @@ public class Object3D {
                     }
                 }
             }
+        }
+        // check if 2 objects and erase all but smallest
+        List<Object3D> objects = ImageLabeller.labelImageListLowConnectivity(mask);
+        if (objects.size()>1) {
+            objects.remove(Collections.max(objects, comparatorInt(o->o.getSize())));
+            for (Object3D toErase: objects) toErase.draw(mask, 0);
         }
         voxels = null; // reset voxels
         // TODO reset bounds ?

@@ -20,6 +20,7 @@ package plugins.plugins.preFilter;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
+import configuration.parameters.ConditionalParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.containers.InputImages;
@@ -39,10 +40,11 @@ import processing.neighborhood.EllipsoidalNeighborhood;
  */
 public class BandPass implements PreFilter, Filter {
     NumberParameter min = new BoundedNumberParameter("Remove structures under size (pixels)", 1, 0, 0, null);
-    NumberParameter max = new BoundedNumberParameter("Remove structures over size (pixels)", 1, 100, 0, null); //TODO: conditional parameter that allow to automatically take in account z-anisotropy
+    NumberParameter max = new BoundedNumberParameter("Remove structures over size (pixels)", 1, 100, 0, null); 
     ChoiceParameter removeStripes = new ChoiceParameter("Remove Stripes", new String[]{"None", "Horizontal", "Vertical"}, "None", false);
     NumberParameter stripeTolerance = new BoundedNumberParameter("Stripes tolerance (%)", 1, 100, 0, 100);
-    Parameter[] parameters = new Parameter[]{min, max, removeStripes, stripeTolerance};
+    ConditionalParameter stripes = new ConditionalParameter(removeStripes).setDefaultParameters(new Parameter[]{stripeTolerance}).setActionParameters("None", new Parameter[0]);
+    Parameter[] parameters = new Parameter[]{min, max, stripes};
     
     public BandPass() {}
     public BandPass(double min, double max) {

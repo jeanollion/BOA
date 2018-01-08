@@ -51,7 +51,9 @@ import plugins.ProcessingScheme;
 import plugins.plugins.segmenters.MutationSegmenter;
 import utils.ArrayUtil;
 import utils.FileIO;
+import utils.HashMapGetCreate;
 import utils.JSONUtils;
+import utils.Pair;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 import utils.Utils;
@@ -73,9 +75,9 @@ public class CompareObjects {
         String unshureSel = "unshureMutations";
         CompareObjects comp = new CompareObjects(ref, db, structureIdx, distCC, unshureSel, true);
         comp.setOutputFile(outputFile, true);
-        //comp.scanConfigurationFolderAndRunAndCount(configFolder);
-        comp.setConfigAndRun(configFolder + "q235.json", true);
-        //comp.comparePositions(true, true);
+        comp.scanConfigurationFolderAndRunAndCount(configFolder);
+        //comp.setConfigAndRun(configFolder + "q235.json", true, 0);
+        //comp.run(true, true, 0);
     }
 
     final MasterDAO dbRef, db;
@@ -127,12 +129,21 @@ public class CompareObjects {
     public void setConfigAndRun(String confFile, boolean eraseSelections, int... positions) {
         if (dbRef.isReadOnly()) throw new IllegalArgumentException("Ref DB :"+dbRef.getDBName()+" is in read only mode, cannot enable selection");
         setConfig(confFile);
-        processPositions(positions);
-        comparePositions(true, eraseSelections, positions);
+        run(eraseSelections, true, positions);
+    }
+    public void run(boolean eraseSelections, boolean process, int... positions) {
+        enableSelection(eraseSelections);
+        enableRefSelection(eraseSelections);
+        if (process) processPositions(positions);
+        comparePositions(positions);
     }
     
-    public int getUnshureSpotsCount() {
-        return this.unshureObjects==null ? 0 : this.unshureObjects.count();
+    public int getUnshureSpotsCount(int... positions) {
+        if (unshureObjects==null) return 0;
+        if (positions.length==0) return unshureObjects.count();
+        int count = 0;
+        for (int pos : positions) count+=unshureObjects.count(dbRef.getExperiment().getPosition(pos).getName());
+        return count;
     }
     public void scanConfigurationFolderAndRunAndCount(String folder, int... positions) {
         if (output==null) throw new IllegalArgumentException("No output file set");
@@ -237,13 +248,9 @@ public class CompareObjects {
     public void runOnAllPositions() {
         runOnPositions(db.getExperiment().getPositionsAsString());
     }
-    public void comparePositions(boolean enableSelections, boolean eraseSelectionsIfExisting, int... positions) {
-        if (enableSelections) {
-            enableSelection(eraseSelectionsIfExisting);
-            enableRefSelection(eraseSelectionsIfExisting);
-        }
+    public void comparePositions(int... positions) {
         runOnPositions(positions);
-        logger.debug("false positive: {}, false negative: {}, total: {} unshure: {}", getFalsePositive(), getFalseNegative(), totalRef, getUnshureSpotsCount() );
+        logger.debug("false positive: {}, false negative: {}, total: {} unshure: {}", getFalsePositive(), getFalseNegative(), totalRef, getUnshureSpotsCount(positions) );
         close();
     }
     public void runOnPositions(int... positions) {
@@ -258,20 +265,17 @@ public class CompareObjects {
         runOnPositions(pos);
     }
     public void runOnPositions(String... positions) {
-        ThreadRunner.execute(positions, true, (String position, int idx) -> {
+        List<Pair<String, Exception>> exList = ThreadRunner.execute(positions, true, (String position, int idx) -> {
             //setQuality(position); // specific to mutations!! 
             runPosition(position);
         }, null);
+        for (Pair<String, Exception> ex:exList) {
+            logger.error(ex.key, ex.value);
+        }
         if (this.fp!=null) db.getSelectionDAO().store(fp);
         if (this.fn!=null) db.getSelectionDAO().store(fn);
-        if (this.fpRef!=null) {
-            logger.debug("storing fpRef: {}", fpRef.count());
-            dbRef.getSelectionDAO().store(fpRef);
-        }
-        if (this.fnRef!=null) {
-            logger.debug("storing fnRef: {}", fnRef.count());
-            dbRef.getSelectionDAO().store(fnRef);
-        }
+        if (this.fpRef!=null) dbRef.getSelectionDAO().store(fpRef);
+        if (this.fnRef!=null) dbRef.getSelectionDAO().store(fnRef);
     }
 
     public int getFalsePositive() {
@@ -321,9 +325,9 @@ public class CompareObjects {
         List<StructureObject> fnObjects = this.fn!=null ? new ArrayList<>() : null;
         List<StructureObject> fpRefObjects = this.fpRef!=null ? new ArrayList<>() : null;
         List<StructureObject> fnRefObjects = this.fnRef!=null ? new ArrayList<>() : null;
-        for (int pIdx = 0; pIdx<parentTrackRef.size(); ++pIdx) {
-            List<StructureObject> refTrack = parentTrackRef.get(thRef.get(pIdx));
-            List<StructureObject> track = parentTrack.get(th.get(pIdx));
+        for (int mcIdx = 0; mcIdx<parentTrackRef.size(); ++mcIdx) {
+            List<StructureObject> refTrack = parentTrackRef.get(thRef.get(mcIdx));
+            List<StructureObject> track = parentTrack.get(th.get(mcIdx));
             if (refTrack.size()!=track.size()) throw new RuntimeException("DB & Ref track don't have same length @ position: "+positionName);
             for (int frame = 0; frame<refTrack.size(); ++frame) compareObjects(refTrack.get(frame), track.get(frame), falsePositiveAndNegative, fpObjects, fnObjects,  fpRefObjects, fnRefObjects);
         }
@@ -349,7 +353,7 @@ public class CompareObjects {
         List<StructureObject> objectsRef = new ArrayList<>(pRef.getChildren(structureIdx));
         int refObjectNumber = objectsRef.size();
         fpn[2]+=objectsRef.size();
-        //if (!objects.isEmpty() || !objectsRef.isEmpty() ) logger.debug("compare objects: {}={} & {}={}", pRef, objectsRef.size(), p, objects.size());
+        //logger.debug("compare objects: {}={} & {}={}", pRef, objectsRef.size(), p, objects.size()); //if (!objects.isEmpty() || !objectsRef.isEmpty() ) 
         Iterator<StructureObject> it = objects.iterator();
         while(it.hasNext()) {
             StructureObject o = it.next();
@@ -358,8 +362,9 @@ public class CompareObjects {
                 ++fpn[0];
                 if (fp!=null) fp.add(o);
             } else { // simple assign by decreasing distCC
-                StructureObject closest = Collections.min(objectsRef, (o1, o2)->Double.compare(GeometricalMeasurements.getDistanceSquare(o1.getObject(), o.getObject()), GeometricalMeasurements.getDistanceSquare(o2.getObject(), o.getObject())));
-                double d = GeometricalMeasurements.getDistanceSquare(closest.getObject(), o.getObject());
+                HashMapGetCreate<StructureObject, Double> distMap = new HashMapGetCreate<>(oo->GeometricalMeasurements.getDistanceSquare(oo.getObject(), o.getObject()));
+                StructureObject closest = Collections.min(objectsRef, Utils.comparator(distMap));
+                double d = distMap.getAndCreateIfNecessary(closest); // case of n==1
                 if (d<=distCCThldSq) { // assigned
                     objectsRef.remove(closest);
                     it.remove();
@@ -372,7 +377,7 @@ public class CompareObjects {
                 }
             }
         }
-        //logger.debug("pos:{}, remaining objectsRef objects: {}, objects: {}. fpRef null? {}", pRef.getPositionName(), objectsRef.size(), objects.size(), fpRef==null);
+        //logger.debug("pos:{}, parent:{}, remaining objects ref: {}, current: {}", pRef.getPositionName(), pRef, objectsRef.size(), objects.size());
         if (!objectsRef.isEmpty()) { // false negative
             if (unshureObjects!=null) objectsRef.removeIf(o->unshureObjects.contains(o));
             fpn[1]+=objectsRef.size();

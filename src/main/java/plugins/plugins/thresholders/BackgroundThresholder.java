@@ -112,11 +112,12 @@ public class BackgroundThresholder implements SimpleThresholder {
                 }
             }
             double newThreshold = i==iterations-1 ? mean + lastSigmaFactor * sigma : mean + sigmaFactor * sigma;
+            if (Double.isFinite(firstValue)) newThreshold = Math.min(firstValue, newThreshold);
             //logger.trace("Kappa Sigma Thresholder: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);
             if (newThreshold == lastThreshold) return lastThreshold;
             else lastThreshold = newThreshold;
         }
-        return lastThreshold;
+        return Math.min(firstValue, lastThreshold);
     }
     public static double runThresholder(Histogram histo, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
         double thld = getHistogramIdx(histo.data, sigmaFactor, lastSigmaFactor, iterations, meanSigma);

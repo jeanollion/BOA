@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -859,7 +860,16 @@ public class Utils {
             cleanMethod.invoke(cleaner);
         } catch (NoSuchMethodException|IllegalAccessException|InvocationTargetException|SecurityException ex) {
         } 
-
+    }
+    public static <T> Comparator<T> comparator(HashMapGetCreate<T, Double> valueMap) {
+        return (o1, o2)-> Double.compare(valueMap.getAndCreateIfNecessary(o1), valueMap.getAndCreateIfNecessary(o2));
+    }
+    public static <T> Comparator<T> comparator(Function<T, Double> toNumber) { 
+        //return comparator(new HashMapGetCreate(toNumber)); //TODO check perfomances using HashMapGetCreate or not. depends on time to generate value ? 
+        return (o1, o2)-> Double.compare(toNumber.apply(o1), toNumber.apply(o2));
+    }
+    public static <T> Comparator<T> comparatorInt(Function<T, Integer> toNumber) {
+        return (o1, o2)-> Integer.compare(toNumber.apply(o1), toNumber.apply(o2));
     }
     /*public static void makeStayOpen(JCheckBoxMenuItem i) {
         UIDefaults uid = UIManager.getDefaults();//.getLookAndFeelDefaults();
