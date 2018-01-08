@@ -104,9 +104,8 @@ public class DBMapMasterDAO implements MasterDAO {
         new File(configDir).delete(); // deletes XP directory only if void. 
     }
     
-    private String getConfigFile(String dbName, boolean db) {
-        if (db) return configDir + File.separator + dbName + "_config.db";
-        else return configDir + File.separator + dbName + "_config.txt";
+    private File getConfigFile(String dbName) {
+        return new File(configDir + File.separator + dbName + "_config.json");
     }
     
     @Override
@@ -143,15 +142,15 @@ public class DBMapMasterDAO implements MasterDAO {
     public void deleteExperiment() {
         if (readOnly) return;
         unlockXP();
-        File cfg = new File(getConfigFile(dbName, false));
+        File cfg = getConfigFile(dbName);
         if (cfg.isFile()) cfg.delete();
     }
 
     private synchronized void lockXP() {
         if (xpFileLock!=null) return;
         try {
-            logger.debug("locking file: {} (xp null? {})", getConfigFile(dbName, false), xp==null);
-            File f = new File(getConfigFile(dbName, false));
+            logger.debug("locking file: {} (xp null? {})", getConfigFile(dbName), xp==null);
+            File f = getConfigFile(dbName);
             if (!f.exists()) f.createNewFile();
             cfg = new RandomAccessFile(f, readOnly?"r":"rw");
             if (!readOnly) xpFileLock = cfg.getChannel().tryLock();

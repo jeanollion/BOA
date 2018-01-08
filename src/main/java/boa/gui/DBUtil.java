@@ -73,12 +73,10 @@ public class DBUtil {
         return d;
     }
     public static String searchLocalDirForDB(String dbName, String dir) {
-        File config = Utils.seach(dir, dbName+"_config.db", 2);
-        if (config==null) config = Utils.seach(dir, dbName+"_config.txt", 2); //TODO retrop compatibilité
+        File config = Utils.seach(dir, dbName+"_config.json", 2);
         if (config!=null) return config.getParent();
         else {
-            config = Utils.seach(new File(dir).getParent(), dbName+"_config.db", 2);
-            if (config==null) config = Utils.seach(new File(dir).getParent(), dbName+"_config.txt", 2); //TODO retrop compatibilité
+            config = Utils.seach(new File(dir).getParent(), dbName+"_config.json", 2);
             if (config!=null) return config.getParent();
             else return null;
         }
@@ -100,7 +98,8 @@ public class DBUtil {
         return configs;
     }
     public static void addConfig(File f, Map<String, File> configs, Set<Pair<String, File>> duplicated) {
-        File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.txt")); 
+        renameFromTxtToJSON(f); // TODO retro-compatibility rename txt to json
+        File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.json")); 
         if (dbs==null) return;
         for (File c : dbs) {
             String dbName = removeConfig(c.getName());
@@ -110,8 +109,13 @@ public class DBUtil {
             } else configs.put(dbName, c.getParentFile());
         }
     }
+    private static void renameFromTxtToJSON(File f) {
+        File[] dbsTXT = f.listFiles(subF -> subF.getName().endsWith("_config.txt"));
+        if (dbsTXT==null) return; 
+        for (File c : dbsTXT) c.renameTo(new File(c.getAbsolutePath().replace("_config.txt", "_config.json")));
+    }
     private static String removeConfig(String name) {
-        return name.substring(0, name.length()-11);
+        return name.substring(0, name.indexOf("_config.json"));
     }
     static long minMem = 2000000000;
     public static void checkMemoryAndFlushIfNecessary(String... exceptPositions) {

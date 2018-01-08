@@ -2479,7 +2479,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //w.close();
         // export config as text file, without positions
         String save = f.getAbsolutePath();
-        if (!save.endsWith(".txt")) save+=".txt";
+        if (!save.endsWith(".json")&&!save.endsWith(".txt")) save+=".json";
         Experiment dup = db.getExperiment().duplicate();
         dup.clearPositions();
         try {
@@ -2565,7 +2565,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (dir==null) return;
         File directory = new File(dir);
         List<String> dbNames = getDBNames();
-        Map<String, File> allXps = ImportExportJSON.listExperiments(directory.getAbsolutePath());
+        Map<String, File> allXps = DBUtil.listExperiments(directory.getAbsolutePath(), false, null);
+        //Map<String, File> allXps = ImportExportJSON.listExperiments(directory.getAbsolutePath());
         if (allXps.size()==1) {
             String name = JOptionPane.showInputDialog("New XP name:");
             if (name==null) return;
@@ -3236,7 +3237,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (config==null) return;
         File configF = new File(config);
         List<String> dbNames = getDBNames();
-        Map<String, File> allXps = ImportExportJSON.listExperiments(configF.getAbsolutePath());
+        Map<String, File> allXps = DBUtil.listExperiments(configF.getAbsolutePath(), false, null);
+        //Map<String, File> allXps = ImportExportJSON.listExperiments(configF.getAbsolutePath());
         if (allXps.size()==1) {
             String name = JOptionPane.showInputDialog("New XP name:", allXps.keySet().iterator().next());
             if (name==null) return;

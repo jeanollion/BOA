@@ -74,8 +74,8 @@ public class CompareObjects {
         CompareObjects comp = new CompareObjects(ref, db, structureIdx, distCC, unshureSel, true);
         comp.setOutputFile(outputFile, true);
         //comp.scanConfigurationFolderAndRunAndCount(configFolder);
-        //comp.setConfigAndRun(configFolder + "base.txt", true);
-        comp.comparePositions(true, true);
+        comp.setConfigAndRun(configFolder + "q235.json", true);
+        //comp.comparePositions(true, true);
     }
 
     final MasterDAO dbRef, db;
@@ -99,6 +99,7 @@ public class CompareObjects {
         }
     }
     public void enableSelection(boolean eraseIfExisting) {
+        if (db.isReadOnly()) throw new IllegalArgumentException("DB :"+db.getDBName()+" is in read only mode, cannot enable selection");
         fp= db.getSelectionDAO().getOrCreate("falsePositives", eraseIfExisting);
         fn = db.getSelectionDAO().getOrCreate("falseNegatives", false);
         if (eraseIfExisting) eraseSelection(fn);
@@ -135,7 +136,7 @@ public class CompareObjects {
     }
     public void scanConfigurationFolderAndRunAndCount(String folder, int... positions) {
         if (output==null) throw new IllegalArgumentException("No output file set");
-        File[] configs = new File(folder).listFiles(f->f.getName().endsWith(".txt"));
+        File[] configs = new File(folder).listFiles(f->f.getName().endsWith(".json"));
         boolean first = true;
         for (File f : configs) {
             if (setConfig(f.getAbsolutePath())) {
@@ -258,7 +259,7 @@ public class CompareObjects {
     }
     public void runOnPositions(String... positions) {
         ThreadRunner.execute(positions, true, (String position, int idx) -> {
-            setQuality(position); // specific to mutations!! 
+            //setQuality(position); // specific to mutations!! 
             runPosition(position);
         }, null);
         if (this.fp!=null) db.getSelectionDAO().store(fp);
