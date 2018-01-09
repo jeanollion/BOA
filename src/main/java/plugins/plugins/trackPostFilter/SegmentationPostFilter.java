@@ -74,7 +74,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
                     toRemove.add(o);
                 }
             }
-            pop.translate(parent.getBounds(), true); // go back to relative landmark
+            pop.translate(parent.getBounds(), true); // go back to absolute landmark
             if (toRemove!=null) {
                 synchronized(objectsToRemove) {
                     objectsToRemove.addAll(toRemove);

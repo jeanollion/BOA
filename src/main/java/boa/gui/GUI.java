@@ -2132,10 +2132,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     public void navigateToNextImage(boolean next) {
         if (trackTreeController==null) this.loadObjectTrees();
-        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
-        if (i==null) { // input image ?
-            Object activeImage = ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage();
-            if (activeImage == null) return;
+        Object activeImage = ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage();
+        if (activeImage == null) return;
+        ImageWindowManager.RegisteredImageType imageType = ImageWindowManagerFactory.getImageManager().getRegisterType(activeImage);
+        logger.debug("active image type: {}", imageType);
+        if (ImageWindowManager.RegisteredImageType.PreProcessed.equals(imageType) || ImageWindowManager.RegisteredImageType.RawInput.equals(imageType)) { // input image ?
             String position = ImageWindowManagerFactory.getImageManager().getPositionOfInputImage(activeImage);
             if (position == null) return;
             else {
@@ -2144,43 +2145,42 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 if (nIdx<0) return;
                 if (nIdx>=db.getExperiment().getPositionCount()) return;
                 String nextPosition = db.getExperiment().getPosition(nIdx).getName();
-                ImageWindowManager.RegisteredImageType r = ImageWindowManagerFactory.getImageManager().getRegisterType(activeImage);
-                boolean pp = ImageWindowManager.RegisteredImageType.PreProcessed.equals(r);
+                boolean pp = ImageWindowManager.RegisteredImageType.PreProcessed.equals(imageType);
                 db.getExperiment().flushImages(true, true, nextPosition);
                 IJVirtualStack.openVirtual(db.getExperiment(), nextPosition, pp);
             }
-            return;
+        } else if (ImageWindowManager.RegisteredImageType.Interactive.equals(imageType)) {
+            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
+            // get next parent
+            StructureObject nextParent = null;
+            if (i.getParent().isRoot()) return;
+            List<StructureObject> siblings = i.getParent().getSiblings();
+            int idx = siblings.indexOf(i.getParent());
+            // current image structure: 
+            ImageObjectInterfaceKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage2());
+            int currentImageStructure = key ==null ? i.getChildStructureIdx() : key.displayedStructureIdx;
+            if (i.getChildStructureIdx() == currentImageStructure) idx += (next ? 1 : -1) ; // only increment if same structure
+            logger.debug("current inter: {}, current image child: {}",interactiveStructure.getSelectedIndex(), currentImageStructure);
+            if (siblings.size()==idx || idx<0) { // next position
+                List<String> positions = Arrays.asList(i.getParent().getExperiment().getPositionsAsString());
+                int idxP = positions.indexOf(i.getParent().getPositionName()) + (next ? 1 : -1);
+                if (idxP<0 || idxP==positions.size()) return;
+                String nextPos = positions.get(idxP);
+                ObjectDAO dao = i.getParent().getDAO().getMasterDAO().getDao(nextPos);
+                List<StructureObject> allObjects = StructureObjectUtils.getAllObjects(dao, i.getParent().getStructureIdx());
+                allObjects.removeIf(o->!o.isTrackHead());
+                if (allObjects.isEmpty()) return;
+                Collections.sort(allObjects);
+                nextParent = next ? allObjects.get(0) : allObjects.get(allObjects.size()-1);
+            } else nextParent = siblings.get(idx);
+            logger.debug("open next Image : next parent: {}", nextParent);
+            if (nextParent==null) return;
+            List<StructureObject> parentTrack = StructureObjectUtils.getTrack(nextParent, false);
+            i= ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentTrack, i.getChildStructureIdx());
+            Image im = ImageWindowManagerFactory.getImageManager().getImage(i, i.getChildStructureIdx());
+            if (im==null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(i.getChildStructureIdx(), true), i, i.getChildStructureIdx(), false, true);
+            else ImageWindowManagerFactory.getImageManager().setActive(im);
         }
-        // get next parent
-        StructureObject nextParent = null;
-        if (i.getParent().isRoot()) return;
-        List<StructureObject> siblings = i.getParent().getSiblings();
-        int idx = siblings.indexOf(i.getParent());
-        // current image structure: 
-        ImageObjectInterfaceKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage2());
-        int currentImageStructure = key ==null ? i.getChildStructureIdx() : key.displayedStructureIdx;
-        if (i.getChildStructureIdx() == currentImageStructure) idx += (next ? 1 : -1) ; // only increment if same structure
-        logger.debug("current inter: {}, current image child: {}",interactiveStructure.getSelectedIndex(), currentImageStructure);
-        if (siblings.size()==idx || idx<0) { // next position
-            List<String> positions = Arrays.asList(i.getParent().getExperiment().getPositionsAsString());
-            int idxP = positions.indexOf(i.getParent().getPositionName()) + (next ? 1 : -1);
-            if (idxP<0 || idxP==positions.size()) return;
-            String nextPos = positions.get(idxP);
-            ObjectDAO dao = i.getParent().getDAO().getMasterDAO().getDao(nextPos);
-            List<StructureObject> allObjects = StructureObjectUtils.getAllObjects(dao, i.getParent().getStructureIdx());
-            allObjects.removeIf(o->!o.isTrackHead());
-            if (allObjects.isEmpty()) return;
-            Collections.sort(allObjects);
-            nextParent = next ? allObjects.get(0) : allObjects.get(allObjects.size()-1);
-        } else nextParent = siblings.get(idx);
-        logger.debug("open next Image : next parent: {}", nextParent);
-        if (nextParent==null) return;
-        List<StructureObject> parentTrack = StructureObjectUtils.getTrack(nextParent, false);
-        i= ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentTrack, i.getChildStructureIdx());
-        Image im = ImageWindowManagerFactory.getImageManager().getImage(i, i.getChildStructureIdx());
-        if (im==null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(i.getChildStructureIdx(), true), i, i.getChildStructureIdx(), false, true);
-        else ImageWindowManagerFactory.getImageManager().setActive(im);
-        
     }
     private int navigateCount = 0;
     public void navigateToNextObjects(boolean next, boolean nextPosition, int structureDisplay, boolean setInteractiveStructure) {
@@ -2805,6 +2805,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     private void clearTrackImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTrackImagesMenuItemActionPerformed
         if (!checkConnection()) return;
+        int response = JOptionPane.showConfirmDialog(this, "Delete All Track Images ? (Irreversible)", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (response != JOptionPane.YES_OPTION) return;
         ImageDAO iDAO = db.getExperiment().getImageDAO();
         for (String p : getSelectedPositions(true)) {
             for (int sIdx = 0; sIdx<db.getExperiment().getStructureCount(); ++sIdx) iDAO.deleteTrackImages(p, sIdx);
@@ -2813,6 +2815,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void clearPPImageMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearPPImageMenuItemActionPerformed
         if (!checkConnection()) return;
+        int response = JOptionPane.showConfirmDialog(this, "Delete All Pre-processed Images ? (Irreversible)", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (response != JOptionPane.YES_OPTION) return;
         for (String p : getSelectedPositions(true)) {
             MicroscopyField f = db.getExperiment().getPosition(p);
             if (f.getInputImages()!=null) f.getInputImages().deleteFromDAO();

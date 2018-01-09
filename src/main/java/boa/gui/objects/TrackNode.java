@@ -317,7 +317,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             ThreadRunner.execute(root.generator.getSelectedTrackNodes(), false, (TrackNode n, int idx) -> {
                                 List<Pair<String, Exception>> errors = Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
                                 logger.debug("errors: {}", errors.size());
-                                for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
+                                for (Pair<String, Exception> e : errors) GUI.getInstance().setMessage("error @"+e.key+": "+e.value.toString());
                             });
                             // reload tree
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
@@ -345,7 +345,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             ThreadRunner.execute(root.generator.getSelectedTrackNodes(), false, new ThreadAction<TrackNode>() {
                                 @Override public void run(TrackNode n, int idx) {
                                     List<Pair<String, Exception>> errors = Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
-                                    for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
+                                    for (Pair<String, Exception> e : errors) GUI.getInstance().setMessage("error @"+e.key+": "+e.value.toString());
                                 }
                             });
                             // reload tree

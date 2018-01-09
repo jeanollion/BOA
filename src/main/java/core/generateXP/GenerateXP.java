@@ -97,6 +97,7 @@ import plugins.plugins.postFilters.RemoveEndofChannelBacteria;
 import plugins.plugins.preFilter.ImageFeature;
 import plugins.plugins.trackPostFilter.RemoveMicrochannelsTouchingBackgroundOnSides;
 import plugins.plugins.trackPostFilter.RemoveSaturatedMicrochannels;
+import plugins.plugins.trackPostFilter.RemoveTrackByFeature;
 import plugins.plugins.trackPostFilter.SegmentationPostFilter;
 import plugins.plugins.transformations.AutoFlipY;
 import plugins.plugins.transformations.RemoveDeadPixels;
@@ -482,7 +483,10 @@ public class GenerateXP {
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo().setContactLimit(0)).setCostParameters(0.1, 0.5)
-                    ).addTrackPostFilters(new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria()))
+                    ).addTrackPostFilters(
+                            new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria()), 
+                            new RemoveTrackByFeature().setFeature(new Size(), 300, true).setQuantileValue(0.25)
+                    )
             );
             // modification of scaling: lap * 2.5, gauss * scale (=2) quality * 2.23
             mutation.setProcessingScheme(new SegmentAndTrack(

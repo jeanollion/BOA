@@ -63,13 +63,13 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        
-        String dbName = "fluo171219_WT_750ms";
+        String dbName = "fluo170512_WT";
+        //String dbName = "fluo171219_WT_750ms";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
-        int pIdx = 6;
-        int mcIdx =0;
-        int structureIdx = 2;
+        int pIdx = 0;
+        int mcIdx =1;
+        int structureIdx = 1;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -84,7 +84,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,29); //  0,80);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,600); //  0,80);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 520, 580); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {

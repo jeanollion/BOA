@@ -211,10 +211,9 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         EdgeDetector seg = new EdgeDetector(); // keep defaults parameters ? 
         seg.setTestMode(debug);
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2));
-        seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(2).setSmoothScale(2)); // min scale = 1.5 min smooth scale = 2
-        seg.setApplyThresholdOnValueMap(true);
-        seg.setThresholder(new BackgroundThresholder(4, 4, 1).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)));
-        //seg.setThresholder(new ConstantValue(50));
+        seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)); // min scale = 1.5, max = 2 min smooth scale = 2
+        seg.setSecondaryThresholdMap(splitAndMerge.getHessian());
+        //seg.setThresholder(new BackgroundThresholder(4, 4, 1).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu))); // useless if secondary map
         ObjectPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
         if (false) { // when done on gradient -> intermediate regions are kept -> remove using hessian value
             double thresholdHess = IJAutoThresholder.runThresholder(splitAndMerge.getHessian(), parent.getMask(), AutoThresholder.Method.Otsu);

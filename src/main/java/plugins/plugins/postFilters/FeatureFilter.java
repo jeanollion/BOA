@@ -34,7 +34,7 @@ import plugins.PostFilter;
  * @author jollion
  */
 public class FeatureFilter implements PostFilter {
-    PluginParameter<ObjectFeature> feature = new PluginParameter<ObjectFeature>("Feature", ObjectFeature.class, false);
+    PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, false);
     NumberParameter threshold = new NumberParameter("Threshold", 4, 0);
     BooleanParameter keepOverThreshold = new BooleanParameter("Keep over threshold", true);
     BooleanParameter strict = new BooleanParameter("Strict comparison with threshold", true);

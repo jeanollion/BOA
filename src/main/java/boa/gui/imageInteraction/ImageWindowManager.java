@@ -123,12 +123,16 @@ public abstract class ImageWindowManager<T, U, V> {
         this.displayedImageNumber=limit;
     }
     public RegisteredImageType getRegisterType(Object image) {
-        if (image instanceof Image && displayedInteractiveImages.contains((Image)image)) return RegisteredImageType.Interactive;
-        else {
-            for (T im : this.displayedRawInputFrames.values()) if (im==image) return RegisteredImageType.RawInput;
-            for (T im : this.displayedPrePocessedFrames.values()) if (im==image) return RegisteredImageType.PreProcessed;
-            return null;
+        if (image instanceof Image) {
+            if (displayedInteractiveImages.contains((Image)image)) return RegisteredImageType.Interactive;
+            else return null;
         }
+        try {
+            if (displayedInteractiveImages.contains(getDisplayer().getImage((T)image))) return RegisteredImageType.Interactive;
+        } catch(Exception e) {}
+        if (this.displayedRawInputFrames.values().contains(image)) return RegisteredImageType.RawInput;
+        if (this.displayedPrePocessedFrames.values().contains(image)) return RegisteredImageType.PreProcessed;
+        return null;
     }
     public Map<Image, DefaultWorker> getRunningWorkers() {
         return runningWorkers;

@@ -53,5 +53,8 @@ public class PluginParameterList<T extends Plugin> extends SimpleListParameter<P
         }
         return res;
     }
-
+    public boolean isEmpty() {
+        for (PluginParameter<T> pp : this.children) if (pp.isActivated()) return false;
+        return true;
+    }
 }
