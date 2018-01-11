@@ -416,7 +416,7 @@ public class BoundingBox implements JSONSerializable {
             ym = (int)(yM+ym)/2;
             yM=ym-1;
         }
-        return new BoundingBox(xm, xM, ym, yM, 0, 0);
+        return new BoundingBox(xm, xM, ym, yM, zMin, zMax);
     }
     /**
      * 

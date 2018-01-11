@@ -490,13 +490,13 @@ public class Object3D {
         if (offset==null) offset=new BoundingBox(0, 0, 0);
         if (!this.getBounds().hasIntersection(other.getBounds().duplicate().translate(offset))) return 0;
         else {
-            ImageMask m = other.getMask();
+            ImageMask otherMask = other.getMask();
             int count = 0;
-            int offX = m.getOffsetX()+offset.getxMin();
-            int offY = m.getOffsetY()+offset.getyMin();
-            int offZ = m.getOffsetZ()+offset.getzMin();
+            int offX = otherMask.getOffsetX()+offset.getxMin();
+            int offY = otherMask.getOffsetY()+offset.getyMin();
+            int offZ = otherMask.getOffsetZ()+offset.getzMin();
             for (Voxel v : this.getVoxels()) {
-                if (m.insideMask(v.x-offX, v.y-offY, v.z-offZ)) ++count;
+                if (otherMask.insideMask(v.x-offX, v.y-offY, v.z-offZ)) ++count;
             }
             return count;
         }
@@ -521,11 +521,12 @@ public class Object3D {
         } else {
             if (!thisBounds.intersect(otherBounds)) return 0;
         }
-        //logger.debug("off: {}, otherOff: {}", thisBounds, otherBounds);
+        
         
         final ImageMask mask = is2D() && !other.is2D() ? new ImageMask2D(getMask()) : getMask();
-        final ImageMask m = other.is2D() && !is2D() ? new ImageMask2D(other.getMask()) : other.getMask();
-        BoundingBox inter = inter2D ? thisBounds.getIntersection2D(otherBounds) : thisBounds.getIntersection(otherBounds);
+        final ImageMask otherMask = other.is2D() && !is2D() ? new ImageMask2D(other.getMask()) : other.getMask();
+        BoundingBox inter = inter2D ? (!is2D() ? thisBounds.getIntersection2D(otherBounds):otherBounds.getIntersection2D(thisBounds)) : thisBounds.getIntersection(otherBounds);
+        logger.debug("off: {}, otherOff: {}, is2D: {} other Is2D: {}, inter: {}", thisBounds, otherBounds, is2D(), other.is2D(), inter);
         final int count[] = new int[1];
         final int offX = thisBounds.getxMin();
         final int offY = thisBounds.getyMin();
@@ -533,14 +534,10 @@ public class Object3D {
         final int otherOffX = otherBounds.getxMin();
         final int otherOffY = otherBounds.getyMin();
         final int otherOffZ = otherBounds.getzMin();
-        inter.loop(new LoopFunction2() {
-            int c;
-            public void loop(int x, int y, int z) {if (mask.insideMask(x-offX, y-offY, z-offZ) && m.insideMask(x-otherOffX, y-otherOffY, z-otherOffZ)) c++;}
-            public void setUp() {c = 0;}
-            public void tearDown() {count[0]=c;}
+        inter.loop((int x, int y, int z) -> {
+            if (mask.insideMask(x-offX, y-offY, z-offZ) && otherMask.insideMask(x-otherOffX, y-otherOffY, z-otherOffZ)) count[0]++;
         });
         return count[0];
-        
     }
     
     public List<Object3D> getIncludedObjects(List<Object3D> candidates) {
