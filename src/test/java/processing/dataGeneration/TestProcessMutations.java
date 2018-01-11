@@ -54,15 +54,15 @@ public class TestProcessMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        String dbName = "fluo171204_WT_750ms_paramOptimization";
-        //String dbName = "fluo171219_WT_750ms";
+        //String dbName = "fluo171204_WT_750ms_paramOptimization";
+        String dbName = "fluo171219_WT_750ms";
         //final String dbName = "boa_fluo151127_test";
-        int fIdx = 0;
-        int mcIdx =5;
+        int fIdx = 355;
+        int mcIdx =2;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName, null);
-        t.testSegMutationsFromXP(fIdx, mcIdx, false, 21,21);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,21);
     }
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -128,7 +128,7 @@ public class TestProcessMutations {
         StructureObject mc = root.getChildren(0).get(mcIdx);
         Image input = mc.getRawImage(2);
         input = mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().filter(input, mc);
-        logger.debug("prefilters: {}", mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters());
+        logger.debug("prefilters: {}, sizeZ: {}", mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().getChildCount(), input.getSizeZ());
         if (parentMC) {
             if (mcMask_!=null) mcMask_.add(mc.getMask());
             testSegMutation(input, mc, parentMask_, input_, outputLabel, intermediateImages_);

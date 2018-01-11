@@ -773,7 +773,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                             Image trackImage = getTrackImage(structureIdx);
                             if (trackImage!=null) {
                                 //logger.debug("object: {}, channel: {}, open from trackImage: offset:{}", this, channelIdx, offsetInTrackImage);
-                                Image image = trackImage.crop(getBounds().duplicate().translateToOrigin().translate(offsetInTrackImage));
+                                BoundingBox bb = getBounds().duplicate().translateToOrigin().translate(offsetInTrackImage);
+                                extendBoundsInZIfNecessary(channelIdx, bb);
+                                Image image = trackImage.crop(bb);
                                 image.resetOffset().addOffset(getBounds());
                                 rawImagesC.set(image, channelIdx);
                             } else { // open root and crop
@@ -843,7 +845,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return this.offsetInTrackImage;
     }
     
-    private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
+    private BoundingBox extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
         //logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(positionName).getSizeZ(channelIdx));
         if (bounds.getSizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
             int sizeZ = getExperiment().getPosition(getPositionName()).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
@@ -851,6 +853,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 bounds.expandZ(sizeZ-1);
             }
         }
+        return bounds;
     }
     
     public boolean is2D() {
