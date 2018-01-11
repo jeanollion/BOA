@@ -214,12 +214,12 @@ public class ImportExportJSON {
     }
     public static void exportConfig(ZipWriter w, MasterDAO dao) {
         if (!w.isValid()) return;
-        w.write("config.txt", new ArrayList<Experiment>(1){{add(dao.getExperiment());}}, o->JSONUtils.serialize(o));
+        w.write("config.json", new ArrayList<Experiment>(1){{add(dao.getExperiment());}}, o->JSONUtils.serialize(o));
     }
     
     public static void exportSelections(ZipWriter w, MasterDAO dao) {
         if (!w.isValid()) return;
-        if (dao.getSelectionDAO()!=null) w.write("selections.txt", dao.getSelectionDAO().getSelections(), o -> JSONUtils.serialize(o));
+        if (dao.getSelectionDAO()!=null) w.write("selections.json", dao.getSelectionDAO().getSelections(), o -> JSONUtils.serialize(o));
     }
     public static Experiment readConfig(File f) {
         if (f.getName().endsWith(".json")) {
@@ -228,7 +228,7 @@ public class ImportExportJSON {
         } else if (f.getName().endsWith(".zip")) {
             ZipReader r = new ZipReader(f.getAbsolutePath());
             if (r.valid()) {
-                List<Experiment> xp = r.readObjects("config.txt", o->JSONUtils.parse(Experiment.class, o));
+                List<Experiment> xp = r.readObjects("config.json", o->JSONUtils.parse(Experiment.class, o));
                 if (xp.size()==1) return xp.get(0);
             }
         }
@@ -276,13 +276,13 @@ public class ImportExportJSON {
         ZipReader r = new ZipReader(path);
         if (r.valid()) {
             if (config) { 
-                List<Experiment> xp = r.readObjects("config.txt", o->JSONUtils.parse(Experiment.class, o));
-                if (xp.size()==1) {
+                Experiment xp = r.readFirstObject("config.json", o->JSONUtils.parse(Experiment.class, o));
+                if (xp!=null) {
                     if (dao.getDir()!=null) {
-                        xp.get(0).setOutputDirectory(dao.getDir()+File.separator+"Output");
-                        xp.get(0).setOutputImageDirectory(xp.get(0).getOutputDirectory());
+                        xp.setOutputDirectory(dao.getDir()+File.separator+"Output");
+                        xp.setOutputImageDirectory(xp.getOutputDirectory());
                     }
-                    dao.setExperiment(xp.get(0));
+                    dao.setExperiment(xp);
                     logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
                 } else return false;
             }
@@ -327,7 +327,7 @@ public class ImportExportJSON {
             }
             if (selections) {
                 logger.debug("importing selections....");
-                List<Selection> sels = r.readObjects("selections.txt", o->JSONUtils.parse(Selection.class, o));
+                List<Selection> sels = r.readObjects("selections.json", o->JSONUtils.parse(Selection.class, o));
                 logger.debug("selections: {}", sels.size());
                 if (sels.size()>0 && dao.getSelectionDAO()!=null) {
                     for (Selection s: sels ) if (dao.getSelectionDAO()!=null) dao.getSelectionDAO().store(s);

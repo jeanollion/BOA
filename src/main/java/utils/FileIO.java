@@ -156,6 +156,20 @@ public class FileIO {
         }
         return res;
     }
+    public static <T> T readFirstFromZip(ZipFile file, String relativePath, Function<String, T> converter) {
+        try {
+            ZipEntry e = file.getEntry(relativePath);
+            if (e!=null) {
+                Reader r = new InputStreamReader(file.getInputStream(e));
+                BufferedReader bufRead = new BufferedReader(r);
+                String myLine = bufRead.readLine();
+                if (myLine!=null) return converter.apply(myLine);
+            }
+        } catch (IOException ex) {
+            logger.debug("an error occured trying read file: {}, {}", relativePath, ex);
+        }
+        return null;
+    }
     public static void writeFile(InputStream in, String filePath) {
         BufferedOutputStream bos = null;
         try {
@@ -316,6 +330,9 @@ public class FileIO {
         public boolean valid() {return in!=null;}
         public <T> List<T> readObjects(String relativePath, Function<String, T> converter) {
             return readFromZip(in, relativePath, converter);
+        }
+        public <T> T readFirstObject(String relativePath, Function<String, T> converter) {
+            return readFirstFromZip(in, relativePath, converter);
         }
         public InputStream readFile(String relativePath) {
             try {
