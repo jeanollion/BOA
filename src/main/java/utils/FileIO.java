@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.io.Reader;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -175,6 +176,90 @@ public class FileIO {
             }
         }
     }
+    public static class TextFile {
+        final File f;
+        RandomAccessFile raf;
+        java.nio.channels.FileLock lock;
+        final boolean toLock;
+        public TextFile(String file, boolean write, boolean lock) {
+            f = new File(file);
+            try {
+                if (!f.exists()) f.createNewFile();
+                raf = new RandomAccessFile(f, write?"rw":"r");
+            } catch (IOException ex) {
+                
+            }
+            if (lock) lock();
+            toLock = lock;
+        }
+        public boolean isValid() {
+            return f.exists() && raf!=null && (!toLock || (lock!=null && lock.isValid()));
+        }
+        public void clear() {
+            try {
+                FileIO.clearRAF(raf);
+            } catch (IOException ex) {
+                
+            }
+        }
+        public void write(String s, boolean append) {
+            try {
+                FileIO.write(raf, s, append);
+            } catch (IOException ex) {
+                
+            }
+        }
+        public String readFirstLine() {
+            try {
+                raf.seek(0);
+                return raf.readLine();
+            } catch (IOException ex) {
+                return null;
+            }
+        }
+        public List<String> readLines() {
+            List<String> res = new ArrayList<>();
+            try {
+                raf.seek(0);
+                String l = raf.readLine();
+                while(l!=null) {
+                    res.add(l);
+                    l = raf.readLine();
+                }
+            } catch (IOException ex) {
+
+            }
+            return res;
+        }
+        public void close() {
+            unlock();
+            try {
+                raf.close();
+            } catch (IOException ex) {
+                
+            }
+        }
+        private void lock() {
+            if (lock!=null) return;
+            try {
+                lock = raf.getChannel().tryLock();
+            } catch (OverlappingFileLockException e) {
+                //logger.debug("file already locked", e);
+            } catch (IOException ex) {
+                
+            } 
+        }
+        public void unlock() {
+            if (this.lock!=null) {
+                try {
+                    lock.release();
+                    lock = null;
+                } catch (IOException ex) {
+                    
+                }
+            }
+        }
+    }
     public static class ZipWriter {
         File f;
         ZipOutputStream out;
@@ -184,7 +269,7 @@ public class FileIO {
                 out  = new ZipOutputStream(new FileOutputStream(f));
                 out.setLevel(9);
             } catch (FileNotFoundException ex) {
-                logger.debug("error while trying to write to zip file", ex);
+                
             }
         }
         public boolean isValid() {return out!=null;}

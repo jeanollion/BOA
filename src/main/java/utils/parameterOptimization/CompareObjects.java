@@ -51,6 +51,7 @@ import plugins.ProcessingScheme;
 import plugins.plugins.segmenters.MutationSegmenter;
 import utils.ArrayUtil;
 import utils.FileIO;
+import utils.FileIO.TextFile;
 import utils.HashMapGetCreate;
 import utils.JSONUtils;
 import utils.Pair;
@@ -86,7 +87,7 @@ public class CompareObjects {
     final Object countLock = new Object();
     Selection unshureObjects, fp, fn, fpRef, fnRef;
     final int structureIdx, parentStructureIdx;
-    RandomAccessFile output;
+    TextFile output;
     String configName;
     public CompareObjects(String refXP, String xp, int structureIdx, double distCCThld, String unshureSelectionName, boolean allowModifyRefXP) {
         dbRef = new Task(refXP).getDB();
@@ -147,6 +148,7 @@ public class CompareObjects {
     }
     public void scanConfigurationFolderAndRunAndCount(String folder, int... positions) {
         if (output==null) throw new IllegalArgumentException("No output file set");
+        if (db.isReadOnly()) throw new RuntimeException("DB could not be locked");
         File[] configs = new File(folder).listFiles(f->f.getName().endsWith(".json"));
         boolean first = true;
         for (File f : configs) {
@@ -167,19 +169,12 @@ public class CompareObjects {
     public void close() {
         dbRef.clearCache();
         db.clearCache();
-        if (output!=null) {
-            try {
-                output.close();
-            } catch (IOException ex) { }
-        }
+        if (output!=null) output.close();
     }
     public void setOutputFile(String file, boolean append) {
-        try {
-            this.output = new RandomAccessFile(file, "rw");
-            if (!append) FileIO.clearRAF(output);
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not create output file @ "+file);
-        }
+        this.output = new TextFile(file, true, true);
+        if (!append) output.clear();
+        if (!output.isValid()) throw new RuntimeException("Could not create output file @ "+file);
     }
     public void appendRefCount() {
         if (output==null) throw new RuntimeException("No output file set");
@@ -188,11 +183,7 @@ public class CompareObjects {
         sb.append(totalRef);
         sb.append(" unshure objects: ");
         sb.append(unshureObjects==null ? 0 : unshureObjects.count());
-        try {
-            FileIO.write(output, sb.toString(), true);
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not append to output file "+ex.getLocalizedMessage());
-        }
+        output.write(sb.toString(), true);
     }
     public void appendToOutputFile() {
         if (output==null) throw new RuntimeException("No output file set");
@@ -207,11 +198,7 @@ public class CompareObjects {
             sb.append(" for Config: ");
             sb.append(configName);
         }
-        try {
-            FileIO.write(output, sb.toString(), true);
-        } catch (IOException ex) {
-            throw new RuntimeException("Could not append to output file "+ex.getLocalizedMessage());
-        }
+        output.write(sb.toString(), true);
     }
     public boolean setConfig(Experiment config) {
         db.getExperiment().getStructure(structureIdx).setContentFrom(config.getStructure(structureIdx));

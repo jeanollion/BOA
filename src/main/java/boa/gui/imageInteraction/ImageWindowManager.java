@@ -134,6 +134,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (this.displayedPrePocessedFrames.values().contains(image)) return RegisteredImageType.PreProcessed;
         return null;
     }
+    public abstract void toggleSetObjectCreationTool();
     public Map<Image, DefaultWorker> getRunningWorkers() {
         return runningWorkers;
     }

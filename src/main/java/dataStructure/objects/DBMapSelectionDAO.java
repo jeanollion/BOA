@@ -83,7 +83,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
         }
         // local files
         File dirFile = new File(dir);
-        for (File f : dirFile.listFiles((f, n)-> n.endsWith(".txt"))) {
+        for (File f : dirFile.listFiles((f, n)-> n.endsWith(".txt")||n.endsWith(".json"))) {
             List<Selection> sels = FileIO.readFromFile(f.getAbsolutePath(), s -> JSONUtils.parse(Selection.class, s));
             for (Selection s : sels) {
                 s.setMasterDAO(mDAO);

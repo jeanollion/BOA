@@ -337,6 +337,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 logger.debug("C pressed: " + e);
             }
         });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0 ), new AbstractAction("Toggle creation tool") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ImageWindowManagerFactory.getImageManager().toggleSetObjectCreationTool();
+                logger.debug("C pressed: " + e);
+            }
+        });
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Reset Links") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -1133,9 +1140,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         jMenuItem19 = new javax.swing.JMenuItem();
         jMenuItem6 = new javax.swing.JMenuItem();
         jMenuItem11 = new javax.swing.JMenuItem();
+        jMenuItem22 = new javax.swing.JMenuItem();
         jMenuItem12 = new javax.swing.JMenuItem();
         jMenuItem15 = new javax.swing.JMenuItem();
         jMenuItem16 = new javax.swing.JMenuItem();
+        jMenuItem23 = new javax.swing.JMenuItem();
+        jMenuItem24 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
@@ -2076,6 +2086,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         jMenuItem11.setText("Ctrl + M: merge objects");
         jMenu3.add(jMenuItem11);
 
+        jMenuItem22.setText("C: switch to creation tool / rectangle selection");
+        jMenu3.add(jMenuItem22);
+
         jMenuItem12.setText("Ctrl + C: create object(s) from selected point(s)");
         jMenu3.add(jMenuItem12);
 
@@ -2084,6 +2097,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         jMenuItem16.setText("Ctrl + L: link / unlink selected objects");
         jMenu3.add(jMenuItem16);
+
+        jMenuItem23.setText("Ctrl + line : strech objects");
+        jMenu3.add(jMenuItem23);
+
+        jMenuItem24.setText("Ctrl + freehand line: manual split objects");
+        jMenu3.add(jMenuItem24);
 
         ShortcutMenu.add(jMenu3);
 
@@ -2368,10 +2387,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void deleteXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteXPMenuItemActionPerformed
         List<String> xps = getSelectedExperiments();
         if (xps==null || xps.isEmpty()) return;
-        int response = JOptionPane.showConfirmDialog(this, "Delete Selected Experiment"+(xps.size()>1?"s":"")+" (all data will be lost)", "Confirm",
-            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (response == JOptionPane.NO_OPTION || response == JOptionPane.CLOSED_OPTION) {
-        } else if (response == JOptionPane.YES_OPTION) {
+        if (Utils.promptBoolean( "Delete Selected Experiment"+(xps.size()>1?"s":"")+" (all data will be lost)", this)) {
             if (db!=null && xps.contains(db.getDBName())) unsetXP();
             for (String xpName : xps) MasterDAOFactory.createDAO(xpName, getHostNameOrDir(xpName)).eraseAll();
             populateExperimentList();
@@ -2479,7 +2495,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //w.close();
         // export config as text file, without positions
         String save = f.getAbsolutePath();
-        if (!save.endsWith(".json")&&!save.endsWith(".txt")) save+=".json";
+        if (!save.endsWith(".json")) save+=".json";
         Experiment dup = db.getExperiment().duplicate();
         dup.clearPositions();
         try {
@@ -2530,8 +2546,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (f==null || !f.isFile()) return;
         Experiment xp = ImportExportJSON.readConfig(f);
         if (xp==null) return;
-        int response = JOptionPane.showConfirmDialog(this, "This will erase configutation on current xp", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (response != JOptionPane.YES_OPTION) return;
+        if (!Utils.promptBoolean("This will erase configutation on current xp. Continue?", this)) return;
         for (String p : getSelectedPositions(true)) {
             MicroscopyField m = xp.getPosition(p);
             if (m!=null) {
@@ -2550,8 +2565,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         Experiment xp = ImportExportJSON.readConfig(f);
         if (xp==null) return;
         if (xp.getStructureCount()!=db.getExperiment().getStructureCount()) logger.error("Selected config to import should have same stucture count as current xp");
-        int response = JOptionPane.showConfirmDialog(this, "This will erase configutation on current xp", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (response != JOptionPane.YES_OPTION) return;
+        if (!Utils.promptBoolean("This will erase configutation on current xp. Continue?", this)) return;
         for (int s : getSelectedStructures(true)) {
             db.getExperiment().getStructure(s).setContentFrom(xp.getStructure(s));
         }
@@ -2641,13 +2655,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File f = Utils.chooseFile("Select exported file", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
-        int response = JOptionPane.showConfirmDialog(this, "This will erase configutation on current xp", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (response != JOptionPane.YES_OPTION) return;
+        if (!Utils.promptBoolean("This will erase configutation on current xp", this)) return;
         PreProcessingChain oldppTemplate = db.getExperiment().getPreProcessingTemplate().duplicate();
         ImportExportJSON.importConfigurationFromFile(f.getAbsolutePath(), db, true, true);
         if (db.getExperiment().getPositionCount()>0 && !db.getExperiment().getPreProcessingTemplate().sameContent(oldppTemplate)) {
-            response = JOptionPane.showConfirmDialog(this, "Also copy pre-processing chain to all positions?", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-            if (response == JOptionPane.YES_OPTION) {
+            if (Utils.promptBoolean("Also copy pre-processing chain to all positions?", this)) {
                 for (MicroscopyField p : db.getExperiment().getPositions()) p.getPreProcessingChain().setContentFrom(db.getExperiment().getPreProcessingTemplate());
             }
         }
@@ -2805,8 +2817,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     private void clearTrackImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTrackImagesMenuItemActionPerformed
         if (!checkConnection()) return;
-        int response = JOptionPane.showConfirmDialog(this, "Delete All Track Images ? (Irreversible)", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (response != JOptionPane.YES_OPTION) return;
+        if (!Utils.promptBoolean("Delete All Track Images ? (Irreversible)", this)) return;
         ImageDAO iDAO = db.getExperiment().getImageDAO();
         for (String p : getSelectedPositions(true)) {
             for (int sIdx = 0; sIdx<db.getExperiment().getStructureCount(); ++sIdx) iDAO.deleteTrackImages(p, sIdx);
@@ -2815,8 +2826,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void clearPPImageMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearPPImageMenuItemActionPerformed
         if (!checkConnection()) return;
-        int response = JOptionPane.showConfirmDialog(this, "Delete All Pre-processed Images ? (Irreversible)", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (response != JOptionPane.YES_OPTION) return;
+        if (!Utils.promptBoolean("Delete All Pre-processed Images ? (Irreversible)", this)) return;
         for (String p : getSelectedPositions(true)) {
             MicroscopyField f = db.getExperiment().getPosition(p);
             if (f.getInputImages()!=null) f.getInputImages().deleteFromDAO();
@@ -3752,6 +3762,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JMenuItem jMenuItem2;
     private javax.swing.JMenuItem jMenuItem20;
     private javax.swing.JMenuItem jMenuItem21;
+    private javax.swing.JMenuItem jMenuItem22;
+    private javax.swing.JMenuItem jMenuItem23;
+    private javax.swing.JMenuItem jMenuItem24;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;

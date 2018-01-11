@@ -107,6 +107,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         if (image instanceof ImagePlus) ((ImagePlus)image).getWindow().addWindowListener(wl);
     }
     @Override
+    public void toggleSetObjectCreationTool() {
+        if (IJ.getToolName()=="point"||IJ.getToolName()=="multipoint") IJ.setTool("rect");
+        else IJ.setTool("multipoint");
+    }
+    @Override
     public void addMouseListener(final Image image) {
         final ImagePlus ip = displayer.getImage(image);
         final ImageCanvas canvas = ip.getCanvas();

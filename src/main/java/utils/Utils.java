@@ -96,11 +96,7 @@ public class Utils {
         String of = Utils.getOpenedFileCount();
         return " Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)"+(of.length()==0?"": " OpenedFiles: "+of);
     }
-    public static boolean promptBoolean(String message, Component parent) {
-        int response = JOptionPane.showConfirmDialog(parent, message, "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        if (response == JOptionPane.YES_OPTION)  return true;
-        return false;
-    }
+
     public static String getOpenedFileCount() {
         OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
         if(os instanceof UnixOperatingSystemMXBean){
@@ -613,6 +609,10 @@ public class Utils {
         File[] res = chooseFiles(dialogTitle,directory, option,  parent);
         if (res!=null) return res[0];
         else return null;
+    }
+    public static boolean promptBoolean(String question, Component parent) {
+        int response = JOptionPane.showConfirmDialog(parent, question, "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        return response == JOptionPane.YES_OPTION;
     }
     
     public static File getOneDir(File[] files) {

@@ -222,7 +222,7 @@ public class ImportExportJSON {
         if (dao.getSelectionDAO()!=null) w.write("selections.txt", dao.getSelectionDAO().getSelections(), o -> JSONUtils.serialize(o));
     }
     public static Experiment readConfig(File f) {
-        if (f.getName().endsWith(".txt")) {
+        if (f.getName().endsWith(".json")) {
             List<Experiment> xp = FileIO.readFromFile(f.getAbsolutePath(), o->JSONUtils.parse(Experiment.class, o));
             if (xp.size()==1) return xp.get(0);
         } else if (f.getName().endsWith(".zip")) {
@@ -236,7 +236,7 @@ public class ImportExportJSON {
     }
     public static void importConfigurationFromFile(String path, MasterDAO dao, boolean structures, boolean preProcessingTemplate) {
         File f = new File(path);
-        if (f.getName().endsWith(".txt")) {
+        if (f.getName().endsWith(".json")) {
             List<Experiment> xp = FileIO.readFromFile(path, o->JSONUtils.parse(Experiment.class, o));
             if (xp.size()==1) {
                 Experiment source = xp.get(0);
@@ -258,7 +258,7 @@ public class ImportExportJSON {
     }
     public static void importFromFile(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, boolean preProcessedImages, boolean trackImages, ProgressCallback pcb) {
         File f = new File(path);
-        if (f.getName().endsWith(".txt")) {
+        if (f.getName().endsWith(".json")) {
             if (config) {
                 List<Experiment> xp = FileIO.readFromFile(path, o->JSONUtils.parse(Experiment.class, o));
                 if (xp.size()==1) {
@@ -339,32 +339,5 @@ public class ImportExportJSON {
             return true;
         } else return false;
     }
-    /*public static Map<String, File> listExperiments(String dir) {
-        File fDir = new File(dir);
-        Map<String, File> res= new HashMap<>();
-        listExperiments(fDir, res);
-        if (fDir.isDirectory()) {
-            for (File subF : fDir.listFiles(f ->f.isDirectory())) listExperiments(subF, res);
-        }
-        return res;
-    }
-    private static void listExperiments(File dir, Map<String, File> res) {
-        if (dir.isDirectory()) {
-            for (File subF : dir.listFiles()) addXP(subF, res);
-        } else addXP(dir, res);
-    }
-    private static void addXP(File file , Map<String, File> res) {
-        Experiment xp = readConfig(file);
-        if (xp==null) return;
-        if (file.getName().endsWith(".zip")) {
-            res.put(Utils.removeExtension(file.getName()), file);
-        } else if (file.getName().endsWith(".txt")) {
-            String name = file.getName();
-            name = Utils.removeExtension(name);
-            if (name.endsWith("config") || name.endsWith("Config")) name = name.substring(name.length()-6, name.length());
-            if (name.length()==0) name = "xp";
-            res.put(name, file);
-        }
-    }
-    */
+    
 }

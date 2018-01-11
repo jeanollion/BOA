@@ -624,6 +624,11 @@
                     <Property name="text" type="java.lang.String" value="Ctrl + M: merge objects"/>
                   </Properties>
                 </MenuItem>
+                <MenuItem class="javax.swing.JMenuItem" name="jMenuItem22">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="C: switch to creation tool / rectangle selection"/>
+                  </Properties>
+                </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="jMenuItem12">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Ctrl + C: create object(s) from selected point(s)"/>
@@ -637,6 +642,16 @@
                 <MenuItem class="javax.swing.JMenuItem" name="jMenuItem16">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Ctrl + L: link / unlink selected objects"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JMenuItem" name="jMenuItem23">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Ctrl + line : strech objects"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JMenuItem" name="jMenuItem24">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Ctrl + freehand line: manual split objects"/>
                   </Properties>
                 </MenuItem>
               </SubComponents>
