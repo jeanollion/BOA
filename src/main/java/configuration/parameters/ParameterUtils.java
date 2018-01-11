@@ -437,7 +437,7 @@ public class ParameterUtils {
                                 }
                                 ImageObjectInterface ioi = iwm.generateTrackMask(parentTrack, structureIdx);
                                 Image interactiveImage = ioi.generateRawImage(structureIdx, true);
-                                iwm.addImage(interactiveImage, ioi, structureIdx, false, true);
+                                iwm.addImage(interactiveImage, ioi, structureIdx, true);
                                 lastTest= new Pair<>(interactiveImage, ioi);
                                 iwm.addWindowClosedListener(interactiveImage, e->{iwm.removeImage(interactiveImage);iwm.removeImageObjectInterface(ioi.getKey()); GUI.getInstance().populateSelections(); lastTest=null; logger.debug("cloooooose image"); return null;});
                                 if (parentStrutureIdx!=segParentStrutureIdx) {

@@ -23,6 +23,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJVirtualStack;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import core.DefaultWorker;
 import core.Processor;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.InputImages;
@@ -47,6 +48,7 @@ import javax.swing.JMenuItem;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import utils.ThreadRunner;
+import utils.Utils;
 
 /**
  *
@@ -302,7 +304,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                             int structureIdx = generator.getExperiment().getStructureIdx(ae.getActionCommand());
                             if (logger.isDebugEnabled()) logger.debug("opening track raw image for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(generator.db.getDao(position).getRoots(), structureIdx);
-                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, false, true);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, true);
                             GUI.getInstance().setInteractiveStructureIdx(structureIdx);
                             GUI.getInstance().setTrackStructureIdx(structureIdx);
                         }
@@ -321,18 +323,20 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                             int structureIdx = generator.getExperiment().getStructureIdx(ae.getActionCommand());
                             logger.debug("create selectionfor structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
                             List<RootTrackNode> selectedNodes = generator.getSelectedRootTrackNodes();
-                            List<StructureObject> objectsToAdd = new ArrayList<StructureObject>();
-                            for (RootTrackNode rtn : selectedNodes) {
-                                objectsToAdd.addAll(StructureObjectUtils.getAllObjects(generator.db.getDao(rtn.position), structureIdx));
-                            }
+                            List<StructureObject> objectsToAdd = new ArrayList<>();
                             Selection s = generator.db.getSelectionDAO().getOrCreate(ae.getActionCommand(), true);
                             s.addElements(objectsToAdd);
                             s.setColor("Grey");
-                            generator.db.getSelectionDAO().store(s);
-                            GUI.getInstance().populateSelections();
-                            List<Selection> sels = GUI.getInstance().getSelections();
-                            sels.removeIf(ss->!ss.getName().equals(ae.getActionCommand()));
-                            sels.get(0).setIsDisplayingObjects(true);
+                            s.setIsDisplayingObjects(true);
+                            // create in background
+                            DefaultWorker.execute(i->{
+                                s.addElements(StructureObjectUtils.getAllObjects(generator.db.getDao(selectedNodes.get(i).position), structureIdx));
+                                if (i==1 || i%(selectedNodes.size()/5)==0 || i==selectedNodes.size()-1) {
+                                    generator.db.getSelectionDAO().store(s);
+                                    GUI.getInstance().populateSelections();
+                                }
+                                return null;
+                            }, selectedNodes.size());
                         }
                     }
                 );

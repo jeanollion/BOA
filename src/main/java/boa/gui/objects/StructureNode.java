@@ -149,7 +149,6 @@ public class StructureNode implements TreeNode, UIContainer {
         StructureNode node;
         JMenuItem[] actions;
         JMenuItem[] openRaw;
-        JMenuItem[] openSeg;
         JMenuItem[] segmentation;
         public StructureNodeUI(StructureNode node_) {
             this.node=node_;
@@ -161,27 +160,6 @@ public class StructureNode implements TreeNode, UIContainer {
             JMenu segmentationSubMenu = new JMenu("Segmentation"); // No segmentation for the moment, see how to run it only if independent from tracking..
             //actions[2] = segmentationSubMenu;
             String[] structureNames = getGenerator().getExperiment().getStructuresAsString();
-            
-            openSeg=new JMenuItem[structureNames.length];
-            for (int i = 0; i < openSeg.length; i++) {
-                openSeg[i] = new JMenuItem(structureNames[i]);
-                openSeg[i].setAction(
-                    new AbstractAction(structureNames[i]) {
-                        @Override
-                        public void actionPerformed(ActionEvent ae) {
-                            int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
-                            if (logger.isDebugEnabled()) logger.debug("opening segmented image for structure: {} of idx: {} from structure idx: {}", ae.getActionCommand(), structureIdx, getParentObject().getStructureIdx());
-                            
-                            //int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), structureIdx);
-                            //parent.loadAllChildObjects(path, 0);
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), structureIdx, true);
-                            //logger.debug("IO-Interface: {}, parent: {}, number of children: {}", i, getParentObject(), getParentObject().getChildren(structureIdx).size());
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateLabelImage(), i, i.getChildStructureIdx(), true, true);
-                        }
-                    }
-                );
-                segSubMenu.add(openSeg[i]);
-            }
             
             openRaw=new JMenuItem[structureNames.length];
             for (int i = 0; i < openRaw.length; i++) {
@@ -195,7 +173,7 @@ public class StructureNode implements TreeNode, UIContainer {
                             int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), structureIdx);
                             parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw), true);
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, false, true);
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, true);
                             GUI.getInstance().setInteractiveStructureIdx(structureIdx);
                         }
                     }

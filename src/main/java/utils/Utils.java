@@ -56,7 +56,9 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -540,7 +542,7 @@ public class Utils {
         }
     }
     
-    public static List<File> seachAll(String path, Function<String, Boolean> fileMatch, int recLevels) {
+    public static List<File> seachAll(String path, Predicate<String> fileMatch, int recLevels) {
         if (path==null) return null;
         File f= new File(path);
         if (!f.exists()) return null;
@@ -549,12 +551,12 @@ public class Utils {
             searchAll(new ArrayList<File>(1){{add(f);}}, res, fileMatch, recLevels, 0);
             return res;
         }
-        else if (fileMatch.apply(f.getName())) return new ArrayList<File>(1){{add(f);}};
+        else if (fileMatch.test(f.getName())) return new ArrayList<File>(1){{add(f);}};
         else return null;
     }
-    private static void searchAll(List<File> filesToSearchIn, List<File> res, Function<String, Boolean> fileMatch, int recLevels, int currentLevel) {
+    private static void searchAll(List<File> filesToSearchIn, List<File> res, Predicate<String> fileMatch, int recLevels, int currentLevel) {
         for (File f : filesToSearchIn) {
-            File[] ff = f.listFiles((dir, name) -> fileMatch.apply(name));
+            File[] ff = f.listFiles((dir, name) -> fileMatch.test(name));
             if (ff.length>0) res.addAll(Arrays.asList(ff));
         }
         if (currentLevel==recLevels) return;
@@ -799,19 +801,19 @@ public class Utils {
         }
     }
     
-    public static <T> T getFirst(Collection<T> coll, Function<T, Boolean> fun) {
-        for (T t : coll) if (fun.apply(t)) return t;
+    public static <T> T getFirst(Collection<T> coll, Predicate<T> fun) {
+        for (T t : coll) if (fun.test(t)) return t;
         return null;
     }
-    public static <K, V> V getFirst(Map<K, V> map, Function<K, Boolean> fun) {
-        for (K t : map.keySet()) if (fun.apply(t)) return map.get(t);
+    public static <K, V> V getFirst(Map<K, V> map, Predicate<K> fun) {
+        for (K t : map.keySet()) if (fun.test(t)) return map.get(t);
         return null;
     }
-    public static <K, V> void removeIf(Map<K, V> map, BiFunction<K, V, Boolean> fun) {
+    public static <K, V> void removeIf(Map<K, V> map, BiPredicate<K, V> fun) {
         Iterator<Entry<K, V>> it = map.entrySet().iterator();
         while(it.hasNext()) {
             Entry<K, V> e = it.next();
-            if (fun.apply(e.getKey(), e.getValue())) it.remove();
+            if (fun.test(e.getKey(), e.getValue())) it.remove();
         }
     }
     public static <V> List<V> flattenMap(Map<?, ? extends Collection<V>> map) {

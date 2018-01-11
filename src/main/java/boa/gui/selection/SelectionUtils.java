@@ -247,7 +247,7 @@ public class SelectionUtils {
     public static ImageObjectInterface fixIOI(ImageObjectInterface i, int structureIdx) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i!=null && i.getChildStructureIdx()!=structureIdx) {
-            Image im = iwm.getImage(i, false);
+            Image im = iwm.getImage(i);
             i = iwm.getImageObjectInterface(im, structureIdx);
         }
         if (i==null) i = iwm.getImageObjectInterface(null, structureIdx);
@@ -314,7 +314,7 @@ public class SelectionUtils {
         Collections.sort(parentList);
         
         ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentList, s.getStructureIdx());
-        ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(displayStructureIdx, true), i, displayStructureIdx, false, true);
+        ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(displayStructureIdx, true), i, displayStructureIdx, true);
     }
         
     public static void setMouseAdapter(final JList list) {

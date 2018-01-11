@@ -136,7 +136,7 @@ public class TestTracker {
         logger.debug("generating TOI");
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
         Image interactiveImage = i.generateRawImage(structureIdx, true);
-        iwm.addImage(interactiveImage, i, structureIdx, false, true);
+        iwm.addImage(interactiveImage, i, structureIdx, true);
         logger.debug("total objects: {} ({})", i.getObjects().size(), StructureObjectUtils.getChildrenMap(parentTrack, structureIdx).size());
         
         if (structureIdx==2) {
@@ -189,7 +189,7 @@ public class TestTracker {
             ImageObjectInterface i = iwm.getImageTrackObjectInterface(pt, structureIdx);
             Image im = i.generateRawImage(structureIdx, true).duplicate(name); // duplicate if not hascode collapse in case of trackImage
             //im.setName(name);
-            iwm.addImage(im, i, structureIdx, false, true);
+            iwm.addImage(im, i, structureIdx, true);
             iwm.setInteractiveStructure(structureIdx);
             iwm.displayAllObjects(im);
             iwm.displayAllTracks(im);

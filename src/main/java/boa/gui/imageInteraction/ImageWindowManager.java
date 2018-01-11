@@ -92,7 +92,6 @@ public abstract class ImageWindowManager<T, U, V> {
     final static int trackArrowStrokeWidth = 3;
     protected final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
     protected final HashMap<Image, ImageObjectInterfaceKey> imageObjectInterfaceMap;
-    protected final HashMap<Image, Boolean> isLabelImage;
     protected final HashMapGetCreate<StructureObject, List<List<StructureObject>>> trackHeadTrackMap;
     protected final LinkedHashMap<String, T> displayedRawInputFrames = new LinkedHashMap<>();
     protected final LinkedHashMap<String, T> displayedPrePocessedFrames = new LinkedHashMap<>();
@@ -115,7 +114,6 @@ public abstract class ImageWindowManager<T, U, V> {
         this.listener=null;
         this.displayer=displayer;
         imageObjectInterfaceMap = new HashMap<Image, ImageObjectInterfaceKey>();
-        isLabelImage = new HashMap<Image, Boolean>();
         imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
         trackHeadTrackMap = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());
     }
@@ -157,7 +155,6 @@ public abstract class ImageWindowManager<T, U, V> {
         imageObjectInterfaces.clear();
         if (!imageObjectInterfaceMap.isEmpty()) logger.debug("flush: will remove {} images", imageObjectInterfaceMap.size());
         imageObjectInterfaceMap.clear();
-        isLabelImage.clear();
         trackHeadTrackMap.clear();
         displayedRawInputFrames.clear();
         displayedPrePocessedFrames.clear();
@@ -178,19 +175,17 @@ public abstract class ImageWindowManager<T, U, V> {
         return interactiveStructureIdx;
     }
     
-    public Image getImage(ImageObjectInterface i, boolean labelImage) {
+    public Image getImage(ImageObjectInterface i) {
         if (i==null) {
             logger.error("cannot get image if IOI null");
             return null;
         }
         List<Image> list = Utils.getKeys(imageObjectInterfaceMap, new ImageObjectInterfaceKey(i.parents, i.childStructureIdx, i.isTimeImage()));
-        list.removeIf(im -> isLabelImage.get(im)!=labelImage);
         if (list.isEmpty()) return null;
         else return list.get(0);
     }
     public Image getImage(ImageObjectInterface i, int displayStructureIdx) {
         List<Image> list = Utils.getKeys(imageObjectInterfaceMap, new ImageObjectInterfaceKey(i.parents, displayStructureIdx, i.isTimeImage()));
-        list.removeIf(im -> isLabelImage.get(im));
         if (list.isEmpty()) return null;
         else return list.get(0);
     }
@@ -200,7 +195,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (b) displayedInteractiveImages.add(image);
     }
     
-    public void addImage(Image image, ImageObjectInterface i, int displayedStructureIdx, boolean labelImage, boolean displayImage) {
+    public void addImage(Image image, ImageObjectInterface i, int displayedStructureIdx, boolean displayImage) {
         if (image==null) return;
         //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
         logger.debug("add image: {} (hash: {}), IOI exists: {} ({})", image.getName(), image.hashCode(), imageObjectInterfaces.containsKey(i.getKey()), imageObjectInterfaces.containsValue(i));
@@ -210,7 +205,6 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         //T dispImage = getImage(image);
         imageObjectInterfaceMap.put(image, new ImageObjectInterfaceKey(i.parents, displayedStructureIdx, i.isTimeImage()));
-        isLabelImage.put(image, labelImage);
         if (displayImage) displayImage(image, i);
     }
     
@@ -341,6 +335,8 @@ public abstract class ImageWindowManager<T, U, V> {
         if (i!=null) {
             logger.debug("reloading object for parentTrackHead: {} structure: {}", key.parent.get(0), key.displayedStructureIdx);
             i.reloadObjects();
+            /*
+            // also reload all label images!!
             for (Entry<Image, ImageObjectInterfaceKey> e : imageObjectInterfaceMap.entrySet()) if (e.getValue().equals(key)) {
                 //logger.debug("updating image: {}", e.getKey().getName());
                 if (isLabelImage.get(e.getKey())) {
@@ -350,6 +346,7 @@ public abstract class ImageWindowManager<T, U, V> {
                 hideAllRois(null, true, true);
                 if (!track) getDisplayer().updateImageDisplay(e.getKey());
             }
+            */
         }
     }
     protected void reloadObjects_(StructureObject parent, int childStructureIdx, boolean track) {
@@ -397,10 +394,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         ImageObjectInterfaceKey key = imageObjectInterfaceMap.get(image);
         if (key==null) return null;
-        if (isLabelImage.get(image)) return this.imageObjectInterfaces.get(key);
-        else { // for raw image, use the childStructureIdx set by the GUI. Creates the ImageObjectInterface if necessary 
-            return getImageObjectInterface(image, interactiveStructureIdx);
-        }
+        return getImageObjectInterface(image, interactiveStructureIdx); // use the interactive structure. Creates the ImageObjectInterface if necessary 
     }
     public ImageObjectInterface getImageObjectInterface(Image image, int structureIdx) {
         if (image==null) {
@@ -428,7 +422,6 @@ public abstract class ImageWindowManager<T, U, V> {
     
     public void removeImage(Image image) {
         imageObjectInterfaceMap.remove(image);
-        isLabelImage.remove(image);
         //removeClickListener(image);
     }
     public void removeImageObjectInterface(ImageObjectInterfaceKey key) {

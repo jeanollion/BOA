@@ -134,25 +134,14 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
         ObjectNode objectNode;
         JMenuItem[] actions;
         JMenuItem[] openRaw;
-        JMenuItem[] openSeg;
         public ObjectNodeUI(ObjectNode on) {
             this.objectNode=on;
-            this.actions = new JMenuItem[3];
-            actions[0] = new JMenuItem("Open Segmentation Mask");
-            actions[0].setAction(
-                new AbstractAction("Open Segmentation Mask") {
-                    @Override
-                    public void actionPerformed(ActionEvent ae) {
-                        logger.debug("opening object mask for object {} of structure: {}", idx, parent.idx);
-                        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx(), true);
-                        ImageWindowManagerFactory.getImageManager().addImage(i.generateLabelImage(), i, i.getChildStructureIdx(), true, true);
-                    }
-                }
-            );
+            this.actions = new JMenuItem[1];
+            
             String[] structureNames = objectNode.data.getExperiment().getStructuresAsString();
             
             JMenu rawSubMenu = new JMenu("Open Raw Input Image");
-            actions[1] = rawSubMenu;
+            actions[0] = rawSubMenu;
             openRaw=new JMenuItem[structureNames.length];
             for (int i = 0; i < openRaw.length; i++) {
                 openRaw[i] = new JMenuItem(structureNames[i]);
@@ -163,7 +152,7 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
                             int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx(), true);
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, false, true);
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, true);
                         }
                     }
                 );

@@ -2197,7 +2197,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             List<StructureObject> parentTrack = StructureObjectUtils.getTrack(nextParent, false);
             i= ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentTrack, i.getChildStructureIdx());
             Image im = ImageWindowManagerFactory.getImageManager().getImage(i, i.getChildStructureIdx());
-            if (im==null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(i.getChildStructureIdx(), true), i, i.getChildStructureIdx(), false, true);
+            if (im==null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(i.getChildStructureIdx(), true), i, i.getChildStructureIdx(), true);
             else ImageWindowManagerFactory.getImageManager().setActive(im);
         }
     }
@@ -2273,11 +2273,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     List track = db.getDao(nextParent.getPositionName()).getTrack(nextParent);
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
                     ImageObjectInterface nextI = iwm.getImageTrackObjectInterface(track, sel.getStructureIdx());
-                    Image im = iwm.getImage(nextI, false);
+                    Image im = iwm.getImage(nextI);
                     boolean newImage = im==null;
                     if (im==null) {
                         im = nextI.generateRawImage(structureDisplay, true);
-                        iwm.addImage(im, nextI, structureDisplay, false, true);
+                        iwm.addImage(im, nextI, structureDisplay, true);
                         
                     }
                     else ImageWindowManagerFactory.getImageManager().setActive(im);

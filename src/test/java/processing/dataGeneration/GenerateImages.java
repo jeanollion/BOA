@@ -75,7 +75,7 @@ public class GenerateImages {
         BoundingBox crop = new BoundingBox(0, imBact.getSizeX()-1, 0, yMax, 0, 0);
         imBact=imBact.crop(crop);
         imMut=imMut.crop(crop);
-        iwm.addImage(imMut, i, 2, false, true);
+        iwm.addImage(imMut, i, 2, true);
         Palette.currentColorIdx=0.5;
         Palette.increment=0.1;
         iwm.displayTracks(imMut, i, allMuts.values(), true);

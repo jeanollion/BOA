@@ -68,7 +68,7 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
         int count = 0;
         for (int i : taskIdx) {
             String message = task.run(i);
-            if (message!=null) publish(message);
+            if (message!=null&&!"".equals(message)) publish(message);
             setProgress(100 * (++count) / taskIdx.length);
         }
         return 0;
