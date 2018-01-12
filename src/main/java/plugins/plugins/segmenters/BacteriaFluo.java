@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -210,9 +211,10 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         */
         EdgeDetector seg = new EdgeDetector(); // keep defaults parameters ? 
         seg.setTestMode(debug);
-        //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2));
-        seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)); // min scale = 1.5, max = 2 min smooth scale = 2
+        //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(1.5)); // min = 1.5
+        seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)); // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5
         seg.setSecondaryThresholdMap(splitAndMerge.getHessian());
+        seg.setWsPriorityMap(getSmoothed(input));
         //seg.setThresholder(new BackgroundThresholder(4, 4, 1).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu))); // useless if secondary map
         ObjectPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
         if (false) { // when done on gradient -> intermediate regions are kept -> remove using hessian value
@@ -242,11 +244,13 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         res = seg.runSegmenter(input, structureIdx, parent);
         if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After second ws"));
         */
+        
         boolean localThreshold = true;
         if (localThreshold) {
             // TODO LOG TO FILE NE FCT PLUS!!
             // local threshold on each cell // TODO: MOP: teser la robustesse des differentes methodes en mesurant le sigma du growth rate
             Image erodeMap = getSmoothed(input);
+            if (debug) ImageWindowManagerFactory.showImage(erodeMap);
             Object3DCluster<SplitAndMerge.Interface> inter = splitAndMerge.getInterfaces(res, false);
             for (Object3D o : res.getObjects()) {
                 Set<Voxel> contour = new HashSet<>(o.getContour());
@@ -256,12 +260,16 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
                 interVox.retainAll(contour);
                 contour.removeAll(interVox);
                 double thld = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.075); // TODO set quantile as parameter
-                o.erodeContours(erodeMap, thld, true, interVox);
-                double thld2 = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.025); // case of first and last cells
+                o.erodeContours(erodeMap, thld, true, interVox); // only erode from interface
+                /*double thld2 = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.075); // case of first and last cells
                 o.erodeContours(erodeMap, thld2, true, contour);
+                logger.debug("o: {} before dilate: {}, thld: {}, thld2: {}", o.getLabel(), o.getVoxels().size(), thld2);
+                o.dilateContours(erodeMap, thld2, true, null, res.getLabelMap());
+                logger.debug("after dilate: {}", o.getVoxels().size());*/
             }
             res.redrawLabelMap(true);
             res = new ObjectPopulation(res.getLabelMap(), true); // update bounds of objects
+            
             if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
         
         }
@@ -418,7 +426,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
 
     @Override public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         if (splitAndMerge==null) splitAndMerge=initializeSplitAndMerge(input);
-        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
+        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         ObjectPopulation pop =  WatershedTransform.watershed(splitAndMerge.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(getNormalizedHessian(input), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
         
         if (verboseManualSeg) {

@@ -77,7 +77,7 @@ public class ObjectPopulation {
      */
     public ObjectPopulation(ImageProperties properties) {
         this.properties = new BlankMask("", properties);
-        this.objects=new ArrayList<Object3D>();
+        this.objects=new ArrayList<>();
     }
     
     /**
@@ -117,18 +117,21 @@ public class ObjectPopulation {
         if (objects != null) {
             this.objects = objects;
         } else {
-            this.objects = new ArrayList<Object3D>();
+            this.objects = new ArrayList<>();
         }
-        if (properties!=null) this.properties = new BlankMask("", properties);
+        if (properties!=null) {
+            //for (Object3D o : objects)  if (o.is2D()==null) o.setIs2D(properties.getSizeZ()==1);
+            this.properties = new BlankMask("", properties);
+        }
     }
     
     public ObjectPopulation(List<Object3D> objects, ImageProperties properties, boolean absoluteLandmark) {
-        if (objects != null) {
-            this.objects = objects;
-        } else {
-            this.objects = new ArrayList<Object3D>();
+        if (objects != null) this.objects = objects;
+        else this.objects = new ArrayList<>();
+        if (properties!=null) {
+            //for (Object3D o : objects) o.setIs2D(properties.getSizeZ()==1);
+            this.properties = new BlankMask("", properties);
         }
-        if (properties!=null) this.properties = new BlankMask("", properties);
         this.absoluteLandmark=absoluteLandmark;
         for (Object3D o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
         //checkForDuplicateLabel();
@@ -141,9 +144,15 @@ public class ObjectPopulation {
         } else {
             this.objects = new ArrayList<Object3D>();
         }
-        if (properties!=null) this.properties = new BlankMask("", properties);
+        if (properties!=null) {
+            //for (Object3D o : objects) o.setIs2D(properties.getSizeZ()==1);
+            this.properties = new BlankMask("", properties);
+        }
         this.absoluteLandmark=absoluteLandmark;
-        for (Object3D o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
+        for (Object3D o : objects) {
+            //o.setIs2D(properties.getSizeZ()==1);
+            o.setIsAbsoluteLandmark(absoluteLandmark);
+        }
         labelImage = labelMap;
         this.relabel(true);
     }
@@ -162,7 +171,7 @@ public class ObjectPopulation {
     
     public ObjectPopulation duplicate() {
         if (objects!=null) {
-            ArrayList<Object3D> ob = new ArrayList<Object3D>(objects.size());
+            ArrayList<Object3D> ob = new ArrayList<>(objects.size());
             for (Object3D o : objects) ob.add(o.duplicate());
             return new ObjectPopulation(ob, properties, absoluteLandmark).setConnectivity(lowConnectivity);
         } else if (labelImage!=null) {
@@ -225,8 +234,11 @@ public class ObjectPopulation {
     }
         
     private void constructObjects() {
-        Object3D[] obs = ObjectFactory.getObjectsImage(labelImage, false);
-        objects = new ArrayList<Object3D>(Arrays.asList(obs));
+        if (labelImage==null) objects = new ArrayList<>();
+        else {
+            Object3D[] obs = ObjectFactory.getObjectsImage(labelImage, false);
+            objects = new ArrayList<>(Arrays.asList(obs));
+        }
     }
     
     
@@ -274,7 +286,6 @@ public class ObjectPopulation {
     public void relabel(boolean fillImage) {
         int idx = 1;
         for (Object3D o : getObjects()) o.label = idx++;
-        if (objects == null || objects.isEmpty()) return;
         redrawLabelMap(fillImage);
     }
     public void redrawLabelMap(boolean fillImage) {
@@ -312,9 +323,9 @@ public class ObjectPopulation {
     
     public List<Object3D> getExtremaSeedList(final boolean maxOfObjectVoxels) {
         int label=1;
-        List<Object3D> seeds = new ArrayList<Object3D>(getObjects().size());
+        List<Object3D> seeds = new ArrayList<>(getObjects().size());
         for (final Object3D o : getObjects()) {
-            seeds.add(new Object3D(o.getExtremum(maxOfObjectVoxels), label++, o.getScaleXY(), o.getScaleZ()));
+            seeds.add(new Object3D(o.getExtremum(maxOfObjectVoxels), label++, o.is2D(), o.getScaleXY(), o.getScaleZ()));
         }
         return seeds;
     }
@@ -323,7 +334,7 @@ public class ObjectPopulation {
         ImageInteger mask = ImageOperations.not(getLabelMap(), new ImageByte("", 0, 0, 0));
         if (!absoluteLandmark) mask.resetOffset();
         for (Object3D o : objects) {
-            res.put(o, new Object3D(ImageOperations.getDilatedMask(o.getMask(), radiusXY, radiusZ, mask, onlyDilatedPart), o.getLabel()));
+            res.put(o, new Object3D(ImageOperations.getDilatedMask(o.getMask(), radiusXY, radiusZ, mask, onlyDilatedPart), o.getLabel(), o.is2D()));
         }
         /*ImageInteger dilLabelMap = Image.createEmptyImage("dilatedObjects", getLabelMap(), getLabelMap());
         for (Object3D o : res.values()) {
@@ -494,11 +505,15 @@ public class ObjectPopulation {
     
     public void mergeAll() {
         if (getObjects().isEmpty()) return;
+        boolean one3D = false;
         if (labelImage!=null) {
             for (Object3D o : getObjects()) draw(o, 1);
         }
-        for (Object3D o : getObjects()) o.setLabel(1);
-        Object3D o = new Object3D(getLabelMap(), 1);
+        for (Object3D o : getObjects()) {
+            o.setLabel(1);
+            if (o.is2D()) one3D = true;
+        }
+        Object3D o = new Object3D(getLabelMap(), 1, !one3D);
         if (!this.absoluteLandmark) o.translate(o.getBounds().reverseOffset());
         objects.clear();
         objects.add(o);

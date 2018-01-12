@@ -506,7 +506,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         if (verboseManualSeg) logger.debug("threshold: {} (type: {})", pv.threshold, threshold.toJSONEntry().toJSONString());
         ImageOperations.and(segmentationMask, pv.getSegmentationMask(), pv.getSegmentationMask());
         ObjectPopulation res = pv.splitSegmentationMask(pv.getSegmentationMask(), pv.minSizePropagation);
-        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
+        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         for (Object3D o : seedObjects) o.draw(pv.getSegmentationMask(), 1, null); // to ensure points are included in mask
         Object3DCluster<InterfaceBT> c = new Object3DCluster(res, false, true, pv.getFactory());
         c.setFixedPoints(seedObjects);
@@ -988,7 +988,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             if (!computeOutsideMeanForEachObject) {
                 ImageByte res = ImageOperations.getDilatedMask(population.getLabelMap(), dilRadiusXY, dilRadiusZ, ImageOperations.not(population.getLabelMap(), new ImageByte("", 0, 0, 0)), true);
                 new IJImageDisplayer().showImage(res.setName("dil mask"));
-                Object3D dilO = new Object3D(res, 1);
+                Object3D dilO = new Object3D(res, 1, res.getSizeZ()==1);
                 meanOut = BasicMeasurements.getMeanValue(dilO, intensityMap, true);
             } else dilatedObjects = population.getDilatedObjects(dilRadiusXY, dilRadiusZ, true);
         }

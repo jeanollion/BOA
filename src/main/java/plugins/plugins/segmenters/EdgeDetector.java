@@ -30,12 +30,15 @@ import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
 import ij.process.AutoThresholder;
+import image.Histogram;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
 import image.ImageInteger;
+import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageProperties;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 import measurement.BasicMeasurements;
@@ -65,6 +68,7 @@ public class EdgeDetector implements Segmenter {
     Image wsMap;
     ImageInteger seedMap;
     Image secondaryThresholdMap;
+    Image watershedPriorityMap;
     public Image getWsMap(Image input, StructureObjectProcessing parent) {
         if (wsMap==null) wsMap = watershedMap.filter(input, parent);
         return wsMap;
@@ -79,11 +83,15 @@ public class EdgeDetector implements Segmenter {
         this.wsMap = wsMap;
         return this;
     }
-
+    public EdgeDetector setWsPriorityMap(Image map) {
+        this.watershedPriorityMap = map;
+        return this;
+    }
     public EdgeDetector setSeedMap(ImageInteger seedMap) {
         this.seedMap = seedMap;
         return this;
     }
+    
     public EdgeDetector setSecondaryThresholdMap(Image secondaryThresholdMap) {
         this.secondaryThresholdMap = secondaryThresholdMap;
         if (secondaryThresholdMap!=null) this.thresholdMethod.setSelectedIndex(2);
@@ -97,6 +105,10 @@ public class EdgeDetector implements Segmenter {
             }
         }
         return secondaryThresholdMap; // todo test if prefilter differs from ws map to avoid processing 2 times same image
+    }
+    public Image getWsPriorityMap(Image input, StructureObjectProcessing parent) {
+        if (this.watershedPriorityMap==null) watershedPriorityMap = ImageFeatures.gaussianSmooth(input, 2, false); // TODO parameter?
+        return watershedPriorityMap;
     }
     public EdgeDetector setPreFilters(PreFilter... prefilters) {
         this.watershedMap.removeAllElements();
@@ -113,7 +125,11 @@ public class EdgeDetector implements Segmenter {
     }
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        ObjectPopulation allRegions = WatershedTransform.watershed(getWsMap(input, parent), parent.getMask(), getSeedMap(input, parent), false, false);
+        WatershedTransform wt = new WatershedTransform(getWsMap(input, parent), parent.getMask(), Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, parent))), false, null, null);
+        wt.setLowConnectivity(false);
+        //wt.setPriorityMap(getWsPriorityMap(input, parent));
+        wt.run();
+        ObjectPopulation allRegions = wt.getObjectPopulation();
         if (testMode) {
             ImageWindowManagerFactory.showImage(allRegions.getLabelMap().duplicate("Segmented Regions"));
             ImageWindowManagerFactory.showImage(seedMap.setName("Seeds"));
@@ -143,7 +159,20 @@ public class EdgeDetector implements Segmenter {
             for (Object3D o : allRegions.getObjects()) {
                 if (values[0].get(o)>=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
             }
-            double thld = BackgroundThresholder.runThresholder(valueMap, parent.getMask(), 4, 4, 1, thld1); // run background thlder with thld1 as limit to select border form interfaces
+            Histogram h = valueMap.getHisto256(parent.getMask());
+            // search for largest segment with no values
+            int sMax = 0, eMax = 0;
+            for (int s = 0; s<254; ++s) {
+                if (h.data[s]!=0) continue;
+                int e = s;
+                while(e<254 && h.data[e+1]==0) ++e;
+                if (e-s>eMax-sMax) {
+                    eMax = e;
+                    sMax = s;
+                }
+            }
+            double thld  = h.getValueFromIdx((eMax+sMax)/2.0);
+            //double thld = BackgroundThresholder.runThresholder(valueMap, parent.getMask(), 4, 4, 1, thld1); // run background thlder with thld1 as limit to select border form interfaces
             if (testMode) {
                 ImageWindowManagerFactory.showImage(valueMap2.setName("Secondary thld value map. Thld: "+thld2));
                 ImageWindowManagerFactory.showImage(valueMap.setName("Value map. Thld: "+thld));

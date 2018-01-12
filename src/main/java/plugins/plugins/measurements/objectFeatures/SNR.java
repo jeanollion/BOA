@@ -101,7 +101,7 @@ public class SNR extends IntensityMeasurement {
                 if (dilRad>0)  {
                     ImageInteger oMask = o.getMask();
                     oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilRad, dilRad, oMask), false, true);
-                    oDil = new Object3D(oMask, 1);
+                    oDil = new Object3D(oMask, 1, o.is2D());
                 }
                 parentChildrenMap.getAndCreateIfNecessary(p).add(new Pair(o, oDil));
             }
@@ -124,7 +124,7 @@ public class SNR extends IntensityMeasurement {
                     ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(erodeRad, erodeRad, mask), true); // erode mask // TODO dillate objects?
                     if (maskErode.count()>0) mask = maskErode;
                 }
-                Object3D parentObject = new Object3D(mask, 1);
+                Object3D parentObject = new Object3D(mask, 1, p.is2D());
                 for (Pair<Object3D, Object3D> o : children) childrenParentMap.put(o.key, parentObject);
                 
                 //ImageWindowManagerFactory.showImage( mask);

@@ -73,8 +73,8 @@ public class FitMicrochannelHeadToGradient implements PostFilter {
         double scaleZ = grad.getScaleZ();
         Voxel corner1 = new Voxel(0, 0, 0);
         Voxel corner2 = new Voxel(gradLocal.getSizeX()-1, 0, 0);
-        seeds.add(new Object3D(corner1, ++label, (float)scaleXY, (float)scaleZ));
-        seeds.add(new Object3D(corner2, ++label, (float)scaleXY, (float)scaleZ));
+        seeds.add(new Object3D(corner1, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
+        seeds.add(new Object3D(corner2, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
         // add all local min within innerHead
         int margin =(int)Math.round(gradientScale+0.5)+1;
         if (margin*2>=b.getSizeX()-2) margin = Math.max(1, b.getSizeX()/4);

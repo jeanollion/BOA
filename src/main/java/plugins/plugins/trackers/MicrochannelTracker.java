@@ -101,7 +101,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
-        Map<Integer, List<StructureObject>> map = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
+        Map<Integer, List<StructureObject>> map = StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx);
         
         logger.debug("tracking: {}", Utils.toStringList(map.entrySet(), e->"t:"+e.getKey()+"->"+e.getValue().size()));
         tmi.addObjects(map);
@@ -248,7 +248,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                 int height = b.getSizeY();
                 if (height+offY>parentBounds.getyMax()) height = parentBounds.getyMax()-offY;
                 BlankMask m = new BlankMask("", width, height, b.getSizeZ(), offX, offY, b.getzMin(), o.getScaleXY(), o.getScaleZ());
-                o.setObject(new Object3D(m, o.getIdx()+1));
+                o.setObject(new Object3D(m, o.getIdx()+1, o.is2D()));
             }
         }
         if (debug) logger.debug("mc after adjust width: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
@@ -344,7 +344,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                                 break;
                             }
                             int idx = parent.getChildren(structureIdx).size(); // idx = last element -> in order to be consistent with the bounding box map because objects are adjusted afterwards
-                            Object3D o = new Object3D(m, idx+1);
+                            Object3D o = new Object3D(m, idx+1, parent.is2D());
                             StructureObject s = new StructureObject(f, structureIdx, idx, o, parent);
                             parent.getChildren(structureIdx).add(s);
                             if (debug) logger.debug("add object: {}, bounds: {}, refBounds: {}", s, s.getBounds(), ref.getBounds());

@@ -61,8 +61,8 @@ public class DummySegmenter implements Segmenter {
             int w = (int)(mask.getSizeX()*0.8d);
             for (int i = 0; i<nb; ++i) masks[i] = new BlankMask("object"+i, w, (int)h, mask.getSizeZ(), (int)(0.1*mask.getSizeX()) ,(int)((2*i+1)*h), 0, mask.getScaleXY(), mask.getScaleZ());
         }
-        ArrayList<Object3D> objects = new ArrayList<Object3D>(nb); int idx=1;
-        for (BlankMask m :masks) objects.add(new Object3D(m, idx++));
+        ArrayList<Object3D> objects = new ArrayList<>(nb); int idx=1;
+        for (BlankMask m :masks) objects.add(new Object3D(m, idx++, mask.getSizeZ()==1));
         return new ObjectPopulation(objects, input);
     }
 

@@ -45,7 +45,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected int idx;
     protected transient final SmallArray<List<StructureObject>> childrenSM=new SmallArray<List<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
     protected transient ObjectDAO dao;
-    private Boolean is2D=null;
     
     // track-related attributes
     protected int timePoint;
@@ -88,18 +87,18 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public StructureObject(int timePoint, BlankMask mask, ObjectDAO dao) {
         this.id= Id.get().toHexString();
         this.timePoint=timePoint;
-        if (mask!=null) this.object=new Object3D(mask, 1);
+        if (mask!=null) this.object=new Object3D(mask, 1, true);
         this.structureIdx = -1;
         this.idx = 0;
         this.dao=dao;
     }
     public StructureObject duplicate() {
-        return duplicate(false);
+        return duplicate(false, false);
     }
-    public StructureObject duplicate(boolean generateNewID) {
+    public StructureObject duplicate(boolean generateNewID, boolean duplicateObject) {
         StructureObject res;
-        if (isRoot()) res = new StructureObject(timePoint, (BlankMask)getMask(), dao);
-        else res= new StructureObject(timePoint, structureIdx, idx, getObject(), getParent());
+        if (isRoot()) res = new StructureObject(timePoint, (BlankMask)(duplicateObject?getMask().duplicate():getMask()), dao);
+        else res= new StructureObject(timePoint, structureIdx, idx, duplicateObject?getObject().duplicate():getObject(), getParent());
         if (!generateNewID) res.id=id;
         res.previousId=previousId;
         res.nextId=nextId;
@@ -112,7 +111,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         res.rawImagesC=rawImagesC.duplicate();
         res.trackImagesC=trackImagesC.duplicate();
         res.offsetInTrackImage=offsetInTrackImage;
-        res.is2D=is2D;
         if (attributes!=null && !attributes.isEmpty()) { // deep copy of attributes
             res.attributes=new HashMap<>(attributes.size());
             for (Entry<String, Object> e : attributes.entrySet()) {
@@ -158,7 +156,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
 
     public Experiment getExperiment() {
-        if (dao==null) return null;
+        if (dao==null) {
+            if (parent!=null) return parent.getExperiment();
+            return null;
+        }
         return dao.getExperiment();
     }
     public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getPosition(getPositionName()):null;}
@@ -182,7 +183,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             StructureObject p = this;
             while (p.getStructureIdx()!=common) p = p.getParent();
             List<StructureObject> candidates = p.getChildren(parentStructureIdx);
-            //logger.debug("common parent: {}, candidates: {}", p, candidates);
+            logger.debug("{} (2D?:{} so2D?: {}) common parent: {}, candidates: {}", this, getObject().is2D(), is2D(), p, candidates);
             return StructureObjectUtils.getInclusionParent(getObject(), candidates, null);
         }
     }
@@ -703,9 +704,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // object- and image-related methods
     public Object3D getObject() {
         if (object==null) {
+            if (objectContainer==null) return null;
             synchronized(this) {
                 if (object==null) {
-                    object=objectContainer.getObject().setIsAbsoluteLandmark(true).setIs2D(is2D());
+                    object=objectContainer.getObject().setIsAbsoluteLandmark(true); 
                     if (attributes!=null) {
                         if (attributes.containsKey("Quality")) object.setQuality((Double)attributes.get("Quality"));
                         if (attributes.containsKey("Center")) object.setCenter(JSONUtils.fromDoubleArray((List)attributes.get("Center")));
@@ -857,18 +859,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public boolean is2D() {
-        if (is2D==null) {
-            if (isRoot()) is2D=true;
-            else {
-                synchronized(this) {
-                    if (is2D==null) {
-                        is2D = getExperiment().getPosition(getPositionName()).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
-                    } 
-                }
-            }
-        }
-        return is2D;
-        //return this.getMask().getSizeZ()==1;
+        if (getObject()!=null) return getObject().is2D();
+        if (isRoot()) return true;
+        return getExperiment().getPosition(getPositionName()).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {

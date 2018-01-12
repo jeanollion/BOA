@@ -289,12 +289,12 @@ public class SaveAndRetriveSegmentationData {
                 Voxel v = new Voxel(p.xpoints[0], p.ypoints[0], 0);
                 ArrayList<Voxel> vox = new ArrayList<Voxel>(1);
                 vox.add(v);
-                res.add(new Object3D(vox, i+1, 1, 1));
+                res.add(new Object3D(vox, i+1, true, 1, 1));
             } else {
                 //if (points) continue;
                 ImageProcessor mask = rois[i].getMask();
                 Rectangle bds = rois[i].getBounds();
-                res.add(new Object3D((ImageInteger)IJImageWrapper.wrap(new ImagePlus("", mask)).addOffset(new BoundingBox(bds.x, bds.y, 0)), i+1));
+                res.add(new Object3D((ImageInteger)IJImageWrapper.wrap(new ImagePlus("", mask)).addOffset(new BoundingBox(bds.x, bds.y, 0)), i+1, true));
             }
         } 
         return res;

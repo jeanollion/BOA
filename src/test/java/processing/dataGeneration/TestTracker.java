@@ -67,7 +67,7 @@ public class TestTracker {
         String dbName = "fluo171219_WT_750ms";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
-        int pIdx = 339;
+        int pIdx = 392;
         int mcIdx =0;
         int structureIdx = 2;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
@@ -84,7 +84,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,600); //  0,80);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,20); //  0,80);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 520, 580); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
@@ -137,10 +137,10 @@ public class TestTracker {
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
         Image interactiveImage = i.generateRawImage(structureIdx, true);
         iwm.addImage(interactiveImage, i, structureIdx, true);
-        logger.debug("total objects: {} ({})", i.getObjects().size(), StructureObjectUtils.getChildrenMap(parentTrack, structureIdx).size());
+        logger.debug("total objects: {} ({})", i.getObjects().size(), StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx).size());
         
         if (structureIdx==2) {
-            Collection<StructureObject> bact = Utils.flattenMap(StructureObjectUtils.getChildrenMap(parentTrack, 1));
+            Collection<StructureObject> bact = Utils.flattenMap(StructureObjectUtils.getChildrenByFrame(parentTrack, 1));
             Selection bactS = new Selection("bact", dao.getMasterDAO());
             bactS.setColor("Grey");
             bactS.addElements(bact);

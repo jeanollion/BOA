@@ -36,7 +36,7 @@ public abstract class ObjectContainer {
     public static final int MAX_VOX_2D_EMB = 30;
     protected transient StructureObject structureObject;
     BoundingBox bounds;
-    
+    boolean is2D;
     public ObjectContainer(StructureObject structureObject) {
         this.structureObject=structureObject;
         this.bounds=structureObject.getBounds();
@@ -46,18 +46,25 @@ public abstract class ObjectContainer {
     }
     protected float getScaleXY() {return structureObject.getMicroscopyField().getScaleXY();}
     protected float getScaleZ() {return structureObject.getMicroscopyField().getScaleZ();}
+    public boolean is2D() {return is2D;}
     public abstract Object3D getObject();
-    public abstract void updateObject();
+    public void updateObject() {
+        is2D = structureObject.getObject().is2D();
+        bounds = structureObject.getObject().getBounds();
+    }
     public abstract void deleteObject();
     public abstract void relabelObject(int newIdx);
     public void initFromJSON(Map<String, Object> json) {
         JSONArray bds =  (JSONArray)json.get("bounds");
         this.bounds=new BoundingBox();
         this.bounds.initFromJSONEntry(bds);
+        if (json.containsKey("is2D")) is2D = (Boolean)json.get("is2D");
+        else is2D = true; // for retrocompatibility. do not call to structure object's method at it may not be fully initiated and may not have access to experiment
     }
     public JSONObject toJSON() {
         JSONObject res = new JSONObject();
         res.put("bounds", bounds.toJSONEntry());
+        res.put("is2D", is2D);
         return res;
     }
     protected ObjectContainer() {}

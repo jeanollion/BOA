@@ -45,9 +45,9 @@ public class ObjectContainerVoxels extends ObjectContainer {
 
     @Override
     public void updateObject() {
+        super.updateObject();
         if (structureObject.getObject().getVoxels() != null) {
             createCoordsArrays(structureObject.getObject());
-            bounds = structureObject.getObject().getBounds();
         } else {
             x = null;
             y = null;
@@ -92,9 +92,9 @@ public class ObjectContainerVoxels extends ObjectContainer {
         }
         return voxels;
     }
-
+    @Override
     public Object3D getObject() {
-        return new Object3D(getVoxels(), structureObject.getIdx() + 1, bounds, structureObject.getScaleXY(), structureObject.getScaleZ());
+        return new Object3D(getVoxels(), structureObject.getIdx() + 1, bounds, is2D, structureObject.getScaleXY(), structureObject.getScaleZ());
     }
 
     @Override

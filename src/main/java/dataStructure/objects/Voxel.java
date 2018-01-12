@@ -104,6 +104,7 @@ public class Voxel implements Comparable<Voxel> {
         };
     }
 
+    @Override
     public int compareTo(Voxel other) {
         if (value < other.value) {
             return -1;

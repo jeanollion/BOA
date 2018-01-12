@@ -40,6 +40,7 @@ import utils.ArrayUtil;
  * @author jollion
  */
 public class Filters {
+    public static Neighborhood getNeighborhood(double radiusXY, ImageProperties image) {return image.getSizeZ()>1 ?getNeighborhood(radiusXY, image.getScaleXY()/image.getScaleZ(), image) : getNeighborhood(radiusXY, 1, image);}
     public static Neighborhood getNeighborhood(double radiusXY, double radiusZ, ImageProperties image) {return image.getSizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
       
     public static <T extends Image> T mean(Image image, T output, Neighborhood neighborhood) {

@@ -102,7 +102,7 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
         List<StructureObject> children = parent.getChildren(excludeStructureIdx);
         ImageByte mask  = TypeConverter.toByteMask(parent.getMask(), null, 1).setName("mask:");
         if (erodeObjectRaduis>0) {
-            ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(erodeObjectRaduis, erodeObjectRaduis, mask), true);
+            ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(erodeObjectRaduis, mask), true);
             //if (maskErode.count()>0) mask = maskErode;
             mask = maskErode;
         }
@@ -110,8 +110,8 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
             Object3D ob = o.getObject();
             if (dilateExcludeRadius>0)  {
                 ImageInteger oMask = o.getMask();
-                oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilateExcludeRadius, dilateExcludeRadius, oMask), false, true);
-                ob = new Object3D(oMask, 1);
+                oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilateExcludeRadius, oMask), false, true);
+                ob = new Object3D(oMask, 1, ob.is2D());
             }
             ob.draw(mask, 0, null);
         }

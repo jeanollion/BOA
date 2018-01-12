@@ -73,12 +73,12 @@ public class TestTrackStructure {
         setTrackLinks(Arrays.asList(rootT));
         dao.store(Arrays.asList(rootT));
         StructureObject[] mcT = new StructureObject[5];
-        for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject(i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i]);
+        for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject(i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1, false), rootT[i]);
         setTrackLinks(Arrays.asList(mcT));
         dao.store(Arrays.asList(mcT));
         StructureObject[][] bTM = new StructureObject[5][3];
         for (int t = 0; t<bTM.length; ++t) {
-            for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject(t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t]);
+            for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject(t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1, false), mcT[t]);
             //dao.storeLater(bTM[i]);
         }
         for (int i= 1; i<mcT.length; ++i) {

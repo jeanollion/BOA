@@ -42,12 +42,7 @@ public class ObjectContainerBlankMask extends ObjectContainer {
     
     @Override
     public Object3D getObject() {
-        return new Object3D(getImage(), structureObject.getIdx()+1);
-    }
-    
-    @Override
-    public void updateObject() {
-        bounds = structureObject.getObject().getBounds();
+        return new Object3D(getImage(), structureObject.getIdx()+1, is2D);
     }
     
     @Override public void deleteObject(){bounds=null;}

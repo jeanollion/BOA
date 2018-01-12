@@ -62,8 +62,8 @@ public class ObjectManipulationTest {
         
         bound1=new BoundingBox(0, 1, 0, 0,0,0);
         bound3 = new BoundingBox(2, 3, 1,1,1,1);
-        o1 = new Object3D(im.cropLabel(1, bound1), 1);
-        o3 = new Object3D(im.cropLabel(3, bound3), 3);
+        o1 = new Object3D(im.cropLabel(1, bound1), 1, false);
+        o3 = new Object3D(im.cropLabel(3, bound3), 3, false);
         
     }
     @Test

@@ -62,7 +62,7 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
     protected void setInterfaces(boolean background, boolean lowConnectivity) {
         Map<Integer, Object3D> objects = new HashMap<>();
         for (Object3D o : population.getObjects()) objects.put(o.getLabel(), o);
-        if (background) objects.put(0, new Object3D(new ArrayList<>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
+        if (background) objects.put(0, new Object3D(new ArrayList<>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getSizeZ()==1, population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
         ImageInteger inputLabels = population.getLabelMap();
         Voxel n;
         int otherLabel;

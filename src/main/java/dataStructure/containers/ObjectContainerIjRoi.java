@@ -59,10 +59,9 @@ public class ObjectContainerIjRoi extends ObjectContainer {
 
     @Override
     public void updateObject() {
-        if (structureObject.getObject().getMask() != null) {
-            createRoi(structureObject.getObject());
-            bounds = structureObject.getObject().getBounds();
-        } else roiZ = null;
+        super.updateObject();
+        if (structureObject.getObject().getMask() != null) createRoi(structureObject.getObject());
+        else roiZ = null;
     }
 
     private void createRoi(Object3D object) {
@@ -98,7 +97,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
     }
 
     public Object3D getObject() {
-        return new Object3D(getMask(), structureObject.getIdx() + 1);
+        return new Object3D(getMask(), structureObject.getIdx() + 1, is2D);
     }
 
     @Override

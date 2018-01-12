@@ -441,7 +441,7 @@ public class ParameterUtils {
                                 lastTest= new Pair<>(interactiveImage, ioi);
                                 iwm.addWindowClosedListener(interactiveImage, e->{iwm.removeImage(interactiveImage);iwm.removeImageObjectInterface(ioi.getKey()); GUI.getInstance().populateSelections(); lastTest=null; logger.debug("cloooooose image"); return null;});
                                 if (parentStrutureIdx!=segParentStrutureIdx) {
-                                    Collection<StructureObject> bact = Utils.flattenMap(StructureObjectUtils.getChildrenMap(parentTrack, segParentStrutureIdx));
+                                    Collection<StructureObject> bact = Utils.flattenMap(StructureObjectUtils.getChildrenByFrame(parentTrack, segParentStrutureIdx));
                                     Selection bactS = new Selection("testTrackerSelection", o.getDAO().getMasterDAO());
                                     bactS.setColor("Grey");
                                     bactS.addElements(bact);

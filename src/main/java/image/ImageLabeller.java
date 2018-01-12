@@ -63,7 +63,7 @@ public class ImageLabeller {
     }
     
     public static Object3D[] labelImage(ImageMask mask) {
-        if (mask instanceof BlankMask) return new Object3D[]{new Object3D((BlankMask)mask, 1)};
+        if (mask instanceof BlankMask) return new Object3D[]{new Object3D((BlankMask)mask, 1, mask.getSizeZ()==1)};
         else {
             ImageLabeller il = new ImageLabeller(mask);
             if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3DHalf;
@@ -74,7 +74,7 @@ public class ImageLabeller {
     }
     
     public static Object3D[] labelImageLowConnectivity(ImageMask mask) {
-        if (mask instanceof BlankMask) return new Object3D[]{new Object3D((BlankMask)mask, 1)};
+        if (mask instanceof BlankMask) return new Object3D[]{new Object3D((BlankMask)mask, 1, mask.getSizeZ()==1)};
         else {
             ImageLabeller il = new ImageLabeller(mask);
             if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3DLowHalf;
@@ -119,7 +119,7 @@ public class ImageLabeller {
                 return mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(v2.x, v2.y, v2.z) && mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(currentVoxel.x, currentVoxel.y, currentVoxel.z);
             }
         };
-        ObjectPopulation pop = WatershedTransform.watershed(mask, null, WatershedTransform.createSeeds(seeds, mask.getScaleXY(), mask.getScaleZ()), false, prop, fus, lowConnectivity);
+        ObjectPopulation pop = WatershedTransform.watershed(mask, null, WatershedTransform.createSeeds(seeds, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()), false, prop, fus, lowConnectivity);
         return pop;
     }
     protected Object3D[] getObjects() {
@@ -128,7 +128,7 @@ public class ImageLabeller {
         for (Spot s : spots.values()) {
             ArrayList<Voxel> voxels = s.voxels;
             voxels = new ArrayList(new HashSet(voxels)); // revmove duplicate voxels because of neighbourhood overlap
-            res[label++]= new Object3D(voxels, label, mask.getScaleXY(), mask.getScaleZ());
+            res[label++]= new Object3D(voxels, label, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ());
         }
         return res;
     }

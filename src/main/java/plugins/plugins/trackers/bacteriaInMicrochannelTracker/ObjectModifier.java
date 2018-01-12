@@ -116,7 +116,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
             cost = tracker.getSegmenter(frame, false).computeMergeCost(tracker.getImage(frame), listSource());
             List<Voxel> vox = new ArrayList(source.key.getVoxels().size()+source.value.getVoxels().size());
             vox.addAll(source.key.getVoxels()); vox.addAll(source.value.getVoxels());
-            value =new Object3D(vox, source.key.getLabel(), source.key.getScaleXY(), source.key.getScaleZ());
+            value =new Object3D(vox, source.key.getLabel(), source.key.is2D(), source.key.getScaleXY(), source.key.getScaleZ());
         }
         public Merge(int frame, Pair<Object3D, Object3D> source, Object3D value, double cost) {
             super(frame);

@@ -163,7 +163,7 @@ public class SegmentOnly implements ProcessingScheme {
             }
             ObjectPopulation pop=null;
             for (Entry<StructureObject, List<Object3D>> e : parentObjectMap.entrySet()) {
-                pop = new ObjectPopulation(e.getValue(), e.getKey().getMaskProperties(), true);
+                pop = new ObjectPopulation(e.getValue(), e.getKey().getRawImage(structureIdx), true); // should keep 3D information
                 e.getKey().setChildrenObjects(pop, structureIdx);
             }
             if (singleFrame) {

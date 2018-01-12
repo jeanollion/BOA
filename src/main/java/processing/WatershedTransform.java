@@ -31,11 +31,14 @@ import image.ImageMask;
 import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.TreeSet;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
@@ -49,6 +52,7 @@ public class WatershedTransform {
     final protected Spot[] spots; // map label -> spot (spots[0]==null)
     protected int spotNumber;
     final protected Image watershedMap;
+    protected Image priorityMap;
     final protected ImageInteger segmentedMap;
     final protected ImageMask mask;
     final boolean is3D;
@@ -58,13 +62,13 @@ public class WatershedTransform {
     FusionCriterion fusionCriterion;
     public static List<Object3D> duplicateSeeds(List<Object3D> seeds) {
         List<Object3D> res = new ArrayList<>(seeds.size());
-        for (Object3D o : seeds) res.add(new Object3D(new ArrayList<Voxel>(o.getVoxels()), o.getLabel(), o.getScaleXY(), o.getScaleZ()));
+        for (Object3D o : seeds) res.add(new Object3D(new ArrayList<Voxel>(o.getVoxels()), o.getLabel(), o.is2D(), o.getScaleXY(), o.getScaleZ()));
         return res;
     }
-    public static List<Object3D> createSeeds(List<Voxel> seeds, float scaleXY, float scaleZ) {
+    public static List<Object3D> createSeeds(List<Voxel> seeds, boolean is2D, float scaleXY, float scaleZ) {
         List<Object3D> res = new ArrayList<>(seeds.size());
         int label = 1;
-        for (Voxel v : seeds) res.add(new Object3D(new ArrayList<Voxel>(){{add(v);}}, label++, scaleXY, scaleZ));
+        for (Voxel v : seeds) res.add(new Object3D(new ArrayList<Voxel>(){{add(v);}}, label++, is2D, scaleXY, scaleZ));
         return res;
     }
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
@@ -84,7 +88,7 @@ public class WatershedTransform {
      * @return 
      */
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
-        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion).setConnectivity(lowConnectivity);
+        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion).setLowConnectivity(lowConnectivity);
         wt.run();
         return wt.getObjectPopulation();
     }
@@ -107,7 +111,8 @@ public class WatershedTransform {
     public WatershedTransform(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         if (mask==null) mask=new BlankMask("", watershedMap);
         this.decreasingPropagation = decreasingPropagation;
-        heap = decreasingPropagation ? new TreeSet<Voxel>(Voxel.getInvertedComparator()) : new TreeSet<Voxel>();
+        heap = decreasingPropagation ? new TreeSet<>(Voxel.getInvertedComparator()) : new TreeSet<>();
+        //heap = decreasingPropagation ? new PriorityQueue<>(Voxel.getInvertedComparator()) : new PriorityQueue<>();
         this.mask=mask;
         this.watershedMap=watershedMap;
         spots = new Spot[regionalExtrema.size()+1];
@@ -121,7 +126,7 @@ public class WatershedTransform {
         if (fusionCriterion==null) setFusionCriterion(new DefaultFusionCriterion());
         else setFusionCriterion(fusionCriterion);
     }
-    public WatershedTransform setConnectivity(boolean lowConnectivity) {
+    public WatershedTransform setLowConnectivity(boolean lowConnectivity) {
         this.lowConnectivity = lowConnectivity;
         return this;
     }
@@ -136,25 +141,154 @@ public class WatershedTransform {
         propagationCriterion.setUp(this);
         return this;
     }
+    public WatershedTransform setPriorityMap(Image priorityMap) {
+        if (!watershedMap.sameSize(priorityMap)) throw new IllegalArgumentException("PriorityMap should have same dimensions as watershed map");
+        this.priorityMap=priorityMap;
+        return this;
+    }
     
     public void run() {
-        for (Spot s : spots) {
-            if (s!=null) for (Voxel v : s.voxels) heap.add(v);
-        }
         double rad = lowConnectivity ? 1 : 1.5;
         EllipsoidalNeighborhood neigh = watershedMap.getSizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
+        
+        for (Spot s : spots) {
+            if (s!=null) {
+                for (Voxel v : s.voxels) {
+                    for (int i = 0; i<neigh.getSize(); ++i) {
+                        Voxel n = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]) ;
+                        if (segmentedMap.contains(n.x, n.y, n.z) && mask.insideMask(n.x, n.y, n.z)) heap.add(n);
+                    }
+                }
+            }
+        }
+        Score score = generateScore();
+        List<Voxel> nextProp  = new ArrayList<>(neigh.getSize());
+        Set<Integer> surroundingLabels = fusionCriterion==null || fusionCriterion instanceof DefaultFusionCriterion ? null : new HashSet<>(neigh.getSize());
         while (!heap.isEmpty()) {
+            //Voxel v = heap.poll();
             Voxel v = heap.pollFirst();
-            Spot currentSpot = spots[segmentedMap.getPixelInt(v.x, v.y, v.z)];
-            Voxel next;
+            if (segmentedMap.getPixelInt(v.x, v.y, v.z)>0) continue;
+            score.setUp(v);
             for (int i = 0; i<neigh.getSize(); ++i) {
-                next = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]);
-                //logger.trace("voxel: {} next: {}, mask contains: {}, insideMask: {}",v, next, mask.contains(next.x, next.y, next.getZ()) , mask.insideMask(next.x, next.y, next.getZ()));
-                if (segmentedMap.contains(next.x, next.y, next.z) && mask.insideMask(next.x, next.y, next.z)) currentSpot=propagate(currentSpot,v, next);
+                Voxel n = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]) ;
+                if (segmentedMap.contains(n.x, n.y, n.z) && mask.insideMask(n.x, n.y, n.z)) {
+                    int nextLabel = segmentedMap.getPixelInt(n.x, n.y, n.z);
+                    if (nextLabel>0) {
+                        if (surroundingLabels!=null) surroundingLabels.add(nextLabel);
+                        score.add(n, nextLabel);
+                    } else {
+                        n.value = watershedMap.getPixel(n.x, n.y, n.z);
+                        nextProp.add(n);
+                    }
+                }
+            }
+            int currentLabel = score.getLabel();
+            spots[currentLabel].addVox(v);
+            // check propagation criterion
+            nextProp.removeIf(n->!propagationCriterion.continuePropagation(v, n));
+            heap.addAll(nextProp);
+            nextProp.clear();
+            // check fusion criterion
+            if (surroundingLabels!=null) {
+                surroundingLabels.remove(currentLabel);
+                if (!surroundingLabels.isEmpty()) {
+                    Spot currentSpot = spots[currentLabel];
+                    for (int otherLabel : surroundingLabels) {
+                        if (fusionCriterion.checkFusionCriteria(currentSpot, spots[otherLabel], v)) {
+                            currentSpot = currentSpot.fusion(spots[otherLabel]);
+                        }
+                    }
+                    surroundingLabels.clear();
+                }
             }
         }
     }
-
+    private Score generateScore() {
+        if (this.priorityMap!=null) {
+            //return new MinDiffPriorityMap();
+            return new MaxPriority();
+            //return new MaxSeedPriority();
+        } 
+        return new MaxDiffWsMap();
+    }
+    private interface Score {
+        public abstract void setUp(Voxel center);
+        public abstract void add(Voxel v, int label);
+        public abstract int getLabel();
+    }
+    private class MaxDiffWsMap implements Score {
+        double centerV = 0;
+        double curDiff = -Double.MAX_VALUE;
+        int curLabel;
+        @Override
+        public void add(Voxel v, int label) {
+            //double diff=!decreasingPropagation ? watershedMap.getPixel(v.x, v.y, v.z) : -watershedMap.getPixel(v.x, v.y, v.z);
+            double diff = Math.abs(watershedMap.getPixel(v.x, v.y, v.z)-centerV);
+            if (diff>curDiff) {
+                curDiff=diff;
+                curLabel = label;
+            }
+        }
+        @Override
+        public int getLabel() {
+            return curLabel;
+        }
+        @Override
+        public void setUp(Voxel center) {
+            centerV = center.value;
+            curDiff = -Double.MAX_VALUE; // reset
+            curLabel=0;
+        }
+    }
+    private class MinDiffPriorityMap implements Score {
+        Voxel center;
+        double centerP;
+        double curDiff = Double.MAX_VALUE;;
+        int curLabel;
+        @Override
+        public void add(Voxel v, int label) {
+            double diff=Math.abs(priorityMap.getPixel(v.x, v.y, v.z)-centerP) ;
+            if (diff<curDiff) {
+                curDiff=diff;
+                curLabel = label;
+            }
+        }
+        @Override
+        public int getLabel() {
+            return curLabel;
+        }
+        @Override
+        public void setUp(Voxel center) {
+            centerP = priorityMap.getPixel(center.x, center.y, center.z);
+            curDiff = Double.MAX_VALUE; // reset
+            curLabel=0;
+        }
+    }
+    private class MaxPriority implements Score {
+        Voxel center;
+        double priority = -Double.MAX_VALUE;;
+        int curLabel;
+        @Override
+        public void add(Voxel v, int label) {
+            double p = priorityMap.getPixel(v.x, v.y, v.z);
+            if (p>priority) {
+                priority = p;
+                curLabel = label;
+            }
+        }
+        @Override
+        public int getLabel() {
+            return curLabel;
+        }
+        @Override
+        public void setUp(Voxel center) {
+            this.center=center;
+            priority = -Double.MAX_VALUE; // reset
+            curLabel=0;
+        }
+    }
+    
+    
     public Image getWatershedMap() {
         return watershedMap;
     }
@@ -172,30 +306,15 @@ public class WatershedTransform {
     public Spot[] getSpotArray() {
         return spots;
     }
-    public TreeSet<Voxel> getHeap() {
+    public Collection<Voxel> getHeap() {
         return heap;
     }
-    protected Spot propagate(Spot currentSpot, Voxel currentVoxel, Voxel nextVox) { /// nextVox.value = 0 at this step
-        int label = segmentedMap.getPixelInt(nextVox.x, nextVox.y, nextVox.z);
-        if (label!=0) {
-            if (label!=currentSpot.label) {
-                Spot s2 = spots[label];
-                if (fusionCriterion.checkFusionCriteria(currentSpot, s2, currentVoxel)) return currentSpot.fusion(s2);
-                else heap.remove(nextVox); // FIXME ??et dans les autres directions?
-            }
-        } else {
-            nextVox.value=watershedMap.getPixel(nextVox.x, nextVox.y, nextVox.z);
-            if (propagationCriterion.continuePropagation(currentVoxel, nextVox)) {
-                currentSpot.addVox(nextVox);
-                heap.add(nextVox);
-            }
-        }
-        return currentSpot;
-    }
+    
     
     public class Spot {
         public List<Voxel> voxels;
         int label;
+        float priorityValue;
         //Voxel seed;
         /*public Spot(int label, Voxel seed) {
             this.label=label;
@@ -209,8 +328,14 @@ public class WatershedTransform {
         public Spot(int label, List<Voxel> voxels) {
             this.label=label;
             this.voxels=voxels;
-            for (Voxel v :voxels) {
+            for (Voxel v : voxels) {
                 v.value=watershedMap.getPixel(v.x, v.y, v.z);
+                if (priorityMap!=null) {
+                    //v = PrioriyVoxel.fromVoxel(v);
+                    //((PrioriyVoxel)v).priority = priorityMap.getPixel(v.x, v.y, v.z);
+                    float p = priorityMap.getPixel(v.x, v.y, v.z);
+                    if (p>priorityValue) priorityValue = p;
+                }
                 heap.add(v);
                 segmentedMap.setPixel(v.x, v.y, v.z, label);
             }
@@ -242,7 +367,7 @@ public class WatershedTransform {
         }
         
         public Object3D toObject3D(int label) {
-            return new Object3D(voxels, label, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
+            return new Object3D(voxels, label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
         }
         
         public double getQuality() {
@@ -394,4 +519,37 @@ public class WatershedTransform {
             return false;
         }
     }
+    
+    /*public static class PrioriyVoxel extends Voxel {
+        float priority;
+        public PrioriyVoxel(int x, int y, int z) {
+            super(x, y, z);
+        }
+        public static PrioriyVoxel fromVoxel(Voxel v) {
+            PrioriyVoxel res = new PrioriyVoxel(v.x, v.y, v.z);
+            res.value=v.value;
+            return res;
+        }
+        @Override
+        public int compareTo(Voxel other) {
+            if (value < other.value) {
+                return -1;
+            } else if (value > other.value) {
+                return 1;
+            } 
+            if (other instanceof PrioriyVoxel) { // inverted order: larger value has priority
+                PrioriyVoxel otherV = (PrioriyVoxel)other;
+                if (priority>otherV.priority) return -1;
+                else if (priority<otherV.priority) return 1;
+            }
+            // consistancy with equals method    
+            if (x<other.x) return -1;
+            else if (x>other.x) return 1;
+            else if (y<other.y) return -1;
+            else if (y>other.y) return 1;
+            else if (z<other.z) return -1;
+            else if (z>other.z) return 1;
+            else return 0;
+        }
+    }*/
 }

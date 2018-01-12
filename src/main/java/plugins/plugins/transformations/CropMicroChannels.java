@@ -179,7 +179,7 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
         public Object3D getObject3D(int idx, float scaleXY, float scaleZ, boolean includeYMinShift, int zMax) {
             BoundingBox bds = getBounds(idx, includeYMinShift);
             if (zMax>1) bds.expandZ(zMax);
-            return new Object3D(new BlankMask("mask of:" + idx+1, bds.getImageProperties(scaleXY, scaleZ)), idx+1);
+            return new Object3D(new BlankMask("mask of:" + idx+1, bds.getImageProperties(scaleXY, scaleZ)), idx+1, bds.getSizeZ()==1);
         }
         public ObjectPopulation getObjectPopulation(ImageProperties im, boolean includeYMinShift) {
             List<Object3D> l = new ArrayList<>(xMin.length);

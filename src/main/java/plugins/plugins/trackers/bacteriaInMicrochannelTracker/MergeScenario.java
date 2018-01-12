@@ -68,7 +68,7 @@ public class MergeScenario extends CorrectionScenario {
                 vox.addAll(rem.getVoxels());
                 tracker.objectAttributeMap.remove(rem);
             }
-            Object3D merged = new Object3D(vox, idxMin+1, o.getScaleXY(), o.getScaleZ());
+            Object3D merged = new Object3D(vox, idxMin+1, o.is2D(), o.getScaleXY(), o.getScaleZ());
             tracker.populations.get(timePointMin).add(idxMin, merged);
             tracker.objectAttributeMap.put(merged, tracker.new TrackAttribute(merged, idxMin, timePointMin));
             tracker.resetIndices(timePointMin);

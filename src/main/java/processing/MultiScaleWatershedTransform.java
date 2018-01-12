@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
@@ -51,6 +52,7 @@ public class MultiScaleWatershedTransform {
     final protected ImageMask mask; // can be ref2D
     final boolean is3D;
     final boolean decreasingPropagation;
+    boolean lowConnectivity;
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
     
@@ -112,7 +114,103 @@ public class MultiScaleWatershedTransform {
         propagationCriterion.setUp(this);
         return this;
     }
+    public MultiScaleWatershedTransform setLowConnectivity(boolean lowConnectivity) {
+        this.lowConnectivity = lowConnectivity;
+        return this;
+    }
+    public void run() {
+        
+        double rad = lowConnectivity ? 1 : 1.5;
+        EllipsoidalNeighborhood neigh = segmentedMap.getSizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
+        
+        for (Spot s : spots) {
+            if (s!=null) {
+                for (Voxel v : s.voxels) {
+                    for (int i = 0; i<neigh.getSize(); ++i) {
+                        Voxel n = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]) ;
+                        if (segmentedMap.contains(n.x, n.y, n.z) && mask.insideMask(n.x, n.y, n.z)) heap.add(n);
+                    }
+                }
+            }
+        }
+        Score score = generateScore();
+        List<Voxel> nextProp  = new ArrayList<>(neigh.getSize());
+        Set<Integer> surroundingLabels = fusionCriterion==null || fusionCriterion instanceof DefaultFusionCriterion ? null : new HashSet<>(neigh.getSize());
+        while (!heap.isEmpty()) {
+            //Voxel v = heap.poll();
+            Voxel v = heap.pollFirst();
+            if (segmentedMap.getPixelInt(v.x, v.y, v.z)>0) continue;
+            score.setUp(v);
+            for (int i = 0; i<neigh.getSize(); ++i) {
+                Voxel n = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]) ;
+                if (segmentedMap.contains(n.x, n.y, n.z) && mask.insideMask(n.x, n.y, n.z)) {
+                    int nextLabel = segmentedMap.getPixelInt(n.x, n.y, n.z);
+                    if (nextLabel>0) {
+                        if (surroundingLabels!=null) surroundingLabels.add(nextLabel);
+                        score.add(n, nextLabel);
+                    } else nextProp.add(n);
+                }
+            }
+            int currentLabel = score.getLabel();
+            spots[currentLabel].addVox(v);
+            // check propagation criterion
+            for (Voxel n : nextProp) {
+                n.value = watershedMaps[spots[currentLabel].scale].getPixel(n.x, n.y, n.z);
+                if (propagationCriterion.continuePropagation(v, n)) { // check if voxel already in set
+                    if (!heap.contains(n)) heap.add(n); // if already present in set -> was accessed from lower value -> priority
+                }
+            }
+            nextProp.clear();
+            // check fusion criterion
+            if (surroundingLabels!=null) {
+                surroundingLabels.remove(currentLabel);
+                if (!surroundingLabels.isEmpty()) {
+                    Spot currentSpot = spots[currentLabel];
+                    for (int otherLabel : surroundingLabels) {
+                        if (fusionCriterion.checkFusionCriteria(currentSpot, spots[otherLabel], v)) {
+                            currentSpot = currentSpot.fusion(spots[otherLabel]);
+                        }
+                    }
+                    surroundingLabels.clear();
+                }
+            }
+        }
+    }
     
+    private Score generateScore() {
+        return new MaxDiffWsMap();
+    }
+    private interface Score {
+        public abstract void setUp(Voxel center);
+        public abstract void add(Voxel v, int label);
+        public abstract int getLabel();
+    }
+    private class MaxDiffWsMap implements Score {
+        Voxel center;
+        double curDiff = -Double.MAX_VALUE;
+        int curLabel;
+        @Override
+        public void add(Voxel v, int label) {
+            //double diff=!decreasingPropagation ? watershedMap.getPixel(v.x, v.y, v.z) : -watershedMap.getPixel(v.x, v.y, v.z);
+            double diff = Math.abs(watershedMaps[spots[label].scale].getPixel(v.x, v.y, v.z)-watershedMaps[spots[label].scale].getPixel(center.x, center.y, center.z)); // compare @ same scale
+            if (diff>curDiff) {
+                curDiff=diff;
+                curLabel = label;
+            }
+        }
+        @Override
+        public int getLabel() {
+            return curLabel;
+        }
+        @Override
+        public void setUp(Voxel center) {
+            this.center = center;
+            curDiff = -Double.MAX_VALUE; // reset
+            curLabel=0;
+        }
+    }
+    
+    /*
     public void run() {
         for (Spot s : spots) {
             if (s!=null) for (Voxel v : s.voxels) heap.add(v);
@@ -129,24 +227,7 @@ public class MultiScaleWatershedTransform {
             }
         }
     }
-    
-    public ImageInteger getLabelImage() {return segmentedMap;}
-    
-    public ObjectPopulation[] getObjectPopulation() {
-        ObjectPopulation[] res = new ObjectPopulation[this.watershedMaps.length];
-        ArrayList<Object3D>[] objects = new ArrayList[watershedMaps.length];
-        for (int i = 0; i<watershedMaps.length; ++i) objects[i] = new ArrayList<>();
-        int label = 1;
-        for (Spot s : spots) if (s!=null) objects[s.scale].add(s.toObject3D(label++));
-        for (int i = 0; i<watershedMaps.length; ++i) res[i] = new ObjectPopulation(objects[i], segmentedMap);
-        return res;
-    }
-    public static ObjectPopulation combine(ObjectPopulation[] pops, ImageProperties ip) {
-        ArrayList<Object3D> allObjects = new ArrayList<>();
-        for (int i = 0; i<pops.length; ++i) allObjects.addAll(pops[i].getObjects());
-        return new ObjectPopulation(allObjects, ip);
-    }
-    
+        
     protected Spot propagate(Spot currentSpot, Voxel currentVoxel, Voxel nextVox) { /// nextVox.value = 0 at this step
         int label = segmentedMap.getPixelInt(nextVox.x, nextVox.y, nextVox.z);
         if (label!=0) {
@@ -163,6 +244,24 @@ public class MultiScaleWatershedTransform {
             }
         }
         return currentSpot;
+    }
+    */
+    
+    public ImageInteger getLabelImage() {return segmentedMap;}
+    
+    public ObjectPopulation[] getObjectPopulation() {
+        ObjectPopulation[] res = new ObjectPopulation[this.watershedMaps.length];
+        ArrayList<Object3D>[] objects = new ArrayList[watershedMaps.length];
+        for (int i = 0; i<watershedMaps.length; ++i) objects[i] = new ArrayList<>();
+        int label = 1;
+        for (Spot s : spots) if (s!=null) objects[s.scale].add(s.toObject3D(label++));
+        for (int i = 0; i<watershedMaps.length; ++i) res[i] = new ObjectPopulation(objects[i], segmentedMap);
+        return res;
+    }
+    public static ObjectPopulation combine(ObjectPopulation[] pops, ImageProperties ip) {
+        ArrayList<Object3D> allObjects = new ArrayList<>();
+        for (int i = 0; i<pops.length; ++i) allObjects.addAll(pops[i].getObjects());
+        return new ObjectPopulation(allObjects, ip);
     }
     
     protected class Spot {
@@ -216,7 +315,7 @@ public class MultiScaleWatershedTransform {
         }
         
         public Object3D toObject3D(int label) {
-            return new Object3D(voxels, label, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
+            return new Object3D(voxels, label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
         }
         
         public double getQuality() {

@@ -81,8 +81,8 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         Result r = segment(input);
         if (r==null) return null;
-        ArrayList<Object3D> objects = new ArrayList<Object3D>(r.size());
-        for (int idx = 0; idx<r.xMax.length; ++idx) objects.add(new Object3D(new BlankMask("mask of microchannel:" + idx+1, r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1));
+        ArrayList<Object3D> objects = new ArrayList<>(r.size());
+        for (int idx = 0; idx<r.xMax.length; ++idx) objects.add(new Object3D(new BlankMask("mask of microchannel:" + idx+1, r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1, true));
         return new ObjectPopulation(objects, input);
     }
     

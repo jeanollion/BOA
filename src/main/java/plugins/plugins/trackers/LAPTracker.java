@@ -188,7 +188,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
             }
         });
         if (registerTMI) debugTMI=tmi;
-        Map<Integer, List<StructureObject>> objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
+        Map<Integer, List<StructureObject>> objectsF = StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx);
+        logger.debug("is2D: {}", Utils.toStringList(Utils.flattenMap(objectsF), o->o.getObject().is2D()+" size: "+o.getObject().getSize()));
         long t0 = System.currentTimeMillis();
         tmi.addObjects(objectsF);
         long t1 = System.currentTimeMillis();
@@ -211,7 +212,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
                 MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getObject(), o.getFrame()));
                 postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
                 removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
-                objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
+                objectsF = StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx);
             } else return;
         }
         long t2 = System.currentTimeMillis();
@@ -225,7 +226,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
             trimLQExtremityWithGaps(tmi, 2, true, true);
         }
         if (ok) {
-            objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
+            objectsF = StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx);
             tmi.setTrackLinks(objectsF);
         }
         

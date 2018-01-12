@@ -155,7 +155,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableTh
         ArrayList<Object3D> res = new ArrayList<Object3D>(objWidth.length);
         for (int i = 0; i < objWidth.length; ++i) {
             int xMin = Math.max((int) (objWidth[i].getBounds().getXMean() - channelWidth / 2.0), 0);
-            res.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), channelWidth, Math.min(channelHeight, image.getSizeY()-yStart), image.getSizeZ(), xMin, yStart, 0, image.getScaleXY(), image.getScaleZ()), i + 1));
+            res.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), channelWidth, Math.min(channelHeight, image.getSizeY()-yStart), image.getSizeZ(), xMin, yStart, 0, image.getScaleXY(), image.getScaleZ()), i + 1, true));
         }
         if (debug) {
             IJImageDisplayer disp = new IJImageDisplayer();

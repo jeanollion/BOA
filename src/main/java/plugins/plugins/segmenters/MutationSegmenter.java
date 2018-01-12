@@ -275,6 +275,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
                     //o.setQuality(lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0));
                 }
                 double zz = o.getCenter().length>2?o.getCenter()[2]:z;
+                //logger.debug("size : {} set quality: center: {} : z : {}, bounds: {}, is2D: {}", o.getSize(), o.getCenter(), z, wsMap[i].getBoundingBox().translateToOrigin(), o.is2D());
+                if (zz>wsMap[i].getSizeZ()-1) zz=wsMap[i].getSizeZ()-1;
                 o.setQuality(Math.sqrt(wsMap[i].getPixel(o.getCenter()[0], o.getCenter()[1], zz) * smooth.getPixel(o.getCenter()[0], o.getCenter()[1], zz)));
                 if (planeByPlane && lapSPZ.length>1) { // keep track of z coordinate
                     o.setCenter(new double[]{o.getCenter()[0], o.getCenter()[1], 0}); // adding z dimention
@@ -411,7 +413,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     
     @Override
     public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
-        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
+        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         final double thld = BackgroundFit.backgroundFitHalf(input, parent.getMask(), 2, null);
         double[] ms = ImageOperations.getMeanAndSigmaWithOffset(input, parent.getMask(), v->v<=thld);
         if (ms[2]==0) ms = ImageOperations.getMeanAndSigmaWithOffset(input, parent.getMask(), v -> true);

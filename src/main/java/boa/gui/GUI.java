@@ -2168,8 +2168,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 db.getExperiment().flushImages(true, true, nextPosition);
                 IJVirtualStack.openVirtual(db.getExperiment(), nextPosition, pp);
             }
-        } else if (ImageWindowManager.RegisteredImageType.Interactive.equals(imageType)) {
+        } else  { // interactive: if IOI found
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
+            if (i==null) return;
             // get next parent
             StructureObject nextParent = null;
             if (i.getParent().isRoot()) return;

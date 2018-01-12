@@ -31,7 +31,7 @@ import java.util.TreeMap;
  */
 public class ObjectFactory {
     public static Object3D[] getObjectsVoxels(ImageInteger labelImage, boolean ensureContinuousLabels) {
-        HashMap<Integer, ArrayList<Voxel>> objects = new HashMap<Integer, ArrayList<Voxel>>();
+        HashMap<Integer, ArrayList<Voxel>> objects = new HashMap<>();
         int label;
         int sizeX = labelImage.getSizeX();
         for (int z = 0; z < labelImage.getSizeZ(); ++z) {
@@ -40,7 +40,7 @@ public class ObjectFactory {
                 if (label != 0) {
                     ArrayList<Voxel> al = objects.get(label);
                     if (al == null) {
-                        al = new ArrayList<Voxel>();
+                        al = new ArrayList<>();
                         objects.put(label, al);
                     }
                     al.add(new Voxel(xy % sizeX, xy / sizeX, z));
@@ -51,7 +51,7 @@ public class ObjectFactory {
         Object3D[] res = new Object3D[tm.size()];
         int i = 0;
         for (Entry<Integer, ArrayList<Voxel>> e : tm.entrySet()) {
-            res[i] = new Object3D(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getScaleXY(), labelImage.getScaleZ());
+            res[i] = new Object3D(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1, labelImage.getScaleXY(), labelImage.getScaleZ());
             ++i;
         }
         return res;
@@ -59,7 +59,7 @@ public class ObjectFactory {
     
     
     public static TreeMap<Integer, BoundingBox> getBounds(ImageInteger labelImage) {
-        HashMap<Integer, BoundingBox> bounds = new HashMap<Integer, BoundingBox>();
+        HashMap<Integer, BoundingBox> bounds = new HashMap<>();
         int label;
         int sizeX = labelImage.getSizeX();
         for (int z = 0; z<labelImage.getSizeZ(); ++z) {
@@ -75,7 +75,7 @@ public class ObjectFactory {
                 }
             }
         }
-        return new TreeMap<Integer, BoundingBox>(bounds);
+        return new TreeMap<>(bounds);
     }
     
     public static Object3D[] getObjectsImage(ImageInteger labelImage, boolean ensureContinuousLabels) {
@@ -89,7 +89,7 @@ public class ObjectFactory {
         
         for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
             ImageByte label = labelImage.cropLabel(e.getKey(), e.getValue());
-            res[i] = new Object3D(label, ensureContinuousLabels?(i + 1):e.getKey());
+            res[i] = new Object3D(label, ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1);
             ++i;
         }
         return res;
@@ -118,10 +118,10 @@ public class ObjectFactory {
             ++newLabel;
         }
     }
-    public static List<Object3D> createSeedObjectsFromSeeds(List<int[]> seedsXYZ, double scaleXY, double scaleZ) {
-        List<Object3D> seedObjects = new ArrayList<Object3D>(seedsXYZ.size());
+    public static List<Object3D> createSeedObjectsFromSeeds(List<int[]> seedsXYZ, boolean is2D, double scaleXY, double scaleZ) {
+        List<Object3D> seedObjects = new ArrayList<>(seedsXYZ.size());
         int label = 0;
-        for (int[] seed : seedsXYZ) seedObjects.add(new Object3D(new Voxel(seed), ++label, (float)scaleXY, (float)scaleZ));
+        for (int[] seed : seedsXYZ) seedObjects.add(new Object3D(new Voxel(seed), ++label, is2D, (float)scaleXY, (float)scaleZ));
         return seedObjects;
     }
     
