@@ -17,7 +17,7 @@
  */
 package testPlugins.dummyPlugins;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import image.Image;
 import java.util.List;
 import plugins.ObjectSplitter;
@@ -34,12 +34,12 @@ public class DummySegmenterSplitAndMerge extends SimpleThresholder implements Se
     public DummySegmenterSplitAndMerge() {
         super(new ConstantValue(1));
     }
-    public double split(Image image, Object3D o, List<Object3D> result) {
+    public double split(Image image, Region o, List<Region> result) {
         result.addAll(s.splitObject(null, o).getObjects());
         return 1;
     }
 
-    public double computeMergeCost(Image image, List<Object3D> objects) {
+    public double computeMergeCost(Image image, List<Region> objects) {
         return 1;
     }
     

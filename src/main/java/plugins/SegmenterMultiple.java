@@ -17,7 +17,7 @@
  */
 package plugins;
 
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
 import java.util.Map;
@@ -35,7 +35,7 @@ public interface SegmenterMultiple extends Segmenter {
      * @param parent
      * @return a map that contains several possible solutions of segmentation, associated to a value that represents 
      */
-    public TreeMap<Double, ObjectPopulation> runSegmenterMultiple(Image input, int structureIdx, StructureObjectProcessing parent);
+    public TreeMap<Double, RegionPopulation> runSegmenterMultiple(Image input, int structureIdx, StructureObjectProcessing parent);
     
     /**
      * 
@@ -44,5 +44,5 @@ public interface SegmenterMultiple extends Segmenter {
      * @param parent
      * @return the best solution of segmentation within all the possible solutions (returned by {@link SegmenterMultiple#runSegmenterMultiple(image.Image, int, dataStructure.objects.StructureObjectProcessing) }
      */
-    @Override public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent);
+    @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent);
 }

@@ -7,7 +7,7 @@ public interface StructureObjectPreProcessing extends Track {
 
     public Image getRawImage(int structureIdx);
     public ImageMask getMask();
-    public Object3D getObject();
+    public Region getObject();
     @Override public StructureObjectPreProcessing getNext();
     
 }

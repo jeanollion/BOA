@@ -25,8 +25,8 @@ import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -279,14 +279,14 @@ public class CompareObjects {
         MutationSegmenter seg = (MutationSegmenter)ps.getSegmenter();
         
         for (StructureObject parent : Utils.flattenMap(parentTrackRef)) {
-            ObjectPopulation pop = parent.getObjectPopulation(structureIdx);
+            RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             if (pop.getObjects().isEmpty()) continue;
             //logger.debug("quality was : {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()));
             Image raw = parent.getRawImage(structureIdx);
             Image pprocessed = pf.filter(raw, parent);
             Image[] maps = seg.computeMaps(raw, pprocessed);
             for (StructureObject parentB : parent.getChildObjects(1)) {
-                List<Object3D> objects = parentB.getObject().getIncludedObjects(pop.getObjects());
+                List<Region> objects = parentB.getObject().getIncludedObjects(pop.getObjects());
                 if (objects.isEmpty()) continue;
                 Image[] subMaps = Utils.transform(maps, new Image[maps.length], i->i.crop(parentB.getRelativeBoundingBox(parent)));
                 MutationSegmenter currentSeg = (MutationSegmenter)ps.getSegmenter();

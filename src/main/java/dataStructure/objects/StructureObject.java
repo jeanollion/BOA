@@ -55,7 +55,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected boolean isTrackHead=true;
     protected Map<String, Object> attributes;
     // object- and images-related attributes
-    private transient Object3D object;
+    private transient Region object;
     private transient boolean objectModified=false;
     protected ObjectContainer objectContainer;
     protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
@@ -65,7 +65,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // measurement-related attributes
     Measurements measurements;
     
-    public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent) {
+    public StructureObject(int timePoint, int structureIdx, int idx, Region object, StructureObject parent) {
         this.id= Id.get().toHexString();
         this.timePoint = timePoint;
         this.object=object;
@@ -87,7 +87,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public StructureObject(int timePoint, BlankMask mask, ObjectDAO dao) {
         this.id= Id.get().toHexString();
         this.timePoint=timePoint;
-        if (mask!=null) this.object=new Object3D(mask, 1, true);
+        if (mask!=null) this.object=new Region(mask, 1, true);
         this.structureIdx = -1;
         this.idx = 0;
         this.dao=dao;
@@ -267,7 +267,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (children!=null) for (StructureObject o : children) o.setParent(this);
     }
     
-    @Override public List<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
+    @Override public List<StructureObject> setChildrenObjects(RegionPopulation population, int structureIdx) {
         if (population==null) {
             ArrayList<StructureObject> res = new ArrayList<>();
             childrenSM.set(res, structureIdx);
@@ -278,7 +278,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         ArrayList<StructureObject> res = new ArrayList<>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
         int i = 0;
-        for (Object3D o : population.getObjects()) res.add(new StructureObject(timePoint, structureIdx, i++, o, this));
+        for (Region o : population.getObjects()) res.add(new StructureObject(timePoint, structureIdx, i++, o, this));
         return res;
     }
     
@@ -682,7 +682,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
-        ObjectPopulation pop = splitter.splitObject(getRawImage(structureIdx),  getObject());
+        RegionPopulation pop = splitter.splitObject(getRawImage(structureIdx),  getObject());
         if (pop==null || pop.getObjects().size()==1) {
             logger.warn("split error: {}", this);
             return null;
@@ -702,7 +702,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     // object- and image-related methods
-    public Object3D getObject() {
+    public Region getObject() {
         if (object==null) {
             if (objectContainer==null) return null;
             synchronized(this) {
@@ -717,7 +717,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return object;
     }
-    public void setObject(Object3D o) {
+    public void setObject(Region o) {
         synchronized(this) {
             objectContainer=null;
             object=o;
@@ -928,13 +928,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.offsetInTrackImage=null;
     }
     
-    public ObjectPopulation getObjectPopulation(int structureIdx) {
+    public RegionPopulation getObjectPopulation(int structureIdx) {
         List<StructureObject> child = this.getChildren(structureIdx);
-        if (child==null || child.isEmpty()) return new ObjectPopulation(new ArrayList<>(0), this.getMaskProperties());
+        if (child==null || child.isEmpty()) return new RegionPopulation(new ArrayList<>(0), this.getMaskProperties());
         else {
-            ArrayList<Object3D> objects = new ArrayList<>(child.size());
+            ArrayList<Region> objects = new ArrayList<>(child.size());
             for (StructureObject s : child) objects.add(s.getObject());
-            return new ObjectPopulation(objects, this.getMaskProperties(), true);
+            return new RegionPopulation(objects, this.getMaskProperties(), true);
         }
     }
     public void setAttributeList(String key, List<Double> value) {

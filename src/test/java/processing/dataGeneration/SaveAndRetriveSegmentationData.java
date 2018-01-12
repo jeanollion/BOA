@@ -23,7 +23,7 @@ import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import core.Task;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -139,19 +139,19 @@ public class SaveAndRetriveSegmentationData {
         return baseFileName+"F"+String.format("%02d", fieldIdx)+"MC"+String.format("%02d", mcIdx);
     }
     
-    public static ArrayList<ArrayList<Object3D>> getObjectsMC(String dbName, int fieldIdx, int structureIdx) {
+    public static ArrayList<ArrayList<Region>> getObjectsMC(String dbName, int fieldIdx, int structureIdx) {
         MasterDAO m = new Task(dbName).getDB();
         ObjectDAO dao = m.getDao(m.getExperiment().getPosition(fieldIdx).getName());
         StructureObject root = dao.getRoot(0);
         List<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
-        ArrayList<ArrayList<Object3D>> res = new ArrayList<ArrayList<Object3D>>();
+        ArrayList<ArrayList<Region>> res = new ArrayList<ArrayList<Region>>();
         IJImageWindowManager windowManager = new IJImageWindowManager(null);
         for (StructureObject th : mcTH) {
             List<StructureObject> track = dao.getTrack(th);
             ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
             List<Pair<StructureObject, BoundingBox>> so = i.getObjects();
-            ArrayList<Object3D> o3DList = new ArrayList<Object3D>(so.size());
+            ArrayList<Region> o3DList = new ArrayList<Region>(so.size());
             for (Pair<StructureObject, BoundingBox> o : so) {
                 o3DList.add(o.key.getObject().translate(o.key.getBounds().reverseOffset()).translate(o.value));
             }
@@ -173,8 +173,8 @@ public class SaveAndRetriveSegmentationData {
     }
     
     public static void compareField(String dbName, String directory, String baseFileName, int fieldIdx, int structureIdx, int insideStructureIdx, double distanceThreshold) {
-        ArrayList<ArrayList<Object3D>> objectsMC=getObjectsMC(dbName, fieldIdx, structureIdx);
-        ArrayList<ArrayList<Object3D>> bacteriaMC= insideStructureIdx>=0?getObjectsMC(dbName, fieldIdx, insideStructureIdx):null;
+        ArrayList<ArrayList<Region>> objectsMC=getObjectsMC(dbName, fieldIdx, structureIdx);
+        ArrayList<ArrayList<Region>> bacteriaMC= insideStructureIdx>=0?getObjectsMC(dbName, fieldIdx, insideStructureIdx):null;
         ImageByte mask=null;
         
         logger.info("Comparison db: {}, field: {}, structure: {}", dbName, fieldIdx, structureIdx);
@@ -203,9 +203,9 @@ public class SaveAndRetriveSegmentationData {
         logger.info("FP: {}({}), FN: {}({}), #error: {}, #total: {}, #total ref: {}", total[0], (double)total[0]/(double)total[3], total[1], (double)total[1]/(double)total[3], total[2], total[3], total[4]);
     }
     
-    public static void draw(ArrayList<Object3D> objects, ImageByte mask) {
+    public static void draw(ArrayList<Region> objects, ImageByte mask) {
         ImageOperations.fill(mask, 0, null);
-        for (Object3D o : objects) o.draw(mask, 1);
+        for (Region o : objects) o.draw(mask, 1);
     }
     
     /**
@@ -257,14 +257,14 @@ public class SaveAndRetriveSegmentationData {
     
     public static double[][] getCenters(String name, ImageMask mask) {
         Image im = ImageReader.openImage(name+".tif");
-        ArrayList<Object3D> objects = getObjects(name+".zip");
+        ArrayList<Region> objects = getObjects(name+".zip");
         return getCenters(objects, im, mask);
     }
     
-    public static double[][] getCenters(ArrayList<Object3D> objects, Image image, ImageMask mask) {
+    public static double[][] getCenters(ArrayList<Region> objects, Image image, ImageMask mask) {
         ArrayList<double[]> res=  new ArrayList<double[]>();
         for (int i = 0; i<objects.size(); ++i) {
-            Object3D o = objects.get(i);
+            Region o = objects.get(i);
             double[] d = o.getMassCenter(image, false);
             Voxel v = getVoxel(d);
             if (mask==null || (mask.contains(v.x, v.y, v.z) && mask.insideMask(v.x, v.y, v.z))) res.add(d);
@@ -276,11 +276,11 @@ public class SaveAndRetriveSegmentationData {
         return new Voxel((int)(coords[0]+0.5), (int)(coords[1]+0.5), (int)(coords[2]+0.5));
     }
     
-    public static ArrayList<Object3D> getObjects(String roiListDir) {
+    public static ArrayList<Region> getObjects(String roiListDir) {
         RoiManager rm = getRM();
         rm.runCommand("open", roiListDir);
         Roi[] rois=  rm.getRoisAsArray();
-        ArrayList<Object3D> res = new ArrayList<Object3D>();
+        ArrayList<Region> res = new ArrayList<Region>();
         for (int i = 0 ; i<rois.length; ++i) { // only for 2D ROI
             if (rois[i] instanceof PointRoi) {
                 //if (!points) continue;
@@ -289,12 +289,12 @@ public class SaveAndRetriveSegmentationData {
                 Voxel v = new Voxel(p.xpoints[0], p.ypoints[0], 0);
                 ArrayList<Voxel> vox = new ArrayList<Voxel>(1);
                 vox.add(v);
-                res.add(new Object3D(vox, i+1, true, 1, 1));
+                res.add(new Region(vox, i+1, true, 1, 1));
             } else {
                 //if (points) continue;
                 ImageProcessor mask = rois[i].getMask();
                 Rectangle bds = rois[i].getBounds();
-                res.add(new Object3D((ImageInteger)IJImageWrapper.wrap(new ImagePlus("", mask)).addOffset(new BoundingBox(bds.x, bds.y, 0)), i+1, true));
+                res.add(new Region((ImageInteger)IJImageWrapper.wrap(new ImagePlus("", mask)).addOffset(new BoundingBox(bds.x, bds.y, 0)), i+1, true));
             }
         } 
         return res;

@@ -18,7 +18,7 @@
 package plugins.plugins.measurements.objectFeatures;
 
 import plugins.objectFeature.IntensityMeasurement;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import image.BoundingBox;
 
 /**
@@ -27,7 +27,7 @@ import image.BoundingBox;
  */
 public class Sd extends IntensityMeasurement {
 
-    public double performMeasurement(Object3D object, BoundingBox offset) {
+    public double performMeasurement(Region object, BoundingBox offset) {
         return core.getIntensityMeasurements(object, offset).sd;
     }
 

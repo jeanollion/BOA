@@ -20,7 +20,7 @@ package boa.gui.objects;
 import static boa.gui.GUI.logger;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import image.IJImageWrapper;

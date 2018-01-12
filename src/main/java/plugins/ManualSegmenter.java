@@ -17,8 +17,8 @@
  */
 package plugins;
 
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import image.Image;
 import image.ImageMask;
@@ -30,5 +30,5 @@ import java.util.List;
  */
 public interface ManualSegmenter extends ImageProcessingPlugin {
     public void setManualSegmentationVerboseMode(boolean verbose);
-    public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ);
+    public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ);
 }

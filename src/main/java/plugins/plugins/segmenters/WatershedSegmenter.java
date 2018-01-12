@@ -24,8 +24,8 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PreFilterSequence;
-import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.ObjectPopulation.MeanIntensity;
+import dataStructure.objects.RegionPopulation;
+import dataStructure.objects.RegionPopulation.MeanIntensity;
 import dataStructure.objects.StructureObjectProcessing;
 import ij.process.AutoThresholder;
 import image.Image;
@@ -51,13 +51,13 @@ public class WatershedSegmenter implements Segmenter {
     BooleanParameter foregroundOverThreshold = new BooleanParameter("Foreground is over threhsold", true);
     public static boolean debug;
     @Override
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         // perform watershed on all local extrema
         Image watershedMap = watershedMapFilters.filter(input, parent);
         
         ImageByte localExtrema = Filters.localExtrema(watershedMap, null, decreasePropagation.getSelected(), Filters.getNeighborhood(localExtremaRadius.getValue().doubleValue(), localExtremaRadius.getValue().doubleValue() * watershedMap.getScaleXY()/watershedMap.getScaleZ(), watershedMap));
         ImageOperations.and(localExtrema, parent.getMask(), localExtrema);
-        ObjectPopulation pop = WatershedTransform.watershed(watershedMap, parent.getMask(), localExtrema, decreasePropagation.getSelected(), null, null, false);
+        RegionPopulation pop = WatershedTransform.watershed(watershedMap, parent.getMask(), localExtrema, decreasePropagation.getSelected(), null, null, false);
         // remove regions with low intensity value
         Image intensityMap = intensityFilter.filter(input, parent);
         if (debug) {

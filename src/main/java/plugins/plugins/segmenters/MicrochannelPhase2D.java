@@ -22,8 +22,8 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
@@ -78,12 +78,12 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
         return this;
     }
     @Override
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         Result r = segment(input);
         if (r==null) return null;
-        ArrayList<Object3D> objects = new ArrayList<>(r.size());
-        for (int idx = 0; idx<r.xMax.length; ++idx) objects.add(new Object3D(new BlankMask("mask of microchannel:" + idx+1, r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1, true));
-        return new ObjectPopulation(objects, input);
+        ArrayList<Region> objects = new ArrayList<>(r.size());
+        for (int idx = 0; idx<r.xMax.length; ++idx) objects.add(new Region(new BlankMask("mask of microchannel:" + idx+1, r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1, true));
+        return new RegionPopulation(objects, input);
     }
     
     @Override

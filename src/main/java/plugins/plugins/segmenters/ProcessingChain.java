@@ -20,7 +20,7 @@ package plugins.plugins.segmenters;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleListParameter;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
@@ -55,7 +55,7 @@ public class ProcessingChain implements Segmenter {
         return this;
     }
     
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         if (preFilters.getChildCount()!=0) {
             for (PluginParameter<PreFilter> p : preFilters.getActivatedChildren() ) {
                 PreFilter pre = p.instanciatePlugin();
@@ -65,7 +65,7 @@ public class ProcessingChain implements Segmenter {
             }
         }
         Segmenter s = segmenter.instanciatePlugin();
-        ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);
+        RegionPopulation pop = s.runSegmenter(input, structureIdx, parent);
         if (postFilters.getChildCount()!=0) {
             for (PluginParameter<PostFilter> p : postFilters.getActivatedChildren() ) {
                 PostFilter pre = p.instanciatePlugin();

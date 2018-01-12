@@ -24,7 +24,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import ij.ImageJ;
 import image.Image;
@@ -64,7 +64,7 @@ public class TestProcessMicrochannelsPhase {
         //MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
         input = mDAO.getExperiment().getStructure(0).getProcessingScheme().getPreFilters().filter(input, root);
-        ObjectPopulation pop = s.runSegmenter(input, 0, root);
+        RegionPopulation pop = s.runSegmenter(input, 0, root);
         FitMicrochannelHeadToGradient.debug=true;
         if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
             ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters().filter(0, Arrays.asList(new StructureObject[]{root}), null);
@@ -88,7 +88,7 @@ public class TestProcessMicrochannelsPhase {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         Image input = root.getRawImage(0);
         ImageWindowManagerFactory.showImage(input);
-        ObjectPopulation pop = root.getObjectPopulation(0);
+        RegionPopulation pop = root.getObjectPopulation(0);
         ImageWindowManagerFactory.showImage(pop.getLabelMap());
         FitMicrochannelHeadToGradient.debug=true;
         if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {

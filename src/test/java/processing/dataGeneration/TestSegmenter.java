@@ -24,7 +24,7 @@ import core.Processor;
 import core.Task;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import ij.ImageJ;
@@ -92,7 +92,7 @@ public class TestSegmenter {
         ImageWindowManagerFactory.showImage(parentTrack.get(0).getRawImage(structureIdx).duplicate("Input"));
         if (ps instanceof SegmentOnly) {
             ((SegmentOnly)ps).segmentAndTrack(structureIdx, parentTrack, null);
-            ObjectPopulation pop = parentTrack.get(0).getObjectPopulation(structureIdx);
+            RegionPopulation pop = parentTrack.get(0).getObjectPopulation(structureIdx);
             ImageWindowManagerFactory.showImage(pop.getLabelMap());
         } else {
             Segmenter s = ps.getSegmenter();

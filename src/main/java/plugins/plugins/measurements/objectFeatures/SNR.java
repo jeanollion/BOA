@@ -24,8 +24,8 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.SiblingStructureParameter;
 import configuration.parameters.StructureParameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
@@ -54,7 +54,7 @@ public class SNR extends IntensityMeasurement {
     protected ChoiceParameter formula = new ChoiceParameter("Formula", new String[]{"(F-B)/sd(B)", "F-B"}, "(F-B)/sd(B)", false);
     protected ChoiceParameter foregroundFormula = new ChoiceParameter("Foreground", new String[]{"mean", "max", "value at center"}, "mean", false);
     @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject, formula, foregroundFormula, dilateExcluded, erodeBorders};}
-    HashMap<Object3D, Object3D> childrenParentMap;
+    HashMap<Region, Region> childrenParentMap;
     BoundingBox childrenOffset;
     BoundingBox parentOffsetRev;
     public SNR() {}
@@ -75,7 +75,7 @@ public class SNR extends IntensityMeasurement {
         this.foregroundFormula.setSelectedIndex(foreground);
         return this;
     }
-    @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         super.setUp(parent, childStructureIdx, childPopulation);
         if (childPopulation.getObjects().isEmpty()) return this;
         if (!childPopulation.isAbsoluteLandmark()) childrenOffset = parent.getBounds(); // the step it still at processing, thus their offset of objects is related to their direct parent
@@ -83,49 +83,49 @@ public class SNR extends IntensityMeasurement {
         parentOffsetRev = parent.getBounds().duplicate().reverseOffset();
         
         // get parents
-        List<Object3D> parents;
+        List<Region> parents;
         if (backgroundObject.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
             parents = parent.getObjectPopulation(backgroundObject.getSelectedStructureIdx()).getObjects();
         } else {
-            parents = new ArrayList<Object3D>(1);
+            parents = new ArrayList<Region>(1);
             parents.add(parent.getObject());
         }
         double erodeRad= this.erodeBorders.getValue().doubleValue();
         double dilRad = this.dilateExcluded.getValue().doubleValue();
         // assign parents to children by inclusion
-        HashMapGetCreate<Object3D, List<Pair<Object3D, Object3D>>> parentChildrenMap = new HashMapGetCreate<>(parents.size(), new HashMapGetCreate.ListFactory());
-        for (Object3D o : childPopulation.getObjects()) {
-            Object3D p = StructureObjectUtils.getInclusionParent(o, parents, childrenOffset, null);
+        HashMapGetCreate<Region, List<Pair<Region, Region>>> parentChildrenMap = new HashMapGetCreate<>(parents.size(), new HashMapGetCreate.ListFactory());
+        for (Region o : childPopulation.getObjects()) {
+            Region p = StructureObjectUtils.getInclusionParent(o, parents, childrenOffset, null);
             if (p!=null) {
-                Object3D oDil = o;
+                Region oDil = o;
                 if (dilRad>0)  {
                     ImageInteger oMask = o.getMask();
                     oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilRad, dilRad, oMask), false, true);
-                    oDil = new Object3D(oMask, 1, o.is2D());
+                    oDil = new Region(oMask, 1, o.is2D());
                 }
                 parentChildrenMap.getAndCreateIfNecessary(p).add(new Pair(o, oDil));
             }
         }
         
         // remove foreground objects from background mask & erodeit
-        childrenParentMap = new HashMap<Object3D, Object3D>();
-        for (Object3D p : parents) {
+        childrenParentMap = new HashMap<Region, Region>();
+        for (Region p : parents) {
             ImageMask ref = p.getMask();
-            List<Pair<Object3D, Object3D>> children = parentChildrenMap.get(p);
+            List<Pair<Region, Region>> children = parentChildrenMap.get(p);
             if (children!=null) {
                 ImageByte mask  = TypeConverter.toByteMask(ref, null, 1).setName("SNR mask");
-                for (Pair<Object3D, Object3D> o : parentChildrenMap.get(p)) o.value.draw(mask, 0, childrenOffset);
+                for (Pair<Region, Region> o : parentChildrenMap.get(p)) o.value.draw(mask, 0, childrenOffset);
                 /*if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) {
-                    for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0);
+                    for (Region o : parentChildrenMap.get(p)) o.draw(mask, 0);
                 } else {
-                    for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0, childrenOffset);
+                    for (Region o : parentChildrenMap.get(p)) o.draw(mask, 0, childrenOffset);
                 }*/
                 if (erodeRad>0) {
                     ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(erodeRad, erodeRad, mask), true); // erode mask // TODO dillate objects?
                     if (maskErode.count()>0) mask = maskErode;
                 }
-                Object3D parentObject = new Object3D(mask, 1, p.is2D());
-                for (Pair<Object3D, Object3D> o : children) childrenParentMap.put(o.key, parentObject);
+                Region parentObject = new Region(mask, 1, p.is2D());
+                for (Pair<Region, Region> o : children) childrenParentMap.put(o.key, parentObject);
                 
                 //ImageWindowManagerFactory.showImage( mask);
             }
@@ -134,10 +134,10 @@ public class SNR extends IntensityMeasurement {
         return this;
     }
     @Override
-    public double performMeasurement(Object3D object, BoundingBox offset) {
+    public double performMeasurement(Region object, BoundingBox offset) {
         
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
-        Object3D parentObject; 
+        Region parentObject; 
         if (childrenParentMap==null) parentObject = super.parent.getObject();
         else parentObject=this.childrenParentMap.get(object);
         if (parentObject==null) return 0;

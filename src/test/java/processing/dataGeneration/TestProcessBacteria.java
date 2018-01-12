@@ -23,7 +23,7 @@ import boa.gui.imageInteraction.ImageDisplayer;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import ij.ImageJ;
 import image.Image;
@@ -57,7 +57,7 @@ public class TestProcessBacteria {
         Image input = mc.getRawImage(1);
         BacteriaFluo.debug=true;
         BacteriaFluo seg = new BacteriaFluo();
-        ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
+        RegionPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelMap());

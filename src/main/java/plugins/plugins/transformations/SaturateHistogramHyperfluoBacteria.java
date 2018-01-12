@@ -24,8 +24,8 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import static core.TaskRunner.logger;
 import dataStructure.containers.InputImages;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import ij.process.AutoThresholder;
 import image.BlankMask;
@@ -144,7 +144,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
             ImageMask thldMask = new ThresholdMask(im, thldBack, true, true);
             double thldHyper2 = IJAutoThresholder.runThresholder(im, thldMask, AutoThresholder.Method.Otsu);
             // ThldHyper is over-estimated. ThldHyper = maximum value of objects that do not contain pixel over ThldHyp +1
-            List<Object3D> objects = ImageLabeller.labelImageList(thldMask);
+            List<Region> objects = ImageLabeller.labelImageList(thldMask);
             List<Double> maxValues = Utils.transform(objects, o->BasicMeasurements.getMaxValue(o, im, false));
             maxValues.removeIf(v->v>=thldHyper2);
             double thldHyper3 = maxValues.isEmpty() ? thldHyper2 : Math.min(Collections.max(maxValues)*1.15, thldHyper2);

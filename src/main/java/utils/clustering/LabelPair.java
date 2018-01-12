@@ -1,6 +1,6 @@
 package utils.clustering;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 
 /**
  *
@@ -30,7 +30,7 @@ import dataStructure.objects.Object3D;
 
 public class LabelPair {
     int r1, r2;
-    public LabelPair(Object3D r1, Object3D r2) {
+    public LabelPair(Region r1, Region r2) {
         if (r1.getLabel()<r2.getLabel()) {
             this.r1=r1.getLabel();
             this.r2=r2.getLabel();
@@ -53,9 +53,9 @@ public class LabelPair {
     public boolean equals(Object o) {
         if (o instanceof LabelPair) {
             return ((LabelPair)o).r1==r1 && ((LabelPair)o).r2==r2;
-        } else if (o instanceof InterfaceImpl && ((InterfaceImpl)o).e1 instanceof Object3D) {
-            return (r1 == ((Interface<Object3D, ?>)o).getE1().getLabel() 
-                    && r2 == ((Interface<Object3D, ?>)o).getE2().getLabel());
+        } else if (o instanceof InterfaceImpl && ((InterfaceImpl)o).e1 instanceof Region) {
+            return (r1 == ((Interface<Region, ?>)o).getE1().getLabel() 
+                    && r2 == ((Interface<Region, ?>)o).getE2().getLabel());
         }
         return false;
     }

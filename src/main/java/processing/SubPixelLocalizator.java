@@ -17,7 +17,7 @@
  */
 package processing;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import image.Image;
 import static image.Image.logger;
@@ -46,9 +46,9 @@ import utils.Utils;
 public class SubPixelLocalizator {
     public static boolean debug;
     public final static Logger logger = LoggerFactory.getLogger(SubPixelLocalizator.class);
-    public static List<Point> getPeaks(Image img, List<Object3D> objects) {
+    public static List<Point> getPeaks(Image img, List<Region> objects) {
         List<Point> peaks = new ArrayList<>(objects.size());
-        for (Object3D o : objects) { // get max value within map
+        for (Region o : objects) { // get max value within map
             double max = Double.NEGATIVE_INFINITY;
             Voxel maxV= null;
             for (Voxel v : o.getVoxels()) {
@@ -75,7 +75,7 @@ public class SubPixelLocalizator {
         return spl.process( peaks, source, source );
     }
     
-    public static void setSubPixelCenter(Image img, List<Object3D> objects, boolean setQuality) {
+    public static void setSubPixelCenter(Image img, List<Region> objects, boolean setQuality) {
         if (objects.isEmpty()) return;
         List<Point> peaks = getPeaks(img, objects);
         List<RefinedPeak< Point >> refined = getSubLocPeaks(img, peaks);
@@ -86,7 +86,7 @@ public class SubPixelLocalizator {
             //logger.debug("refined: {}", Utils.toStringList(refined, p->"["+p.getDoublePosition(0)+"; "+p.getDoublePosition(1)+(img.getSizeZ()>1? ";"+p.getDoublePosition(2): "")+"]"));
         }
         for (RefinedPeak< Point > r : refined) {
-            Object3D o = objects.get(peaks.indexOf(r.getOriginalPeak()));
+            Region o = objects.get(peaks.indexOf(r.getOriginalPeak()));
             double[] position= new double[img.getSizeZ()>1?3 : 2];
             position[0] = r.getDoublePosition(0);
             position[1] = r.getDoublePosition(1);

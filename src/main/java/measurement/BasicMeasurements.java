@@ -17,7 +17,7 @@
  */
 package measurement;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
 import image.BoundingBox.LoopFunction;
@@ -33,13 +33,13 @@ import static plugins.Plugin.logger;
  * @author jollion
  */
 public class BasicMeasurements {
-    public static double getSum(Object3D object, Image image, boolean useOffset) {
+    public static double getSum(Region object, Image image, boolean useOffset) {
         double value=0;
         if (useOffset) for (Voxel v : object.getVoxels()) value+=image.getPixelWithOffset(v.x, v.y, v.z);
         else for (Voxel v : object.getVoxels()) value+=image.getPixel(v.x, v.y, v.z);
         return value;
     }
-    public static double getMeanValue(Object3D object, Image image, boolean useOffset) {
+    public static double getMeanValue(Region object, Image image, boolean useOffset) {
         return getMeanValue(object.getVoxels(), image, useOffset);
     }
     public static double getMeanValue(List<Voxel> voxels, Image image, boolean useOffset) {
@@ -48,7 +48,7 @@ public class BasicMeasurements {
         else for (Voxel v : voxels) value+=image.getPixel(v.x, v.y, v.z);
         return value/(double)voxels.size();
     }
-    public static double getSdValue(Object3D object, Image image, boolean useOffset) {
+    public static double getSdValue(Region object, Image image, boolean useOffset) {
         double value=0;
         double value2=0;
         double tmp;
@@ -111,7 +111,7 @@ public class BasicMeasurements {
         return new double[] {(fore - sdMeanBack[0]) / sdMeanBack[1], fore, sdMeanBack[0], sdMeanBack[1]};
         
     }
-    public static double getMaxValue(Object3D object, Image image, boolean useOffset) {
+    public static double getMaxValue(Region object, Image image, boolean useOffset) {
         double max=-Double.MAX_VALUE;
         if (useOffset) {
             for (Voxel v : object.getVoxels()) if (image.getPixelWithOffset(v.x, v.y, v.z)>max) max = image.getPixelWithOffset(v.x, v.y, v.z);
@@ -121,7 +121,7 @@ public class BasicMeasurements {
         }
         return max;
     }
-    public static double getMinValue(Object3D object, Image image, boolean useOffset) {
+    public static double getMinValue(Region object, Image image, boolean useOffset) {
         double min=Double.MAX_VALUE;
         if (useOffset) {
             for (Voxel v : object.getVoxels()) if (image.getPixelWithOffset(v.x, v.y, v.z)<min) min = image.getPixelWithOffset(v.x, v.y, v.z);
@@ -130,7 +130,7 @@ public class BasicMeasurements {
         }
         return min;
     }
-    public static double getPercentileValue(Object3D object, double percentile, Image image, boolean useOffset) {
+    public static double getPercentileValue(Region object, double percentile, Image image, boolean useOffset) {
         if (object.getVoxels().isEmpty()) return Double.NaN;
         if (percentile<=0) return getMinValue(object, image, useOffset);
         if (percentile>=1) return getMaxValue(object, image, useOffset);

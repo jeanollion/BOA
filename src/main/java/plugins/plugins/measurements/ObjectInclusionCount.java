@@ -23,7 +23,7 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
 import configuration.parameters.TextParameter;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import image.ImageMask;
@@ -92,7 +92,7 @@ public class ObjectInclusionCount implements Measurement {
     public static int count(StructureObject container, List<StructureObject> toCount, double proportionInclusion, boolean onlyTrackHeads) {
         if (toCount==null || toCount.isEmpty()) return 0;
         int count = 0;
-        Object3D containerObject = container.getObject();
+        Region containerObject = container.getObject();
         for (StructureObject o : toCount) {
             if (onlyTrackHeads && !o.isTrackHead()) continue;
             if (o.getObject().intersect(containerObject)) {

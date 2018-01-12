@@ -24,7 +24,7 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.containers.InputImages;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.Voxel;
 import ij.ImagePlus;
@@ -74,11 +74,11 @@ public class SubtractBackgroundMicrochannel implements PreFilter {
         input = TypeConverter.toFloat(input, null); // automaticaly copies data
         // remove pixels in corners if corners are detected
         ImageInteger cornerMask = ImageOperations.andNot(new BlankMask(input), structureObject.getMask(), null);
-        List<Object3D> corners = ImageLabeller.labelImageList(cornerMask);
+        List<Region> corners = ImageLabeller.labelImageList(cornerMask);
         if (!corners.isEmpty()) {
             //ImageWindowManagerFactory.showImage(input.duplicate("before corner"));
             List<Voxel> contour = structureObject.getObject().duplicate().translate(structureObject.getObject().getBounds().duplicate().reverseOffset()).getContour();
-            for (Object3D o : corners) {
+            for (Region o : corners) {
                 for (Voxel v : o.getVoxels()) {
                     Voxel closest = Voxel.getClosest(v, contour);
                     //logger.debug("v: {}={}->{}={}", v, input.getPixel(v.x, v.y, v.z), closest, input.getPixel(closest.x, closest.y, closest.z));

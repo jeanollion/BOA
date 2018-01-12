@@ -17,7 +17,7 @@
  */
 package plugins;
 
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
 
@@ -33,5 +33,5 @@ public interface Segmenter extends ImageProcessingPlugin {
      * @param parent parent object of the objects to be segmented
      * @return 
      */
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent);
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent);
 }

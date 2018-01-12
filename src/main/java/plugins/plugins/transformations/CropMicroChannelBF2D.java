@@ -22,7 +22,7 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.containers.InputImages;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.Image;

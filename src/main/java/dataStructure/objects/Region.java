@@ -45,8 +45,8 @@ import static utils.Utils.comparatorInt;
  * @author jollion
  * 
  */
-public class Object3D {
-    public final static Logger logger = LoggerFactory.getLogger(Object3D.class);
+public class Region {
+    public final static Logger logger = LoggerFactory.getLogger(Region.class);
     protected ImageInteger mask; //lazy -> use getter // bounds par rapport au root si absoluteLandMark==true, au parent sinon
     protected BoundingBox bounds;
     protected int label;
@@ -59,7 +59,7 @@ public class Object3D {
     /**
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
      */
-    public Object3D(ImageInteger mask, int label, boolean is2D) {
+    public Region(ImageInteger mask, int label, boolean is2D) {
         this.mask=mask;
         this.bounds=mask.getBoundingBox();
         this.label=label;
@@ -68,23 +68,23 @@ public class Object3D {
         this.is2D=is2D;
     }
     
-    public Object3D(List<Voxel> voxels, int label, boolean is2D, float scaleXY, float scaleZ) {
+    public Region(List<Voxel> voxels, int label, boolean is2D, float scaleXY, float scaleZ) {
         this.voxels=voxels;
         this.label=label;
         this.scaleXY=scaleXY;
         this.scaleZ=scaleXY;
         this.is2D=is2D;
     }
-    public Object3D(final Voxel voxel, int label, boolean is2D, float scaleXY, float scaleZ) {
+    public Region(final Voxel voxel, int label, boolean is2D, float scaleXY, float scaleZ) {
         this(new ArrayList<Voxel>(){{add(voxel);}}, label, is2D, scaleXY, scaleZ);
     }
     
-    public Object3D(List<Voxel> voxels, int label, BoundingBox bounds, boolean is2D, float scaleXY, float scaleZ) {
+    public Region(List<Voxel> voxels, int label, BoundingBox bounds, boolean is2D, float scaleXY, float scaleZ) {
         this(voxels, label, is2D, scaleXY, scaleZ);
         this.bounds=bounds;
     }
     
-    public Object3D setIsAbsoluteLandmark(boolean absoluteLandmark) {
+    public Region setIsAbsoluteLandmark(boolean absoluteLandmark) {
         this.absoluteLandmark = absoluteLandmark;
         return this;
     }
@@ -95,7 +95,7 @@ public class Object3D {
     public boolean is2D() {
         return is2D;
     }
-    public Object3D setQuality(double quality) {
+    public Region setQuality(double quality) {
         this.quality=quality;
         return this;
     }
@@ -103,15 +103,15 @@ public class Object3D {
         return quality;
     }
     
-    public Object3D duplicate() {
+    public Region duplicate() {
         if (this.mask!=null) {
-            return new Object3D((ImageInteger)mask.duplicate(""), label, is2D).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
+            return new Region((ImageInteger)mask.duplicate(""), label, is2D).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
         }
         else if (this.voxels!=null) {
             ArrayList<Voxel> vox = new ArrayList<> (voxels.size());
             for (Voxel v : voxels) vox.add(v.duplicate());
-            if (bounds==null) return new Object3D(vox, label, is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
-            else return new Object3D(vox, label, bounds.duplicate(), is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
+            if (bounds==null) return new Region(vox, label, is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
+            else return new Region(vox, label, bounds.duplicate(), is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
         }
         return null;
     }
@@ -178,7 +178,7 @@ public class Object3D {
         return resList;
     }
     
-    public Object3D setCenter(double[] center) {
+    public Region setCenter(double[] center) {
         this.center=center;
         return this;
     }
@@ -417,10 +417,10 @@ public class Object3D {
             }
         }
         // check if 2 objects and erase all but smallest
-        List<Object3D> objects = ImageLabeller.labelImageListLowConnectivity(mask);
+        List<Region> objects = ImageLabeller.labelImageListLowConnectivity(mask);
         if (objects.size()>1) {
             objects.remove(Collections.max(objects, comparatorInt(o->o.getSize())));
-            for (Object3D toErase: objects) toErase.draw(mask, 0);
+            for (Region toErase: objects) toErase.draw(mask, 0);
         }
         voxels = null; // reset voxels
         // TODO reset bounds ?
@@ -481,7 +481,7 @@ public class Object3D {
         }
     }
     
-    public Set<Voxel> getIntersection(Object3D other) {
+    public Set<Voxel> getIntersection(Region other) {
         if (!intersect(other)) return Collections.emptySet(); 
         if (other.is2D()!=is2D()) { // should not take into acount z for intersection -> cast to voxel2D (even for the 2D object to enshure voxel2D), and return voxels from the 3D objects
             Set s1 = Sets.newHashSet(Utils.transform(getVoxels(), v->v.toVoxel2D()));
@@ -497,7 +497,7 @@ public class Object3D {
     }
     /*
     // TODO faire une methode plus optimisée qui utilise les masques uniquement
-    public int getIntersectionCountMask(Object3D other, BoundingBox offset) {
+    public int getIntersectionCountMask(Region other, BoundingBox offset) {
         if (offset==null) offset=new BoundingBox(0, 0, 0);
         if (!this.getBounds().hasIntersection(other.getBounds().duplicate().translate(offset))) return 0;
         else {
@@ -512,7 +512,7 @@ public class Object3D {
             return count;
         }
     }*/
-    public boolean intersect(Object3D other) {
+    public boolean intersect(Region other) {
         if (is2D()||other.is2D()) return getBounds().intersect2D(other.getBounds());
         else return getBounds().intersect(other.getBounds());
     }
@@ -523,7 +523,7 @@ public class Object3D {
      * @param offsetOther added to the bounds of {@param other}
      * @return 
      */
-    public int getIntersectionCountMaskMask(Object3D other, BoundingBox offset, BoundingBox offsetOther) {
+    public int getIntersectionCountMaskMask(Region other, BoundingBox offset, BoundingBox offsetOther) {
         BoundingBox otherBounds = offsetOther==null? other.getBounds().duplicate() : other.getBounds().duplicate().translate(offsetOther);
         BoundingBox thisBounds = offset==null? getBounds().duplicate() : getBounds().duplicate().translate(offset);
         final boolean inter2D = is2D() || other.is2D();
@@ -552,17 +552,17 @@ public class Object3D {
         return count[0];
     }
     
-    public List<Object3D> getIncludedObjects(List<Object3D> candidates) {
-        ArrayList<Object3D> res = new ArrayList<>();
-        for (Object3D c : candidates) if (c.intersect(this)) res.add(c); // strict inclusion?
+    public List<Region> getIncludedObjects(List<Region> candidates) {
+        ArrayList<Region> res = new ArrayList<>();
+        for (Region c : candidates) if (c.intersect(this)) res.add(c); // strict inclusion?
         return res;
     }
     
-    public Object3D getContainer(Collection<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
+    public Region getContainer(Collection<Region> parents, BoundingBox offset, BoundingBox offsetParent) {
         if (parents.isEmpty()) return null;
-        Object3D currentParent=null;
+        Region currentParent=null;
         int currentIntersection=-1;
-        for (Object3D p : parents) {
+        for (Region p : parents) {
             int inter = getIntersectionCountMaskMask(p, offset, offsetParent);
             if (inter>0) {
                 if (currentParent==null) {
@@ -577,7 +577,7 @@ public class Object3D {
         return currentParent;
     }
     
-    public void merge(Object3D other) {
+    public void merge(Region other) {
         //int nb = getVoxels().size();
         this.getVoxels().addAll(other.getVoxels()); // TODO check for duplicates?
         //logger.debug("merge:  {} + {}, nb voxel avant: {}, nb voxels après: {}", this.getLabel(), other.getLabel(), nb,getVoxels().size() );
@@ -724,7 +724,7 @@ public class Object3D {
         return false;
     }
     
-    public Object3D translate(int offsetX, int offsetY, int offsetZ) {
+    public Region translate(int offsetX, int offsetY, int offsetZ) {
         if (offsetX==0 && offsetY==0 && offsetZ==0) return this;
         if (mask!=null) mask.addOffset(offsetX, offsetY, offsetZ);
         if (bounds!=null) bounds.translate(offsetX, offsetY, offsetZ);
@@ -736,12 +736,12 @@ public class Object3D {
         }
         return this;
     }
-    public Object3D translate(BoundingBox bounds) {
+    public Region translate(BoundingBox bounds) {
         if (bounds.isOffsetNull()) return this;
         else return translate(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()); 
     }
 
-    public Object3D setLabel(int label) {
+    public Region setLabel(int label) {
         this.label=label;
         return this;
     }

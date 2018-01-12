@@ -25,7 +25,7 @@ import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
@@ -248,7 +248,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                 int height = b.getSizeY();
                 if (height+offY>parentBounds.getyMax()) height = parentBounds.getyMax()-offY;
                 BlankMask m = new BlankMask("", width, height, b.getSizeZ(), offX, offY, b.getzMin(), o.getScaleXY(), o.getScaleZ());
-                o.setObject(new Object3D(m, o.getIdx()+1, o.is2D()));
+                o.setObject(new Region(m, o.getIdx()+1, o.is2D()));
             }
         }
         if (debug) logger.debug("mc after adjust width: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
@@ -344,7 +344,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                                 break;
                             }
                             int idx = parent.getChildren(structureIdx).size(); // idx = last element -> in order to be consistent with the bounding box map because objects are adjusted afterwards
-                            Object3D o = new Object3D(m, idx+1, parent.is2D());
+                            Region o = new Region(m, idx+1, parent.is2D());
                             StructureObject s = new StructureObject(f, structureIdx, idx, o, parent);
                             parent.getChildren(structureIdx).add(s);
                             if (debug) logger.debug("add object: {}, bounds: {}, refBounds: {}", s, s.getBounds(), ref.getBounds());

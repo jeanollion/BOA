@@ -18,8 +18,8 @@
 package testPlugins.dummyPlugins;
 
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.Voxel;
 import image.Image;
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ import plugins.ObjectSplitter;
  */
 public class DummySplitter implements ObjectSplitter {
 
-    public ObjectPopulation splitObject(Image input, Object3D object) {
+    public RegionPopulation splitObject(Image input, Region object) {
         double yMid  = object.getBounds().getYMean();
         ArrayList<Voxel> v1 = new ArrayList<Voxel>(object.getVoxels().size()/2+1);
         ArrayList<Voxel> v2 = new ArrayList<Voxel>(object.getVoxels().size()/2+1);
@@ -39,10 +39,10 @@ public class DummySplitter implements ObjectSplitter {
             if (v.y<yMid) v1.add(v);
             else v2.add(v);
         }
-        Object3D o1  = new Object3D(v1, 1, object.is2D(), object.getScaleXY(), object.getScaleZ());
-        Object3D o2  = new Object3D(v2, 2, object.is2D(), object.getScaleXY(), object.getScaleZ());
+        Region o1  = new Region(v1, 1, object.is2D(), object.getScaleXY(), object.getScaleZ());
+        Region o2  = new Region(v2, 2, object.is2D(), object.getScaleXY(), object.getScaleZ());
         //logger.debug("dummy splitter: object1: {} object2: {}", v1.size(), v2.size());
-        return new ObjectPopulation(null, input).addObjects(false, o1, o2);
+        return new RegionPopulation(null, input).addObjects(false, o1, o2);
     }
 
     public Parameter[] getParameters() {

@@ -18,7 +18,7 @@
 package plugins.plugins.trackers.trackMate.postProcessing;
 
 import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import static dataStructure.objects.StructureObjectUtils.getStructureObjectComparator;
@@ -54,12 +54,12 @@ import utils.clustering.InterfaceImpl;
  */
 public class MutationTrackPostProcessing {
     final TreeMap<StructureObject, List<StructureObject>> trackHeadTrackMap; // sorted by timePoint
-    final Map<Object3D, SpotWithinCompartment>  objectSpotMap;
+    final Map<Region, SpotWithinCompartment>  objectSpotMap;
     final Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotTrackMap;
     final HashMapGetCreate<List<SpotWithinCompartment>, Track> spotTrackMap;
     final RemoveObjectCallBact removeObject;
     final int spotStructureIdx;
-    public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, Map<Object3D, SpotWithinCompartment> objectSpotMap, RemoveObjectCallBact removeObject) {
+    public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, Map<Region, SpotWithinCompartment> objectSpotMap, RemoveObjectCallBact removeObject) {
         this.removeObject=removeObject;
         this.spotStructureIdx=structureIdx;
         trackHeadTrackMap = new TreeMap<StructureObject, List<StructureObject>>(getStructureObjectComparator());

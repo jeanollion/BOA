@@ -23,8 +23,8 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import dataStructure.objects.Voxel;
@@ -63,7 +63,7 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
         // left-most
         StructureObject object = Collections.min(allTracks.keySet(), (o1, o2)->Double.compare(o1.getBounds().getXMean(), o2.getBounds().getXMean()));
         Image image = parentTrackByF.get(object.getFrame()).getRawImage(backgroundStructure.getSelectedStructureIdx());
-        ObjectPopulation bck = ImageLabeller.labelImage(Arrays.asList(new Voxel[]{new Voxel(0, 0, 0), new Voxel(0, image.getSizeY()-1, 0 )}), image, true);
+        RegionPopulation bck = ImageLabeller.labelImage(Arrays.asList(new Voxel[]{new Voxel(0, 0, 0), new Voxel(0, image.getSizeY()-1, 0 )}), image, true);
         //ImageWindowManagerFactory.showImage(bck.getLabelMap().duplicate("left background"));
         if (intersectWithBackground(object, bck)) objectsToRemove.addAll(allTracks.get(object));
         
@@ -77,15 +77,15 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
         }
         if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false);
     }
-    private boolean intersectWithBackground(StructureObject object, ObjectPopulation bck) {
+    private boolean intersectWithBackground(StructureObject object, RegionPopulation bck) {
         bck.filter(o->o.getSize()>10); // 
-        Object3D cutObject =object.getObject();
+        Region cutObject =object.getObject();
         int XMargin = this.XMargin.getValue().intValue();
         if (XMargin>0 && object.getBounds().getSizeY()>2*XMargin) {
             BoundingBox bds = object.getBounds();
-            cutObject = new Object3D(new BlankMask("", bds.getSizeX(), bds.getSizeY()-2*XMargin, bds.getSizeZ(), bds.getxMin(), bds.getyMin()+XMargin, bds.getzMin(), object.getScaleXY(), object.getScaleZ()), cutObject.getLabel(), cutObject.is2D());
+            cutObject = new Region(new BlankMask("", bds.getSizeX(), bds.getSizeY()-2*XMargin, bds.getSizeZ(), bds.getxMin(), bds.getyMin()+XMargin, bds.getzMin(), object.getScaleXY(), object.getScaleZ()), cutObject.getLabel(), cutObject.is2D());
         }
-        for (Object3D o : bck.getObjects()) {
+        for (Region o : bck.getObjects()) {
             int inter = o.getIntersectionCountMaskMask(cutObject, null, null);
             if (inter>0) {
                 logger.debug("remove track: {} (object: {}), intersection with bck object: {}", object, cutObject.getBounds(), inter);

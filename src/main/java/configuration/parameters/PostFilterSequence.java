@@ -17,7 +17,7 @@
  */
 package configuration.parameters;
 
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import image.ImageProperties;
 import java.util.Collection;
@@ -34,7 +34,7 @@ public class PostFilterSequence extends PluginParameterList<PostFilter> {
         super(name, "Post-Filter", PostFilter.class);
     }
     
-    public ObjectPopulation filter(ObjectPopulation objectPopulation, int structureIdx, StructureObject parent) {
+    public RegionPopulation filter(RegionPopulation objectPopulation, int structureIdx, StructureObject parent) {
         if (objectPopulation == null) return null;
         if (!configured) {
             synchronized(configured) {

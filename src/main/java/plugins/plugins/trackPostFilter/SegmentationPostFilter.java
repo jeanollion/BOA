@@ -22,7 +22,7 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
@@ -63,7 +63,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
         if (postFilters.getChildCount()==0) return;
         List<StructureObject> objectsToRemove = new ArrayList<>();
         List<Pair<String, Exception>> errors = ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
-            ObjectPopulation pop = parent.getObjectPopulation(structureIdx);
+            RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             
             pop.translate(parent.getBounds().duplicate().reverseOffset(), false); // go back to relative landmark
             pop=postFilters.filter(pop, structureIdx, parent);

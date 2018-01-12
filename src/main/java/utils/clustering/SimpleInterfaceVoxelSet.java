@@ -17,7 +17,7 @@
  */
 package utils.clustering;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 
 /**
  *
@@ -25,7 +25,7 @@ import dataStructure.objects.Object3D;
  */
 public class SimpleInterfaceVoxelSet extends InterfaceVoxelSet<SimpleInterfaceVoxelSet> {
 
-    public SimpleInterfaceVoxelSet(Object3D e1, Object3D e2) {
+    public SimpleInterfaceVoxelSet(Region e1, Region e2) {
         super(e1, e2);
     }
 

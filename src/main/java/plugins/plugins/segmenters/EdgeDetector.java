@@ -25,8 +25,8 @@ import configuration.parameters.ConditionalParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PreFilterSequence;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
 import ij.process.AutoThresholder;
@@ -124,12 +124,12 @@ public class EdgeDetector implements Segmenter {
         return this;
     }
     @Override
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         WatershedTransform wt = new WatershedTransform(getWsMap(input, parent), parent.getMask(), Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, parent))), false, null, null);
         wt.setLowConnectivity(false);
         //wt.setPriorityMap(getWsPriorityMap(input, parent));
         wt.run();
-        ObjectPopulation allRegions = wt.getObjectPopulation();
+        RegionPopulation allRegions = wt.getObjectPopulation();
         if (testMode) {
             ImageWindowManagerFactory.showImage(allRegions.getLabelMap().duplicate("Segmented Regions"));
             ImageWindowManagerFactory.showImage(seedMap.setName("Seeds"));
@@ -138,9 +138,9 @@ public class EdgeDetector implements Segmenter {
         if (this.thresholdMethod.getSelectedIndex()==0) {
             double thld = threshold.instanciatePlugin().runThresholder(input, parent);
             if (testMode) ImageWindowManagerFactory.showImage(generateRegionValueMap(allRegions, input).setName("Intensity value Map. Threshold: "+thld));
-            allRegions.filter(new ObjectPopulation.MeanIntensity(thld, true, input));
+            allRegions.filter(new RegionPopulation.MeanIntensity(thld, true, input));
         } else if (this.thresholdMethod.getSelectedIndex()==1) { // thld on value map
-            Map<Object3D, Double>[] values = new Map[1];
+            Map<Region, Double>[] values = new Map[1];
             Image valueMap = generateRegionValueMap(allRegions, input, values);
             double thld = threshold.instanciatePlugin().runThresholder(valueMap , parent);
             if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("Intensity value Map. Threshold: "+thld));
@@ -148,15 +148,15 @@ public class EdgeDetector implements Segmenter {
             allRegions.getObjects().removeAll(values[0].keySet());
             allRegions.relabel(true);
         } else { // use of secondary map to select border regions and compute thld
-            Map<Object3D, Double>[] values = new Map[1];
+            Map<Region, Double>[] values = new Map[1];
             Image valueMap = generateRegionValueMap(allRegions, input, values);
             double thld1 = IJAutoThresholder.runThresholder(valueMap, parent.getMask(), AutoThresholder.Method.Otsu);
             if (testMode) ImageWindowManagerFactory.showImage(valueMap.duplicate("Primary thld value map. Thld: "+thld1));
-            Map<Object3D, Double>[] values2 = new Map[1];
+            Map<Region, Double>[] values2 = new Map[1];
             Image valueMap2 = generateRegionValueMap(allRegions, getSecondaryThresholdMap(input, parent), values2);
             double thld2 = IJAutoThresholder.runThresholder(valueMap2, parent.getMask(), AutoThresholder.Method.Otsu);
             // select objects under thld2 | above thld -> foreground, interface ou backgruond. Others are interface or border (majority) and set value to thld on valueMap 
-            for (Object3D o : allRegions.getObjects()) {
+            for (Region o : allRegions.getObjects()) {
                 if (values[0].get(o)>=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
             }
             Histogram h = valueMap.getHisto256(parent.getMask());
@@ -184,22 +184,22 @@ public class EdgeDetector implements Segmenter {
         return allRegions;
     }
 
-    public static Image generateRegionValueMap(ObjectPopulation pop, Image image) {
+    public static Image generateRegionValueMap(RegionPopulation pop, Image image) {
         return generateRegionValueMap(pop, image, null);
     }
-    public static Image generateRegionValueMap(ObjectPopulation pop, Image image, Map<Object3D, Double>[] values) {
-        Map<Object3D, Double> objectValues = pop.getObjects().stream().collect(Collectors.toMap(o->o, o->BasicMeasurements.getMeanValue(o, image, false)));
+    public static Image generateRegionValueMap(RegionPopulation pop, Image image, Map<Region, Double>[] values) {
+        Map<Region, Double> objectValues = pop.getObjects().stream().collect(Collectors.toMap(o->o, o->BasicMeasurements.getMeanValue(o, image, false)));
         if (values!=null) values[0] = objectValues;
         return generateRegionValueMap(image, objectValues);
     }
-    private static Image generateRegionValueMap(ImageProperties image, Map<Object3D, Double> objectValues) {
+    private static Image generateRegionValueMap(ImageProperties image, Map<Region, Double> objectValues) {
         Image valueMap = new ImageFloat("Value per region", image);
-        for (Map.Entry<Object3D, Double> e : objectValues.entrySet()) {
+        for (Map.Entry<Region, Double> e : objectValues.entrySet()) {
             for (Voxel v : e.getKey().getVoxels()) valueMap.setPixel(v.x, v.y, v.z, e.getValue());
         }
         return valueMap;
     }
-    protected double getValue(Object3D o, Image input) {
+    protected double getValue(Region o, Image input) {
         return BasicMeasurements.getMeanValue(o, input, false);
     }
     @Override

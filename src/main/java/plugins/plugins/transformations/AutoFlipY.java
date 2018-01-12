@@ -25,8 +25,8 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import dataStructure.containers.InputImages;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -163,21 +163,21 @@ public class AutoFlipY implements Transformation {
         int minSize = minObjectSize.getValue().intValue();
         SimpleThresholder thlder = fluoThld.instanciatePlugin();
         ImageMask mask = new ThresholdMask(image, thlder.runSimpleThresholder(image, null), true, true);
-        List<Object3D> objects = ImageLabeller.labelImageList(mask);
+        List<Region> objects = ImageLabeller.labelImageList(mask);
         objects.removeIf(o->o.getSize()<minSize);
         // filter by median sizeY
-        Map<Object3D, Integer> sizeY = objects.stream().collect(Collectors.toMap(o->o, o->o.getBounds().getSizeY()));
+        Map<Region, Integer> sizeY = objects.stream().collect(Collectors.toMap(o->o, o->o.getBounds().getSizeY()));
         double medianSizeY = ArrayUtil.medianInt(sizeY.values());
         objects.removeIf(o->sizeY.get(o)<medianSizeY/2);
         if (testMode) logger.debug("objects: {}, minSize: {}, minSizeY: {} (median sizeY: {})", objects.size(), minSize, medianSizeY/2, medianSizeY);
         if (objects.isEmpty() || objects.size()<=2) return null;
-        Map<Object3D, BoundingBox> xBounds = objects.stream().collect(Collectors.toMap(o->o, o->new BoundingBox(o.getBounds().getxMin(), o.getBounds().getxMax(), 0, 1, 0, 1)));
-        Iterator<Object3D> it = objects.iterator();
-        List<Object3D> yMinOs = new ArrayList<>();
-        List<Object3D> yMaxOs = new ArrayList<>();
+        Map<Region, BoundingBox> xBounds = objects.stream().collect(Collectors.toMap(o->o, o->new BoundingBox(o.getBounds().getxMin(), o.getBounds().getxMax(), 0, 1, 0, 1)));
+        Iterator<Region> it = objects.iterator();
+        List<Region> yMinOs = new ArrayList<>();
+        List<Region> yMaxOs = new ArrayList<>();
         while(it.hasNext()) {
-            Object3D o = it.next();
-            List<Object3D> inter = new ArrayList<>(objects);
+            Region o = it.next();
+            List<Region> inter = new ArrayList<>(objects);
             inter.removeIf(oo->!xBounds.get(oo).intersect2D(xBounds.get(o)));
             yMinOs.add(Collections.min(inter, (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin())));
             yMaxOs.add(Collections.max(inter, (o1, o2)->Integer.compare(o1.getBounds().getyMax(), o2.getBounds().getyMax())));
@@ -192,8 +192,8 @@ public class AutoFlipY implements Transformation {
         
         if (testMode) {
             //ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(mask, null, 1).setName("Segmentation mask"));
-            this.upperObjectsTest.add(new ObjectPopulation(yMinOs, image).getLabelMap().setName("Upper Objects"));
-            this.lowerObjectsTest.add(new ObjectPopulation(yMaxOs, image).getLabelMap().setName("Lower Objects"));
+            this.upperObjectsTest.add(new RegionPopulation(yMinOs, image).getLabelMap().setName("Upper Objects"));
+            this.lowerObjectsTest.add(new RegionPopulation(yMaxOs, image).getLabelMap().setName("Lower Objects"));
         }
         List<Pair<Integer, Integer>> yMins = Utils.transform(yMinOs, o->new Pair<>(o.getBounds().getyMin(), o.getBounds().getSizeY()));
         double sigmaMin = getSigma(yMins);

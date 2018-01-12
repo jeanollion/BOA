@@ -18,7 +18,7 @@
 package plugins.plugins.trackers.trackMate;
 
 import boa.gui.imageInteraction.ImageObjectInterface;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import fiji.plugin.trackmate.Spot;
 import ij.gui.Line;
@@ -40,7 +40,7 @@ import utils.Utils;
  */
 public class SpotWithinCompartment extends Spot {
     public static double poleDistanceFactor = 0; 
-    protected Object3D object;
+    protected Region object;
     public final SpotCompartiment compartiment;
     public final Localization localization;
     public final int frame;
@@ -48,7 +48,7 @@ public class SpotWithinCompartment extends Spot {
     public boolean lowQuality=false;
     protected final DistanceComputationParameters distanceParameters;
     
-    public SpotWithinCompartment(Object3D object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter, DistanceComputationParameters distanceParameters) {
+    public SpotWithinCompartment(Region object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter, DistanceComputationParameters distanceParameters) {
         super(scaledCenter[0], scaledCenter[1], scaledCenter.length>2?scaledCenter[2]:0, 1, 1);
         //logger.debug("create spot: F={}, Idx={}, center={}", timePoint, object.getLabel()-1, Utils.toStringArray(scaledCenter));
         getFeatures().put(Spot.FRAME, (double)compartiment.object.getFrame());
@@ -106,7 +106,7 @@ public class SpotWithinCompartment extends Spot {
         return center;
     }
     
-    public Object3D getObject() {return object;}
+    public Region getObject() {return object;}
     
     @Override
     public double normalizeDiffTo( final Spot s, final String feature ) {

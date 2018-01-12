@@ -21,7 +21,7 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.containers.InputImages;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.Image;
@@ -103,7 +103,7 @@ public class CropMicroChannels2D {//implements TransformationTimeIndependent {
         // get Y coords
         ImageInteger heightMask = threshold(imProjY, IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Triangle), true, false);
         if (debug) plotProfile(heightMask, 0, 0, true);
-        Object3D[] objHeight = ImageLabeller.labelImage(heightMask);
+        Region[] objHeight = ImageLabeller.labelImage(heightMask);
         if (objHeight.length==0) return null;
         else if (objHeight.length==1) {
             yStart = objHeight[0].getBounds().getxMin();
@@ -124,7 +124,7 @@ public class CropMicroChannels2D {//implements TransformationTimeIndependent {
         // get X coords
         ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Triangle), true, false);
         if (debug) plotProfile(widthMask, 0, 0, true);
-        Object3D[] objWidth = ImageLabeller.labelImage(widthMask);
+        Region[] objWidth = ImageLabeller.labelImage(widthMask);
         median = Filters.median(imProjX, new ImageFloat("", 0, 0, 0), new EllipsoidalNeighborhood(3, true));
         projDer = ImageFeatures.getDerivative(median, 1, 1, 0, 0, true);
         if (debug) plotProfile(projDer, 0, 0, true);

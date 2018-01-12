@@ -18,9 +18,9 @@
 package boa.gui.imageInteraction;
 
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.ObjectPopulation.Filter;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
+import dataStructure.objects.RegionPopulation.Filter;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import image.Image;
@@ -44,7 +44,7 @@ import utils.Pair;
  * @author jollion
  */
 public class FreeLineSplitter implements ObjectSplitter {
-    final Map<Object3D, BoundingBox> offsetMap;
+    final Map<Region, BoundingBox> offsetMap;
     final int[] xPoints, yPoints;
     public FreeLineSplitter(Collection<Pair<StructureObject, BoundingBox>> objects, int[] xPoints, int[] yPoints) {
         if (xPoints.length!=yPoints.length) throw new IllegalArgumentException("xPoints & yPoints should have same length");
@@ -58,7 +58,7 @@ public class FreeLineSplitter implements ObjectSplitter {
         }
     }
     @Override
-    public ObjectPopulation splitObject(Image input, Object3D object) {
+    public RegionPopulation splitObject(Image input, Region object) {
         ImageInteger mask = object.getMask();
         ImageInteger splitMask = mask.duplicate("splitMask");
         BoundingBox off=offsetMap.get(object);
@@ -73,19 +73,19 @@ public class FreeLineSplitter implements ObjectSplitter {
             int y = yPoints[i] - offY;
             if (splitMask.contains(x, y, 0)) splitMask.setPixel(x, y, 0, 0);
         }
-        List<Object3D> objects = ImageLabeller.labelImageListLowConnectivity(splitMask);
-        ObjectPopulation res = new ObjectPopulation(objects, input);
+        List<Region> objects = ImageLabeller.labelImageListLowConnectivity(splitMask);
+        RegionPopulation res = new RegionPopulation(objects, input);
         res.filterAndMergeWithConnected(o->o.getSize()>1); // connect 1-pixels objects, artifacts of low connectivity labelling
         if (objects.size()>2) { // merge smaller & connected
             // islate bigger object and try to merge others
-            Object3D biggest = Collections.max(objects, (o1, o2)->Integer.compare(o1.getSize(), o2.getSize()));
-            List<Object3D> toMerge = new ArrayList<>(objects);
+            Region biggest = Collections.max(objects, (o1, o2)->Integer.compare(o1.getSize(), o2.getSize()));
+            List<Region> toMerge = new ArrayList<>(objects);
             toMerge.remove(biggest);
-            ObjectPopulation mergedPop =  new ObjectPopulation(toMerge, input);
+            RegionPopulation mergedPop =  new RegionPopulation(toMerge, input);
             mergedPop.mergeAllConnected();
             objects = mergedPop.getObjects();
             objects.add(biggest);
-            res = new ObjectPopulation(objects, input);
+            res = new RegionPopulation(objects, input);
         }
         // relabel removed pixels
         if (objects.size()==2) {
@@ -104,7 +104,7 @@ public class FreeLineSplitter implements ObjectSplitter {
                     splitMask.setPixel(x, y, 0, l1Count>=l2Count ? 1 : 2);
                 }
             }
-            res = new ObjectPopulation(splitMask, true);
+            res = new RegionPopulation(splitMask, true);
         }
         if (verbose) {
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(res.getLabelMap());

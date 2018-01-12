@@ -18,8 +18,8 @@
 package plugins.plugins.measurements.objectFeatures;
 
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import plugins.ObjectFeature;
@@ -35,12 +35,12 @@ public class Quality implements ObjectFeature {
     }
 
     @Override
-    public ObjectFeature setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    public ObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         return this;
     }
 
     @Override
-    public double performMeasurement(Object3D object, BoundingBox offset) {
+    public double performMeasurement(Region object, BoundingBox offset) {
         double quality = object.getQuality();
         if (Double.isInfinite(quality)) return Double.NaN; // not measured
         return quality;

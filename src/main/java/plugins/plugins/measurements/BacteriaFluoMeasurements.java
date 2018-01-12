@@ -20,7 +20,7 @@ package plugins.plugins.measurements;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
@@ -77,7 +77,7 @@ public class BacteriaFluoMeasurements implements Measurement {
     }
 
     public void performMeasurement(StructureObject object) {
-        Object3D bactObject = object.getObject();
+        Region bactObject = object.getObject();
         Image bactImage = object.getRawImage(bacteria.getSelectedIndex());
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
         BoundingBox parentOffset = object.getParent().getBounds();

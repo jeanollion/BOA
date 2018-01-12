@@ -19,8 +19,8 @@ package processing;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import ij.ImageStack;
 import ij.process.FloodFiller;
 import ij.process.ImageProcessor;
@@ -39,7 +39,7 @@ import plugins.plugins.segmenters.BacteriaTrans;
 import static plugins.plugins.segmenters.BacteriaTrans.debug;
 import utils.clustering.ClusterCollection;
 import utils.clustering.SimpleInterfaceVoxelSet;
-import utils.clustering.Object3DCluster;
+import utils.clustering.RegionCluster;
 
 /**
  *
@@ -53,8 +53,8 @@ public class FillHoles2D {
         FillHoles2D.fillHoles(close, 2); // binary close generate an image with only 1's
         ImageDisplayer disp = debug ? new IJImageDisplayer() : null;
         ImageOperations.xor(close, image, close);
-        ObjectPopulation foregroundPop = new ObjectPopulation(image, false);
-        ObjectPopulation closePop = new ObjectPopulation(close, false);
+        RegionPopulation foregroundPop = new RegionPopulation(image, false);
+        RegionPopulation closePop = new RegionPopulation(close, false);
         if (debug) disp.showImage(closePop.getLabelMap().duplicate("close XOR"));
         closePop.filter(new InterfaceSizeFilter(foregroundPop, minSizeFusion, backgroundProportion));
         if (!closePop.getObjects().isEmpty()) {
@@ -63,7 +63,7 @@ public class FillHoles2D {
                 disp.showImage(closePop.getLabelMap().duplicate("close XOR after filter"));
                 disp.showImage(foregroundPop.getLabelMap().duplicate("seg map before close"));
             }
-            for (Object3D o : closePop.getObjects()) o.draw(image, 1);
+            for (Region o : closePop.getObjects()) o.draw(image, 1);
             return true;
         } else return false;
     }
@@ -72,8 +72,8 @@ public class FillHoles2D {
 // Binary fill by Gabriel Landini, G.Landini at bham.ac.uk
     // 21/May/2008
 
-    public static void fillHoles(ObjectPopulation pop) {
-        for (Object3D o : pop.getObjects()) {
+    public static void fillHoles(RegionPopulation pop) {
+        for (Region o : pop.getObjects()) {
             fillHoles(o.getMask(), 2);
             o.resetVoxels();
             o.getVoxels();
@@ -133,39 +133,39 @@ public class FillHoles2D {
             else im.setPixel(xy, 0, 1);
         }
     }
-    private static class InterfaceSizeFilter implements ObjectPopulation.Filter {
-        Object3DCluster clust;
-        final ObjectPopulation foregroundObjects;
+    private static class InterfaceSizeFilter implements RegionPopulation.Filter {
+        RegionCluster clust;
+        final RegionPopulation foregroundObjects;
         final double fusionSize, backgroundFactor;
-        public InterfaceSizeFilter(ObjectPopulation foregroundObjects, double fusionSize, double backgroundFactor) {
+        public InterfaceSizeFilter(RegionPopulation foregroundObjects, double fusionSize, double backgroundFactor) {
             this.foregroundObjects=foregroundObjects;
             this.fusionSize=fusionSize;
             this.backgroundFactor=backgroundFactor;
         }
         @Override
-        public void init(ObjectPopulation population) {
+        public void init(RegionPopulation population) {
             if (!population.getImageProperties().sameSize(foregroundObjects.getImageProperties())) throw new IllegalArgumentException("Foreground objects population should have same bounds as current population");
-            ClusterCollection.InterfaceFactory<Object3D, SimpleInterfaceVoxelSet> f = (Object3D e1, Object3D e2, Comparator<? super Object3D> elementComparator) -> new SimpleInterfaceVoxelSet(e1, e2);
-            List<Object3D> allObjects = new ArrayList<>(population.getObjects().size()+foregroundObjects.getObjects().size());
+            ClusterCollection.InterfaceFactory<Region, SimpleInterfaceVoxelSet> f = (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new SimpleInterfaceVoxelSet(e1, e2);
+            List<Region> allObjects = new ArrayList<>(population.getObjects().size()+foregroundObjects.getObjects().size());
             allObjects.addAll(population.getObjects());
             allObjects.addAll(foregroundObjects.getObjects());
-            ObjectPopulation mixedPop = new ObjectPopulation(allObjects, population.getImageProperties());
+            RegionPopulation mixedPop = new RegionPopulation(allObjects, population.getImageProperties());
             mixedPop.relabel();
-            clust = new Object3DCluster(mixedPop, true, false, f); // high connectivity -> more selective 
-            //if (debug) new IJImageDisplayer().showImage(Object3DCluster.drawInterfaces(clust));
+            clust = new RegionCluster(mixedPop, true, false, f); // high connectivity -> more selective 
+            //if (debug) new IJImageDisplayer().showImage(RegionCluster.drawInterfaces(clust));
         }
-        private Map<Integer, Integer> getInterfaceSize(Object3D o) {
+        private Map<Integer, Integer> getInterfaceSize(Region o) {
             Set<SimpleInterfaceVoxelSet> inter = clust.getInterfaces(o);
             Map<Integer, Integer> res = new HashMap<>(inter.size());
             for (SimpleInterfaceVoxelSet i : inter) {
-                Object3D other = i.getOther(o);
+                Region other = i.getOther(o);
                 res.put(other.getLabel(), res.getOrDefault(other.getLabel(), 0) + i.getVoxels(other).size());
             }
             return res;
             
         }
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             Map<Integer, Integer> interfaces = getInterfaceSize(object);
             double bck = (interfaces.containsKey(0)) ? interfaces.remove(0) : 0;
             double fore = 0; for (Integer i : interfaces.values()) fore+=i;
@@ -173,7 +173,7 @@ public class FillHoles2D {
             if (bck>(bck+fore)*backgroundFactor) return false;
             if (interfaces.size()==1) return true;
             else { // link separated objects only if all but one are small enough
-                Set<Object3D> interactants = clust.getInteractants(object);
+                Set<Region> interactants = clust.getInteractants(object);
                 interactants.removeIf(o -> o.getLabel()==0 || o.getSize()<=fusionSize); 
                 return interactants.size()<=1;
             }

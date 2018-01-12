@@ -12,7 +12,7 @@ package processing;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import static core.Processor.logger;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import ij.ImagePlus;
 import ij.gui.Arrow;
@@ -223,7 +223,7 @@ public class FitEllipse {
     }
 
     
-    public static EllipseFit2D fitEllipse2D(Object3D object) {
+    public static EllipseFit2D fitEllipse2D(Region object) {
         FitEllipse fitter = new FitEllipse();
         ImageInteger mask = object.getMask();
         if (mask.getSizeZ()>1) mask = mask.getZPlane(mask.getSizeZ()/2);

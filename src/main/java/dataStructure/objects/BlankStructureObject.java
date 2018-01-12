@@ -63,11 +63,11 @@ public class BlankStructureObject implements StructureObjectProcessing {
         return null;
     }
 
-    public Object3D getObject() {
+    public Region getObject() {
         return null;
     }
 
-    public ArrayList<StructureObject> setChildrenObjects(ObjectPopulation children, int structureIdx) {
+    public ArrayList<StructureObject> setChildrenObjects(RegionPopulation children, int structureIdx) {
         return null;
     }
 

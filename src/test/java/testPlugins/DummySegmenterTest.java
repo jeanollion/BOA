@@ -18,8 +18,8 @@
 package testPlugins;
 
 import TestUtils.TestUtils;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import image.ImageByte;
 import image.ImageFormat;
 import image.ImageInteger;
@@ -39,10 +39,10 @@ public class DummySegmenterTest {
     public void testDummySegmenter() {
         DummySegmenter s = new DummySegmenter(true, 2);
         ImageByte in = new ImageByte("", 50, 50, 2);
-        ObjectPopulation pop = s.runSegmenter(in, 0, null);
+        RegionPopulation pop = s.runSegmenter(in, 0, null);
         assertEquals("number of objects", 2, pop.getObjects().size());
         ImageInteger image = pop.getLabelMap();
-        Object3D[] obs = ImageLabeller.labelImage(image);
+        Region[] obs = ImageLabeller.labelImage(image);
         assertEquals("number of objects from image", 2, obs.length);
         
         // reconstruction de l'image

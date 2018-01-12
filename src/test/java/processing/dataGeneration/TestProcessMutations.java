@@ -24,7 +24,7 @@ import configuration.parameters.PostFilterSequence;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import ij.ImageJ;
 import image.BlankMask;
@@ -90,7 +90,7 @@ public class TestProcessMutations {
         }
         ((MutationSegmenter)seg).intermediateImages=intermediateImages;
         
-        ObjectPopulation pop = seg.runSegmenter(localInput, 2, parent);
+        RegionPopulation pop = seg.runSegmenter(localInput, 2, parent);
         
         
         PostFilterSequence pf = new PostFilterSequence("pf"); 

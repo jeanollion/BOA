@@ -17,8 +17,8 @@
  */
 package plugins;
 
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import image.Image;
 
 /**
@@ -26,6 +26,6 @@ import image.Image;
  * @author jollion
  */
 public interface ObjectSplitter extends ImageProcessingPlugin {
-    public ObjectPopulation splitObject(Image input, Object3D object);
+    public RegionPopulation splitObject(Image input, Region object);
     public void setSplitVerboseMode(boolean verbose);
 }

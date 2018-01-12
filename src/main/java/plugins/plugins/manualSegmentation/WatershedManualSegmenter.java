@@ -23,8 +23,8 @@ import configuration.parameters.BooleanParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PreFilterSequence;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import image.Image;
@@ -46,7 +46,7 @@ public class WatershedManualSegmenter implements ManualSegmenter {
     PluginParameter<Thresholder> stopThreshold = new PluginParameter<Thresholder>("Stop threshold", Thresholder.class, false);
     Parameter[] parameters=  new Parameter[]{prefilters, decreasingIntensities, stopThreshold};
     boolean verbose;
-    public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> points) {
+    public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> points) {
         input = prefilters.filter(input, parent).setName("preFilteredImage");
         Thresholder t = stopThreshold.instanciatePlugin();
         double threshold = t!=null?t.runThresholder(input, parent): Double.NaN;
@@ -56,7 +56,7 @@ public class WatershedManualSegmenter implements ManualSegmenter {
         for (int[] p : points) {
             if (segmentationMask.insideMask(p[0], p[1], p[2])) mask.setPixel(p[0], p[1], p[2], label++);
         }
-        ObjectPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), prop, null, false);
+        RegionPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), prop, null, false);
         if (verbose) {
             ImageDisplayer disp = new IJImageDisplayer();
             disp.showImage(input);

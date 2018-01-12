@@ -17,8 +17,8 @@
  */
 package dataStructure.containers;
 
-import dataStructure.objects.Object3D;
-import static dataStructure.objects.Object3D.logger;
+import dataStructure.objects.Region;
+import static dataStructure.objects.Region.logger;
 import dataStructure.objects.StructureObject;
 import image.BlankMask;
 import image.BoundingBox;
@@ -41,8 +41,8 @@ public class ObjectContainerBlankMask extends ObjectContainer {
     }
     
     @Override
-    public Object3D getObject() {
-        return new Object3D(getImage(), structureObject.getIdx()+1, is2D);
+    public Region getObject() {
+        return new Region(getImage(), structureObject.getIdx()+1, is2D);
     }
     
     @Override public void deleteObject(){bounds=null;}

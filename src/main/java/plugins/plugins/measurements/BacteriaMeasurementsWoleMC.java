@@ -20,7 +20,7 @@ package plugins.plugins.measurements;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
@@ -79,7 +79,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
 
     public void performMeasurement(StructureObject object) {
         // measurements on microchannels
-        Object3D o = object.getObject();
+        Region o = object.getObject();
         long t0 = System.currentTimeMillis();
         object.getMeasurements().setValue("MutationCount", ObjectInclusionCount.count(object, mutation.getSelectedIndex(), 0, true));
         object.getMeasurements().setValue("BacteriaCount", ObjectInclusionCount.count(object, bacteria.getSelectedIndex(), 0, false));

@@ -23,7 +23,7 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import image.Image;
 import image.ImageOperations;
@@ -77,7 +77,7 @@ public class FixedObjectsTracker implements TrackerSegmenter {
         
         // segment objects on input image
         Segmenter s = segmenter.instanciatePlugin();
-        ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);
+        RegionPopulation pop = s.runSegmenter(input, structureIdx, parent);
         for (StructureObject p : parentTrack) p.setChildrenObjects(pop, structureIdx);
         track(structureIdx, parentTrack);
     }

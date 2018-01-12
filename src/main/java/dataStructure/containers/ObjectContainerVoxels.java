@@ -17,8 +17,8 @@
  */
 package dataStructure.containers;
 
-import dataStructure.objects.Object3D;
-import static dataStructure.objects.Object3D.logger;
+import dataStructure.objects.Region;
+import static dataStructure.objects.Region.logger;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import dataStructure.objects.Voxel2D;
@@ -55,7 +55,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
         }
     }
 
-    private void createCoordsArrays(Object3D object) {
+    private void createCoordsArrays(Region object) {
         if (!object.is2D()) {
             List<Voxel> voxels = object.getVoxels();
             x = new int[voxels.size()];
@@ -93,8 +93,8 @@ public class ObjectContainerVoxels extends ObjectContainer {
         return voxels;
     }
     @Override
-    public Object3D getObject() {
-        return new Object3D(getVoxels(), structureObject.getIdx() + 1, bounds, is2D, structureObject.getScaleXY(), structureObject.getScaleZ());
+    public Region getObject() {
+        return new Region(getVoxels(), structureObject.getIdx() + 1, bounds, is2D, structureObject.getScaleXY(), structureObject.getScaleZ());
     }
 
     @Override

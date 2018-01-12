@@ -20,8 +20,8 @@ package plugins.plugins.segmenters;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import dataStructure.objects.BlankStructureObject;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
 import image.ImageByte;
@@ -54,7 +54,7 @@ public class SimpleThresholder implements Segmenter {
         this.threshold= new PluginParameter<Thresholder>("Threshold", Thresholder.class, new ConstantValue(threshold), false);
     }
     
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing structureObject) {
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing structureObject) {
         ImageByte mask = new ImageByte("mask", input);
         Thresholder t =  threshold.instanciatePlugin();
         double thresh = t.runThresholder(input, structureObject);
@@ -64,33 +64,33 @@ public class SimpleThresholder implements Segmenter {
                 if (input.getPixel(xy, z)>=thresh) pixels[z][xy]=1;
             }
         }
-        Object3D[] objects = ImageLabeller.labelImage(mask);
+        Region[] objects = ImageLabeller.labelImage(mask);
         logger.trace("simple thresholder: image: {} number of objects: {}", input.getName(), objects.length);
-        return  new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
+        return  new RegionPopulation(new ArrayList<Region>(Arrays.asList(objects)), input);
         
     }
     
-    public static ObjectPopulation run(Image input, Thresholder thresholder, StructureObjectProcessing structureObject) {
+    public static RegionPopulation run(Image input, Thresholder thresholder, StructureObjectProcessing structureObject) {
         double thresh = thresholder.runThresholder(input, structureObject);
         return run(input, thresh, structureObject.getMask()); 
     }
     
-    public static ObjectPopulation run(Image input, ImageMask mask, Thresholder thresholder) {
+    public static RegionPopulation run(Image input, ImageMask mask, Thresholder thresholder) {
         double thresh = thresholder.runThresholder(input, new BlankStructureObject(mask));
         return run(input, thresh, mask); 
     }
     
-    public static ObjectPopulation run(Image input, double threhsold, ImageMask mask) {
+    public static RegionPopulation run(Image input, double threhsold, ImageMask mask) {
         ImageInteger maskR = ImageOperations.threshold(input, threhsold, true, false, false, null);
         if (mask!=null) ImageOperations.and(maskR, mask, maskR);
-        Object3D[] objects = ImageLabeller.labelImage(maskR);
-        return new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
+        Region[] objects = ImageLabeller.labelImage(maskR);
+        return new RegionPopulation(new ArrayList<Region>(Arrays.asList(objects)), input);
     }
-    public static ObjectPopulation runUnder(Image input, double threhsold, ImageMask mask) {
+    public static RegionPopulation runUnder(Image input, double threhsold, ImageMask mask) {
         ImageInteger maskR = ImageOperations.threshold(input, threhsold, false, false, false, null);
         if (mask!=null) ImageOperations.and(maskR, mask, maskR);
-        Object3D[] objects = ImageLabeller.labelImage(maskR);
-        return new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
+        Region[] objects = ImageLabeller.labelImage(maskR);
+        return new RegionPopulation(new ArrayList<Region>(Arrays.asList(objects)), input);
     }
 
     public Parameter[] getParameters() {

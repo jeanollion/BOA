@@ -17,14 +17,23 @@
  */
 package utils.clustering;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
-import java.util.Collection;
+import java.util.Comparator;
 
 /**
  *
  * @author jollion
  */
-public interface InterfaceObject3D<T extends Interface<Object3D, T>> extends Interface<Object3D, T> {
-    public abstract void addPair(Voxel v1, Voxel v2);
+public abstract class InterfaceRegionImpl<T extends Interface<Region, T>> extends InterfaceImpl<Region, T> implements InterfaceRegion<T> {
+
+    public InterfaceRegionImpl(Region e1, Region e2) {
+        super(e1, e2, RegionCluster.regionComparator);
+    }
+
+    @Override
+    public void performFusion() {
+        e1.addVoxels(e2.getVoxels());
+    }
+
 }

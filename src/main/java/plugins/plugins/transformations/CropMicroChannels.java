@@ -21,8 +21,8 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import dataStructure.containers.InputImages;
 import static dataStructure.containers.InputImages.getAverageFrame;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -176,15 +176,15 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
         public BoundingBox getBounds(int idx, boolean includeYMinShift) {
             return new BoundingBox(xMin[idx], xMax[idx], yMin+(includeYMinShift?yMinShift[idx]:0), yMax, 0, 0);
         }
-        public Object3D getObject3D(int idx, float scaleXY, float scaleZ, boolean includeYMinShift, int zMax) {
+        public Region getRegion(int idx, float scaleXY, float scaleZ, boolean includeYMinShift, int zMax) {
             BoundingBox bds = getBounds(idx, includeYMinShift);
             if (zMax>1) bds.expandZ(zMax);
-            return new Object3D(new BlankMask("mask of:" + idx+1, bds.getImageProperties(scaleXY, scaleZ)), idx+1, bds.getSizeZ()==1);
+            return new Region(new BlankMask("mask of:" + idx+1, bds.getImageProperties(scaleXY, scaleZ)), idx+1, bds.getSizeZ()==1);
         }
-        public ObjectPopulation getObjectPopulation(ImageProperties im, boolean includeYMinShift) {
-            List<Object3D> l = new ArrayList<>(xMin.length);
-            for (int i = 0; i<xMin.length; ++i) l.add(getObject3D(i, im.getScaleXY(), im.getScaleZ(), includeYMinShift, im.getSizeZ()));
-            return new ObjectPopulation(l, im);
+        public RegionPopulation getObjectPopulation(ImageProperties im, boolean includeYMinShift) {
+            List<Region> l = new ArrayList<>(xMin.length);
+            for (int i = 0; i<xMin.length; ++i) l.add(getRegion(i, im.getScaleXY(), im.getScaleZ(), includeYMinShift, im.getSizeZ()));
+            return new RegionPopulation(l, im);
         }
     }
     boolean testMode;

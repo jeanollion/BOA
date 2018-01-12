@@ -17,7 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -35,8 +35,8 @@ import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClo
  */
 public class Assignment {
         final static boolean notSameLineIsError = true;
-        List<Object3D> prevObjects;
-        List<Object3D> nextObjects;
+        List<Region> prevObjects;
+        List<Region> nextObjects;
         int idxPrev, idxNext;
         double sizePrev, sizeNext;
         double previousSizeIncrement = Double.NaN;
@@ -67,7 +67,7 @@ public class Assignment {
             this.previousSizeIncrement=other.previousSizeIncrement;
             this.currentScore=other.currentScore;
         }
-        public Assignment(List<Object3D> prev, List<Object3D> next, double sizePrev, double sizeNext, int idxPrev, int idxNext) {
+        public Assignment(List<Region> prev, List<Region> next, double sizePrev, double sizeNext, int idxPrev, int idxNext) {
             this.sizeNext=sizeNext;
             this.sizePrev=sizePrev;
             this.prevObjects = prev;
@@ -91,15 +91,15 @@ public class Assignment {
             if (this.prevFromSameLine==null) {
                 if (prevObjects.size()<=1) prevFromSameLine=true;
                 else {
-                    Iterator<Object3D> it = prevObjects.iterator();
-                    Object3D first = it.next();
+                    Iterator<Region> it = prevObjects.iterator();
+                    Region first = it.next();
                     prevFromSameLine=true;
                     while(it.hasNext() && prevFromSameLine) prevFromSameLine = ta.areFromSameLine.apply(first, it.next());
                 }
             }
             return prevFromSameLine;
         }
-        public Object3D getLastObject(boolean prev) {
+        public Region getLastObject(boolean prev) {
             if (prev) {
                 if (prevObjects.isEmpty()) return null;
                 else return prevObjects.get(prevObjects.size()-1);
@@ -110,7 +110,7 @@ public class Assignment {
         }
         public boolean incrementPrev() {
             if (idxPrevEnd()<ta.idxPrevLim) {
-                Object3D o = ta.prev.get(idxPrevEnd());
+                Region o = ta.prev.get(idxPrevEnd());
                 prevObjects.add(o);
                 if (prevFromSameLine!=null && prevFromSameLine) prevFromSameLine = ta.areFromSameLine.apply(prevObjects.get(0), o);
                 sizePrev+=ta.sizeFunction.apply(o);
@@ -121,7 +121,7 @@ public class Assignment {
         }
         public boolean incrementNext() {
             if (idxNextEnd()<ta.idxNextLim) {
-                Object3D o = ta.next.get(idxNextEnd());
+                Region o = ta.next.get(idxNextEnd());
                 nextObjects.add(o);
                 sizeNext+=ta.sizeFunction.apply(o);
                 currentScore=null;
@@ -147,7 +147,7 @@ public class Assignment {
             }
         }
         public boolean removeUntil(boolean prev, boolean removeFirst, int n) {
-            List<Object3D> l = prev ? prevObjects : nextObjects;
+            List<Region> l = prev ? prevObjects : nextObjects;
             if (l.size()<=n) return false;
             currentScore=null;
             if (prev) {
@@ -156,7 +156,7 @@ public class Assignment {
             }
             
             if (removeFirst) {
-                Iterator<Object3D> it = l.iterator();
+                Iterator<Region> it = l.iterator();
                 while(l.size()>n) {
                     if (prev) {
                         sizePrev -= ta.sizeFunction.apply(it.next());
@@ -168,7 +168,7 @@ public class Assignment {
                     it.remove();
                 }
             } else {
-                ListIterator<Object3D> it = l.listIterator(l.size());
+                ListIterator<Region> it = l.listIterator(l.size());
                 while(l.size()>n) {
                     if (prev) sizePrev -= ta.sizeFunction.apply(it.previous());
                     else sizeNext -= ta.sizeFunction.apply(it.previous());

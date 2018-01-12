@@ -22,8 +22,8 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import ij.process.AutoThresholder;
@@ -84,7 +84,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableTh
     }
 
     @Override
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runThresholder(input, parent) : thresholdValue;
         logger.debug("thresholder: {} : {}", threshold.getPluginName(), threshold.getParameters());
         CropMicroChannelFluo2D cropper = new CropMicroChannelFluo2D().setChannelDim(this.channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue()).setParameters(this.minObjectSize.getValue().intValue());
@@ -101,13 +101,13 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableTh
         return r;
     }
     
-    private static ObjectPopulation run2(Image image, int channelHeight, int channelWidth, int yMargin) {
+    private static RegionPopulation run2(Image image, int channelHeight, int channelWidth, int yMargin) {
         // get yStart
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
         double thldY =  IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Triangle); // ISODATA ou Triangle?
         ImageInteger heightMask = threshold(imProjY, thldY, true, false); 
-        Object3D[] objHeight = ImageLabeller.labelImage(heightMask);
+        Region[] objHeight = ImageLabeller.labelImage(heightMask);
         int yStart;
         if (objHeight.length == 0) {
             yStart = 0;
@@ -150,19 +150,19 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableTh
         float[] xProj = ImageOperations.meanProjection(image, ImageOperations.Axis.X, null);
         ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), new float[][]{xProj});
         ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Triangle), true, false);
-        Object3D[] objWidth = ImageLabeller.labelImage(widthMask);
+        Region[] objWidth = ImageLabeller.labelImage(widthMask);
 
-        ArrayList<Object3D> res = new ArrayList<Object3D>(objWidth.length);
+        ArrayList<Region> res = new ArrayList<Region>(objWidth.length);
         for (int i = 0; i < objWidth.length; ++i) {
             int xMin = Math.max((int) (objWidth[i].getBounds().getXMean() - channelWidth / 2.0), 0);
-            res.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), channelWidth, Math.min(channelHeight, image.getSizeY()-yStart), image.getSizeZ(), xMin, yStart, 0, image.getScaleXY(), image.getScaleZ()), i + 1, true));
+            res.add(new Region(new BlankMask("mask of microchannel:" + (i + 1), channelWidth, Math.min(channelHeight, image.getSizeY()-yStart), image.getSizeZ(), xMin, yStart, 0, image.getScaleXY(), image.getScaleZ()), i + 1, true));
         }
         if (debug) {
             IJImageDisplayer disp = new IJImageDisplayer();
             disp.showImage(imProjY.setName("imm proj Y"));
             disp.showImage(imProjX.setName("imm proj X"));
         }
-        return new ObjectPopulation(res, image);
+        return new RegionPopulation(res, image);
     }
 
     @Override

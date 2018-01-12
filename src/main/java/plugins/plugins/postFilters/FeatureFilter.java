@@ -23,7 +23,7 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.TextParameter;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import plugins.ObjectFeature;
@@ -53,10 +53,10 @@ public class FeatureFilter implements PostFilter {
     } 
     
     @Override
-    public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         ObjectFeature f = feature.instanciatePlugin();
         f.setUp(parent, childStructureIdx, childPopulation);
-        childPopulation=childPopulation.filter(new ObjectPopulation.Feature(f, threshold.getValue().doubleValue(), keepOverThreshold.getSelected(), strict.getSelected()));
+        childPopulation=childPopulation.filter(new RegionPopulation.Feature(f, threshold.getValue().doubleValue(), keepOverThreshold.getSelected(), strict.getSelected()));
         return childPopulation;
     }
     @Override

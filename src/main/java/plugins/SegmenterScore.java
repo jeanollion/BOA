@@ -17,7 +17,7 @@
  */
 package plugins;
 
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
 import java.util.List;
@@ -35,5 +35,5 @@ public interface SegmenterScore extends Segmenter {
      * @param parent parent object of the objects to be segmented
      * @return an object population. This type of segmenter must set a quality variable to each segmented object
      */
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent);
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent);
 }

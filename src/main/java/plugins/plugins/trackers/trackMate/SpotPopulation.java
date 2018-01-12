@@ -17,8 +17,8 @@
  */
 package plugins.plugins.trackers.trackMate;
 
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import fiji.plugin.trackmate.Spot;
@@ -49,7 +49,7 @@ import utils.Utils;
  * @author jollion
  */
 public class SpotPopulation {
-    public final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap = new HashMap<Object3D, SpotWithinCompartment>();
+    public final HashMap<Region, SpotWithinCompartment>  objectSpotMap = new HashMap<Region, SpotWithinCompartment>();
     private final SpotCollection collectionHQ = new SpotCollection();
     private final SpotCollection collectionLQ = new SpotCollection();
     private final SpotCollection collection = new SpotCollection();
@@ -79,16 +79,16 @@ public class SpotPopulation {
         }
         return new int[]{min, max};
     }
-    public HashMap<Object3D, SpotWithinCompartment> getObjectSpotMap() {
+    public HashMap<Region, SpotWithinCompartment> getObjectSpotMap() {
         return objectSpotMap;
     }
-    public void addSpots(StructureObject container, int spotSturctureIdx, List<Object3D> objects, int compartmentStructureIdx) {
+    public void addSpots(StructureObject container, int spotSturctureIdx, List<Region> objects, int compartmentStructureIdx) {
         //ObjectPopulation population = container.getObjectPopulation(spotSturctureIdx);
         List<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
         Image intensityMap = null;// = container.getRawImage(spotSturctureIdx);
         //logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
         HashMapGetCreate<StructureObject, SpotCompartiment> compartimentMap = new HashMapGetCreate<>((StructureObject s) -> new SpotCompartiment(s));
-        for (Object3D o : objects) {
+        for (Region o : objects) {
             StructureObject parent = StructureObjectUtils.getInclusionParent(o, compartments, null); 
             if (parent==null) {
                 //logger.warn("no parent found for object @ center {}, parents: {}", o.getCenter(true), compartments);
@@ -237,7 +237,7 @@ public class SpotPopulation {
     
     private StructureObject getStructureObject(StructureObject parent, int structureIdx, SpotWithinCompartment s) {
         List<StructureObject> children = parent.getChildren(structureIdx);
-        Object3D o = s.object;
+        Region o = s.object;
         for (StructureObject c : children) if (c.getObject() == o) return c;
         return null;
     }

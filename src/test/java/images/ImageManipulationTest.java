@@ -18,7 +18,7 @@
 package images;
 
 import image.ImageLabeller;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import image.BoundingBox;
 import image.ImageByte;
 import image.ImageFloat;
@@ -170,15 +170,15 @@ public class ImageManipulationTest {
         
         int[] sizes = new int[]{4, 5, 5};
         
-        Object3D[] objects = ImageLabeller.labelImage(mask);
+        Region[] objects = ImageLabeller.labelImage(mask);
         assertEquals("Number of object detected", 3, objects.length);
         int i=0;
         int[] observedSizes = new int[objects.length];
-        for (Object3D o : objects) observedSizes[i++]=o.getVoxels().size();
+        for (Region o : objects) observedSizes[i++]=o.getVoxels().size();
         assertArrayEquals("Size of objects", sizes, observedSizes);
         
         ImageByte mask2 = new ImageByte("", mask);
-        for (Object3D o : objects) o.draw(mask2, 1);
+        for (Region o : objects) o.draw(mask2, 1);
         for (int z = 0; z < mask2.getSizeZ(); ++z) assertArrayEquals("Spot voxels slice:"+z, mask.getPixelArray()[z], mask2.getPixelArray()[z]);       
     }
     
@@ -223,15 +223,15 @@ public class ImageManipulationTest {
         
         int[] sizes = new int[]{8, 7, 9, 4};
         
-        Object3D[] objects = ImageLabeller.labelImage(mask);
+        Region[] objects = ImageLabeller.labelImage(mask);
         assertEquals("Number of object detected", 4, objects.length);
         int i=0;
         int[] observedSizes = new int[objects.length];
-        for (Object3D o : objects) observedSizes[i++]=o.getVoxels().size();
+        for (Region o : objects) observedSizes[i++]=o.getVoxels().size();
         assertArrayEquals("Size of objects", sizes, observedSizes);
         
         ImageByte mask2 = new ImageByte("", mask);
-        for (Object3D o : objects) o.draw(mask2, 1);
+        for (Region o : objects) o.draw(mask2, 1);
         for (int z = 0; z < mask2.getSizeZ(); ++z) assertArrayEquals("Spot voxels slice:"+z, mask.getPixelArray()[z], mask2.getPixelArray()[z]);       
     }
     

@@ -19,8 +19,8 @@ package processing;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import static core.Processor.logger;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.Voxel;
 import image.BlankMask;
 import image.Image;
@@ -56,27 +56,27 @@ public class MultiScaleWatershedTransform {
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
     
-    public static ObjectPopulation[] watershed(Image[] watershedMaps, ImageMask mask, List<Object3D>[] regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+    public static RegionPopulation[] watershed(Image[] watershedMaps, ImageMask mask, List<Region>[] regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         MultiScaleWatershedTransform wt = new MultiScaleWatershedTransform(watershedMaps, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion);
         wt.run();
         return wt.getObjectPopulation();
     }
     
-    public static ObjectPopulation[] watershed(Image[] watershedMaps, ImageMask mask, ImageMask[] seeds, boolean decreasingPropagation) {
+    public static RegionPopulation[] watershed(Image[] watershedMaps, ImageMask mask, ImageMask[] seeds, boolean decreasingPropagation) {
         if (watershedMaps.length!=seeds.length) throw new IllegalArgumentException("seeds and watershed maps should be within same scale-space");
         return watershed(watershedMaps, mask, getRegionalExtrema(seeds), decreasingPropagation, null, null);
     }
-    public static ObjectPopulation[] watershed(Image[] watershedMaps, ImageMask mask, ImageMask[] seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+    public static RegionPopulation[] watershed(Image[] watershedMaps, ImageMask mask, ImageMask[] seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         return watershed(watershedMaps, mask, getRegionalExtrema(seeds), decreasingPropagation, propagationCriterion, fusionCriterion);
     }
     
-    private static List<Object3D>[] getRegionalExtrema(ImageMask[] seeds) {
+    private static List<Region>[] getRegionalExtrema(ImageMask[] seeds) {
         List[] res = new List[seeds.length];
         for (int i = 0; i<res.length; ++i) res[i] = ImageLabeller.labelImageList(seeds[i]);
-        return (List<Object3D>[]) res;
+        return (List<Region>[]) res;
     }
     
-    public MultiScaleWatershedTransform(Image[] watershedMaps, ImageMask mask, List<Object3D>[] regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+    public MultiScaleWatershedTransform(Image[] watershedMaps, ImageMask mask, List<Region>[] regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         if (watershedMaps.length!= regionalExtrema.length) throw new IllegalArgumentException("Watershed maps should have same number of planes as seeds");
         if (!Image.sameSize(Arrays.asList(watershedMaps))) throw new IllegalArgumentException("WatershedMaps should be of same dimensions");
         if (mask==null) mask=new BlankMask("", watershedMaps[0]);
@@ -85,12 +85,12 @@ public class MultiScaleWatershedTransform {
         this.mask=mask;
         this.watershedMaps=watershedMaps;
         spotNumber = 0;
-        for (List<Object3D> l : regionalExtrema) spotNumber += l.size();
+        for (List<Region> l : regionalExtrema) spotNumber += l.size();
         spots = new Spot[spotNumber+1];
         segmentedMap = ImageInteger.createEmptyLabelImage("segmentationMap", spots.length, watershedMaps[0]);
         int spotIdx = 1;
         for (int i = 0; i<regionalExtrema.length; ++i) {
-            for (Object3D o : regionalExtrema[i]) {
+            for (Region o : regionalExtrema[i]) {
                 spots[spotIdx] = new Spot(spotIdx, i, o.getVoxels());
                 ++spotIdx;
             }
@@ -249,19 +249,19 @@ public class MultiScaleWatershedTransform {
     
     public ImageInteger getLabelImage() {return segmentedMap;}
     
-    public ObjectPopulation[] getObjectPopulation() {
-        ObjectPopulation[] res = new ObjectPopulation[this.watershedMaps.length];
-        ArrayList<Object3D>[] objects = new ArrayList[watershedMaps.length];
+    public RegionPopulation[] getObjectPopulation() {
+        RegionPopulation[] res = new RegionPopulation[this.watershedMaps.length];
+        ArrayList<Region>[] objects = new ArrayList[watershedMaps.length];
         for (int i = 0; i<watershedMaps.length; ++i) objects[i] = new ArrayList<>();
         int label = 1;
-        for (Spot s : spots) if (s!=null) objects[s.scale].add(s.toObject3D(label++));
-        for (int i = 0; i<watershedMaps.length; ++i) res[i] = new ObjectPopulation(objects[i], segmentedMap);
+        for (Spot s : spots) if (s!=null) objects[s.scale].add(s.toRegion(label++));
+        for (int i = 0; i<watershedMaps.length; ++i) res[i] = new RegionPopulation(objects[i], segmentedMap);
         return res;
     }
-    public static ObjectPopulation combine(ObjectPopulation[] pops, ImageProperties ip) {
-        ArrayList<Object3D> allObjects = new ArrayList<>();
+    public static RegionPopulation combine(RegionPopulation[] pops, ImageProperties ip) {
+        ArrayList<Region> allObjects = new ArrayList<>();
         for (int i = 0; i<pops.length; ++i) allObjects.addAll(pops[i].getObjects());
-        return new ObjectPopulation(allObjects, ip);
+        return new RegionPopulation(allObjects, ip);
     }
     
     protected class Spot {
@@ -314,8 +314,8 @@ public class MultiScaleWatershedTransform {
             }
         }
         
-        public Object3D toObject3D(int label) {
-            return new Object3D(voxels, label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
+        public Region toRegion(int label) {
+            return new Region(voxels, label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
         }
         
         public double getQuality() {

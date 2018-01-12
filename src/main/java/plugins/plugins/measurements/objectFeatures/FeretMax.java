@@ -19,8 +19,8 @@ package plugins.plugins.measurements.objectFeatures;
 
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import measurement.GeometricalMeasurements;
@@ -42,12 +42,12 @@ public class FeretMax implements ObjectFeature {
     }
 
     @Override
-    public ObjectFeature setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    public ObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         return this;
     }
 
     @Override
-    public double performMeasurement(Object3D object, BoundingBox offset) {
+    public double performMeasurement(Region object, BoundingBox offset) {
         double feret = GeometricalMeasurements.getFeretMax(object);
         if (scaled.getSelectedIndex()==0) feret/=object.getScaleXY();
         return feret;

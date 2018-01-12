@@ -17,7 +17,7 @@
  */
 package plugins;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import image.Image;
 import java.util.Collection;
 import java.util.List;
@@ -33,12 +33,12 @@ public interface SegmenterSplitAndMerge extends Segmenter {
      * @param result list in which put the resulting objects
      * @return a value representing the cost of splitting the object, NaN if the object could not be split
      */
-    public double split(Image input, Object3D o, List<Object3D> result);
+    public double split(Image input, Region o, List<Region> result);
     /**
      * Compute Merge Cost & removes from the list objects that are not in contact with the first object from the list
      * @param input
      * @param objects objects to be merged
      * @return a value representing the cost of merging the objects, NaN if none of the objects are in contact. 
      */
-    public double computeMergeCost(Image input, List<Object3D> objects);
+    public double computeMergeCost(Image input, List<Region> objects);
 }

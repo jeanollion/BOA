@@ -17,8 +17,8 @@
  */
 package processing;
 
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectProcessing;
@@ -50,11 +50,11 @@ public class PluginSequenceRunner {
         }
     }
     
-    public static ObjectPopulation postFilterImage(ObjectPopulation objectPopulation, int structureIdx, StructureObject structureObject, ArrayList<PostFilter> postFilters) {
+    public static RegionPopulation postFilterImage(RegionPopulation objectPopulation, int structureIdx, StructureObject structureObject, ArrayList<PostFilter> postFilters) {
         if (postFilters==null || postFilters.isEmpty()) return objectPopulation;
         else {
             ImageProperties initialProperites = objectPopulation.getImageProperties();
-            ObjectPopulation currentObjectPopulation=objectPopulation;
+            RegionPopulation currentObjectPopulation=objectPopulation;
             for (PostFilter p : postFilters) {
                 currentObjectPopulation = p.runPostFilter(structureObject, structureIdx, objectPopulation);
                 currentObjectPopulation.setProperties(initialProperites, true);

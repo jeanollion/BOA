@@ -9,5 +9,5 @@ public interface StructureObjectProcessing extends StructureObjectPreProcessing 
     public Image getRawImage(int structureIdx);
     @Override public StructureObjectProcessing getNext();
     @Override public StructureObjectProcessing getPrevious();
-    public List<? extends StructureObjectPostProcessing> setChildrenObjects(ObjectPopulation children, int structureIdx);
+    public List<? extends StructureObjectPostProcessing> setChildrenObjects(RegionPopulation children, int structureIdx);
 }

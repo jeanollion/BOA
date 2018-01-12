@@ -19,8 +19,8 @@ package plugins.plugins.postFilters;
 
 import configuration.parameters.Parameter;
 import configuration.parameters.ScaleXYZParameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import image.ImageInteger;
 import plugins.PostFilter;
@@ -34,9 +34,9 @@ import processing.neighborhood.Neighborhood;
 public class BinaryClose implements PostFilter {
     ScaleXYZParameter scale = new ScaleXYZParameter("Closing Radius", 5, 1, true);
     @Override
-    public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Neighborhood n = Filters.getNeighborhood(scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parent.getMask());
-        for (Object3D o : childPopulation.getObjects()) {
+        for (Region o : childPopulation.getObjects()) {
             ImageInteger closed = Filters.binaryCloseExtend(o.getMask(), n);
             o.setMask(closed);
         }

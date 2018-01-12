@@ -22,7 +22,7 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
 import configuration.parameters.TrackPostFilterSequence;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import image.Image;
 import java.util.ArrayList;

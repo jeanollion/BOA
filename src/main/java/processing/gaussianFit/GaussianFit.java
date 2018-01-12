@@ -19,7 +19,7 @@ package processing.gaussianFit;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import static core.Processor.logger;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import ij.ImagePlus;
 import ij.gui.EllipseRoi;
@@ -53,11 +53,11 @@ import net.imglib2.type.numeric.integer.UnsignedByteType;
  * @author jollion
  */
 public class GaussianFit {
-    public static Map<Object3D, double[]> run(Image image, List<Object3D> peaks, double typicalSigma, double sigmaLow, double sigmaUp, double precision) {
+    public static Map<Region, double[]> run(Image image, List<Region> peaks, double typicalSigma, double sigmaLow, double sigmaUp, double precision) {
         return run(image, peaks, typicalSigma, sigmaLow, sigmaUp, precision, 300, 1e-3d, 1e-1d);
     }
     
-    public static Map<Object3D, double[]> run(Image image, List<Object3D> peaks, double typicalSigma, double sigmaLow, double sigmaUp, double precision, int maxIter, double lambda, double termEpsilon ) {
+    public static Map<Region, double[]> run(Image image, List<Region> peaks, double typicalSigma, double sigmaLow, double sigmaUp, double precision, int maxIter, double lambda, double termEpsilon ) {
         double[] sigmas = new double[image.getSizeZ()>1 ? 3 :2];
         double[] sigmasLow = new double[image.getSizeZ()>1 ? 3 :2];
         double[] sigmasUp = new double[image.getSizeZ()>1 ? 3 :2];
@@ -80,7 +80,7 @@ public class GaussianFit {
      * @param termEpsilon
      * @return for each peak array of fitted parameters: coordinates, intensity@peak, 1/sigma2 in each dimension, error
      */
-    public static Map<Object3D, double[]> run(Image image, List<Object3D> peaks, double[][] typicalSigmas, int maxIter, double lambda, double termEpsilon ) {
+    public static Map<Region, double[]> run(Image image, List<Region> peaks, double[][] typicalSigmas, int maxIter, double lambda, double termEpsilon ) {
         boolean is3D = image.getSizeZ()>1;
         Img img = ImgLib2ImageWrapper.getImage(image);
         //MLEllipticGaussianSimpleEstimator estimator = new MLEllipticGaussianSimpleEstimator(typicalSigmas[0], typicalSigmas[1], typicalSigmas[2]);
@@ -91,9 +91,9 @@ public class GaussianFit {
         MLGaussianPlusConstantSimpleEstimator estimator = new MLGaussianPlusConstantSimpleEstimator(typicalSigmas[0][0], typicalSigmas[1][0], typicalSigmas[2][0], is3D?3:2);
         GaussianPlusConstant fitFunction = new GaussianPlusConstant();
         //logger.debug("span: {}", estimator.getDomainSpan());
-        Map<Localizable, Object3D> locObj = new HashMap<Localizable, Object3D>(peaks.size());
+        Map<Localizable, Region> locObj = new HashMap<Localizable, Region>(peaks.size());
         List<Localizable> peaksLoc = new ArrayList<Localizable>(peaks.size());
-        for (Object3D o : peaks) {
+        for (Region o : peaks) {
             double[] center = o.getGeomCenter(false);
             if (o.isAbsoluteLandMark()) {
                 center[0]-=image.getBoundingBox().getxMin();
@@ -116,7 +116,7 @@ public class GaussianFit {
         //logger.debug("Peak fitting of {} peaks, using {} threads, done in {} ms.", peaks.size(), fitter.getNumThreads(), fitter.getProcessingTime());
         
         Map<Localizable, double[]> results = fitter.getResult();
-        Map<Object3D, double[]> results2 = new HashMap<Object3D, double[]>(results.size());
+        Map<Region, double[]> results2 = new HashMap<Region, double[]>(results.size());
         for (Entry<Localizable, double[]> e : results.entrySet()) {
             Observation data = LocalizationUtils.gatherObservationData(img, e.getKey(), estimator.getDomainSpan());
             double[] params = new double[e.getValue().length+1];
@@ -144,31 +144,31 @@ public class GaussianFit {
         if (is3D) return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d), (long)(v[2]+0.5d));
         else return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d));
     }
-    public static void display2DImageAndRois(Image image, Map<Object3D, double[]> params) {
+    public static void display2DImageAndRois(Image image, Map<Region, double[]> params) {
         ImagePlus ip = new IJImageDisplayer().showImage(image);
         final Overlay overlay = new Overlay();
         ip.setOverlay(overlay);
-        TreeMap<Object3D, double[]> paramsSort = new TreeMap<Object3D, double[]>(new Comparator<Object3D>() {
+        TreeMap<Region, double[]> paramsSort = new TreeMap<Region, double[]>(new Comparator<Region>() {
 
-            public int compare(Object3D arg0, Object3D arg1) {
+            public int compare(Region arg0, Region arg1) {
                 return Integer.compare(arg0.getLabel(), arg1.getLabel());
             }
         });
         paramsSort.putAll(params);
-        for (Entry<Object3D, double[]> e : paramsSort.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue(), null));
+        for (Entry<Region, double[]> e : paramsSort.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue(), null));
     }
-    public static void appendRois(Overlay overlay, BoundingBox offset, Map<Object3D, double[]> params) {
-        TreeMap<Object3D, double[]> paramsSort = new TreeMap<Object3D, double[]>(new Comparator<Object3D>() {
+    public static void appendRois(Overlay overlay, BoundingBox offset, Map<Region, double[]> params) {
+        TreeMap<Region, double[]> paramsSort = new TreeMap<Region, double[]>(new Comparator<Region>() {
 
-            public int compare(Object3D arg0, Object3D arg1) {
+            public int compare(Region arg0, Region arg1) {
                 return Integer.compare(arg0.getLabel(), arg1.getLabel());
             }
         });
         paramsSort.putAll(params);
-        for (Entry<Object3D, double[]> e : paramsSort.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue(), offset));
+        for (Entry<Region, double[]> e : paramsSort.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue(), offset));
     }
     
-    public static Roi get2DEllipse(Object3D o, double[] p, BoundingBox offset) {
+    public static Roi get2DEllipse(Region o, double[] p, BoundingBox offset) {
         double Ar = p[2];
         double x = p[0];
         double y = p[1];

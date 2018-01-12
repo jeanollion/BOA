@@ -18,7 +18,7 @@
 package plugins.plugins.measurements.objectFeatures;
 
 import plugins.objectFeature.IntensityMeasurement;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
 import image.Image;
@@ -29,7 +29,7 @@ import image.Image;
  */
 public class MeanAtBorder extends IntensityMeasurement {
     @Override
-    public double performMeasurement(Object3D object, BoundingBox offset) {
+    public double performMeasurement(Region object, BoundingBox offset) {
         Image im = core.getIntensityMap(true);
         if (offset==null) offset=new BoundingBox(0, 0, 0);
         int offX=offset.getxMin()-intensityMap.getOffsetX();

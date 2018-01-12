@@ -29,7 +29,7 @@ import dataStructure.objects.BasicMasterDAO;
 import dataStructure.objects.DBMapObjectDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Measurements;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -176,7 +176,7 @@ public class DeleteFromDAOTest {
         
         ObjectDAO dao = db.getDao(f);
         StructureObject root = new StructureObject(0, new BlankMask("", 1, 1, 1), dao);
-        Object3D o = new Object3D(new BlankMask("", 1, 1, 1), 1, false);
+        Region o = new Region(new BlankMask("", 1, 1, 1), 1, false);
         List<StructureObject> s0 = new ArrayList<StructureObject>();
         for (int i = 0; i<count[0]; ++i) {
             StructureObject oi = new StructureObject(0, 0, i, o, root);
@@ -235,7 +235,7 @@ public class DeleteFromDAOTest {
         
         ObjectDAO dao = db.getDao(f);
         StructureObject root = new StructureObject(0, new BlankMask("", 1, 1, 1), dao);
-        Object3D o = new Object3D(new BlankMask("", 1, 1, 1), 1, false);
+        Region o = new Region(new BlankMask("", 1, 1, 1), 1, false);
         final StructureObject c1 = new StructureObject(0, 0, 0, o, root);
         final StructureObject c2 = new StructureObject(0, 0, 1, o, root);
         final StructureObject c3 = new StructureObject(0, 0, 2, o, root);

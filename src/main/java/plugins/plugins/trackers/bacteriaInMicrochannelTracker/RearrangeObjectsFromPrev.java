@@ -17,7 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +34,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import static plugins.Plugin.logger;
 import plugins.plugins.trackers.ObjectIdxTracker;
-import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
+import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorRegion;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.getObjectSize;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
@@ -51,14 +51,14 @@ import utils.Utils;
 public class RearrangeObjectsFromPrev extends ObjectModifier {
     protected List<RearrangeAssignment> assignements;
     protected final Assignment assignment;
-    protected HashMapGetCreate<Object3D, Double> sizeMap = new HashMapGetCreate<>(o -> getObjectSize(o));
+    protected HashMapGetCreate<Region, Double> sizeMap = new HashMapGetCreate<>(o -> getObjectSize(o));
     public RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int frame, Assignment assignment) { // idxMax included
         super(frame, frame, tracker);
         objects.put(frame, new ArrayList(assignment.nextObjects)); // new arraylist -> can be modified
         objects.put(frame-1, assignment.prevObjects);
         assignements = new ArrayList<>(assignment.objectCountPrev());
         this.assignment=assignment;
-        for (Object3D o : assignment.prevObjects) {
+        for (Region o : assignment.prevObjects) {
             double[] sizeRange = new double[2];
             double si = tracker.sizeIncrementFunction.apply(o);
             double size = tracker.sizeFunction.apply(o);
@@ -90,12 +90,12 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
                 Assignment ass1 = ta.getAssignmentContaining(assignment.nextObjects.get(0), true);
                 if (ta.currentAssignment.getLastObject(true)==assignment.getLastObject(false) && ass1.prevObjects.get(0)==assignment.nextObjects.get(0)) {
                     // functions for track assigner -> use prev object assigned to next object
-                    Function<Object3D, Double> sizeIncrementFunction = o -> { 
+                    Function<Region, Double> sizeIncrementFunction = o -> { 
                         RearrangeAssignment ra = getAssignement(o, false, false);
                         if (ra==null) return Double.NaN;
                         else return tracker.sizeIncrementFunction.apply(ra.prevObject);
                     };
-                    BiFunction<Object3D, Object3D, Boolean> areFromSameLine = (o1, o2) -> {
+                    BiFunction<Region, Region, Boolean> areFromSameLine = (o1, o2) -> {
                         RearrangeAssignment ra1 = getAssignement(o1, false, false);
                         if (ra1==null) return false;
                         RearrangeAssignment ra2 = getAssignement(o2, false, false);
@@ -122,7 +122,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         return -1;
     }
     
-    protected RearrangeAssignment getAssignement(Object3D o, boolean prev, boolean reset) {
+    protected RearrangeAssignment getAssignement(Region o, boolean prev, boolean reset) {
         if (prev) return assignUntil(reset, (a, i) -> a.prevObject==o ? a : null);
         else return assignUntil(reset, (a, i) -> a.contains(o) ? a : null);
     }
@@ -132,7 +132,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
     }
         
     protected RearrangeAssignment assignUntil(boolean reset, BiFunction<RearrangeAssignment, Integer, RearrangeAssignment> exitFunction) { // assigns from start with custom exit function -> if return non null value -> exit assignment loop with value
-        List<Object3D> allObjects = getObjects(timePointMax);
+        List<Region> allObjects = getObjects(timePointMax);
         if (reset) for (int rangeIdx = 0; rangeIdx<assignements.size(); ++rangeIdx) assignements.get(rangeIdx).clear();
         int currentOIdx = 0;
         if (!reset) {
@@ -157,10 +157,10 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
     @Override
     protected void applyScenario() {
         for (int i = this.assignment.idxNextEnd()-1; i>=assignment.idxNext; --i) tracker.objectAttributeMap.remove(tracker.populations.get(timePointMin).remove(i));
-        List<Object3D> allObjects = getObjects(timePointMax);
+        List<Region> allObjects = getObjects(timePointMax);
         sortAndRelabel();
         int idx = assignment.idxNext;
-        for (Object3D o : allObjects) {
+        for (Region o : allObjects) {
             tracker.populations.get(timePointMin).add(idx, o);
             tracker.objectAttributeMap.put(o, tracker.new TrackAttribute(o, idx, timePointMax));
             idx++;
@@ -169,8 +169,8 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
     }
     
     public void sortAndRelabel() {
-        List<Object3D> allObjects = getObjects(timePointMax);
-        Collections.sort(allObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
+        List<Region> allObjects = getObjects(timePointMax);
+        Collections.sort(allObjects, getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ));
         for (int i = 0; i<allObjects.size(); ++i) allObjects.get(i).setLabel(i+1);
     }
     
@@ -180,23 +180,23 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
     }
     
     protected class RearrangeAssignment {
-        final List<Object3D> objects;
-        final Object3D prevObject;
+        final List<Region> objects;
+        final Region prevObject;
         final double[] sizeRange;
         double size;
-        public RearrangeAssignment(Object3D prevObject, double[] sizeRange) {
+        public RearrangeAssignment(Region prevObject, double[] sizeRange) {
             this.prevObject=prevObject;
             this.sizeRange=sizeRange;
             this.objects = new ArrayList<>(3);
         }
-        public void add(Object3D o) {
+        public void add(Region o) {
             this.objects.add(o);
             this.size+=sizeMap.getAndCreateIfNecessary(o);
         }
         public boolean isEmpty() {
             return objects.isEmpty();
         }
-        public boolean contains(Object3D o) {
+        public boolean contains(Region o) {
             return objects.contains(o);
         }
         public void clear() {
@@ -209,19 +209,19 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         public boolean underSize() {
             return size<sizeRange[0];
         }
-        public Object3D getLastObject() {
+        public Region getLastObject() {
             if (objects.isEmpty()) return null;
             return objects.get(objects.size()-1);
         }
         public boolean split() { 
             TreeSet<Split> res = new TreeSet<>();
-            for (Object3D o : objects) {
+            for (Region o : objects) {
                 Split s = getSplit(timePointMax, o);
                 if (Double.isFinite(s.cost)) res.add(s);
             }
             if (res.isEmpty()) return false;
             Split s = res.first(); // lowest cost
-            List<Object3D> allObjects = getObjects(timePointMax);
+            List<Region> allObjects = getObjects(timePointMax);
             if (debugCorr) logger.debug("RO: split: {}, cost: {}", allObjects.indexOf(s.source)+assignment.idxNext, s.cost);
             s.apply(objects);
             s.apply(getObjects(s.frame));
@@ -233,12 +233,12 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         public void mergeUsingNext(TrackAssigner assignments) {
             if (debugCorr) logger.debug("RO: merge using next: current: {} all assignments: {}", this, assignments);
             if (objects.size()<=1) return;
-            Iterator<Object3D> it = objects.iterator();
-            Object3D lastO = it.next();
+            Iterator<Region> it = objects.iterator();
+            Region lastO = it.next();
             Assignment lastAss = assignments.getAssignmentContaining(lastO, true);
             boolean reset = false;
             while(it.hasNext()) {
-                Object3D currentO = it.next();
+                Region currentO = it.next();
                 Assignment ass = assignments.getAssignmentContaining(currentO, true);
                 if (ass!=null && ass == lastAss && (ass.objectCountNext()<ass.objectCountPrev())) {
                     Merge m = getMerge(timePointMax, new Pair(lastO, currentO));
@@ -280,10 +280,10 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         private Merge getBestMerge() {
             sortAndRelabel();
             TreeSet<Merge> res = new TreeSet();
-            Iterator<Object3D> it = objects.iterator();
-            Object3D lastO = it.next();
+            Iterator<Region> it = objects.iterator();
+            Region lastO = it.next();
             while (it.hasNext()) {
-                Object3D currentO = it.next();
+                Region currentO = it.next();
                 Merge m = getMerge(timePointMax, new Pair(lastO, currentO));
                 if (Double.isFinite(m.cost)) res.add(m);
                 lastO = currentO;

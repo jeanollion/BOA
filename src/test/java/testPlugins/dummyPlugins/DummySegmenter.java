@@ -20,8 +20,8 @@ package testPlugins.dummyPlugins;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import image.BlankMask;
 import image.Image;
@@ -45,7 +45,7 @@ public class DummySegmenter implements Segmenter {
         this.objectNb.setValue(objectNb);
     }
     
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing structureObject) {
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing structureObject) {
         ImageMask mask;
         if (structureObject==null) mask = new BlankMask("", input);
         else mask = structureObject.getMask();
@@ -61,9 +61,9 @@ public class DummySegmenter implements Segmenter {
             int w = (int)(mask.getSizeX()*0.8d);
             for (int i = 0; i<nb; ++i) masks[i] = new BlankMask("object"+i, w, (int)h, mask.getSizeZ(), (int)(0.1*mask.getSizeX()) ,(int)((2*i+1)*h), 0, mask.getScaleXY(), mask.getScaleZ());
         }
-        ArrayList<Object3D> objects = new ArrayList<>(nb); int idx=1;
-        for (BlankMask m :masks) objects.add(new Object3D(m, idx++, mask.getSizeZ()==1));
-        return new ObjectPopulation(objects, input);
+        ArrayList<Region> objects = new ArrayList<>(nb); int idx=1;
+        for (BlankMask m :masks) objects.add(new Region(m, idx++, mask.getSizeZ()==1));
+        return new RegionPopulation(objects, input);
     }
 
     public boolean callOnlyOnTrackHeads() {

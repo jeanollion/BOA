@@ -19,12 +19,12 @@ package plugins.plugins.postFilters;
 
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.ObjectPopulation.ContactBorder;
-import dataStructure.objects.ObjectPopulation.ContactBorder.Border;
-import dataStructure.objects.ObjectPopulation.Filter;
-import dataStructure.objects.ObjectPopulation.Size;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
+import dataStructure.objects.RegionPopulation.ContactBorder;
+import dataStructure.objects.RegionPopulation.ContactBorder.Border;
+import dataStructure.objects.RegionPopulation.Filter;
+import dataStructure.objects.RegionPopulation.Size;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
@@ -49,18 +49,18 @@ public class MicrochannelPhaseArtifacts implements PostFilter {
         return this;
     }
     
-    @Override public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    @Override public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         childPopulation.filter(getFilter(XThickness.getValue().doubleValue(), XContactFraction.getValue().doubleValue(), 0, 0));
         childPopulation.filter(getFilter(XThickness.getValue().doubleValue(), 0, YContactFraction.getValue().doubleValue(), 0));
         childPopulation.filter(getFilter(XThickness.getValue().doubleValue(), 0, 0, cornerContactFraction.getValue().doubleValue())); // for corner removal contact condition
         return childPopulation;
     }
-    public static ObjectPopulation.Filter getFilter(double maxThickness, double minXContactFraction, double minYContactFraction, double minContactFractionCorner) {
-        return new ObjectPopulation.Filter() {
+    public static RegionPopulation.Filter getFilter(double maxThickness, double minXContactFraction, double minYContactFraction, double minContactFractionCorner) {
+        return new RegionPopulation.Filter() {
             ContactBorder borderY, borderXl, borderXr;
-            ObjectPopulation population;
+            RegionPopulation population;
             @Override
-            public void init(ObjectPopulation population) {
+            public void init(RegionPopulation population) {
                 this.population=population;
                 this.borderY = new ContactBorder(0, population.getImageProperties(), Border.YUp);//.setTolerance(1);
                 this.borderXl = new ContactBorder(0, population.getImageProperties(), Border.Xl).setTolerance(1);
@@ -68,7 +68,7 @@ public class MicrochannelPhaseArtifacts implements PostFilter {
             }
 
             @Override
-            public boolean keepObject(Object3D object) {
+            public boolean keepObject(Region object) {
                 double xThickness = GeometricalMeasurements.medianThicknessX(object);
                 if (xThickness>maxThickness) { 
                     if (xThickness<1.5*maxThickness) { // allow corner check for objects a little bit thicker
@@ -102,7 +102,7 @@ public class MicrochannelPhaseArtifacts implements PostFilter {
                 return !isCorner(object, minContactFractionCorner);
             }
 
-            public boolean isCorner(Object3D object, double minContactFraction) {
+            public boolean isCorner(Region object, double minContactFraction) {
                 if (minContactFraction<=0) return false;
                 int xl = borderXl.getContact(object);
                 int xr = borderXr.getContact(object);

@@ -17,7 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,18 +43,18 @@ public class TrackAssigner {
     double[] currentScore = null;
     protected int verboseLevel = 0;
     AssignerMode mode = AssignerMode.ADAPTATIVE;
-    final Function<Object3D, Double> sizeFunction;
-    private Function<Object3D, Double> sizeIncrementFunction;
-    final BiFunction<Object3D, Object3D, Boolean> areFromSameLine;
-    final List<Object3D> prev, next;
+    final Function<Region, Double> sizeFunction;
+    private Function<Region, Double> sizeIncrementFunction;
+    final BiFunction<Region, Region, Boolean> areFromSameLine;
+    final List<Region> prev, next;
     final int idxPrevLim, idxNextLim;
     final protected List<Assignment> assignments = new ArrayList();
     protected Assignment currentAssignment;
     double[] baseSizeIncrement;
     protected boolean truncatedChannel;
     int nextIncrementCheckRecursiveLevel = -1; 
-    HashMapGetCreate<Object3D, Double> sizeIncrements = new HashMapGetCreate<>(o -> sizeIncrementFunction.apply(o));
-    protected TrackAssigner(List<Object3D> prev, List<Object3D> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Object3D, Double> sizeFunction, Function<Object3D, Double> sizeIncrementFunction, BiFunction<Object3D, Object3D, Boolean> areFromSameLine) {
+    HashMapGetCreate<Region, Double> sizeIncrements = new HashMapGetCreate<>(o -> sizeIncrementFunction.apply(o));
+    protected TrackAssigner(List<Region> prev, List<Region> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Region, Double> sizeFunction, Function<Region, Double> sizeIncrementFunction, BiFunction<Region, Region, Boolean> areFromSameLine) {
         this.prev= prev!=null ? prev : Collections.EMPTY_LIST;
         this.next= next!=null ? next : Collections.EMPTY_LIST;
         idxPrevLim = this.prev.size();
@@ -118,7 +118,7 @@ public class TrackAssigner {
         }
     }
     
-    public boolean assignUntil(Object3D o, boolean prev) {
+    public boolean assignUntil(Region o, boolean prev) {
         if (currentAssignment==null) nextTrack();
         if (prev) {
             while(!currentAssignment.prevObjects.contains(o) && nextTrack()) {}
@@ -139,7 +139,7 @@ public class TrackAssigner {
     public void assignAll() {
         while(nextTrack()) {}
     }
-    public Assignment getAssignmentContaining(Object3D o, boolean inPrev) {
+    public Assignment getAssignmentContaining(Region o, boolean inPrev) {
         for (Assignment a : this.assignments) if (inPrev && a.prevObjects.contains(o) || !inPrev && a.nextObjects.contains(o)) return a;
         return null;
     }

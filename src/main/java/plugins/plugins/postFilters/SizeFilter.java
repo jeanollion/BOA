@@ -19,9 +19,9 @@ package plugins.plugins.postFilters;
 
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
-import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.ObjectPopulation.Filter;
-import dataStructure.objects.ObjectPopulation.Size;
+import dataStructure.objects.RegionPopulation;
+import dataStructure.objects.RegionPopulation.Filter;
+import dataStructure.objects.RegionPopulation.Size;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import plugins.PostFilter;
@@ -41,7 +41,7 @@ public class SizeFilter implements PostFilter {
         maxSize.setValue(max);
     }
     
-    @Override public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    @Override public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Size f = new Size();
         if (minSize.getValue().intValue()>0) f.setMin(minSize.getValue().intValue());
         if (maxSize.getValue().intValue()>0) f.setMax(maxSize.getValue().intValue());

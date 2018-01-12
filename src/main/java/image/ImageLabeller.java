@@ -17,9 +17,9 @@
  */
 package image;
 
-import dataStructure.objects.Object3D;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.Voxel;
 import dataStructure.objects.Voxel;
 import image.BlankMask;
@@ -62,8 +62,8 @@ public class ImageLabeller {
         spots = new HashMap<Integer, Spot>();
     }
     
-    public static Object3D[] labelImage(ImageMask mask) {
-        if (mask instanceof BlankMask) return new Object3D[]{new Object3D((BlankMask)mask, 1, mask.getSizeZ()==1)};
+    public static Region[] labelImage(ImageMask mask) {
+        if (mask instanceof BlankMask) return new Region[]{new Region((BlankMask)mask, 1, mask.getSizeZ()==1)};
         else {
             ImageLabeller il = new ImageLabeller(mask);
             if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3DHalf;
@@ -73,8 +73,8 @@ public class ImageLabeller {
         }
     }
     
-    public static Object3D[] labelImageLowConnectivity(ImageMask mask) {
-        if (mask instanceof BlankMask) return new Object3D[]{new Object3D((BlankMask)mask, 1, mask.getSizeZ()==1)};
+    public static Region[] labelImageLowConnectivity(ImageMask mask) {
+        if (mask instanceof BlankMask) return new Region[]{new Region((BlankMask)mask, 1, mask.getSizeZ()==1)};
         else {
             ImageLabeller il = new ImageLabeller(mask);
             if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3DLowHalf;
@@ -84,11 +84,11 @@ public class ImageLabeller {
         }
     }
     
-    public static List<Object3D> labelImageList(ImageMask mask) {
+    public static List<Region> labelImageList(ImageMask mask) {
         return new ArrayList<>(Arrays.asList(labelImage(mask)));
     }
     
-    public static List<Object3D> labelImageListLowConnectivity(ImageMask mask) {
+    public static List<Region> labelImageListLowConnectivity(ImageMask mask) {
         return new ArrayList<>(Arrays.asList(labelImageLowConnectivity(mask)));
     }
     /**
@@ -97,7 +97,7 @@ public class ImageLabeller {
      * @param mask label mask
      * @return  Label objects starting from {@param seeds} that have same value on {@param mask} as the seed's value. If two object that have same seed value meet, they will be merged
      */
-    public static ObjectPopulation labelImage(List<Voxel> seeds, Image mask, boolean lowConnectivity) {
+    public static RegionPopulation labelImage(List<Voxel> seeds, Image mask, boolean lowConnectivity) {
         WatershedTransform.PropagationCriterion prop = new WatershedTransform.PropagationCriterion() {
             @Override
             public void setUp(WatershedTransform instance) {}
@@ -119,16 +119,16 @@ public class ImageLabeller {
                 return mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(v2.x, v2.y, v2.z) && mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(currentVoxel.x, currentVoxel.y, currentVoxel.z);
             }
         };
-        ObjectPopulation pop = WatershedTransform.watershed(mask, null, WatershedTransform.createSeeds(seeds, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()), false, prop, fus, lowConnectivity);
+        RegionPopulation pop = WatershedTransform.watershed(mask, null, WatershedTransform.createSeeds(seeds, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()), false, prop, fus, lowConnectivity);
         return pop;
     }
-    protected Object3D[] getObjects() {
-        Object3D[] res = new Object3D[spots.size()];
+    protected Region[] getObjects() {
+        Region[] res = new Region[spots.size()];
         int label = 0;
         for (Spot s : spots.values()) {
             ArrayList<Voxel> voxels = s.voxels;
             voxels = new ArrayList(new HashSet(voxels)); // revmove duplicate voxels because of neighbourhood overlap
-            res[label++]= new Object3D(voxels, label, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ());
+            res[label++]= new Region(voxels, label, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ());
         }
         return res;
     }

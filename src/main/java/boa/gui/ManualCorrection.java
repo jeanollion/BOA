@@ -27,9 +27,9 @@ import boa.gui.objects.StructureNode;
 import boa.gui.selection.SelectionUtils;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import static dataStructure.objects.StructureObject.correctionMerge;
@@ -128,9 +128,9 @@ public class ManualCorrection {
     public static void saveManualCorrectionSelection(StructureObject o) {
         o.getDAO().getMasterDAO().getSelectionDAO().store(getManualCorrectionSelection(o));
     }
-    public static void updateObjects(List<Pair<StructureObject, Object3D>> objectsToUpdate, boolean updateDisplay) {
+    public static void updateObjects(List<Pair<StructureObject, Region>> objectsToUpdate, boolean updateDisplay) {
         if (objectsToUpdate==null || objectsToUpdate.isEmpty()) return;
-        for (Pair<StructureObject, Object3D> p : objectsToUpdate) {
+        for (Pair<StructureObject, Region> p : objectsToUpdate) {
             p.key.setObject(p.value);
             p.key.getDAO().store(p.key);
         }
@@ -415,8 +415,8 @@ public class ManualCorrection {
                     int[] seed = it.next();
                     if (!mask.insideMask(seed[0], seed[1], seed[2])) it.remove();
                 }
-                ObjectPopulation seg = segmenter.manualSegment(segImage, e.getKey(), mask, structureIdx, e.getValue());
-                //seg.filter(new ObjectPopulation.Size().setMin(2)); // remove seeds
+                RegionPopulation seg = segmenter.manualSegment(segImage, e.getKey(), mask, structureIdx, e.getValue());
+                //seg.filter(new RegionPopulation.Size().setMin(2)); // remove seeds
                 logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
                 if (!test && !seg.getObjects().isEmpty()) {
                     StructureObject parent = e.getKey().getParent(parentStructureIdx);

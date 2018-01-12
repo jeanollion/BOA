@@ -17,28 +17,28 @@
  */
 package utils.clustering;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import utils.Pair;
-import utils.clustering.Object3DCluster.InterfaceVoxels;
+import utils.clustering.RegionCluster.InterfaceVoxels;
 
 /**
  *
  * @author jollion
  * @param <T>
  */
-public abstract class InterfaceVoxelSet<T extends InterfaceVoxelSet<T>> extends InterfaceObject3DImpl<T> implements InterfaceVoxels<T> {
+public abstract class InterfaceVoxelSet<T extends InterfaceVoxelSet<T>> extends InterfaceRegionImpl<T> implements InterfaceVoxels<T> {
     Set<Pair<Voxel, Voxel>> voxels;
 
-    public InterfaceVoxelSet(Object3D e1, Object3D e2) {
+    public InterfaceVoxelSet(Region e1, Region e2) {
         super(e1, e2);
         voxels=new HashSet<>();
     }
     
-    public InterfaceVoxelSet(Object3D e1, Object3D e2, Set<Pair<Voxel, Voxel>> voxels) {
+    public InterfaceVoxelSet(Region e1, Region e2, Set<Pair<Voxel, Voxel>> voxels) {
         super(e1, e2);
         this.voxels=voxels;
     }
@@ -56,7 +56,7 @@ public abstract class InterfaceVoxelSet<T extends InterfaceVoxelSet<T>> extends 
         return res;
     }
     
-    public Set<Voxel> getVoxels(Object3D o) {
+    public Set<Voxel> getVoxels(Region o) {
         Set<Voxel> res = new HashSet<>(voxels.size());
         if (o==e1) voxels.stream().forEach((p) -> { res.add(p.key); });
         else if (o==e2) voxels.stream().forEach((p) -> { res.add(p.value); });
@@ -69,8 +69,8 @@ public abstract class InterfaceVoxelSet<T extends InterfaceVoxelSet<T>> extends 
     }
 
     @Override 
-    public void fusionInterface(T otherInterface, Comparator<? super Object3D> elementComparator) {
-        //fusionInterfaceSetElements(otherInterface, Object3DCluster.object3DComparator);
+    public void fusionInterface(T otherInterface, Comparator<? super Region> elementComparator) {
+        //fusionInterfaceSetElements(otherInterface, RegionCluster.object3DComparator);
         voxels.addAll(((InterfaceVoxelSet)otherInterface).voxels);
     }
 }

@@ -27,8 +27,8 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import ij.ImageJ;
 import ij.process.AutoThresholder;
@@ -79,7 +79,7 @@ public class TestProcessBacteriaPhase {
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);
-        ObjectPopulation pop;
+        RegionPopulation pop;
         Image input = mc.getRawImage(1);
         if (useSegmentedObjectsFromDB) {
             pop=mc.getObjectPopulation(1);
@@ -91,7 +91,7 @@ public class TestProcessBacteriaPhase {
             seg.setSplitVerboseMode(true);
         }
         
-        List<Object3D> res = new ArrayList<>();
+        List<Region> res = new ArrayList<>();
         //pop.translate(input.getBoundingBox(), true);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(pop.getObjects().get(oIdx).getMask().crop(input.getBoundingBox().translateToOrigin()));
@@ -102,7 +102,7 @@ public class TestProcessBacteriaPhase {
         
         ImageByte splitMap = new ImageByte("splitted objects", pop.getLabelMap());
         int label=1;
-        for (Object3D o : res) o.draw(splitMap, label++);
+        for (Region o : res) o.draw(splitMap, label++);
         disp.showImage(splitMap);
     }
     
@@ -121,7 +121,7 @@ public class TestProcessBacteriaPhase {
         }
         
         if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
-        ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
+        RegionPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(pop.getLabelMap());
     }

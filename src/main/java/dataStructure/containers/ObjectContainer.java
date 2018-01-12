@@ -17,7 +17,7 @@
  */
 package dataStructure.containers;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import java.util.Map;
@@ -47,7 +47,7 @@ public abstract class ObjectContainer {
     protected float getScaleXY() {return structureObject.getMicroscopyField().getScaleXY();}
     protected float getScaleZ() {return structureObject.getMicroscopyField().getScaleZ();}
     public boolean is2D() {return is2D;}
-    public abstract Object3D getObject();
+    public abstract Region getObject();
     public void updateObject() {
         is2D = structureObject.getObject().is2D();
         bounds = structureObject.getObject().getBounds();

@@ -17,7 +17,7 @@
  */
 package image;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +30,7 @@ import java.util.TreeMap;
  * @author jollion
  */
 public class ObjectFactory {
-    public static Object3D[] getObjectsVoxels(ImageInteger labelImage, boolean ensureContinuousLabels) {
+    public static Region[] getObjectsVoxels(ImageInteger labelImage, boolean ensureContinuousLabels) {
         HashMap<Integer, ArrayList<Voxel>> objects = new HashMap<>();
         int label;
         int sizeX = labelImage.getSizeX();
@@ -48,10 +48,10 @@ public class ObjectFactory {
             }
         }
         TreeMap<Integer, ArrayList<Voxel>> tm = new TreeMap(objects);
-        Object3D[] res = new Object3D[tm.size()];
+        Region[] res = new Region[tm.size()];
         int i = 0;
         for (Entry<Integer, ArrayList<Voxel>> e : tm.entrySet()) {
-            res[i] = new Object3D(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1, labelImage.getScaleXY(), labelImage.getScaleZ());
+            res[i] = new Region(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1, labelImage.getScaleXY(), labelImage.getScaleZ());
             ++i;
         }
         return res;
@@ -78,18 +78,18 @@ public class ObjectFactory {
         return new TreeMap<>(bounds);
     }
     
-    public static Object3D[] getObjectsImage(ImageInteger labelImage, boolean ensureContinuousLabels) {
+    public static Region[] getObjectsImage(ImageInteger labelImage, boolean ensureContinuousLabels) {
         return getObjectsImage(labelImage, null, ensureContinuousLabels);
     }
     
-    public static Object3D[] getObjectsImage(ImageInteger labelImage, TreeMap<Integer, BoundingBox> bounds,  boolean ensureContinuousLabels) {
+    public static Region[] getObjectsImage(ImageInteger labelImage, TreeMap<Integer, BoundingBox> bounds,  boolean ensureContinuousLabels) {
         if (bounds==null) bounds = getBounds(labelImage);
-        Object3D[] res = new Object3D[bounds.size()];
+        Region[] res = new Region[bounds.size()];
         int i = 0;
         
         for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
             ImageByte label = labelImage.cropLabel(e.getKey(), e.getValue());
-            res[i] = new Object3D(label, ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1);
+            res[i] = new Region(label, ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1);
             ++i;
         }
         return res;
@@ -118,10 +118,10 @@ public class ObjectFactory {
             ++newLabel;
         }
     }
-    public static List<Object3D> createSeedObjectsFromSeeds(List<int[]> seedsXYZ, boolean is2D, double scaleXY, double scaleZ) {
-        List<Object3D> seedObjects = new ArrayList<>(seedsXYZ.size());
+    public static List<Region> createSeedObjectsFromSeeds(List<int[]> seedsXYZ, boolean is2D, double scaleXY, double scaleZ) {
+        List<Region> seedObjects = new ArrayList<>(seedsXYZ.size());
         int label = 0;
-        for (int[] seed : seedsXYZ) seedObjects.add(new Object3D(new Voxel(seed), ++label, is2D, (float)scaleXY, (float)scaleZ));
+        for (int[] seed : seedsXYZ) seedObjects.add(new Region(new Voxel(seed), ++label, is2D, (float)scaleXY, (float)scaleZ));
         return seedObjects;
     }
     

@@ -18,8 +18,8 @@
 package processing;
 
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.Voxel;
 import image.Image;
 import image.ImageByte;
@@ -32,8 +32,8 @@ import java.util.Set;
 import static plugins.Plugin.logger;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import utils.clustering.ClusterCollection;
-import utils.clustering.InterfaceObject3DImpl;
-import utils.clustering.Object3DCluster;
+import utils.clustering.InterfaceRegionImpl;
+import utils.clustering.RegionCluster;
 
 /**
  *
@@ -46,7 +46,7 @@ public class SplitAndMerge {
     Image normalizedHessian;
     public ImageByte tempSplitMask;
     public final double splitThresholdValue, hessianScale;
-    ClusterCollection.InterfaceFactory<Object3D, Interface> factory;
+    ClusterCollection.InterfaceFactory<Region, Interface> factory;
     boolean testMode;
     
     public SplitAndMerge(Image input, double splitThreshold, double hessianScale) {
@@ -77,9 +77,9 @@ public class SplitAndMerge {
      * @param objectMergeLimit
      * @return 
      */
-    public ObjectPopulation splitAndMerge(ImageInteger segmentationMask, int minSizePropagation, int minSize, int objectMergeLimit) {
+    public RegionPopulation splitAndMerge(ImageInteger segmentationMask, int minSizePropagation, int minSize, int objectMergeLimit) {
         WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
-        ObjectPopulation popWS = WatershedTransform.watershed(getHessian(), segmentationMask, false, null, sfc, false);
+        RegionPopulation popWS = WatershedTransform.watershed(getHessian(), segmentationMask, false, null, sfc, false);
         if (testMode) {
             popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
             ImageWindowManagerFactory.showImage(getHessian());
@@ -94,30 +94,30 @@ public class SplitAndMerge {
      * @param objectMergeLimit 
      * @return 
      */
-    protected ObjectPopulation merge(ObjectPopulation popWS, int minSize, int objectMergeLimit) {
-        Object3DCluster.verbose=testMode;
-        Object3DCluster.mergeSort(popWS,  getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
+    protected RegionPopulation merge(RegionPopulation popWS, int minSize, int objectMergeLimit) {
+        RegionCluster.verbose=testMode;
+        RegionCluster.mergeSort(popWS,  getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
         //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
-        popWS.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
-        popWS.filterAndMergeWithConnected(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
+        popWS.filterAndMergeWithConnected(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
+        popWS.filterAndMergeWithConnected(new RegionPopulation.Size().setMin(minSize)); // remove small objects
         popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         if (testMode) ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map"));
         return popWS;
     }
-    public Object3DCluster<Interface> getInterfaces(ObjectPopulation population, boolean lowConnectivity) {
-        return new Object3DCluster<>(population, false, lowConnectivity, getFactory());
+    public RegionCluster<Interface> getInterfaces(RegionPopulation population, boolean lowConnectivity) {
+        return new RegionCluster<>(population, false, lowConnectivity, getFactory());
     }
     
 
-    public ClusterCollection.InterfaceFactory<Object3D, Interface> getFactory() {
-        if (factory==null) factory = (Object3D e1, Object3D e2, Comparator<? super Object3D> elementComparator) -> new Interface(e1, e2);
+    public ClusterCollection.InterfaceFactory<Region, Interface> getFactory() {
+        if (factory==null) factory = (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new Interface(e1, e2);
         return factory;
     }
 
-    public class Interface extends InterfaceObject3DImpl<Interface> implements Object3DCluster.InterfaceVoxels<Interface> {
+    public class Interface extends InterfaceRegionImpl<Interface> implements RegionCluster.InterfaceVoxels<Interface> {
         public double value;
         Set<Voxel> voxels;
-        public Interface(Object3D e1, Object3D e2) {
+        public Interface(Region e1, Region e2) {
             super(e1, e2);
             voxels = new HashSet<Voxel>();
         }
@@ -137,7 +137,7 @@ public class SplitAndMerge {
         }
 
         @Override 
-        public void fusionInterface(Interface otherInterface, Comparator<? super Object3D> elementComparator) {
+        public void fusionInterface(Interface otherInterface, Comparator<? super Region> elementComparator) {
             //fusionInterfaceSetElements(otherInterface, elementComparator);
             Interface other = otherInterface;
             voxels.addAll(other.voxels); 
@@ -160,7 +160,7 @@ public class SplitAndMerge {
         @Override
         public int compareTo(Interface t) {
             int c = Double.compare(value, t.value); // increasing values
-            if (c==0) return super.compareElements(t, Object3DCluster.object3DComparator);
+            if (c==0) return super.compareElements(t, RegionCluster.regionComparator);
             else return c;
         }
 

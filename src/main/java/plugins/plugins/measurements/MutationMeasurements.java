@@ -20,7 +20,7 @@ package plugins.plugins.measurements;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import dataStructure.objects.Voxel;
@@ -70,7 +70,7 @@ public class MutationMeasurements implements Measurement {
 
     public void performMeasurement(StructureObject object) {
         object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
-        /*Object3D mutObject = object.getObject();
+        /*Region mutObject = object.getObject();
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
         BoundingBox parentOffset = object.getParent().getBounds();
         double[] center = mutObject.getCenter(mutImage, true);

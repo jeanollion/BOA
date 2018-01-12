@@ -18,8 +18,8 @@
 package boa.gui.imageInteraction;
 
 import boa.gui.ManualCorrection;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
@@ -46,13 +46,13 @@ public class ManualObjectStrecher {
     public static final Logger logger = LoggerFactory.getLogger(ManualObjectStrecher.class);
     public static void strechObjects(List<Pair<StructureObject, BoundingBox>> parents, int structureIdx, int[] xPoints, int[] yPoints, double thresholdQuantile, boolean brightObject) {
         logger.debug("will strech {} objects, of structure: {}, x: {}, y: {}", parents.size(), structureIdx, xPoints, yPoints);
-        List<Pair<StructureObject, Object3D>> objectsToUpdate = new ArrayList<>(parents.size());
+        List<Pair<StructureObject, Region>> objectsToUpdate = new ArrayList<>(parents.size());
         for (Pair<StructureObject, BoundingBox> p : parents) {
             List<StructureObject> children = p.key.getChildren(structureIdx);
             if (children.isEmpty()) continue;
             // get uppermost children : 
             StructureObject child = children.stream().min((s1, s2)->Integer.compare(s1.getBounds().getyMin(), s2.getBounds().getyMin())).orElse(children.get(0));
-            Object3D childObject = child.getObject().duplicate();
+            Region childObject = child.getObject().duplicate();
             BoundingBox offset = p.key.getBounds().duplicate().reverseOffset().translate(p.value);
             childObject.translate(offset); // translate object in ROI referencial
             List<Voxel> contour = childObject.getContour();
@@ -129,9 +129,9 @@ public class ManualObjectStrecher {
             }
             offset.reverseOffset();
             strechMap.addOffset(offset);
-            Object3D[] allO = ObjectFactory.getObjectsImage(strechMap, false);
+            Region[] allO = ObjectFactory.getObjectsImage(strechMap, false);
             if (allO.length>0) {
-                Object3D newObject = allO[0].translate(strechMap.getBoundingBox());
+                Region newObject = allO[0].translate(strechMap.getBoundingBox());
                 objectsToUpdate.add(new Pair(child, newObject));
                 logger.debug("resulting object bounds: {} (old: {})", newObject, child.getObject().getBounds(), newObject);
             }

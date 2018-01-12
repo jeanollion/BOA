@@ -27,8 +27,8 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.Measurements;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectTracker;
@@ -140,8 +140,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     // tracking-related attributes
     protected enum Flag {error, correctionMerge, correctionSplit;}
-    HashMap<Integer, List<Object3D>> populations;
-    HashMap<Object3D, TrackAttribute> objectAttributeMap;
+    HashMap<Integer, List<Region>> populations;
+    HashMap<Region, TrackAttribute> objectAttributeMap;
     //SegmenterSplitAndMerge[] segmenters;
     private boolean segment, correction;
     HashMap<Integer, Image> inputImages;
@@ -176,9 +176,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     final static double globalContrastThreshold = 0;
     // functions for assigners
     
-    Function<Object3D, Double> sizeFunction; 
-    Function<Object3D, Double> sizeIncrementFunction;
-    BiFunction<Object3D, Object3D, Boolean> areFromSameLine;
+    Function<Region, Double> sizeFunction; 
+    Function<Region, Double> sizeIncrementFunction;
+    BiFunction<Region, Region, Boolean> areFromSameLine;
     
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {
@@ -634,15 +634,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 else if (children.size()!=populations.get(f).size()) logger.error("BCMTLC: error @ parent: {}, children and tracker objects differ in number", parent);
                 else setAttributesToStructureObjects(f, children, childrenPrev);
             } else { // creates new structureObjects
-                List<Object3D> cObjects;
+                List<Region> cObjects;
                 if (correctionStep) {
                     cObjects = new ArrayList<>(populations.get(f).size());
-                    for (Object3D o : populations.get(f)) cObjects.add(o.duplicate());
+                    for (Region o : populations.get(f)) cObjects.add(o.duplicate());
                 } else {
                     cObjects = populations.get(f);
                     //RemoveIncompleteDivisions(t);
                 }
-                children = parent.setChildrenObjects(new ObjectPopulation(cObjects, null), structureIdx); // will translate all voxels
+                children = parent.setChildrenObjects(new RegionPopulation(cObjects, null), structureIdx); // will translate all voxels
                 setAttributesToStructureObjects(f, children, childrenPrev);
                 if (debug) for (StructureObject c : children) if (c.hasTrackLinkError(true, true)) ++errors;
             }
@@ -744,7 +744,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     nextO.clear(); // stop while loop
                     for (int f = frame+1; f<maxT; ++f) { // remove all objects from frame
                         if (populations.get(f)!=null) {
-                            for (Object3D r : populations.get(f)) objectAttributeMap.remove(r);
+                            for (Region r : populations.get(f)) objectAttributeMap.remove(r);
                             populations.get(f).clear();
                         }
                     }
@@ -834,7 +834,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return res;
     }
     
-    protected List<Object3D> getObjects(int timePoint) {
+    protected List<Region> getObjects(int timePoint) {
         if (this.populations.get(timePoint)==null) {
             StructureObject parent = this.parentsByF.get(timePoint);
             List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
@@ -850,7 +850,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
         
     protected TrackAttribute getAttribute(int frame, int idx) {
-        Object3D o = getObjects(frame).get(idx);
+        Region o = getObjects(frame).get(idx);
         TrackAttribute res = objectAttributeMap.get(o);
         if (res==null) {
             createAttributes(frame);
@@ -864,13 +864,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     private void createAttributes(int frame) {
-        List<Object3D> pop = getObjects(frame);
+        List<Region> pop = getObjects(frame);
         for (int i = 0; i<pop.size(); ++i) objectAttributeMap.put(pop.get(i), new TrackAttribute(pop.get(i), i, frame));
     }
 
     protected void resetIndices(int timePoint) {
         int idx = 0;
-        for (Object3D o : getObjects(timePoint)) {
+        for (Region o : getObjects(timePoint)) {
             if (!objectAttributeMap.containsKey(o)) {
                 if (idx!=0 && debug)  logger.warn("inconsistent attributes for timePoint: {} will be created de novo", timePoint); 
                 createAttributes(timePoint);
@@ -898,7 +898,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return res;
     }
     
-    protected static double getObjectSize(Object3D o) {
+    protected static double getObjectSize(Region o) {
         if (useVolumeAsSize) return GeometricalMeasurements.getVolume(o);
         //this.objectSize = o.getBounds().getSizeY();
         else return GeometricalMeasurements.getFeretMax(o);
@@ -914,14 +914,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         boolean errorPrev, errorCur, truncatedDivision, sizeIncrementError;
         double sizeIncrement=Double.NaN;
         int nPrev;
-        public final Object3D o;
+        public final Region o;
         boolean division=false, trackHead=true;
         private double objectSize=Double.NaN;
         private double objectLength = Double.NaN;
         
         final boolean touchEndOfChannel;
         double endOfChannelContact;
-        protected TrackAttribute(Object3D o, int idx, int timePoint) {
+        protected TrackAttribute(Region o, int idx, int timePoint) {
             this.o=o;
             this.idx=idx;
             this.timePoint=timePoint;
@@ -1088,7 +1088,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (maxT-1<=timePoint) return res!=null ? res : Collections.EMPTY_SET;
             if (division) {
                 if (res==null) res = new HashSet<>();
-                for (Object3D o : getObjects(timePoint+1)) {
+                for (Region o : getObjects(timePoint+1)) {
                     TrackAttribute ta = objectAttributeMap.get(o);
                     if (ta!=null && ta.prev==this) res.add(ta);
                 }
@@ -1104,7 +1104,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         public Set<TrackAttribute> getPrevious(Set<TrackAttribute> res) {
             if (timePoint==minT) return res!=null ? res : Collections.EMPTY_SET;
             if (res==null) res = new HashSet<>();
-            for (Object3D o : getObjects(timePoint-1)) {
+            for (Region o : getObjects(timePoint-1)) {
                 TrackAttribute ta = objectAttributeMap.get(o);
                 if (ta!=null && ta.next==this) res.add(ta);
             }
@@ -1129,8 +1129,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     public void resetTrackAttributes(int frame) {
-        if (populations.get(frame)!=null) for (Object3D o : populations.get(frame)) if (objectAttributeMap.containsKey(o)) objectAttributeMap.get(o).resetTrackAttributes(true, false);
-        if (populations.get(frame-1)!=null) for (Object3D o : populations.get(frame-1)) if (objectAttributeMap.containsKey(o)) objectAttributeMap.get(o).resetTrackAttributes(false, true);
+        if (populations.get(frame)!=null) for (Region o : populations.get(frame)) if (objectAttributeMap.containsKey(o)) objectAttributeMap.get(o).resetTrackAttributes(true, false);
+        if (populations.get(frame-1)!=null) for (Region o : populations.get(frame-1)) if (objectAttributeMap.containsKey(o)) objectAttributeMap.get(o).resetTrackAttributes(false, true);
     }
     
     private void setAssignmentToTrackAttributes(Assignment a, int frame, boolean forceError, boolean lastAssignment) {
@@ -1359,8 +1359,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
 
     protected class ObjectAndAttributeSave {
-        final List<Object3D>[] objects;
-        final Map<Object3D, TrackAttribute> taMap;
+        final List<Region>[] objects;
+        final Map<Region, TrackAttribute> taMap;
         final int tpMin;
         protected ObjectAndAttributeSave(int tpMin, int tpMax) {
             if (tpMin<0) tpMin = 0;
@@ -1370,7 +1370,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             taMap = new HashMap<>();
             for (int t = tpMin; t<=tpMax; ++t) {
                 objects[t-tpMin] = new ArrayList(getObjects(t));
-                for (Object3D o : getObjects(t)) {
+                for (Region o : getObjects(t)) {
                     TrackAttribute ta = objectAttributeMap.get(o);
                     if (ta!=null) taMap.put(o, ta);
                 }
@@ -1379,7 +1379,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         public void restoreAll() {
             for (int i = 0; i<objects.length; i++) {
                 populations.put(i+tpMin, new ArrayList(objects[i]));
-                for (Object3D o : objects[i]) objectAttributeMap.replace(o, taMap.get(o));
+                for (Region o : objects[i]) objectAttributeMap.replace(o, taMap.get(o));
                 resetIndices(i+tpMin);
             }
         }
@@ -1389,7 +1389,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (tMax>=tpMin+objects.length) tMax=tpMin+objects.length-1;
             for (int t = tMin; t<=tMax; ++t) {
                 populations.put(t, new ArrayList(objects[t-tpMin]));
-                for (Object3D o : populations.get(t)) objectAttributeMap.replace(o, taMap.get(o));
+                for (Region o : populations.get(t)) objectAttributeMap.replace(o, taMap.get(o));
                 resetIndices(t);
             }
             return true;
@@ -1397,7 +1397,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         public boolean restore(int t) {
             if (t<tpMin || t>=tpMin+objects.length) return false;
             populations.put(t,new ArrayList(objects[t-tpMin]));
-            for (Object3D o : populations.get(t)) objectAttributeMap.replace(o, taMap.get(o));
+            for (Region o : populations.get(t)) objectAttributeMap.replace(o, taMap.get(o));
             resetIndices(t);
             return true;
         }

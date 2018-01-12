@@ -18,7 +18,7 @@
 package plugins.plugins.measurements;
 
 import configuration.parameters.Parameter;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import plugins.ObjectFeature;
 
@@ -33,7 +33,7 @@ public abstract class SimpleObjectFeature implements ObjectFeature {
         return new Parameter[0];
     }
 
-    @Override public SimpleObjectFeature setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    @Override public SimpleObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         this.parent=parent;
         this.childStructureIdx=childStructureIdx;
         return this;

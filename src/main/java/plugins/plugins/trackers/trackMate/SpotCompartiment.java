@@ -17,7 +17,7 @@
  */
 package plugins.plugins.trackers.trackMate;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
@@ -114,7 +114,7 @@ public class SpotCompartiment {
         else return null;
     }
     
-    private static double[] getPole(Object3D o, double margin, int marginYUp, int marginYDown) {
+    private static double[] getPole(Region o, double margin, int marginYUp, int marginYDown) {
         double xMean = 0, zMean = 0, count=0;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
@@ -146,7 +146,7 @@ public class SpotCompartiment {
         return new double[]{ xMean * o.getScaleXY(), (o.getBounds().getyMin()+margin)* o.getScaleXY(), zMean * o.getScaleZ()};
     }
     
-    private static double[][] getPoles(Object3D o, double proportionOfWidth, double yLenghtForXMean) {
+    private static double[][] getPoles(Region o, double proportionOfWidth, double yLenghtForXMean) {
         int[] ySize = new int[o.getBounds().getSizeY()];
         double meanYSize = 0;
         ImageMask mask = o.getMask();
@@ -174,7 +174,7 @@ public class SpotCompartiment {
         return new double[][]{poleUp, poleDown};
     }
     
-    private static double[] getPoleByCount(Object3D o, int limit, int marginYUp, int marginYDown) {
+    private static double[] getPoleByCount(Region o, int limit, int marginYUp, int marginYDown) {
         int count=0, countPrev, countCur=-1;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
@@ -197,7 +197,7 @@ public class SpotCompartiment {
         throw new RuntimeException("get Division middle : limit unreached");
     }
     
-    private static double[] getYPositionWithinCompartimentByCount(Object3D o, int... limit) {
+    private static double[] getYPositionWithinCompartimentByCount(Region o, int... limit) {
         int count=0;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();

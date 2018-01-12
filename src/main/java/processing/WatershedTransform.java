@@ -19,8 +19,8 @@ package processing;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import static core.Processor.logger;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.Voxel;
 import image.BlankMask;
 import image.Image;
@@ -60,18 +60,18 @@ public class WatershedTransform {
     protected boolean lowConnectivity = false;
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
-    public static List<Object3D> duplicateSeeds(List<Object3D> seeds) {
-        List<Object3D> res = new ArrayList<>(seeds.size());
-        for (Object3D o : seeds) res.add(new Object3D(new ArrayList<Voxel>(o.getVoxels()), o.getLabel(), o.is2D(), o.getScaleXY(), o.getScaleZ()));
+    public static List<Region> duplicateSeeds(List<Region> seeds) {
+        List<Region> res = new ArrayList<>(seeds.size());
+        for (Region o : seeds) res.add(new Region(new ArrayList<Voxel>(o.getVoxels()), o.getLabel(), o.is2D(), o.getScaleXY(), o.getScaleZ()));
         return res;
     }
-    public static List<Object3D> createSeeds(List<Voxel> seeds, boolean is2D, float scaleXY, float scaleZ) {
-        List<Object3D> res = new ArrayList<>(seeds.size());
+    public static List<Region> createSeeds(List<Voxel> seeds, boolean is2D, float scaleXY, float scaleZ) {
+        List<Region> res = new ArrayList<>(seeds.size());
         int label = 1;
-        for (Voxel v : seeds) res.add(new Object3D(new ArrayList<Voxel>(){{add(v);}}, label++, is2D, scaleXY, scaleZ));
+        for (Voxel v : seeds) res.add(new Region(new ArrayList<Voxel>(){{add(v);}}, label++, is2D, scaleXY, scaleZ));
         return res;
     }
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
+    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
         ImageByte seeds = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1.5, 1.5, watershedMap));
         if (mask!=null) ImageOperations.and(seeds, mask, seeds); // no offset
         //new IJImageDisplayer().showImage(seeds.setName("seeds"));
@@ -81,34 +81,34 @@ public class WatershedTransform {
      * 
      * @param watershedMap
      * @param mask
-     * @param regionalExtrema CONTAINED OBJECT3D WILL BE MODIFIED
+     * @param regionalExtrema CONTAINED REGION WILL BE MODIFIED
      * @param decreasingPropagation
      * @param propagationCriterion
      * @param fusionCriterion
      * @return 
      */
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
+    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, List<Region> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
         WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion).setLowConnectivity(lowConnectivity);
         wt.run();
         return wt.getObjectPopulation();
     }
     
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, boolean lowConnectivity) {
+    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, boolean lowConnectivity) {
         return watershed(watershedMap, mask, Arrays.asList(ImageLabeller.labelImage(seeds)), invertWatershedMapValues, null, null, lowConnectivity);
     }
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
+    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
         return watershed(watershedMap, mask, Arrays.asList(ImageLabeller.labelImage(seeds)), decreasingPropagation, propagationCriterion, fusionCriterion, lowConnectivity);
     }
     /**
      * 
      * @param watershedMap
      * @param mask
-     * @param regionalExtrema CONTAINED OBJECT3D WILL BE MODIFIED
+     * @param regionalExtrema CONTAINED REGION WILL BE MODIFIED
      * @param decreasingPropagation
      * @param propagationCriterion
      * @param fusionCriterion 
      */
-    public WatershedTransform(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+    public WatershedTransform(Image watershedMap, ImageMask mask, List<Region> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         if (mask==null) mask=new BlankMask("", watershedMap);
         this.decreasingPropagation = decreasingPropagation;
         heap = decreasingPropagation ? new TreeSet<>(Voxel.getInvertedComparator()) : new TreeSet<>();
@@ -295,13 +295,13 @@ public class WatershedTransform {
     
     public ImageInteger getLabelImage() {return segmentedMap;}
     
-    public ObjectPopulation getObjectPopulation() {
+    public RegionPopulation getObjectPopulation() {
         //int nb = 0;
         //for (Spot s : wt.spots) if (s!=null) nb++;
-        ArrayList<Object3D> res = new ArrayList<Object3D>(spotNumber);
+        ArrayList<Region> res = new ArrayList<Region>(spotNumber);
         int label = 1;
-        for (Spot s : spots) if (s!=null) res.add(s.toObject3D(label++));
-        return new ObjectPopulation(res, watershedMap).setConnectivity(lowConnectivity);
+        for (Spot s : spots) if (s!=null) res.add(s.toRegion(label++));
+        return new RegionPopulation(res, watershedMap).setConnectivity(lowConnectivity);
     }
     public Spot[] getSpotArray() {
         return spots;
@@ -366,8 +366,8 @@ public class WatershedTransform {
             }
         }
         
-        public Object3D toObject3D(int label) {
-            return new Object3D(voxels, label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
+        public Region toRegion(int label) {
+            return new Region(voxels, label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
         }
         
         public double getQuality() {

@@ -17,7 +17,7 @@
  */
 package measurement;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import image.Image;
 import java.util.ArrayList;
@@ -30,12 +30,12 @@ import utils.ArrayUtil;
  */
 public class GeometricalMeasurements {
     
-    public static double getVolume(Object3D o) {
+    public static double getVolume(Region o) {
         int count = o.getVoxels().size();
         if (!o.is2D()) return count * o.getScaleXY() * o.getScaleXY() * o.getScaleZ();
         else  return count * o.getScaleXY() * o.getScaleXY();
     }
-    public static double getFeretMax(Object3D o) {
+    public static double getFeretMax(Region o) {
         double d2Max = 0;
         List<Voxel> list = o.getContour();
         int voxCount = list.size();
@@ -50,13 +50,13 @@ public class GeometricalMeasurements {
         return Math.sqrt(d2Max);
     }
     
-    public static double getDistance(Object3D o1, Object3D o2) {
+    public static double getDistance(Region o1, Region o2) {
         return getDistance(o1.getGeomCenter(false), o2.getGeomCenter(false), o1.getScaleXY(), o1.getScaleZ());
     }
-    public static double getDistanceSquare(Object3D o1, Object3D o2) {
+    public static double getDistanceSquare(Region o1, Region o2) {
         return getDistanceSquare(o1.getGeomCenter(false), o2.getGeomCenter(false), o1.getScaleXY(), o1.getScaleZ());
     }
-    public static double getDistanceBB(Object3D o1, Object3D o2, boolean scaled) {
+    public static double getDistanceBB(Region o1, Region o2, boolean scaled) {
         double dMin = Double.POSITIVE_INFINITY;
         double sXY = scaled ? o1.getScaleXY():1;
         double sZ = scaled ? o1.getScaleZ():1;
@@ -68,7 +68,7 @@ public class GeometricalMeasurements {
         }
         return Math.sqrt(dMin);
     }
-    public static double getDistance(Object3D o1, Object3D o2, Image im1, Image im2) {
+    public static double getDistance(Region o1, Region o2, Image im1, Image im2) {
         return getDistance(o1.getMassCenter(im1, false), o2.getMassCenter(im2, false), o1.getScaleXY(), o1.getScaleZ());
     }
     
@@ -79,7 +79,7 @@ public class GeometricalMeasurements {
         return Math.pow((c1[0]-c2[0])*scaleXY, 2) + Math.pow((c1[1]-c2[1])*scaleXY, 2) + Math.pow((c1[2]-c2[2])*scaleZ, 2);
     }
 
-    public static double meanThicknessZ(Object3D object) {
+    public static double meanThicknessZ(Region object) {
         double mean = 0;
         double count = 0;
         for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
@@ -109,7 +109,7 @@ public class GeometricalMeasurements {
         }
         return mean;
     }
-    public static double medianThicknessZ(Object3D object) {
+    public static double medianThicknessZ(Region object) {
         List<Integer> values = new ArrayList<>();
         for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
             for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
@@ -132,7 +132,7 @@ public class GeometricalMeasurements {
         }
         return ArrayUtil.medianInt(values);
     }
-    public static double meanThicknessY(Object3D object) {
+    public static double meanThicknessY(Region object) {
         double mean = 0;
         double count = 0;
         for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
@@ -162,7 +162,7 @@ public class GeometricalMeasurements {
         }
         return mean;
     }
-    public static double medianThicknessY(Object3D object) {
+    public static double medianThicknessY(Region object) {
         List<Integer> values = new ArrayList<>();
         for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
             for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
@@ -186,7 +186,7 @@ public class GeometricalMeasurements {
         return ArrayUtil.medianInt(values);
     }
 
-    public static double meanThicknessX(Object3D object) {
+    public static double meanThicknessX(Region object) {
         double mean = 0;
         double count = 0;
         for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
@@ -216,7 +216,7 @@ public class GeometricalMeasurements {
         }
         return mean;
     }
-    public static double medianThicknessX(Object3D object) {
+    public static double medianThicknessX(Region object) {
         List<Integer> values = new ArrayList<>();
         for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
             for (int y = 0; y < object.getBounds().getSizeY(); ++y) {

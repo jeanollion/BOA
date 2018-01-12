@@ -17,7 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Voxel;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,8 +33,8 @@ import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClo
  */
 public class MergeScenario extends CorrectionScenario {
         int idxMin, idxMax;
-        List<Object3D> listO;
-        public MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int idxMin, List<Object3D> objects, int frame) { // idxMax included
+        List<Region> listO;
+        public MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int idxMin, List<Region> objects, int frame) { // idxMax included
             super(frame, frame, tracker);
             this.idxMax=idxMin+objects.size()-1;
             this.idxMin = idxMin;
@@ -48,7 +48,7 @@ public class MergeScenario extends CorrectionScenario {
             if (timePointMin==0 || idxMin==idxMax) return null;
             int iMin = Integer.MAX_VALUE;
             int iMax = -1;
-            for (Object3D o : listO) {
+            for (Region o : listO) {
                 TrackAttribute ta = tracker.objectAttributeMap.get(o).prev;
                 if (ta==null) continue;
                 if (iMin>ta.idx) iMin = ta.idx;
@@ -62,13 +62,13 @@ public class MergeScenario extends CorrectionScenario {
         @Override
         protected void applyScenario() {
             List<Voxel> vox = new ArrayList<>();
-            Object3D o = tracker.populations.get(timePointMin).get(idxMin); 
+            Region o = tracker.populations.get(timePointMin).get(idxMin); 
             for (int i = idxMax; i>=idxMin; --i) {
-                Object3D rem = tracker.populations.get(timePointMin).remove(i);
+                Region rem = tracker.populations.get(timePointMin).remove(i);
                 vox.addAll(rem.getVoxels());
                 tracker.objectAttributeMap.remove(rem);
             }
-            Object3D merged = new Object3D(vox, idxMin+1, o.is2D(), o.getScaleXY(), o.getScaleZ());
+            Region merged = new Region(vox, idxMin+1, o.is2D(), o.getScaleXY(), o.getScaleZ());
             tracker.populations.get(timePointMin).add(idxMin, merged);
             tracker.objectAttributeMap.put(merged, tracker.new TrackAttribute(merged, idxMin, timePointMin));
             tracker.resetIndices(timePointMin);

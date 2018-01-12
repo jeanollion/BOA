@@ -19,7 +19,7 @@ package plugins.plugins.trackPostFilter;
 
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import image.BlankMask;

@@ -20,8 +20,8 @@ package images;
 import static TestUtils.GenerateSyntheticData.generateImages;
 import TestUtils.TestUtils;
 import dataStructure.configuration.Structure;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
@@ -45,7 +45,8 @@ import org.junit.Test;
 public class ObjectManipulationTest {
     ImageByte im, imRelabel;
     BoundingBox bound1, bound3;
-    Object3D o1, o3;
+    Region o1;
+    Region o3;
     
     @Before
     public void setUp() {
@@ -62,13 +63,13 @@ public class ObjectManipulationTest {
         
         bound1=new BoundingBox(0, 1, 0, 0,0,0);
         bound3 = new BoundingBox(2, 3, 1,1,1,1);
-        o1 = new Object3D(im.cropLabel(1, bound1), 1, false);
-        o3 = new Object3D(im.cropLabel(3, bound3), 3, false);
+        o1 = new Region(im.cropLabel(1, bound1), 1, false);
+        o3 = new Region(im.cropLabel(3, bound3), 3, false);
         
     }
     @Test
     public void testGetObjectsVoxels() {
-        Object3D[] obs = ObjectFactory.getObjectsVoxels(im, false);
+        Region[] obs = ObjectFactory.getObjectsVoxels(im, false);
         assertEquals("object number", 2, obs.length);
         assertEquals("object1 vox number:", 2, obs[0].getVoxels().size());
         assertTrue("object1 vox1:", new Voxel(0, 0, 0).equals(obs[0].getVoxels().get(0)));
@@ -90,7 +91,7 @@ public class ObjectManipulationTest {
     
     @Test
     public void testGetObjectsImages() {
-        Object3D[] obs = ObjectFactory.getObjectsImage(im, null, false);
+        Region[] obs = ObjectFactory.getObjectsImage(im, null, false);
         assertEquals("object number", 2, obs.length);
         TestUtils.assertImage((ImageByte)obs[0].getMask(), (ImageByte)o1.getMask(), 0);
         TestUtils.assertImage((ImageByte)obs[1].getMask(), (ImageByte)o3.getMask(), 0);
@@ -98,28 +99,28 @@ public class ObjectManipulationTest {
     
     @Test 
     public void testConversionVoxelMask() {
-        Object3D[] obs = ObjectFactory.getObjectsVoxels(im, false);
+        Region[] obs = ObjectFactory.getObjectsVoxels(im, false);
         ImageByte imtest = new ImageByte("", im);
         int label=1;
-        for (Object3D o : obs) o.draw(imtest, label++);
+        for (Region o : obs) o.draw(imtest, label++);
         ImageByte imtest2 = new ImageByte("", im);
         label = 1;
-        for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
+        for (Region o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
         TestUtils.assertImage(imtest, imtest2, 0);
     }
     
     @Test 
     public void testConversionMaskVoxels() {
-        Object3D[] obs = ObjectFactory.getObjectsImage(im, null, false);
+        Region[] obs = ObjectFactory.getObjectsImage(im, null, false);
         ImageByte imtest = new ImageByte("", im);
         int label=1;
-        for (Object3D o : obs) {
+        for (Region o : obs) {
             o.getVoxels(); // get voxels to ensure draw with voxels over draw with mask
             o.draw(imtest, label++);
         }
         ImageByte imtest2 = new ImageByte("", im);
         label = 1;
-        for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
+        for (Region o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
         TestUtils.assertImage(imtest, imtest2, 0);
     }
     
@@ -132,21 +133,21 @@ public class ObjectManipulationTest {
     
     @Test 
     public void testObjectPopulation() {
-        ObjectPopulation popObj = new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(new Object3D[]{o1, o3})), im);
+        RegionPopulation popObj = new RegionPopulation(new ArrayList<Region>(Arrays.asList(new Region[]{o1, o3})), im);
         TestUtils.assertImage(im, (ImageByte)popObj.getLabelMap(), 0);
         popObj.relabel();
         TestUtils.assertImage(imRelabel, (ImageByte)popObj.getLabelMap(), 0);
-        popObj = new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(new Object3D[]{o1, o3})), im);
+        popObj = new RegionPopulation(new ArrayList<Region>(Arrays.asList(new Region[]{o1, o3})), im);
         popObj.relabel();
         TestUtils.assertImage(imRelabel, (ImageByte)popObj.getLabelMap(), 0);
         
-        ObjectPopulation popIm = new ObjectPopulation(im, true);
+        RegionPopulation popIm = new RegionPopulation(im, true);
         assertEquals("number of objects", 2, popIm.getObjects().size());
         assertObject3DVoxels(o1, popIm.getObjects().get(0));
         assertObject3DVoxels(o3, popIm.getObjects().get(1));
     }
     
-    public static void assertObject3DVoxels(Object3D expected, Object3D actual) {
+    public static void assertObject3DVoxels(Region expected, Region actual) {
         assertEquals("object voxel number", expected.getVoxels().size(), actual.getVoxels().size());
         for (int i = 0; i<expected.getVoxels().size(); ++i) {
             TestUtils.logger.trace("assert voxel: {} expected: {} actual: {}", i, expected.getVoxels().get(i), actual.getVoxels().get(i));

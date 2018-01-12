@@ -18,7 +18,7 @@
 package dataStructure.objects;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
-import static dataStructure.objects.Object3D.logger;
+import static dataStructure.objects.Region.logger;
 import static ij.process.AutoThresholder.Method.Otsu;
 import image.BlankMask;
 import image.BoundingBox;
@@ -64,10 +64,10 @@ import utils.HashMapGetCreate;
  *
  * @author nasique
  */
-public class ObjectPopulation {
+public class RegionPopulation {
 
     private ImageInteger labelImage;
-    private List<Object3D> objects;
+    private List<Region> objects;
     private ImageProperties properties;
     private boolean absoluteLandmark=false;
     private boolean lowConnectivity = false;
@@ -75,7 +75,7 @@ public class ObjectPopulation {
      * Creates an empty ObjectPopulation instance
      * @param properties 
      */
-    public ObjectPopulation(ImageProperties properties) {
+    public RegionPopulation(ImageProperties properties) {
         this.properties = new BlankMask("", properties);
         this.objects=new ArrayList<>();
     }
@@ -87,7 +87,7 @@ public class ObjectPopulation {
      * image, one value per object, if false, the image will be labeled (and
      * thus modified) by Connected Components Labeling
      */
-    public ObjectPopulation(ImageInteger image, boolean isLabeledImage) {
+    public RegionPopulation(ImageInteger image, boolean isLabeledImage) {
         this.properties = image.getProperties();
         labelImage = image;
         if (!isLabeledImage) {
@@ -96,7 +96,7 @@ public class ObjectPopulation {
         }
     }
     
-    public ObjectPopulation setLabelImage(ImageInteger image, boolean isLabeledImage, boolean lowConnectivity) {
+    public RegionPopulation setLabelImage(ImageInteger image, boolean isLabeledImage, boolean lowConnectivity) {
         this.lowConnectivity=lowConnectivity;
         labelImage = image;
         if (!isLabeledImage) {
@@ -105,51 +105,48 @@ public class ObjectPopulation {
         } else objects = null;
         return this;
     }
-    public ObjectPopulation setConnectivity(boolean low) {
+    public RegionPopulation setConnectivity(boolean low) {
         this.lowConnectivity = low;
         return this;
     }
 
-    /*public ObjectPopulation(ArrayList<Object3D> objects) {
-     this.objects = objects;
-     }*/
-    public ObjectPopulation(List<Object3D> objects, ImageProperties properties) {
+    public RegionPopulation(List<Region> objects, ImageProperties properties) {
         if (objects != null) {
             this.objects = objects;
         } else {
             this.objects = new ArrayList<>();
         }
         if (properties!=null) {
-            //for (Object3D o : objects)  if (o.is2D()==null) o.setIs2D(properties.getSizeZ()==1);
+            //for (Region o : objects)  if (o.is2D()==null) o.setIs2D(properties.getSizeZ()==1);
             this.properties = new BlankMask("", properties);
         }
     }
     
-    public ObjectPopulation(List<Object3D> objects, ImageProperties properties, boolean absoluteLandmark) {
+    public RegionPopulation(List<Region> objects, ImageProperties properties, boolean absoluteLandmark) {
         if (objects != null) this.objects = objects;
         else this.objects = new ArrayList<>();
         if (properties!=null) {
-            //for (Object3D o : objects) o.setIs2D(properties.getSizeZ()==1);
+            //for (Region o : objects) o.setIs2D(properties.getSizeZ()==1);
             this.properties = new BlankMask("", properties);
         }
         this.absoluteLandmark=absoluteLandmark;
-        for (Object3D o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
+        for (Region o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
         //checkForDuplicateLabel();
     }
     
-    public ObjectPopulation(List<Object3D> objects, ImageInteger labelMap, ImageProperties properties, boolean absoluteLandmark) {
+    public RegionPopulation(List<Region> objects, ImageInteger labelMap, ImageProperties properties, boolean absoluteLandmark) {
         if (!labelMap.sameSize(properties)) throw new IllegalArgumentException("labelMap and ImageProperties should be of same dimensions");
         if (objects != null) {
             this.objects = objects;
         } else {
-            this.objects = new ArrayList<Object3D>();
+            this.objects = new ArrayList<Region>();
         }
         if (properties!=null) {
-            //for (Object3D o : objects) o.setIs2D(properties.getSizeZ()==1);
+            //for (Region o : objects) o.setIs2D(properties.getSizeZ()==1);
             this.properties = new BlankMask("", properties);
         }
         this.absoluteLandmark=absoluteLandmark;
-        for (Object3D o : objects) {
+        for (Region o : objects) {
             //o.setIs2D(properties.getSizeZ()==1);
             o.setIsAbsoluteLandmark(absoluteLandmark);
         }
@@ -169,15 +166,15 @@ public class ObjectPopulation {
         return false;
     }
     
-    public ObjectPopulation duplicate() {
+    public RegionPopulation duplicate() {
         if (objects!=null) {
-            ArrayList<Object3D> ob = new ArrayList<>(objects.size());
-            for (Object3D o : objects) ob.add(o.duplicate());
-            return new ObjectPopulation(ob, properties, absoluteLandmark).setConnectivity(lowConnectivity);
+            ArrayList<Region> ob = new ArrayList<>(objects.size());
+            for (Region o : objects) ob.add(o.duplicate());
+            return new RegionPopulation(ob, properties, absoluteLandmark).setConnectivity(lowConnectivity);
         } else if (labelImage!=null) {
-            return new ObjectPopulation((ImageInteger)labelImage.duplicate(""), true).setConnectivity(lowConnectivity);
+            return new RegionPopulation((ImageInteger)labelImage.duplicate(""), true).setConnectivity(lowConnectivity);
         }
-        return new ObjectPopulation(null , properties, absoluteLandmark).setConnectivity(lowConnectivity);
+        return new RegionPopulation(null , properties, absoluteLandmark).setConnectivity(lowConnectivity);
     }
     
     /**
@@ -192,7 +189,7 @@ public class ObjectPopulation {
         return this.absoluteLandmark;
     }
     
-    public ObjectPopulation addObjects(boolean updateLabelImage, Object3D... objects) {
+    public RegionPopulation addObjects(boolean updateLabelImage, Region... objects) {
         return addObjects(Arrays.asList(objects), updateLabelImage);
     }
     /**
@@ -200,7 +197,7 @@ public class ObjectPopulation {
      * @param objects
      * @return 
      */
-    public ObjectPopulation addObjects(List<Object3D> objects, boolean updateLabelImage) {
+    public RegionPopulation addObjects(List<Region> objects, boolean updateLabelImage) {
         this.objects.addAll(objects);
         if (updateLabelImage) relabel(true);
         return this;
@@ -211,14 +208,14 @@ public class ObjectPopulation {
         return labelImage;
     }
     
-    public List<Object3D> getObjects() {
+    public List<Region> getObjects() {
         if (objects == null) {
             constructObjects();
         }
         return objects;
     }
     
-    private void draw(Object3D o, int label) {
+    private void draw(Region o, int label) {
         if (this.absoluteLandmark) o.draw(labelImage, label, new BoundingBox(0, 0, 0)); // in order to remove the offset of the image
         else o.draw(labelImage, label);
     }
@@ -229,20 +226,20 @@ public class ObjectPopulation {
         } else {
             labelImage = ImageInteger.createEmptyLabelImage("labelImage", objects.size(), getImageProperties());
             //logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
-            for (Object3D o : objects) draw(o, o.getLabel());
+            for (Region o : objects) draw(o, o.getLabel());
         }
     }
         
     private void constructObjects() {
         if (labelImage==null) objects = new ArrayList<>();
         else {
-            Object3D[] obs = ObjectFactory.getObjectsImage(labelImage, false);
+            Region[] obs = ObjectFactory.getObjectsImage(labelImage, false);
             objects = new ArrayList<>(Arrays.asList(obs));
         }
     }
     
     
-    public void eraseObject(Object3D o, boolean eraseInList) {
+    public void eraseObject(Region o, boolean eraseInList) {
         if (labelImage != null) {
             draw(o, 0);
         }
@@ -255,7 +252,7 @@ public class ObjectPopulation {
         return labelImage != null;
     }
     
-    public ObjectPopulation setProperties(ImageProperties properties, boolean onlyIfSameSize) {
+    public RegionPopulation setProperties(ImageProperties properties, boolean onlyIfSameSize) {
         if (labelImage != null) {
             if (!onlyIfSameSize || labelImage.sameSize(properties)) {
                 labelImage.resetOffset().addOffset(properties);
@@ -274,7 +271,7 @@ public class ObjectPopulation {
                 properties = new BlankMask("", labelImage);
             } else if (objects!=null && !objects.isEmpty()) { //unscaled, no offset for label image..
                 BoundingBox box = new BoundingBox();
-                for (Object3D o : objects) {
+                for (Region o : objects) {
                     box.expand(o.getBounds());
                 }
                 properties = box.getImageProperties();                
@@ -285,7 +282,7 @@ public class ObjectPopulation {
     public void relabel() {relabel(true);}
     public void relabel(boolean fillImage) {
         int idx = 1;
-        for (Object3D o : getObjects()) o.label = idx++;
+        for (Region o : getObjects()) o.label = idx++;
         redrawLabelMap(fillImage);
     }
     public void redrawLabelMap(boolean fillImage) {
@@ -296,19 +293,19 @@ public class ObjectPopulation {
             } else {
                 if (fillImage) ImageOperations.fill(labelImage, 0, null);
             }
-            for (Object3D o : getObjects()) draw(o, o.getLabel());
+            for (Region o : getObjects()) draw(o, o.getLabel());
         }
     }
     
     public void translate(int offsetX, int offsetY, int offsetZ , boolean absoluteLandmark) {
-        for (Object3D o : getObjects()) {
+        for (Region o : getObjects()) {
             o.translate(offsetX, offsetY, offsetZ);
         }
         this.absoluteLandmark=absoluteLandmark;
     }
     
     public void translate(BoundingBox bounds, boolean absoluteLandmark) {
-        for (Object3D o : getObjects()) {
+        for (Region o : getObjects()) {
             o.translate(bounds);
             o.setIsAbsoluteLandmark(absoluteLandmark);
         }
@@ -316,28 +313,28 @@ public class ObjectPopulation {
     }
     
     public void setVoxelIntensities(Image intensityMap) {
-        for (Object3D o : getObjects()) {
+        for (Region o : getObjects()) {
             for (Voxel v : o.getVoxels()) v.value=intensityMap.getPixel(v.x, v.y, v.z);
         }
     }
     
-    public List<Object3D> getExtremaSeedList(final boolean maxOfObjectVoxels) {
+    public List<Region> getExtremaSeedList(final boolean maxOfObjectVoxels) {
         int label=1;
-        List<Object3D> seeds = new ArrayList<>(getObjects().size());
-        for (final Object3D o : getObjects()) {
-            seeds.add(new Object3D(o.getExtremum(maxOfObjectVoxels), label++, o.is2D(), o.getScaleXY(), o.getScaleZ()));
+        List<Region> seeds = new ArrayList<>(getObjects().size());
+        for (final Region o : getObjects()) {
+            seeds.add(new Region(o.getExtremum(maxOfObjectVoxels), label++, o.is2D(), o.getScaleXY(), o.getScaleZ()));
         }
         return seeds;
     }
-    public Map<Object3D, Object3D> getDilatedObjects(double radiusXY, double radiusZ, boolean onlyDilatedPart) {
-        Map<Object3D, Object3D> res = new HashMap<>(objects.size());
+    public Map<Region, Region> getDilatedObjects(double radiusXY, double radiusZ, boolean onlyDilatedPart) {
+        Map<Region, Region> res = new HashMap<>(objects.size());
         ImageInteger mask = ImageOperations.not(getLabelMap(), new ImageByte("", 0, 0, 0));
         if (!absoluteLandmark) mask.resetOffset();
-        for (Object3D o : objects) {
-            res.put(o, new Object3D(ImageOperations.getDilatedMask(o.getMask(), radiusXY, radiusZ, mask, onlyDilatedPart), o.getLabel(), o.is2D()));
+        for (Region o : objects) {
+            res.put(o, new Region(ImageOperations.getDilatedMask(o.getMask(), radiusXY, radiusZ, mask, onlyDilatedPart), o.getLabel(), o.is2D()));
         }
         /*ImageInteger dilLabelMap = Image.createEmptyImage("dilatedObjects", getLabelMap(), getLabelMap());
-        for (Object3D o : res.values()) {
+        for (Region o : res.values()) {
             if (this.absoluteLandmark) o.draw(dilLabelMap, o.getLabel(), new BoundingBox(0, 0, 0)); // in order to remove the offset of the image
             else o.draw(dilLabelMap, o.getLabel());
         }
@@ -345,7 +342,7 @@ public class ObjectPopulation {
         return res;
     }
     
-    public boolean isInContactWithOtherObject(Object3D o) {
+    public boolean isInContactWithOtherObject(Region o) {
         DisplacementNeighborhood n = (DisplacementNeighborhood) Filters.getNeighborhood(1.5, 1, properties);
         getLabelMap();
         for (Voxel v : o.getContour()) {
@@ -361,7 +358,7 @@ public class ObjectPopulation {
      WatershedTransform wt = new WatershedTransform(edgeMap, mask, objects, false, null, null);
      wt.setPropagationCriterion(wt.new MonotonalPropagation());
      wt.run();
-     ObjectPopulation pop =  wt.getObjectPopulation();
+     RegionPopulation pop =  wt.getObjectPopulation();
      this.objects=pop.getObjects();
      //set labelImage
      if (pop.hasImage()) this.labelImage=pop.getLabelImage();
@@ -372,7 +369,7 @@ public class ObjectPopulation {
      wt.setPropagationCriterion(wt.new MonotonalPropagation());
      wt.run();
      ImageInteger segmentedMap = wt.getLabelImage();
-     for (Object3D o : objects) {
+     for (Region o : objects) {
      Iterator<Voxel> it = o.getVoxels().iterator();
      while(it.hasNext()) {
      Voxel v = it.next();
@@ -397,8 +394,8 @@ public class ObjectPopulation {
                 }
             }
         }
-        ArrayList<Object3D> seeds = new ArrayList<Object3D>(Arrays.asList(ObjectFactory.getObjectsImage(seedMap, false)));        
-        ObjectPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null, lowConnectivity);
+        ArrayList<Region> seeds = new ArrayList<Region>(Arrays.asList(ObjectFactory.getObjectsImage(seedMap, false)));        
+        RegionPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null, lowConnectivity);
         this.objects = pop.getObjects();
         objects.remove(0); // remove background object
         relabel(true);
@@ -406,7 +403,7 @@ public class ObjectPopulation {
     
     public void localThreshold(Image intensity, int marginX, int marginY, int marginZ) {
         ImageInteger background = ImageOperations.xor(getLabelMap(), new BlankMask("", properties), null);
-        for (Object3D o : getObjects()) {
+        for (Region o : getObjects()) {
             o.draw(background, 1);
             BoundingBox bounds = o.getBounds().duplicate();
             bounds.expandX(bounds.getxMin() - marginX);
@@ -424,7 +421,7 @@ public class ObjectPopulation {
         relabel(false);
     }
     
-    protected void localThreshold(Object3D o, Image intensity, double threshold) {
+    protected void localThreshold(Region o, Image intensity, double threshold) {
         Iterator<Voxel> it = o.getVoxels().iterator();
         while (it.hasNext()) {
             Voxel v = it.next();
@@ -435,27 +432,27 @@ public class ObjectPopulation {
         }
     }
     
-    public ObjectPopulation filter(SimpleFilter filter) {
+    public RegionPopulation filter(SimpleFilter filter) {
         return filter(filter, null);
     }
     
-    public ObjectPopulation filterAndMergeWithConnected(SimpleFilter filter) {
-        List<Object3D> removed = new ArrayList<Object3D>();
+    public RegionPopulation filterAndMergeWithConnected(SimpleFilter filter) {
+        List<Region> removed = new ArrayList<Region>();
         filter(filter, removed);
         if (!removed.isEmpty()) mergeWithConnected(removed);
         return this;
     }
     
-    public ObjectPopulation filter(SimpleFilter filter, List<Object3D> removedObjects) {
+    public RegionPopulation filter(SimpleFilter filter, List<Region> removedObjects) {
         //int objectNumber = objects.size();
         if (removedObjects==null) removedObjects=new ArrayList<>();
         if (filter instanceof Filter) ((Filter)filter).init(this);
-        for (Object3D o : getObjects()) {
+        for (Region o : getObjects()) {
             if (!filter.keepObject(o)) removedObjects.add(o);
         }
         if (removedObjects.isEmpty()) return this;
         this.objects.removeAll(removedObjects);
-        if (hasImage()) for (Object3D o : removedObjects) draw(o, 0);
+        if (hasImage()) for (Region o : removedObjects) draw(o, 0);
         relabel(false);
         //logger.debug("filter: {}, total object number: {}, remaning objects: {}", filter.getClass().getSimpleName(), objectNumber, objects.size());
         return this;
@@ -466,15 +463,15 @@ public class ObjectPopulation {
      * @param otherPopulations populations that will be combined (destructive). Pixels will be added to overlapping objects, and non-overlapping objects will be added 
      * @return  the current instance for convinience
      */
-    public ObjectPopulation combine(List<ObjectPopulation> otherPopulations) {
-        for (ObjectPopulation pop : otherPopulations) {
+    public RegionPopulation combine(List<RegionPopulation> otherPopulations) {
+        for (RegionPopulation pop : otherPopulations) {
             pop.filter(new RemoveAndCombineOverlappingObjects(this));
             this.getObjects().addAll(pop.getObjects());
         }
         relabel(false);
         return this;
     }
-    public void combine(ObjectPopulation... otherPopulations) {
+    public void combine(RegionPopulation... otherPopulations) {
         if (otherPopulations.length>0) combine(Arrays.asList(otherPopulations));
     }
     
@@ -483,7 +480,7 @@ public class ObjectPopulation {
             return;
         }
         if (labelImage!=null) {
-            for (Object3D o : getObjects()) {
+            for (Region o : getObjects()) {
                 draw(o, 0);
             }
         }
@@ -495,8 +492,8 @@ public class ObjectPopulation {
                 maxIdx = i;
             }
         }
-        ArrayList<Object3D> objectsTemp = new ArrayList<Object3D>(1);
-        Object3D o = objects.get(maxIdx);
+        ArrayList<Region> objectsTemp = new ArrayList<Region>(1);
+        Region o = objects.get(maxIdx);
         o.setLabel(1);
         objectsTemp.add(o);
         objects = objectsTemp;
@@ -507,13 +504,13 @@ public class ObjectPopulation {
         if (getObjects().isEmpty()) return;
         boolean one3D = false;
         if (labelImage!=null) {
-            for (Object3D o : getObjects()) draw(o, 1);
+            for (Region o : getObjects()) draw(o, 1);
         }
-        for (Object3D o : getObjects()) {
+        for (Region o : getObjects()) {
             o.setLabel(1);
             if (o.is2D()) one3D = true;
         }
-        Object3D o = new Object3D(getLabelMap(), 1, !one3D);
+        Region o = new Region(getLabelMap(), 1, !one3D);
         if (!this.absoluteLandmark) o.translate(o.getBounds().reverseOffset());
         objects.clear();
         objects.add(o);
@@ -524,7 +521,7 @@ public class ObjectPopulation {
     private void mergeAllConnected(int fromLabel) {
         relabel(); // objects label start from 1 -> idx = label-1
         getObjects();
-        List<Object3D> toRemove = new ArrayList<Object3D>();
+        List<Region> toRemove = new ArrayList<Region>();
         ImageInteger inputLabels = getLabelMap();
         int otherLabel;
         int[][] neigh = inputLabels.getSizeZ()>1 ? (lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf) : (lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half);
@@ -537,16 +534,16 @@ public class ObjectPopulation {
                     if (label-1>=objects.size()) {
                         new IJImageDisplayer().showImage(inputLabels.duplicate("label map, error: "+label));
                     }
-                    Object3D currentRegion = objects.get(label-1);
+                    Region currentRegion = objects.get(label-1);
                     for (int i = 0; i<neigh.length; ++i) {
                         n = new Voxel(x+neigh[i][0], y+neigh[i][1], z+neigh[i][2]);
                         if (inputLabels.contains(n.x, n.y, n.z)) { 
                             otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
                             if (otherLabel>0 && otherLabel!=label) {
                                 if (label>=fromLabel || otherLabel>=fromLabel) {
-                                    Object3D otherRegion = objects.get(otherLabel-1);
+                                    Region otherRegion = objects.get(otherLabel-1);
                                     if (otherLabel<label) { // switch
-                                        Object3D temp = currentRegion;
+                                        Region temp = currentRegion;
                                         currentRegion = otherRegion;
                                         otherRegion = temp;
                                         label = currentRegion.getLabel();
@@ -563,19 +560,19 @@ public class ObjectPopulation {
         }
         objects.removeAll(toRemove);
     }
-    public void mergeWithConnected(Collection<Object3D> objectsToMerge) {
+    public void mergeWithConnected(Collection<Region> objectsToMerge) {
         // create a new list, with objects to merge at the end, and record the last label to merge
-        ArrayList<Object3D> newObjects = new ArrayList<Object3D>();
-        Set<Object3D> toMerge=  new HashSet<>(objectsToMerge);
-        for (Object3D o : objects) if (!objectsToMerge.contains(o)) newObjects.add(o);
+        ArrayList<Region> newObjects = new ArrayList<Region>();
+        Set<Region> toMerge=  new HashSet<>(objectsToMerge);
+        for (Region o : objects) if (!objectsToMerge.contains(o)) newObjects.add(o);
         int labelToMerge = newObjects.size()+1;
         newObjects.addAll(toMerge);
         this.objects=newObjects;
         mergeAllConnected(labelToMerge);
         // erase unmerged objects
-        Iterator<Object3D> it = objects.iterator();
+        Iterator<Region> it = objects.iterator();
         while(it.hasNext()) {
-            Object3D n = it.next();
+            Region n = it.next();
             if (n.getLabel()>=labelToMerge) {
                 eraseObject(n, false);
                 it.remove();
@@ -584,9 +581,9 @@ public class ObjectPopulation {
     }
     
     public void sortBySpatialOrder(final IndexingOrder order) {
-        Comparator<Object3D> comp = new Comparator<Object3D>() {
+        Comparator<Region> comp = new Comparator<Region>() {
             @Override
-            public int compare(Object3D arg0, Object3D arg1) {
+            public int compare(Region arg0, Region arg1) {
                 return compareCenters(getCenterArray(arg0.getBounds()), getCenterArray(arg1.getBounds()), order);
             }
         };
@@ -609,10 +606,10 @@ public class ObjectPopulation {
     }
     
     public static interface Filter extends SimpleFilter {
-        public void init(ObjectPopulation population);
+        public void init(RegionPopulation population);
     }
     public static interface SimpleFilter {
-        public boolean keepObject(Object3D object);
+        public boolean keepObject(Region object);
     }
 
     public static class Feature implements Filter {
@@ -627,12 +624,12 @@ public class ObjectPopulation {
             this.strict=strict;
         }
         @Override
-        public void init(ObjectPopulation population) {
+        public void init(RegionPopulation population) {
             this.offset= population.absoluteLandmark ? null : population.getObjectOffset();
         }
 
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             double testValue = feature.performMeasurement(object, offset);
             if (Double.isNaN(testValue)) return true;
             //logger.debug("FeatureFilter: {}, object: {}, testValue: {}, threshold: {}", feature.getClass().getSimpleName(), object.getLabel(), testValue, threshold);
@@ -666,11 +663,11 @@ public class ObjectPopulation {
         }
         
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             return (tX < 0 || object.getBounds().getSizeX() > tX) && (tY < 0 || object.getBounds().getSizeY() > tY) && (tZ < 0 || object.getBounds().getSizeZ() > tZ);
         }
 
-        public void init(ObjectPopulation population) {}
+        public void init(RegionPopulation population) {}
     }
     
     public static class MeanThickness implements Filter {
@@ -693,11 +690,11 @@ public class ObjectPopulation {
         }
         
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             return (tX < 0 || (object.getBounds().getSizeX() > tX && GeometricalMeasurements.meanThicknessX(object)>tX)) && (tY < 0 || (object.getBounds().getSizeY() > tY && GeometricalMeasurements.meanThicknessY(object)>tY)) && (tZ < 0 || (object.getBounds().getSizeZ() > tZ && GeometricalMeasurements.meanThicknessZ(object)>tZ));
         }
 
-        public void init(ObjectPopulation population) {}
+        public void init(RegionPopulation population) {}
     }
     public static class MedianThickness implements Filter {
 
@@ -719,11 +716,11 @@ public class ObjectPopulation {
         }
         
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             return (tX < 0 || (object.getBounds().getSizeX() > tX && GeometricalMeasurements.medianThicknessX(object)>tX)) && (tY < 0 || (object.getBounds().getSizeY() > tY && GeometricalMeasurements.medianThicknessY(object)>tY)) && (tZ < 0 || (object.getBounds().getSizeZ() > tZ && GeometricalMeasurements.medianThicknessZ(object)>tZ));
         }
 
-        public void init(ObjectPopulation population) {}
+        public void init(RegionPopulation population) {}
     }
 
     public static class RemoveFlatObjects extends Thickness {
@@ -753,9 +750,9 @@ public class ObjectPopulation {
             this.max = max;
             return this;
         }
-        @Override public void init(ObjectPopulation population) {}
+        @Override public void init(RegionPopulation population) {}
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             int size = object.getVoxels().size();
             return (min < 0 || size >= min) && (max < 0 || size < max);
         }
@@ -804,9 +801,9 @@ public class ObjectPopulation {
             if (border.z && (v.z <=tolerance || v.z >= mask.getSizeZ() - tolEnd)) return true;
             return false;
         }
-        @Override public void init(ObjectPopulation population) {}
+        @Override public void init(RegionPopulation population) {}
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             if (contactLimit <= 0) {
                 return true;
             }
@@ -819,7 +816,7 @@ public class ObjectPopulation {
             }
             return true;
         }
-        public int getContact(Object3D object) {
+        public int getContact(Region object) {
             int count = 0;
             for (Voxel v : object.getContour()) {
                 if (contact(v)) ++count;
@@ -839,9 +836,9 @@ public class ObjectPopulation {
             this.intensityMap = intensityMap;
             this.keepOverThreshold=keepOverThreshold;
         }
-        @Override public void init(ObjectPopulation population) {}
+        @Override public void init(RegionPopulation population) {}
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             double mean = BasicMeasurements.getMeanValue(object, intensityMap, false);
             return mean >= threshold == keepOverThreshold;
         }
@@ -851,7 +848,7 @@ public class ObjectPopulation {
         public static boolean disp = false;
         double typicalSigma, sigmaMin,sigmaMax, precision, errorThreshold, sigmaThreshold; 
         Image image;
-        Map<Object3D, double[]> fit;
+        Map<Region, double[]> fit;
         public GaussianFit(Image image, double typicalSigma, double sigmaMin, double sigmaMax, double precision, double errorThreshold, double sigmaThreshold) {
             this.typicalSigma=typicalSigma;
             this.sigmaMin=sigmaMin;
@@ -860,12 +857,12 @@ public class ObjectPopulation {
             this.precision=precision;
             this.image=image;
         }
-        @Override public void init(ObjectPopulation population) {
+        @Override public void init(RegionPopulation population) {
             fit = processing.gaussianFit.GaussianFit.run(image, population.getObjects(), typicalSigma, sigmaMin, sigmaMax, precision, 300, 0.001, 0.01);
             if (disp) processing.gaussianFit.GaussianFit.display2DImageAndRois(image, fit);
         }
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             double[] params = fit.get(object);
             return params[params.length-1]<errorThreshold;// && params[params.length-2]<sigmaThreshold;
         }
@@ -876,11 +873,11 @@ public class ObjectPopulation {
         public Or(Filter... filters) {
             this.filters=filters;
         }
-        public void init(ObjectPopulation population) {
+        public void init(RegionPopulation population) {
             for (Filter f : filters) f.init(population);
         }
 
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             for (Filter f : filters) if (f.keepObject(object)) return true;
             return false;
         }
@@ -907,9 +904,9 @@ public class ObjectPopulation {
             }            
             n = labelMap.getSizeZ() > 1 ? new EllipsoidalNeighborhood(rad, radZ, false) : new EllipsoidalNeighborhood(rad, false);
         }
-        @Override public void init(ObjectPopulation population) {}
+        @Override public void init(RegionPopulation population) {}
         @Override
-        public boolean keepObject(Object3D object) {
+        public boolean keepObject(Region object) {
             for (Voxel v : object.getVoxels()) {
                 n.setPixels(v, labelMap);
                 for (float f : n.getPixelValues()) {
@@ -924,20 +921,20 @@ public class ObjectPopulation {
 
     private static class RemoveAndCombineOverlappingObjects implements Filter { // suppress objects that are already in other and combine the voxels
 
-        ObjectPopulation other;
+        RegionPopulation other;
         boolean distanceTolerance;
 
-        public RemoveAndCombineOverlappingObjects(ObjectPopulation other) { //, boolean distanceTolerance
+        public RemoveAndCombineOverlappingObjects(RegionPopulation other) { //, boolean distanceTolerance
             this.other = other;
             //this.distanceTolerance = distanceTolerance;
             
         }
-        @Override public void init(ObjectPopulation population) {}
+        @Override public void init(RegionPopulation population) {}
         @Override
-        public boolean keepObject(Object3D object) {
-            Object3D maxInterO = null;
+        public boolean keepObject(Region object) {
+            Region maxInterO = null;
             int maxInter = 0;
-            for (Object3D o : other.getObjects()) {
+            for (Region o : other.getObjects()) {
                 int inter = o.getIntersection(object).size();
                 if (inter > maxInter) {
                     maxInter = inter;

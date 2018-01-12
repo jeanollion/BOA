@@ -21,7 +21,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
 import dataStructure.objects.Measurements;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
@@ -75,7 +75,7 @@ public class BacteriaTransMeasurements implements Measurement {
     }
 
     @Override public void performMeasurement(StructureObject object) {
-        Object3D bactObject = object.getObject();
+        Region bactObject = object.getObject();
         BoundingBox parentOffset = object.getParent().getBounds();
         double[] center=bactObject.getGeomCenter(true);
         center[0]-=parentOffset.getxMin()*object.getScaleXY();

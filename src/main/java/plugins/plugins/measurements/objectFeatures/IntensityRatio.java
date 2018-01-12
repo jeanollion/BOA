@@ -17,7 +17,7 @@
  */
 package plugins.plugins.measurements.objectFeatures;
 
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import image.BoundingBox;
 import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
 import utils.Utils;
@@ -29,9 +29,9 @@ import utils.Utils;
 public class IntensityRatio extends SNR {
     
     
-    @Override public double performMeasurement(Object3D object, BoundingBox offset) {
+    @Override public double performMeasurement(Region object, BoundingBox offset) {
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
-        Object3D parentObject; 
+        Region parentObject; 
         if (childrenParentMap==null) parentObject = super.parent.getObject();
         else parentObject=this.childrenParentMap.get(object);
         if (parentObject==null) return 0;

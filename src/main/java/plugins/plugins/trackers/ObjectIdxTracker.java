@@ -19,7 +19,7 @@ package plugins.plugins.trackers;
 
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectProcessing;
@@ -84,10 +84,10 @@ public class ObjectIdxTracker implements Tracker {
         };
     }
     
-    public static Comparator<Object3D> getComparatorObject3D(final IndexingOrder order) {
-        return new Comparator<Object3D>() {
+    public static Comparator<Region> getComparatorRegion(final IndexingOrder order) {
+        return new Comparator<Region>() {
             @Override
-            public int compare(Object3D arg0, Object3D arg1) {
+            public int compare(Region arg0, Region arg1) {
                 return compareCenters(getCenterArray(arg0.getBounds()), getCenterArray(arg1.getBounds()), order);
             }
         };

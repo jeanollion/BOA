@@ -18,7 +18,7 @@
 package configuration.parameters;
 
 import dataStructure.containers.InputImages;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;

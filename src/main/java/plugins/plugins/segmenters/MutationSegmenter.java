@@ -25,11 +25,11 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.ObjectPopulation.MeanIntensity;
-import dataStructure.objects.ObjectPopulation.Or;
-import dataStructure.objects.ObjectPopulation.Overlap;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
+import dataStructure.objects.RegionPopulation.MeanIntensity;
+import dataStructure.objects.RegionPopulation.Or;
+import dataStructure.objects.RegionPopulation.Overlap;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
@@ -155,23 +155,23 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     }
     
     @Override
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+    public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         return run(input, parent, getScale(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
     }
     
-    /*public ObjectPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
+    /*public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             // tester sur average, max, ou plan par plan
             ArrayList<Image> planes = input.splitZPlanes();
             ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
             for (Image plane : planes) {
-                ObjectPopulation obj = runPlane(plane, parent, scale, minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
+                RegionPopulation obj = runPlane(plane, parent, scale, minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
                 //if (true) return obj;
                 if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
             }
-            if (populations.isEmpty()) return new ObjectPopulation(new ArrayList<Object3D>(0), planes.get(0));
+            if (populations.isEmpty()) return new RegionPopulation(new ArrayList<Object3D>(0), planes.get(0));
             // combine: 
-            ObjectPopulation pop = populations.remove(populations.size()-1);
+            RegionPopulation pop = populations.remove(populations.size()-1);
             pop.combine(populations);
             return pop;
         } else return runPlane(input, parent, scale, minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
@@ -219,7 +219,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             return lap;
         }
     }
-    public ObjectPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
+    public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
         Arrays.sort(scale);
         ImageMask parentMask = parent.getMask().getSizeZ()!=input.getSizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
@@ -260,13 +260,13 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         
         ImageByte[] seedMaps = arrangeSpAndZPlanes(seedsSPZ, planeByPlane).toArray(new ImageByte[0]);
         Image[] wsMap = arrangeSpAndZPlanes(lapSPZ, planeByPlane).toArray(new Image[0]);
-        ObjectPopulation[] pops =  MultiScaleWatershedTransform.watershed(wsMap, parentMask, seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdPropagation), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize));
+        RegionPopulation[] pops =  MultiScaleWatershedTransform.watershed(wsMap, parentMask, seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdPropagation), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize));
         //ObjectPopulation pop =  watershed(lap, parent.getMask(), seedPop.getObjects(), true, new ThresholdPropagationOnWatershedMap(thresholdPropagation), new SizeFusionCriterion(minSpotSize), false);
         SubPixelLocalizator.debug=debug;
         for (int i = 0; i<pops.length; ++i) { // TODO voir si en 3D pas mieux avec gaussian
             int z = i/scale.length;
             SubPixelLocalizator.setSubPixelCenter(wsMap[i], pops[i].getObjects(), true); // lap -> better in case of close objects
-            for (Object3D o : pops[i].getObjects()) { // quality criterion : sqrt (smooth * lap)
+            for (Region o : pops[i].getObjects()) { // quality criterion : sqrt (smooth * lap)
                 if (o.getQuality()==0) { // localizator didnt work
                     double[] center = o.getMassCenter(wsMap[i], false);
                     if (center[0]>wsMap[i].getSizeX()-1) center[0] = wsMap[i].getSizeX()-1;
@@ -284,13 +284,13 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
                 }  
             }
         }
-        ObjectPopulation pop = MultiScaleWatershedTransform.combine(pops, input);
+        RegionPopulation pop = MultiScaleWatershedTransform.combine(pops, input);
         if (debug) {
             logger.debug("Parent: {}: Q: {}", parent, Utils.toStringList(pop.getObjects(), o->""+o.getQuality()));
             logger.debug("Parent: {}: C: {}", parent ,Utils.toStringList(pop.getObjects(), o->""+Utils.toStringArray(o.getCenter())));
         }
-        pop.filter(new ObjectPopulation.RemoveFlatObjects(false));
-        pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
+        pop.filter(new RegionPopulation.RemoveFlatObjects(false));
+        pop.filter(new RegionPopulation.Size().setMin(minSpotSize));
         if (testParam!=null) {
             ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(parent.getMask(), null, 1));
             ImageWindowManagerFactory.showImage(input);
@@ -337,16 +337,16 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         } else return Image.mergeImagesInZ(Arrays.asList(spZ));
     }
     
-    public void printSubLoc(String name, Image locMap, Image smooth, Image lap, ObjectPopulation pop, BoundingBox globBound) {
+    public void printSubLoc(String name, Image locMap, Image smooth, Image lap, RegionPopulation pop, BoundingBox globBound) {
         BoundingBox b = locMap.getBoundingBox().translate(globBound.reverseOffset());
-        List<Object3D> objects = pop.getObjects();
+        List<Region> objects = pop.getObjects();
         
-        for(Object3D o : objects) o.setCenter(o.getMassCenter(locMap, false));
+        for(Region o : objects) o.setCenter(o.getMassCenter(locMap, false));
         pop.translate(b, false);
         logger.debug("mass center: centers: {}", Utils.toStringList(objects, o -> Utils.toStringArray(o.getCenter())+" value: "+o.getQuality()));
         pop.translate(b.duplicate().reverseOffset(), false);
         
-        for(Object3D o : objects) o.setCenter(o.getGeomCenter(false));
+        for(Region o : objects) o.setCenter(o.getGeomCenter(false));
         pop.translate(b, false);
         logger.debug("geom center {}: centers: {}", name, Utils.toStringList(objects, o -> Utils.toStringArray(o.getCenter())+" value: "+o.getQuality()));
         pop.translate(b.duplicate().reverseOffset(), false);
@@ -366,11 +366,11 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     public Parameter[] getParameters() {
         return parameters;
     }
-    public void setQuality(List<Object3D> objects, BoundingBox offset, Image input, ImageMask parentMask) {
+    public void setQuality(List<Region> objects, BoundingBox offset, Image input, ImageMask parentMask) {
         if (objects.isEmpty()) return;
         if (offset==null) offset = new BoundingBox();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
-        for (Object3D o : objects) {
+        for (Region o : objects) {
             double[] center = o.getCenter();
             if (center==null) throw new IllegalArgumentException("No center for object: "+o);
             double smooth = pv.getSmoothedMap().getPixel(center[0]-offset.getxMin(), center[1]-offset.getyMin(), center.length>2?center[2]-offset.getzMin():0);
@@ -412,8 +412,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     }
     
     @Override
-    public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
-        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
+    public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
+        List<Region> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         final double thld = BackgroundFit.backgroundFitHalf(input, parent.getMask(), 2, null);
         double[] ms = ImageOperations.getMeanAndSigmaWithOffset(input, parent.getMask(), v->v<=thld);
         if (ms[2]==0) ms = ImageOperations.getMeanAndSigmaWithOffset(input, parent.getMask(), v -> true);
@@ -421,9 +421,9 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         Image scaledInput = ImageOperations.affineOperation2WithOffset(input, null, 1/ms[1], -ms[0]);
         Image lap = ImageFeatures.getLaplacian(scaledInput, scale.getArrayDouble()[0], true, false).setName("laplacian: "+scale);
         Image smooth = ImageFeatures.gaussianSmoothScaleIndep(scaledInput, smoothScale.getValue().doubleValue(), smoothScale.getValue().doubleValue(), false).setName("gaussian: "+scale.getArrayDouble()[0]); // scale indep ? 
-        ObjectPopulation pop =  watershed(lap, parent.getMask(), seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
+        RegionPopulation pop =  watershed(lap, parent.getMask(), seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
         SubPixelLocalizator.setSubPixelCenter(smooth, pop.getObjects(), true);
-        for (Object3D o : pop.getObjects()) { // quality criterion : smooth * lap
+        for (Region o : pop.getObjects()) { // quality criterion : smooth * lap
             o.setQuality(Math.sqrt(smooth.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0) * lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)));
         }
         
@@ -439,7 +439,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     }
 
     @Override
-    public ObjectPopulation splitObject(Image input, Object3D object) {
+    public RegionPopulation splitObject(Image input, Region object) {
         ImageFloat wsMap = ImageFeatures.getLaplacian(input, 1.5, false, false);
         return WatershedObjectSplitter.splitInTwo(wsMap, object.getMask(), true, true, manualSplitVerbose);
     }

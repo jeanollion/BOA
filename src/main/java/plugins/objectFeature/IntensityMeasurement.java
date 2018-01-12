@@ -20,8 +20,8 @@ package plugins.objectFeature;
 import configuration.parameters.Parameter;
 import configuration.parameters.PreFilterSequence;
 import configuration.parameters.StructureParameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import image.Image;
@@ -45,7 +45,7 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
         return this;
     }
     
-    @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         super.setUp(parent, childStructureIdx, childPopulation);
         this.parent=parent;
         if (intensity.getSelectedIndex()==-1) intensity.setSelectedIndex(childStructureIdx);

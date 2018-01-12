@@ -25,7 +25,7 @@ import core.Task;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.process.AutoThresholder;

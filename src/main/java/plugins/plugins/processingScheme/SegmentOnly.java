@@ -22,8 +22,8 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
 import dataStructure.configuration.Experiment;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
@@ -126,7 +126,7 @@ public class SegmentOnly implements ProcessingScheme {
         long t1 = System.currentTimeMillis();
         //if (useMaps) errors.addAll(ThreadRunner.execute(parentTrack, false, (p, idx) -> subMaps.getAndCreateIfNecessarySyncOnKey(p), executor, null));
         long t2 = System.currentTimeMillis();
-        ObjectPopulation[] pops = new ObjectPopulation[allParents.size()];
+        RegionPopulation[] pops = new RegionPopulation[allParents.size()];
         errors.addAll(ThreadRunner.execute(allParents, false, (subParent, idx) -> {
             StructureObject globalParent = subParent.getParent(parentStructureIdx);
             Segmenter seg = segmenter.instanciatePlugin();
@@ -137,7 +137,7 @@ public class SegmentOnly implements ProcessingScheme {
             if (applyToSegmenter!=null) applyToSegmenter.apply(subParent, seg);
             Image input = inputImages.getAndCreateIfNecessarySyncOnKey(globalParent);
             if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
-            ObjectPopulation pop = seg.runSegmenter(input, structureIdx, subParent);
+            RegionPopulation pop = seg.runSegmenter(input, structureIdx, subParent);
             pop = postFilters.filter(pop, structureIdx, subParent);
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);
             pops[idx] = pop;
@@ -146,24 +146,24 @@ public class SegmentOnly implements ProcessingScheme {
         if (useMaps) subMaps.clear();
         long t3 = System.currentTimeMillis();
         if (subSegmentation) { // collect if necessary and set to parent
-            HashMapGetCreate<StructureObject, List<Object3D>> parentObjectMap = new HashMapGetCreate<>(parentTrack.size(), new HashMapGetCreate.ListFactory());
-            HashMap<ObjectPopulation, StructureObject> popParentMap = new HashMap<>(pops.length);
+            HashMapGetCreate<StructureObject, List<Region>> parentObjectMap = new HashMapGetCreate<>(parentTrack.size(), new HashMapGetCreate.ListFactory());
+            HashMap<RegionPopulation, StructureObject> popParentMap = new HashMap<>(pops.length);
             for (int i = 0; i<pops.length; ++i) popParentMap.put(pops[i], allParents.get(i));
             Arrays.sort(pops, (p1, p2)->popParentMap.get(p1).compareTo(popParentMap.get(p2)));
             for (int i = 0; i<pops.length; ++i) {
                 StructureObject subParent = popParentMap.get(pops[i]);
                 StructureObject parent = subParent.getParent(parentStructureIdx);
                 if (pops[i]!=null) {
-                    List<Object3D> objects =  parentObjectMap.getAndCreateIfNecessary(parent);
+                    List<Region> objects =  parentObjectMap.getAndCreateIfNecessary(parent);
                     int label = objects.size();
-                    if (label>0) for (Object3D o : pops[i].getObjects()) o.setLabel(label++);
+                    if (label>0) for (Region o : pops[i].getObjects()) o.setLabel(label++);
                     objects.addAll(pops[i].getObjects());
                 }
                 else logger.debug("pop null for subParent: {}", allParents.get(i));
             }
-            ObjectPopulation pop=null;
-            for (Entry<StructureObject, List<Object3D>> e : parentObjectMap.entrySet()) {
-                pop = new ObjectPopulation(e.getValue(), e.getKey().getRawImage(structureIdx), true); // should keep 3D information
+            RegionPopulation pop=null;
+            for (Entry<StructureObject, List<Region>> e : parentObjectMap.entrySet()) {
+                pop = new RegionPopulation(e.getValue(), e.getKey().getRawImage(structureIdx), true); // should keep 3D information
                 e.getKey().setChildrenObjects(pop, structureIdx);
             }
             if (singleFrame) {

@@ -24,8 +24,8 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import dataStructure.containers.InputImages;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import ij.process.AutoThresholder;
 import image.BoundingBox;
@@ -51,7 +51,7 @@ import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.trackers.ObjectIdxTracker.IndexingOrder;
-import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
+import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorRegion;
 import processing.Filters;
 import processing.ImageFeatures;
 import processing.RadonProjection;
@@ -140,7 +140,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         if (testMode) logger.debug("crop micochannels threshold : {}", thld);
         ImageInteger mask = thresholdedImage == null ? ImageOperations.threshold(image, thld, true, true) : thresholdedImage;
         Filters.binaryClose(mask, mask, Filters.getNeighborhood(1, 0, image)); // case of low intensity signal -> noisy. // remove small objects?
-        List<Object3D> bacteria = ImageOperations.filterObjects(mask, mask, o->o.getSize()<minObjectSize.getValue().intValue());
+        List<Region> bacteria = ImageOperations.filterObjects(mask, mask, o->o.getSize()<minObjectSize.getValue().intValue());
         
         float[] xProj = ImageOperations.meanProjection(mask, ImageOperations.Axis.X, null);
         ImageFloat imProjX = new ImageFloat("proj(X)", mask.getSizeX(), new float[][]{xProj});
@@ -150,12 +150,12 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
             Utils.plotProfile(imProjX, 0, 0, true);
             Utils.plotProfile(projXThlded, 0, 0, true);
         }
-        List<Object3D> xObjectList = ImageLabeller.labelImageList(projXThlded);
+        List<Region> xObjectList = ImageLabeller.labelImageList(projXThlded);
         if (xObjectList.isEmpty()) return null;
         if (channelWidth<=1) channelWidth=(int)xObjectList.stream().mapToInt(o->o.getBounds().getSizeX()).average().getAsDouble();
         Xmargin = Math.max(Xmargin, channelWidth/2+1);
         if (testMode) logger.debug("channelWidth: {}, marging: {}", channelWidth, Xmargin);
-        Iterator<Object3D> it = xObjectList.iterator();
+        Iterator<Region> it = xObjectList.iterator();
         int rightLimit = image.getSizeX() - Xmargin;
         while(it.hasNext()) {
             BoundingBox b = it.next().getBounds();
@@ -164,24 +164,24 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         if (xObjectList.isEmpty()) return null;
         // fusion of overlapping objects
         it = xObjectList.iterator();
-        Object3D prev = it.next();
+        Region prev = it.next();
         while(it.hasNext()) {
-            Object3D next = it.next();
+            Region next = it.next();
             if (prev.getBounds().getxMax()+1>next.getBounds().getxMin()) { 
                 prev.addVoxels(next.getVoxels());
                 it.remove();
             } else prev= next;
         }
         
-        Object3D[] xObjects = xObjectList.toArray(new Object3D[xObjectList.size()]);
+        Region[] xObjects = xObjectList.toArray(new Region[xObjectList.size()]);
         if (xObjects.length==0) return null;
         
-        if (testMode) ImageWindowManagerFactory.showImage(new ObjectPopulation(bacteria, mask).getLabelMap().setName("segmented bacteria"));
+        if (testMode) ImageWindowManagerFactory.showImage(new RegionPopulation(bacteria, mask).getLabelMap().setName("segmented bacteria"));
         if (testMode) logger.debug("mc: {}, objects: {}", Utils.toStringArray(xObjects, o->o.getBounds()), bacteria.size());
         if (bacteria.isEmpty()) return null;
         int[] yMins = new int[xObjects.length];
         Arrays.fill(yMins, Integer.MAX_VALUE);
-        for (Object3D o : bacteria) {
+        for (Region o : bacteria) {
             BoundingBox b = o.getBounds();
             //if (debug) logger.debug("object: {}");
             X_SEARCH : for (int i = 0; i<xObjects.length; ++i) {

@@ -27,7 +27,7 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
 import configuration.parameters.StructureParameter;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTracker;
 import dataStructure.objects.StructureObjectUtils;
@@ -165,7 +165,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
         final HashMapGetCreate<StructureObject, SpotCompartiment> compartimentMap = new HashMapGetCreate<>((StructureObject s) -> new SpotCompartiment(s));
         TrackMateInterface<SpotWithinCompartment> tmi = new TrackMateInterface<>(new SpotFactory<SpotWithinCompartment>() {
             @Override
-            public SpotWithinCompartment toSpot(Object3D o, int frame) {
+            public SpotWithinCompartment toSpot(Region o, int frame) {
                 StructureObject parent = parentsByF.get(frame);
                 List<StructureObject> candidates = parent.getChildren(compartimentStructure);
                 StructureObject compartimentSO = StructureObjectUtils.getInclusionParent(o, candidates, null); 

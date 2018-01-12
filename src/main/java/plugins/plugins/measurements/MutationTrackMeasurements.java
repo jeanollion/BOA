@@ -20,7 +20,7 @@ package plugins.plugins.measurements;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -134,7 +134,7 @@ public class MutationTrackMeasurements implements Measurement {
         return parameters;
     }
     
-    private static double getYProportionalPositionWithinContainer(Object3D container, double yCoordinate) {
+    private static double getYProportionalPositionWithinContainer(Region container, double yCoordinate) {
         double countNext=-1, countPrev=-1, count = 0;
         ImageMask mask = container.getMask();
         BoundingBox bds = container.getBounds();

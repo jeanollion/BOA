@@ -27,7 +27,7 @@ import configuration.parameters.PreFilterSequence;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import ij.ImageJ;
 import image.Image;
@@ -70,7 +70,7 @@ public class TestProcessMicrochannels {
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
         ((OverridableThreshold)s).setThresholdValue(10.5);
-        ObjectPopulation pop=s.runSegmenter(input, 0, root);
+        RegionPopulation pop=s.runSegmenter(input, 0, root);
         logger.debug("object count: {}", pop.getObjects().size());
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);

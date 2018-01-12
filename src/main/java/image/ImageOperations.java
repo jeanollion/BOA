@@ -18,8 +18,8 @@
 package image;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.Voxel;
 import image.BoundingBox.LoopFunction;
 import static image.Image.logger;
@@ -36,14 +36,14 @@ import utils.Utils;
  * @author jollion
  */
 public class ImageOperations {
-    public static List<Object3D> filterObjects(ImageInteger image, ImageInteger output, Function<Object3D, Boolean> removeObject) {
-        List<Object3D> l = ImageLabeller.labelImageList(image);
-        List<Object3D> toRemove = new ArrayList<>(l.size());
-        for (Object3D o : l) if (removeObject.apply(o)) toRemove.add(o);
+    public static List<Region> filterObjects(ImageInteger image, ImageInteger output, Function<Region, Boolean> removeObject) {
+        List<Region> l = ImageLabeller.labelImageList(image);
+        List<Region> toRemove = new ArrayList<>(l.size());
+        for (Region o : l) if (removeObject.apply(o)) toRemove.add(o);
         l.removeAll(toRemove);
         //logger.debug("count before: {}/ after :{}", tot, stay);
         if (output==null) output= ImageInteger.createEmptyLabelImage("", l.size(), image);
-        for (Object3D o : toRemove) o.draw(output, 0);
+        for (Region o : toRemove) o.draw(output, 0);
         return l;
     }
     public static Image applyPlaneByPlane(Image image, Function<Image, Image> function) {

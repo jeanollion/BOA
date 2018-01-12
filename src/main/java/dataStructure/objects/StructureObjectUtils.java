@@ -205,15 +205,15 @@ public class StructureObjectUtils {
     }
     
     // TODO remove this method
-    public static Object3D getInclusionParent(Object3D children, List<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
+    public static Region getInclusionParent(Region children, List<Region> parents, BoundingBox offset, BoundingBox offsetParent) {
         if (parents.isEmpty() || children==null) return null;
         return children.getContainer(parents, offset, offsetParent); 
     }
     
-    public static StructureObject getInclusionParent(Object3D children, Collection<StructureObject> parents, BoundingBox offset) {
+    public static StructureObject getInclusionParent(Region children, Collection<StructureObject> parents, BoundingBox offset) {
         if (parents.isEmpty() || children==null) return null;
-        Map<Object3D, StructureObject> soOMap = parents.stream().collect(Collectors.toMap(o->o.getObject(), o->o));
-        Object3D parentObject = children.getContainer(soOMap.keySet(), offset, null); 
+        Map<Region, StructureObject> soOMap = parents.stream().collect(Collectors.toMap(o->o.getObject(), o->o));
+        Region parentObject = children.getContainer(soOMap.keySet(), offset, null); 
         return soOMap.get(parentObject);
     }
     

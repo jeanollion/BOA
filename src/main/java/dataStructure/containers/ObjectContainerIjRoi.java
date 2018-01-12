@@ -19,7 +19,7 @@ package dataStructure.containers;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -64,7 +64,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
         else roiZ = null;
     }
 
-    private void createRoi(Object3D object) {
+    private void createRoi(Region object) {
         Map<Integer, Roi> roiZTemp = IJImageWindowManager.createRoi(object.getMask(), object.getBounds(), object.is2D());
         roiZ = new ArrayList<byte[]>(roiZTemp.size());
         roiZTemp = new TreeMap<Integer, Roi>(roiZTemp);
@@ -96,8 +96,8 @@ public class ObjectContainerIjRoi extends ObjectContainer {
         return res;
     }
 
-    public Object3D getObject() {
-        return new Object3D(getMask(), structureObject.getIdx() + 1, is2D);
+    public Region getObject() {
+        return new Region(getMask(), structureObject.getIdx() + 1, is2D);
     }
 
     @Override

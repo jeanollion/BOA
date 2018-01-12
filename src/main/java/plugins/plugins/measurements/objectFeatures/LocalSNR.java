@@ -23,8 +23,8 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.SiblingStructureParameter;
 import configuration.parameters.StructureParameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import dataStructure.objects.Voxel;
@@ -58,10 +58,10 @@ public class LocalSNR extends SNR {
         localBackgroundRadius.setValue(backgroundRadius);
         return this;
     }
-    @Override public double performMeasurement(final Object3D object, BoundingBox offset) {
+    @Override public double performMeasurement(final Region object, BoundingBox offset) {
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
         if (offset==null) offset=new BoundingBox(0, 0, 0);
-        final Object3D parentObject; 
+        final Region parentObject; 
         if (childrenParentMap==null) parentObject = super.parent.getObject();
         else parentObject=this.childrenParentMap.get(object);
         if (parentObject==null) return 0;

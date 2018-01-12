@@ -22,7 +22,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import plugins.PluginFactory;
 import processing.dataGeneration.TestProcessMutations;
@@ -54,9 +54,9 @@ public class GaussianFitTestOnMutations {
         StructureObject root = db.getDao(f.getName()).getRoot(tp);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);
-        ObjectPopulation pop = mc.getObjectPopulation(2);
-        ObjectPopulation.GaussianFit.disp=true;
+        RegionPopulation pop = mc.getObjectPopulation(2);
+        RegionPopulation.GaussianFit.disp=true;
         new IJImageDisplayer().showImage(mc.getRawImage(2).duplicate("source"));
-        pop.filter(new ObjectPopulation.GaussianFit(mc.getRawImage(2), 4, 2, 6, 0.5, 1, 5));
+        pop.filter(new RegionPopulation.GaussianFit(mc.getRawImage(2), 4, 2, 6, 0.5, 1, 5));
     }
 }

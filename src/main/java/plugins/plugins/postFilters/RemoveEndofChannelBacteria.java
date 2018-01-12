@@ -20,12 +20,12 @@ package plugins.plugins.postFilters;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.ObjectPopulation.ContactBorder;
-import dataStructure.objects.ObjectPopulation.ContactBorder.Border;
-import dataStructure.objects.ObjectPopulation.Filter;
-import dataStructure.objects.ObjectPopulation.Size;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
+import dataStructure.objects.RegionPopulation.ContactBorder;
+import dataStructure.objects.RegionPopulation.ContactBorder.Border;
+import dataStructure.objects.RegionPopulation.Filter;
+import dataStructure.objects.RegionPopulation.Size;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import measurement.GeometricalMeasurements;
@@ -56,7 +56,7 @@ public class RemoveEndofChannelBacteria implements PostFilter {
         return this;
     }
     
-    @Override public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    @Override public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         final ContactBorder yDown = new ContactBorder(0, childPopulation.getImageProperties(), Border.YDown);
         final ContactBorder xlr = new ContactBorder(0, childPopulation.getImageProperties(), Border.Xlr); 
         final double contactThld=contactProportion.getValue().doubleValue();
@@ -84,7 +84,7 @@ public class RemoveEndofChannelBacteria implements PostFilter {
         
         return childPopulation;
     }
-    private static StructureObject getSO(StructureObject parent, int childStructureIdx, Object3D ob ) {
+    private static StructureObject getSO(StructureObject parent, int childStructureIdx, Region ob ) {
         for (StructureObject o : parent.getChildren(childStructureIdx)) if (o.getObject()==ob) return o;
         return null;
     }

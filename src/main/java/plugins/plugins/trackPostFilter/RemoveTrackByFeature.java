@@ -25,8 +25,8 @@ import configuration.parameters.ConditionalParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
-import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Region;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
@@ -77,14 +77,14 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
     @Override
     public void filter(int structureIdx, List<StructureObject> parentTrack) throws MultipleException {
         if (!feature.isOnePluginSet()) return;
-        Map<Object3D, Double> valueMap = new HashMap<>();
+        Map<Region, Double> valueMap = new HashMap<>();
         // compute feature for each object, by parent
         List<Pair<String, Exception>> errors = ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
-            ObjectPopulation pop = parent.getObjectPopulation(structureIdx);
+            RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             ObjectFeature f = feature.instanciatePlugin();
             f.setUp(parent, structureIdx, pop);
-            Map<Object3D, Double> locValueMap = new HashMap<>(pop.getObjects().size());
-            for (Object3D o : pop.getObjects()) locValueMap.put(o, f.performMeasurement(o, null));
+            Map<Region, Double> locValueMap = new HashMap<>(pop.getObjects().size());
+            for (Region o : pop.getObjects()) locValueMap.put(o, f.performMeasurement(o, null));
             synchronized(valueMap) {
                 valueMap.putAll(locValueMap);
             }

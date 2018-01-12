@@ -1,6 +1,6 @@
 package dataStructure.objects;
 
-import static dataStructure.objects.Object3D.logger;
+import static dataStructure.objects.Region.logger;
 import java.util.Collection;
 import java.util.Comparator;
 

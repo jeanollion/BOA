@@ -23,7 +23,7 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
 import configuration.parameters.TextParameter;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import image.Image;
 import image.ImageByte;
@@ -107,11 +107,11 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
             mask = maskErode;
         }
         for (StructureObject o : children) {
-            Object3D ob = o.getObject();
+            Region ob = o.getObject();
             if (dilateExcludeRadius>0)  {
                 ImageInteger oMask = o.getMask();
                 oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilateExcludeRadius, oMask), false, true);
-                ob = new Object3D(oMask, 1, ob.is2D());
+                ob = new Region(oMask, 1, ob.is2D());
             }
             ob.draw(mask, 0, null);
         }

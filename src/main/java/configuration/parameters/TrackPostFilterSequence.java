@@ -17,7 +17,7 @@
  */
 package configuration.parameters;
 
-import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.RegionPopulation;
 import dataStructure.objects.StructureObject;
 import java.util.Collection;
 import java.util.List;

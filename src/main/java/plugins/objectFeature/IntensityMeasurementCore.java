@@ -19,7 +19,7 @@ package plugins.objectFeature;
 
 import configuration.parameters.PreFilterSequence;
 import static core.Processor.logger;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
@@ -36,7 +36,7 @@ import plugins.plugins.measurements.objectFeatures.LocalSNR;
  */
 public class IntensityMeasurementCore implements ObjectFeatureCore {
     Image intensityMap, transformedMap;
-    HashMap<Object3D, IntensityMeasurements> values = new HashMap<>();
+    HashMap<Region, IntensityMeasurements> values = new HashMap<>();
     
     public void setUp(Image intensityMap, StructureObject parent , PreFilterSequence preFilters) {
         this.intensityMap=intensityMap;    
@@ -46,7 +46,7 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
     public Image getIntensityMap(boolean transformed) {
         return transformed ? transformedMap : intensityMap;
     }
-    public IntensityMeasurements getIntensityMeasurements(Object3D o, BoundingBox offset) {
+    public IntensityMeasurements getIntensityMeasurements(Region o, BoundingBox offset) {
         IntensityMeasurements i = values.get(o);
         if (i==null) {
             i = new IntensityMeasurements(o, offset);
@@ -59,9 +59,9 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
         public double mean=0, sd=0, min=Double.MAX_VALUE, max=-Double.MAX_VALUE, valueAtCenter=Double.NaN, count=0;
         int[] maxCoords = new int[3];
         BoundingBox offset;
-        Object3D o;
+        Region o;
         
-        public IntensityMeasurements(Object3D o, BoundingBox offset) {
+        public IntensityMeasurements(Region o, BoundingBox offset) {
             if (offset==null) offset=new BoundingBox(0, 0, 0);
             this.offset = offset;
             this.o=o;

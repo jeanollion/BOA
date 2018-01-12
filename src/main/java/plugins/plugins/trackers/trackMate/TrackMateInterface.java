@@ -20,7 +20,7 @@ package plugins.plugins.trackers.trackMate;
 import boa.gui.GUI;
 import com.google.common.collect.Sets;
 import configuration.parameters.Parameter;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.Region;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import fiji.plugin.trackmate.Logger;
@@ -63,8 +63,8 @@ import utils.Utils;
  */
 public class TrackMateInterface<S extends Spot> {
     public static final org.slf4j.Logger logger = LoggerFactory.getLogger(TrackMateInterface.class);
-    public final HashMap<Object3D, S>  objectSpotMap = new HashMap<>();
-    public final HashMap<S, Object3D>  spotObjectMap = new HashMap<>();
+    public final HashMap<Region, S>  objectSpotMap = new HashMap<>();
+    public final HashMap<S, Region>  spotObjectMap = new HashMap<>();
     private final SpotCollection collection = new SpotCollection();
     private Logger internalLogger = Logger.VOID_LOGGER;
     int numThreads=1;
@@ -78,7 +78,7 @@ public class TrackMateInterface<S extends Spot> {
     public void resetEdges() {
         graph=null;
     }
-    public void removeObject(Object3D o, int frame) {
+    public void removeObject(Region o, int frame) {
         S s = objectSpotMap.remove(o);
         if (s!=null) {
             if (graph!=null) graph.removeVertex(s);
@@ -87,14 +87,14 @@ public class TrackMateInterface<S extends Spot> {
         }
     }
     
-    public void addObject(Object3D o, int frame) {
+    public void addObject(Region o, int frame) {
         S s = factory.toSpot(o, frame);
         objectSpotMap.put(o, s);
         spotObjectMap.put(s, o);
         collection.add(s, frame);
     }
     
-    public void addObjects(Collection<Object3D> objects, int frame) {
+    public void addObjects(Collection<Region> objects, int frame) {
         objects.stream().forEach((o) -> {
             addObject(o, frame);
         });
@@ -466,22 +466,22 @@ public class TrackMateInterface<S extends Spot> {
     
     private StructureObject getStructureObject(List<StructureObject> candidates, S s) {
         if (candidates==null || candidates.isEmpty()) return null;
-        Object3D o = spotObjectMap.get(s);
+        Region o = spotObjectMap.get(s);
         for (StructureObject c : candidates) if (c.getObject() == o) return c;
         return null;
     }
     
-    public static DefaultObject3DSpotFactory defaultFactory() {
-        return new DefaultObject3DSpotFactory();
+    public static DefaultRegionSpotFactory defaultFactory() {
+        return new DefaultRegionSpotFactory();
     }
     public interface SpotFactory<S extends Spot> {
-        public S toSpot(Object3D o, int frame);
+        public S toSpot(Region o, int frame);
         public S duplicate(S s);
     }
 
-    public static class DefaultObject3DSpotFactory implements SpotFactory<Spot> {
+    public static class DefaultRegionSpotFactory implements SpotFactory<Spot> {
         @Override
-        public Spot toSpot(Object3D o, int frame) {
+        public Spot toSpot(Region o, int frame) {
             double[] center = o.getCenter();
             if (center==null) center = o.getGeomCenter(true);
             Spot s = new Spot(center[0], center[1], center.length>=2 ? center[2] : 0, 1, 1);
