@@ -18,6 +18,7 @@
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ConditionalParameter;
@@ -100,7 +101,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     ChoiceParameter globalAutothresholdMethod = new ChoiceParameter("Global Threshold Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod);
     
-    Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold, thresholdCond};
+    BooleanParameter correctMotherCell = new BooleanParameter("Correct Mother Cell", false).setToolTipText("When first cell tends to be split, tries to merge it");
+    
+    Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold, thresholdCond, correctMotherCell};
 
     ExecutorService executor;
     @Override
@@ -187,6 +190,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         thresholdCond.setActionParameters("Autothreshold", new Parameter[]{autothresholdMethod});
         thresholdCond.setActionParameters("Autothreshold Adaptative by Frame", new Parameter[]{autothresholdMethod, adaptativeCoefficient, frameHalfWindow});
         thresholdCond.setActionParameters("Autothreshold by Frame with global minimum", new Parameter[]{autothresholdMethod, globalAutothresholdMethod});
+    }
+    
+    public BacteriaClosedMicrochannelTrackerLocalCorrections setCorrectMotherCell(boolean correct) {
+        this.correctMotherCell.setSelected(correct);
+        return this;
     }
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections setSegmenter(SegmenterSplitAndMerge seg) {
@@ -424,7 +432,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 }*/
                 setAssignmentToTrackAttributes(t, true); // last assignment -> for beheaded cell correction
             }
-            correctBeheadedCells();
+            if (correctMotherCell.getSelected()) correctBeheadedCells();
             for (int t = minT+1; t<maxT; ++t) setAssignmentToTrackAttributes(t, false);
         }
         if (correctionStep) step("after correct beheaded cells", true);

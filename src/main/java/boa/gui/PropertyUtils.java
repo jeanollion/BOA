@@ -78,8 +78,11 @@ public class PropertyUtils {
         return getProps().getProperty(key, defaultValue);
     }
     public static void set(String key, String value) {
-        if (value!=null) getProps().setProperty(key, value);
-        saveParamChanges();
+        if (value!=null) {
+            getProps().setProperty(key, value);
+            saveParamChanges();
+        }
+        else remove(key);
     }
     public static void set(String key, int value) {
         getProps().setProperty(key, Integer.toString(value));
