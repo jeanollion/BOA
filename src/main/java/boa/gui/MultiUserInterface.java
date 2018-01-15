@@ -20,6 +20,8 @@ package boa.gui;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  *
@@ -48,5 +50,7 @@ public class MultiUserInterface  implements UserInterface {
     public void setRunning(boolean running) {
         uis.stream().forEach((ui) -> {ui.setRunning(running);});
     }
-    
+    public void applyToLogUserInterfaces(Consumer<LogUserInterface> function) {
+        uis.stream().filter((ui) -> (ui instanceof LogUserInterface)).forEach((ui) -> function.accept((LogUserInterface)ui));
+    }
 }

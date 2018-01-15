@@ -23,29 +23,34 @@ package image;
  */
 public class ImageMask2D implements ImageMask {
     final ImageMask mask;
-
+    final int z;
     public ImageMask2D(ImageMask mask) {
         this.mask = mask;
+        this.z=0;
+    }
+    public ImageMask2D(ImageMask mask, int z) {
+        this.mask = mask;
+        this.z=z;
     }
     
     @Override
     public boolean insideMask(int x, int y, int z) {
-        return mask.insideMask(x, y, 0);
+        return mask.insideMask(x, y, this.z);
     }
 
     @Override
     public boolean insideMask(int xy, int z) {
-        return mask.insideMask(xy, 0);
+        return mask.insideMask(xy, this.z);
     }
 
     @Override
     public boolean insideMaskWithOffset(int x, int y, int z) {
-        return mask.insideMaskWithOffset(x, y, 0);
+        return mask.insideMaskWithOffset(x, y, this.z);
     }
 
     @Override
     public boolean insideMaskWithOffset(int xy, int z) {
-        return mask.insideMaskWithOffset(xy, 0);
+        return mask.insideMaskWithOffset(xy, this.z);
     }
 
     @Override
@@ -115,12 +120,12 @@ public class ImageMask2D implements ImageMask {
 
     @Override
     public boolean contains(int x, int y, int z) {
-        return z>=0 && mask.contains(x, y, 0);
+        return z>=0 && mask.contains(x, y, this.z);
     }
 
     @Override
     public boolean containsWithOffset(int x, int y, int z) {
-        return z>=mask.getOffsetZ() && mask.containsWithOffset(x, y, 0);
+        return z>=mask.getOffsetZ() && mask.containsWithOffset(x, y, this.z);
     }
 
     @Override

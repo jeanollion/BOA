@@ -34,9 +34,12 @@ public class LogUserInterface implements UserInterface {
     File logFile;
     FileLock xpFileLock;
     RandomAccessFile logFileWriter;
-    
-    public LogUserInterface() {
-
+    boolean append;
+    public LogUserInterface(boolean append) {
+        this.append = append;
+    }
+    public void setAppend(boolean append) {
+        this.append=append;
     }
     private synchronized void lockLogFile() {
         if (xpFileLock!=null) return;
@@ -77,15 +80,19 @@ public class LogUserInterface implements UserInterface {
             }
         }
     }
-    public void setLogFile(String dir, boolean clearIfExisting) {
+    public File getLogFile() {
+        return logFile;
+    }
+    public void setLogFile(String dir) {
         if (dir==null) {
             this.unlockLogFile();
             return;
         }
+        if (logFileWriter!=null) this.unlockLogFile();
         logFile = new File(dir);
-        if (clearIfExisting && logFile.exists()) {
+        if (!append && logFile.exists()) {
             lockLogFile();
-            if (this.logFileWriter!=null && clearIfExisting) {
+            if (this.logFileWriter!=null) {
                 try {
                     FileIO.clearRAF(logFileWriter);
                 } catch (IOException ex) { }

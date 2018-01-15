@@ -346,7 +346,7 @@ public class RegionPopulation {
         DisplacementNeighborhood n = (DisplacementNeighborhood) Filters.getNeighborhood(1.5, 1, properties);
         getLabelMap();
         for (Voxel v : o.getContour()) {
-            n.setPixels(v, labelImage);
+            n.setPixels(v, labelImage, null);
             for (int i = 0; i<n.getValueCount(); ++i) if (n.getPixelValues()[i]>0 && n.getPixelValues()[i]!=o.getLabel()) return true; // TODO for high number of objects float can lead to ambiguities
             
         }
@@ -380,7 +380,7 @@ public class RegionPopulation {
      }*/
     public void fitToEdges(Image edgeMap, ImageMask mask) {
         // get seeds outsit label image
-        ImageInteger seedMap = Filters.localExtrema(edgeMap, null, false, Filters.getNeighborhood(1.5, 1.5, edgeMap));
+        ImageInteger seedMap = Filters.localExtrema(edgeMap, null, false, null, Filters.getNeighborhood(1.5, 1.5, edgeMap));
         this.getLabelMap(); //creates the labelImage        
         // merge background seeds && foreground seeds : background = 1, foreground = label+1
         for (int z = 0; z < seedMap.getSizeZ(); z++) {
@@ -908,7 +908,7 @@ public class RegionPopulation {
         @Override
         public boolean keepObject(Region object) {
             for (Voxel v : object.getVoxels()) {
-                n.setPixels(v, labelMap);
+                n.setPixels(v, labelMap, null);
                 for (float f : n.getPixelValues()) {
                     if (f > 0) {
                         return true;

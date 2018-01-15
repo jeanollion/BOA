@@ -3185,9 +3185,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }//GEN-LAST:event_actionPoolListMousePressed
     private UserInterface getUserInterface() {
         if (activateLoggingMenuItem.isSelected()) {
-            String log = logFile==null ? db.getDir()+File.separator+"Log.txt" : logFile;
-            LogUserInterface logUI = new LogUserInterface();
-            logUI.setLogFile(log, !appendToFileMenuItem.isSelected());
+            LogUserInterface logUI = new LogUserInterface(appendToFileMenuItem.isSelected());
+            if (logFile!=null) logUI.setLogFile(logFile);
             return new MultiUserInterface(this, logUI);
         } else return this;
     }

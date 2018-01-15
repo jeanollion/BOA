@@ -79,7 +79,7 @@ public class FitMicrochannelHeadToGradient implements PostFilter {
         int margin =(int)Math.round(gradientScale+0.5)+1;
         if (margin*2>=b.getSizeX()-2) margin = Math.max(1, b.getSizeX()/4);
         BoundingBox innerHead = new BoundingBox(margin, head.getSizeX()-1-margin,margin, head.getSizeY()-1-margin, 0, head.getSizeZ()-1);
-        ImageByte maxL = Filters.localExtrema(gradLocal, null, false, Filters.getNeighborhood(1.5, 1.5, gradLocal)).resetOffset();
+        ImageByte maxL = Filters.localExtrema(gradLocal, null, false, null, Filters.getNeighborhood(1.5, 1.5, gradLocal)).resetOffset();
         if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds before and"));
         ImageOperations.andWithOffset(maxL, innerHead.getImageProperties(1, 1), maxL);
         if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));

@@ -102,14 +102,14 @@ public class Daemon {
                 while(running) {
                     Task t = jobQueue.poll();
                     if (t!=null) {
-                        
-                        logUI.setLogFile(logDir.getAbsolutePath()+File.separator+taskFileNameMap.get(t).getName().replace(".json", ".txt"), !oneJobHasBeenRun.contains(taskFileNameMap.get(t)));
+                        logUI.setAppend(!oneJobHasBeenRun.contains(taskFileNameMap.get(t)));
+                        logUI.setLogFile(logDir.getAbsolutePath()+File.separator+taskFileNameMap.get(t).getName().replace(".json", ".txt"));
                         t.publishMemoryUsage("");
                         ui.setMessage("Running Job: "+t+" remaining jobs: "+jobQueue.size());
                         t.runTask();
                         t.publishErrors();
                         if (!t.errors.isEmpty()) fileNameErrorMap.put(taskFileNameMap.get(t), true);
-                        logUI.setLogFile(null, false);
+                        logUI.setLogFile(null);
                         oneJobHasBeenRun.add(taskFileNameMap.get(t));
                         taskFileNameMap.remove(t);
                         moveFiles();

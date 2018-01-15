@@ -19,6 +19,7 @@ package processing.neighborhood;
 
 import dataStructure.objects.Voxel;
 import image.Image;
+import image.ImageMask;
 
 /**
  *
@@ -31,9 +32,9 @@ public abstract class DisplacementNeighborhood implements Neighborhood {
     float[] distances;
     int valueCount=0;
     
-    @Override public void setPixels(Voxel v, Image image) {setPixels(v.x, v.y, v.z, image);}
+    @Override public void setPixels(Voxel v, Image image, ImageMask mask) {setPixels(v.x, v.y, v.z, image, mask);}
     
-    @Override public void setPixels(int x, int y, int z, Image image) {
+    @Override public void setPixels(int x, int y, int z, Image image, ImageMask mask) {
         valueCount=0;
         int xx, yy;
         if (is3D) { 
@@ -42,13 +43,13 @@ public abstract class DisplacementNeighborhood implements Neighborhood {
                 xx=x+dx[i];
                 yy=y+dy[i];
                 zz=z+dz[i];
-                if (image.contains(xx, yy, zz)) values[valueCount++]=image.getPixel(xx, yy, zz);
+                if (image.contains(xx, yy, zz) && (mask==null||mask.insideMask(xx, yy, zz))) values[valueCount++]=image.getPixel(xx, yy, zz);
             }
         } else {
             for (int i = 0; i<dx.length; ++i) {
                 xx=x+dx[i];
                 yy=y+dy[i];
-                if (image.contains(xx, yy, z)) values[valueCount++]=image.getPixel(xx, yy, z);
+                if (image.contains(xx, yy, z) && (mask==null||mask.insideMask(xx, yy, z))) values[valueCount++]=image.getPixel(xx, yy, z);
             }
         }
     }

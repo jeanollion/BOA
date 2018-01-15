@@ -27,6 +27,7 @@ import static image.Image.logger;
 import image.ImageByte;
 import image.ImageFloat;
 import image.ImageInteger;
+import image.ImageMask;
 import image.ImageOperations;
 import image.ImageProperties;
 import java.util.Arrays;
@@ -136,12 +137,12 @@ public class Filters {
      * @param neighborhood 2D/3D neighborhood in which the local extrema is computed
      * @return an image of same type as output (that can be output). Each pixel value is 0 if the current pixel is not an extrema, or has the value of the original image if it is an extrema
      */
-    public static ImageByte localExtrema(Image image, ImageByte output, boolean maxLocal, Neighborhood neighborhood) {
+    public static ImageByte localExtrema(Image image, ImageByte output, boolean maxLocal, ImageMask mask, Neighborhood neighborhood) {
         ImageByte res;
         String name = maxLocal?"MaxLocal of: "+image.getName():"MinLocal of: "+image.getName();
         if (output==null || !output.sameSize(image) || output==image) res = new ImageByte(name, image);
         else res = (ImageByte)output.setName(name);
-        Filter filter = maxLocal?new LocalMax():new LocalMin();
+        Filter filter = maxLocal?new LocalMax(mask):new LocalMin(mask);
         return applyFilter(image, res, filter, neighborhood);
     }
         /**
@@ -153,12 +154,12 @@ public class Filters {
      * @param neighborhood 2D/3D neighborhood in which the local extrema is computed
      * @return an image of same type as output (that can be output). Each pixel value is 0 if the current pixel is not an extrema, or has the value of the original image if it is an extrema
      */
-    public static ImageByte localExtrema(Image image, ImageByte output, boolean maxLocal, double threshold, Neighborhood neighborhood) {
+    public static ImageByte localExtrema(Image image, ImageByte output, boolean maxLocal, double threshold, ImageMask mask, Neighborhood neighborhood) {
         ImageByte res;
         String name = maxLocal?"MaxLocal of: "+image.getName():"MinLocal of: "+image.getName();
         if (output==null || !output.sameSize(image) || output==image) res = new ImageByte(name, image);
         else res = (ImageByte)output.setName(name);
-        Filter filter = maxLocal?new LocalMaxThreshold(threshold):new LocalMinThreshold(threshold);
+        Filter filter = maxLocal?new LocalMaxThreshold(threshold, mask):new LocalMinThreshold(threshold, mask);
         return applyFilter(image, res, filter, neighborhood);
     }
     
@@ -192,7 +193,7 @@ public class Filters {
     }
     private static class Mean extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image);
+            neighborhood.setPixels(x, y, z, image, null);
             if (neighborhood.getValueCount()==0) return 0;
             double mean = 0;
             for (int i = 0; i<neighborhood.getValueCount(); ++i) mean+=neighborhood.getPixelValues()[i];
@@ -201,7 +202,7 @@ public class Filters {
     }
     private static class SigmaMu extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image);
+            neighborhood.setPixels(x, y, z, image, null);
             if (neighborhood.getValueCount()==0) return 0;
             double mean = 0;
             double values2 = 0;
@@ -216,7 +217,7 @@ public class Filters {
     }
     public static class Median extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image);
+            neighborhood.setPixels(x, y, z, image, null);
             if (neighborhood.getValueCount()==0) return 0;
             Arrays.sort(neighborhood.getPixelValues(), 0, neighborhood.getValueCount());
             if (neighborhood.getValueCount()%2==0) return (neighborhood.getPixelValues()[neighborhood.getValueCount()/2-1]+neighborhood.getPixelValues()[neighborhood.getValueCount()/2])/2f;
@@ -270,27 +271,35 @@ public class Filters {
         }
     }
     public static class LocalMax extends Filter {
+        final ImageMask mask;
+        public LocalMax(ImageMask mask) {
+            this.mask = mask;
+        }
         @Override public float applyFilter(int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image);
+            if (mask!=null && !mask.insideMask(x, y, z)) return 0;
+            neighborhood.setPixels(x, y, z, image, mask);
             if (neighborhood.getValueCount()==0) return 0;
             float max = neighborhood.getPixelValues()[0]; // coords are sorted by distance, first is center
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) return 0;
             return 1;
         }
-        public boolean hasValueNoOver(float value, int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image);
+        public boolean hasNoValueOver(float value, int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image, mask);
             for (int i = 0; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>value) return false;
             return true;
         }
     }
     private static class LocalMaxThreshold extends Filter {
         double threshold;
-        public LocalMaxThreshold(double threshold) {
+        final ImageMask mask;
+        public LocalMaxThreshold(double threshold, ImageMask mask) {
             this.threshold=threshold;
+            this.mask=mask;
         }
         @Override public float applyFilter(int x, int y, int z) {
+            if (mask!=null && !mask.insideMask(x, y, z)) return 0;
             if (image.getPixel(x, y, z)<threshold) return 0;
-            neighborhood.setPixels(x, y, z, image);
+            neighborhood.setPixels(x, y, z, image, mask);
             if (neighborhood.getValueCount()==0) return 0;
             float max = neighborhood.getPixelValues()[0];
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) return 0;
@@ -298,8 +307,13 @@ public class Filters {
         }
     }
     private static class LocalMin extends Filter {
+        final ImageMask mask;
+        public LocalMin(ImageMask mask) {
+            this.mask = mask;
+        }
         @Override public float applyFilter(int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image);
+            if (mask!=null && !mask.insideMask(x, y, z)) return 0;
+            neighborhood.setPixels(x, y, z, image, mask);
             if (neighborhood.getValueCount()==0) return 0;
             float min = neighborhood.getPixelValues()[0];
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;
@@ -308,12 +322,15 @@ public class Filters {
     }
     private static class LocalMinThreshold extends Filter {
         double threshold;
-        public LocalMinThreshold(double threshold) {
+        final ImageMask mask;
+        public LocalMinThreshold(double threshold, ImageMask mask) {
             this.threshold=threshold;
+            this.mask=mask;
         }
         @Override public float applyFilter(int x, int y, int z) {
+            if (mask!=null && !mask.insideMask(x, y, z)) return 0;
             if (image.getPixel(x, y, z)>threshold) return 0;
-            neighborhood.setPixels(x, y, z, image);
+            neighborhood.setPixels(x, y, z, image, null);
             if (neighborhood.getValueCount()==0) return 0;
             float min = neighborhood.getPixelValues()[0];
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;

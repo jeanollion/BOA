@@ -20,6 +20,7 @@ package processing.neighborhood;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
 import image.Image;
+import image.ImageMask;
 
 /**
  *
@@ -33,8 +34,8 @@ public interface Neighborhood {
      * @param z Z-axis coordinate of the center of the neighborhood (0 for 2D case)
      * @param image image to copy pixels values from
      */
-    public void setPixels(int x, int y, int z, Image image);
-    public void setPixels(Voxel v, Image image);
+    public void setPixels(int x, int y, int z, Image image, ImageMask mask);
+    public void setPixels(Voxel v, Image image, ImageMask mask);
     public int getSize();
     /**
      * 

@@ -20,6 +20,7 @@ package processing.neighborhood;
 import dataStructure.objects.Voxel;
 import image.Image;
 import image.ImageInteger;
+import image.ImageMask;
 import image.ImageProperties;
 import java.util.ArrayList;
 
@@ -59,7 +60,7 @@ public class EllipsoidalNeighborhoodCompartment extends EllipsoidalNeighborhood 
             }
         }
     }
-    @Override public void setPixels(int x, int y, int z, Image image) {
+    @Override public void setPixels(int x, int y, int z, Image image, ImageMask mask) {
         valueCount=0;
         int label = compartimentMap.getPixelInt(x, y, z);
         int xx, yy;
@@ -69,13 +70,13 @@ public class EllipsoidalNeighborhoodCompartment extends EllipsoidalNeighborhood 
                 xx=x+dx[i];
                 yy=y+dy[i];
                 zz=z+dz[i];
-                if (image.contains(xx, yy, zz) && compartimentMap.getPixelInt(xx, yy, zz)==label) values[valueCount++]=image.getPixel(xx, yy, zz);
+                if (image.contains(xx, yy, zz) && compartimentMap.getPixelInt(xx, yy, zz)==label  && (mask==null||mask.insideMask(xx, yy, zz))) values[valueCount++]=image.getPixel(xx, yy, zz);
             }
         } else {
             for (int i = 0; i<dx.length; ++i) {
                 xx=x+dx[i];
                 yy=y+dy[i];
-                if (image.contains(xx, yy, z) && compartimentMap.getPixelInt(xx, yy, z)==label) values[valueCount++]=image.getPixel(xx, yy, z);
+                if (image.contains(xx, yy, z) && compartimentMap.getPixelInt(xx, yy, z)==label && (mask==null||mask.insideMask(xx, yy, z))) values[valueCount++]=image.getPixel(xx, yy, z);
             }
         }
     }

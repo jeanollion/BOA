@@ -75,7 +75,7 @@ public class EdgeDetector implements Segmenter {
     }
 
     public ImageInteger getSeedMap(Image input, StructureObjectProcessing parent) {
-        if (seedMap==null) seedMap = Filters.localExtrema(getWsMap(input, parent), null, false, Filters.getNeighborhood(1, 1, getWsMap(input, parent)));
+        if (seedMap==null) seedMap = Filters.localExtrema(getWsMap(input, parent), null, false, parent.getMask(), Filters.getNeighborhood(1, 1, getWsMap(input, parent)));
         return seedMap;
     }
 

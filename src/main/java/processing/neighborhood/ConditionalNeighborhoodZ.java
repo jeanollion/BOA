@@ -20,6 +20,7 @@ package processing.neighborhood;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
 import image.Image;
+import image.ImageMask;
 import java.util.HashMap;
 
 /**
@@ -46,9 +47,9 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
         else return res;
     }
     
-    public void setPixels(int x, int y, int z, Image image) {
+    public void setPixels(int x, int y, int z, Image image, ImageMask mask) {
         currentNeighborhood = getNeighborhood(z);
-        currentNeighborhood.setPixels(x, y, z, image);
+        currentNeighborhood.setPixels(x, y, z, image, mask);
     }
     
     @Override public BoundingBox getBoundingBox() {
@@ -60,8 +61,8 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
         return res;
     }
 
-    public void setPixels(Voxel v, Image image) {
-        setPixels(v.x, v.y, v.z, image);
+    public void setPixels(Voxel v, Image image, ImageMask mask) {
+        setPixels(v.x, v.y, v.z, image, mask);
     }
 
     public int getSize() {

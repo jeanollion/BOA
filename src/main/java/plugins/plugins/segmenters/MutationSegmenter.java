@@ -238,7 +238,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         ImageByte[] seedsSPZ = new ImageByte[lapSPZ.length];
         LocalMax[] lmZ = new LocalMax[lapSPZ.length];
         for (int z = 0; z<lapSPZ.length; ++z) {
-            lmZ[z] = new LocalMax();
+            lmZ[z] = new LocalMax(new ImageMask2D(parent.getMask(), parent.getMask().getSizeZ()!=input.getSizeZ()?0:z));
             lmZ[z].setUp(lapSPZ[z], n);
             seedsSPZ[z] = new ImageByte("", lapSPZ[z]);
         }
@@ -247,11 +247,11 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             lapSPZ[z].getBoundingBox().translateToOrigin().loop((x, y, sp)->{
                 float currentValue = lapSPZ[z].getPixel(x, y, sp);
                 if (parentMask.insideMask(x, y, z) && smooth.getPixel(x, y, z)>=intensityThreshold && currentValue>=thresholdSeeds) { // check pixel is over thresholds
-                    if ( (z==0 || (z>0 && seedsSPZ[z-1].getPixel(x, y, sp)==0)) && lmZ[z].hasValueNoOver(currentValue, x, y, sp)) { // check if 1) was not already checked at previous plane [make it not parallelizable] && if is local max on this z plane
+                    if ( (z==0 || (z>0 && seedsSPZ[z-1].getPixel(x, y, sp)==0)) && lmZ[z].hasNoValueOver(currentValue, x, y, sp)) { // check if 1) was not already checked at previous plane [make it not parallelizable] && if is local max on this z plane
                         boolean lm = true;
-                        if (z>0) lm = lmZ[z-1].hasValueNoOver(currentValue, x, y, sp); // check if local max on previous z plane
-                        if (lm && z<lapSPZ.length-1) lm = lmZ[z+1].hasValueNoOver(currentValue, x, y, sp); // check if local max on next z plane
-                        //logger.debug("candidate seed: x:{}, y:{}, z:{},value: {} local max ? {}, no value sup below:{} , no value sup over:{}", x, y, z, currentValue, lm, z>0?lmZ[z-1].hasValueNoOver(currentValue, x, y, sp):true, z<lapSPZ.length-1?lmZ[z+1].hasValueNoOver(currentValue, x, y, sp):true);
+                        if (z>0) lm = lmZ[z-1].hasNoValueOver(currentValue, x, y, sp); // check if local max on previous z plane
+                        if (lm && z<lapSPZ.length-1) lm = lmZ[z+1].hasNoValueOver(currentValue, x, y, sp); // check if local max on next z plane
+                        //logger.debug("candidate seed: x:{}, y:{}, z:{},value: {} local max ? {}, no value sup below:{} , no value sup over:{}", x, y, z, currentValue, lm, z>0?lmZ[z-1].hasNoValueOver(currentValue, x, y, sp):true, z<lapSPZ.length-1?lmZ[z+1].hasNoValueOver(currentValue, x, y, sp):true);
                         if (lm) seedsSPZ[z].setPixel(x, y, sp, 1);
                     }
                 }

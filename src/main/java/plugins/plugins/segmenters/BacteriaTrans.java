@@ -619,8 +619,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             //return input;
         }
         private RegionPopulation splitSegmentationMask(ImageInteger maskToSplit, int minSize) {
-            ImageByte seeds = Filters.localExtrema(getEDM(), null, true, Filters.getNeighborhood(3, 3, getEDM())); // TODO seed radius -> parameter ? 
-            if (maskToSplit!=null) ImageOperations.and(seeds, maskToSplit, seeds);
+            ImageByte seeds = Filters.localExtrema(getEDM(), null, true, maskToSplit, Filters.getNeighborhood(3, 3, getEDM())); // TODO seed radius -> parameter ? 
             RegionPopulation res =  WatershedTransform.watershed(getEDM(), maskToSplit, ImageLabeller.labelImageList(seeds), true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
             if (res.getObjects().size()==1) { // relabel with low connectivity -> if not contour will fail
                 List<Region> list = ImageLabeller.labelImageListLowConnectivity(maskToSplit);

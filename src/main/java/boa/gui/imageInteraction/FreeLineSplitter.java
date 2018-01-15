@@ -96,7 +96,7 @@ public class FreeLineSplitter implements ObjectSplitter {
                 int y = yPoints[i] - offY;
                 if (splitMask.contains(x, y, 0) && mask.insideMask(x, y, 0) && !splitMask.insideMask(x, y, 0)) {
                     int l1Count = 0, l2Count=0;
-                    n.setPixels(x, y, 0, splitMask);
+                    n.setPixels(x, y, 0, splitMask, null);
                     for (float f : n.getPixelValues()) {
                         if (f==1) ++l1Count;
                         else if (f==2) ++l2Count;

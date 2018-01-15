@@ -55,14 +55,14 @@ public class TestProcessMutations {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         //String dbName = "fluo171204_WT_750ms_paramOptimization";
-        //String dbName = "fluo171219_WT_750ms";
-        String dbName = "fluo170512_WT";
-        int fIdx = 0;
-        int mcIdx =0;
+        String dbName = "fluo171219_WT_750ms";
+        //String dbName = "fluo170512_WT";
+        int fIdx = 314;
+        int mcIdx =2;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName, null);
-        t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,20);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,5);
     }
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {

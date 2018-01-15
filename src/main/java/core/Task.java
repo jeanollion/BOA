@@ -22,6 +22,8 @@ import boa.gui.DBUtil;
 import static boa.gui.DBUtil.searchForLocalDir;
 import static boa.gui.DBUtil.searchLocalDirForDB;
 import boa.gui.GUI;
+import boa.gui.LogUserInterface;
+import boa.gui.MultiUserInterface;
 import boa.gui.UserInterface;
 import boa.gui.PropertyUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
@@ -48,6 +50,7 @@ import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingWorker;
@@ -588,6 +591,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         int[] taskCounter = new int[]{0, totalSubtasks};
         for (Task t : tasks) t.setSubtaskNumber(taskCounter);
         DefaultWorker.execute(i -> {
+            tasks.get(i).initDB();
+            Consumer<LogUserInterface> setLF = l->{if (l.getLogFile()==null) l.setLogFile(tasks.get(i).getDir()+File.separator+"Log.txt");};
+            if (ui instanceof MultiUserInterface) ((MultiUserInterface)ui).applyToLogUserInterfaces(setLF);
+            else if (ui instanceof LogUserInterface) setLF.accept((LogUserInterface)ui);
             tasks.get(i).runTask();
             if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
             tasks.get(i).db=null;

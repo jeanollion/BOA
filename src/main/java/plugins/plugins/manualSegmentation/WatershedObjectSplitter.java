@@ -65,8 +65,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
     
     public static RegionPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation, boolean keepOnlyTwoSeeds, boolean verbose) {
         
-        ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
-        ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
+        ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, mask, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
         List<Region> seeds = Arrays.asList(ImageLabeller.labelImage(localMax));
         if (seeds.size()<2) {
             //logger.warn("Object splitter : less than 2 seeds found");
@@ -105,8 +104,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
     
     public static RegionPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation, int minSize, boolean verbose) {
         
-        ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
-        ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
+        ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, mask, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
         List<Region> seeds = ImageLabeller.labelImageList(localMax);
         if (seeds.size()<2) {
             //logger.warn("Object splitter : less than 2 seeds found");

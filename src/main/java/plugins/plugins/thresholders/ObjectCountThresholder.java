@@ -70,7 +70,7 @@ public class ObjectCountThresholder implements Thresholder {
     
     public double runThresholder(Image input, ImageMask mask) {
         
-        ImageByte seeds = Filters.localExtrema(input, null, descendingIntensities.getSelected(), descendingIntensities.getSelected() ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY, Filters.getNeighborhood(1.5, 1, input));
+        ImageByte seeds = Filters.localExtrema(input, null, descendingIntensities.getSelected(), descendingIntensities.getSelected() ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY, mask, Filters.getNeighborhood(1.5, 1, input));
         boolean bright = descendingIntensities.getSelected();
         if (debug) ImageWindowManagerFactory.showImage(seeds);
         int max = maxObjectNumber.getValue().intValue();

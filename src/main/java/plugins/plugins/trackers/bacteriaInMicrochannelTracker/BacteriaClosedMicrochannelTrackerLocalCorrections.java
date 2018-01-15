@@ -174,7 +174,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     final static int cellNumberLimitForAssignment = 7;
     final static int maxCorrectionLength = 1000;
     private static final double beheadedCellsSizeLimit = 300;
-    final static boolean useVolumeAsSize=false; // if length -> length should be re-computed for merged objects and not just summed
+    final static boolean useVolumeAsSize=true; // if length -> length should be re-computed for merged objects and not just summed
     
     final static double globalContrastThreshold = 0;
     // functions for assigners
