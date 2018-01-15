@@ -23,6 +23,7 @@ import boa.gui.ManualCorrection;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.IJImageWindowManager.TrackRoi;
 import static boa.gui.imageInteraction.ImageWindowManager.displayTrackMode;
+import boa.gui.imageInteraction.localZoom.ImageZoom;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -49,6 +50,7 @@ import image.BlankMask;
 import image.BoundingBox;
 import image.IJImageWrapper;
 import image.Image;
+import image.ImageFloat;
 import image.ImageInteger;
 import image.ImageMask;
 import java.awt.Canvas;
@@ -65,6 +67,7 @@ import java.awt.event.AdjustmentListener;
 import static java.awt.event.InputEvent.BUTTON2_DOWN_MASK;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowEvent;
@@ -199,10 +202,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 }
                 // get clicked object
                 if (!fromSelection && !strechObjects) {
-                    int x = e.getX();
-                    int y = e.getY();
-                    int offscreenX = canvas.offScreenX(x);
-                    int offscreenY = canvas.offScreenY(y);
+                    int offscreenX = canvas.offScreenX(e.getX());
+                    int offscreenY = canvas.offScreenY(e.getY());
                     Pair<StructureObject, BoundingBox> o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
                     //logger.debug("click {}, {}, object: {} (total: {}, parent: {}), ctlr:{}", x, y, o, i.getObjects().size(), ctrl);
                     if (o!=null) {
@@ -261,7 +262,42 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         for (MouseListener m : mls) canvas.removeMouseListener(m);
         canvas.addMouseListener(ml);
         for (MouseListener m : mls) canvas.addMouseListener(m);
+        canvas.addMouseMotionListener(new MouseMotionListener() {
+
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                if (localZoom==null) return;
+                localZoom.setImage(image);
+                
+                int offscreenX = canvas.offScreenX(e.getX());
+                int offscreenY = canvas.offScreenY(e.getY());
+                if (offscreenX<0||offscreenY<0||offscreenX>=image.getSizeX()||offscreenY>=image.getSizeY()) return;
+                // center on cursor and update content
+                if (!localZoom.isVisible()) {// magnification? record other active window?
+                    localZoom.setVisible(true);
+                } 
+                localZoom.setLocation(e.getXOnScreen()+10, e.getYOnScreen()+10);
+                localZoom.setContent(offscreenX, offscreenY, ip.getSlice()-1);
+            }
+        });
     }
+    ImageZoom localZoom;
+    
+    public void toggleActivateLocalZoom() {
+        if (localZoom==null) {
+           localZoom = new ImageZoom();
+           
+        } else {
+           localZoom.dispose();
+           localZoom = null;
+        }
+    }
+    
     
     @Override public void closeNonInteractiveWindows() {
         super.closeNonInteractiveWindows();

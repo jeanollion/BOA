@@ -19,6 +19,7 @@ package boa.gui;
 
 import boa.gui.configuration.ConfigurationTreeGenerator;
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.IJVirtualStack;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageObjectInterfaceKey;
@@ -335,6 +336,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             public void actionPerformed(ActionEvent e) {
                 manualSegmentButtonActionPerformed(e);
                 logger.debug("C pressed: " + e);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), new AbstractAction("Zoom") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+                if (iwm instanceof IJImageWindowManager) ((IJImageWindowManager)iwm).toggleActivateLocalZoom();
+                logger.debug("Zoom pressed: " + e);
             }
         });
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0 ), new AbstractAction("Toggle creation tool") {
@@ -2237,7 +2246,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 Collection<String> l;
                 if (nextPosition || position==null) {
                     String selPos = null;
-                    if (position==null) selPos = this.trackTreeController.getSelectedPosition();
+                    //if (position==null) selPos = this.trackTreeController.getSelectedPosition();
                     if (selPos!=null) position = selPos;
                     else position = SelectionUtils.getNextPosition(sel, position, next);
                     l = position==null ? null : sel.getElementStrings(position);
@@ -3402,7 +3411,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //if (db.isReadOnly()) return;
         List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (selList.isEmpty()) logger.warn("Select at least two objects to Merge first!");
-        else if (selList.size()<=10 || Utils.promptBoolean("Merge "+selList.size()+ " Objects ? ", this))  ManualCorrection.mergeObjects(db, selList, true);
+        else if (selList.size()<=10 || Utils.promptBoolean("Merge "+selList.size()+ " Objects ? ", null))  ManualCorrection.mergeObjects(db, selList, true);
     }//GEN-LAST:event_mergeObjectsButtonActionPerformed
 
     private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
@@ -3410,7 +3419,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //if (db.isReadOnly()) return;
         List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
-        else if (selList.size()<=10 || Utils.promptBoolean("Split "+selList.size()+ " Objects ? ", this)) ManualCorrection.splitObjects(db, selList, true, false);
+        else if (selList.size()<=10 || Utils.promptBoolean("Split "+selList.size()+ " Objects ? ", null)) ManualCorrection.splitObjects(db, selList, true, false);
     }//GEN-LAST:event_splitObjectsButtonActionPerformed
 
     private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed

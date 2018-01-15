@@ -593,11 +593,14 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         DefaultWorker.execute(i -> {
             tasks.get(i).initDB();
             Consumer<LogUserInterface> setLF = l->{if (l.getLogFile()==null) l.setLogFile(tasks.get(i).getDir()+File.separator+"Log.txt");};
+            Consumer<LogUserInterface> unsetLF = l->{l.setLogFile(null);};
             if (ui instanceof MultiUserInterface) ((MultiUserInterface)ui).applyToLogUserInterfaces(setLF);
             else if (ui instanceof LogUserInterface) setLF.accept((LogUserInterface)ui);
             tasks.get(i).runTask();
             if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
             tasks.get(i).db=null;
+            if (ui instanceof MultiUserInterface) ((MultiUserInterface)ui).applyToLogUserInterfaces(unsetLF);
+            else if (ui instanceof LogUserInterface) unsetLF.accept((LogUserInterface)ui);
             return "";
         }, tasks.size()).setEndOfWork(
                 ()->{for (Task t : tasks) t.done(); for (Runnable r : endOfWork) r.run();});
