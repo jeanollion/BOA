@@ -25,6 +25,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.objects.ObjectNode;
 import boa.gui.objects.StructureNode;
 import boa.gui.selection.SelectionUtils;
+import configuration.parameters.PreFilterSequence;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Region;
@@ -58,7 +59,10 @@ import java.util.TreeSet;
 import measurement.GeometricalMeasurements;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
+import plugins.Segmenter;
+import plugins.UseMaps;
 import plugins.plugins.trackers.trackMate.TrackMateInterface;
+import utils.HashMapGetCreate;
 import utils.Pair;
 import utils.Utils;
 
@@ -387,9 +391,9 @@ public class ManualCorrection {
         int structureIdx = key.displayedStructureIdx;
         int segmentationParentStructureIdx = db.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
         int parentStructureIdx = db.getExperiment().getStructure(structureIdx).getParentStructure();
-        ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
+        ManualSegmenter segInstance = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
         
-        if (segmenter==null) {
+        if (segInstance==null) {
             logger.warn("No manual segmenter found for structure: {}", structureIdx);
             return;
         }
@@ -398,11 +402,24 @@ public class ManualCorrection {
         if (points!=null) {
             logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, segmentationParentStructureIdx);
             List<StructureObject> segmentedObjects = new ArrayList<>();
+            PreFilterSequence preFilters = db.getExperiment().getStructure(structureIdx).getProcessingScheme().getPreFilters();
+            HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parent->preFilters.filter(parent.getRawImage(structureIdx), parent));
+            HashMapGetCreate<StructureObject, Image[]> subMaps = segInstance instanceof UseMaps? new HashMapGetCreate<>(parent->((UseMaps)segInstance).computeMaps(parent.getRawImage(structureIdx), inputImages.getAndCreateIfNecessary(parent))) : null;
+            
             for (Map.Entry<StructureObject, List<int[]>> e : points.entrySet()) {
-                segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
+                ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
                 segmenter.setManualSegmentationVerboseMode(test);
-                
-                Image segImage = e.getKey().getRawImage(structureIdx);
+                StructureObject globalParent = e.getKey().getParent(parentStructureIdx);
+                StructureObject subParent = e.getKey();
+                boolean subSegmentation = !subParent.equals(globalParent);
+                boolean ref2D = subParent.is2D() && inputImages.getAndCreateIfNecessarySyncOnKey(globalParent).getSizeZ()>1;
+                if (subMaps!=null) {
+                    Image[] maps = subMaps.getAndCreateIfNecessarySyncOnKey(e.getKey().getParent(parentStructureIdx));
+                    if (subSegmentation) ((UseMaps)segmenter).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(ref2D? subParent.getBounds().duplicate().fitToImageZ(i):subParent.getBounds())));
+                    else ((UseMaps)segmenter).setMaps(maps);
+                }
+                Image input = inputImages.getAndCreateIfNecessarySyncOnKey(globalParent);
+                if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
                 
                 // generate image mask without old objects
                 ImageByte mask = TypeConverter.cast(e.getKey().getMask().duplicate(), new ImageByte("Manual Segmentation Mask", 0, 0, 0));
@@ -415,7 +432,7 @@ public class ManualCorrection {
                     int[] seed = it.next();
                     if (!mask.insideMask(seed[0], seed[1], seed[2])) it.remove();
                 }
-                RegionPopulation seg = segmenter.manualSegment(segImage, e.getKey(), mask, structureIdx, e.getValue());
+                RegionPopulation seg = segmenter.manualSegment(input, e.getKey(), mask, structureIdx, e.getValue());
                 //seg.filter(new RegionPopulation.Size().setMin(2)); // remove seeds
                 logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
                 if (!test && !seg.getObjects().isEmpty()) {

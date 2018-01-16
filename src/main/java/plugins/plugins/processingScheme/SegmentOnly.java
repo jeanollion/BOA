@@ -132,7 +132,8 @@ public class SegmentOnly implements ProcessingScheme {
             Segmenter seg = segmenter.instanciatePlugin();
             if (useMaps) {
                 Image[] maps = subMaps.getAndCreateIfNecessarySyncOnKey(globalParent);
-                ((UseMaps)seg).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(ref2D? subParent.getBounds().duplicate().fitToImageZ(i):subParent.getBounds())));
+                if (subSegmentation) ((UseMaps)seg).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(ref2D? subParent.getBounds().duplicate().fitToImageZ(i):subParent.getBounds())));
+                else ((UseMaps)seg).setMaps(maps);
             }
             if (applyToSegmenter!=null) applyToSegmenter.apply(subParent, seg);
             Image input = inputImages.getAndCreateIfNecessarySyncOnKey(globalParent);

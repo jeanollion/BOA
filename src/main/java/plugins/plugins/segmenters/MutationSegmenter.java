@@ -265,19 +265,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         SubPixelLocalizator.debug=debug;
         for (int i = 0; i<pops.length; ++i) { // TODO voir si en 3D pas mieux avec gaussian
             int z = i/scale.length;
-            SubPixelLocalizator.setSubPixelCenter(wsMap[i], pops[i].getObjects(), true); // lap -> better in case of close objects
-            for (Region o : pops[i].getObjects()) { // quality criterion : sqrt (smooth * lap)
-                if (o.getQuality()==0) { // localizator didnt work
-                    double[] center = o.getMassCenter(wsMap[i], false);
-                    if (center[0]>wsMap[i].getSizeX()-1) center[0] = wsMap[i].getSizeX()-1;
-                    if (center[1]>wsMap[i].getSizeY()-1) center[1] = wsMap[i].getSizeY()-1;
-                    o.setCenter(center);
-                    //o.setQuality(lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0));
-                }
-                double zz = o.getCenter().length>2?o.getCenter()[2]:z;
-                //logger.debug("size : {} set quality: center: {} : z : {}, bounds: {}, is2D: {}", o.getSize(), o.getCenter(), z, wsMap[i].getBoundingBox().translateToOrigin(), o.is2D());
-                if (zz>wsMap[i].getSizeZ()-1) zz=wsMap[i].getSizeZ()-1;
-                o.setQuality(Math.sqrt(wsMap[i].getPixel(o.getCenter()[0], o.getCenter()[1], zz) * smooth.getPixel(o.getCenter()[0], o.getCenter()[1], zz)));
+            setCenterAndQuality(wsMap[i], smooth, pops[i], z);
+            for (Region o : pops[i].getObjects()) {
                 if (planeByPlane && lapSPZ.length>1) { // keep track of z coordinate
                     o.setCenter(new double[]{o.getCenter()[0], o.getCenter()[1], 0}); // adding z dimention
                     o.translate(0, 0, z);
@@ -303,8 +292,6 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             if (testParam.equals(this.scale.getName()) || testParam.equals(this.intensityThreshold.getName())) ImageWindowManagerFactory.showImage(pv.getSmoothedMap().setName("IntensityMap"));
             logger.debug("Quality: {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()+""));
             ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("segmented image"));
-            
-            
         }
         if (intermediateImages!=null) {
             if (planeByPlane) {
@@ -324,7 +311,22 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         }
         return pop;
     }
-    
+    private static void setCenterAndQuality(Image map, Image map2, RegionPopulation pop, int z) {
+        SubPixelLocalizator.setSubPixelCenter(map, pop.getObjects(), true); // lap -> better in case of close objects
+        for (Region o : pop.getObjects()) { // quality criterion : sqrt (smooth * lap)
+            if (o.getQuality()==0) { // localizator didnt work
+                double[] center = o.getMassCenter(map, false);
+                if (center[0]>map.getSizeX()-1) center[0] = map.getSizeX()-1;
+                if (center[1]>map.getSizeY()-1) center[1] = map.getSizeY()-1;
+                if (center.length>=2 && center[2]>map.getSizeZ()-1) center[2] = map.getSizeZ()-1;
+                o.setCenter(center);
+            }
+            double zz = o.getCenter().length>2?o.getCenter()[2]:z;
+            //logger.debug("size : {} set quality: center: {} : z : {}, bounds: {}, is2D: {}", o.getSize(), o.getCenter(), z, wsMap[i].getBoundingBox().translateToOrigin(), o.is2D());
+            if (zz>map.getSizeZ()-1) zz=map.getSizeZ()-1;
+            o.setQuality(Math.sqrt(map.getPixel(o.getCenter()[0], o.getCenter()[1], zz) * map2.getPixel(o.getCenter()[0], o.getCenter()[1], zz)));
+        }
+    }
     private static <T extends Image> List<T> arrangeSpAndZPlanes(T[] spZ, boolean ZbyZ) {
         if (ZbyZ) {
             List<T> res = new ArrayList<>(spZ.length * spZ[0].getSizeZ());
@@ -413,19 +415,15 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     
     @Override
     public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
+        ImageMask parentMask = parent.getMask().getSizeZ()!=input.getSizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
+        this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
+        if (pv.smooth==null || pv.lap==null) setMaps(computeMaps(input, input));
+        else logger.debug("manual seg: maps already set!");
         List<Region> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
-        final double thld = BackgroundFit.backgroundFitHalf(input, parent.getMask(), 2, null);
-        double[] ms = ImageOperations.getMeanAndSigmaWithOffset(input, parent.getMask(), v->v<=thld);
-        if (ms[2]==0) ms = ImageOperations.getMeanAndSigmaWithOffset(input, parent.getMask(), v -> true);
-        if (verboseManualSeg) logger.debug("thld: {} mean & sigma: {}", thld, ms);
-        Image scaledInput = ImageOperations.affineOperation2WithOffset(input, null, 1/ms[1], -ms[0]);
-        Image lap = ImageFeatures.getLaplacian(scaledInput, scale.getArrayDouble()[0], true, false).setName("laplacian: "+scale);
-        Image smooth = ImageFeatures.gaussianSmoothScaleIndep(scaledInput, smoothScale.getValue().doubleValue(), smoothScale.getValue().doubleValue(), false).setName("gaussian: "+scale.getArrayDouble()[0]); // scale indep ? 
+        Image lap = pv.getLaplacianMap()[0]; // todo max in scale space for each seed? 
+        Image smooth = pv.getSmoothedMap();
         RegionPopulation pop =  watershed(lap, parent.getMask(), seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
-        SubPixelLocalizator.setSubPixelCenter(smooth, pop.getObjects(), true);
-        for (Region o : pop.getObjects()) { // quality criterion : smooth * lap
-            o.setQuality(Math.sqrt(smooth.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0) * lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)));
-        }
+        setCenterAndQuality(lap, smooth, pop, 0);
         
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
