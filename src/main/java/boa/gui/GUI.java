@@ -175,8 +175,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     //private static int progressBarTabIndex = 3;
     // enable/disable components
     private ProgressIcon progressBar;
-    private NumberParameter localZoomFactor = new BoundedNumberParameter("Local Zoom Factor", 1, 3, 2, null);
-    private NumberParameter localZoomArea = new BoundedNumberParameter("Local Zoom Area", 0, 25, 25, null);
+    private NumberParameter localZoomFactor = new BoundedNumberParameter("Local Zoom Factor", 1, 4, 2, null);
+    private NumberParameter localZoomArea = new BoundedNumberParameter("Local Zoom Area", 0, 35, 15, null);
     final private List<Component> relatedToXPSet;
     final private List<Component> relatedToReadOnly;
     /**

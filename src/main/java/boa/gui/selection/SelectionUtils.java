@@ -70,11 +70,13 @@ import utils.Utils;
  */
 public class SelectionUtils {
     public static Map<String, Color> colorsImageDisplay = new HashMap<String, Color>() {{
-        put("Magenta", new Color(255, 0, 255, 120));
-        put("Blue", new Color(0, 0, 255, 120));
-        put("Cyan", new Color(0, 255, 255, 120));
-        put("Green", new Color(0, 255, 0, 120));
+        put("Magenta", new Color(255, 0, 255, 255));
+        put("Blue", new Color(0, 0, 255, 255));
+        put("Cyan", new Color(0, 255, 255, 255));
+        put("Green", new Color(0, 255, 0, 255));
         put("Grey", new Color(192, 192, 192, 120));
+        put("Yellow", new Color(204, 204, 0, 255));
+        put("Orange", new Color(255, 140, 0, 255));
     }};
     public static Map<String, Color> colors = new HashMap<String, Color>() {{
         put("Magenta", new Color(255, 0, 255));
@@ -82,6 +84,8 @@ public class SelectionUtils {
         put("Cyan", new Color(0, 139, 139));
         put("Green", new Color(0, 100, 0));
         put("Grey", new Color(192, 192, 192));
+        put("Yellow", new Color(204, 204, 0));
+        put("Orange", new Color(255, 140, 0));
     }};
     
     public static boolean validSelectionName(MasterDAO db, String name) {

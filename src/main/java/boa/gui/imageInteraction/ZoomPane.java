@@ -26,6 +26,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Stroke;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -121,7 +122,8 @@ public class ZoomPane extends JPanel {
         g2d.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
         int mid=getWidth()/2;
         int center = 5;
-        g2d.setStroke(new BasicStroke(2));
+        //Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{9}, 0);
+        //g2d.setStroke(dashed);
         g2d.drawLine(mid, 0, mid, mid-center);
         g2d.drawLine(mid, mid+center, mid, mid*2);
         g2d.drawLine(0, mid, mid-center, mid);
