@@ -18,6 +18,7 @@
 package boa.gui;
 
 import static boa.gui.GUI.logger;
+import configuration.parameters.Parameter;
 import dataStructure.objects.MasterDAOFactory;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -161,7 +162,7 @@ public class PropertyUtils {
         //logger.info("propery file: "+f);
         return f;
     }
-    
+
     public static void setPersistant(JMenuItem item, String key, boolean defaultValue) {
         item.setSelected(PropertyUtils.get(key, defaultValue));
         item.addActionListener((java.awt.event.ActionEvent evt) -> { logger.debug("item: {} persistSel {}", key, item.isSelected());PropertyUtils.set(key, item.isSelected()); });

@@ -508,6 +508,11 @@
                 </MenuItem>
               </SubComponents>
             </Menu>
+            <Menu class="javax.swing.JMenu" name="localZoomMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Local Zoom"/>
+              </Properties>
+            </Menu>
           </SubComponents>
         </Menu>
         <Menu class="javax.swing.JMenu" name="ShortcutMenu">
@@ -552,6 +557,11 @@
                 <Property name="text" type="java.lang.String" value="Navigation / Display"/>
               </Properties>
               <SubComponents>
+                <MenuItem class="javax.swing.JMenuItem" name="jMenuItem25">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Tab: toggle local zoom"/>
+                  </Properties>
+                </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="jMenuItem13">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Ctrl + A : Display all objects on active image"/>

@@ -23,7 +23,6 @@ import boa.gui.ManualCorrection;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.IJImageWindowManager.TrackRoi;
 import static boa.gui.imageInteraction.ImageWindowManager.displayTrackMode;
-import boa.gui.imageInteraction.localZoom.ImageZoom;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -65,6 +64,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import static java.awt.event.InputEvent.BUTTON2_DOWN_MASK;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -262,42 +262,48 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         for (MouseListener m : mls) canvas.removeMouseListener(m);
         canvas.addMouseListener(ml);
         for (MouseListener m : mls) canvas.addMouseListener(m);
-        canvas.addMouseMotionListener(new MouseMotionListener() {
-
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                
+        MouseAdapter ma = new MouseAdapter() {
+            private void update(MouseEvent e) {
+                if (localZoom ==null) return;
+                localZoom.setParent(canvas);
+                localZoom.updateLocation(e);
             }
-
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                update(e);
+            }
+            @Override
+            public void mouseDragged(MouseEvent e){
+                update(e);
+            }
             @Override
             public void mouseMoved(MouseEvent e) {
-                if (localZoom==null) return;
-                localZoom.setImage(image);
-                
-                int offscreenX = canvas.offScreenX(e.getX());
-                int offscreenY = canvas.offScreenY(e.getY());
-                if (offscreenX<0||offscreenY<0||offscreenX>=image.getSizeX()||offscreenY>=image.getSizeY()) return;
-                // center on cursor and update content
-                if (!localZoom.isVisible()) {// magnification? record other active window?
-                    localZoom.setVisible(true);
-                } 
-                localZoom.setLocation(e.getXOnScreen()+10, e.getYOnScreen()+10);
-                localZoom.setContent(offscreenX, offscreenY, ip.getSlice()-1);
+                update(e);
             }
-        });
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                update(e);
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (localZoom ==null) return;
+                else localZoom.detach();
+            }
+        };
+        canvas.addMouseMotionListener(ma);
+        canvas.addMouseListener(ma);
+        
     }
-    ImageZoom localZoom;
     
+    ZoomPane localZoom;
     public void toggleActivateLocalZoom() {
         if (localZoom==null) {
-           localZoom = new ImageZoom();
-           
+            localZoom =  GUI.getInstance()==null? new ZoomPane() : new ZoomPane(GUI.getInstance().getLocalZoomLevel(), GUI.getInstance().getLocalZoomArea());
         } else {
-           localZoom.dispose();
-           localZoom = null;
+            localZoom.detach();
+            localZoom = null;
         }
     }
-    
     
     @Override public void closeNonInteractiveWindows() {
         super.closeNonInteractiveWindows();

@@ -35,7 +35,9 @@ import boa.gui.selection.SelectionUtils;
 import static boa.gui.selection.SelectionUtils.setMouseAdapter;
 import boa.gui.selection.SelectionRenderer;
 import static boa.gui.selection.SelectionUtils.fixIOI;
+import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.FileChooser;
+import configuration.parameters.NumberParameter;
 import core.DefaultWorker;
 import core.Processor;
 import core.ProgressCallback;
@@ -173,7 +175,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     //private static int progressBarTabIndex = 3;
     // enable/disable components
     private ProgressIcon progressBar;
-    
+    private NumberParameter localZoomFactor = new BoundedNumberParameter("Local Zoom Factor", 1, 3, 2, null);
+    private NumberParameter localZoomArea = new BoundedNumberParameter("Local Zoom Area", 0, 25, 25, null);
     final private List<Component> relatedToXPSet;
     final private List<Component> relatedToReadOnly;
     /**
@@ -246,6 +249,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         PropertyUtils.setPersistant(exportPPImagesMenuItem, "export_ppimages", true);
         PropertyUtils.setPersistant(exportTrackImagesMenuItem, "export_trackImages", true);
         
+        // local zoom
+        ConfigurationTreeGenerator.addToMenu(localZoomFactor.getName(), localZoomFactor.getUI().getDisplayComponent(), localZoomMenu);
+        ConfigurationTreeGenerator.addToMenu(localZoomArea.getName(), localZoomArea.getUI().getDisplayComponent(), localZoomMenu);
         PluginFactory.findPlugins("plugins.plugins");
         
         pyGtw = new PythonGateway();
@@ -548,7 +554,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     public static void setProgression(int percentage) {
         if (hasInstance()) getInstance().setProgress(percentage);
     }
-    
+    public int getLocalZoomArea() {
+        return this.localZoomArea.getValue().intValue();
+    }
+    public double getLocalZoomLevel() {
+        return this.localZoomFactor.getValue().doubleValue();
+    }
     public void outputDirectoryUpdated() {
         this.reloadObjectTrees=true;
         if (this.db==null) return;
@@ -1127,6 +1138,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         setLogFileMenuItem = new javax.swing.JMenuItem();
         activateLoggingMenuItem = new javax.swing.JCheckBoxMenuItem();
         appendToFileMenuItem = new javax.swing.JCheckBoxMenuItem();
+        localZoomMenu = new javax.swing.JMenu();
         ShortcutMenu = new javax.swing.JMenu();
         ActiveSelMenu = new javax.swing.JMenu();
         jMenuItem20 = new javax.swing.JMenuItem();
@@ -1135,6 +1147,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         jMenuItem3 = new javax.swing.JMenuItem();
         jMenuItem4 = new javax.swing.JMenuItem();
         jMenu4 = new javax.swing.JMenu();
+        jMenuItem25 = new javax.swing.JMenuItem();
         jMenuItem13 = new javax.swing.JMenuItem();
         jMenuItem14 = new javax.swing.JMenuItem();
         jMenuItem7 = new javax.swing.JMenuItem();
@@ -2027,6 +2040,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         miscMenu.add(logMenu);
 
+        localZoomMenu.setText("Local Zoom");
+        miscMenu.add(localZoomMenu);
+
         mainMenu.add(miscMenu);
 
         ShortcutMenu.setText("Shortcuts");
@@ -2051,6 +2067,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         ShortcutMenu.add(ActiveSelMenu);
 
         jMenu4.setText("Navigation / Display");
+
+        jMenuItem25.setText("Tab: toggle local zoom");
+        jMenu4.add(jMenuItem25);
 
         jMenuItem13.setText("Ctrl + A : Display all objects on active image");
         jMenu4.add(jMenuItem13);
@@ -3774,6 +3793,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JMenuItem jMenuItem22;
     private javax.swing.JMenuItem jMenuItem23;
     private javax.swing.JMenuItem jMenuItem24;
+    private javax.swing.JMenuItem jMenuItem25;
     private javax.swing.JMenuItem jMenuItem3;
     private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;
@@ -3791,6 +3811,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JButton linkObjectsButton;
     private javax.swing.JMenu localDBMenu;
     private javax.swing.JRadioButtonMenuItem localFileSystemDatabaseRadioButton;
+    private javax.swing.JMenu localZoomMenu;
     private javax.swing.JMenu logMenu;
     private javax.swing.JMenuBar mainMenu;
     private javax.swing.JButton manualSegmentButton;

@@ -26,11 +26,14 @@ import configuration.parameters.ui.ChoiceParameterUI;
 import configuration.parameters.ui.MultipleChoiceParameterUI;
 import dataStructure.configuration.PreProcessingChain.PreProcessingChainUI;
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.Action;
 import javax.swing.Icon;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -151,7 +154,20 @@ public class ConfigurationTreeGenerator {
             else if (o instanceof JMenuItem) menu.add((JMenuItem)o);
             else if (o instanceof JSeparator) menu.addSeparator();
             else if (o instanceof Component) menu.add((Component)o);
-            
         }
+    }
+    public static void addToMenu(String label, Object[] UIElements, JMenu menu) {
+        for (Object o : UIElements) {
+            if (o instanceof Action) menu.add((Action)o);
+            else if (o instanceof JMenuItem) menu.add((JMenuItem)o);
+            else if (o instanceof JSeparator) menu.addSeparator();
+            else if (o instanceof Component) addToMenu(label, (Component)o, menu);
+        }
+    }
+    private static void addToMenu(String label, Component c, JMenu menu) {
+        JPanel panel = new JPanel(new FlowLayout());
+        panel.add(new JLabel(label));
+        panel.add(c);
+        menu.add(panel);
     }
 }
