@@ -31,10 +31,13 @@ import image.Image;
 import image.ImageInteger;
 import image.ImageOperations;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.lang.reflect.Field;
@@ -100,6 +103,7 @@ public abstract class ImageWindowManager<T, U, V> {
     final ImageDisplayer<T> displayer;
     int interactiveStructureIdx;
     int displayedImageNumber = 20;
+    ZoomPane localZoom;
     // displayed objects 
     protected final Map<Pair<StructureObject, BoundingBox>, U> objectRoiMap = new HashMap<Pair<StructureObject, BoundingBox>, U>();
     protected final Map<Pair<StructureObject, StructureObject>, V> parentTrackHeadTrackRoiMap=new HashMap<Pair<StructureObject, StructureObject>, V>();
@@ -131,6 +135,46 @@ public abstract class ImageWindowManager<T, U, V> {
         if (this.displayedRawInputFrames.values().contains(image)) return RegisteredImageType.RawInput;
         if (this.displayedPrePocessedFrames.values().contains(image)) return RegisteredImageType.PreProcessed;
         return null;
+    }
+    void addLocalZoom(Component parent) {
+        MouseAdapter ma = new MouseAdapter() {
+            private void update(MouseEvent e) {
+                if (localZoom ==null) return;
+                localZoom.setParent(parent);
+                localZoom.updateLocation(e);
+            }
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                update(e);
+            }
+            @Override
+            public void mouseDragged(MouseEvent e){
+                update(e);
+            }
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                update(e);
+            }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                update(e);
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (localZoom ==null) return;
+                else localZoom.detach();
+            }
+        };
+        parent.addMouseListener(ma);
+        parent.addMouseMotionListener(ma);
+    }
+    public void toggleActivateLocalZoom() {
+        if (localZoom==null) {
+            localZoom =  GUI.getInstance()==null? new ZoomPane() : new ZoomPane(GUI.getInstance().getLocalZoomLevel(), GUI.getInstance().getLocalZoomArea());
+        } else {
+            localZoom.detach();
+            localZoom = null;
+        }
     }
     public abstract void toggleSetObjectCreationTool();
     public Map<Image, DefaultWorker> getRunningWorkers() {

@@ -347,8 +347,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), new AbstractAction("Zoom") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-                if (iwm instanceof IJImageWindowManager) ((IJImageWindowManager)iwm).toggleActivateLocalZoom();
+                ImageWindowManagerFactory.getImageManager().toggleActivateLocalZoom();
                 logger.debug("Zoom pressed: " + e);
             }
         });

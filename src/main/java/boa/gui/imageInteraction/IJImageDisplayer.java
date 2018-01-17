@@ -43,6 +43,8 @@ import image.TypeConverter;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.ColorModel;
 import java.util.HashMap;
 import javax.swing.SwingUtilities;
@@ -80,6 +82,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         if (!ip.isVisible()) ip.show();
         if (displayRange.length>=3) zoom(ip, displayRange[2]);
         else zoom(ip, ImageDisplayer.zoomMagnitude);
+        ImageWindowManagerFactory.getImageManager().addLocalZoom(ip.getCanvas());
         return ip;
     }
     
@@ -194,8 +197,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ImagePlus ip = IJImageWrapper.getImagePlus(imageTC, -1);
         ip.setTitle(title);
         // TODO: set display range ?
-        
         ip.show();
+        ImageWindowManagerFactory.getImageManager().addLocalZoom(ip.getCanvas());
         logger.debug("image: {}, isDisplayedAsHyperStack: {}, is HP: {}, dim: {}", title, ip.isDisplayedHyperStack(), ip.isHyperStack(), ip.getDimensions());
         displayedImages.put(imageTC[0][0], ip);
         displayedImagesInv.put(ip, imageTC[0][0]);

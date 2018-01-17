@@ -262,47 +262,6 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         for (MouseListener m : mls) canvas.removeMouseListener(m);
         canvas.addMouseListener(ml);
         for (MouseListener m : mls) canvas.addMouseListener(m);
-        MouseAdapter ma = new MouseAdapter() {
-            private void update(MouseEvent e) {
-                if (localZoom ==null) return;
-                localZoom.setParent(canvas);
-                localZoom.updateLocation(e);
-            }
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                update(e);
-            }
-            @Override
-            public void mouseDragged(MouseEvent e){
-                update(e);
-            }
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                update(e);
-            }
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                update(e);
-            }
-            @Override
-            public void mouseExited(MouseEvent e) {
-                if (localZoom ==null) return;
-                else localZoom.detach();
-            }
-        };
-        canvas.addMouseMotionListener(ma);
-        canvas.addMouseListener(ma);
-        
-    }
-    
-    ZoomPane localZoom;
-    public void toggleActivateLocalZoom() {
-        if (localZoom==null) {
-            localZoom =  GUI.getInstance()==null? new ZoomPane() : new ZoomPane(GUI.getInstance().getLocalZoomLevel(), GUI.getInstance().getLocalZoomArea());
-        } else {
-            localZoom.detach();
-            localZoom = null;
-        }
     }
     
     @Override public void closeNonInteractiveWindows() {

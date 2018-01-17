@@ -94,7 +94,7 @@ public class IJVirtualStack extends VirtualStack {
         cal.pixelDepth=bdsC[0].getScaleZ();
         ip.setCalibration(cal);
         ip.show();
-        
+        ImageWindowManagerFactory.getImageManager().addLocalZoom(ip.getCanvas());
         ImageWindowManagerFactory.getImageManager().addInputImage(position, ip, !output);
     }
 }
