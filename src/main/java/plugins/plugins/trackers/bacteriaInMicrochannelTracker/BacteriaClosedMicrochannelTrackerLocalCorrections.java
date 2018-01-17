@@ -1282,14 +1282,17 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     private int[] performCorrectionSplitOrMergeOverMultipleTime(Assignment a, int frame) {
         MergeScenario m = new MergeScenario(this, a.idxPrev, a.prevObjects, frame-1);
-        //if (Double.isInfinite(m.cost)) return -1; //cannot merge
         List<CorrectionScenario> merge = m.getWholeScenario(maxCorrectionLength, costLim, cumCostLim); // merge scenario
-        double[] mergeCost = new double[]{Double.POSITIVE_INFINITY, 0}; for (CorrectionScenario c : merge) mergeCost[1]+=c.cost; if (merge.isEmpty()) mergeCost[1]=Double.POSITIVE_INFINITY;
-        SplitScenario ss =new SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, a.nextObjects.get(0), frame);
+        double[] mergeCost = new double[]{Double.POSITIVE_INFINITY, 0}; 
+        if (merge.isEmpty()) mergeCost[1]=Double.POSITIVE_INFINITY;
+        else for (CorrectionScenario c : merge) mergeCost[1]+=c.cost; 
         
+        SplitScenario ss =new SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, a.nextObjects.get(0), frame);
         List<CorrectionScenario> split =ss.getWholeScenario(maxCorrectionLength, costLim, cumCostLim);
-        double[] splitCost = new double[]{Double.POSITIVE_INFINITY, 0}; for (CorrectionScenario c : split) splitCost[1]+=c.cost; if (split.isEmpty()) splitCost[1]=Double.POSITIVE_INFINITY;
-
+        double[] splitCost = new double[]{Double.POSITIVE_INFINITY, 0}; 
+        if (split.isEmpty()) splitCost[1]=Double.POSITIVE_INFINITY;
+        else for (CorrectionScenario c : split) splitCost[1]+=c.cost; 
+        
         if (Double.isInfinite(mergeCost[1]) && Double.isInfinite(splitCost[1])) return null;
         int tMin = frame-merge.size();
         int tMax = frame+split.size();

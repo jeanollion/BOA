@@ -483,7 +483,7 @@ public class GenerateXP {
             );
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(
-                            new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo().setContactLimit(0)).setCostParameters(0.1, 0.5)
+                            new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo().setContactLimit(0)).setCostParameters(0.25, 1.25)
                     ).addTrackPostFilters(
                             new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria()), 
                             new RemoveTrackByFeature().setFeature(new Size(), 300, true).setQuantileValue(0.25)
