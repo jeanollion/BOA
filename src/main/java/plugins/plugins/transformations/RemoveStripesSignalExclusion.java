@@ -33,6 +33,8 @@ import image.ImageFloat;
 import image.ImageInteger;
 import image.ImageMask;
 import image.ImageOperations;
+import image.ThresholdMask;
+import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,6 +49,7 @@ import plugins.Transformation;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import utils.ArrayUtil;
 import utils.ThreadRunner;
 import utils.Utils;
 
@@ -57,10 +60,14 @@ import utils.Utils;
 public class RemoveStripesSignalExclusion implements Transformation {
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new BackgroundThresholder(2.5, 3, 3), false); //new ConstantValue(150)
+    BooleanParameter signalExclusionBool2 = new BooleanParameter("Second Signal Exclusion", false);
+    ChannelImageParameter signalExclusion2 = new ChannelImageParameter("Channel for Signal Exclusion 2", -1, false);
+    PluginParameter<SimpleThresholder> signalExclusionThreshold2 = new PluginParameter<>("Signal Exclusion Threshold 2", SimpleThresholder.class, new BackgroundThresholder(4, 5, 2), false);
+    ConditionalParameter signalExclusionCond = new ConditionalParameter(signalExclusionBool2).setActionParameters("true", new Parameter[]{signalExclusion2, signalExclusionThreshold2});
     BooleanParameter addGlobalMean = new BooleanParameter("Add global mean (avoid negative values)", true);
     BooleanParameter trimNegativeValues = new BooleanParameter("Set Negative values to Zero", false);
     ConditionalParameter addGMCond = new ConditionalParameter(addGlobalMean).setActionParameters("false", new Parameter[]{trimNegativeValues});
-    Parameter[] parameters = new Parameter[]{signalExclusion, signalExclusionThreshold, addGMCond};
+    Parameter[] parameters = new Parameter[]{signalExclusion, signalExclusionThreshold, signalExclusionCond, addGMCond};
     List<List<List<Double>>> meanTZY = new ArrayList<>();
     
     public RemoveStripesSignalExclusion() {}
@@ -80,12 +87,39 @@ public class RemoveStripesSignalExclusion implements Transformation {
         this.signalExclusionThreshold.setPlugin(thlder);
         return this;
     }
-    Map<Integer, Image> testMasks;
+    public RemoveStripesSignalExclusion setSecondSignalExclusion(int channel2, SimpleThresholder thlder) {
+        if (channel2>=0 && thlder!=null) {
+            this.signalExclusionThreshold2.setPlugin(thlder);
+            this.signalExclusion2.setSelectedIndex(channel2);
+            this.signalExclusionBool2.setSelected(true);
+        } else this.signalExclusionBool2.setSelected(false);
+        return this;
+    }
+    Map<Integer, Image> testMasks, testMasks2;
     @Override
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  throws Exception {
-        if (testMode) testMasks = new ConcurrentHashMap<>();
         final int chExcl = signalExclusion.getSelectedIndex();
-        final double exclThld = chExcl>=0?signalExclusionThreshold.instanciatePlugin().runSimpleThresholder(inputImages.getImage(chExcl, inputImages.getDefaultTimePoint()), null):Double.NaN;
+        final int chExcl2 = this.signalExclusionBool2.getSelected() ? signalExclusion2.getSelectedIndex() : -1;
+        if (testMode && chExcl>=0) {
+            testMasks = new ConcurrentHashMap<>();
+            if (chExcl>=0) testMasks2 = new ConcurrentHashMap<>();
+        }
+        // one threshold for all frames or one threshold per frame ? 
+        /*double thld1=Double.NaN, thld2=Double.NaN;
+        if (chExcl>=0) {
+            long t0 = System.currentTimeMillis();
+            List<Integer> imageIdx = InputImages.chooseNImagesWithSignal(inputImages, chExcl, 10); // faire image moyenne = moyenne des thld? 
+            long t1= System.currentTimeMillis();
+            List<Double> thdls1 = Utils.transform(imageIdx, i->signalExclusionThreshold.instanciatePlugin().runSimpleThresholder(inputImages.getImage(chExcl, i), null));
+            long t2 = System.currentTimeMillis();
+            logger.debug("choose 10 images: {}, apply bckThlder: {}", t1-t0, t2-t1);
+            thld1 = ArrayUtil.median(thdls1);
+            if (chExcl2>=0) {
+                List<Double> thdls2 = Utils.transform(imageIdx, i->signalExclusionThreshold2.instanciatePlugin().runSimpleThresholder(inputImages.getImage(chExcl2, i), null));
+                thld2 = ArrayUtil.median(thdls2);
+            }
+        }
+        final double[] exclThld = chExcl>=0?(chExcl2>=0? new double[]{thld1, thld2} : new double[]{thld1} ) : new double[0];*/
         final boolean addGlobalMean = this.addGlobalMean.getSelected();
         //logger.debug("remove stripes thld: {}", exclThld);
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getFrameNumber());
@@ -95,15 +129,23 @@ public class RemoveStripesSignalExclusion implements Transformation {
                     new Runnable() {  
                     public void run() {
                         for (int frame = tr.ai.getAndIncrement(); frame<tr.end; frame = tr.ai.getAndIncrement()) {
-                            Image signalExclusion=null;
+                            Image currentImage = inputImages.getImage(channelIdx, frame);
+                            ImageMask m;
                             if (chExcl>=0) {
-                                signalExclusion = inputImages.getImage(chExcl, frame);
-                                if (testMode) {
-                                    Image mask = ImageOperations.threshold(signalExclusion, exclThld, true, true, true, null);
-                                    testMasks.put(frame, mask);
+                                Image se1 = inputImages.getImage(chExcl, frame);
+                                double thld1 = signalExclusionThreshold.instanciatePlugin().runSimpleThresholder(se1, null);
+                                ThresholdMask mask = currentImage.getSizeZ()>1 && se1.getSizeZ()==1 ? new ThresholdMask(se1, thld1, true, true, 0):new ThresholdMask(se1, thld1, true, true);
+                                if (testMode) testMasks.put(frame, TypeConverter.toByteMask(mask, null, 1));
+                                if (chExcl2>=0) {
+                                    Image se2 = inputImages.getImage(chExcl2, frame);
+                                    double thld2 = signalExclusionThreshold2.instanciatePlugin().runSimpleThresholder(se2, null);
+                                    ThresholdMask mask2 = currentImage.getSizeZ()>1 && se2.getSizeZ()==1 ? new ThresholdMask(se2, thld2, true, true, 0):new ThresholdMask(se2, thld2, true, true);
+                                    if (testMode) testMasks2.put(frame, TypeConverter.toByteMask(mask2, null, 1));
+                                    mask = ThresholdMask.or(mask, mask2);
                                 }
-                            }
-                            meanX[frame] = computeMeanX(inputImages.getImage(channelIdx, frame), signalExclusion, exclThld, addGlobalMean);
+                                m = mask;
+                            } else m = new BlankMask(currentImage);
+                            meanX[frame] = computeMeanX(currentImage, m, addGlobalMean);
                             if (frame%100==0) logger.debug("tp: {} {}", frame, Utils.getMemoryUsage());
                         }
                     }
@@ -135,34 +177,32 @@ public class RemoveStripesSignalExclusion implements Transformation {
             }
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Stripes", stripesTC);
         }
-        if (testMode && !testMasks.isEmpty()) {
-            Image[][] maskTC = new Image[testMasks.size()][1];
-            for (Map.Entry<Integer, Image> e : testMasks.entrySet()) maskTC[e.getKey()][0] = e.getValue();
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Exclusion signal mask", maskTC);
-            testMasks.clear();
+        if (testMode) {
+            if (!testMasks.isEmpty()) {
+                Image[][] maskTC = new Image[testMasks.size()][1];
+                for (Map.Entry<Integer, Image> e : testMasks.entrySet()) maskTC[e.getKey()][0] = e.getValue();
+                ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Exclusion signal mask", maskTC);
+                testMasks.clear();
+            }
+            if (!testMasks2.isEmpty()) {
+                Image[][] maskTC = new Image[testMasks2.size()][1];
+                for (Map.Entry<Integer, Image> e : testMasks2.entrySet()) maskTC[e.getKey()][0] = e.getValue();
+                ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Exclusion signal mask2", maskTC);
+                testMasks2.clear();
+            }
         }
     }
     
-    public static Double[][] computeMeanX(Image image, Image exclusionSignal, double exclusionThreshold, boolean addGlobalMean) {
-        boolean ref2D = exclusionSignal.getSizeZ()==1;
-        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) {
-            // allow reference image of zSize 1
-            if (!(exclusionSignal.getSizeZ()==1 && image.getSizeZ()!=1 && image.getSizeX()==exclusionSignal.getSizeX() && image.getSizeY()==exclusionSignal.getSizeY())) throw new RuntimeException("Image and exclusion signal should have same dimensions");
-        }
-        int[] xyz = new int[3];
-        Function<int[], Boolean> includeCoord = exclusionSignal==null? c->true : c -> exclusionSignal.getPixel(c[0], c[1], ref2D?0:c[2])<exclusionThreshold;
+    public static Double[][] computeMeanX(Image image, ImageMask mask, boolean addGlobalMean) {
         Double[][] res = new Double[image.getSizeZ()][image.getSizeY()];
         double globalSum=0;
         double globalCount=0;
         for (int z=0; z<image.getSizeZ(); ++z) {
-            xyz[2]=z;
             for (int y = 0; y<image.getSizeY(); ++y) {
-                xyz[1]=y;
                 double sum = 0;
                 double count = 0;
                 for (int x = 0; x<image.getSizeX(); ++x) {
-                    xyz[0]=x;
-                    if (includeCoord.apply(xyz)) {
+                    if (!mask.insideMask(x, y, z)) {
                         ++count;
                         sum+=image.getPixel(x, y, z);
                     }
@@ -198,8 +238,8 @@ public class RemoveStripesSignalExclusion implements Transformation {
         
         return output;
     }
-    public static Image removeStripes(Image image, Image exclusionSignal, double exclusionThreshold, boolean addGlobalMean) {
-        Double[][] meanX = computeMeanX(image, exclusionSignal, exclusionThreshold, addGlobalMean);
+    public static Image removeStripes(Image image, ImageMask exclusionSignalMask, boolean addGlobalMean) {
+        Double[][] meanX = computeMeanX(image, exclusionSignalMask, addGlobalMean);
         List<List<Double>> resL = new ArrayList<>(meanX.length);
         for (Double[] meanY : meanX) resL.add(Arrays.asList(meanY));
         return removeMeanX(image, image instanceof ImageFloat ? image : null, resL);

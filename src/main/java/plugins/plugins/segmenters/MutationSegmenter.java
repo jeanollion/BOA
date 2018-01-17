@@ -422,7 +422,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         List<Region> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         Image lap = pv.getLaplacianMap()[0]; // todo max in scale space for each seed? 
         Image smooth = pv.getSmoothedMap();
-        RegionPopulation pop =  watershed(lap, parent.getMask(), seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
+        RegionPopulation pop =  watershed(lap, parentMask, seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
         setCenterAndQuality(lap, smooth, pop, 0);
         
         if (verboseManualSeg) {

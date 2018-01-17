@@ -97,12 +97,12 @@ public class SelectBestFocusPlane implements Transformation, Autofocus {
             if (thlder!=null) {
                 final ImageMask maskThld = new ThresholdMask(planes.get(zz), thlder.runSimpleThresholder(planes.get(zz), globalMask), true, false);
                 final int zzz = zz;
-                if (globalMask!=null) mask = new ThresholdMask(planes.get(zz), (x, y, z)->globalMask.insideMask(x, y, zzz)&&maskThld.insideMask(x, y, z), (xy, z)->globalMask.insideMask(xy, zzz)&&maskThld.insideMask(xy, z));
+                if (globalMask!=null) mask = new ThresholdMask(planes.get(zz), (x, y, z)->globalMask.insideMask(x, y, zzz)&&maskThld.insideMask(x, y, z), (xy, z)->globalMask.insideMask(xy, zzz)&&maskThld.insideMask(xy, z), true);
                 else mask = maskThld;
                 if (mask.count()==0) continue;
             } else if (globalMask!=null) {
                 final int zzz = zz;
-                mask = new ThresholdMask(planes.get(zz), (x, y, z)->globalMask.insideMask(x, y, zzz), (xy, z)->globalMask.insideMask(xy, zzz));
+                mask = new ThresholdMask(planes.get(zz), (x, y, z)->globalMask.insideMask(x, y, zzz), (xy, z)->globalMask.insideMask(xy, zzz), true);
             }
             double temp = evalPlane(planes.get(zz), scale, mask);
             if (temp>maxValues) {

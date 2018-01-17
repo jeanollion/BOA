@@ -82,7 +82,7 @@ public class AnalyseHyperFluoBacterias {
     
     
     private static Image removeStripes(Image input) {
-        return RemoveStripesSignalExclusion.removeStripes(input, input, BackgroundThresholder.runThresholder(input, null, 2.5, 3, 3, Double.MAX_VALUE, null), false);
+        return RemoveStripesSignalExclusion.removeStripes(input, new ThresholdMask(input, BackgroundThresholder.runThresholder(input, null, 2.5, 3, 3, Double.MAX_VALUE, null), true, true), false);
     }
     private static void testSaturate(List<Image> ultra, String name) {
         List<ImageByte> ultraThld = Utils.transform(ultra, i->saturateAndThld(i));

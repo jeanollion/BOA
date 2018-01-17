@@ -95,6 +95,7 @@ import plugins.legacy.SuppressCentralHorizontalLine;
 import plugins.plugins.measurements.objectFeatures.MeanAtBorder;
 import plugins.plugins.postFilters.RemoveEndofChannelBacteria;
 import plugins.plugins.preFilter.ImageFeature;
+import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.trackPostFilter.RemoveMicrochannelsTouchingBackgroundOnSides;
 import plugins.plugins.trackPostFilter.RemoveSaturatedMicrochannels;
 import plugins.plugins.trackPostFilter.RemoveTrackByFeature;
@@ -439,8 +440,8 @@ public class GenerateXP {
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
         ps.addTransformation(1, null, new RemoveDeadPixels(20, 4)); // for reminiscent pixels
         ps.addTransformation(1, null, new RemoveDeadPixels(35, 1)); // for non-reminiscent pixels
-        ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false).setTrimNegativeValues(true)); // TODO test trim negative values. make it more sensitive because sd of background is rediced -> modify otsu thld. advantage: after transformations, convertion to 16 bit trim values.
-        ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
+        ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false).setTrimNegativeValues(true)); // TODO test trim negative values. make background thresholder more sensitive because sd of background is rediced -> modify otsu thld. advantage: after transformations, convertion to 16 bit trim values so same behavior of further transformation & segmentation.
+        ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0).setSecondSignalExclusion(1, new BackgroundThresholder(4, 5, 2))); // add secondary mask in case of non-bacteria "contaminents" -> high fluo in mutation and no fluo in bacteria
         ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
         ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR).setRemoveIncompleteRowsAndColumns(false));
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE));

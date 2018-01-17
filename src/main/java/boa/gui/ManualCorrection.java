@@ -42,6 +42,8 @@ import fiji.plugin.trackmate.Spot;
 import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
+import image.ImageMask;
+import image.ImageMask2D;
 import image.TypeConverter;
 import java.awt.Color;
 import java.util.ArrayList;
@@ -423,16 +425,18 @@ public class ManualCorrection {
                 
                 // generate image mask without old objects
                 ImageByte mask = TypeConverter.cast(e.getKey().getMask().duplicate(), new ImageByte("Manual Segmentation Mask", 0, 0, 0));
+                
                 List<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
                 for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
-                if (test) iwm.getDisplayer().showImage(mask, 0, 1);
+                if (test) iwm.getDisplayer().showImage((ImageByte)mask, 0, 1);
                 // remove seeds out of mask
+                ImageMask refMask =  ref2D ? new ImageMask2D(mask) : mask;
                 Iterator<int[]> it=e.getValue().iterator();
                 while(it.hasNext()) {
                     int[] seed = it.next();
-                    if (!mask.insideMask(seed[0], seed[1], seed[2])) it.remove();
+                    if (!refMask.insideMask(seed[0], seed[1], seed[2])) it.remove();
                 }
-                RegionPopulation seg = segmenter.manualSegment(input, e.getKey(), mask, structureIdx, e.getValue());
+                RegionPopulation seg = segmenter.manualSegment(input, e.getKey(), refMask, structureIdx, e.getValue());
                 //seg.filter(new RegionPopulation.Size().setMin(2)); // remove seeds
                 logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
                 if (!test && !seg.getObjects().isEmpty()) {

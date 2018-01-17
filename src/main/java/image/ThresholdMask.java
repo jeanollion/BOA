@@ -25,6 +25,7 @@ public class ThresholdMask implements ImageMask {
     final InsideMaskFunction insideMask;
     final InsideMaskXYFunction insideMaskXY;
     final ImageProperties image;
+    final boolean is2D;
     public ThresholdMask(Image imageToThreshold, double threshold, boolean foregroundOverthreshold, boolean strict) {
         this.image = imageToThreshold;
         if (foregroundOverthreshold) {
@@ -41,11 +42,49 @@ public class ThresholdMask implements ImageMask {
             if (strict) insideMaskXY = (xy, z) -> imageToThreshold.getPixel(xy, z)<threshold;
             else insideMaskXY = (xy, z) -> imageToThreshold.getPixel(xy, z)<=threshold;
         }
+        is2D = false;
     }
-    public ThresholdMask(ImageProperties imageProperties, InsideMaskFunction insideMask, InsideMaskXYFunction insideMaskXY) {
+    /**
+     * Construct ThresholdMask2D
+     * @param imageToThreshold
+     * @param threshold
+     * @param foregroundOverthreshold
+     * @param strict
+     * @param z 
+     */
+    public ThresholdMask(Image imageToThreshold, double threshold, boolean foregroundOverthreshold, boolean strict, int z) {
+        this.image = imageToThreshold;
+        if (foregroundOverthreshold) {
+            if (strict) insideMask = (x, y, zz) -> imageToThreshold.getPixel(x, y, z)>threshold;
+            else insideMask = (x, y, zz) -> imageToThreshold.getPixel(x, y, z)>threshold;
+        } else {
+            if (strict) insideMask = (x, y, zz) -> imageToThreshold.getPixel(x, y, z)<threshold;
+            else insideMask = (x, y, zz) -> imageToThreshold.getPixel(x, y, z)<=threshold;
+        }
+        if (foregroundOverthreshold) {
+            if (strict) insideMaskXY = (xy, zz) -> imageToThreshold.getPixel(xy, z)>threshold;
+            else insideMaskXY = (xy, zz) -> imageToThreshold.getPixel(xy, z)>threshold;
+        } else {
+            if (strict) insideMaskXY = (xy, zz) -> imageToThreshold.getPixel(xy, z)<threshold;
+            else insideMaskXY = (xy, zz) -> imageToThreshold.getPixel(xy, z)<=threshold;
+        }
+        is2D=true;
+    }
+    public ThresholdMask(ImageProperties imageProperties, InsideMaskFunction insideMask, InsideMaskXYFunction insideMaskXY, boolean is2D) {
         this.image=imageProperties;
         this.insideMask=insideMask;
         this.insideMaskXY=insideMaskXY;
+        this.is2D = is2D;
+    }
+    public static ThresholdMask or(ThresholdMask mask1, ThresholdMask mask2) {
+        if (mask1.getSizeX()!=mask2.getSizeX() || mask1.getSizeY()!=mask2.getSizeY()) throw new IllegalArgumentException("Mask1 & 2 should have same XY dimensions");
+        if (mask1.getSizeZ()!=mask2.getSizeZ() && !mask1.is2D && !mask2.is2D) throw new IllegalArgumentException("Mask1 & 2 should either have same Z dimensions or be 2D");
+        return new ThresholdMask(mask1.is2D?mask2:mask1, (x, y, z)->mask1.insideMask.insideMask(x, y, z)||mask2.insideMask(x,y, z), (xy, z)->mask1.insideMask(xy, z)||mask2.insideMask(xy, z), mask1.is2D && mask2.is2D);
+    }
+    public static ThresholdMask and(ThresholdMask mask1, ThresholdMask mask2) {
+        if (mask1.getSizeX()!=mask2.getSizeX() || mask1.getSizeY()!=mask2.getSizeY()) throw new IllegalArgumentException("Mask1 & 2 should have same XY dimensions");
+        if (mask1.getSizeZ()!=mask2.getSizeZ() && !mask1.is2D && !mask2.is2D) throw new IllegalArgumentException("Mask1 & 2 should either have same Z dimensions or be 2D");
+        return new ThresholdMask(mask1.is2D?mask2:mask1, (x, y, z)->mask1.insideMask.insideMask(x, y, z)&&mask2.insideMask(x,y, z), (xy, z)->mask1.insideMask(xy, z)&&mask2.insideMask(xy, z), mask1.is2D && mask2.is2D);
     }
     @Override
     public boolean insideMask(int x, int y, int z) {
