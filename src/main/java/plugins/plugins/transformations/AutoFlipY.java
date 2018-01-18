@@ -75,8 +75,7 @@ public class AutoFlipY implements Transformation {
     PluginParameter<SimpleThresholder> fluoThld = new PluginParameter<>("Threshold for bacteria Segmentation", SimpleThresholder.class, new BackgroundThresholder(4, 5, 3), false); 
     NumberParameter minObjectSize = new BoundedNumberParameter("Minimal Object Size", 1, 100, 10, null).setToolTipText("Object under this size (in pixels) will be removed");
     ConditionalParameter cond = new ConditionalParameter(method).setActionParameters("Bacteria Fluo", new Parameter[]{fluoThld, minObjectSize});
-    List config = new ArrayList(1);
-    
+    Boolean flip = null;
     public AutoFlipY() {
         cond.addListener(p->{ 
             AutoFlipMethod m = AutoFlipMethod.getMethod(method.getSelectedItem());
@@ -91,7 +90,7 @@ public class AutoFlipY implements Transformation {
     List<Image> upperObjectsTest, lowerObjectsTest;
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {
-        config.clear();
+        flip=null;
         if (method.getSelectedItem().equals(FLUO.name)) { 
             if (testMode) {
                 upperObjectsTest=new ArrayList<>();
@@ -120,9 +119,8 @@ public class AutoFlipY implements Transformation {
                 upperObjectsTest.clear();
                 lowerObjectsTest.clear();
             }
-            boolean flip = countFlip>countNoFlip;
+            flip = countFlip>countNoFlip;
             logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
-            config.add(flip);
         } else if (method.getSelectedItem().equals(FLUO_HALF_IMAGE.name)) { 
             // compares signal in upper half & lower half -> signal should be in upper half
             List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 1);
@@ -141,9 +139,8 @@ public class AutoFlipY implements Transformation {
                     else ++countNoFlip;
                 }
             }
-            boolean flip = countFlip>countNoFlip;
+            flip = countFlip>countNoFlip;
             logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
-            config.add(flip);
         } /*else if (method.getSelectedItem().equals(PHASE.name)) {
             // detection of optical abberation
             // comparison of signal above & under using gradient filer
@@ -222,29 +219,16 @@ public class AutoFlipY implements Transformation {
     
     @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return (config.size()==1);
+        return flip!=null;
     }
-    private Boolean getFlip() {
-        if (config.isEmpty()) return null;
-        Object o = config.get(0);
-        //logger.debug("flip config: {} ({})", o, o.getClass().getSimpleName());
-        if (o instanceof Boolean) return (Boolean)o;
-        else if (o instanceof String) return Boolean.parseBoolean((String)o);
-        else return null;
-    }
+    
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) throws Exception {
-        Boolean flip = getFlip();
         if (flip) {
             ///logger.debug("AutoFlipY: flipping (flip config: {} ({}))", flip, flip.getClass().getSimpleName());
             return ImageTransformation.flip(image, ImageTransformation.Axis.Y);
         } //else logger.debug("AutoFlipY: no flip");
         return image;
-    }
-
-    @Override
-    public List getConfigurationData() {
-        return config;
     }
 
     @Override

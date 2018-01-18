@@ -187,11 +187,6 @@ public class KalmanFilter implements Transformation {
     }
 
     @Override
-    public ArrayList getConfigurationData() {
-        return null;
-    }
-
-    @Override
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.SAME;
     }

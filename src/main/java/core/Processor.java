@@ -125,7 +125,7 @@ public class Processor {
             logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
             if (computeConfigurationData || !transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber())) {
                 transfo.computeConfigurationData(tpp.getInputChannel(), images);
-                tpp.setConfigurationData(transfo.getConfigurationData());
+                //tpp.setConfigurationData(transfo.getConfigurationData());
             }
             images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }

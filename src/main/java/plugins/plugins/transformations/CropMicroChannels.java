@@ -127,11 +127,6 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
         BoundingBox bounds = new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.getSizeZ()-1);
         return image.crop(bounds);
     }
-
-    @Override
-    public ArrayList getConfigurationData() {
-        return configurationData;
-    }
     
     public static class Result {
         public final int[] xMax;

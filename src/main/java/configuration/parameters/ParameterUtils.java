@@ -501,7 +501,7 @@ public class ParameterUtils {
                         } catch (Exception ex) {
                             logger.debug("Error computing tranfo configuration", ex);
                         }
-                        tpp.setConfigurationData(transfo.getConfigurationData());
+                        //tpp.setConfigurationData(transfo.getConfigurationData());
                         images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
                         
                         if (showAllSteps || i==transfoIdx) {
@@ -570,7 +570,7 @@ public class ParameterUtils {
                 } catch (Exception ex) {
                     logger.debug("Error computing tranfo configuration", ex);
                 }
-                tpp.setConfigurationData(transfo.getConfigurationData());
+                //tpp.setConfigurationData(transfo.getConfigurationData());
                 images.addTransformation(input, output, transfo);
 
                 Image[][] imagesTC = images.getImagesTC(0, images.getFrameNumber(), ArrayUtil.generateIntegerArray(images.getChannelNumber()));

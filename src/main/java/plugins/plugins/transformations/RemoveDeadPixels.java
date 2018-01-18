@@ -165,7 +165,7 @@ public class RemoveDeadPixels implements Transformation {
         }
         return image;
     }
-
+    /*
     @Override
     public List getConfigurationData() {
         if (configMapF!=null && !configMapF.isEmpty() && configMapF.size()!=configDataFXYZV.size()) {
@@ -184,7 +184,7 @@ public class RemoveDeadPixels implements Transformation {
         }
         if (configDataFXYZV.isEmpty()) configDataFXYZV.add(Arrays.asList(new Double[]{-1d, 0d, 0d, 0d, 0d})); // to say its been configured
         return configDataFXYZV;
-    }
+    }*/
 
     @Override
     public SelectionMode getOutputChannelSelectionMode() {

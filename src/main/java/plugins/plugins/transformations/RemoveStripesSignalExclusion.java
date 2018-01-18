@@ -68,8 +68,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
     BooleanParameter trimNegativeValues = new BooleanParameter("Set Negative values to Zero", false);
     ConditionalParameter addGMCond = new ConditionalParameter(addGlobalMean).setActionParameters("false", new Parameter[]{trimNegativeValues});
     Parameter[] parameters = new Parameter[]{signalExclusion, signalExclusionThreshold, signalExclusionCond, addGMCond};
-    List<List<List<Double>>> meanTZY = new ArrayList<>();
-    
+    float[][][] meanFZY;
     public RemoveStripesSignalExclusion() {}
     
     public RemoveStripesSignalExclusion(int signalExclusion) {
@@ -123,7 +122,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
         final boolean addGlobalMean = this.addGlobalMean.getSelected();
         //logger.debug("remove stripes thld: {}", exclThld);
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getFrameNumber());
-        Double[][][] meanX = new Double[inputImages.getFrameNumber()][][];
+        meanFZY = new float[inputImages.getFrameNumber()][][];
         for (int i = 0; i<tr.threads.length; i++) {
             tr.threads[i] = new Thread(
                     new Runnable() {  
@@ -145,7 +144,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
                                 }
                                 m = mask;
                             } else m = new BlankMask(currentImage);
-                            meanX[frame] = computeMeanX(currentImage, m, addGlobalMean);
+                            meanFZY[frame] = computeMeanX(currentImage, m, addGlobalMean);
                             if (frame%100==0) logger.debug("tp: {} {}", frame, Utils.getMemoryUsage());
                         }
                     }
@@ -154,23 +153,14 @@ public class RemoveStripesSignalExclusion implements Transformation {
         }
         tr.startAndJoin();
         tr.throwErrorIfNecessary("");
-        meanTZY.clear();
-        for (int f = 0; f<meanX.length; ++f) {
-            List<List<Double>> resL = new ArrayList<>(meanX[f].length);
-            for (Double[] meanY : meanX[f]) resL.add(Arrays.asList(meanY));
-            meanTZY.add(resL);
-        }
         if (testMode) { // make stripes images
-            Image[][] stripesTC = new Image[meanX.length][1];
-            for (int f = 0; f<meanX.length; ++f) {
-                List<List<Double>> muZY = meanTZY.get(f);
+            Image[][] stripesTC = new Image[meanFZY.length][1];
+            for (int f = 0; f<meanFZY.length; ++f) {
                 stripesTC[f][0] = new ImageFloat("removeStripes", inputImages.getImage(channelIdx, f));
                 for (int z = 0; z<stripesTC[f][0].getSizeZ(); ++z) {
-                    List<Double> muY = muZY.get(z);
                     for (int y = 0; y<stripesTC[f][0].getSizeY(); ++y) {
-                        double mu = muY.get(y);
                         for (int x = 0; x<stripesTC[f][0].getSizeX(); ++x) {
-                            stripesTC[f][0].setPixel(x, y, z, mu);
+                            stripesTC[f][0].setPixel(x, y, z, meanFZY[f][z][y]);
                         }
                     }
                 }
@@ -193,8 +183,8 @@ public class RemoveStripesSignalExclusion implements Transformation {
         }
     }
     
-    public static Double[][] computeMeanX(Image image, ImageMask mask, boolean addGlobalMean) {
-        Double[][] res = new Double[image.getSizeZ()][image.getSizeY()];
+    public static float[][] computeMeanX(Image image, ImageMask mask, boolean addGlobalMean) {
+        float[][] res = new float[image.getSizeZ()][image.getSizeY()];
         double globalSum=0;
         double globalCount=0;
         for (int z=0; z<image.getSizeZ(); ++z) {
@@ -207,7 +197,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
                         sum+=image.getPixel(x, y, z);
                     }
                 }
-                res[z][y] = count>0 ? sum/count : 0;
+                res[z][y] = count>0 ? (float)(sum/count) : 0f;
                 globalSum+=sum;
                 globalCount+=count;
             }
@@ -222,16 +212,14 @@ public class RemoveStripesSignalExclusion implements Transformation {
         }
         return res;
     }
-    public static Image removeMeanX(Image source, Image output, List<List<Double>> muZY) {
+    public static Image removeMeanX(Image source, Image output, float[][] muZY) {
         if (output==null || !output.sameSize(source)) {
             output = new ImageFloat("", source);
         }
         for (int z = 0; z<output.getSizeZ(); ++z) {
-            List<Double> muY = muZY.get(z);
             for (int y = 0; y<output.getSizeY(); ++y) {
-                double mu = muY.get(y);
                 for (int x = 0; x<output.getSizeX(); ++x) {
-                    output.setPixel(x, y, z, source.getPixel(x, y, z)-mu);
+                    output.setPixel(x, y, z, source.getPixel(x, y, z)-muZY[z][y]);
                 }
             }
         }
@@ -239,36 +227,30 @@ public class RemoveStripesSignalExclusion implements Transformation {
         return output;
     }
     public static Image removeStripes(Image image, ImageMask exclusionSignalMask, boolean addGlobalMean) {
-        Double[][] meanX = computeMeanX(image, exclusionSignalMask, addGlobalMean);
-        List<List<Double>> resL = new ArrayList<>(meanX.length);
-        for (Double[] meanY : meanX) resL.add(Arrays.asList(meanY));
-        return removeMeanX(image, image instanceof ImageFloat ? image : null, resL);
+        return removeMeanX(image, image instanceof ImageFloat ? image : null, computeMeanX(image, exclusionSignalMask, addGlobalMean));
     }
     
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (meanTZY==null || meanTZY.isEmpty() || meanTZY.size()<timePoint) throw new RuntimeException("RemoveStripes transformation not configured: "+ (meanTZY==null?"null":  meanTZY.size()));
-        List<List<Double>> muZY = meanTZY.get(timePoint);
-        Image res = removeMeanX(image, null, muZY);
+        if (meanFZY==null || meanFZY.length<timePoint) throw new RuntimeException("RemoveStripes transformation not configured: "+ (meanFZY==null?"null":  meanFZY.length));
+        Image res = removeMeanX(image, image instanceof ImageFloat ? image : null, meanFZY[timePoint]);
         if (trimNegativeValues.getSelected()) ImageOperations.trimValues(res, 0, 0, true);
+        if (timePoint%100==0) logger.debug(Utils.getMemoryUsage());
         return res;
     }
     
-    @Override
-    public List getConfigurationData() {
-        return meanTZY;
-    }
     @Override
     public Transformation.SelectionMode getOutputChannelSelectionMode() {
         return Transformation.SelectionMode.SAME;
     }
 
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
-    
+    @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return meanTZY!=null && meanTZY.size()==totalTimePointNumber;
+        return meanFZY!=null && meanFZY.length==totalTimePointNumber;
     }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}

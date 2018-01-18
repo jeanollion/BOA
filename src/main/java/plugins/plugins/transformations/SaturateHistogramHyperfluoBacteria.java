@@ -168,11 +168,6 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
     }
 
     @Override
-    public ArrayList getConfigurationData() {
-        return configData;
-    }
-
-    @Override
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.SAME;
     }

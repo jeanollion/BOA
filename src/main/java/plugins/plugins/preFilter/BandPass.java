@@ -84,9 +84,6 @@ public class BandPass implements PreFilter, Filter {
         return filter(image, min.getValue().doubleValue(), max.getValue().doubleValue(), removeStripes.getSelectedIndex(), stripeTolerance.getValue().doubleValue());
     }
 
-    @Override public ArrayList getConfigurationData() {
-        return null;
-    }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

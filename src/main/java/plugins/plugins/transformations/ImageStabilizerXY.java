@@ -329,11 +329,6 @@ public class ImageStabilizerXY implements Transformation {
         }
         return res;
     }
-
-    @Override
-    public ArrayList getConfigurationData() {
-        return this.translationTXY;
-    }
     
     @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
