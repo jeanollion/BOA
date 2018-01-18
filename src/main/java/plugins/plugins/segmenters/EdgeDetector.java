@@ -137,7 +137,7 @@ public class EdgeDetector implements Segmenter {
         }
         if (this.thresholdMethod.getSelectedIndex()==0) {
             double thld = threshold.instanciatePlugin().runThresholder(input, parent);
-            if (testMode) ImageWindowManagerFactory.showImage(generateRegionValueMap(allRegions, input).setName("Intensity value Map. Threshold: "+thld));
+            if (testMode) ImageWindowManagerFactory.showImage(generateRegionValueMap(allRegions, input).setName("Intensity value Map. Threshold: "+thld+" thldMethod: "+this.threshold.getPluginName()));
             allRegions.filter(new RegionPopulation.MeanIntensity(thld, true, input));
         } else if (this.thresholdMethod.getSelectedIndex()==1) { // thld on value map
             Map<Region, Double>[] values = new Map[1];

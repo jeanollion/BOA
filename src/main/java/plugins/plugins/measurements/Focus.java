@@ -17,6 +17,8 @@
  */
 package plugins.plugins.measurements;
 
+import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.ScaleXYZParameter;
 import configuration.parameters.StructureParameter;
@@ -30,6 +32,8 @@ import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import plugins.Measurement;
 import processing.ImageFeatures;
+import utils.ArrayUtil;
+import utils.Utils;
 
 /**
  *
@@ -37,7 +41,16 @@ import processing.ImageFeatures;
  */
 public class Focus implements Measurement {
     StructureParameter structure = new StructureParameter("Structure");
-    ScaleXYZParameter scale = new ScaleXYZParameter("Gradient Scale");
+    NumberParameter scale = new BoundedNumberParameter("Gradient Scale", 1, 2, 1, null);
+    
+    public Focus() {}
+    public Focus(int structureIdx) {
+        this.structure.setSelectedIndex(structureIdx);
+    }
+    public Focus setGradientScale(double scale) {
+        this.scale.setValue(scale);
+        return this;
+    }
     @Override
     public int getCallStructure() {
         return structure.getParentStructureIdx();
@@ -60,11 +73,21 @@ public class Focus implements Measurement {
     public void performMeasurement(StructureObject object) {
         int structureIdx = structure.getSelectedStructureIdx();
         Image input = object.getRawImage(structure.getParentStructureIdx());
-        Image grad = ImageFeatures.getGradientMagnitude(input, scale.getScaleXY(), scale.getScaleZ(input.getScaleXY(), input.getScaleZ()), false);
+        double mid = input.getSizeZ()/2.0;
+        if (input.getSizeZ()>1) {
+            throw new RuntimeException("Focus measurement cannot be run on 3D images");
+            /*List<Double> centers = Utils.transform(object.getChildren(structureIdx), o->{
+                double[] center = object.getObject().getGeomCenter(false);
+                if (center.length==3) return center[2];
+                else return mid;
+            });
+            input = input.getZPlane((int)(ArrayUtil.mean(centers)+0.5));*/
+        }
+        Image grad = ImageFeatures.getGradientMagnitude(input, scale.getValue().doubleValue(), false);
         double gradAtBorder = 0, intensity=0, borderCount=0, count=0;
         for (StructureObject o : object.getChildren(structureIdx)) {
             List<Voxel> contour = o.getObject().getContour();
-            for (Voxel v : contour) gradAtBorder+=grad.getPixel(v.x, v.y, v.z);
+            for (Voxel v : contour) gradAtBorder+=grad.getPixelWithOffset(v.x, v.y, v.z);
             borderCount += contour.size();
             count+=o.getObject().getSize();
             intensity+=BasicMeasurements.getSum(o.getObject(), input, true);

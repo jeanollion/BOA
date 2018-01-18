@@ -92,6 +92,7 @@ import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SimpleTranslation;
 import plugins.legacy.SuppressCentralHorizontalLine;
+import plugins.plugins.measurements.Focus;
 import plugins.plugins.measurements.objectFeatures.MeanAtBorder;
 import plugins.plugins.postFilters.RemoveEndofChannelBacteria;
 import plugins.plugins.preFilter.ImageFeature;
@@ -507,6 +508,7 @@ public class GenerateXP {
             xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));
             xp.addMeasurement(new ObjectFeatures(2).addFeatures(new Quality()));
             xp.addMeasurement(new RelativePosition(1, 0, 1, 2));
+            xp.addMeasurement(new Focus(1));
         }
     }
     

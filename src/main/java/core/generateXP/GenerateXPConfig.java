@@ -32,9 +32,9 @@ import utils.JSONUtils;
  */
 public class GenerateXPConfig {
     public static void main(String[] args) {
-        String path = "/home/jollion/Fiji.app/plugins/BOA"; // portable
+        //String path = "/home/jollion/Fiji.app/plugins/BOA"; // portable
         //String path = "/home/jollion/Documents/FijiMapDB3/Fiji.app/plugins/BOA";
-        //String path = "/data/Images/Fiji.app/plugins/BOA"; // LJP
+        String path = "/data/Images/Fiji.app/plugins/BOA"; // LJP
         Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, true, 0, 0, Double.NaN, null);
         exportXP(path, xpFluo, false);
         
@@ -50,10 +50,10 @@ public class GenerateXPConfig {
         
     }
     private static void exportXP(String dir, Experiment xp, boolean zip) {
-        if (!zip) FileIO.writeToFile(dir+File.separator+xp.getName()+"Config.txt", new ArrayList<Experiment>(){{add(xp);}}, o->JSONUtils.serialize(o));
+        if (!zip) FileIO.writeToFile(dir+File.separator+xp.getName()+"Config.json", new ArrayList<Experiment>(){{add(xp);}}, o->JSONUtils.serialize(o));
         else {
             FileIO.ZipWriter w = new FileIO.ZipWriter(dir+File.separator+xp.getName()+".zip");
-            w.write("config.txt", new ArrayList<Experiment>(1){{add(xp);}}, o->JSONUtils.serialize(o));
+            w.write("config.json", new ArrayList<Experiment>(1){{add(xp);}}, o->JSONUtils.serialize(o));
             w.close();
         }
     }

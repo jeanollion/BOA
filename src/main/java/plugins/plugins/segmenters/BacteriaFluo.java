@@ -213,9 +213,9 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         seg.setTestMode(debug);
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(1.5)); // min = 1.5
         seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)); // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5
-        seg.setSecondaryThresholdMap(splitAndMerge.getHessian());
+        seg.setSecondaryThresholdMap(splitAndMerge.getHessian()); // not efficient when hyperfluo cells but not saturated..
+        //seg.setThrehsoldingMethod(0).setThresholder(new BackgroundThresholder(3, 3, 2).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu))); // useless if secondary map
         seg.setWsPriorityMap(getSmoothed(input));
-        //seg.setThresholder(new BackgroundThresholder(4, 4, 1).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu))); // useless if secondary map
         RegionPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
         if (false) { // when done on gradient -> intermediate regions are kept -> remove using hessian value
             double thresholdHess = IJAutoThresholder.runThresholder(splitAndMerge.getHessian(), parent.getMask(), AutoThresholder.Method.Otsu);
