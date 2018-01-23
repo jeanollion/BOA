@@ -212,11 +212,12 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         EdgeDetector seg = new EdgeDetector(); // keep defaults parameters ? 
         seg.setTestMode(debug);
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(1.5)); // min = 1.5
-        seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)); // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5
+        seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)); // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2)
         seg.setSecondaryThresholdMap(splitAndMerge.getHessian()); // not efficient when hyperfluo cells but not saturated..
         //seg.setThrehsoldingMethod(0).setThresholder(new BackgroundThresholder(3, 3, 2).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu))); // useless if secondary map
         seg.setWsPriorityMap(getSmoothed(input));
         RegionPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
+        
         if (false) { // when done on gradient -> intermediate regions are kept -> remove using hessian value
             double thresholdHess = IJAutoThresholder.runThresholder(splitAndMerge.getHessian(), parent.getMask(), AutoThresholder.Method.Otsu);
             if (debug) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(splitPop, splitAndMerge.getHessian()).setName("Hessian Value Map. Threshold: "+thresholdHess));
@@ -246,33 +247,25 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         */
         
         boolean localThreshold = true;
+        double iqrFactor = 1.25; // TODO : parameter
         if (localThreshold) {
-            // TODO LOG TO FILE NE FCT PLUS!!
-            // local threshold on each cell // TODO: MOP: teser la robustesse des differentes methodes en mesurant le sigma du growth rate
             Image erodeMap = getSmoothed(input);
             if (debug) ImageWindowManagerFactory.showImage(erodeMap);
-            RegionCluster<SplitAndMerge.Interface> inter = splitAndMerge.getInterfaces(res, false);
             for (Region o : res.getObjects()) {
-                Set<Voxel> contour = new HashSet<>(o.getContour());
-                Set<SplitAndMerge.Interface> inters = inter.getInterfaces(o);
-                Set<Voxel> interVox = new HashSet<>();
-                for (SplitAndMerge.Interface i : inters) interVox.addAll(i.getVoxels());
-                interVox.retainAll(contour);
-                contour.removeAll(interVox);
-                double thld = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.075); // TODO set quantile as parameter
-                o.erodeContours(erodeMap, thld, true, interVox); // only erode from interface
-                /*double thld2 = ArrayUtil.quantile(Utils.transform(contour, v->(double)erodeMap.getPixel(v.x, v.y, v.z)), 0.075); // case of first and last cells
-                o.erodeContours(erodeMap, thld2, true, contour);
-                logger.debug("o: {} before dilate: {}, thld: {}, thld2: {}", o.getLabel(), o.getVoxels().size(), thld2);
-                o.dilateContours(erodeMap, thld2, true, null, res.getLabelMap());
-                logger.debug("after dilate: {}", o.getVoxels().size());*/
+                List<Double> values = Utils.transform(o.getVoxels(), v->(double)erodeMap.getPixel(v.x, v.y, v.z));
+                double q1 = ArrayUtil.quantile(values, 0.25); 
+                double q2 = ArrayUtil.quantile(values, 0.5); 
+                double q3 = ArrayUtil.quantile(values, 0.75); 
+                double thld = q2 - iqrFactor * (q3-q1);
+                double min = values.get(0);
+                if (min<thld) o.erodeContours(erodeMap, thld, true, o.getContour());
+                if (debug) logger.debug("Region: {} erode contour: med: {} iqr: {}, thld: {}, min: {}", o.getLabel(), q2, q3-q1, thld, min);
             }
             res.redrawLabelMap(true);
             res = new RegionPopulation(res.getLabelMap(), true); // update bounds of objects
-            
             if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
-        
         }
+        
         res.filter(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         res.filter(new RegionPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
         

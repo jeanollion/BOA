@@ -98,6 +98,7 @@ import plugins.plugins.postFilters.RemoveEndofChannelBacteria;
 import plugins.plugins.preFilter.ImageFeature;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.trackPostFilter.RemoveMicrochannelsTouchingBackgroundOnSides;
+import plugins.plugins.trackPostFilter.RemoveMicrochannelsWithOverexpression;
 import plugins.plugins.trackPostFilter.RemoveSaturatedMicrochannels;
 import plugins.plugins.trackPostFilter.RemoveTrackByFeature;
 import plugins.plugins.trackPostFilter.SegmentationPostFilter;
@@ -478,9 +479,9 @@ public class GenerateXP {
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
                     ).addTrackPostFilters(new RemoveMicrochannelsTouchingBackgroundOnSides(2),
+                            new RemoveMicrochannelsWithOverexpression(99, 5).setTrim(true),
                             new TrackLengthFilter().setMinSize(5), 
-                            new RemoveTracksStartingAfterFrame(), 
-                            new RemoveSaturatedMicrochannels())
+                            new RemoveTracksStartingAfterFrame())
             );
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(
@@ -503,7 +504,7 @@ public class GenerateXP {
             xp.clearMeasurements();
             xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));
             xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Size().setScale(true), new FeretMax().setScale(true), new Mean().setIntensityStructure(1)));
-            xp.addMeasurement(new ObjectFeatures(1).addFeature(new MeanAtBorder().setIntensityStructure(1), "GradientMean").addPreFilter(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2.5)));
+            xp.addMeasurement(new ObjectFeatures(1).addFeature(new MeanAtBorder().setIntensityStructure(1), "IntensityBorderMeanGrad").addPreFilter(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2.5)));
             xp.addMeasurement(new MutationTrackMeasurements(1, 2));
             xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));
             xp.addMeasurement(new ObjectFeatures(2).addFeatures(new Quality()));

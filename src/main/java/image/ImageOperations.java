@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import processing.Filters;
 import utils.Utils;
 
@@ -742,7 +743,7 @@ public class ImageOperations {
         return min;
     }
     
-    public static double[] getMeanAndSigma(Image image, ImageMask mask, Function<Double, Boolean> useValue) {
+    public static double[] getMeanAndSigma(Image image, ImageMask mask, Predicate<Double> useValue) {
         if (mask==null) mask = new BlankMask(image);
         double mean = 0;
         double count = 0;
@@ -752,7 +753,7 @@ public class ImageOperations {
             for (int xy = 0; xy < image.getSizeXY(); ++xy) {
                 if (mask.insideMask(xy, z)) {
                     value = image.getPixel(xy, z);
-                    if (useValue==null || useValue.apply(value)) {
+                    if (useValue==null || useValue.test(value)) {
                         mean += value;
                         count++;
                         values2 += value * value;

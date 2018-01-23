@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import static plugins.Plugin.logger;
 import plugins.Transformation;
 import utils.ThreadRunner;
@@ -119,7 +120,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
             if (testMode) testMasks.put(timePoint, exclusionMask.duplicate());
         }
         else exclusionMask = new BlankMask(image);
-        Function<Double, Boolean> func = excludeZero ? v -> v!=0: null;
+        Predicate<Double> func = excludeZero ? v -> v!=0: null;
         double[] res=  ImageOperations.getMeanAndSigma(image, exclusionMask, func);
         long t1 = System.currentTimeMillis();
         //logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}, processing time: {}", timePoint, res, exclusionSignal!=null, t1-t0);

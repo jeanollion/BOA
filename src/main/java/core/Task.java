@@ -454,9 +454,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         publishMemoryUsage("After clearing cache");
     }
     public void publishMemoryUsage(String message) {
-        long used = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        String of = Utils.getOpenedFileCount();
-        publish(message+" Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)"+(of.length()==0?"": " OpenedFiles: "+of));
+        publish(message+Utils.getMemoryUsage());
     }
     public void extractMeasurements(String dir, int[] structures) {
         if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());

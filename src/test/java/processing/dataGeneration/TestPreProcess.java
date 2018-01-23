@@ -179,7 +179,6 @@ public class TestPreProcess {
         for (int t = 0; t<=(tEnd-tStart); ++t) input.add(images.getImage(channelIdx, t).duplicate("input"+t));
         Transformation stabilizer = stab.instanciatePlugin();
         stabilizer.computeConfigurationData(stab.getInputChannel(), images);
-        stab.setConfigurationData(stabilizer.getConfigurationData());
         images.addTransformation(stab.getInputChannel(), stab.getOutputChannels(), stabilizer);
         List<Image> output = new ArrayList<Image>(tEnd-tStart+1);
         for (int t = 0; t<=(tEnd-tStart); ++t) output.add(images.getImage(channelIdx, t).duplicate("output"+t));
