@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 import static plugins.Plugin.logger;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import utils.clustering.ClusterCollection;
@@ -48,11 +49,30 @@ public class SplitAndMerge {
     public final double splitThresholdValue, hessianScale;
     ClusterCollection.InterfaceFactory<Region, Interface> factory;
     boolean testMode;
-    
+    final Function<Set<Voxel>, Double> interfaceValue;
+    public SplitAndMerge(Image input, double splitThreshold, double hessianScale, Function<Set<Voxel>, Double> interfaceValue) {
+        rawIntensityMap=input;
+        splitThresholdValue=splitThreshold;
+        this.hessianScale=hessianScale;
+        this.interfaceValue=interfaceValue;
+    }
     public SplitAndMerge(Image input, double splitThreshold, double hessianScale) {
         rawIntensityMap=input;
         splitThresholdValue=splitThreshold;
         this.hessianScale=hessianScale;
+        interfaceValue = voxels->{
+            if (voxels.isEmpty()) {
+                return Double.NaN;
+            } else {
+                double hessSum = 0, intensitySum = 0;
+                getHessian();
+                for (Voxel v : voxels) {
+                    hessSum+=hessian.getPixel(v.x, v.y, v.z);
+                    intensitySum += rawIntensityMap.getPixel(v.x, v.y, v.z);
+                }
+                return hessSum / intensitySum;
+            }
+        };
     }
 
     public void setTestMode(boolean testMode) {
@@ -94,7 +114,7 @@ public class SplitAndMerge {
      * @param objectMergeLimit 
      * @return 
      */
-    protected RegionPopulation merge(RegionPopulation popWS, int minSize, int objectMergeLimit) {
+    public RegionPopulation merge(RegionPopulation popWS, int minSize, int objectMergeLimit) {
         RegionCluster.verbose=testMode;
         RegionCluster.mergeSort(popWS,  getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
         //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
@@ -113,27 +133,19 @@ public class SplitAndMerge {
         if (factory==null) factory = (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new Interface(e1, e2);
         return factory;
     }
-
+    
+    
+    
     public class Interface extends InterfaceRegionImpl<Interface> implements RegionCluster.InterfaceVoxels<Interface> {
         public double value;
         Set<Voxel> voxels;
         public Interface(Region e1, Region e2) {
             super(e1, e2);
-            voxels = new HashSet<Voxel>();
+            voxels = new HashSet<>();
         }
 
         @Override public void updateSortValue() {
-            if (voxels.isEmpty()) {
-                value = Double.NaN;
-            } else {
-                double hessSum = 0, intensitySum = 0;
-                getHessian();
-                for (Voxel v : voxels) {
-                    hessSum+=hessian.getPixel(v.x, v.y, v.z);
-                    intensitySum += rawIntensityMap.getPixel(v.x, v.y, v.z);
-                }
-                value = hessSum / intensitySum;
-            }
+            value = interfaceValue.apply(voxels);
         }
 
         @Override 
@@ -163,7 +175,7 @@ public class SplitAndMerge {
             if (c==0) return super.compareElements(t, RegionCluster.regionComparator);
             else return c;
         }
-
+        @Override
         public Collection<Voxel> getVoxels() {
             return voxels;
         }

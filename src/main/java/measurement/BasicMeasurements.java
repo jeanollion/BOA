@@ -24,9 +24,11 @@ import image.BoundingBox.LoopFunction;
 import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import static plugins.Plugin.logger;
+import utils.ArrayUtil;
 
 /**
  *
@@ -130,15 +132,14 @@ public class BasicMeasurements {
         }
         return min;
     }
-    public static double getPercentileValue(Region object, double percentile, Image image, boolean useOffset) {
-        if (object.getVoxels().isEmpty()) return Double.NaN;
-        if (percentile<=0) return getMinValue(object, image, useOffset);
-        if (percentile>=1) return getMaxValue(object, image, useOffset);
-        object.setVoxelValues(image, useOffset);
-        Collections.sort(object.getVoxels());
-        double idxD = percentile * object.getVoxels().size();
-        int idx = (int) idxD;
-        double delta = idxD - idx;
-        return object.getVoxels().get(idx).value * (1 - delta) + (delta) * object.getVoxels().get(idx+1).value;
+    public static double[] getQuantileValue(Region object, Image image, boolean useOffset, double... quantiles) {
+        if (quantiles.length==0 || object.getVoxels().isEmpty()) return new double[0];
+        if (quantiles.length==1 && quantiles[0]<=0) return new double[]{getMinValue(object, image, useOffset)};
+        if (quantiles.length==1 && quantiles[0]>=1) return new double[]{getMaxValue(object, image, useOffset)};
+        float[] values = new float[object.getVoxels().size()];
+        int i = 0;
+        if (useOffset) for (Voxel v : object.getVoxels()) values[i++] = image.getPixelWithOffset(v.x, v.y, v.z);
+        else  for (Voxel v : object.getVoxels()) values[i++] = image.getPixel(v.x, v.y, v.z);
+        return ArrayUtil.quantiles(values, quantiles);
     }
 }

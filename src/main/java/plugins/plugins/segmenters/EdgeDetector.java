@@ -40,6 +40,7 @@ import image.ImageMask;
 import image.ImageProperties;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import measurement.BasicMeasurements;
 import plugins.PreFilter;
@@ -50,7 +51,9 @@ import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import processing.Filters;
 import processing.ImageFeatures;
+import processing.SplitAndMerge;
 import processing.WatershedTransform;
+import utils.ArrayUtil;
 
 /**
  *
@@ -127,9 +130,21 @@ public class EdgeDetector implements Segmenter {
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         WatershedTransform wt = new WatershedTransform(getWsMap(input, parent), parent.getMask(), Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, parent))), false, null, null);
         wt.setLowConnectivity(false);
-        //wt.setPriorityMap(getWsPriorityMap(input, parent));
         wt.run();
         RegionPopulation allRegions = wt.getObjectPopulation();
+        
+        /*
+        // merge background regions : Do not solve the problem of 2 class of foreground intensities: when around foregrond region of highest intensity, background regions are of intensity comparable to lower foreground regions
+        double thldMerge = IJAutoThresholder.runThresholder(input, parent.getMask(), AutoThresholder.Method.Triangle);
+        if (testMode) logger.debug("thld: {}", thldMerge);
+        SplitAndMerge sm = new SplitAndMerge(input, thldMerge, 1, s->{
+            float[] values = new float[s.size()]; int i=0;
+            for (Voxel v : s) values[i++] = input.getPixel(v.x, v.y, v.z);
+            return ArrayUtil.quantiles(values, 0.5)[0];
+        });
+        sm.setTestMode(testMode);
+        sm.merge(allRegions, 3, 0);
+        */
         if (testMode) {
             ImageWindowManagerFactory.showImage(allRegions.getLabelMap().duplicate("Segmented Regions"));
             ImageWindowManagerFactory.showImage(seedMap.setName("Seeds"));
@@ -188,7 +203,9 @@ public class EdgeDetector implements Segmenter {
         return generateRegionValueMap(pop, image, null);
     }
     public static Image generateRegionValueMap(RegionPopulation pop, Image image, Map<Region, Double>[] values) {
-        Map<Region, Double> objectValues = pop.getObjects().stream().collect(Collectors.toMap(o->o, o->BasicMeasurements.getMeanValue(o, image, false)));
+        Function<Region, Double> valueFunction = r->BasicMeasurements.getQuantileValue(r, image, false, 0.5)[0];
+        //Function<Region, Double> valueFunction = o->BasicMeasurements.getMeanValue(o, image, false);
+        Map<Region, Double> objectValues = pop.getObjects().stream().collect(Collectors.toMap(o->o, valueFunction));
         if (values!=null) values[0] = objectValues;
         return generateRegionValueMap(image, objectValues);
     }

@@ -163,6 +163,9 @@ public class Processor {
         if (deleteObjects) {
             if (structures.length==0 || structures.length==xp.getStructureCount()) dao.deleteAllObjects();
             else dao.deleteObjectsByStructureIdx(structures);
+            ImageDAO imageDAO = xp.getImageDAO();
+            if (structures.length==0) for (int s : xp.getStructuresInHierarchicalOrderAsArray()) imageDAO.deleteTrackImages(dao.getPositionName(), s);
+            else for (int s : structures) imageDAO.deleteTrackImages(dao.getPositionName(), s);
         } 
         List<StructureObject> root = getOrCreateRootTrack(dao);
         if (root==null || root.isEmpty()) {

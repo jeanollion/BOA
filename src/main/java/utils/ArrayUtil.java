@@ -441,7 +441,21 @@ public class ArrayUtil {
         if (delta==0 || idx==list.size()-1) return list.get(idxInf);
         else return list.get(idxInf) * (1-delta) + list.get(idxInf+1) * delta;
     }
-    
+    public static double[] quantiles(float[] values, double... quantile) {
+        if (quantile.length==0) return new double[0];
+        Arrays.sort(values);
+        double[] res = new double[quantile.length];
+        for (int qIdx = 0; qIdx<quantile.length; ++qIdx) {
+            double idxD = quantile[qIdx] * (values.length-1);
+            if (idxD<0) idxD=0;
+            else if (idxD>values.length-1) idxD = values.length-1;
+            int idx = (int) idxD;
+            double delta = idxD - idx;
+            if (delta==0) res[qIdx] = values[idx];
+            else res[qIdx] = (1 - delta) * values[idx]  + (delta) * values[idx+1];
+        }
+        return res;
+    }
     public static int[] toInt(float[] array) {
         int[] res= new int[array.length];
         for (int i = 0; i<array.length; ++i) res[i] = Math.round(array[i]);
