@@ -21,18 +21,18 @@ import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectUtils;
-import image.BoundingBox;
-import image.Image;
-import image.ImageInteger;
+import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
+import boa.image.BoundingBox;
+import boa.image.Image;
+import boa.image.ImageInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import utils.Pair;
+import boa.utils.Pair;
 
 /**
  *

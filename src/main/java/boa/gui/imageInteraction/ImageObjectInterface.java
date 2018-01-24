@@ -18,16 +18,16 @@
 package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
-import dataStructure.objects.StructureObject;
-import image.BoundingBox;
-import image.Image;
-import image.ImageInteger;
+import boa.data_structure.StructureObject;
+import boa.image.BoundingBox;
+import boa.image.Image;
+import boa.image.ImageInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import utils.Pair;
+import boa.utils.Pair;
 
 /**
  *

@@ -23,15 +23,15 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJVirtualStack;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import core.DefaultWorker;
-import core.Processor;
-import dataStructure.configuration.MicroscopyField;
-import dataStructure.containers.InputImages;
-import dataStructure.objects.Selection;
-import dataStructure.objects.SelectionDAO;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectUtils;
-import image.Image;
+import boa.core.DefaultWorker;
+import boa.core.Processor;
+import boa.configuration.experiment.MicroscopyField;
+import boa.data_structure.input_image.InputImages;
+import boa.data_structure.Selection;
+import boa.data_structure.dao.SelectionDAO;
+import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
+import boa.image.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,8 +47,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import utils.ThreadRunner;
-import utils.Utils;
+import boa.utils.ThreadRunner;
+import boa.utils.Utils;
 
 /**
  *

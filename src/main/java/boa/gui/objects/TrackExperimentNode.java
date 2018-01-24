@@ -17,7 +17,7 @@
  */
 package boa.gui.objects;
 
-import dataStructure.objects.StructureObject;
+import boa.data_structure.StructureObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

@@ -19,8 +19,8 @@ package boa.gui.objects;
 
 import boa.gui.GUI;
 import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
-import dataStructure.configuration.Experiment;
-import dataStructure.objects.StructureObject;
+import boa.configuration.experiment.Experiment;
+import boa.data_structure.StructureObject;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -37,11 +37,11 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import static boa.gui.GUI.logger;
 import boa.gui.configuration.TrackTreeCellRenderer;
-import boa.gui.selection.SelectionUtils;
-import dataStructure.objects.MasterDAO;
-import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.Selection;
-import dataStructure.objects.StructureObjectUtils;
+import boa.data_structure.SelectionUtils;
+import boa.data_structure.dao.MasterDAO;
+import boa.data_structure.dao.ObjectDAO;
+import boa.data_structure.Selection;
+import boa.data_structure.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,8 +51,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.tree.MutableTreeNode;
-import utils.HashMapGetCreate;
-import utils.Utils;
+import boa.utils.HashMapGetCreate;
+import boa.utils.Utils;
 /**
  *
  * @author nasique

@@ -17,10 +17,10 @@
  */
 package boa.gui.imageInteraction;
 
-import dataStructure.objects.StructureObject;
-import image.BoundingBox;
+import boa.data_structure.StructureObject;
+import boa.image.BoundingBox;
 import java.util.List;
-import utils.Pair;
+import boa.utils.Pair;
 
 /**
  *

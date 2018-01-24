@@ -18,7 +18,7 @@
 package boa.gui.selection;
 
 import static boa.gui.GUI.logger;
-import dataStructure.objects.Selection;
+import boa.data_structure.Selection;
 import java.awt.Color;
 import java.awt.Component;
 import javax.swing.ImageIcon;

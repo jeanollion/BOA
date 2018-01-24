@@ -21,12 +21,12 @@ import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import core.Processor;
-import dataStructure.configuration.Experiment;
-import dataStructure.objects.Selection;
-import dataStructure.objects.SelectionDAO;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectUtils;
+import boa.core.Processor;
+import boa.configuration.experiment.Experiment;
+import boa.data_structure.Selection;
+import boa.data_structure.dao.SelectionDAO;
+import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,9 +40,9 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import utils.Pair;
-import utils.ThreadRunner;
-import utils.ThreadRunner.ThreadAction;
+import boa.utils.Pair;
+import boa.utils.ThreadRunner;
+import boa.utils.ThreadRunner.ThreadAction;
 
 /**
  *

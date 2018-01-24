@@ -18,18 +18,18 @@
 package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
-import dataStructure.configuration.Experiment;
-import dataStructure.configuration.MicroscopyField;
-import dataStructure.containers.ImageDAO;
+import boa.configuration.experiment.Experiment;
+import boa.configuration.experiment.MicroscopyField;
+import boa.data_structure.dao.ImageDAO;
 import ij.ImagePlus;
 import ij.VirtualStack;
 import ij.measure.Calibration;
 import ij.process.ImageProcessor;
-import image.BlankMask;
-import image.BoundingBox;
-import image.IJImageWrapper;
-import image.Image;
-import static image.Image.logger;
+import boa.image.BlankMask;
+import boa.image.BoundingBox;
+import boa.image.IJImageWrapper;
+import boa.image.Image;
+import static boa.image.Image.logger;
 import java.awt.Font;
 import java.awt.image.ColorModel;
 import java.io.File;

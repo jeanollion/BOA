@@ -20,10 +20,10 @@ package boa.gui.objects;
 import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
 import static boa.gui.GUI.logger;
 import boa.gui.configuration.TransparentTreeCellRenderer;
-import dataStructure.configuration.Experiment;
-import dataStructure.objects.MasterDAO;
-import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.StructureObject;
+import boa.configuration.experiment.Experiment;
+import boa.data_structure.dao.MasterDAO;
+import boa.data_structure.dao.ObjectDAO;
+import boa.data_structure.StructureObject;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -38,7 +38,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import utils.Utils;
+import boa.utils.Utils;
 
 /**
  *

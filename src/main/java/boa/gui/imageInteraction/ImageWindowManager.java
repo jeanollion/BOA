@@ -19,17 +19,17 @@ package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
-import core.DefaultWorker;
-import static dataStructure.objects.Measurements.asString;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectUtils;
-import static dataStructure.objects.StructureObjectUtils.frameComparator;
-import static dataStructure.objects.StructureObjectUtils.setAllChildren;
+import boa.core.DefaultWorker;
+import static boa.data_structure.Measurements.asString;
+import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
+import static boa.data_structure.StructureObjectUtils.frameComparator;
+import static boa.data_structure.StructureObjectUtils.setAllChildren;
 import ij.ImagePlus;
-import image.BoundingBox;
-import image.Image;
-import image.ImageInteger;
-import image.ImageOperations;
+import boa.image.BoundingBox;
+import boa.image.Image;
+import boa.image.ImageInteger;
+import boa.image.processing.ImageOperations;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Toolkit;
@@ -63,16 +63,16 @@ import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingWorker;
-import measurement.extraction.DataExtractor;
-import utils.ArrayFileWriter;
-import utils.HashMapGetCreate;
-import utils.HashMapGetCreate.Factory;
-import utils.HashMapGetCreate.SetFactory;
-import utils.Pair;
-import static utils.Pair.unpairKeys;
-import static utils.Pair.unpairValues;
-import utils.Palette;
-import utils.Utils;
+import boa.measurement.MeasurementExtractor;
+import boa.utils.ArrayFileWriter;
+import boa.utils.HashMapGetCreate;
+import boa.utils.HashMapGetCreate.Factory;
+import boa.utils.HashMapGetCreate.SetFactory;
+import boa.utils.Pair;
+import static boa.utils.Pair.unpairKeys;
+import static boa.utils.Pair.unpairValues;
+import boa.utils.Palette;
+import boa.utils.Utils;
 
 /**
  *
@@ -1192,7 +1192,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
     }
     private static String toString(Object o) {
-        return asString(o, DataExtractor.numberFormater);
+        return asString(o, MeasurementExtractor.numberFormater);
         //return o instanceof Number ? Utils.format((Number) o, 3) : o.toString();
     }   
 }

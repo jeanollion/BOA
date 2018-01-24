@@ -18,7 +18,7 @@
 package boa.gui.objects;
 
 import static boa.gui.GUI.logger;
-import dataStructure.objects.StructureObject;
+import boa.data_structure.StructureObject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;

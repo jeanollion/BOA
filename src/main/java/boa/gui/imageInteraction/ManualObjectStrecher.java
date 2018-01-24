@@ -18,25 +18,25 @@
 package boa.gui.imageInteraction;
 
 import boa.gui.ManualCorrection;
-import dataStructure.objects.Region;
-import dataStructure.objects.RegionPopulation;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.Voxel;
-import image.BoundingBox;
-import image.Image;
-import image.ImageByte;
-import image.ImageInteger;
-import image.ImageLabeller;
-import image.ImageOperations;
-import image.ObjectFactory;
+import boa.data_structure.Region;
+import boa.data_structure.RegionPopulation;
+import boa.data_structure.StructureObject;
+import boa.data_structure.Voxel;
+import boa.image.BoundingBox;
+import boa.image.Image;
+import boa.image.ImageByte;
+import boa.image.ImageInteger;
+import boa.image.ImageLabeller;
+import boa.image.processing.ImageOperations;
+import boa.image.processing.ObjectFactory;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import processing.FillHoles2D;
-import processing.Filters;
-import utils.Pair;
-import utils.Utils;
+import boa.image.processing.FillHoles2D;
+import boa.image.processing.Filters;
+import boa.utils.Pair;
+import boa.utils.Utils;
 
 /**
  *

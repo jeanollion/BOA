@@ -16,15 +16,15 @@
 package boa.gui.configuration;
 
 import static boa.gui.GUI.logger;
-import dataStructure.configuration.Experiment;
-import configuration.parameters.ListParameter;
-import configuration.parameters.ui.ListParameterUI;
-import configuration.parameters.Parameter;
-import configuration.parameters.ui.ParameterUI;
-import configuration.parameters.ui.ArmableUI;
-import configuration.parameters.ui.ChoiceParameterUI;
-import configuration.parameters.ui.MultipleChoiceParameterUI;
-import dataStructure.configuration.PreProcessingChain.PreProcessingChainUI;
+import boa.configuration.experiment.Experiment;
+import boa.configuration.parameters.ListParameter;
+import boa.configuration.parameters.ui.ListParameterUI;
+import boa.configuration.parameters.Parameter;
+import boa.configuration.parameters.ui.ParameterUI;
+import boa.configuration.parameters.ui.ArmableUI;
+import boa.configuration.parameters.ui.ChoiceParameterUI;
+import boa.configuration.parameters.ui.MultipleChoiceParameterUI;
+import boa.configuration.experiment.PreProcessingChain.PreProcessingChainUI;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Rectangle;

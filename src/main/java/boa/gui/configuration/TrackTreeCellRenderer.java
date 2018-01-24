@@ -20,7 +20,7 @@ package boa.gui.configuration;
 import boa.gui.objects.RootTrackNode;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeGenerator;
-import dataStructure.objects.StructureObject;
+import boa.data_structure.StructureObject;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.Collection;

@@ -17,14 +17,14 @@
  */
 package boa.gui.imageInteraction;
 
-import image.BoundingBox;
-import image.Histogram;
-import static image.IJImageWrapper.getStackIndex;
-import image.Image;
-import static image.Image.logger;
-import image.ImageInteger;
-import image.ImageMask;
-import image.ImageOperations;
+import boa.image.BoundingBox;
+import boa.image.Histogram;
+import static boa.image.IJImageWrapper.getStackIndex;
+import boa.image.Image;
+import static boa.image.Image.logger;
+import boa.image.ImageInteger;
+import boa.image.ImageMask;
+import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;

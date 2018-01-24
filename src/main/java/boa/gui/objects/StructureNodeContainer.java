@@ -17,7 +17,7 @@
  */
 package boa.gui.objects;
 
-import dataStructure.objects.StructureObject;
+import boa.data_structure.StructureObject;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 

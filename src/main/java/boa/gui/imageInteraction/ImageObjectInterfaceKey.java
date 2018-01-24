@@ -17,7 +17,7 @@
  */
 package boa.gui.imageInteraction;
 
-import dataStructure.objects.StructureObject;
+import boa.data_structure.StructureObject;
 import java.util.List;
 import java.util.Map;
 

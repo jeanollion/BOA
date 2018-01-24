@@ -15,9 +15,9 @@
  */
 package boa.gui.configuration;
 
-import configuration.parameters.ContainerParameter;
-import configuration.parameters.ListParameter;
-import configuration.parameters.Parameter;
+import boa.configuration.parameters.ContainerParameter;
+import boa.configuration.parameters.ListParameter;
+import boa.configuration.parameters.Parameter;
 import java.util.ArrayList;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;

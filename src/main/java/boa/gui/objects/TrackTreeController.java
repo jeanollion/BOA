@@ -19,9 +19,9 @@ package boa.gui.objects;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
-import dataStructure.objects.MasterDAO;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectUtils;
+import boa.data_structure.dao.MasterDAO;
+import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

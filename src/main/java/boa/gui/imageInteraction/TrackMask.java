@@ -17,21 +17,21 @@
  */
 package boa.gui.imageInteraction;
 
-import core.DefaultWorker;
-import core.DefaultWorker.WorkerTask;
+import boa.core.DefaultWorker;
+import boa.core.DefaultWorker.WorkerTask;
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectUtils;
+import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
 import ij.plugin.filter.MaximumFinder;
-import image.BlankMask;
-import image.BoundingBox;
-import image.Image;
-import image.ImageInteger;
-import image.ImageOperations;
-import static image.ImageOperations.pasteImage;
+import boa.image.BlankMask;
+import boa.image.BoundingBox;
+import boa.image.Image;
+import boa.image.ImageInteger;
+import boa.image.processing.ImageOperations;
+import static boa.image.processing.ImageOperations.pasteImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,7 +45,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import utils.Pair;
+import boa.utils.Pair;
 
 /**
  *

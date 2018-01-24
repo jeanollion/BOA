@@ -19,7 +19,7 @@ package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
 import static boa.gui.imageInteraction.ImageWindowManagerFactory.ImageEnvironnement.IJ;
-import image.Image;
+import boa.image.Image;
 
 /**
  *

@@ -17,16 +17,16 @@
  */
 package boa.gui.imageInteraction;
 
-import configuration.parameters.Parameter;
-import dataStructure.objects.Region;
-import dataStructure.objects.RegionPopulation;
-import dataStructure.objects.RegionPopulation.Filter;
-import dataStructure.objects.StructureObject;
-import image.BoundingBox;
-import image.Image;
-import image.ImageByte;
-import image.ImageInteger;
-import image.ImageLabeller;
+import boa.configuration.parameters.Parameter;
+import boa.data_structure.Region;
+import boa.data_structure.RegionPopulation;
+import boa.data_structure.RegionPopulation.Filter;
+import boa.data_structure.StructureObject;
+import boa.image.BoundingBox;
+import boa.image.Image;
+import boa.image.ImageByte;
+import boa.image.ImageInteger;
+import boa.image.ImageLabeller;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -34,10 +34,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang.ArrayUtils;
-import plugins.ObjectSplitter;
-import processing.neighborhood.EllipsoidalNeighborhood;
-import processing.neighborhood.Neighborhood;
-import utils.Pair;
+import boa.plugins.ObjectSplitter;
+import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
+import boa.image.processing.neighborhood.Neighborhood;
+import boa.utils.Pair;
 
 /**
  *
