@@ -25,15 +25,15 @@ import boa.image.ImageShort;
 import boa.image.TypeConverter;
 import ij.ImagePlus;
 import static boa.image.IJImageWrapper.getImagePlus;
-import mpicbg.imglib.image.display.imagej.ImageJFunctions;
-import mpicbg.imglib.type.numeric.RealType;
+//import mpicbg.imglib.image.display.imagej.ImageJFunctions;
+//import mpicbg.imglib.type.numeric.RealType;
 
 /**
  *
  * @author jollion
  */
 public class ImgLib1ImageWrapper {
-    
+    /*
     public static < T extends RealType< T >> Image wrap(mpicbg.imglib.image.Image<T> image) {
         ImagePlus ip = ImageJFunctions.copyToImagePlus(image);
         return IJImageWrapper.wrap(ip);
@@ -47,4 +47,5 @@ public class ImgLib1ImageWrapper {
         else if (image instanceof ImageByte) return ImageJFunctions.wrapByte(ip);
         else return null;
     }
+    */
 }

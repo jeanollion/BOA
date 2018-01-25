@@ -149,7 +149,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
         if (readOnly) return;
         if (db.isClosed()) makeDB();
         if (commit) this.db.commit();
-        this.db.compact();
+        //this.db.compact();
     }
     private synchronized void close(boolean commit) {
         if (db.isClosed()) return;

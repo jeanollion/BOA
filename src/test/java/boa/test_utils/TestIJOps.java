@@ -46,7 +46,7 @@ import boa.utils.Utils;
  */
 public class TestIJOps {
     public static void main(String[] args) {
-        final ImageJ ij = new ImageJ();
+        /*final ImageJ ij = new ImageJ();
         //ij.launch(args);
         
         logger.debug("ops: {}", ij.op().ops());
@@ -83,6 +83,8 @@ public class TestIJOps {
         ij.op().run(dog, out, converted, 1.0, 1.25, null);
         Image res = ImgLib2ImageWrapper.wrap((RandomAccessibleInterval)out).setName("res");
         ImageWindowManagerFactory.showImage(res);
+        
+        */
         /*Module mod = ij.op().module(gauss, out, img, 2d, null);
         try {
             mod.initialize();

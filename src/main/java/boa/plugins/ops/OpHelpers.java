@@ -36,12 +36,15 @@ import boa.utils.Utils;
  * @author jollion
  */
 public class OpHelpers {
+    // need further version of IJ2 to work
+    /*
     public static final Logger logger = LoggerFactory.getLogger(OpHelpers.class);
     final OpService service;
     public OpHelpers(OpService service) {
         this.service=service;
     }
     public static OpParameter[] getParameters(OpInfo info) {
+        
         List<ModuleItem<?>> params = info.inputs();
         params.removeIf(p->!p.isPersisted()||p.getIOType()!=ItemIO.INPUT);
         List<OpParameter> res = Utils.transform(params, p->mapParameter(p));
@@ -77,5 +80,5 @@ public class OpHelpers {
     public static boolean isImage(ModuleItem<?> param) {
         return RandomAccessible.class.isAssignableFrom(param.getType());
     }
-    
+    */
 }

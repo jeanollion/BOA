@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.transformations;
+package boa.plugins.legacy;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.TimePointParameter;
@@ -26,10 +26,10 @@ import boa.image.wrappers.ImgLib1ImageWrapper;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import mpicbg.imglib.algorithm.fft.PhaseCorrelation;
-import mpicbg.stitching.PairWiseStitchingImgLib;
-import mpicbg.stitching.PairWiseStitchingResult;
-import mpicbg.stitching.StitchingParameters;
+//import mpicbg.imglib.algorithm.fft.PhaseCorrelation;
+//import mpicbg.stitching.PairWiseStitchingImgLib;
+//import mpicbg.stitching.PairWiseStitchingResult;
+//import mpicbg.stitching.StitchingParameters;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.complex.ComplexFloatType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -46,6 +46,14 @@ public class ImageStabilizer {
     ArrayList<ArrayList<Double>> translationTXYZ = new ArrayList<ArrayList<Double>>();
     TimePointParameter ref = new TimePointParameter("Reference time point", 50, true);
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
+        /*
+        depends on:
+        <!--dependency>
+            <groupId>sc.fiji</groupId>
+            <artifactId>Stitching_</artifactId>
+            <version>3.0.3-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency-->
         int defTp = ref.getSelectedTimePoint();
         mpicbg.imglib.image.Image imRef = ImgLib1ImageWrapper.getImage(inputImages.getImage(channelIdx, defTp));
         translationTXYZ = new ArrayList<ArrayList<Double>>(inputImages.getFrameNumber());
@@ -58,12 +66,12 @@ public class ImageStabilizer {
                 if (off.size()==2) off.add(0d);
                 translationTXYZ.add(off);
             } else translationTXYZ.add(new ArrayList<Double>(Arrays.asList(new Double[]{0d, 0d, 0d}))); //reference time point
-        }
-        /*final Img< FloatType > image;
-        final Img< FloatType > template;
-        final FourierTransform< FloatType, ComplexFloatType > fft =
-            new FourierTransform< FloatType, ComplexFloatType >(
-                template, new ComplexFloatType() );*/
+        }*/
+        //final Img< FloatType > image;
+        //final Img< FloatType > template;
+        //final FourierTransform< FloatType, ComplexFloatType > fft =
+        //    new FourierTransform< FloatType, ComplexFloatType >(
+        //        template, new ComplexFloatType() );*/
     }
     
     public ImageStabilizer setReferenceTimePoint(int timePoint) {

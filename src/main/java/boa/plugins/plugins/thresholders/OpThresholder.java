@@ -59,11 +59,12 @@ public class OpThresholder implements SimpleThresholder {
     }
 
     private void init() {
-        Collection<OpInfo> allOpsInfos = Core.getOpService().infos();
+        /*Collection<OpInfo> allOpsInfos = Core.getOpService().infos();
         allOpsInfos.removeIf(o->!o.isNamespace("threshold")||"apply".equals(o.getSimpleName())||(o.outputs().size()==1 && (o.outputs().get(0).getType()==RealType.class || Number.class.isAssignableFrom(o.outputs().get(0).getType()))));
         
         //net.imagej.ops.threshold.ApplyThresholdMethod;
         //allOps = new TreeMap<>(allOpsInfos.stream().collect(Collectors.toMap(o->o.getName(), o->o)));
+        
         allOps = new TreeMap<>();
         for (OpInfo info : allOpsInfos) {
             if (allOps.containsKey(info.getSimpleName())) {
@@ -77,6 +78,7 @@ public class OpThresholder implements SimpleThresholder {
             String m = method.getSelectedItem();
             if (cond.getActionParameters(m)==null) cond.setActionParameters(m, OpHelpers.getParameters(allOps.get(m)));
         });
+        */
         // TODO: set listener -> when choose an op -> create the parameters, remove the others
     }
     @Override
@@ -92,7 +94,7 @@ public class OpThresholder implements SimpleThresholder {
 
     @Override
     public double runSimpleThresholder(Image image, ImageMask mask) {
-        String m = method.getSelectedItem();
+        /*String m = method.getSelectedItem();
         OpInfo info = allOps.get(m);
         List<ModuleItem<?>> inputs = info.inputs();
         Map<String, Object> values = cond.getParameters(m).stream().collect(Collectors.toMap(o->((OpParameter)o).getModuleItem().getName(), o->((OpParameter)o).getValue()));
@@ -111,7 +113,8 @@ public class OpThresholder implements SimpleThresholder {
         Object res = Core.getOpService().run(info.getName(), args);
         if (res instanceof RealType) return ((RealType)res).getRealDouble();
         else if (res instanceof Number) return ((Number)res).doubleValue();
-        else return Double.NaN;
+        else */return Double.NaN;
+                
     }
 
 }

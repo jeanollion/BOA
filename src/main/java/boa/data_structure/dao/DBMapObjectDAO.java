@@ -389,14 +389,14 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (onlyOpened) {
             for (DB db : this.dbS.values()) {
                 db.commit();
-                db.compact();
+                //db.compact();
             }
         } else {
             for (int s = -1; s<mDAO.getExperiment().getStructureCount(); ++s) {
                 if (dbS.keySet().contains(s)) {
                     dbS.get(s).commit();
-                    dbS.get(s).compact();
-                } else if (new File(getDBFile(s)).exists()) getDB(s).compact();
+                    //dbS.get(s).compact();
+                } //else if (new File(getDBFile(s)).exists()) getDB(s).compact();
             }
         }
     }
@@ -405,14 +405,14 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (onlyOpened) {
             for (Pair<DB, ?> p : this.measurementdbS.values()) {
                 p.key.commit();
-                p.key.compact();
+                //p.key.compact();
             }
         } else {
             for (int s = -1; s<mDAO.getExperiment().getStructureCount(); ++s) {
                 if (measurementdbS.keySet().contains(s)) {
                     measurementdbS.get(s).key.commit();
-                    measurementdbS.get(s).key.compact();
-                } else if (new File(this.getMeasurementDBFile(s)).exists()) this.getMeasurementDB(s).key.compact();
+                    //measurementdbS.get(s).key.compact();
+                } //else if (new File(this.getMeasurementDBFile(s)).exists()) this.getMeasurementDB(s).key.compact();
             }
         }
     }
