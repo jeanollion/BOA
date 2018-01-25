@@ -77,7 +77,10 @@ public class SplitAndMerge {
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
-     
+    public SplitAndMerge setMap(Image hessian) {
+        this.hessian = hessian;
+        return this;
+    }
     public Image getHessian() {
         if (hessian ==null) hessian=ImageFeatures.getHessian(rawIntensityMap, hessianScale, false)[0].setName("hessian");
         return hessian;

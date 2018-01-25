@@ -138,10 +138,17 @@ public class EdgeDetector implements Segmenter, ToolTip {
     }
     @Override
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        WatershedTransform wt = new WatershedTransform(getWsMap(input, parent), parent.getMask(), Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, parent))), false, null, null);
+        return runSegmenter(input, parent, parent.getMask());
+    }
+    public RegionPopulation partitionImage(Image input, StructureObjectProcessing parent, ImageMask mask) {
+        if (mask==null) mask=parent.getMask();
+        WatershedTransform wt = new WatershedTransform(getWsMap(input, parent), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, parent))), false, null, null);
         wt.setLowConnectivity(false);
         wt.run();
-        RegionPopulation allRegions = wt.getObjectPopulation();
+        return wt.getObjectPopulation();
+    }
+    public RegionPopulation runSegmenter(Image input, StructureObjectProcessing parent, ImageMask mask) {
+        RegionPopulation allRegions = partitionImage(input, parent, mask);
         
         /*
         // merge background regions : Do not solve the problem of 2 class of foreground intensities: when around foregrond region of highest intensity, background regions are of intensity comparable to lower foreground regions
@@ -175,16 +182,16 @@ public class EdgeDetector implements Segmenter, ToolTip {
         } else { // use of secondary map to select border regions and compute thld
             Map<Region, Double>[] values = new Map[1];
             Image valueMap = generateRegionValueMap(allRegions, input, values);
-            double thld1 = IJAutoThresholder.runThresholder(valueMap, parent.getMask(), AutoThresholder.Method.Otsu);
+            double thld1 = IJAutoThresholder.runThresholder(valueMap, mask, AutoThresholder.Method.Otsu);
             if (testMode) ImageWindowManagerFactory.showImage(valueMap.duplicate("Primary thld value map. Thld: "+thld1));
             Map<Region, Double>[] values2 = new Map[1];
             Image valueMap2 = generateRegionValueMap(allRegions, getSecondaryThresholdMap(input, parent), values2);
-            double thld2 = IJAutoThresholder.runThresholder(valueMap2, parent.getMask(), AutoThresholder.Method.Otsu);
+            double thld2 = IJAutoThresholder.runThresholder(valueMap2, mask, AutoThresholder.Method.Otsu);
             // select objects under thld2 | above thld -> foreground, interface ou backgruond. Others are interface or border (majority) and set value to thld on valueMap 
             for (Region o : allRegions.getObjects()) {
                 if (values[0].get(o)>=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
             }
-            Histogram h = valueMap.getHisto256(parent.getMask());
+            Histogram h = valueMap.getHisto256(mask);
             // search for largest segment with no values
             int sMax = 0, eMax = 0;
             for (int s = 0; s<254; ++s) {
@@ -213,7 +220,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
         return generateRegionValueMap(pop, image, null);
     }
     public static Image generateRegionValueMap(RegionPopulation pop, Image image, Map<Region, Double>[] values) {
-        Function<Region, Double> valueFunction = r->BasicMeasurements.getQuantileValue(r, image, false, 0.5)[0];
+        Function<Region, Double> valueFunction = valueFunction(image);
         //Function<Region, Double> valueFunction = o->BasicMeasurements.getMeanValue(o, image, false);
         Map<Region, Double> objectValues = pop.getObjects().stream().collect(Collectors.toMap(o->o, valueFunction));
         if (values!=null) values[0] = objectValues;
@@ -226,8 +233,8 @@ public class EdgeDetector implements Segmenter, ToolTip {
         }
         return valueMap;
     }
-    protected double getValue(Region o, Image input) {
-        return BasicMeasurements.getMeanValue(o, input, false);
+    protected static Function<Region, Double> valueFunction(Image image) {
+        return r->BasicMeasurements.getQuantileValue(r, image, false, 0.5)[0];
     }
     @Override
     public Parameter[] getParameters() {

@@ -68,28 +68,36 @@ import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 import boa.image.processing.clustering.RegionCluster;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup {
+public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup, ToolTip {
     public static boolean debug = false;
     
     // configuration-related attributes
     NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.3, 0, 1).setToolTipText("Higher value splits more"); // TODO was 0.12 before change of scale (hess *= sqrt(2pi)-> *2.5 // verifier si toujours ok
-    NumberParameter localThresholdFactor = new BoundedNumberParameter("Local Threshold Factor", 2, 1.25, 1, null).setToolTipText("After segmentation, values under T are removed. T = median value - inter-quartile * this factor. Lower value will yield in smaller cells");
+    NumberParameter localThresholdFactor = new BoundedNumberParameter("Local Threshold Factor", 2, 1.25, 1, null).setToolTipText("Factor defining the local threshold. T = median value - (inter-quartile) * (this factor). Lower value of this factor will yield in smaller cells");
     NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 100, 50, null).setToolTipText("Minimum Object Size in voxels");
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 50, 1, null).setToolTipText("After first segmentation, objects are splitted and merged according to a criterion on hessian/intensity @ border");
-    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 0, 5).setToolTipText("Scale for gaussian filtering (remove high frequency noise). In pixels");
+    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 0, 5).setToolTipText("Scale (pixels) for gaussian filtering (remove high frequency noise). Used for the local thresholding step");
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6);
     NumberParameter manualSegPropagationHessianThreshold = new BoundedNumberParameter("Manual Segmentation: Propagation NormedHessian Threshold", 3, 0.2, 0, null);
     
     Parameter[] parameters = new Parameter[]{splitThreshold, localThresholdFactor, minSize, smoothScale, hessianScale, manualSegPropagationHessianThreshold};
+    String toolTip = "<html>Intensity-based 2D segmentation <br />"
+            + "1) Foreground is detected using the plugin EdgeDetector using StructureMax as watershed map & the method secondary map using hessian max as secondary map <br />"
+            + "2) Forground region is split by applying a watershed transform on the maximal hessian eigen value, regions are then merged, using a criterion described in \"Split Threshold\" parameter<br />"
+            + "3) A local threshold is applied to each region. Threshold is set as described in \"Local Threshold Factor\" parameter. Propagating from contour voxels, all voxels with value on the smoothed image (\"Smooth scale\" parameter) under the local threshold is removed </html>";
+    
+    @Override
+    public String getToolTipText() {return toolTip;}
     
     //segmentation-related attributes (kept for split and merge methods)
     SplitAndMerge splitAndMerge;
-    Image smoothed, DoG, normalizedHessian;
+    Image smoothed, normalizedHessian;
     
     public BacteriaFluo setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
@@ -128,49 +136,27 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     }
     
     public Image getNormalizedHessian(Image input) {
-        if (normalizedHessian==null) {
-            Image gauss = ImageFeatures.gaussianSmooth(input, smoothScale.getValue().doubleValue(), false);
-            normalizedHessian=ImageOperations.divide(splitAndMerge.getHessian(), gauss, null).setName("NormalizedHessian");
-        } 
+        if (normalizedHessian==null) normalizedHessian=ImageOperations.divide(splitAndMerge.getHessian(), getSmoothed(input), null).setName("NormalizedHessian");
         return normalizedHessian;
     }
-    
-    @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        splitAndMerge = initializeSplitAndMerge(input);
-        
-        
+    private EdgeDetector initEdgeDetector() {
         EdgeDetector seg = new EdgeDetector(); // keep defaults parameters ? 
         seg.setTestMode(debug);
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2)); // min = 1.5
         seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)); // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2)
-        seg.setSecondaryThresholdMap(splitAndMerge.getHessian()); // not efficient when hyperfluo cells but not saturated..
+        //seg.setSecondaryThresholdMap(splitAndMerge.getHessian()); // not efficient when hyperfluo cells but not saturated..
+        seg.setThrehsoldingMethod(1).setThresholder(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu));
         //seg.setThrehsoldingMethod(0).setThresholder(new BackgroundThresholder(3, 3, 2).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu))); // useless if secondary map
-        seg.setWsPriorityMap(getSmoothed(input));
-        RegionPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
-        
+        //seg.setWsPriorityMap(getSmoothed(input));
+        return seg;
+    }
+    @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         splitAndMerge = initializeSplitAndMerge(input);
+        EdgeDetector seg = initEdgeDetector();
+        RegionPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
         RegionPopulation res = splitAndMerge.splitAndMerge(splitPop.getLabelMap(), minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 0);
-        
-        boolean localThreshold = true;
-        double iqrFactor = this.localThresholdFactor.getValue().doubleValue(); 
-        if (localThreshold) {
-            Image erodeMap = getSmoothed(input);
-            if (debug) ImageWindowManagerFactory.showImage(erodeMap);
-            for (Region o : res.getObjects()) {
-                List<Double> values = Utils.transform(o.getVoxels(), v->(double)erodeMap.getPixel(v.x, v.y, v.z));
-                double q1 = ArrayUtil.quantile(values, 0.25); 
-                double q2 = ArrayUtil.quantile(values, 0.5); 
-                double q3 = ArrayUtil.quantile(values, 0.75); 
-                double thld = q2 - iqrFactor * (q3-q1);
-                double min = values.get(0);
-                if (min<thld) o.erodeContours(erodeMap, thld, true, o.getContour());
-                if (debug) logger.debug("Region: {} erode contour: med: {} iqr: {}, thld: {}, min: {}", o.getLabel(), q2, q3-q1, thld, min);
-            }
-            res.redrawLabelMap(true);
-            res = new RegionPopulation(res.getLabelMap(), true); // update bounds of objects
-            if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
-        }
-        
+        localThreshold(input, res);
+        if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
         res.filter(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         res.filter(new RegionPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
         
@@ -185,6 +171,24 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             }
         }
         return res;
+    }
+    
+    private RegionPopulation localThreshold(Image input, RegionPopulation res) {
+        double iqrFactor = this.localThresholdFactor.getValue().doubleValue(); 
+        Image erodeMap = getSmoothed(input);
+        if (debug) ImageWindowManagerFactory.showImage(erodeMap);
+        for (Region o : res.getObjects()) {
+            List<Double> values = Utils.transform(o.getVoxels(), v->(double)erodeMap.getPixel(v.x, v.y, v.z));
+            double q1 = ArrayUtil.quantile(values, 0.25); 
+            double q2 = ArrayUtil.quantile(values, 0.5); 
+            double q3 = ArrayUtil.quantile(values, 0.75); 
+            double thld = q2 - iqrFactor * (q3-q1);
+            double min = values.get(0);
+            if (min<thld) o.erodeContours(erodeMap, thld, true, o.getContour());
+            if (debug) logger.debug("Region: {} erode contour: med: {} iqr: {}, thld: {}, min: {}", o.getLabel(), q2, q3-q1, thld, min);
+        }
+        res.redrawLabelMap(true);
+        return new RegionPopulation(res.getLabelMap(), true); // update bounds of objects
     }
     
     @Override
@@ -234,28 +238,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
 
         if (maxCost==Double.MIN_VALUE) return Double.POSITIVE_INFINITY;
         return BacteriaTrans.getCost(maxCost, splitAndMerge.splitThresholdValue, false);
-        /*
-        if (pv==null) throw new RuntimeException("Segment method have to be called before merge method in order to initialize images");
-        if (objects.isEmpty() || objects.size()==1) return 0;
-        synchronized(pv) {
-            double maxCost = Double.NEGATIVE_INFINITY;
-            RegionPopulation mergePop = new RegionPopulation(objects, pv.getSplitMask(), pv.getSplitMask(), false);
-            RegionCluster c = new RegionCluster(mergePop, false, pv.getFactory());
-            List<Set<Object3D>> clusters = c.getClusters();
-            logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
-            if (clusters.size()>1) { // merge impossible : presence of disconnected objects
-                if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
-                return Double.POSITIVE_INFINITY;
-            } 
-            Set<ProcessingVariables.InterfaceBF> allInterfaces = c.getInterfaces(clusters.get(0));
-            for (ProcessingVariables.InterfaceBF i : allInterfaces) {
-                i.updateSortValue();
-                if (i.value>maxCost) maxCost = i.value;
-            }
-            
-            if (maxCost==Double.MIN_VALUE) return Double.POSITIVE_INFINITY;
-            return BacteriaTrans.getCost(maxCost, pv.splitThresholdValue, false);
-        }*/
+        
     }
     
     private SplitAndMerge.Interface getInterface(Region o1, Region o2) {
@@ -268,28 +251,6 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         return inter;
     }
     
-    // manual correction implementations
-    private boolean verboseManualSeg;
-    @Override public void setManualSegmentationVerboseMode(boolean verbose) {
-        this.verboseManualSeg=verbose;
-    }
-
-    @Override public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
-        if (splitAndMerge==null) splitAndMerge=initializeSplitAndMerge(input);
-        List<Region> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
-        RegionPopulation pop =  WatershedTransform.watershed(splitAndMerge.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(getNormalizedHessian(input), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
-        
-        if (verboseManualSeg) {
-            Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
-            for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(splitAndMerge.getHessian());
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(getNormalizedHessian(input).setName("NormalizedHessian: for propagation limit"));
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
-        }
-        
-        return pop;
-    }
     
     // object splitter interface
     boolean splitVerbose;
@@ -320,6 +281,38 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         return pop;
     }
 
+    
+    // manual correction implementations
+    private boolean verboseManualSeg;
+    @Override public void setManualSegmentationVerboseMode(boolean verbose) {
+        this.verboseManualSeg=verbose;
+    }
+
+    @Override public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
+        if (splitAndMerge==null) splitAndMerge=initializeSplitAndMerge(input);
+        List<Region> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
+        EdgeDetector seg = initEdgeDetector();
+        RegionPopulation pop = seg.partitionImage(input, parent, segmentationMask);
+        pop = splitAndMerge.merge(pop, minSize.getValue().intValue(), 0);
+        pop.filter(o->{
+            for(Region so : seedObjects ) if (o.intersect(so)) return true;
+            return false;
+        });
+        localThreshold(input, pop);
+        //RegionPopulation pop =  WatershedTransform.watershed(splitAndMerge.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(getNormalizedHessian(input), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
+        
+        if (verboseManualSeg) {
+            Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
+            for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(splitAndMerge.getHessian());
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(getNormalizedHessian(input).setName("NormalizedHessian: for propagation limit"));
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
+        }
+        
+        return pop;
+    }
+    
     // ParameterSetup Implementation
     
     @Override public boolean canBeTested(String p) {
