@@ -231,7 +231,11 @@ public class PluginFactory {
         }
         return null;
     }
-
+    public static <T extends Plugin> Class<T> getPluginClass(Class<T> clazz, String className) {
+        Class plugClass = plugins.get(className);
+        if (plugClass==null && refactoredNames.containsKey(className)) plugClass = plugins.get(refactoredNames.get(className));
+        return plugClass;
+    }
     public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
         try {
             Class plugClass = plugins.get(className);

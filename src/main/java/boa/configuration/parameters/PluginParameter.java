@@ -312,7 +312,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         return allowNoSelection;
     }
     
-    protected Class<T> getPluginType() {
+    public Class<T> getPluginType() {
         if (pluginType==null) {
             try {
                 pluginType = (Class<T>) Class.forName(pluginTypeName);

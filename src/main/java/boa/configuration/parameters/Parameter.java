@@ -16,6 +16,7 @@
 package boa.configuration.parameters;
 
 import boa.configuration.parameters.ui.ParameterUI;
+import boa.plugins.ToolTip;
 import boa.utils.JSONSerializable;
 import java.util.ArrayList;
 import javax.swing.tree.MutableTreeNode;
@@ -26,7 +27,7 @@ import org.slf4j.Logger;
  * @author jollion
  */
 
-public interface Parameter extends MutableTreeNode, JSONSerializable {
+public interface Parameter extends MutableTreeNode, JSONSerializable, ToolTip {
     public static final Logger logger = LoggerFactory.getLogger(Parameter.class);
     public ArrayList<Parameter> getPath();
     public ParameterUI getUI();
@@ -36,6 +37,5 @@ public interface Parameter extends MutableTreeNode, JSONSerializable {
     public String getName();
     public void setName(String name);
     public String toStringFull();
-    public String getToolTipText();
     public <T extends Parameter> T setToolTipText(String text);
 }

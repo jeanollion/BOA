@@ -21,7 +21,11 @@ import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.ChoosableParameter;
 import boa.configuration.parameters.ConditionalParameter;
 import boa.configuration.parameters.ParameterUtils;
+import boa.configuration.parameters.PluginParameter;
 import boa.gui.configuration.ConfigurationTreeModel;
+import boa.plugins.Plugin;
+import boa.plugins.PluginFactory;
+import boa.plugins.ToolTip;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -85,6 +89,15 @@ public class ChoiceParameterUI implements ArmableUI {
                     }
                 }
             );
+            if (choice_ instanceof PluginParameter) { // TODO instead of instanciate: check tool tip from class
+                Class plugClass = PluginFactory.getPluginClass(((PluginParameter)choice_).getPluginType(), choices[i]);
+                if (plugClass!=null && ToolTip.class.isAssignableFrom(plugClass)) {
+                    Plugin p = PluginFactory.getPlugin(((PluginParameter)choice_).getPluginType(), choices[i]);
+                    if (p!=null) actionChoice[i].setToolTipText(((ToolTip)p).getToolTipText());
+                }
+                
+                
+            }
         }
         if (subMenuTitle!=null) {
             JMenu subMenu = new JMenu(subMenuTitle);

@@ -25,6 +25,9 @@ import boa.configuration.parameters.ui.ArmableUI;
 import boa.configuration.parameters.ui.ChoiceParameterUI;
 import boa.configuration.parameters.ui.MultipleChoiceParameterUI;
 import boa.configuration.experiment.PreProcessingChain.PreProcessingChainUI;
+import boa.configuration.parameters.PluginParameter;
+import boa.plugins.Plugin;
+import boa.plugins.ToolTip;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Rectangle;
@@ -82,9 +85,28 @@ public class ConfigurationTreeGenerator {
                 if (getRowForLocation(evt.getX(), evt.getY()) == -1) return null;
                 TreePath curPath = getPathForLocation(evt.getX(), evt.getY());
                 Object node = curPath.getLastPathComponent();
-                if (node instanceof Parameter) {
-                    return ((Parameter)node).getToolTipText();
-                } else return null;
+                logger.debug("trying to get tool tip from : {} of class: {}", node, node.getClass());
+                if (node instanceof ToolTip) {
+                    String t = ((ToolTip)node).getToolTipText();
+                    if (node instanceof PluginParameter) {
+                        Plugin p = ((PluginParameter)node).instanciatePlugin();
+                        if (p instanceof ToolTip) {
+                            String t2 = ((ToolTip)p).getToolTipText();
+                            if (t2!=null) {
+                                if (t==null) return t2;
+                                else {
+                                    if (t2.startsWith("<html>")) t2.replace("<html>", "");
+                                    if (!t2.endsWith("</html>")) t2=t2+"</html>";
+                                    if (t.endsWith("</html>")) t.replace("</html>", "");
+                                    if (!t2.startsWith("</html>")) t="</html>"+t;
+                                    return t+"<br />Current Plugin:<br />"+t2;
+                                }
+                            }
+                        }
+                    }
+                    if (t!=null) return t;
+                }
+                return null;
             }
         };
         treeModel.setJTree(tree);
@@ -103,8 +125,8 @@ public class ConfigurationTreeGenerator {
                     tree.setSelectionPath(path);
                     Rectangle pathBounds = tree.getUI().getPathBounds(tree, path);
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
-                        JPopupMenu menu = new JPopupMenu();
                         Object lastO = path.getLastPathComponent();
+                        JPopupMenu menu = new JPopupMenu();
                         if (lastO instanceof Parameter) {
                             Parameter p = (Parameter) lastO;
                             ParameterUI ui = p.getUI();
@@ -125,6 +147,7 @@ public class ConfigurationTreeGenerator {
                         }
                         
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
+                        
                     }
                 } 
                 if (soutParent && SwingUtilities.isLeftMouseButton(e)) {

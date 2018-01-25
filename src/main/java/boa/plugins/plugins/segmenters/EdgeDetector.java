@@ -53,17 +53,18 @@ import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.SplitAndMerge;
 import boa.image.processing.WatershedTransform;
+import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
 
 /**
  *
  * @author jollion
  */
-public class EdgeDetector implements Segmenter {
-    protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2));
-    public PluginParameter<Thresholder> threshold = new PluginParameter("Threshold", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
-    ChoiceParameter thresholdMethod = new ChoiceParameter("Remove background method", new String[]{"Intensity Map", "Value Map", "Secondary Map"}, "Value Map", false);
-    protected PreFilterSequence scondaryThresholdMap = new PreFilterSequence("Secondary Threshold Map").add(new ImageFeature().setFeature(ImageFeature.Feature.HessianMax).setScale(2));
+public class EdgeDetector implements Segmenter, ToolTip {
+    protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map");
+    public PluginParameter<Thresholder> threshold = new PluginParameter("Threshold", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setToolTipText("Threshold method used to remove background regions");
+    ChoiceParameter thresholdMethod = new ChoiceParameter("Remove background method", new String[]{"Intensity Map", "Value Map", "Secondary Map"}, "Value Map", false).setToolTipText("<html>Intensity Map: compute threshold on raw intensity map and removes regions whose median value is under the threhsold<br />Value Map: same as Intensity map but threshold is computed on an image where all pixels values are replaced by the median value of each region<br /><pre>Secondary Map: This method is designed to robustly threshold foreground objects and regions located between foreground objects. Does only work in case forground objects are of comparable intensities<br />1) Ostus's method is applied on on the image where pixels values are replaced by median value of eache region. <br />2) Ostus's method is applied on on the image where pixels values are replaced by median value of secondary map of each region. Typically using Hessian Max this allows to select regions in between two foreground objects or directly connected to foreground <br />3) A map with regions that are under threshold in 1) and over threshold in 2) ie regions that are not foreground but are either in between two objects or connected to one objects. The histogram of this map is computed and threshold is set in the middle of the largest histogram zone without objects</pre> </html>");
+    protected PreFilterSequence scondaryThresholdMap = new PreFilterSequence("Secondary Threshold Map").add(new ImageFeature().setFeature(ImageFeature.Feature.HessianMax).setScale(2)).setToolTipText("A map used that allows to selected regions in between two foreground objects or directly connected to a foreground object");
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod).setDefaultParameters(new Parameter[]{threshold}).setActionParameters("Secondary Map", new Parameter[]{scondaryThresholdMap});
     boolean testMode;
     
@@ -72,6 +73,15 @@ public class EdgeDetector implements Segmenter {
     ImageInteger seedMap;
     Image secondaryThresholdMap;
     Image watershedPriorityMap;
+    String toolTip = "<html>Segment region at maximal values of the watershed map; <br />"
+            + "1) Partition of the whole image using classical watershed seeded on all regional minima of the watershed map. <br />"
+            + "2) Suppression of background regions depending on the selected metohd; <br />"
+            + "</html>";
+    
+    @Override
+    public String getToolTipText() {return toolTip;}
+
+    
     public Image getWsMap(Image input, StructureObjectProcessing parent) {
         if (wsMap==null) wsMap = watershedMap.filter(input, parent);
         return wsMap;
@@ -227,5 +237,7 @@ public class EdgeDetector implements Segmenter {
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
+
+    
     
 }
