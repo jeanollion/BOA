@@ -23,6 +23,7 @@ import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.Image;
@@ -38,7 +39,7 @@ import boa.plugins.TrackerSegmenter;
  */
 public class FixedObjectsTracker implements TrackerSegmenter {
     protected NumberParameter refAverage = new BoundedNumberParameter("Number of frame to average around reference frame", 0, 0, 0, null);
-    protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
+    protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
     protected Parameter[] parameters = new Parameter[]{segmenter, refAverage};
     
     public FixedObjectsTracker() {}
@@ -48,7 +49,7 @@ public class FixedObjectsTracker implements TrackerSegmenter {
     }
     
     @Override
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
+    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, TrackPreFilterSequence trackPreFilters, PostFilterSequence postFilters) {
         //get input image
         int frame = parentTrack.get(0).getMicroscopyField().getDefaultTimePoint();
         int fInf = parentTrack.get(0).getFrame();
@@ -63,6 +64,7 @@ public class FixedObjectsTracker implements TrackerSegmenter {
                 break;
             }
         }
+        // TODO take into acount trackPreFilters
         Image input;
         if (av>1) {
             List<Image> toAv = new ArrayList<>(av);

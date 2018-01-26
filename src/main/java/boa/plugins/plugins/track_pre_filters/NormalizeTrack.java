@@ -17,50 +17,51 @@
  */
 package boa.plugins.plugins.track_pre_filters;
 
+import boa.configuration.parameters.BooleanParameter;
+import boa.configuration.parameters.BoundedNumberParameter;
+import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObject;
+import boa.image.Histogram;
 import boa.image.Image;
+import boa.image.processing.ImageOperations;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import boa.plugins.TrackPreFilter;
+import java.util.ArrayList;
+import java.util.Map.Entry;
 
 /**
  *
  * @author jollion
  */
 public class NormalizeTrack  implements TrackPreFilter {
-
-    //@Override
-    public Map<StructureObject, Image> filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages) throws Exception {
-        /*List<Image> planes = new ArrayList<>(parentsByF.size());
-        for (int t = minT; t<maxT; ++t) planes.add(getImage(t));
-        ThresholdHisto thresholdHisto = new ThresholdHisto(planes, minT, null, null);
+    NumberParameter saturation = new BoundedNumberParameter("Saturation", 3, 0.99, 0, 1);
+    BooleanParameter invert = new BooleanParameter("Invert", false);
+    @Override
+    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImage) throws Exception {
+        Histogram histo = Histogram.getHisto256(preFilteredImages.values(), null);
         double[] minAndMax = new double[2];
-        minAndMax[0] = thresholdHisto.minAndMax[0];
-        if (blackBackground) minAndMax[1] = ImageOperations.getPercentile(thresholdHisto.histoAll, thresholdHisto.minAndMax, thresholdHisto.byteHisto, 0.99)[0];
-        else minAndMax[1] = thresholdHisto.minAndMax[1];
-        thresholdHisto.freeMemory();
+        minAndMax[0] = histo.minAndMax[0];
+        if (saturation.getValue().doubleValue()<1) minAndMax[1] = histo.getQuantiles(saturation.getValue().doubleValue())[0];
+        else minAndMax[1] = histo.minAndMax[1];
         double scale = 1 / (minAndMax[1] - minAndMax[0]);
         double offset = -minAndMax[0] * scale;
-        if (invert) {
+        if (invert.getSelected()) {
             scale = -scale;
             offset = 1 - offset;
         }
         logger.debug("normalization: range: [{}-{}] scale: {} off: {}", minAndMax[0], minAndMax[1], scale, offset);
-        for (int t = minT; t<maxT; ++t) {
-            Image trans = ImageOperations.affineOperation(planes.get(t-minT), null, scale, offset);
-            inputImages.put(t, trans);
+        for (Entry<StructureObject, Image> e : preFilteredImages.entrySet()) {
+            Image trans = ImageOperations.affineOperation(e.getValue(), canModifyImage?e.getValue():null, scale, offset);
+            e.setValue(trans);
         }
-        //this.setParentImages(false);
-        so.getPreFilters().removeAllElements(); // preFilters already applied
-                */
-        return null;
     }
 
     @Override
     public Parameter[] getParameters() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return new Parameter[]{saturation, invert};
     }
     
 }

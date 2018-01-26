@@ -19,6 +19,7 @@ package boa.plugins;
 
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.StructureObject;
 import java.util.List;
 
@@ -31,10 +32,10 @@ public interface TrackerSegmenter extends Tracker {
      * This method segment & assign the children of each element of the {@param parentTrack}, and sets the track links for each child
      * @param structureIdx index of child structure to be segmented and tracked
      * @param parentTrack parent track, sorted in the order of increasing timePoint
-     * @param preFilters filters to apply before segmentation
+     * @param trackPreFilters filters to apply before segmentation
      * @param postFilters filters to apply after segmentation
      */
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters);
+    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, TrackPreFilterSequence trackPreFilters, PostFilterSequence postFilters);
     /**
      * Optional method, can return null
      * @return the segmenter used for the tracking process

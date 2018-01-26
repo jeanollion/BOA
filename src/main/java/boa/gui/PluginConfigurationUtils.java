@@ -39,6 +39,7 @@ import boa.image.Image;
 import boa.plugins.ParameterSetup;
 import boa.plugins.ParameterSetupTracker;
 import boa.plugins.ProcessingScheme;
+import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
@@ -130,9 +131,8 @@ public class PluginConfigurationUtils {
                                 //logger.debug("parents for testing: {}", Utils.toStringList(parentTrack, oo->oo+"->"+oo.getTrackHead()));
                                 ps.setTestParameter(parameters[idx].getName());
                                 TrackPostFilterSequence tpf=null;
-                                if (psc instanceof SegmentAndTrack) tpf = ((SegmentAndTrack)psc).getTrackPostFilters();
-                                if (psc instanceof SegmentThenTrack) tpf = ((SegmentThenTrack)psc).getTrackPostFilters();
-                                if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getPreFilters(), psc.getPostFilters());
+                                if (psc instanceof ProcessingSchemeWithTracking) tpf = ((ProcessingSchemeWithTracking)psc).getTrackPostFilters();
+                                if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getTrackPreFilters().duplicate().addAtFirst(psc.getPreFilters()), psc.getPostFilters());
                                 else ((Tracker)ps).track(structureIdx, parentTrack);
                                 if (tpf!=null) tpf.filter(structureIdx, parentTrack, null);
                                 

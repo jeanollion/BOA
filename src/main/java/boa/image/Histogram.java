@@ -20,7 +20,10 @@ package boa.image;
 import boa.image.processing.ImageOperations;
 import static boa.image.Image.logger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  *
@@ -98,7 +101,7 @@ public class Histogram {
      * @param minAndMax the method will output min and max values in this array, except if minAndMax[0]<minAndMax[1] -> in this case will use these values for histogram
      * @return
      */
-    public static Histogram getHisto256(List<Image> images, double[] minAndMax) {
+    public static Histogram getHisto256(Collection<Image> images, double[] minAndMax) {
         if (!(minAndMax[0] < minAndMax[1])) {
             double[] mm = ImageOperations.getMinAndMax(images);
             minAndMax[0] = mm[0];
@@ -115,7 +118,24 @@ public class Histogram {
         }
         return histo;
     }
-    public static List<Histogram> getHisto256AsList(List<Image> images, double[] minAndMax) {
+    public static Histogram getHisto256(Map<Image, ImageMask> images, double[] minAndMax) {
+        if (!(minAndMax[0] < minAndMax[1])) {
+            double[] mm = ImageOperations.getMinAndMax(images);
+            minAndMax[0] = mm[0];
+            minAndMax[1] = mm[1];
+        }
+        Histogram histo = null;
+        for (Entry<Image, ImageMask> e : images.entrySet()) {
+            Histogram h = e.getKey().getHisto256(minAndMax[0], minAndMax[1], e.getValue(), null);
+            if (histo == null) {
+                histo = h;
+            } else {
+                histo.add(h);
+            }
+        }
+        return histo;
+    }
+    public static List<Histogram> getHisto256AsList(Collection<Image> images, double[] minAndMax) {
         if (!(minAndMax[0] < minAndMax[1])) {
             double[] mm = ImageOperations.getMinAndMax(images);
             minAndMax[0] = mm[0];
@@ -161,7 +181,7 @@ public class Histogram {
             }
         }
     }
-    public double[] getPercentile(double... percent) {
+    public double[] getQuantiles(double... percent) {
         double binSize = getBinSize();
         int gcount = 0;
         for (int i : data) gcount += i;

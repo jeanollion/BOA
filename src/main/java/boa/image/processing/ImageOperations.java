@@ -39,6 +39,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import boa.utils.Utils;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  *
@@ -64,7 +67,7 @@ public class ImageOperations {
         }
     }
 
-    public static double[] getMinAndMax(List<Image> images) {
+    public static double[] getMinAndMax(Collection<Image> images) {
         if (images.isEmpty()) {
             return new double[2];
         }
@@ -72,6 +75,25 @@ public class ImageOperations {
         double[] minAndMax = it.next().getMinAndMax(null);
         while (it.hasNext()) {
             double[] mm = it.next().getMinAndMax(null);
+            if (minAndMax[0] > mm[0]) {
+                minAndMax[0] = mm[0];
+            }
+            if (minAndMax[1] < mm[1]) {
+                minAndMax[1] = mm[1];
+            }
+        }
+        return minAndMax;
+    }
+    public static double[] getMinAndMax(Map<Image, ImageMask> images) {
+        if (images.isEmpty()) {
+            return new double[2];
+        }
+        Iterator<Entry<Image, ImageMask>> it = images.entrySet().iterator();
+        Entry<Image, ImageMask> e = it.next();
+        double[] minAndMax = e.getKey().getMinAndMax(e.getValue());
+        while (it.hasNext()) {
+            e = it.next();
+            double[] mm = e.getKey().getMinAndMax(e.getValue());
             if (minAndMax[0] > mm[0]) {
                 minAndMax[0] = mm[0];
             }
@@ -657,11 +679,11 @@ public class ImageOperations {
             minAndMax[1] = mm[1];
         }
         if (pMin>0 && pMax<1) {
-            minAndMax = getPercentile(input, mask, null, new double[]{pMin, pMax});
+            minAndMax = getQuantiles(input, mask, null, new double[]{pMin, pMax});
         } else if (pMin>0) {
-            minAndMax[0] = getPercentile(input, mask, null, new double[]{pMin})[0];
+            minAndMax[0] = getQuantiles(input, mask, null, new double[]{pMin})[0];
         } else if (pMax<0) {
-            minAndMax[1] = getPercentile(input, mask, null, new double[]{pMax})[1];
+            minAndMax[1] = getQuantiles(input, mask, null, new double[]{pMax})[1];
         }
         double scale = 1 / (minAndMax[1] - minAndMax[0]);
         double offset = -minAndMax[0] * scale;
@@ -685,10 +707,10 @@ public class ImageOperations {
         }
         return output;
     }
-    public static double[] getPercentile(Image image, ImageMask mask, BoundingBox limits, double... percent) {
+    public static double[] getQuantiles(Image image, ImageMask mask, BoundingBox limits, double... percent) {
         double[] mm = image.getMinAndMax(mask);
         Histogram histo = image.getHisto256(mm[0], mm[1], mask, limits);
-        return histo.getPercentile(percent);
+        return histo.getQuantiles(percent);
     }
     
     

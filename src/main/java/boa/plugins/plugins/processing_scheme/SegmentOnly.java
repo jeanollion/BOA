@@ -22,6 +22,7 @@ import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.experiment.Experiment;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -42,12 +43,14 @@ import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
+import boa.plugins.TrackPreFilter;
 import boa.plugins.UseMaps;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
+import java.util.Map;
 
 /**
  *
@@ -56,8 +59,9 @@ import boa.utils.Utils;
 public class SegmentOnly implements ProcessingScheme {
     @FunctionalInterface public static interface ApplyToSegmenter { public void apply(StructureObject o, Segmenter segmenter);}
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
+    protected TrackPreFilterSequence trackPreFilters = new TrackPreFilterSequence("Track Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
-    protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
+    protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
     Parameter[] parameters;
     
     public SegmentOnly() {}
@@ -70,6 +74,14 @@ public class SegmentOnly implements ProcessingScheme {
     }
     @Override public SegmentOnly addPreFilters(PreFilter... preFilter) {
         preFilters.add(preFilter);
+        return this;
+    }
+    @Override public SegmentOnly addTrackPreFilters(TrackPreFilter... trackPreFilter) {
+        trackPreFilters.add(trackPreFilter);
+        return this;
+    }
+    @Override public SegmentOnly addTrackPreFilters(Collection<TrackPreFilter> trackPreFilter) {
+        trackPreFilters.add(trackPreFilter);
         return this;
     }
     @Override public SegmentOnly addPostFilters(PostFilter... postFilter) {
@@ -88,6 +100,10 @@ public class SegmentOnly implements ProcessingScheme {
         this.preFilters=preFilters;
         return this;
     }
+    public SegmentOnly setTrackPreFilters(TrackPreFilterSequence trackPreFilters) {
+        this.trackPreFilters=trackPreFilters;
+        return this;
+    }
     public SegmentOnly setPostFilters(PostFilterSequence postFilters) {
         this.postFilters=postFilters;
         return this;
@@ -95,7 +111,9 @@ public class SegmentOnly implements ProcessingScheme {
     @Override public PreFilterSequence getPreFilters() {
         return preFilters;
     }
-    
+    @Override public TrackPreFilterSequence getTrackPreFilters() {
+        return trackPreFilters;
+    }
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
@@ -114,8 +132,10 @@ public class SegmentOnly implements ProcessingScheme {
         boolean useMaps =  subSegmentation && segmenter.instanciatePlugin() instanceof UseMaps;
         boolean singleFrame = parentTrack.get(0).getMicroscopyField().singleFrame(structureIdx); // will semgent only on first frame
         
-        HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parentTrack.size(), parent->preFilters.filter(parent.getRawImage(structureIdx), parent));
-        HashMapGetCreate<StructureObject, Image[]> subMaps = useMaps? new HashMapGetCreate<>(parentTrack.size(), parent->((UseMaps)segmenter.instanciatePlugin()).computeMaps(parent.getRawImage(structureIdx), inputImages.getAndCreateIfNecessarySyncOnKey(parent))) : null; //
+        //HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parentTrack.size(), parent->preFilters.filter(parent.getRawImage(structureIdx), parent.getMask()));
+        TrackPreFilterSequence tpf = preFilters.isEmpty()? trackPreFilters : trackPreFilters.duplicate().addAtFirst(preFilters);
+        Map<StructureObject, Image> inputImages = tpf.filter(structureIdx, parentTrack, executor);
+        HashMapGetCreate<StructureObject, Image[]> subMaps = useMaps? new HashMapGetCreate<>(parentTrack.size(), parent->((UseMaps)segmenter.instanciatePlugin()).computeMaps(parent.getRawImage(structureIdx), inputImages.get(parent))) : null; //
         // segment in direct parents
         List<StructureObject> allParents = singleFrame ? StructureObjectUtils.getAllChildren(parentTrack.subList(0, 1), segParentStructureIdx) : StructureObjectUtils.getAllChildren(parentTrack, segParentStructureIdx);
         Collections.shuffle(allParents); // reduce thread blocking
@@ -136,7 +156,7 @@ public class SegmentOnly implements ProcessingScheme {
                 else ((UseMaps)seg).setMaps(maps);
             }
             if (applyToSegmenter!=null) applyToSegmenter.apply(subParent, seg);
-            Image input = inputImages.getAndCreateIfNecessarySyncOnKey(globalParent);
+            Image input = inputImages.get(globalParent);
             if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
             RegionPopulation pop = seg.runSegmenter(input, structureIdx, subParent);
             pop = postFilters.filter(pop, structureIdx, subParent);

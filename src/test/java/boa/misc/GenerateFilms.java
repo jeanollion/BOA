@@ -133,7 +133,7 @@ public class GenerateFilms {
             if (saturateChannel[c]<1) { // sturate image
                 List<Image> planes = new ArrayList<>(imageTC.length);
                 for (int t = 0; t<imageTC.length; ++t) planes.add(imageTC[t][c]);
-                double max = ImageOperations.getPercentile(Image.mergeZPlanes(planes), null, null, saturateChannel[c])[0];
+                double max = ImageOperations.getQuantiles(Image.mergeZPlanes(planes), null, null, saturateChannel[c])[0];
                 logger.debug("percentile:{} value = {}", 1-saturateChannel[c], max);
                 scale = 255 / (max - minAndMax[0]);
             } 

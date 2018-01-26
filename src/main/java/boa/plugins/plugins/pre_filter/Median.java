@@ -24,6 +24,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
+import boa.image.ImageMask;
 import java.util.ArrayList;
 import boa.plugins.Filter;
 import boa.plugins.PreFilter;
@@ -44,7 +45,7 @@ public class Median implements PreFilter, Filter {
         this.radiusXY.setValue(radiusXY);
         this.radiusZ.setValue(radiusZ);
     }
-    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+    public Image runPreFilter(Image input, ImageMask mask) {
         return filter(input, radiusXY.getValue().doubleValue(), radiusZ.getValue().doubleValue());
     }
     

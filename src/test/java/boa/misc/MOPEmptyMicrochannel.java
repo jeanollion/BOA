@@ -124,7 +124,7 @@ public class MOPEmptyMicrochannel {
         @Override
         public double compute(Image i) {
             ImageFeats ifea = imageFeatures.getAndCreateIfNecessary(i);
-            double[] mm = ImageOperations.getPercentile(ifea.cropped(), null, null, 0.01, 0.99);
+            double[] mm = ImageOperations.getQuantiles(ifea.cropped(), null, null, 0.01, 0.99);
             return (mm[1]-mm[0]) / (mm[1]+mm[0]);
         }
         @Override public String name() {return "ContrastPercentile";}
@@ -349,7 +349,7 @@ public class MOPEmptyMicrochannel {
                         pcb.log("position: "+pos+ " elements: "+mcs.size());
                         for (StructureObject mc : mcs) {
                             Image im = mc.getRawImage(0);
-                            if (filter) im = f.filter(im, mc);
+                            if (filter) im = f.filter(im, mc.getMask());
                             ImageWriter.writeToFile(im, dir, dbS+"."+pos+"."+Selection.indicesString(mc), ImageFormat.TIF);
                         }
                         db.clearCache(pos);

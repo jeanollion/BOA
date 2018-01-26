@@ -497,7 +497,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     // model container methods, for configuration tree in GUI
-    
+    // TODO: parameters independent of UI. No access to ConfigurationTreeModel nor UI. Make an independent mapping of parameters/UI
     @Override
     public ConfigurationTreeModel getModel() {
         return model;

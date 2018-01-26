@@ -36,7 +36,7 @@ import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
 import boa.image.processing.ImageOperations;
 import static boa.image.processing.ImageOperations.threshold;
-import boa.image.processing.ObjectFactory;
+import boa.image.processing.RegionFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;

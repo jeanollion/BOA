@@ -48,13 +48,8 @@ public class SplitAndMerge {
     public final double splitThresholdValue, hessianScale;
     ClusterCollection.InterfaceFactory<Region, Interface> factory;
     boolean testMode;
-    final Function<Set<Voxel>, Double> interfaceValue;
-    public SplitAndMerge(Image input, double splitThreshold, double hessianScale, Function<Set<Voxel>, Double> interfaceValue) {
-        rawIntensityMap=input;
-        splitThresholdValue=splitThreshold;
-        this.hessianScale=hessianScale;
-        this.interfaceValue=interfaceValue;
-    }
+    Function<Set<Voxel>, Double> interfaceValue;
+
     public SplitAndMerge(Image input, double splitThreshold, double hessianScale) {
         rawIntensityMap=input;
         splitThresholdValue=splitThreshold;
@@ -73,6 +68,10 @@ public class SplitAndMerge {
             }
         };
     }
+    public SplitAndMerge setInterfaceValue(Function<Set<Voxel>, Double> interfaceValue) {
+        this.interfaceValue=interfaceValue;
+        return this;
+    }
 
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
@@ -82,7 +81,11 @@ public class SplitAndMerge {
         return this;
     }
     public Image getHessian() {
-        if (hessian ==null) hessian=ImageFeatures.getHessian(rawIntensityMap, hessianScale, false)[0].setName("hessian");
+        if (hessian ==null) {
+            synchronized(this) {
+                if (hessian==null) hessian=ImageFeatures.getHessian(rawIntensityMap, hessianScale, false)[0].setName("hessian");
+            }
+        }
         return hessian;
     }
 

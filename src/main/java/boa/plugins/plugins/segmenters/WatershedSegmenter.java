@@ -53,12 +53,12 @@ public class WatershedSegmenter implements Segmenter {
     @Override
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         // perform watershed on all local extrema
-        Image watershedMap = watershedMapFilters.filter(input, parent);
+        Image watershedMap = watershedMapFilters.filter(input, parent.getMask());
         
         ImageByte localExtrema = Filters.localExtrema(watershedMap, null, decreasePropagation.getSelected(), parent.getMask(), Filters.getNeighborhood(localExtremaRadius.getValue().doubleValue(), watershedMap));
         RegionPopulation pop = WatershedTransform.watershed(watershedMap, parent.getMask(), localExtrema, decreasePropagation.getSelected(), null, null, false);
         // remove regions with low intensity value
-        Image intensityMap = intensityFilter.filter(input, parent);
+        Image intensityMap = intensityFilter.filter(input, parent.getMask());
         if (debug) {
             ImageWindowManagerFactory.showImage(input.duplicate("input map"));
             ImageWindowManagerFactory.showImage(localExtrema.duplicate("local extrema"));

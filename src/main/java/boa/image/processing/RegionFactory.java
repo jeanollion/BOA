@@ -22,6 +22,8 @@ import boa.data_structure.Voxel;
 import boa.image.BoundingBox;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
+import boa.image.ImageMask;
+import boa.utils.HashMapGetCreate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,35 +34,27 @@ import java.util.TreeMap;
  *
  * @author jollion
  */
-public class ObjectFactory {
-    public static Region[] getObjectsVoxels(ImageInteger labelImage, boolean ensureContinuousLabels) {
-        HashMap<Integer, ArrayList<Voxel>> objects = new HashMap<>();
+public class RegionFactory {
+    public static Region[] getRegions(ImageInteger labelImage, boolean ensureContinuousLabels) {
+        HashMapGetCreate<Integer, List<Voxel>> objects = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory<>());
         int label;
         int sizeX = labelImage.getSizeX();
         for (int z = 0; z < labelImage.getSizeZ(); ++z) {
             for (int xy = 0; xy < labelImage.getSizeXY(); ++xy) {
                 label = labelImage.getPixelInt(xy, z);
-                if (label != 0) {
-                    ArrayList<Voxel> al = objects.get(label);
-                    if (al == null) {
-                        al = new ArrayList<>();
-                        objects.put(label, al);
-                    }
-                    al.add(new Voxel(xy % sizeX, xy / sizeX, z));
-                }
+                if (label != 0) objects.getAndCreateIfNecessary(label).add(new Voxel(xy % sizeX, xy / sizeX, z));
             }
         }
-        TreeMap<Integer, ArrayList<Voxel>> tm = new TreeMap(objects);
+        TreeMap<Integer, List<Voxel>> tm = new TreeMap(objects);
         Region[] res = new Region[tm.size()];
         int i = 0;
-        for (Entry<Integer, ArrayList<Voxel>> e : tm.entrySet()) {
+        for (Entry<Integer, List<Voxel>> e : tm.entrySet()) {
             res[i] = new Region(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1, labelImage.getScaleXY(), labelImage.getScaleZ());
             ++i;
         }
         return res;
     }
-    
-    
+  
     public static TreeMap<Integer, BoundingBox> getBounds(ImageInteger labelImage) {
         HashMap<Integer, BoundingBox> bounds = new HashMap<>();
         int label;

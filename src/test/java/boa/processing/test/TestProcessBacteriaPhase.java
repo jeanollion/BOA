@@ -60,11 +60,11 @@ public class TestProcessBacteriaPhase {
 
         //String dbName = "MF1_170523";
         //String dbName = "MutD5_141209";
-        //String dbName = "MutH_150324";
-        String dbName = "TestThomasRawStacks";
+        String dbName = "MutH_150324";
+        //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =2;
-        int time =4;
+        int microChannel =0;
+        int time =500;
         //setMask=true;
         //thld = 776;
         
@@ -145,7 +145,7 @@ public class TestProcessBacteriaPhase {
                 if (setMask) seg.setThresholdedImage((ImageInteger)ImageReader.openIJTif("/data/Images/MOP/ThldPlaneF"+timePointMin+".tif")); //open radius = 3 ou appliquer le filtre pour objets phase ? 
                 logger.debug("using seg from XP: {}", seg);
                 if (!mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().getActivatedChildren().isEmpty()) ImageWindowManagerFactory.showImage(input);
-                input = mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().filter(input, mc).setName("preFiltered");
+                input = mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().filter(input, mc.getMask()).setName("preFiltered");
                 if (normalize) input = ImageOperations.normalize(input, null, null);
             }
             if (!Double.isNaN(thld)) seg.setThresholdValue(thld);

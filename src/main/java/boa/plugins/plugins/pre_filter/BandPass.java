@@ -26,6 +26,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
+import boa.image.ImageMask;
 import java.util.ArrayList;
 import boa.plugins.Filter;
 import boa.plugins.PreFilter;
@@ -56,7 +57,7 @@ public class BandPass implements PreFilter, Filter {
         this.removeStripes.setSelectedIndex(removeStripes);
         this.stripeTolerance.setValue(stripeTolerance);
     }
-    @Override public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+    @Override public Image runPreFilter(Image input, ImageMask mask) {
         return filter(input, min.getValue().doubleValue(), max.getValue().doubleValue(), removeStripes.getSelectedIndex(), stripeTolerance.getValue().doubleValue());
     }
     

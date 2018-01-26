@@ -37,6 +37,7 @@ import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
+import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import boa.plugins.PreFilter;
 import boa.plugins.TransformationTimeIndependent;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.ImageTransformation;
+import boa.image.processing.RegionFactory;
 
 /**
  *
@@ -70,14 +72,15 @@ public class SubtractBackgroundMicrochannel implements PreFilter {
     public SubtractBackgroundMicrochannel(){}
     
     @Override 
-    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+    public Image runPreFilter(Image input, ImageMask mask) {
         input = TypeConverter.toFloat(input, null); // automaticaly copies data
         // remove pixels in corners if corners are detected
-        ImageInteger cornerMask = ImageOperations.andNot(new BlankMask(input), structureObject.getMask(), null);
+        ImageInteger cornerMask = ImageOperations.andNot(new BlankMask(input), mask, null);
         List<Region> corners = ImageLabeller.labelImageList(cornerMask);
         if (!corners.isEmpty()) {
             //ImageWindowManagerFactory.showImage(input.duplicate("before corner"));
-            List<Voxel> contour = structureObject.getObject().duplicate().translate(structureObject.getObject().getBounds().duplicate().reverseOffset()).getContour();
+            Region parent = new Region(TypeConverter.toImageInteger(mask, null), 1, mask.getSizeZ()==1);
+            List<Voxel> contour =parent.translate(parent.getBounds().duplicate().reverseOffset()).getContour();
             for (Region o : corners) {
                 for (Voxel v : o.getVoxels()) {
                     Voxel closest = Voxel.getClosest(v, contour);

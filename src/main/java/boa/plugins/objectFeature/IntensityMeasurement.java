@@ -69,7 +69,7 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
         if (newCore==null) {
             if (core==null) {
                 core = new IntensityMeasurementCore();
-                core.setUp(intensityMap, parent, preFilters);
+                core.setUp(intensityMap, parent.getMask(), preFilters);
             }
             if (availableCores!=null) availableCores.add(core);
         } else core=newCore;

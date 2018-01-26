@@ -43,7 +43,7 @@ import boa.image.ImageMask;
 import boa.image.ImageMask2D;
 import boa.image.processing.ImageOperations;
 import boa.image.ImageShort;
-import boa.image.processing.ObjectFactory;
+import boa.image.processing.RegionFactory;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -402,7 +402,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
         if (pv.smooth==null || pv.lap==null) setMaps(computeMaps(input, input));
         else logger.debug("manual seg: maps already set!");
-        List<Region> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
+        List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         Image lap = pv.getLaplacianMap()[0]; // todo max in scale space for each seed? 
         Image smooth = pv.getSmoothedMap();
         RegionPopulation pop =  watershed(lap, parentMask, seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);

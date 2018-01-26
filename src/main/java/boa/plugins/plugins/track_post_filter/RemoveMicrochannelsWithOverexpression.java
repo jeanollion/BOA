@@ -63,7 +63,7 @@ public class RemoveMicrochannelsWithOverexpression implements TrackPostFilter {
     public void filter(int structureIdx, List<StructureObject> parentTrack) throws Exception {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         double per = intensityPercentile.getValue().doubleValue()/100d;
-        Map<StructureObject, Double> value = Utils.flattenMap(allTracks).stream().collect(Collectors.toMap(o->o, o->ImageOperations.getPercentile(o.getRawImage(structureIdx), o.getMask(), null, per)[0]));
+        Map<StructureObject, Double> value = Utils.flattenMap(allTracks).stream().collect(Collectors.toMap(o->o, o->ImageOperations.getQuantiles(o.getRawImage(structureIdx), o.getMask(), null, per)[0]));
         List<Double> distribution = new ArrayList<>(value.values());
         double quart1 = ArrayUtil.quantile(distribution, 0.25);
         double quart2 = ArrayUtil.quantile(distribution, 0.5);

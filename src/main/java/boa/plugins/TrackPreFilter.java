@@ -19,17 +19,22 @@ package boa.plugins;
 
 import boa.data_structure.StructureObject;
 import boa.image.Image;
+import boa.image.ImageMask;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author jollion
  */
 public interface TrackPreFilter  extends Plugin {
-    public Map<StructureObject, Image> filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages) throws Exception;
+    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) throws Exception;
     /*public static List<Image> getContinuousImageList(TreeMap<StructureObject, Image> images) {
         
     }*/
-}
+    public static Map<Image, ImageMask> getMaskMap(Map<StructureObject, Image> map) {
+        return map.entrySet().stream().collect(Collectors.toMap(e->e.getValue(), e->e.getKey().getMask()));
+    }
+} 

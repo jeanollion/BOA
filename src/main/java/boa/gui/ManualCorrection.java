@@ -406,7 +406,7 @@ public class ManualCorrection {
             logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, segmentationParentStructureIdx);
             List<StructureObject> segmentedObjects = new ArrayList<>();
             PreFilterSequence preFilters = db.getExperiment().getStructure(structureIdx).getProcessingScheme().getPreFilters();
-            HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parent->preFilters.filter(parent.getRawImage(structureIdx), parent));
+            HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parent->preFilters.filter(parent.getRawImage(structureIdx), parent.getMask()));
             HashMapGetCreate<StructureObject, Image[]> subMaps = segInstance instanceof UseMaps? new HashMapGetCreate<>(parent->((UseMaps)segInstance).computeMaps(parent.getRawImage(structureIdx), inputImages.getAndCreateIfNecessary(parent))) : null;
             
             for (Map.Entry<StructureObject, List<int[]>> e : points.entrySet()) {

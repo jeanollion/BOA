@@ -21,33 +21,47 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
+import boa.image.ImageMask;
 import boa.image.ImageProperties;
+import boa.plugins.MultiThreaded;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
+import boa.plugins.TrackPreFilter;
+import boa.utils.MultipleException;
+import boa.utils.Pair;
+import boa.utils.ThreadRunner;
+import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
 
 /**
  *
  * @author jollion
  */
-public class PreFilterSequence extends PluginParameterList<PreFilter> {
+public class PreFilterSequence extends PluginParameterList<PreFilter> implements TrackPreFilter, MultiThreaded {
 
     public PreFilterSequence(String name) {
         super(name, "Pre-Filter", PreFilter.class);
     }
     
-    public Image filter(Image input, StructureObjectPreProcessing parent) {
+    public Image filter(Image input, ImageMask mask) {
         ImageProperties prop = input.getProperties();
         for (PreFilter p : get()) {
-            input = p.runPreFilter(input, parent);
+            input = p.runPreFilter(input, mask);
             //logger.debug("prefilter: {}", p.getClass().getSimpleName());
         }
         input.setCalibration(prop);
         if (input.sameSize(prop)) input.resetOffset().addOffset(prop);
         return input;
+    }
+    @Override public PreFilterSequence removeAll() {
+        this.removeAllElements();
+        return this;
     }
     @Override public PreFilterSequence add(PreFilter... instances) {
         super.add(instances);
@@ -60,5 +74,24 @@ public class PreFilterSequence extends PluginParameterList<PreFilter> {
     }
     public String toStringElements() {
         return Utils.toStringList(children, p -> p.pluginName);
+    }
+    ExecutorService executor;
+    @Override public void setExecutor(ExecutorService executor) {
+        this.executor=executor;
+    }
+    
+    @Override
+    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) throws Exception {
+        Collection<Entry<StructureObject, Image>> col = preFilteredImages.entrySet();
+        ThreadAction<Entry<StructureObject, Image>> ta = (Entry<StructureObject, Image> e, int idx) -> {
+            e.setValue(filter(e.getValue(), e.getKey().getMask()));
+        };
+        List<Pair<String, Exception>> ex = ThreadRunner.execute(col, false, ta, executor, null);
+        if (!ex.isEmpty()) throw new MultipleException(ex);
+    }
+
+    @Override
+    public Parameter[] getParameters() {
+        return new Parameter[]{this};
     }
 }

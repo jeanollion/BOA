@@ -43,10 +43,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import boa.plugins.PluginFactory;
 import boa.plugins.ProcessingScheme;
-import boa.plugins.ProcessingSchemeWithTracking;
-import boa.plugins.plugins.post_filters.MicrochannelPhaseArtifacts;
-import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
-import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
 import boa.plugins.plugins.trackers.LAPTracker;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
@@ -63,13 +59,15 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        String dbName = "fluo170512_WT";
+        String dbName = "MutH_150324";
+        //String dbName = "fluo170512_WT";
         //String dbName = "fluo171219_WT_750ms";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx =0;
         int mcIdx =1;
         int structureIdx = 1;
+        int[] frames = new int[]{0, 200};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -84,8 +82,8 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,500); //  0,80);
-        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 13, 17); 
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
+        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);
@@ -124,8 +122,9 @@ public class TestTracker {
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         List<Pair<String, Exception>> l;
         CropMicroChannelFluo2D.debug=false;
-        if (ps instanceof ProcessingSchemeWithTracking && structureIdx==0) ((ProcessingSchemeWithTracking)ps).getTrackPostFilters().removeAllElements();
-        ps.getPostFilters().add(new MicrochannelPhaseArtifacts());
+        //if (ps instanceof ProcessingSchemeWithTracking && structureIdx==0) ((ProcessingSchemeWithTracking)ps).getTrackPostFilters().removeAllElements();
+        //ps.getPostFilters().add(new MicrochannelPhaseArtifacts());
+        
         if (trackOnly) l=ps.trackOnly(structureIdx, parentTrack, null);
         else l=ps.segmentAndTrack(structureIdx, parentTrack, null);
         for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);

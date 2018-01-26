@@ -27,6 +27,7 @@ import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectTracker;
@@ -129,9 +130,9 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
         this.maximalTrackFrameNumber.setValue(max);
         return this;
     }
-    @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
+    @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, TrackPreFilterSequence trackPreFilters, PostFilterSequence postFilters) {
         long t0 = System.currentTimeMillis();
-        SegmentOnly ps = new SegmentOnly(segmenter.instanciatePlugin()).setPreFilters(preFilters).setPostFilters(postFilters);
+        SegmentOnly ps = new SegmentOnly(segmenter.instanciatePlugin()).setTrackPreFilters(trackPreFilters).setPostFilters(postFilters);
         List<Pair<String, Exception>> ex = ps.segmentAndTrack(structureIdx, parentTrack, executor);
         if (!ex.isEmpty()) throw new MultipleException(ex);
         long t1= System.currentTimeMillis();

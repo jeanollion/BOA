@@ -47,7 +47,7 @@ import boa.image.ImageLabeller;
 import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.image.ImageProperties;
-import boa.image.processing.ObjectFactory;
+import boa.image.processing.RegionFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -89,25 +89,14 @@ import boa.image.processing.Curvature;
 import boa.image.processing.EDT;
 import boa.image.processing.FillHoles2D;
 import boa.image.processing.Filters;
-import boa.image.processing.FitEllipse;
-import boa.image.processing.FitEllipse.EllipseFit2D;
 import boa.image.processing.Curvature;
 import static boa.image.processing.Curvature.computeCurvature;
-import static boa.image.processing.Curvature.getCurvatureMask;
-import boa.image.processing.ImageFeatures;
 import boa.image.processing.WatershedTransform;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
-import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
-import static boa.utils.Utils.plotProfile;
 import boa.image.processing.clustering.ClusterCollection.InterfaceFactory;
-import boa.image.processing.clustering.SimpleInterfaceVoxelSet;
-import boa.image.processing.clustering.Interface;
-import boa.image.processing.clustering.InterfaceImpl;
-import boa.image.processing.clustering.InterfaceRegion;
 import boa.image.processing.clustering.InterfaceRegionImpl;
-import boa.image.processing.clustering.InterfaceVoxelSet;
 import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.clustering.RegionCluster.InterfaceVoxels;
 
@@ -119,8 +108,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     public static boolean debug = false;
     
     // configuration-related attributes
-    
-    //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
     NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 2.5, 0, null).setToolTipText("For microchannel border aberration removal"); // 0-3
     NumberParameter closeRadius = new BoundedNumberParameter("Close Radius", 1, 4, 0, null); //3-5
     NumberParameter maxBorderArtefactThickness = new BoundedNumberParameter("Max Border Artefact Thickness", 0, 7, 1, null).setToolTipText("In pixels. For microchannel border aberration removal");;
@@ -198,17 +185,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         return this;
     }
 
-    /*public BacteriaTrans setSmoothScale(double smoothScale) {
-        this.smoothScale.setValue(smoothScale);
-        return this;
-    }*/
-
     public BacteriaTrans setOpenRadius(double openRadius) {
         this.openRadius.setValue(openRadius);
         return this;
     }
 
-    
     @Override
     public String toString() {
         return "Bacteria Trans: " + Utils.toStringArray(parameters, p->p.toStringFull());
@@ -233,11 +214,22 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         */
         pv = getProcessingVariables(input, parent.getMask());
         if (mask==null) {
-            if (Double.isNaN(thresholdValue)) pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
+            if (Double.isNaN(thresholdValue)) {
+                pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
+            }
             else {
                 if (debug) logger.debug("using pre-set threshold {}, for {}", thresholdValue, parent);
                 pv.threshold=thresholdValue;
             }
+            EdgeDetector seg = new EdgeDetector();
+            seg.setThrehsoldingMethod(1).setThresholder(new ConstantValue(pv.threshold)).setIsDarkBackground(false);
+            seg.setTestMode(debug);
+            pv.thresh = seg.run(input, pv.mask).getLabelMap();
+            if (debug) {
+                ImageWindowManagerFactory.showImage(input);
+                ImageWindowManagerFactory.showImage(pv.thresh.duplicate("edge detector"));
+            }
+            //return null;
         } else {
             if (debug) logger.debug("using pre-set mask");
             pv.thresh=mask;
@@ -507,7 +499,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         if (verboseManualSeg) logger.debug("threshold: {} (type: {})", pv.threshold, threshold.toJSONEntry().toJSONString());
         ImageOperations.and(segmentationMask, pv.getSegmentationMask(), pv.getSegmentationMask());
         RegionPopulation res = pv.splitSegmentationMask(pv.getSegmentationMask(), pv.minSizePropagation);
-        List<Region> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
+        List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         for (Region o : seedObjects) o.draw(pv.getSegmentationMask(), 1, null); // to ensure points are included in mask
         RegionCluster<InterfaceBT> c = new RegionCluster(res, false, true, pv.getFactory());
         c.setFixedPoints(seedObjects);
@@ -625,26 +617,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 List<Region> list = ImageLabeller.labelImageListLowConnectivity(maskToSplit);
                 res = new RegionPopulation(list, maskToSplit);
             } 
-            //res = new MicrochannelPhaseArtifacts().setThickness(maxBorderThickness).runPostFilter(null, -1, res); // filter to remove channel border artifacts
             return res;
-            /*   
-            RegionPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), true);
-            if (splitVerbose) logger.debug("splitMask: {}", res.getObjects().size());
-            if (res.getObjects().size()>1) {
-                res.setVoxelIntensities(getEDM()); // for getExtremaSeedList method called just afterwards. // offset of objects needs to be relative to EDM map because EDM offset is not taken into acount
-                RegionPopulation res2 = WatershedTransform.watershed(getEDM(), maskToSplit, res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
-                if (res2.getObjects().size()>1) return res2;
-                else {
-                    res =  WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
-                    res.setVoxelIntensities(getEDM());
-                    return res;
-                }
-            } else {
-                res =  WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
-                res.setVoxelIntensities(getEDM());
-                return res;
-            }
-            */
+            
         }
         private ImageInteger getSegmentationMask() {
             if (segMask == null) {

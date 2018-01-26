@@ -55,17 +55,18 @@ import boa.image.processing.SplitAndMerge;
 import boa.image.processing.WatershedTransform;
 import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
-
+import boa.plugins.SimpleThresholder;
 /**
  *
  * @author jollion
  */
 public class EdgeDetector implements Segmenter, ToolTip {
-    protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map");
-    public PluginParameter<Thresholder> threshold = new PluginParameter("Threshold", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setToolTipText("Threshold method used to remove background regions");
+    protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map");
+    public PluginParameter<SimpleThresholder> threshold = new PluginParameter("Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setToolTipText("Threshold method used to remove background regions");
     ChoiceParameter thresholdMethod = new ChoiceParameter("Remove background method", new String[]{"Intensity Map", "Value Map", "Secondary Map"}, "Value Map", false).setToolTipText("<html>Intensity Map: compute threshold on raw intensity map and removes regions whose median value is under the threhsold<br />Value Map: same as Intensity map but threshold is computed on an image where all pixels values are replaced by the median value of each region<br /><pre>Secondary Map: This method is designed to robustly threshold foreground objects and regions located between foreground objects. Does only work in case forground objects are of comparable intensities<br />1) Ostus's method is applied on on the image where pixels values are replaced by median value of eache region. <br />2) Ostus's method is applied on on the image where pixels values are replaced by median value of secondary map of each region. Typically using Hessian Max this allows to select regions in between two foreground objects or directly connected to foreground <br />3) A map with regions that are under threshold in 1) and over threshold in 2) ie regions that are not foreground but are either in between two objects or connected to one objects. The histogram of this map is computed and threshold is set in the middle of the largest histogram zone without objects</pre> </html>");
     protected PreFilterSequence scondaryThresholdMap = new PreFilterSequence("Secondary Threshold Map").add(new ImageFeature().setFeature(ImageFeature.Feature.HessianMax).setScale(2)).setToolTipText("A map used that allows to selected regions in between two foreground objects or directly connected to a foreground object");
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod).setDefaultParameters(new Parameter[]{threshold}).setActionParameters("Secondary Map", new Parameter[]{scondaryThresholdMap});
+    BooleanParameter darkBackground = new BooleanParameter("Dark Background", true);
     boolean testMode;
     
     // variables
@@ -81,17 +82,23 @@ public class EdgeDetector implements Segmenter, ToolTip {
     @Override
     public String getToolTipText() {return toolTip;}
 
+    public PreFilterSequence getWSMapSequence() {
+        return this.watershedMap;
+    }
     
-    public Image getWsMap(Image input, StructureObjectProcessing parent) {
-        if (wsMap==null) wsMap = watershedMap.filter(input, parent);
+    public Image getWsMap(Image input, ImageMask mask) {
+        if (wsMap==null) wsMap = watershedMap.filter(input, mask);
         return wsMap;
     }
 
-    public ImageInteger getSeedMap(Image input, StructureObjectProcessing parent) {
-        if (seedMap==null) seedMap = Filters.localExtrema(getWsMap(input, parent), null, false, parent.getMask(), Filters.getNeighborhood(1, 1, getWsMap(input, parent)));
+    public ImageInteger getSeedMap(Image input,  ImageMask mask) {
+        if (seedMap==null) seedMap = Filters.localExtrema(getWsMap(input, mask), null, false, mask, Filters.getNeighborhood(1, 1, getWsMap(input, mask)));
         return seedMap;
     }
-
+    public EdgeDetector setIsDarkBackground(boolean dark) {
+        this.darkBackground.setSelected(dark);
+        return this;
+    }
     public EdgeDetector setWsMap(Image wsMap) {
         this.wsMap = wsMap;
         return this;
@@ -110,11 +117,11 @@ public class EdgeDetector implements Segmenter, ToolTip {
         if (secondaryThresholdMap!=null) this.thresholdMethod.setSelectedIndex(2);
         return this;
     }
-    public Image getSecondaryThresholdMap(Image input, StructureObjectProcessing parent) {
+    public Image getSecondaryThresholdMap(Image input,  ImageMask mask) {
         if (scondaryThresholdMap==null) {
             if (!scondaryThresholdMap.isEmpty()) {
-                if (scondaryThresholdMap.sameContent(this.watershedMap)) secondaryThresholdMap = getWsMap(input, parent);
-                else secondaryThresholdMap = scondaryThresholdMap.filter(input, parent);
+                if (scondaryThresholdMap.sameContent(this.watershedMap)) secondaryThresholdMap = getWsMap(input, mask);
+                else secondaryThresholdMap = scondaryThresholdMap.filter(input, mask);
             }
         }
         return secondaryThresholdMap; // todo test if prefilter differs from ws map to avoid processing 2 times same image
@@ -128,7 +135,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
         this.watershedMap.add(prefilters);
         return this;
     }
-    public EdgeDetector setThresholder(Thresholder thlder) {
+    public EdgeDetector setThresholder(SimpleThresholder thlder) {
         this.threshold.setPlugin(thlder);
         return this;
     }
@@ -138,17 +145,16 @@ public class EdgeDetector implements Segmenter, ToolTip {
     }
     @Override
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return runSegmenter(input, parent, parent.getMask());
+        return run(input, parent.getMask());
     }
-    public RegionPopulation partitionImage(Image input, StructureObjectProcessing parent, ImageMask mask) {
-        if (mask==null) mask=parent.getMask();
-        WatershedTransform wt = new WatershedTransform(getWsMap(input, parent), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, parent))), false, null, null);
+    public RegionPopulation partitionImage(Image input, ImageMask mask) {
+        WatershedTransform wt = new WatershedTransform(getWsMap(input, mask), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, mask))), false, null, null);
         wt.setLowConnectivity(false);
         wt.run();
         return wt.getObjectPopulation();
     }
-    public RegionPopulation runSegmenter(Image input, StructureObjectProcessing parent, ImageMask mask) {
-        RegionPopulation allRegions = partitionImage(input, parent, mask);
+    public RegionPopulation run(Image input, ImageMask mask) {
+        RegionPopulation allRegions = partitionImage(input, mask);
         
         /*
         // merge background regions : Do not solve the problem of 2 class of foreground intensities: when around foregrond region of highest intensity, background regions are of intensity comparable to lower foreground regions
@@ -168,15 +174,16 @@ public class EdgeDetector implements Segmenter, ToolTip {
             ImageWindowManagerFactory.showImage(wsMap.setName("Watershed Map"));
         }
         if (this.thresholdMethod.getSelectedIndex()==0) {
-            double thld = threshold.instanciatePlugin().runThresholder(input, parent);
+            double thld = threshold.instanciatePlugin().runSimpleThresholder(input, mask);
             if (testMode) ImageWindowManagerFactory.showImage(generateRegionValueMap(allRegions, input).setName("Intensity value Map. Threshold: "+thld+" thldMethod: "+this.threshold.getPluginName()));
-            allRegions.filter(new RegionPopulation.MeanIntensity(thld, true, input));
+            allRegions.filter(new RegionPopulation.MedianIntensity(thld, darkBackground.getSelected(), input));
         } else if (this.thresholdMethod.getSelectedIndex()==1) { // thld on value map
             Map<Region, Double>[] values = new Map[1];
             Image valueMap = generateRegionValueMap(allRegions, input, values);
-            double thld = threshold.instanciatePlugin().runThresholder(valueMap , parent);
+            double thld = threshold.instanciatePlugin().runSimpleThresholder(valueMap , mask);
             if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("Intensity value Map. Threshold: "+thld));
-            values[0].entrySet().removeIf(e->e.getValue()>=thld);
+            if (darkBackground.getSelected()) values[0].entrySet().removeIf(e->e.getValue()>=thld);
+            else values[0].entrySet().removeIf(e->e.getValue()<=thld);
             allRegions.getObjects().removeAll(values[0].keySet());
             allRegions.relabel(true);
         } else { // use of secondary map to select border regions and compute thld
@@ -185,11 +192,17 @@ public class EdgeDetector implements Segmenter, ToolTip {
             double thld1 = IJAutoThresholder.runThresholder(valueMap, mask, AutoThresholder.Method.Otsu);
             if (testMode) ImageWindowManagerFactory.showImage(valueMap.duplicate("Primary thld value map. Thld: "+thld1));
             Map<Region, Double>[] values2 = new Map[1];
-            Image valueMap2 = generateRegionValueMap(allRegions, getSecondaryThresholdMap(input, parent), values2);
+            Image valueMap2 = generateRegionValueMap(allRegions, getSecondaryThresholdMap(input, mask), values2);
             double thld2 = IJAutoThresholder.runThresholder(valueMap2, mask, AutoThresholder.Method.Otsu);
             // select objects under thld2 | above thld -> foreground, interface ou backgruond. Others are interface or border (majority) and set value to thld on valueMap 
-            for (Region o : allRegions.getObjects()) {
-                if (values[0].get(o)>=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
+            if (darkBackground.getSelected()) {
+                for (Region o : allRegions.getObjects()) {
+                    if (values[0].get(o)>=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
+                }
+            } else {
+                for (Region o : allRegions.getObjects()) {
+                    if (values[0].get(o)<=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
+                }
             }
             Histogram h = valueMap.getHisto256(mask);
             // search for largest segment with no values
@@ -209,7 +222,8 @@ public class EdgeDetector implements Segmenter, ToolTip {
                 ImageWindowManagerFactory.showImage(valueMap2.setName("Secondary thld value map. Thld: "+thld2));
                 ImageWindowManagerFactory.showImage(valueMap.setName("Value map. Thld: "+thld));
             }
-            values[0].entrySet().removeIf(e->e.getValue()>=thld);
+            if (darkBackground.getSelected()) values[0].entrySet().removeIf(e->e.getValue()>=thld);
+            else values[0].entrySet().removeIf(e->e.getValue()<=thld);
             allRegions.getObjects().removeAll(values[0].keySet());
             allRegions.relabel(true);
         }

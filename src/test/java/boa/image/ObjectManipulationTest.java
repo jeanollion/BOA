@@ -28,7 +28,7 @@ import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageLabeller;
-import boa.image.processing.ObjectFactory;
+import boa.image.processing.RegionFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.TreeMap;
@@ -69,7 +69,7 @@ public class ObjectManipulationTest {
     }
     @Test
     public void testGetObjectsVoxels() {
-        Region[] obs = ObjectFactory.getObjectsVoxels(im, false);
+        Region[] obs = RegionFactory.getRegions(im, false);
         assertEquals("object number", 2, obs.length);
         assertEquals("object1 vox number:", 2, obs[0].getVoxels().size());
         assertTrue("object1 vox1:", new Voxel(0, 0, 0).equals(obs[0].getVoxels().get(0)));
@@ -83,7 +83,7 @@ public class ObjectManipulationTest {
     
     @Test
     public void testGetObjectsBounds() {
-        TreeMap<Integer, BoundingBox> bds = ObjectFactory.getBounds(im);
+        TreeMap<Integer, BoundingBox> bds = RegionFactory.getBounds(im);
         assertEquals("object number", 2, bds.size());
         assertTrue("bound1", bound1.equals(bds.get(1)));
         assertTrue("bound3", bound3.equals(bds.get(3)));
@@ -91,7 +91,7 @@ public class ObjectManipulationTest {
     
     @Test
     public void testGetObjectsImages() {
-        Region[] obs = ObjectFactory.getObjectsImage(im, null, false);
+        Region[] obs = RegionFactory.getObjectsImage(im, null, false);
         assertEquals("object number", 2, obs.length);
         TestUtils.assertImage((ImageByte)obs[0].getMask(), (ImageByte)o1.getMask(), 0);
         TestUtils.assertImage((ImageByte)obs[1].getMask(), (ImageByte)o3.getMask(), 0);
@@ -99,7 +99,7 @@ public class ObjectManipulationTest {
     
     @Test 
     public void testConversionVoxelMask() {
-        Region[] obs = ObjectFactory.getObjectsVoxels(im, false);
+        Region[] obs = RegionFactory.getRegions(im, false);
         ImageByte imtest = new ImageByte("", im);
         int label=1;
         for (Region o : obs) o.draw(imtest, label++);
@@ -111,7 +111,7 @@ public class ObjectManipulationTest {
     
     @Test 
     public void testConversionMaskVoxels() {
-        Region[] obs = ObjectFactory.getObjectsImage(im, null, false);
+        Region[] obs = RegionFactory.getObjectsImage(im, null, false);
         ImageByte imtest = new ImageByte("", im);
         int label=1;
         for (Region o : obs) {
@@ -127,7 +127,7 @@ public class ObjectManipulationTest {
     @Test
     public void testRelabelImage() {
         ImageByte im2 = im.duplicate("");
-        ObjectFactory.relabelImage(im2, null);
+        RegionFactory.relabelImage(im2, null);
         TestUtils.assertImage(imRelabel, im2, 0);
     }
     

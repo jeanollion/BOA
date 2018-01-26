@@ -32,11 +32,29 @@ public class PluginParameterList<T extends Plugin> extends SimpleListParameter<P
     public PluginParameterList(String name, String childLabel, Class<T> childClass) {
         super(name, -1, new PluginParameter<T>(childLabel, childClass, false));
     }
+    @Override
+    public PluginParameterList duplicate() {
+        PluginParameterList res = new PluginParameterList(name, childLabel, getChildClass());
+        res.setContentFrom(this);
+        return res;
+    }
     private void add(T instance) {
         super.insert(super.createChildInstance(childLabel).setPlugin(instance));
     } 
+    public PluginParameterList<T> removeAll() {
+        this.removeAllElements();
+        return this;
+    }
     public PluginParameterList<T> add(T... instances) {
         for (T t : instances) add(t);
+        return this;
+    }
+    public PluginParameterList<T> addAtFirst(T... instances) {
+        for (T t : instances) {
+            PluginParameter<T> pp = super.createChildInstance(childLabel).setPlugin(t);
+            pp.setParent(this);
+            super.getChildren().add(0, pp);
+        }
         return this;
     }
     

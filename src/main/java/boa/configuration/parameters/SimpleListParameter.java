@@ -63,6 +63,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
 
     @Override
     public void initFromJSONEntry(Object json) {
+        removeAllElements();
         if (json instanceof JSONObject && ((JSONObject)json).containsKey("list")) {
             JSONObject jsonO = (JSONObject)json;
             JSONArray list = (JSONArray)jsonO.get("list");
@@ -204,8 +205,9 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         return instance;
     }
 
+    @Override
     public SimpleListParameter<T> duplicate() {
-        SimpleListParameter<T> res = new SimpleListParameter<T>(name, unMutableIndex, getChildClass());
+        SimpleListParameter<T> res = new SimpleListParameter<>(name, unMutableIndex, getChildClass());
         res.setContentFrom(this);
         return res;
     }

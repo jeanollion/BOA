@@ -21,6 +21,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
+import boa.configuration.parameters.PreFilterSequence;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -37,55 +38,59 @@ import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.WatershedTransform;
+import boa.plugins.plugins.pre_filter.ImageFeature;
+import boa.plugins.plugins.segmenters.EdgeDetector;
+import boa.utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class FitMicrochannelHeadToGradient implements PostFilter {
-    NumberParameter gradientScale = new BoundedNumberParameter("Gradient Scale", 1, 2, 1, null);
+public class FitMicrochannelHeadToEdges implements PostFilter {
+     protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map");
+    
     public static boolean debug = false;
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
-        fitHead(parent.getRawImage(childStructureIdx), gradientScale.getValue().doubleValue(), childPopulation);
+        Image edge = watershedMap.filter(parent.getRawImage(childStructureIdx), parent.getMask());
+        fitHead(edge, childPopulation);
         return childPopulation;
     }
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{gradientScale};
+        return new Parameter[]{watershedMap};
     }
-    public static void fitHead(Image input, double gradientScale, RegionPopulation inputPop) {
-        Image grad = ImageFeatures.getGradientMagnitude(input, gradientScale, false).setName("grad");
-        if (debug) ImageWindowManagerFactory.showImage(grad);
-        for (Region o : inputPop.getObjects()) cutHead(grad, gradientScale, o);
+    public static void fitHead(Image edgeMap, RegionPopulation inputPop) {
+        if (debug) ImageWindowManagerFactory.showImage(edgeMap);
+        for (Region o : inputPop.getObjects()) cutHead(edgeMap, 3, o);
         inputPop.redrawLabelMap(true);
         if (debug && !inputPop.getObjects().isEmpty()) logger.debug("object mask type: {}", inputPop.getObjects().get(0).getMask().getClass().getSimpleName());
     }
     
-    private static void cutHead(Image grad, double gradientScale, Region object) {
+    private static void cutHead(Image edgeMap, int margin, Region object) {
         BoundingBox b = object.getBounds();
-        BoundingBox head = new BoundingBox(b.getxMin(), b.getxMax(), b.getyMin(), b.getyMin()+b.getSizeX(), b.getzMin(), b.getzMax());
-        Image gradLocal = grad.crop(head);
+        BoundingBox head = new BoundingBox(b.getxMin()-margin, b.getxMax()+margin, b.getyMin()-margin, b.getyMin()+b.getSizeX(), b.getzMin(), b.getzMax());
+        Image edgeMapLocal = edgeMap.crop(head);
         List<Region> seeds = new ArrayList<>(3);
         int label = 0;
-        double scaleXY = grad.getScaleXY();
-        double scaleZ = grad.getScaleZ();
+        double scaleXY = edgeMap.getScaleXY();
+        double scaleZ = edgeMap.getScaleZ();
         Voxel corner1 = new Voxel(0, 0, 0);
-        Voxel corner2 = new Voxel(gradLocal.getSizeX()-1, 0, 0);
+        Voxel corner2 = new Voxel(edgeMapLocal.getSizeX()-1, 0, 0);
         seeds.add(new Region(corner1, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
         seeds.add(new Region(corner2, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
         // add all local min within innerHead
-        int margin =(int)Math.round(gradientScale+0.5)+1;
-        if (margin*2>=b.getSizeX()-2) margin = Math.max(1, b.getSizeX()/4);
-        BoundingBox innerHead = new BoundingBox(margin, head.getSizeX()-1-margin,margin, head.getSizeY()-1-margin, 0, head.getSizeZ()-1);
-        ImageByte maxL = Filters.localExtrema(gradLocal, null, false, null, Filters.getNeighborhood(1.5, 1.5, gradLocal)).resetOffset();
-        if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds before and"));
-        ImageOperations.andWithOffset(maxL, innerHead.getImageProperties(1, 1), maxL);
+        int innerMargin = margin*2;
+        if (innerMargin*2>=b.getSizeX()-2) innerMargin = Math.max(1, b.getSizeX()/4);
+        BoundingBox innerHead = new BoundingBox(innerMargin, head.getSizeX()-1-innerMargin,innerMargin, head.getSizeY()-1-innerMargin, 0, head.getSizeZ()-1);
+        ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, innerHead.getImageProperties(1, 1), Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
+        //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds before and"));
+        //ImageOperations.andWithOffset(maxL, innerHead.getImageProperties(1, 1), maxL);
         if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));
         seeds.addAll(ImageLabeller.labelImageList(maxL));
         //seeds.add(new Region(new Voxel((gradLocal.getSizeX()-1)/2, (gradLocal.getSizeY()-1)/2, 0), ++label, (float)scaleXY, (float)scaleZ));
-        RegionPopulation pop = WatershedTransform.watershed(gradLocal, null, seeds, false, null, null, false);
+        RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, null, false);
         pop.getObjects().removeIf(o->!o.getVoxels().contains(corner1)&&!o.getVoxels().contains(corner2));
         pop.translate(head, true);
         for (Region o : pop.getObjects()) {

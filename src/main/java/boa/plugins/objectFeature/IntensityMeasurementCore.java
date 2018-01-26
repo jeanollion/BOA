@@ -25,6 +25,7 @@ import boa.data_structure.Voxel;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageInteger;
+import boa.image.ImageMask;
 import java.util.HashMap;
 import boa.measurement.BasicMeasurements;
 import boa.plugins.objectFeature.ObjectFeatureCore;
@@ -38,10 +39,10 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
     Image intensityMap, transformedMap;
     HashMap<Region, IntensityMeasurements> values = new HashMap<>();
     
-    public void setUp(Image intensityMap, StructureObject parent , PreFilterSequence preFilters) {
+    public void setUp(Image intensityMap, ImageMask mask , PreFilterSequence preFilters) {
         this.intensityMap=intensityMap;    
         if (preFilters==null) this.transformedMap=intensityMap;
-        else transformedMap = preFilters.filter(intensityMap, parent);
+        else transformedMap = preFilters.filter(intensityMap, mask);
     }
     public Image getIntensityMap(boolean transformed) {
         return transformed ? transformedMap : intensityMap;

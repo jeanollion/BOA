@@ -19,6 +19,7 @@ package boa.plugins;
 
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.StructureObject;
 import java.util.Collection;
 import java.util.List;
@@ -32,8 +33,11 @@ import boa.utils.Pair;
 public interface ProcessingScheme extends Plugin { //Multithreaded
     public ProcessingScheme addPreFilters(PreFilter... preFilters);
     public ProcessingScheme addPostFilters(PostFilter... postFilters);
+    public ProcessingScheme addTrackPreFilters(TrackPreFilter... trackPreFilters);
     public ProcessingScheme addPreFilters(Collection<PreFilter> preFilters);
     public ProcessingScheme addPostFilters(Collection<PostFilter> postFilters);
+    public ProcessingScheme addTrackPreFilters(Collection<TrackPreFilter> trackPreFilters);
+    public TrackPreFilterSequence getTrackPreFilters();
     public PreFilterSequence getPreFilters();
     public PostFilterSequence getPostFilters();
     public Segmenter getSegmenter();

@@ -35,6 +35,7 @@ import java.util.List;
 import boa.plugins.ManualSegmenter;
 import boa.plugins.Thresholder;
 import boa.image.processing.WatershedTransform;
+import boa.plugins.SimpleThresholder;
 
 /**
  *
@@ -43,13 +44,13 @@ import boa.image.processing.WatershedTransform;
 public class WatershedManualSegmenter implements ManualSegmenter {
     BooleanParameter decreasingIntensities = new BooleanParameter("Decreasing intensities", true);
     PreFilterSequence prefilters = new PreFilterSequence("PreFilters");
-    PluginParameter<Thresholder> stopThreshold = new PluginParameter<Thresholder>("Stop threshold", Thresholder.class, false);
+    PluginParameter<SimpleThresholder> stopThreshold = new PluginParameter<>("Stop threshold", SimpleThresholder.class, false);
     Parameter[] parameters=  new Parameter[]{prefilters, decreasingIntensities, stopThreshold};
     boolean verbose;
     public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> points) {
-        input = prefilters.filter(input, parent).setName("preFilteredImage");
-        Thresholder t = stopThreshold.instanciatePlugin();
-        double threshold = t!=null?t.runThresholder(input, parent): Double.NaN;
+        input = prefilters.filter(input, segmentationMask).setName("preFilteredImage");
+        SimpleThresholder t = stopThreshold.instanciatePlugin();
+        double threshold = t!=null?t.runSimpleThresholder(input, segmentationMask): Double.NaN;
         WatershedTransform.PropagationCriterion prop = Double.isNaN(threshold) ? null : new WatershedTransform.ThresholdPropagationOnWatershedMap(threshold);
         ImageByte mask = new ImageByte("seeds mask", input);
         int label = 1;

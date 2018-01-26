@@ -20,6 +20,7 @@ package boa.plugins.plugins.pre_filter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
+import boa.image.ImageMask;
 import boa.plugins.PreFilter;
 
 /**
@@ -28,7 +29,7 @@ import boa.plugins.PreFilter;
  */
 public class Invert implements PreFilter {
 
-    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+    public Image runPreFilter(Image input, ImageMask mask) {
         input = input.duplicate("inverted");
         input.invert();
         return input;

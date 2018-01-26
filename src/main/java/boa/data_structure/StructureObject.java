@@ -6,6 +6,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.PostLoadable;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.MicroscopyField;
+import boa.data_structure.dao.BasicObjectDAO;
 import boa.data_structure.region_container.ObjectContainer;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
@@ -993,7 +994,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (measurements==null) {
             synchronized(this) {
                 if (measurements==null) {
-                    measurements = dao.getMeasurements(this);
+                    if (dao!=null && !(dao instanceof BasicObjectDAO)) measurements = dao.getMeasurements(this);
                     if (measurements==null) measurements = new Measurements(this);
                 }
             }

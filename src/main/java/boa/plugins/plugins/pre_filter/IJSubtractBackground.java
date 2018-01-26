@@ -29,6 +29,7 @@ import ij.ImageStack;
 import boa.image.IJImageWrapper;
 import boa.image.Image;
 import boa.image.ImageFloat;
+import boa.image.ImageMask;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
 import boa.plugins.Filter;
@@ -57,7 +58,7 @@ public class IJSubtractBackground implements PreFilter, Filter {
     
     public IJSubtractBackground(){}
     
-    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+    public Image runPreFilter(Image input, ImageMask mask) {
         return filter(input, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
     }
     /**

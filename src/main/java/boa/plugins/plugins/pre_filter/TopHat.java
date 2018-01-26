@@ -30,6 +30,7 @@ import ij.ImageStack;
 import boa.image.IJImageWrapper;
 import boa.image.Image;
 import boa.image.ImageFloat;
+import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
@@ -61,8 +62,8 @@ public class TopHat implements PreFilter, Filter {
     }
     public TopHat() { }
     
-    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
-        return filter(input, radius.getScaleXY(), radius.getScaleZ(structureObject.getScaleXY(), structureObject.getScaleZ()), darkBackground.getSelected(), smooth.getSelected());
+    public Image runPreFilter(Image input, ImageMask mask) {
+        return filter(input, radius.getScaleXY(), radius.getScaleZ(mask.getScaleXY(), mask.getScaleZ()), darkBackground.getSelected(), smooth.getSelected());
     }
     
     public static Image filter(Image input, double radiusXY, double radiusZ, boolean darkBackground, boolean smooth) {

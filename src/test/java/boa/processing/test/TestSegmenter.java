@@ -35,7 +35,6 @@ import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.plugins.plugins.segmenters.WatershedSegmenter;
-import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import boa.utils.Utils;
 
 /**

@@ -28,7 +28,7 @@ import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
 import boa.image.processing.ImageOperations;
-import boa.image.processing.ObjectFactory;
+import boa.image.processing.RegionFactory;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -118,7 +118,7 @@ public class ManualObjectStrecher {
             ImageOperations.and(thlded, strechMap, thlded);
             //ImageWindowManagerFactory.showImage(thlded.duplicate("and with thld"));
             //check that after thesholding, object reaches line -> if not , do not apply thresholding
-            int yMin = ObjectFactory.getObjectsImage(strechMap, false)[0].getBounds().getyMin()+p.value.getyMin();
+            int yMin = RegionFactory.getObjectsImage(strechMap, false)[0].getBounds().getyMin()+p.value.getyMin();
             logger.debug("y Min: {}, line y to reach: {}", yMin, Math.max(leftUp.y, rightUp.y)+1);
             if (yMin<=Math.max(leftUp.y, rightUp.y)+1) {
                 strechMap = thlded;
@@ -129,7 +129,7 @@ public class ManualObjectStrecher {
             }
             offset.reverseOffset();
             strechMap.addOffset(offset);
-            Region[] allO = ObjectFactory.getObjectsImage(strechMap, false);
+            Region[] allO = RegionFactory.getObjectsImage(strechMap, false);
             if (allO.length>0) {
                 Region newObject = allO[0].translate(strechMap.getBoundingBox());
                 objectsToUpdate.add(new Pair(child, newObject));

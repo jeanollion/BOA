@@ -79,7 +79,7 @@ public interface ImageDisplayer<T> {
         
         hist.removeSaturatingValue(5, true);
         hist.removeSaturatingValue(5, false);
-        double[] per =  hist.getPercentile(0.01, 0.9999);
+        double[] per =  hist.getQuantiles(0.01, 0.9999);
         if (per[0]==per[1]) {
             per[0] = hist.minAndMax[0];
             per[1] = hist.minAndMax[1];

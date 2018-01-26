@@ -22,6 +22,7 @@ import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.parameters.TrackPostFilterSequence;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.StructureObject;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +36,7 @@ import boa.plugins.ProcessingScheme;
 import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackPostFilter;
+import boa.plugins.TrackPreFilter;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.utils.MultipleException;
@@ -47,8 +49,9 @@ import boa.utils.Pair;
 public class SegmentAndTrack implements ProcessingSchemeWithTracking {
     int nThreads;
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
+    protected TrackPreFilterSequence trackPreFilters = new TrackPreFilterSequence("Track Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
-    PluginParameter<TrackerSegmenter> tracker = new PluginParameter<TrackerSegmenter>("Tracker", TrackerSegmenter.class, true);
+    PluginParameter<TrackerSegmenter> tracker = new PluginParameter<>("Tracker", TrackerSegmenter.class, true);
     protected TrackPostFilterSequence trackPostFilters = new TrackPostFilterSequence("Track Post-Filters");
     Parameter[] parameters= new Parameter[]{tracker, preFilters, postFilters, trackPostFilters};
     
@@ -76,6 +79,14 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
         postFilters.add(postFilter);
         return this;
     }
+    @Override public SegmentAndTrack addTrackPreFilters(TrackPreFilter... trackPreFilter) {
+        trackPreFilters.add(trackPreFilter);
+        return this;
+    }
+    @Override public SegmentAndTrack addTrackPreFilters(Collection<TrackPreFilter> trackPreFilter) {
+        trackPreFilters.add(trackPreFilter);
+        return this;
+    }
     @Override public SegmentAndTrack addPreFilters(Collection<PreFilter> preFilter) {
         preFilters.add(preFilter);
         return this;
@@ -87,7 +98,9 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
     @Override public PreFilterSequence getPreFilters() {
         return preFilters;
     }
-    
+    @Override public TrackPreFilterSequence getTrackPreFilters() {
+        return trackPreFilters;
+    }
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
@@ -108,7 +121,8 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
         try {
             TrackerSegmenter t = tracker.instanciatePlugin();
             if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
-            t.segmentAndTrack(structureIdx, parentTrack, preFilters, postFilters);
+            TrackPreFilterSequence tpf = trackPreFilters.duplicate().addAtFirst(preFilters);
+            t.segmentAndTrack(structureIdx, parentTrack, tpf, postFilters);
             //logger.debug("executing #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
             trackPostFilters.filter(structureIdx, parentTrack, executor); 
         } catch (MultipleException me) {

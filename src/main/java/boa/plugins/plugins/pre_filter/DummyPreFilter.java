@@ -22,6 +22,7 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
+import boa.image.ImageMask;
 import boa.plugins.PreFilter;
 
 /**
@@ -31,7 +32,7 @@ import boa.plugins.PreFilter;
 public class DummyPreFilter implements PreFilter{
     NumberParameter n1 = new NumberParameter("number1", 2, 2);
     ChoiceParameter c1 = new ChoiceParameter("CHoice", new String[]{"c1", "c2"}, "c1", true);
-    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+    public Image runPreFilter(Image input, ImageMask mask) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

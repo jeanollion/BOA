@@ -60,7 +60,7 @@ public class ProcessingChain implements Segmenter {
             for (PluginParameter<PreFilter> p : preFilters.getActivatedChildren() ) {
                 PreFilter pre = p.instanciatePlugin();
                 if (pre!=null) {
-                    input = pre.runPreFilter(input, parent);
+                    input = pre.runPreFilter(input, parent.getMask());
                 }
             }
         }

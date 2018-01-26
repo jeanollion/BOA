@@ -25,6 +25,7 @@ import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
@@ -68,6 +69,7 @@ import static boa.utils.SlidingOperator.performSlide;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
+import java.util.TreeMap;
 
 /**
  *
@@ -122,18 +124,15 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
     }
     
     @Override
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
+    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, TrackPreFilterSequence trackPreFilters, PostFilterSequence postFilters) {
         if (parentTrack.isEmpty()) return;
         // segmentation
         final Result[] boundingBoxes = new Result[parentTrack.size()];
         
-        Image[] inputImages = new Image[parentTrack.size()];
         MicrochannelSegmenter[] segmenters = new MicrochannelSegmenter[parentTrack.size()];
         for (int i = 0; i<parentTrack.size(); ++i) segmenters[i] = getSegmenter();
-        ThreadRunner.execute(parentTrack, false, (StructureObject parent, int idx) -> {
-            inputImages[idx] = preFilters.filter(parent.getRawImage(structureIdx), parent);
-        }, executor, null);
-        
+        TreeMap<StructureObject, Image> ii = trackPreFilters.filter(structureIdx, parentTrack, executor);
+        Image[] inputImages = ii.values().toArray(new Image[parentTrack.size()]);
         if (segmenters[0] instanceof OverridableThresholdWithSimpleThresholder) {
             Image[] inputImagesToThld = new Image[inputImages.length];
             for (int i = 0; i<parentTrack.size(); ++i) {

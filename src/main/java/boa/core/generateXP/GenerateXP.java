@@ -102,6 +102,8 @@ import boa.plugins.plugins.track_post_filter.SegmentationPostFilter;
 import boa.plugins.plugins.transformations.AutoFlipY;
 import boa.plugins.plugins.transformations.RemoveDeadPixels;
 import boa.image.processing.ImageTransformation;
+import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
+import boa.plugins.plugins.track_post_filter.AverageMask;
 
 
 /**
@@ -554,9 +556,16 @@ public class GenerateXP {
         Structure mc = xp.getStructure(0);
         Structure bacteria = xp.getStructure(1);
         if (processing) {
-            if (!subTransPre) mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D())).addPreFilters(new IJSubtractBackground(0.3, true, false, true, false)));
-            else mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D()))
-                    .addTrackPostFilters(new TrackLengthFilter().setMinSize(100),  new RemoveTracksStartingAfterFrame()));
+            SegmentAndTrack mcpc;
+            if (!subTransPre) mcpc = new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D())).addPreFilters(new IJSubtractBackground(0.3, true, false, true, false));
+            else mcpc =new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D()));
+            mcpc.addTrackPostFilters(
+                new TrackLengthFilter().setMinSize(100),  
+                new RemoveTracksStartingAfterFrame(),
+                new SegmentationPostFilter().addPostFilters(new FitMicrochannelHeadToEdges()),
+                new AverageMask()
+            );
+            mc.setProcessingScheme(mcpc);
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()

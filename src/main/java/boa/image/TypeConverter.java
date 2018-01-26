@@ -83,7 +83,10 @@ public class TypeConverter {
         }
         return output;
     }
-    
+    public static ImageInteger toImageInteger(ImageMask image, ImageByte output) {
+        if (image instanceof ImageInteger) return (ImageInteger)image;
+        else return toByteMask(image, output, 1);
+    }
     
     /**
      * 

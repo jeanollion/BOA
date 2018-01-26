@@ -283,7 +283,7 @@ public class CompareObjects {
             if (pop.getObjects().isEmpty()) continue;
             //logger.debug("quality was : {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()));
             Image raw = parent.getRawImage(structureIdx);
-            Image pprocessed = pf.filter(raw, parent);
+            Image pprocessed = pf.filter(raw, parent.getMask());
             Image[] maps = seg.computeMaps(raw, pprocessed);
             for (StructureObject parentB : parent.getChildObjects(1)) {
                 List<Region> objects = parentB.getObject().getIncludedObjects(pop.getObjects());

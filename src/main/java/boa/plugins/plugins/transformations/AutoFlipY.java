@@ -146,6 +146,20 @@ public class AutoFlipY implements Transformation {
             // comparison of signal above & under using gradient filer
         }*/
     }
+    private Boolean isFlipPhaseOpticalAberration(Image image) {
+        /* 
+        1) search for optical aberration
+        2) get x variance for each line above and under aberration -> microchannels are where variance is maximal
+        */
+        ImageMask upper = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        ImageMask lower = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY()+image.getSizeY()/2, image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null)[0];
+        double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null)[0];
+        if (testMode) logger.debug("AutoFlipY: upper half mean {} lower: {}", upperMean, lowerMean);
+        if (upperMean>lowerMean) return false;
+        else if (lowerMean>upperMean) return true;
+        else return null;
+    }
     private Boolean isFlipFluoUpperHalf(Image image) {
         ImageMask upper = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
         ImageMask lower = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY()+image.getSizeY()/2, image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());

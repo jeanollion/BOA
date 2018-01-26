@@ -31,7 +31,7 @@ import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.image.ImageProperties;
 import boa.image.ImageShort;
-import boa.image.processing.ObjectFactory;
+import boa.image.processing.RegionFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -233,7 +233,7 @@ public class RegionPopulation {
     private void constructObjects() {
         if (labelImage==null) objects = new ArrayList<>();
         else {
-            Region[] obs = ObjectFactory.getObjectsImage(labelImage, false);
+            Region[] obs = RegionFactory.getObjectsImage(labelImage, false);
             objects = new ArrayList<>(Arrays.asList(obs));
         }
     }
@@ -394,7 +394,7 @@ public class RegionPopulation {
                 }
             }
         }
-        ArrayList<Region> seeds = new ArrayList<Region>(Arrays.asList(ObjectFactory.getObjectsImage(seedMap, false)));        
+        ArrayList<Region> seeds = new ArrayList<Region>(Arrays.asList(RegionFactory.getObjectsImage(seedMap, false)));        
         RegionPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null, lowConnectivity);
         this.objects = pop.getObjects();
         objects.remove(0); // remove background object
@@ -841,6 +841,24 @@ public class RegionPopulation {
         public boolean keepObject(Region object) {
             double mean = BasicMeasurements.getMeanValue(object, intensityMap, false);
             return mean >= threshold == keepOverThreshold;
+        }
+    }
+    public static class MedianIntensity implements Filter {
+
+        double threshold;
+        Image intensityMap;
+        boolean keepOverThreshold;
+        
+        public MedianIntensity(double threshold, boolean keepOverThreshold, Image intensityMap) {
+            this.threshold = threshold;
+            this.intensityMap = intensityMap;
+            this.keepOverThreshold=keepOverThreshold;
+        }
+        @Override public void init(RegionPopulation population) {}
+        @Override
+        public boolean keepObject(Region object) {
+            double median = BasicMeasurements.getQuantileValue(object, intensityMap, false, 0.5)[0];
+            return median >= threshold == keepOverThreshold;
         }
     }
         

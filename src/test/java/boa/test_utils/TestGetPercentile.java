@@ -38,7 +38,7 @@ public class TestGetPercentile {
         float[] pix = im.getPixelArray()[0];
         Arrays.sort(pix);
         logger.debug("sort: {}", toStringArray(per, d->d+":"+getPer(d, pix)));
-        logger.debug("histo: {}", ImageOperations.getPercentile(im, null, null, ArrayUtils.toPrimitive(per)));
+        logger.debug("histo: {}", ImageOperations.getQuantiles(im, null, null, ArrayUtils.toPrimitive(per)));
     }
     public static double getPer(double per , float[] array) {
         double idx = per * array.length;

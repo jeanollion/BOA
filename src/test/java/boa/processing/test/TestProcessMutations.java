@@ -127,7 +127,7 @@ public class TestProcessMutations {
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);
         Image input = mc.getRawImage(2);
-        input = mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().filter(input, mc);
+        input = mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().filter(input, mc.getMask());
         logger.debug("prefilters: {}, sizeZ: {}", mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().getChildCount(), input.getSizeZ());
         if (parentMC) {
             if (mcMask_!=null) mcMask_.add(mc.getMask());

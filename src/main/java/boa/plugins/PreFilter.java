@@ -17,13 +17,13 @@
  */
 package boa.plugins;
 
-import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
+import boa.image.ImageMask;
 
 /**
  *
  * @author jollion
  */
 public interface PreFilter extends ImageProcessingPlugin {
-    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject);
+    public Image runPreFilter(Image input, ImageMask mask);
 }

@@ -22,6 +22,7 @@ import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.parameters.TrackPostFilterSequence;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.Image;
@@ -37,6 +38,7 @@ import boa.plugins.ProcessingScheme;
 import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackPostFilter;
+import boa.plugins.TrackPreFilter;
 import boa.plugins.Tracker;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
@@ -49,6 +51,7 @@ import boa.utils.ThreadRunner;
 public class SegmentThenTrack implements ProcessingSchemeWithTracking {
     protected PluginParameter<Tracker> tracker = new PluginParameter<>("Tracker", Tracker.class, true);
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
+    protected TrackPreFilterSequence trackPreFilters = new TrackPreFilterSequence("Track Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
     protected TrackPostFilterSequence trackPostFilters = new TrackPostFilterSequence("Track Post-Filters");
@@ -86,10 +89,20 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
         postFilters.add(postFilter);
         return this;
     }
+    @Override public SegmentThenTrack addTrackPreFilters(TrackPreFilter... trackPreFilter) {
+        trackPreFilters.add(trackPreFilter);
+        return this;
+    }
+    @Override public SegmentThenTrack addTrackPreFilters(Collection<TrackPreFilter> trackPreFilter) {
+        trackPreFilters.add(trackPreFilter);
+        return this;
+    }
     @Override public PreFilterSequence getPreFilters() {
         return preFilters;
     }
-    
+    @Override public TrackPreFilterSequence getTrackPreFilters() {
+        return trackPreFilters;
+    }
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
@@ -145,7 +158,7 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
             return Collections.EMPTY_LIST;
         }
         if (parentTrack.isEmpty()) return Collections.EMPTY_LIST;
-        SegmentOnly seg = new SegmentOnly(segmenter.instanciatePlugin()).setPreFilters(preFilters).setPostFilters(postFilters);
+        SegmentOnly seg = new SegmentOnly(segmenter.instanciatePlugin()).setPreFilters(preFilters).setTrackPreFilters(trackPreFilters).setPostFilters(postFilters);
         return seg.segmentAndTrack(structureIdx, parentTrack, executor);
     }
 
@@ -172,7 +185,7 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{preFilters, segmenter, postFilters, tracker, trackPostFilters};
+        return new Parameter[]{preFilters, trackPreFilters, segmenter, postFilters, tracker, trackPostFilters};
     }
     
 }
