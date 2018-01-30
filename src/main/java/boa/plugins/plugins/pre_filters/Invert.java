@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.pre_filter;
+package boa.plugins.plugins.pre_filters;
 
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObjectPreProcessing;

@@ -23,6 +23,8 @@ import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.core.Task;
 import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.parameters.PluginParameter;
+import boa.configuration.parameters.TrackPostFilterSequence;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -34,8 +36,10 @@ import boa.plugins.PluginFactory;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
+import boa.plugins.TrackPostFilter;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
+import boa.plugins.plugins.track_post_filter.TrackLengthFilter;
 
 /**
  *
@@ -67,7 +71,9 @@ public class TestProcessMicrochannelsPhase {
         RegionPopulation pop = s.runSegmenter(input, 0, root);
         FitMicrochannelHeadToEdges.debug=true;
         if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
-            ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters().filter(0, Arrays.asList(new StructureObject[]{root}), null);
+            TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters();
+            for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) if (pp.instanciatePlugin() instanceof TrackLengthFilter) pp.setActivated(false);
+            tpf.filter(0, Arrays.asList(new StructureObject[]{root}), null);
             pop = root.getObjectPopulation(0);
         }
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);

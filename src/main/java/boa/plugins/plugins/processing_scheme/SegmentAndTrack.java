@@ -39,6 +39,7 @@ import boa.plugins.TrackPostFilter;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
+import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
 
@@ -53,7 +54,7 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     PluginParameter<TrackerSegmenter> tracker = new PluginParameter<>("Tracker", TrackerSegmenter.class, true);
     protected TrackPostFilterSequence trackPostFilters = new TrackPostFilterSequence("Track Post-Filters");
-    Parameter[] parameters= new Parameter[]{tracker, preFilters, postFilters, trackPostFilters};
+    Parameter[] parameters= new Parameter[]{preFilters, trackPreFilters, tracker, postFilters, trackPostFilters};
     
     public SegmentAndTrack(){}
     
@@ -98,7 +99,8 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
     @Override public PreFilterSequence getPreFilters() {
         return preFilters;
     }
-    @Override public TrackPreFilterSequence getTrackPreFilters() {
+    @Override public TrackPreFilterSequence getTrackPreFilters(boolean addPreFilters) {
+        if (addPreFilters && !preFilters.isEmpty()) return trackPreFilters.duplicate().addAtFirst(new PreFilters().add(preFilters));
         return trackPreFilters;
     }
     @Override public PostFilterSequence getPostFilters() {
@@ -121,7 +123,7 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
         try {
             TrackerSegmenter t = tracker.instanciatePlugin();
             if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
-            TrackPreFilterSequence tpf = trackPreFilters.duplicate().addAtFirst(preFilters);
+            TrackPreFilterSequence tpf = trackPreFilters.duplicate().addAtFirst(new PreFilters().add(preFilters));
             t.segmentAndTrack(structureIdx, parentTrack, tpf, postFilters);
             //logger.debug("executing #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
             trackPostFilters.filter(structureIdx, parentTrack, executor); 

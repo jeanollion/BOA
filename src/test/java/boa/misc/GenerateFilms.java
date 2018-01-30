@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import boa.plugins.plugins.pre_filter.IJSubtractBackground;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.image.processing.ImageTransformation;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;

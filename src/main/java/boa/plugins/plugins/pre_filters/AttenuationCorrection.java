@@ -2,7 +2,7 @@
  * from Philippe Andrey, Eric Biot, Souad Blila
     http://imagejdocu.tudor.lu/doku.php?id=plugin:stacks:attenuation_correction:start
  */
-package boa.plugins.plugins.pre_filter;
+package boa.plugins.plugins.pre_filters;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;

@@ -27,7 +27,7 @@ import boa.plugins.PluginFactory;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.plugins.measurements.objectFeatures.Quality;
 import boa.plugins.plugins.post_filters.FeatureFilter;
-import boa.plugins.plugins.pre_filter.BandPass;
+import boa.plugins.plugins.pre_filters.BandPass;
 import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
 import boa.plugins.plugins.trackers.LAPTracker;

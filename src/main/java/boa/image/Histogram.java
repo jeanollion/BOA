@@ -102,6 +102,7 @@ public class Histogram {
      * @return
      */
     public static Histogram getHisto256(Collection<Image> images, double[] minAndMax) {
+        if (minAndMax==null) minAndMax=new double[2];
         if (!(minAndMax[0] < minAndMax[1])) {
             double[] mm = ImageOperations.getMinAndMax(images);
             minAndMax[0] = mm[0];
@@ -119,6 +120,7 @@ public class Histogram {
         return histo;
     }
     public static Histogram getHisto256(Map<Image, ImageMask> images, double[] minAndMax) {
+        if (minAndMax==null) minAndMax=new double[2];
         if (!(minAndMax[0] < minAndMax[1])) {
             double[] mm = ImageOperations.getMinAndMax(images);
             minAndMax[0] = mm[0];
@@ -136,6 +138,7 @@ public class Histogram {
         return histo;
     }
     public static List<Histogram> getHisto256AsList(Collection<Image> images, double[] minAndMax) {
+        if (minAndMax==null) minAndMax=new double[2];
         if (!(minAndMax[0] < minAndMax[1])) {
             double[] mm = ImageOperations.getMinAndMax(images);
             minAndMax[0] = mm[0];

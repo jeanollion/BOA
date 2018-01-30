@@ -38,7 +38,7 @@ import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.WatershedTransform;
-import boa.plugins.plugins.pre_filter.ImageFeature;
+import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.segmenters.EdgeDetector;
 import boa.utils.Utils;
 

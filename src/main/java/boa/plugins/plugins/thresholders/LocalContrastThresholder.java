@@ -26,7 +26,7 @@ import boa.image.ImageFloat;
 import boa.image.processing.ImageOperations;
 import java.util.List;
 import boa.plugins.Thresholder;
-import boa.plugins.plugins.pre_filter.IJSubtractBackground;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.utils.Utils;

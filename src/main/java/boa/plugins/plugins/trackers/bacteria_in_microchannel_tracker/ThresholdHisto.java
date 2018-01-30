@@ -35,7 +35,6 @@ import static boa.plugins.Plugin.logger;
 import boa.plugins.Segmenter;
 import boa.plugins.OverridableThreshold;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
-import boa.plugins.plugins.thresholders.Percentage;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
 import boa.utils.ArrayUtil;
@@ -86,8 +85,9 @@ public class ThresholdHisto extends Threshold {
             double sv = IJAutoThresholder.runThresholder(saturateMethod, histoAll); // byteImage=true to get a 8-bit value
             saturateValue256 = (int)histoAll.getIdxFromValue(sv);
             // limit to saturagePercentage
-            int satPer = Percentage.getBinAtPercentage(histoAll.data, maxSaturationProportion);
-            if (satPer>saturateValue256) saturateValue256 = satPer;
+            double sat = histoAll.getQuantiles(1-maxSaturationProportion)[0];
+            double satPer = histoAll.getIdxFromValue(sat);
+            if (satPer>saturateValue256) saturateValue256 = (int)satPer;
             saturateValue =  histoAll.getValueFromIdx(saturateValue256);
             for (int i = saturateValue256; i<256; ++i) histoAll.data[i]=0;
             histoAll.minAndMax[1] = saturateValue;

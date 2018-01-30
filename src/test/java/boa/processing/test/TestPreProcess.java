@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import boa.plugins.PluginFactory;
 import boa.plugins.Transformation;
-import boa.plugins.plugins.pre_filter.IJSubtractBackground;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.plugins.plugins.transformations.AutoRotationXY;
 import boa.plugins.plugins.transformations.CropMicroChannelBF2D;
 import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;

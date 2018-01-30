@@ -37,7 +37,7 @@ public interface ProcessingScheme extends Plugin { //Multithreaded
     public ProcessingScheme addPreFilters(Collection<PreFilter> preFilters);
     public ProcessingScheme addPostFilters(Collection<PostFilter> postFilters);
     public ProcessingScheme addTrackPreFilters(Collection<TrackPreFilter> trackPreFilters);
-    public TrackPreFilterSequence getTrackPreFilters();
+    public TrackPreFilterSequence getTrackPreFilters(boolean addPreFilters);
     public PreFilterSequence getPreFilters();
     public PostFilterSequence getPostFilters();
     public Segmenter getSegmenter();

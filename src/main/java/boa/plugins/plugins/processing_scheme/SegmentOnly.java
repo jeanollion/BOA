@@ -45,12 +45,14 @@ import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.UseMaps;
+import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
 import java.util.Map;
+import java.util.TreeSet;
 
 /**
  *
@@ -62,7 +64,7 @@ public class SegmentOnly implements ProcessingScheme {
     protected TrackPreFilterSequence trackPreFilters = new TrackPreFilterSequence("Track Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
-    Parameter[] parameters;
+    Parameter[] parameters = new Parameter[]{preFilters, trackPreFilters, segmenter, postFilters};
     
     public SegmentOnly() {}
     
@@ -111,7 +113,8 @@ public class SegmentOnly implements ProcessingScheme {
     @Override public PreFilterSequence getPreFilters() {
         return preFilters;
     }
-    @Override public TrackPreFilterSequence getTrackPreFilters() {
+    @Override public TrackPreFilterSequence getTrackPreFilters(boolean addPreFilters) {
+        if (addPreFilters && !preFilters.isEmpty()) return trackPreFilters.duplicate().addAtFirst(new PreFilters().add(preFilters));
         return trackPreFilters;
     }
     @Override public PostFilterSequence getPostFilters() {
@@ -121,6 +124,10 @@ public class SegmentOnly implements ProcessingScheme {
         return segmentAndTrack(structureIdx, parentTrack, executor, null);
     }
     public List<Pair<String, Exception>> segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor, ApplyToSegmenter applyToSegmenter) {
+        Map<StructureObject, Image> inputImages = getTrackPreFilters(true).filter(structureIdx, parentTrack, executor);
+        return segmentAndTrack(structureIdx, parentTrack, inputImages, executor, applyToSegmenter);
+    }
+    public List<Pair<String, Exception>> segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, final Map<StructureObject, Image> inputImages, ExecutorService executor, ApplyToSegmenter applyToSegmenter) {
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
             return Collections.EMPTY_LIST;
@@ -133,8 +140,6 @@ public class SegmentOnly implements ProcessingScheme {
         boolean singleFrame = parentTrack.get(0).getMicroscopyField().singleFrame(structureIdx); // will semgent only on first frame
         
         //HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parentTrack.size(), parent->preFilters.filter(parent.getRawImage(structureIdx), parent.getMask()));
-        TrackPreFilterSequence tpf = preFilters.isEmpty()? trackPreFilters : trackPreFilters.duplicate().addAtFirst(preFilters);
-        Map<StructureObject, Image> inputImages = tpf.filter(structureIdx, parentTrack, executor);
         HashMapGetCreate<StructureObject, Image[]> subMaps = useMaps? new HashMapGetCreate<>(parentTrack.size(), parent->((UseMaps)segmenter.instanciatePlugin()).computeMaps(parent.getRawImage(structureIdx), inputImages.get(parent))) : null; //
         // segment in direct parents
         List<StructureObject> allParents = singleFrame ? StructureObjectUtils.getAllChildren(parentTrack.subList(0, 1), segParentStructureIdx) : StructureObjectUtils.getAllChildren(parentTrack, segParentStructureIdx);
@@ -163,7 +168,6 @@ public class SegmentOnly implements ProcessingScheme {
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);
             pops[idx] = pop;
         }, executor, null));
-        inputImages.clear();
         if (useMaps) subMaps.clear();
         long t3 = System.currentTimeMillis();
         if (subSegmentation) { // collect if necessary and set to parent
@@ -213,7 +217,7 @@ public class SegmentOnly implements ProcessingScheme {
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{preFilters, segmenter, postFilters};
+        return parameters;
     }
     @Override public Segmenter getSegmenter() {return segmenter.instanciatePlugin();}
 }

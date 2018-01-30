@@ -32,20 +32,19 @@ import boa.utils.JSONUtils;
  */
 public class GenerateXPConfig {
     public static void main(String[] args) {
-        String path = "/home/jollion/Fiji.app/plugins/BOA"; // portable
-        //String path = "/home/jollion/Documents/FijiMapDB3/Fiji.app/plugins/BOA";
-        //String path = "/data/Images/Fiji.app/plugins/BOA"; // LJP
-        Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, true, 0, 0, Double.NaN, null);
+        //String path = "/home/jollion/Fiji.app/plugins/BOA"; // portable
+        String path = "/data/Images/Fiji.app/plugins/BOA"; // LJP
+        Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, 0, 0, Double.NaN, null);
         exportXP(path, xpFluo, false);
         
-        Experiment xpTrans = GenerateXP.generateXPTrans("MotherMachinePhaseContrast", null, true, true, 0, 0, Double.NaN);
+        Experiment xpTrans = GenerateXP.generateXPTrans("MotherMachinePhaseContrast", null, true, 0, 0, Double.NaN);
         exportXP(path, xpTrans, false);
         
-        Experiment xpTransFluo = GenerateXP.generateXPFluo("MotherMachinePhaseContrastAndMutations", null, true, true, 0, 0, Double.NaN, null);
+        Experiment xpTransFluo = GenerateXP.generateXPFluo("MotherMachinePhaseContrastAndMutations", null, true, 0, 0, Double.NaN, null);
         GenerateXP.setParametersTrans(xpTransFluo, true, false);
         PreProcessingChain ps = xpTransFluo.getPreProcessingTemplate();
         ps.removeAllTransformations();
-        GenerateXP.setPreprocessingTransAndMut(ps, true, 0, 0, Double.NaN);
+        GenerateXP.setPreprocessingTransAndMut(ps, 0, 0, Double.NaN);
         exportXP(path, xpTransFluo, false);
         
     }

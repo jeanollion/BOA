@@ -17,15 +17,11 @@
  */
 package boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker;
 
-import boa.data_structure.StructureObject;
 import ij.process.AutoThresholder;
 import boa.image.Image;
 import java.util.List;
-import boa.plugins.OverridableThreshold;
-import boa.plugins.Segmenter;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.logger;
 
 /**
  *

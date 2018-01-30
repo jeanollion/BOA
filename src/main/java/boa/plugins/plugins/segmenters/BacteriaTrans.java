@@ -78,7 +78,7 @@ import boa.plugins.OverridableThreshold;
 import boa.plugins.ParameterSetup;
 import boa.plugins.plugins.manual_segmentation.WatershedObjectSplitter;
 import boa.plugins.plugins.post_filters.MicrochannelPhaseArtifacts;
-import boa.plugins.plugins.pre_filter.IJSubtractBackground;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
 import boa.plugins.plugins.thresholders.ConstantValue;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;

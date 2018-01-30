@@ -39,6 +39,11 @@ import java.util.Map.Entry;
 public class NormalizeTrack  implements TrackPreFilter {
     NumberParameter saturation = new BoundedNumberParameter("Saturation", 3, 0.99, 0, 1);
     BooleanParameter invert = new BooleanParameter("Invert", false);
+    public NormalizeTrack() {}
+    public NormalizeTrack(double saturation, boolean invert) {
+        this.saturation.setValue(saturation);
+        this.invert.setSelected(invert);
+    }
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImage) throws Exception {
         Histogram histo = Histogram.getHisto256(preFilteredImages.values(), null);

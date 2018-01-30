@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.pre_filter;
+package boa.plugins.plugins.pre_filters;
 
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
@@ -30,14 +30,14 @@ import boa.image.ImageFloat;
 import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.plugins.PreFilter;
-import static boa.plugins.plugins.pre_filter.ImageFeature.Feature.GAUSS;
-import static boa.plugins.plugins.pre_filter.ImageFeature.Feature.GRAD;
-import static boa.plugins.plugins.pre_filter.ImageFeature.Feature.HessianDet;
-import static boa.plugins.plugins.pre_filter.ImageFeature.Feature.HessianMax;
-import static boa.plugins.plugins.pre_filter.ImageFeature.Feature.HessianMaxNorm;
-import static boa.plugins.plugins.pre_filter.ImageFeature.Feature.HessianMin;
-import static boa.plugins.plugins.pre_filter.ImageFeature.Feature.LoG;
-import static boa.plugins.plugins.pre_filter.ImageFeature.Feature.StructureMax;
+import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.GAUSS;
+import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.GRAD;
+import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.HessianDet;
+import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.HessianMax;
+import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.HessianMaxNorm;
+import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.HessianMin;
+import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.LoG;
+import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.StructureMax;
 import boa.image.processing.ImageFeatures;
 import boa.utils.Utils;
 

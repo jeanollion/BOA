@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.image.processing;
+package boa.image.processing.split_merge;
 
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.data_structure.Region;
@@ -24,6 +24,8 @@ import boa.data_structure.Voxel;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
+import boa.image.processing.ImageFeatures;
+import boa.image.processing.WatershedTransform;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -39,18 +41,16 @@ import boa.image.processing.clustering.RegionCluster;
  *
  * @author jollion
  */
-public class SplitAndMerge {
+public class SplitAndMergeHessian extends SplitAndMerge<SplitAndMergeHessian.Interface> {
     Image hessian;
     final Image rawIntensityMap;
     Image intensityMap;
     Image normalizedHessian;
     public ImageByte tempSplitMask;
     public final double splitThresholdValue, hessianScale;
-    ClusterCollection.InterfaceFactory<Region, Interface> factory;
-    boolean testMode;
     Function<Set<Voxel>, Double> interfaceValue;
 
-    public SplitAndMerge(Image input, double splitThreshold, double hessianScale) {
+    public SplitAndMergeHessian(Image input, double splitThreshold, double hessianScale) {
         rawIntensityMap=input;
         splitThresholdValue=splitThreshold;
         this.hessianScale=hessianScale;
@@ -68,15 +68,13 @@ public class SplitAndMerge {
             }
         };
     }
-    public SplitAndMerge setInterfaceValue(Function<Set<Voxel>, Double> interfaceValue) {
+    public SplitAndMergeHessian setInterfaceValue(Function<Set<Voxel>, Double> interfaceValue) {
         this.interfaceValue=interfaceValue;
         return this;
     }
 
-    public void setTestMode(boolean testMode) {
-        this.testMode = testMode;
-    }
-    public SplitAndMerge setMap(Image hessian) {
+    
+    public SplitAndMergeHessian setWatershedMap(Image hessian) {
         this.hessian = hessian;
         return this;
     }
@@ -88,57 +86,19 @@ public class SplitAndMerge {
         }
         return hessian;
     }
+    @Override public Image getWatershedMap() {
+        return getHessian();
+    }
 
     public ImageByte getSplitMask() {
         if (tempSplitMask==null) tempSplitMask = new ImageByte("split mask", rawIntensityMap);
         return tempSplitMask;
     }
     
-    /**
-     * 
-     * @param segmentationMask
-     * @param minSizePropagation
-     * @param minSize
-     * @param objectMergeLimit
-     * @return 
-     */
-    public RegionPopulation splitAndMerge(ImageInteger segmentationMask, int minSizePropagation, int minSize, int objectMergeLimit) {
-        WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
-        RegionPopulation popWS = WatershedTransform.watershed(getHessian(), segmentationMask, false, null, sfc, false);
-        if (testMode) {
-            popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-            ImageWindowManagerFactory.showImage(getHessian());
-            ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map before merge"));
-        }
-        return merge(popWS, minSize, objectMergeLimit);
+    @Override
+    protected ClusterCollection.InterfaceFactory<Region, Interface> createFactory() {
+        return (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new Interface(e1, e2);
     }
-    /**
-     * 
-     * @param popWS population to merge according to criterion on hessian value @ interface / value @ interface
-     * @param minSize after merge, objects smaller than this size will be erased
-     * @param objectMergeLimit 
-     * @return 
-     */
-    public RegionPopulation merge(RegionPopulation popWS, int minSize, int objectMergeLimit) {
-        RegionCluster.verbose=testMode;
-        RegionCluster.mergeSort(popWS,  getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
-        //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
-        popWS.filterAndMergeWithConnected(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
-        popWS.filterAndMergeWithConnected(new RegionPopulation.Size().setMin(minSize)); // remove small objects
-        popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-        if (testMode) ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map"));
-        return popWS;
-    }
-    public RegionCluster<Interface> getInterfaces(RegionPopulation population, boolean lowConnectivity) {
-        return new RegionCluster<>(population, false, lowConnectivity, getFactory());
-    }
-    
-
-    public ClusterCollection.InterfaceFactory<Region, Interface> getFactory() {
-        if (factory==null) factory = (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new Interface(e1, e2);
-        return factory;
-    }
-    
     
     
     public class Interface extends InterfaceRegionImpl<Interface> implements RegionCluster.InterfaceVoxels<Interface> {

@@ -27,6 +27,7 @@ import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Experiment.ImportImageMethod;
 import boa.configuration.experiment.PreProcessingChain;
 import boa.configuration.experiment.Structure;
+import boa.configuration.parameters.PreFilterSequence;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.MasterDAOFactory;
 import ij.process.AutoThresholder;
@@ -57,10 +58,10 @@ import boa.plugins.plugins.measurements.objectFeatures.Quality;
 import boa.plugins.plugins.measurements.objectFeatures.SNR;
 import boa.plugins.plugins.measurements.objectFeatures.Size;
 import boa.plugins.plugins.post_filters.FeatureFilter;
-import boa.plugins.plugins.pre_filter.BandPass;
-import boa.plugins.plugins.pre_filter.IJSubtractBackground;
-import boa.plugins.plugins.pre_filter.Median;
-import boa.plugins.plugins.pre_filter.SubtractBackgroundMicrochannel;
+import boa.plugins.plugins.pre_filters.BandPass;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground;
+import boa.plugins.plugins.pre_filters.Median;
+import boa.plugins.plugins.pre_filters.SubtractBackgroundMicrochannel;
 import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
@@ -92,7 +93,7 @@ import boa.plugins.legacy.SuppressCentralHorizontalLine;
 import boa.plugins.plugins.measurements.Focus;
 import boa.plugins.plugins.measurements.objectFeatures.MeanAtBorder;
 import boa.plugins.plugins.post_filters.RemoveEndofChannelBacteria;
-import boa.plugins.plugins.pre_filter.ImageFeature;
+import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.track_post_filter.RemoveMicrochannelsTouchingBackgroundOnSides;
 import boa.plugins.plugins.track_post_filter.RemoveMicrochannelsWithOverexpression;
@@ -104,6 +105,9 @@ import boa.plugins.plugins.transformations.RemoveDeadPixels;
 import boa.image.processing.ImageTransformation;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.plugins.plugins.track_post_filter.AverageMask;
+import boa.plugins.plugins.track_pre_filters.NormalizeTrack;
+import boa.plugins.plugins.track_pre_filters.PreFilters;
+import boa.plugins.plugins.track_pre_filters.Saturate;
 
 
 /**
@@ -398,7 +402,7 @@ public class GenerateXP {
         if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) DBUtil.removePrefix(dbName, GUI.DBprefix);
         MasterDAO mDAO = MasterDAOFactory.createDAO(dbName, configDir);
         MasterDAO.deleteObjectsAndSelectionAndXP(mDAO);
-        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY); 
+        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, null, inputDir);
@@ -416,7 +420,7 @@ public class GenerateXP {
     }
     
     
-    public static Experiment generateXPFluo(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
+    public static Experiment generateXPFluo(String name, String outputDir, boolean setUpPreProcessing, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
         
         Experiment xp = new Experiment(name);
         if (importMethod==null) xp.setImportImageMethod(ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
@@ -452,20 +456,20 @@ public class GenerateXP {
         ps.addTransformation(0, null, cropper).setActivated(true);
         //ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, 0).setCropper(cropper)).setActivated(false); // additional translation to correct chromatic shift
     }
-    public static void setPreprocessingTrans(PreProcessingChain ps, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
+    public static void setPreprocessingTrans(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.setFrameDuration(4);
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
         ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, true)));
-        ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
+        ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.PHASE));
         ps.addTransformation(0, null, new CropMicroChannelBF2D());
         if (subTransPre) ps.addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, false)); // subtract after crop because subtract alter optical aberation detection. Optimization: paraboloid = true / range=03-05 best = 0.3 
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
     }
-    public static void setPreprocessingTransAndMut(PreProcessingChain ps, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
+    public static void setPreprocessingTransAndMut(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.removeAllTransformations();
-        setPreprocessingTrans(ps, flip, trimFramesStart, trimFramesEnd, scaleXY );
+        setPreprocessingTrans(ps, trimFramesStart, trimFramesEnd, scaleXY );
         ps.addTransformation(1, null, new RemoveStripesSignalExclusion(-1));
-        ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(false); // nearest -> translation entiers
+        //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, 0, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(false); // nearest -> translation entiers //flip?-1:1 depends on FLIP !!!
     }
     public static void setParametersFluo(Experiment xp, boolean processing, boolean measurements) {
         Structure mc = xp.getStructure(0).setBrightObject(true);
@@ -512,7 +516,7 @@ public class GenerateXP {
         }
     }
     
-    public static Experiment generateXPTrans(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
+    public static Experiment generateXPTrans(String name, String outputDir, boolean setUpPreProcessing, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         Experiment xp = new Experiment(name);
         xp.setImportImageMethod(importMethod==null ? Experiment.ImportImageMethod.SINGLE_FILE : importMethod);
         xp.getChannelImages().insert(new ChannelImage("BF", ""));
@@ -521,7 +525,7 @@ public class GenerateXP {
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);
         setParametersTrans(xp, true, true);
-        if (setUpPreProcessing) setPreprocessingTrans(xp.getPreProcessingTemplate(), flip, trimFramesStart, trimFramesEnd, scaleXY);
+        if (setUpPreProcessing) setPreprocessingTrans(xp.getPreProcessingTemplate(), trimFramesStart, trimFramesEnd, scaleXY);
         return xp;
     }
     public static void deletePositions(Experiment xp, boolean[] deletePositions) {
@@ -572,7 +576,11 @@ public class GenerateXP {
                             .setSegmenter(new BacteriaTrans())
                             .setCostParameters(1.5, 3).setThresholdParameters(5, 1, 25, 15)
                             .setCorrectMotherCell(true)
-                    ).addPreFilters(new SubtractBackgroundMicrochannel())
+                    ).addTrackPreFilters(
+                        new Saturate(0.03),
+                        new PreFilters().add(new SubtractBackgroundMicrochannel()),
+                        new NormalizeTrack(0.99, true)
+                    )
             );
             /*bacteria.setProcessingScheme(
                     new SegmentAndTrack(

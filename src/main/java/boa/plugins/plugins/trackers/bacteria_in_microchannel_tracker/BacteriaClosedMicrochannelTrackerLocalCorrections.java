@@ -77,6 +77,7 @@ import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -144,12 +145,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     // tracking-related attributes
     protected enum Flag {error, correctionMerge, correctionSplit;}
-    HashMap<Integer, List<Region>> populations;
-    HashMap<Region, TrackAttribute> objectAttributeMap;
+    Map<Integer, List<Region>> populations;
+    Map<Region, TrackAttribute> objectAttributeMap;
     //SegmenterSplitAndMerge[] segmenters;
     private boolean segment, correction;
-    HashMap<Integer, Image> inputImages;
+    Map<Integer, Image> inputImages;
     TreeMap<Integer, StructureObject> parentsByF;
+    
     int structureIdx;
     int minT, maxT;
     double maxGR, minGR, costLim, cumCostLim;
@@ -231,7 +233,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.trackPreFilters=trackPreFilters;
         this.postFilters=postFilters;
         init(parentTrack, structureIdx, true);
-        segmentAndTrack(true);
+        segmentAndTrack(parentTrack, true);
     }
 
     public static boolean correctionStep;
@@ -242,18 +244,16 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     @FunctionalInterface public static interface ApplyToSegmenter { public void apply(int frame, Segmenter segmenter);}
     ApplyToSegmenter applyToSegmenter;
     
-    protected void segmentAndTrack(boolean performCorrection) {
+    protected void segmentAndTrack(List<StructureObject> parentTrack, boolean performCorrection) {
         if (performCorrection && (correctionStep)) stepParents = new LinkedHashMap<>();
         this.correction=performCorrection;
         maxT = Collections.max(parentsByF.keySet())+1;
         minT = Collections.min(parentsByF.keySet());
         if (debug) logger.debug("minF: {}, maxF: {}", minT, maxT);
-        if (correction) inputImages=new HashMap<>(parentsByF.size());
         // 0) optional compute threshold for all images
-        .... revoir la gestion des preFilters -> compute first, store and set to parent before apply segmentOnly ? ou dans segment only possibilité de donner les images filtrées. 
-        ..... ajouter les prefilters pour les images BF
-        ..... revoir les corrections 
-        SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters).setTrackPreFilters(trackPreFilters);
+        TreeMap<StructureObject, Image> preFilteredImages = trackPreFilters.filter(structureIdx, parentTrack, executor);
+        if (correction) inputImages=preFilteredImages.entrySet().stream().collect(Collectors.toMap(e->e.getKey().getFrame(), e->e.getValue()));
+        SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters);
         applyToSegmenter = (frame, s) -> {
             if (s instanceof OverridableThreshold) {
                 if (threshold!=null) {
@@ -275,34 +275,23 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             //logger.debug("minF: [{}-{}], nb planes: {}, nbParents: {}", minT, maxT, planes.size(), this.parentsByF.size());
             int method = thresholdMethod.getSelectedIndex();
             
-            if (method==1 || method==2) {
-                threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue()); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
-            } else if (method==5) {
-                threshold = new IndividualThresholdWithGlobalAttributes(planes, minT, AutoThresholder.Method.valueOf(autothresholdMethod.getSelectedItem()), AutoThresholder.Method.valueOf(globalAutothresholdMethod.getSelectedItem()));
-            } else {
-                if (debug || debugCorr) logger.debug("threshold method: {}", autothresholdMethod.getSelectedItem() );
-                threshold = new ThresholdHisto(planes, minT, AutoThresholder.Method.valueOf(autothresholdMethod.getSelectedItem()), false?null:AutoThresholder.Method.Shanbhag);
+            switch (method) {
+                case 1:
+                case 2:
+                    threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue());
+                    break;
+                case 5:
+                    threshold = new IndividualThresholdWithGlobalAttributes(planes, minT, AutoThresholder.Method.valueOf(autothresholdMethod.getSelectedItem()), AutoThresholder.Method.valueOf(globalAutothresholdMethod.getSelectedItem()));
+                    break;
+                default:
+                    if (debug || debugCorr) logger.debug("threshold method: {}", autothresholdMethod.getSelectedItem() );
+                    threshold = new ThresholdHisto(planes, minT, AutoThresholder.Method.valueOf(autothresholdMethod.getSelectedItem()), AutoThresholder.Method.MaxEntropy);
+                    break;
             }
             if (method==1 || method==2 || method==3 || method==4) {
                 threshold.setAdaptativeThreshold(adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue()); 
             }
-            if (bactTestFrame>=0) {
-                logger.debug("test frame: {}", bactTestFrame);
-                if (!inputImages.isEmpty()) {
-                    this.setParentImages(false);
-                    logger.debug("set parent images");
-                }
-                BacteriaTrans.debug=true;
-                BacteriaFluo.debug=true;
-                List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
-                subParentTrack.removeIf(o->o.getFrame()<bactTestFrame||o.getFrame()>bactTestFrame);
-                ImageWindowManagerFactory.showImage(this.parentsByF.get(bactTestFrame).getRawImage(structureIdx));
-                so.segmentAndTrack(structureIdx, subParentTrack, null);
-                BacteriaTrans.debug=false;
-                BacteriaFluo.debug=false;
-                return;
-            }
-            int[] fr = getFrameRangeContainingCells(so); // will use the adaptative threshold by Frame because global threshold not relevant for cell range computation if some channel are void
+            int[] fr = getFrameRangeContainingCells(so, preFilteredImages); // will use the adaptative threshold by Frame because global threshold not relevant for cell range computation if some channel are void
             if (fr!=null) {
                 threshold.setFrameRange(fr);
                 if (method==3) ((ThresholdHisto)threshold).unsetAdaptativeByF();
@@ -318,18 +307,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         } else if (!Double.isNaN(debugThreshold)) {
             logger.debug("Threshold used: {}", debugThreshold);
         }
-        if (bactTestFrame>=0) {
+        if (bactTestFrame>=0) {// for testing purpose in context of whole track
             logger.debug("test frame: {}, ", bactTestFrame);
-            if (!inputImages.isEmpty()) {
-                this.setParentImages(false);
-                logger.debug("set parent images");
-            }
             BacteriaTrans.debug=true;
             BacteriaFluo.debug=true;
             List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
             subParentTrack.removeIf(o->o.getFrame()<bactTestFrame||o.getFrame()>bactTestFrame);
             ImageWindowManagerFactory.showImage(this.parentsByF.get(bactTestFrame).getRawImage(structureIdx));
-            so.segmentAndTrack(structureIdx, subParentTrack, null);
+            so.segmentAndTrack(structureIdx, subParentTrack, preFilteredImages, null, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
             BacteriaTrans.debug=false;
             BacteriaFluo.debug=false;
             return;
@@ -343,12 +328,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         //logger.debug("minT: {}, maxT: {}", minT, maxT);
         
-        if (!inputImages.isEmpty()) this.setParentImages(false); // set filtered input images to parent 
         List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
         subParentTrack.removeIf(o->o.getFrame()<minT||o.getFrame()>=maxT);
-        List<Pair<String, Exception>> l = so.segmentAndTrack(structureIdx, subParentTrack, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
+        List<Pair<String, Exception>> l = so.segmentAndTrack(structureIdx, subParentTrack, preFilteredImages, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
         for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);
-        this.setParentImages(true); // reset raw images to parents
+
         //for (StructureObject p : parents.subList(minT, maxT)) populations.get(p.getFrame()) = Utils.transform(p.getChildren(structureIdx), o->o.getObject());
         // trim empty frames
         while (minT<maxT && getObjects(minT).isEmpty()) ++minT;
@@ -421,43 +405,32 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         Collections.sort(parents);
         applyLinksToParents(parents);
     }
-    HashMap<Integer, Image> rawImages;
-    private void setParentImages(boolean resetRaw) {
-        if (resetRaw) {
-            if (rawImages==null) return;
-            for (Entry<Integer, Image> e : rawImages.entrySet()) parentsByF.get(e.getKey()).setRawImage(structureIdx, e.getValue());
-        } else {
-            // save raw images
-            rawImages = new HashMap<>();
-            for (StructureObject p : this.parentsByF.values()) rawImages.put(p.getFrame(), p.getRawImage(structureIdx));
-            for (StructureObject p : this.parentsByF.values()) p.setRawImage(structureIdx, getImage(p.getFrame()));
-        }
-    }
-    private boolean hasNoObjects(SegmentOnly so, int f) {
+
+    private boolean hasNoObjects(SegmentOnly so, int f, Map<StructureObject, Image> preFilteredImages) {
         if (!parentsByF.containsKey(f)) return true;
         List<StructureObject> before = parentsByF.get(f).getChildren(structureIdx);
-        so.segmentAndTrack(structureIdx, new ArrayList<StructureObject>(1){{add(parentsByF.get(f));}}, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
+        so.segmentAndTrack(structureIdx, new ArrayList<StructureObject>(1){{add(parentsByF.get(f));}}, preFilteredImages, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
         List<StructureObject> after = parentsByF.get(f).getChildren(structureIdx);
         parentsByF.get(f).setChildren(before, structureIdx);
         return after==null || after.isEmpty();
     }
-    private int[] getFrameRangeContainingCells(SegmentOnly so) {
+    private int[] getFrameRangeContainingCells(SegmentOnly so, Map<StructureObject, Image> preFilteredImages) {
         int inc = this.parentsByF.size()<100 ? 1 : 10;
         int minF = Collections.min(parentsByF.keySet());
         int maxF = Collections.max(parentsByF.keySet());
         final int minFF=minF;
         final int maxFF = maxF;
-        while (minF<maxF && hasNoObjects(so, minF)) {minF+=inc;}
+        while (minF<maxF && hasNoObjects(so, minF, preFilteredImages)) {minF+=inc;}
         if (minF>=maxF) {
             if (debug || debugCorr) logger.debug("getFrameRange: [{}-{}]", minF, maxF);
             return null;
         }
-        if (inc>1) while (minF>minFF && !hasNoObjects(so, minF-1)) minF--; // backward 
+        if (inc>1) while (minF>minFF && !hasNoObjects(so, minF-1, preFilteredImages)) minF--; // backward 
         
-        while (maxF>minF && hasNoObjects(so, maxF)) maxF-=inc;
+        while (maxF>minF && hasNoObjects(so, maxF, preFilteredImages)) maxF-=inc;
         if (debug || debugCorr) logger.debug("getFrameRange: [{}-{}]", minF, maxF);
         if (maxF<=minF) return null;
-        if (inc>1) while (maxF<maxFF-1 && !hasNoObjects(so, maxF+1)) maxF++; // forward 
+        if (inc>1) while (maxF<maxFF-1 && !hasNoObjects(so, maxF+1, preFilteredImages)) maxF++; // forward 
         
         return new int[]{minF, maxF};
     }
@@ -742,7 +715,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     protected void init(List<StructureObject> parentTrack, int structureIdx, boolean segment) {
-        if (preFilters==null) this.preFilters=new PreFilterSequence("");
         if (postFilters==null) this.postFilters=new PostFilterSequence("");
         this.segment=segment;
         this.parentsByF = new TreeMap<>(StructureObjectUtils.splitByFrame(parentTrack));
@@ -775,14 +747,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return parent;
     }
     protected Image getImage(int frame) {
-        Image res = inputImages!=null ? inputImages.get(frame) : null;
-        if (res==null) {
-            StructureObject parent = this.getParent(frame, true);
-            if (parent==null) return null;
-            res = preFilters.filter(parent.getRawImage(structureIdx), parent.getMask());
-            if (inputImages!=null) inputImages.put(frame, res);
-        }
-        return res;
+        return inputImages!=null ? inputImages.get(frame) : null;
     }
     
     protected List<Region> getObjects(int timePoint) {

@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.pre_filter;
+package boa.plugins.plugins.pre_filters;
 
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BooleanParameter;
@@ -48,19 +48,20 @@ import boa.plugins.TransformationTimeIndependent;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.ImageTransformation;
 import boa.image.processing.RegionFactory;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class SubtractBackgroundMicrochannel implements PreFilter {
+public class SubtractBackgroundMicrochannel implements PreFilter, ToolTip {
     BooleanParameter method = new BooleanParameter("Method", "Rolling Ball", "Sliding Paraboloid", false);
     BooleanParameter imageType = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
     BooleanParameter corners = new BooleanParameter("Correct corners", false);
     NumberParameter radius = new BoundedNumberParameter("Radius", 2, 1000000, 0.01, null);
     Parameter[] parameters = new Parameter[]{radius, method, imageType, smooth, corners};
-    
+    String toolTip = "<html>Apply IJ's subtractbackground to image mirrored only on upper and lower side. Phase Constrast Image should be saturated before in order to avoide to bright values</html>";
     public SubtractBackgroundMicrochannel(double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {
         this.radius.setValue(radius);
         method.setSelected(!doSlidingParaboloid);
@@ -119,6 +120,11 @@ public class SubtractBackgroundMicrochannel implements PreFilter {
     
     public Parameter[] getParameters() {
         return parameters;
+    }
+
+    @Override
+    public String getToolTipText() {
+        return toolTip;
     }
 
 }

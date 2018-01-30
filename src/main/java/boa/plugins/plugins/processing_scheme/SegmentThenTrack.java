@@ -40,6 +40,7 @@ import boa.plugins.Segmenter;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.Tracker;
+import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
@@ -55,7 +56,7 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
     protected TrackPostFilterSequence trackPostFilters = new TrackPostFilterSequence("Track Post-Filters");
-    protected Parameter[] parameters;
+    protected Parameter[] parameters = new Parameter[]{preFilters, trackPreFilters, segmenter, postFilters, tracker, trackPostFilters};
     public SegmentThenTrack() {}
     public SegmentThenTrack(Segmenter segmenter, Tracker tracker) {
         this.segmenter.setPlugin(segmenter);
@@ -100,7 +101,8 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
     @Override public PreFilterSequence getPreFilters() {
         return preFilters;
     }
-    @Override public TrackPreFilterSequence getTrackPreFilters() {
+    @Override public TrackPreFilterSequence getTrackPreFilters(boolean addPreFilters) {
+        if (addPreFilters && !preFilters.isEmpty()) return trackPreFilters.duplicate().addAtFirst(new PreFilters().add(preFilters));
         return trackPreFilters;
     }
     @Override public PostFilterSequence getPostFilters() {
@@ -185,7 +187,7 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{preFilters, trackPreFilters, segmenter, postFilters, tracker, trackPostFilters};
+        return parameters;
     }
     
 }

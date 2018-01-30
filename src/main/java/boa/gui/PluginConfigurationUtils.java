@@ -49,6 +49,7 @@ import static boa.plugins.Transformation.SelectionMode.SAME;
 import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
+import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.Utils;
@@ -132,7 +133,7 @@ public class PluginConfigurationUtils {
                                 ps.setTestParameter(parameters[idx].getName());
                                 TrackPostFilterSequence tpf=null;
                                 if (psc instanceof ProcessingSchemeWithTracking) tpf = ((ProcessingSchemeWithTracking)psc).getTrackPostFilters();
-                                if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getTrackPreFilters().duplicate().addAtFirst(psc.getPreFilters()), psc.getPostFilters());
+                                if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getTrackPreFilters(true), psc.getPostFilters());
                                 else ((Tracker)ps).track(structureIdx, parentTrack);
                                 if (tpf!=null) tpf.filter(structureIdx, parentTrack, null);
                                 

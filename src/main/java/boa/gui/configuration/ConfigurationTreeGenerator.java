@@ -85,7 +85,6 @@ public class ConfigurationTreeGenerator {
                 if (getRowForLocation(evt.getX(), evt.getY()) == -1) return null;
                 TreePath curPath = getPathForLocation(evt.getX(), evt.getY());
                 Object node = curPath.getLastPathComponent();
-                logger.debug("trying to get tool tip from : {} of class: {}", node, node.getClass());
                 if (node instanceof ToolTip) {
                     String t = ((ToolTip)node).getToolTipText();
                     if (node instanceof PluginParameter) {

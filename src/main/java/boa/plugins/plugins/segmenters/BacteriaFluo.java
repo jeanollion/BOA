@@ -47,13 +47,13 @@ import boa.plugins.ObjectSplitter;
 import boa.plugins.ParameterSetup;
 import boa.plugins.Segmenter;
 import boa.plugins.SegmenterSplitAndMerge;
-import boa.plugins.plugins.pre_filter.ImageFeature;
+import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.thresholders.ConstantValue;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
-import boa.image.processing.SplitAndMerge;
+import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.image.processing.WatershedTransform;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
@@ -86,7 +86,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     public String getToolTipText() {return toolTip;}
     
     //segmentation-related attributes (kept for split and merge methods)
-    SplitAndMerge splitAndMerge;
+    SplitAndMergeHessian splitAndMerge;
     Image smoothed;
     
     public BacteriaFluo setSplitThreshold(double splitThreshold) {
@@ -117,8 +117,8 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     public String toString() {
         return "Bacteria Fluo: " + Utils.toStringArray(parameters);
     }   
-    private SplitAndMerge initializeSplitAndMerge(Image input) {
-        SplitAndMerge res= new SplitAndMerge(input, splitThreshold.getValue().doubleValue(), hessianScale.getValue().doubleValue());
+    private SplitAndMergeHessian initializeSplitAndMerge(Image input) {
+        SplitAndMergeHessian res= new SplitAndMergeHessian(input, splitThreshold.getValue().doubleValue(), hessianScale.getValue().doubleValue());
         if (!isDarkBackground.getSelected()) res.setInterfaceValue(voxels-> {
             if (voxels.isEmpty()) return Double.NaN;
             else {
@@ -215,7 +215,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             Region o2 = pop.getObjects().get(1);
             result.add(o1);
             result.add(o2);
-            SplitAndMerge.Interface inter = getInterface(o1, o2);
+            SplitAndMergeHessian.Interface inter = getInterface(o1, o2);
             double cost = BacteriaTrans.getCost(inter.value, splitAndMerge.splitThresholdValue, true);
             pop.translate(o.getBounds(), true);
             return cost;
@@ -235,8 +235,8 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
             return Double.POSITIVE_INFINITY;
         } 
-        Set<SplitAndMerge.Interface> allInterfaces = c.getInterfaces(clusters.get(0));
-        for (SplitAndMerge.Interface i : allInterfaces) {
+        Set<SplitAndMergeHessian.Interface> allInterfaces = c.getInterfaces(clusters.get(0));
+        for (SplitAndMergeHessian.Interface i : allInterfaces) {
             i.updateSortValue();
             if (i.value>maxCost) maxCost = i.value;
         }
@@ -246,10 +246,10 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         
     }
     
-    private SplitAndMerge.Interface getInterface(Region o1, Region o2) {
+    private SplitAndMergeHessian.Interface getInterface(Region o1, Region o2) {
         o1.draw(splitAndMerge.getSplitMask(), o1.getLabel());
         o2.draw(splitAndMerge.getSplitMask(), o2.getLabel());
-        SplitAndMerge.Interface inter = RegionCluster.getInteface(o1, o2, splitAndMerge.tempSplitMask, splitAndMerge.getFactory());
+        SplitAndMergeHessian.Interface inter = RegionCluster.getInteface(o1, o2, splitAndMerge.tempSplitMask, splitAndMerge.getFactory());
         inter.updateSortValue();
         o1.draw(splitAndMerge.getSplitMask(), 0);
         o2.draw(splitAndMerge.getSplitMask(), 0);
@@ -294,7 +294,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     }
 
     @Override public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
-        SplitAndMerge splitAndMerge=initializeSplitAndMerge(input);
+        SplitAndMergeHessian splitAndMerge=initializeSplitAndMerge(input);
         List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         EdgeDetector seg = initEdgeDetector();
         RegionPopulation pop = seg.run(input, segmentationMask);

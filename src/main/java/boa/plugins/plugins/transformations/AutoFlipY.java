@@ -47,6 +47,8 @@ import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import static boa.plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.FLUO;
 import static boa.plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE;
 import boa.image.processing.ImageTransformation;
+import boa.plugins.ToolTip;
+import static boa.plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.PHASE;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.Utils;
@@ -55,11 +57,13 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class AutoFlipY implements Transformation {
+public class AutoFlipY implements Transformation, ToolTip {
+
+    
     public static enum AutoFlipMethod {
         FLUO("Bacteria Fluo", "Detects side where bacteria are more aligned -> should be the upper side"),
-        FLUO_HALF_IMAGE("Bacteria Fluo: Upper Half of Image", "Bacteria should be present in upper half of the image");
-        //PHASE("Phase Optical Aberration");
+        FLUO_HALF_IMAGE("Bacteria Fluo: Upper Half of Image", "Bacteria should be present in upper half of the image"),
+        PHASE("Phase Contrast Optical Aberration", "Optical Aberration is detected and side where variance along X axis is maximal is selected OR if the optical aberration is closer to one side on the image than microchannel height the other side is selected");
         final String name;
         final String toolTip;
         AutoFlipMethod(String name, String toolTip) {
@@ -71,10 +75,12 @@ public class AutoFlipY implements Transformation {
             return null;
         }
     }
+    String toolTip = "Methods for flipping image along Y-axis in order to set the close-end of channel at the top of the image. Should be set after the rotation";
     ChoiceParameter method = new ChoiceParameter("Method", Utils.transform(AutoFlipMethod.values(), new String[AutoFlipMethod.values().length], f->f.name), FLUO_HALF_IMAGE.name, false);
     PluginParameter<SimpleThresholder> fluoThld = new PluginParameter<>("Threshold for bacteria Segmentation", SimpleThresholder.class, new BackgroundThresholder(4, 5, 3), false); 
     NumberParameter minObjectSize = new BoundedNumberParameter("Minimal Object Size", 1, 100, 10, null).setToolTipText("Object under this size (in pixels) will be removed");
-    ConditionalParameter cond = new ConditionalParameter(method).setActionParameters("Bacteria Fluo", new Parameter[]{fluoThld, minObjectSize});
+    NumberParameter microchannelLength = new BoundedNumberParameter("Microchannel Length", 0, 400, 100, null).setToolTipText("Typical Microchannel Length");
+    ConditionalParameter cond = new ConditionalParameter(method).setActionParameters("Bacteria Fluo", new Parameter[]{fluoThld, minObjectSize}).setActionParameters("Phase Contrast Optical Aberration", new Parameter[]{microchannelLength});
     Boolean flip = null;
     public AutoFlipY() {
         cond.addListener(p->{ 
@@ -82,6 +88,10 @@ public class AutoFlipY implements Transformation {
             if (m!=null) cond.setToolTipText(m.toolTip);
             else cond.setToolTipText("Choose autoflip algorithm");
         });
+    }
+    @Override
+    public String getToolTipText() {
+        return toolTip;
     }
     public AutoFlipY setMethod(AutoFlipMethod method) {
         this.method.setValue(method.name);
@@ -141,10 +151,34 @@ public class AutoFlipY implements Transformation {
             }
             flip = countFlip>countNoFlip;
             logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
-        } /*else if (method.getSelectedItem().equals(PHASE.name)) {
-            // detection of optical abberation
-            // comparison of signal above & under using gradient filer
-        }*/
+        } else if (method.getSelectedItem().equals(PHASE.name)) {
+            int length = microchannelLength.getValue().intValue();
+            Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
+            float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
+            int maxIdx = ArrayUtil.max(yProj);
+            int minIdx = ArrayUtil.min(yProj); //, maxIdx+1, yProj.length-1 // in case peak is touching edge of image no min after aberration: seach for min in whole y axis
+            double peakHeight = yProj[maxIdx] - yProj[minIdx];
+            float thld = (float)(peakHeight * 0.25 + yProj[minIdx] );
+            int startOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, maxIdx, 0, thld, true, true);
+            if (startOfPeakIdx<length) {
+                flip = true;
+                return;
+            }
+            int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, maxIdx, yProj.length-1, thld, true, true);
+            if (yProj.length-1 - endOfPeakIdx<length) {
+                flip = false;
+                return;
+            }
+            // compare upper and lower side X-variances withing frame of microchannel length
+            // TODO : TEST !!!!
+            float[] xProjUpper = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new BoundingBox(0, image.getSizeX()-1, startOfPeakIdx-length, startOfPeakIdx, 0, image.getSizeZ()));
+            float[] xProjLower = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new BoundingBox(0, image.getSizeX()-1, endOfPeakIdx, endOfPeakIdx+length, 0, image.getSizeZ()));
+            double varUpper = ArrayUtil.meanSigma(xProjUpper, 0, xProjUpper.length, null)[1];
+            double varLower = ArrayUtil.meanSigma(xProjLower, 0, xProjLower.length, null)[1];
+            flip = varLower>varUpper;
+            logger.debug("AutoFlipY: {} (var upper: {}, var lower: {} aberration: [{};{}]", flip, varLower, varUpper,startOfPeakIdx, endOfPeakIdx );
+            
+        }
     }
     private Boolean isFlipPhaseOpticalAberration(Image image) {
         /* 

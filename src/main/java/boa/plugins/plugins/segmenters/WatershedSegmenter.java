@@ -33,7 +33,7 @@ import boa.image.ImageByte;
 import boa.image.processing.ImageOperations;
 import boa.plugins.Segmenter;
 import boa.plugins.SimpleThresholder;
-import boa.plugins.plugins.pre_filter.ImageFeature;
+import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.Filters;
 import boa.image.processing.WatershedTransform;

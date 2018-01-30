@@ -43,7 +43,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import boa.plugins.PluginFactory;
-import boa.plugins.plugins.pre_filter.IJSubtractBackground;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.plugins.plugins.segmenters.BacteriaTrans;
 
 /**
@@ -63,8 +63,8 @@ public class TestProcessBacteriaPhase {
         String dbName = "MutH_150324";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =0;
-        int time =500;
+        int microChannel =1;
+        int time =0;
         //setMask=true;
         //thld = 776;
         

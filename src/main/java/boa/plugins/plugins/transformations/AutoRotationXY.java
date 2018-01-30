@@ -37,7 +37,7 @@ import boa.image.TypeConverter;
 import java.util.ArrayList;
 import java.util.List;
 import boa.plugins.TransformationTimeIndependent;
-import boa.plugins.plugins.pre_filter.IJSubtractBackground;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.image.processing.ImageTransformation;
 import boa.image.processing.ImageTransformation.InterpolationScheme;
 import boa.image.processing.RadonProjection;

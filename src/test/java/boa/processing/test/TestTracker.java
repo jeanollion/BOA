@@ -25,6 +25,8 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.core.Processor;
 import boa.core.Task;
 import boa.configuration.experiment.Experiment;
+import boa.configuration.parameters.PluginParameter;
+import boa.configuration.parameters.TrackPostFilterSequence;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.ObjectDAO;
 import boa.data_structure.Selection;
@@ -43,6 +45,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import boa.plugins.PluginFactory;
 import boa.plugins.ProcessingScheme;
+import boa.plugins.ProcessingSchemeWithTracking;
+import boa.plugins.TrackPostFilter;
+import boa.plugins.plugins.track_post_filter.TrackLengthFilter;
 import boa.plugins.plugins.trackers.LAPTracker;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
@@ -50,12 +55,14 @@ import boa.plugins.plugins.trackers.trackmate.SpotWithinCompartmentRoiModifier;
 import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.Map.Entry;
 
 /**
  *
  * @author jollion
  */
 public class TestTracker {
+    static boolean displayOnFilteredImages = true;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
@@ -67,8 +74,8 @@ public class TestTracker {
         int pIdx =0;
         int mcIdx =1;
         int structureIdx = 1;
-        int[] frames = new int[]{0, 200};
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
+        int[] frames = new int[]{1, 200};
+        BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
             return;
@@ -122,8 +129,10 @@ public class TestTracker {
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         List<Pair<String, Exception>> l;
         CropMicroChannelFluo2D.debug=false;
-        //if (ps instanceof ProcessingSchemeWithTracking && structureIdx==0) ((ProcessingSchemeWithTracking)ps).getTrackPostFilters().removeAllElements();
-        //ps.getPostFilters().add(new MicrochannelPhaseArtifacts());
+        if (ps instanceof ProcessingSchemeWithTracking && structureIdx==0) {
+            TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)ps).getTrackPostFilters();
+            for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) if (pp.instanciatePlugin() instanceof TrackLengthFilter) pp.setActivated(false);
+        }
         
         if (trackOnly) l=ps.trackOnly(structureIdx, parentTrack, null);
         else l=ps.segmentAndTrack(structureIdx, parentTrack, null);
@@ -134,6 +143,12 @@ public class TestTracker {
         if (structureIdx==2 && LAPTracker.debugTMI!=null) iwm.setRoiModifier(new SpotWithinCompartmentRoiModifier(LAPTracker.debugTMI, 2));
         logger.debug("generating TOI");
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
+        // display preFilteredImages
+        if (displayOnFilteredImages && !ps.getTrackPreFilters(true).isEmpty()) {
+            Map<StructureObject, Image> pfImages = ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+            for (Entry<StructureObject, Image> e : pfImages.entrySet()) e.getKey().setRawImage(structureIdx, e.getValue());
+        }
+        
         Image interactiveImage = i.generateRawImage(structureIdx, true);
         iwm.addImage(interactiveImage, i, structureIdx, true);
         logger.debug("total objects: {} ({})", i.getObjects().size(), StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx).size());

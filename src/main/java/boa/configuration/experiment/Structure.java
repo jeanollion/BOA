@@ -41,7 +41,7 @@ import boa.plugins.TrackCorrector;
 import boa.plugins.Tracker;
 import boa.plugins.plugins.manual_segmentation.WatershedManualSegmenter;
 import boa.plugins.plugins.manual_segmentation.WatershedObjectSplitter;
-import boa.plugins.plugins.pre_filter.ImageFeature;
+import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.utils.Utils;
 
 /**
