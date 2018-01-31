@@ -19,21 +19,30 @@ package boa.image.processing.split_merge;
 
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
+import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageInteger;
+import boa.image.processing.Filters;
 import boa.image.processing.WatershedTransform;
 import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
+import boa.image.processing.neighborhood.Neighborhood;
+import static boa.plugins.Plugin.logger;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
+import boa.utils.HashMapGetCreate;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author jollion
  */
 public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionCluster.InterfaceVoxels<I>> {
-    protected boolean testMode;
+    public boolean testMode;
     protected ClusterCollection.InterfaceFactory<Region, I> factory;
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
@@ -80,6 +89,29 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
         return merge(popWS, minSize, objectMergeLimit);
     }
     public RegionCluster<I> getInterfaces(RegionPopulation population, boolean lowConnectivity) {
-        return new RegionCluster<I>(population, false, lowConnectivity, getFactory());
+        return new RegionCluster<>(population, false, lowConnectivity, getFactory());
+    }
+    public static void removeOutterVoxels(RegionPopulation pop) {
+        Neighborhood n = Filters.getNeighborhood(1, 1, pop.getImageProperties());
+        HashMapGetCreate<Integer, int[]> count = new HashMapGetCreate<>(9, i->new int[1]);
+        Map<Integer, Region> regionByLabel = pop.getObjects().stream().collect(Collectors.toMap(r->r.getLabel(), r->r));
+        int modifiedPix= 0;
+        for (Region r : pop.getObjects()) {
+            Iterator<Voxel> it = r.getVoxels().iterator();
+            while(it.hasNext()) {
+                Voxel v = it.next();
+                n.setPixels(v, pop.getLabelMap(), null);
+                for (int i = 0; i<n.getValueCount(); ++i) count.getAndCreateIfNecessary((int)n.getPixelValues()[i])[0]++;
+                int maxLabel = Collections.max(count.entrySet(), (e1, e2)->Integer.compare(e1.getValue()[0], e2.getValue()[0])).getKey();
+                if (maxLabel!=r.getLabel() && count.get(maxLabel)[0]>count.get(r.getLabel())[0]) {
+                    it.remove();
+                    regionByLabel.get(maxLabel).getVoxels().add(v);
+                    pop.getLabelMap().setPixel(v.x, v.y, v.z, maxLabel);
+                    modifiedPix++;
+                }
+                count.clear();
+            }
+        }
+        logger.debug("modified pix: {}", modifiedPix);
     }
 }

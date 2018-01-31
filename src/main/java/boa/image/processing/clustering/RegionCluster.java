@@ -46,6 +46,7 @@ import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
  */
 public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollection<Region, I> {
     RegionPopulation population;
+    //public boolean testMode = false;
     public final static Comparator<Region> regionComparator = new Comparator<Region>() {
         public int compare(Region o1, Region o2) {
             return Integer.compare(o1.getLabel(), o2.getLabel());
@@ -214,7 +215,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     public void mergeSmallObjects(double sizeLimit, int numberOfObjecsToKeep, BiFunction<Region, Set<Region>, Region> noInterfaceCase) {
         if (numberOfObjecsToKeep<0) numberOfObjecsToKeep=0;
         for (I i : interfaces) i.updateSortValue();
-        TreeSet<Region> queue = new TreeSet<Region>((e1, e2) -> Integer.compare(e1.getSize(), e2.getSize()));
+        TreeSet<Region> queue = new TreeSet<>((e1, e2) -> Integer.compare(e1.getSize(), e2.getSize()));
         queue.addAll(allElements);
         while(queue.size()>numberOfObjecsToKeep) {
             Region s = queue.pollFirst();

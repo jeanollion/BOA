@@ -405,6 +405,12 @@ public class ArrayUtil {
         sum2 = Math.sqrt(sum2 / col.size() - sum * sum);
         return new double[]{sum, sum2};
     }
+    public static double median(float[] array) {
+        if (array.length==0) return Double.NaN;
+        Arrays.sort(array);
+        if (array.length%2==1) return array[array.length/2];
+        else return (array[array.length/2]+array[array.length/2-1])/2.0d;
+    }
     public static double median(Collection<Double> col) {
         if (col.isEmpty()) return Double.NaN;
         List<Double> list = new ArrayList<>(col);

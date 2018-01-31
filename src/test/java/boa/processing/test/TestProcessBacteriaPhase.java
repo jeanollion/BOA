@@ -30,6 +30,7 @@ import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
 import ij.ImageJ;
 import ij.process.AutoThresholder;
 import boa.image.BoundingBox;
@@ -43,8 +44,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import boa.plugins.PluginFactory;
+import boa.plugins.Segmenter;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
+import boa.plugins.plugins.segmenters.BacteriaShape;
 import boa.plugins.plugins.segmenters.BacteriaTrans;
+import java.util.Map;
 
 /**
  *
@@ -63,8 +67,8 @@ public class TestProcessBacteriaPhase {
         String dbName = "MutH_150324";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =1;
-        int time =0;
+        int microChannel =0;
+        int time =51;
         //setMask=true;
         //thld = 776;
         
@@ -131,14 +135,25 @@ public class TestProcessBacteriaPhase {
         mDAO.setReadOnly(true);
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
-        rootTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
-        List<StructureObject> parentTrack = new ArrayList<StructureObject>();
-        for (StructureObject root : rootTrack) {
-            StructureObject mc = root.getChildren(0).get(microChannel);
-            parentTrack.add(mc);
-            Image input = mc.getRawImage(1);
-            
-            BacteriaTrans.debug=true;
+        Map<StructureObject, List<StructureObject>> allMCTracks = StructureObjectUtils.getAllTracks(rootTrack, 0);
+        allMCTracks.entrySet().removeIf(o->o.getKey().getIdx()!=microChannel);
+        List<StructureObject> parentTrack = allMCTracks.entrySet().iterator().next().getValue();
+        Map<StructureObject, Image> preFilteredImages;
+        if (timePointMin==timePointMax && !mDAO.getExperiment().getStructure(1).getProcessingScheme().getTrackPreFilters(true).isEmpty()) {
+            parentTrack.removeIf(o -> o.getFrame()<timePointMin-10 || o.getFrame()>timePointMax+10);
+            preFilteredImages = mDAO.getExperiment().getStructure(1).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
+            parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
+        } else {
+            parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
+            preFilteredImages = mDAO.getExperiment().getStructure(1).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
+        }
+        
+        
+        for (StructureObject mc : parentTrack) {
+            Image input = preFilteredImages.get(mc);
+            Segmenter seg = new BacteriaShape();
+            seg.runSegmenter(input, 1, mc);
+            /*BacteriaTrans.debug=true;
             BacteriaTrans seg = new BacteriaTrans();
             if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
                 seg = (BacteriaTrans) mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
@@ -149,9 +164,10 @@ public class TestProcessBacteriaPhase {
                 if (normalize) input = ImageOperations.normalize(input, null, null);
             }
             if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
-            mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
+            mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);*/
             logger.debug("seg: tp {}, #objects: {}", mc.getFrame(), mc.getChildren(1).size());
         }
+        if (true) return;
         GUI.getInstance(); // for hotkeys...
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, 1);

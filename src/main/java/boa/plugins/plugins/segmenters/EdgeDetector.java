@@ -22,6 +22,7 @@ import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.ConditionalParameter;
+import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PreFilterSequence;
@@ -66,6 +67,8 @@ public class EdgeDetector implements Segmenter, ToolTip {
     ChoiceParameter thresholdMethod = new ChoiceParameter("Remove background method", new String[]{"Intensity Map", "Value Map", "Secondary Map"}, "Value Map", false).setToolTipText("<html>Intensity Map: compute threshold on raw intensity map and removes regions whose median value is under the threhsold<br />Value Map: same as Intensity map but threshold is computed on an image where all pixels values are replaced by the median value of each region<br /><pre>Secondary Map: This method is designed to robustly threshold foreground objects and regions located between foreground objects. Does only work in case forground objects are of comparable intensities<br />1) Ostus's method is applied on on the image where pixels values are replaced by median value of eache region. <br />2) Ostus's method is applied on on the image where pixels values are replaced by median value of secondary map of each region. Typically using Hessian Max this allows to select regions in between two foreground objects or directly connected to foreground <br />3) A map with regions that are under threshold in 1) and over threshold in 2) ie regions that are not foreground but are either in between two objects or connected to one objects. The histogram of this map is computed and threshold is set in the middle of the largest histogram zone without objects</pre> </html>");
     protected PreFilterSequence scondaryThresholdMap = new PreFilterSequence("Secondary Threshold Map").add(new ImageFeature().setFeature(ImageFeature.Feature.HessianMax).setScale(2)).setToolTipText("A map used that allows to selected regions in between two foreground objects or directly connected to a foreground object");
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod).setDefaultParameters(new Parameter[]{threshold}).setActionParameters("Secondary Map", new Parameter[]{scondaryThresholdMap});
+    NumberParameter seedRadius = new BoundedNumberParameter("Seed Radius", 1, 1.5, 1, null);
+    NumberParameter minSizePropagation = new BoundedNumberParameter("Min Size Propagation", 0, 5, 0, null);
     BooleanParameter darkBackground = new BooleanParameter("Dark Background", true);
     boolean testMode;
     
@@ -92,8 +95,19 @@ public class EdgeDetector implements Segmenter, ToolTip {
     }
 
     public ImageInteger getSeedMap(Image input,  ImageMask mask) {
-        if (seedMap==null) seedMap = Filters.localExtrema(getWsMap(input, mask), null, false, mask, Filters.getNeighborhood(1, 1, getWsMap(input, mask)));
+        if (seedMap==null) {
+            double radZ = Math.max(1, seedRadius.getValue().doubleValue() * input.getScaleXY() / input.getScaleZ());
+            seedMap = Filters.localExtrema(getWsMap(input, mask), null, false, mask, Filters.getNeighborhood(seedRadius.getValue().doubleValue(), radZ, getWsMap(input, mask)));
+        }
         return seedMap;
+    }
+    public EdgeDetector setSeedRadius(double radius) {
+        this.seedRadius.setValue(radius);
+        return this;
+    }
+    public EdgeDetector setMinSizePropagation(int minSize) {
+        this.minSizePropagation.setValue(minSize);
+        return this;
     }
     public EdgeDetector setIsDarkBackground(boolean dark) {
         this.darkBackground.setSelected(dark);
@@ -148,7 +162,9 @@ public class EdgeDetector implements Segmenter, ToolTip {
         return run(input, parent.getMask());
     }
     public RegionPopulation partitionImage(Image input, ImageMask mask) {
-        WatershedTransform wt = new WatershedTransform(getWsMap(input, mask), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, mask))), false, null, null);
+        int minSizePropagation = this.minSizePropagation.getValue().intValue();
+        WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
+        WatershedTransform wt = new WatershedTransform(getWsMap(input, mask), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, mask))), false, null, sfc);
         wt.setLowConnectivity(false);
         wt.run();
         return wt.getObjectPopulation();

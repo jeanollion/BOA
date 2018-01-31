@@ -25,20 +25,36 @@ import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
+import boa.image.ImageLabeller;
+import boa.image.ImageMask;
+import boa.image.processing.Curvature;
+import boa.image.processing.EDT;
+import boa.image.processing.Filters;
 import boa.image.processing.ImageOperations;
+import boa.image.processing.WatershedTransform;
 import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.image.processing.split_merge.SplitAndMergeBacteriaShape.InterfaceBT;
+import boa.measurement.GeometricalMeasurements;
 import static boa.plugins.Plugin.logger;
 import static boa.plugins.plugins.segmenters.BacteriaTrans.debug;
+import boa.plugins.plugins.trackers.ObjectIdxTracker;
+import static boa.plugins.plugins.trackers.ObjectIdxTracker.getComparatorRegion;
+import boa.utils.HashMapGetCreate;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import net.imglib2.KDTree;
 import net.imglib2.Point;
 import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
@@ -48,10 +64,26 @@ import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
  * @author jollion
  */
 public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
+    protected final HashMap<Region, KDTree<Double>> curvatureMap = new HashMap<>();
+    protected Image distanceMap;
+    protected ImageMask mask;
+    
+    public int minSizeFusion;
+    public int curvatureScale;
+    public double curvatureSearchScale;
+    public double curvatureThreshold, curvatureThreshold2;
+    public double relativeThicknessThreshold, relativeThicknessMaxDistance;
+    public boolean ignoreEndOfChannelSmallObjects;
+    
     public boolean splitVerbose=false;
+    private final static double maxMergeDistanceBB = 3; // distance in pixel for merging small objects during main process
+    
+    private double yLimLastObject = Double.NaN;
+    
+    
     @Override
     public Image getWatershedMap() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return distanceMap;
     }
 
     @Override
@@ -59,6 +91,77 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
         return (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new InterfaceBT(e1, e2);
     }
     
+    private Image getEDM() {
+        return distanceMap;
+    }
+    private void setDistanceMap(ImageMask mask) {
+        distanceMap = EDT.transform(mask, true, 1, mask.getScaleZ()/mask.getScaleXY(), 1);
+    }
+    
+    @Override
+    public RegionPopulation merge(RegionPopulation popWS, int minSize, int objectMergeLimit) {
+        if (distanceMap == null) setDistanceMap(popWS.getLabelMap());
+        removeOutterVoxels(popWS);
+        RegionCluster<InterfaceBT> c = new RegionCluster(popWS, false, true, getFactory());
+        RegionCluster.verbose=testMode;
+        if (minSize>0) c.mergeSmallObjects(minSize, objectMergeLimit, null);
+        if (ignoreEndOfChannelSmallObjects && !popWS.getObjects().isEmpty()) yLimLastObject = Collections.max(popWS.getObjects(), (o1, o2)->Double.compare(o1.getBounds().getyMax(), o2.getBounds().getyMax())).getBounds().getyMax();
+        updateCurvature(c.getClusters());
+        c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
+        if (minSize>0) {
+            BiFunction<Region, Set<Region>, Region> noInterfaceCase = (smallO, set) -> {
+                if (set.isEmpty()) return null;
+                Region closest = Collections.min(set, (o1, o2) -> Double.compare(o1.getBounds().getDistance(smallO.getBounds()), o2.getBounds().getDistance(smallO.getBounds())));
+                double d = GeometricalMeasurements.getDistanceBB(closest, smallO, false);
+                if (debug) logger.debug("merge small objects with no interface: min distance: {} to {} = {}", smallO.getLabel(), closest.getLabel(), d);
+                if (d<maxMergeDistanceBB) return closest;
+                else return null;
+            }; 
+            c.mergeSmallObjects(minSize, objectMergeLimit, noInterfaceCase);
+        }
+        Collections.sort(popWS.getObjects(), getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
+        popWS.relabel(true);
+        distanceMap = null;
+        return popWS;
+    }
+    @Override
+    public RegionPopulation splitAndMerge(ImageInteger segmentationMask, int minSizePropagation, int minSize, int objectMergeLimit) {
+        setDistanceMap(segmentationMask);
+        WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
+        ImageByte seeds = Filters.localExtrema(getEDM(), null, true, segmentationMask, Filters.getNeighborhood(3, 3, getEDM())); // TODO seed radius -> parameter ? 
+        RegionPopulation popWS =  WatershedTransform.watershed(getEDM(), segmentationMask, ImageLabeller.labelImageList(seeds), true, null, sfc, true);
+        if (testMode) {
+            popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
+            ImageWindowManagerFactory.showImage(getWatershedMap());
+            ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map before merge"));
+        }
+        return merge(popWS, minSize, objectMergeLimit);
+    }
+    
+    protected void updateCurvature(List<Set<Region>> clusters) { // need to be called in order to use curvature in InterfaceBT
+        curvatureMap.clear();
+        ImageByte clusterMap = new ImageByte("cluster map", mask).resetOffset(); 
+        Iterator<Set<Region>> it = clusters.iterator();
+        while(it.hasNext()) {
+            Set<Region> clust = it.next();
+            for (Region o : clust) o.draw(clusterMap, 1);
+            //Filters.binaryOpen(clusterMap, clusterMap, Filters.getNeighborhood(1, 1, clusterMap)); // avoid funny values // done at segmentation step
+            KDTree<Double> curv = Curvature.computeCurvature(clusterMap, curvatureScale);
+            /*if (debug) {
+                logger.debug("curvature map: {}", curv.size());
+                try {
+                    Image c = Curvature.getCurvatureMask(clusterMap, curv);
+                    if (c!=null) ImageWindowManagerFactory.showImage(c);
+                } catch(Exception e) {
+                    logger.debug("error curv map show", e);
+                }
+            }*/
+            for (Region o : clust) {
+                curvatureMap.put(o, curv);
+                if (it.hasNext()) o.draw(clusterMap, 0);
+            }
+        }
+    }
     
     public class InterfaceBT extends InterfaceRegionImpl<InterfaceBT> implements RegionCluster.InterfaceVoxels<InterfaceBT> {
         double maxDistance=Double.NEGATIVE_INFINITY;
@@ -95,7 +198,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
         public KDTree<Double> getCurvature() {
             //if (debug || ProcessingVariables.this.splitVerbose) logger.debug("interface: {}, contains curvature: {}", this, ProcessingVariables.this.curvatureMap.containsKey(e1));
             if (borderVoxels.isEmpty()) setBorderVoxels();
-            return ProcessingVariables.this.curvatureMap.get(e1);
+            return curvatureMap.get(e1);
         }
 
         @Override public void updateSortValue() {
@@ -245,7 +348,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
                 borderVoxels.addAll(l.get(0).getVoxels());   
                 if (l.size()==2) borderVoxels2.addAll(l.get(1).getVoxels());} 
             else {
-                if (debug) logger.error("interface: {}, #{} sides found!!, {}", this, l.size(), input.getName());
+                if (debug) logger.error("interface: {}, #{} sides found!!", this, l.size());
             }
         }
 

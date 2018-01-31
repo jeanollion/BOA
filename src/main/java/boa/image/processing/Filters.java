@@ -200,6 +200,36 @@ public class Filters {
             return (float)(mean/neighborhood.getValueCount());
         }
     }
+    public static class Sigma extends Filter {
+        @Override public float applyFilter(int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image, null);
+            if (neighborhood.getValueCount()==0) return 0;
+            double mean = 0;
+            double values2 = 0;
+            for (int i = 0; i<neighborhood.getValueCount(); ++i) {
+                mean+=neighborhood.getPixelValues()[i];
+                values2+=Math.pow(neighborhood.getPixelValues()[i], 2);
+            }
+            mean/=neighborhood.getValueCount();
+            values2/=neighborhood.getValueCount();
+            return (float)Math.sqrt(values2 - mean * mean);
+        }
+    }
+    public static class Variance extends Filter {
+        @Override public float applyFilter(int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image, null);
+            if (neighborhood.getValueCount()==0) return 0;
+            double mean = 0;
+            double values2 = 0;
+            for (int i = 0; i<neighborhood.getValueCount(); ++i) {
+                mean+=neighborhood.getPixelValues()[i];
+                values2+=Math.pow(neighborhood.getPixelValues()[i], 2);
+            }
+            mean/=neighborhood.getValueCount();
+            values2/=neighborhood.getValueCount();
+            return (float)(values2 - mean * mean);
+        }
+    }
     private static class SigmaMu extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
             neighborhood.setPixels(x, y, z, image, null);
