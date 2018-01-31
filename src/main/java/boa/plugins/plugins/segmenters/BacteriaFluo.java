@@ -153,7 +153,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         EdgeDetector seg = initEdgeDetector();
         RegionPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
         RegionPopulation res = splitAndMerge.splitAndMerge(splitPop.getLabelMap(), minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 0);
-        localThreshold(input, res);
+        res.localThreshold(getSmoothed(input), localThresholdFactor.getValue().doubleValue(), isDarkBackground.getSelected(), true);
         if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
         res.filter(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         res.filter(new RegionPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
@@ -171,30 +171,6 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         return res;
     }
     
-    private RegionPopulation localThreshold(Image input, RegionPopulation res) {
-        double iqrFactor = this.localThresholdFactor.getValue().doubleValue(); 
-        Image erodeMap = getSmoothed(input);
-        if (debug) ImageWindowManagerFactory.showImage(erodeMap);
-        for (Region o : res.getObjects()) {
-            List<Double> values = Utils.transform(o.getVoxels(), v->(double)erodeMap.getPixel(v.x, v.y, v.z));
-            double q1 = ArrayUtil.quantile(values, 0.25); 
-            double q2 = ArrayUtil.quantile(values, 0.5); 
-            double q3 = ArrayUtil.quantile(values, 0.75); 
-            double thld, extremeValue;
-            if (this.isDarkBackground.getSelected()) {
-                thld = q2 - iqrFactor * (q3-q1);
-                extremeValue = values.get(0);
-                if (extremeValue<thld) o.erodeContours(erodeMap, thld, true, o.getContour());
-            } else {
-                thld = q2 + iqrFactor * (q3-q1);
-                extremeValue = values.get(values.size()-1);
-                if (extremeValue>thld) o.erodeContours(erodeMap, thld, false, o.getContour());
-            }
-            if (debug) logger.debug("Region: {} erode contour: med: {} iqr: {}, thld: {}, min: {}", o.getLabel(), q2, q3-q1, thld, extremeValue);
-        }
-        res.redrawLabelMap(true);
-        return new RegionPopulation(res.getLabelMap(), true); // update bounds of objects
-    }
     
     @Override
     public Parameter[] getParameters() {
@@ -303,7 +279,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             for(Region so : seedObjects ) if (o.intersect(so)) return true;
             return false;
         });
-        localThreshold(input, pop);
+        pop.localThreshold(getSmoothed(input), localThresholdFactor.getValue().doubleValue(), isDarkBackground.getSelected(), true);
         //RegionPopulation pop =  WatershedTransform.watershed(splitAndMerge.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(getNormalizedHessian(input), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
         
         if (verboseManualSeg) {

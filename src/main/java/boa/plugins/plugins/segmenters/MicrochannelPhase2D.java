@@ -63,8 +63,8 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
     NumberParameter channelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
     NumberParameter yStartAdjustWindow = new BoundedNumberParameter("Y-Start Adjust Window (pixels)", 0, 5, 0, null).setToolTipText("Window within which y-coordinate of start of microchannel will be refined (in pixels)");
     NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 3, 10, 0, null).setToolTipText("Threshold for Microchannel border detection (peaks of 1st derivative in X-axis)");
-    NumberParameter sigmaThreshold = new BoundedNumberParameter("Border Sigma Threshold", 3, 0.75, 0.5, 1).setToolTipText("<html>Fine adjustement of X bounds: eliminate lines with no signals <br />After segmentation, standart deviation along y-axis of each line is compared to the one of the center of the microchannel. <br />When the ratio is inferior to this threhsold, the line is eliminated. <br />0 = no adjustement</html>");
-    Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, localDerExtremaThld};
+    NumberParameter sigmaThreshold = new BoundedNumberParameter("Border Sigma Threshold", 3, 0.75, 0, 1).setToolTipText("<html>Fine adjustement of X bounds: eliminate lines with no signals <br />After segmentation, standart deviation along y-axis of each line is compared to the one of the center of the microchannel. <br />When the ratio is inferior to this threhsold, the line is eliminated. <br />0 = no adjustement</html>");
+    Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, localDerExtremaThld, sigmaThreshold};
     public static boolean debug = false;
 
     public MicrochannelPhase2D() {

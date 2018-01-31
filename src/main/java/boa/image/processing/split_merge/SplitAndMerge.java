@@ -91,27 +91,28 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
     public RegionCluster<I> getInterfaces(RegionPopulation population, boolean lowConnectivity) {
         return new RegionCluster<>(population, false, lowConnectivity, getFactory());
     }
-    public static void removeOutterVoxels(RegionPopulation pop) {
-        Neighborhood n = Filters.getNeighborhood(1, 1, pop.getImageProperties());
+    public static void smoothRegions(RegionPopulation pop, boolean lowConnectivity, boolean eraseVoxelsIfConnectedToBackground) {
+        Neighborhood n = Filters.getNeighborhood(lowConnectivity?1:1.5, lowConnectivity?1:1.5, pop.getImageProperties());
         HashMapGetCreate<Integer, int[]> count = new HashMapGetCreate<>(9, i->new int[1]);
         Map<Integer, Region> regionByLabel = pop.getObjects().stream().collect(Collectors.toMap(r->r.getLabel(), r->r));
-        int modifiedPix= 0;
-        for (Region r : pop.getObjects()) {
+        Iterator<Region> rIt = pop.getObjects().iterator();
+        while(rIt.hasNext()) {
+            Region r = rIt.next();
             Iterator<Voxel> it = r.getVoxels().iterator();
             while(it.hasNext()) {
                 Voxel v = it.next();
                 n.setPixels(v, pop.getLabelMap(), null);
                 for (int i = 0; i<n.getValueCount(); ++i) count.getAndCreateIfNecessary((int)n.getPixelValues()[i])[0]++;
+                if (!eraseVoxelsIfConnectedToBackground) count.remove(0);
                 int maxLabel = Collections.max(count.entrySet(), (e1, e2)->Integer.compare(e1.getValue()[0], e2.getValue()[0])).getKey();
                 if (maxLabel!=r.getLabel() && count.get(maxLabel)[0]>count.get(r.getLabel())[0]) {
                     it.remove();
-                    regionByLabel.get(maxLabel).getVoxels().add(v);
+                    if (maxLabel>0) regionByLabel.get(maxLabel).getVoxels().add(v);
                     pop.getLabelMap().setPixel(v.x, v.y, v.z, maxLabel);
-                    modifiedPix++;
                 }
                 count.clear();
             }
+            if (r.getVoxels().isEmpty()) rIt.remove();
         }
-        logger.debug("modified pix: {}", modifiedPix);
     }
 }

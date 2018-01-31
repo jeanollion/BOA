@@ -75,7 +75,7 @@ public class TestTracker {
         int mcIdx =1;
         int structureIdx = 1;
         int[] frames = new int[]{1, 200};
-        BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
+        //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
             return;

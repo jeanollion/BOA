@@ -37,7 +37,7 @@ import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
-import boa.image.processing.split_merge.SplitAndMergeBacteriaShape.InterfaceBT;
+import boa.image.processing.split_merge.SplitAndMergeBacteriaShape.InterfaceLocalShape;
 import boa.measurement.GeometricalMeasurements;
 import static boa.plugins.Plugin.logger;
 import static boa.plugins.plugins.segmenters.BacteriaTrans.debug;
@@ -63,23 +63,24 @@ import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
  *
  * @author jollion
  */
-public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
+public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShape> {
     protected final HashMap<Region, KDTree<Double>> curvatureMap = new HashMap<>();
     protected Image distanceMap;
     protected ImageMask mask;
-    
-    public int minSizeFusion;
-    public int curvatureScale;
-    public double curvatureSearchScale;
-    public double curvatureThreshold, curvatureThreshold2;
-    public double relativeThicknessThreshold, relativeThicknessMaxDistance;
+    // TODO uncalibrated parameters
+    public int minSizeFusion=0;
+    public int curvatureScale=6;
+    public double curvatureSearchScale=2.5;
+    public double curvatureThreshold=-1, curvatureThreshold2=-.6;
+    public double relativeThicknessThreshold=0.7, relativeThicknessMaxDistance=1;
     public boolean ignoreEndOfChannelSmallObjects;
-    
+    public boolean curvaturePerCluster = true;
     public boolean splitVerbose=false;
-    private final static double maxMergeDistanceBB = 3; // distance in pixel for merging small objects during main process
+    public int minInterfaceSize = -1;
+    private final static double maxMergeDistanceBB = 0; // distance in pixel for merging small objects during main process // was 3
     
     private double yLimLastObject = Double.NaN;
-    
+    public BiFunction<? super InterfaceLocalShape, ? super InterfaceLocalShape, Integer> compareMethod=null;
     
     @Override
     public Image getWatershedMap() {
@@ -87,8 +88,8 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
     }
 
     @Override
-    protected ClusterCollection.InterfaceFactory<Region, InterfaceBT> createFactory() {
-        return (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new InterfaceBT(e1, e2);
+    protected ClusterCollection.InterfaceFactory<Region, InterfaceLocalShape> createFactory() {
+        return (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new InterfaceLocalShape(e1, e2);
     }
     
     private Image getEDM() {
@@ -100,13 +101,13 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
     
     @Override
     public RegionPopulation merge(RegionPopulation popWS, int minSize, int objectMergeLimit) {
-        if (distanceMap == null) setDistanceMap(popWS.getLabelMap());
-        removeOutterVoxels(popWS);
-        RegionCluster<InterfaceBT> c = new RegionCluster(popWS, false, true, getFactory());
+        if (distanceMap == null) setDistanceMap(popWS.getLabelMap()); // REVOIR BESOIN DE DISTANCE MAP A CE STADE. UTILISATION DE MAX DISTANCE POUR RELATIVE THICKNESS A REVIOR
+        smoothRegions(popWS, true, true);
+        RegionCluster<InterfaceLocalShape> c = new RegionCluster(popWS, false, true, getFactory());
         RegionCluster.verbose=testMode;
         if (minSize>0) c.mergeSmallObjects(minSize, objectMergeLimit, null);
         if (ignoreEndOfChannelSmallObjects && !popWS.getObjects().isEmpty()) yLimLastObject = Collections.max(popWS.getObjects(), (o1, o2)->Double.compare(o1.getBounds().getyMax(), o2.getBounds().getyMax())).getBounds().getyMax();
-        updateCurvature(c.getClusters());
+        if (curvaturePerCluster) updateCurvature(c.getClusters());
         c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
         if (minSize>0) {
             BiFunction<Region, Set<Region>, Region> noInterfaceCase = (smallO, set) -> {
@@ -140,7 +141,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
     
     protected void updateCurvature(List<Set<Region>> clusters) { // need to be called in order to use curvature in InterfaceBT
         curvatureMap.clear();
-        ImageByte clusterMap = new ImageByte("cluster map", mask).resetOffset(); 
+        ImageByte clusterMap = new ImageByte("cluster map", mask).resetOffset(); // offset is added if getCurvature method
         Iterator<Set<Region>> it = clusters.iterator();
         while(it.hasNext()) {
             Set<Region> clust = it.next();
@@ -163,7 +164,9 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
         }
     }
     
-    public class InterfaceBT extends InterfaceRegionImpl<InterfaceBT> implements RegionCluster.InterfaceVoxels<InterfaceBT> {
+    
+    
+    public class InterfaceLocalShape extends InterfaceRegionImpl<InterfaceLocalShape> implements RegionCluster.InterfaceVoxels<InterfaceLocalShape> {
         double maxDistance=Double.NEGATIVE_INFINITY;
         double curvatureValue=Double.POSITIVE_INFINITY;
         double curvL=Double.NaN, curvR=Double.NaN;
@@ -174,7 +177,8 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
         private final Set<Voxel> voxels = new HashSet<>();
         private final Neighborhood borderNeigh = new EllipsoidalNeighborhood(1.5, true);
         private ImageInteger joinedMask;
-        public InterfaceBT(Region e1, Region e2) {
+        private KDTree<Double> localCurvatureMap;
+        public InterfaceLocalShape(Region e1, Region e2) {
             super(e1, e2);
         }
         @Override public Collection<Voxel> getVoxels() {
@@ -195,15 +199,22 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
             return joinedMask;
         }
 
-        public KDTree<Double> getCurvature() {
+        public KDTree<Double> getCurvatureMap() {
             //if (debug || ProcessingVariables.this.splitVerbose) logger.debug("interface: {}, contains curvature: {}", this, ProcessingVariables.this.curvatureMap.containsKey(e1));
             if (borderVoxels.isEmpty()) setBorderVoxels();
-            return curvatureMap.get(e1);
+            if (curvaturePerCluster) return curvatureMap.get(e1);
+            else {
+                if (localCurvatureMap==null) {
+                    localCurvatureMap = Curvature.computeCurvature(getJoinedMask(), curvatureScale);
+                    if (testMode) ImageWindowManagerFactory.showImage(Curvature.getCurvatureMask(mask, localCurvatureMap));
+                }
+                return localCurvatureMap;
+            }
         }
 
         @Override public void updateSortValue() {
-            if (voxels.size()<=-1) curvatureValue=Double.NEGATIVE_INFINITY; // when border is too small curvature may not be computable, but objects should not be merged
-            else if (getCurvature()!=null) {
+            if (voxels.size()<=minInterfaceSize) curvatureValue=Double.NEGATIVE_INFINITY; // when border is too small curvature may not be computable, but objects should not be merged
+            else if (getCurvatureMap()!=null) {
                 curvatureValue = getMeanOfMinCurvature();
             } //else logger.debug("no curvature found for: {}", this);
             if (Double.isNaN(curvatureValue)) curvatureValue = Double.NEGATIVE_INFINITY; // curvature cannot be computed for objects too small
@@ -214,12 +225,13 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
             super.performFusion();
         }
         @Override 
-        public void fusionInterface(InterfaceBT otherInterface, Comparator<? super Region> elementComparator) {
+        public void fusionInterface(InterfaceLocalShape otherInterface, Comparator<? super Region> elementComparator) {
             if (otherInterface.maxDistance>maxDistance) {
                 this.maxDistance=otherInterface.maxDistance;
                 this.maxVoxel=otherInterface.maxVoxel;
             }
             joinedMask=null;
+            localCurvatureMap=null;
             voxels.addAll(otherInterface.voxels);
             setBorderVoxels();
         }
@@ -250,7 +262,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
         private double getMinCurvature(Collection<Voxel> voxels) { // returns negative infinity if no border
             if (voxels.isEmpty()) return Double.NEGATIVE_INFINITY;
             //RadiusNeighborSearchOnKDTree<Double> search = new RadiusNeighborSearchOnKDTree(getCurvature());
-            NearestNeighborSearchOnKDTree<Double> search = new NearestNeighborSearchOnKDTree(getCurvature());
+            NearestNeighborSearchOnKDTree<Double> search = new NearestNeighborSearchOnKDTree(getCurvatureMap());
 
             double min = Double.POSITIVE_INFINITY;
             for (Voxel v : voxels) {
@@ -352,7 +364,8 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
             }
         }
 
-        @Override public int compareTo(InterfaceBT t) { // decreasingOrder of curvature value
+        @Override public int compareTo(InterfaceLocalShape t) { // decreasingOrder of curvature value
+            if (compareMethod!=null) return compareMethod.apply(this, t);
             //return Double.compare(t.maxDistance, maxDistance);
             int c = Double.compare(t.curvatureValue, curvatureValue);
             if (c==0) return super.compareElements(t, RegionCluster.regionComparator); // consitency with equals method
@@ -364,4 +377,12 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceBT> {
             return "Interface: " + e1.getLabel()+"+"+e2.getLabel()+ " sortValue: "+curvatureValue;
         }
     }
+    
+    public final static  BiFunction<? super InterfaceLocalShape, ? super InterfaceLocalShape, Integer> compareBySize = (i1, i2) -> { // compare by cluster size
+            int[] maxMin1 = i1.getE1().getSize()>i1.getE2().getSize() ? new int[]{i1.getE1().getSize(), i1.getE2().getSize()} : new int[]{i1.getE2().getSize(), i1.getE1().getSize()};
+            int[] maxMin2 = i2.getE1().getSize()>i2.getE2().getSize() ? new int[]{i2.getE1().getSize(), i2.getE2().getSize()} : new int[]{i2.getE2().getSize(), i2.getE1().getSize()};
+            int c = Integer.compare(maxMin1[0], maxMin2[0]);
+            if (c!=0) return c;
+            return Integer.compare(maxMin1[1], maxMin2[1]);
+        };
 }

@@ -58,7 +58,10 @@ import boa.image.processing.WatershedTransform;
 import boa.image.processing.neighborhood.DisplacementNeighborhood;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
+import boa.utils.Utils;
+import static boa.utils.Utils.comparatorInt;
 
 /**
  *
@@ -401,7 +404,52 @@ public class RegionPopulation {
         relabel(true);
     }
     
-    public void localThreshold(Image intensity, int marginX, int marginY, int marginZ) {
+    public RegionPopulation localThreshold(Image erodeMap, double iqrFactor, boolean darkBackground, boolean keepOnlyBiggestObject) {
+        //if (debug) ImageWindowManagerFactory.showImage(erodeMap);
+        List<Region> addedObjects = new ArrayList<>();
+        for (Region o : getObjects()) {
+            List<Double> values = Utils.transform(o.getVoxels(), (Voxel v) -> (double) erodeMap.getPixel(v.x, v.y, v.z));
+            double q1 = ArrayUtil.quantile(values, 0.25);
+            double q2 = ArrayUtil.quantile(values, 0.5);
+            double q3 = ArrayUtil.quantile(values, 0.75);
+            double thld;
+            double extremeValue;
+            boolean performed = false;
+            if (darkBackground) {
+                thld = q2 - iqrFactor * (q3 - q1);
+                extremeValue = values.get(0);
+                if (extremeValue < thld) {
+                    o.erodeContours(erodeMap, thld, true, keepOnlyBiggestObject, o.getContour());
+                    performed=true;
+                }
+            } else {
+                thld = q2 + iqrFactor * (q3 - q1);
+                extremeValue = values.get(values.size() - 1);
+                if (extremeValue > thld) {
+                    o.erodeContours(erodeMap, thld, false, keepOnlyBiggestObject, o.getContour());
+                    performed=true;
+                }
+            }
+            if (performed && !keepOnlyBiggestObject) {
+                List<Region> objects = ImageLabeller.labelImageListLowConnectivity(o.mask);
+                if (objects.size()>1) {
+                    objects.remove(0);
+                    for (Region toErase: objects) {
+                        toErase.draw(o.mask, 0);
+                        toErase.translate(o.mask.getBoundingBox());
+                    }
+                    addedObjects.addAll(objects);
+                }
+            }
+            //logger.debug("Region: {} erode contour: med: {} iqr: {}, thld: {}, min: {}", o.getLabel(), q2, q3-q1, thld, extremeValue);
+        }
+        objects.addAll(addedObjects);
+        relabel(true);
+        constructObjects(); // updates bounds of objects
+        return this;
+    }
+    
+    /*public void localThreshold(Image intensity, int marginX, int marginY, int marginZ) {
         ImageInteger background = ImageOperations.xor(getLabelMap(), new BlankMask("", properties), null);
         for (Region o : getObjects()) {
             o.draw(background, 1);
@@ -419,7 +467,7 @@ public class RegionPopulation {
             localThreshold(o, intensity, thld);
         }
         relabel(false);
-    }
+    }*/
     
     protected void localThreshold(Region o, Image intensity, double threshold) {
         Iterator<Voxel> it = o.getVoxels().iterator();

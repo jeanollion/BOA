@@ -68,12 +68,12 @@ public class TestProcessBacteriaPhase {
         //String dbName = "TestThomasRawStacks";
         int field = 0;
         int microChannel =0;
-        int time =51;
+        int[] time =new int[]{48, 48};
         //setMask=true;
         //thld = 776;
         
         //testSegBacteriesFromXP(dbName, field, time, microChannel);
-        testSegBacteriesFromXP(dbName, field, microChannel, time, time);
+        testSegBacteriesFromXP(dbName, field, microChannel, time[0], time[1]);
         //testSplit(dbName, field, time, microChannel, 1, true);
     }
     
@@ -139,20 +139,13 @@ public class TestProcessBacteriaPhase {
         allMCTracks.entrySet().removeIf(o->o.getKey().getIdx()!=microChannel);
         List<StructureObject> parentTrack = allMCTracks.entrySet().iterator().next().getValue();
         Map<StructureObject, Image> preFilteredImages;
-        if (timePointMin==timePointMax && !mDAO.getExperiment().getStructure(1).getProcessingScheme().getTrackPreFilters(true).isEmpty()) {
-            parentTrack.removeIf(o -> o.getFrame()<timePointMin-10 || o.getFrame()>timePointMax+10);
-            preFilteredImages = mDAO.getExperiment().getStructure(1).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
-            parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
-        } else {
-            parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
-            preFilteredImages = mDAO.getExperiment().getStructure(1).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
-        }
-        
+        preFilteredImages = mDAO.getExperiment().getStructure(1).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
+        parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {
             Image input = preFilteredImages.get(mc);
-            Segmenter seg = new BacteriaShape();
-            seg.runSegmenter(input, 1, mc);
+            BacteriaShape seg = new BacteriaShape();
+            if (parentTrack.size()==1) seg.testMode=true;
             /*BacteriaTrans.debug=true;
             BacteriaTrans seg = new BacteriaTrans();
             if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
@@ -163,11 +156,12 @@ public class TestProcessBacteriaPhase {
                 input = mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().filter(input, mc.getMask()).setName("preFiltered");
                 if (normalize) input = ImageOperations.normalize(input, null, null);
             }
-            if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
-            mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);*/
+            if (!Double.isNaN(thld)) seg.setThresholdValue(thld);*/
+            mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
+            mc.setRawImage(0, input);
             logger.debug("seg: tp {}, #objects: {}", mc.getFrame(), mc.getChildren(1).size());
         }
-        if (true) return;
+        //if (true) return;
         GUI.getInstance(); // for hotkeys...
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, 1);

@@ -397,7 +397,7 @@ public class Region {
      * @param removeIfLowerThanThreshold
      * @param contour will be modified if a set
      */
-    public void erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, Collection<Voxel> contour) {
+    public void erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, boolean keepOnlyBiggestObject, Collection<Voxel> contour) {
         TreeSet<Voxel> heap = contour==null ? new TreeSet<>(getContour()) : new TreeSet<>(contour);
         EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
         ImageInteger mask = getMask();
@@ -416,11 +416,12 @@ public class Region {
                 }
             }
         }
-        // check if 2 objects and erase all but smallest
-        List<Region> objects = ImageLabeller.labelImageListLowConnectivity(mask);
-        if (objects.size()>1) {
-            objects.remove(Collections.max(objects, comparatorInt(o->o.getSize())));
-            for (Region toErase: objects) toErase.draw(mask, 0);
+        if (keepOnlyBiggestObject) { // check if 2 objects and erase all but smallest
+            List<Region> objects = ImageLabeller.labelImageListLowConnectivity(mask);
+            if (objects.size()>1) {
+                objects.remove(Collections.max(objects, comparatorInt(o->o.getSize())));
+                for (Region toErase: objects) toErase.draw(mask, 0);
+            }
         }
         voxels = null; // reset voxels
         // TODO reset bounds ?

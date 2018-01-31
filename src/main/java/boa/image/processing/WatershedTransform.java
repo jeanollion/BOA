@@ -22,6 +22,7 @@ import static boa.core.Processor.logger;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.BlankMask;
 import boa.image.Image;
 import boa.image.ImageByte;
@@ -153,6 +154,7 @@ public class WatershedTransform {
         for (Spot s : spots) {
             if (s!=null) {
                 for (Voxel v : s.voxels) {
+                    if (!mask.insideMask(v.x, v.y, v.z)) continue;
                     for (int i = 0; i<neigh.getSize(); ++i) {
                         Voxel n = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]) ;
                         if (segmentedMap.contains(n.x, n.y, n.z) && mask.insideMask(n.x, n.y, n.z)) heap.add(n);
@@ -166,7 +168,7 @@ public class WatershedTransform {
         while (!heap.isEmpty()) {
             //Voxel v = heap.poll();
             Voxel v = heap.pollFirst();
-            if (segmentedMap.getPixelInt(v.x, v.y, v.z)>0) continue;
+            if (segmentedMap.getPixelInt(v.x, v.y, v.z)>0) continue; //already segmented
             score.setUp(v);
             for (int i = 0; i<neigh.getSize(); ++i) {
                 Voxel n = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]) ;
@@ -182,6 +184,11 @@ public class WatershedTransform {
                 }
             }
             int currentLabel = score.getLabel();
+            if (spots[currentLabel]==null) {
+                logger.error("WS error no spot for label: {} voxel: {}", currentLabel, v);
+                ImageWindowManagerFactory.showImage(this.watershedMap);
+                ImageWindowManagerFactory.showImage(this.segmentedMap);
+            }
             spots[currentLabel].addVox(v);
             // check propagation criterion
             nextProp.removeIf(n->!propagationCriterion.continuePropagation(v, n));

@@ -20,16 +20,26 @@ package boa.plugins.plugins.segmenters;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
+import boa.data_structure.RegionPopulation.ContactBorder;
 import boa.data_structure.StructureObjectProcessing;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageFloat;
+import boa.image.ImageInteger;
+import boa.image.ImageLabeller;
+import boa.image.ImageMask;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
+import boa.image.processing.WatershedTransform;
 import boa.image.processing.split_merge.SplitAndMerge;
+import boa.image.processing.split_merge.SplitAndMergeBacteriaShape;
 import boa.image.processing.split_merge.SplitAndMergeEdge;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.plugins.SegmenterSplitAndMerge;
+import boa.plugins.plugins.thresholders.ConstantValue;
+import boa.plugins.plugins.thresholders.IJAutoThresholder;
+import ij.process.AutoThresholder;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -37,35 +47,87 @@ import java.util.List;
  * @author jollion
  */
 public class BacteriaShape implements SegmenterSplitAndMerge {
-
+    public boolean testMode = false;
     @Override
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        ImageWindowManagerFactory.showImage(input);
-        EdgeDetector seg = new EdgeDetector().setSeedRadius(1).setMinSizePropagation(5); // seed radius 1 to have seeds on sides / minsizePropagation: not higer than 10
-        seg.setWsMap(Filters.applyFilter(input, new ImageFloat("", input), new Filters.Sigma(), Filters.getNeighborhood(3, input))); // lower than 4
-        RegionPopulation pop = seg.partitionImage(input, parent.getMask());
-        ImageWindowManagerFactory.showImage(seg.getWsMap(input, null));
-        ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input));
-        SplitAndMergeEdge sam = new SplitAndMergeEdge(seg.getWsMap(input, null), 0.3, false); // median 0.075
-        sam.setTestMode(true);
+        if (testMode) ImageWindowManagerFactory.showImage(input);
+        Image smoothed = Filters.median(input, null, Filters.getNeighborhood(3, input));
+        Image sigma = Filters.applyFilter(smoothed, new ImageFloat("", input), new Filters.Sigma(), Filters.getNeighborhood(2, input)); // lower than 4
+        if (testMode) ImageWindowManagerFactory.showImage(sigma);
+        RegionPopulation pop = partitionImage(sigma, parent.getMask());
+        SplitAndMerge.smoothRegions(pop, true, true); // regularize borders
+        if (testMode) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after partition"));
+        
+        // remove background object : touches sides
+        pop.filter(new ContactBorder(input.getSizeY()/2, input, ContactBorder.Border.Xl));
+        pop.filter(new ContactBorder(input.getSizeY()/2, input, ContactBorder.Border.Xr));
+        EdgeDetector seg = new EdgeDetector().setThrehsoldingMethod(1);
+        //seg.setThresholder(new ConstantValue(0.2)).filterRegions(pop, input, parent.getMask());
+        
+        SplitAndMergeEdge sam = new SplitAndMergeEdge(sigma, 0.03, 0.15); // merge according to quantile value of sigma @ border between regions
+        sam.setTestMode(testMode);
         sam.merge(pop, 10, 0);
-        ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after merge"));
-        return null;
+        if (testMode) {
+            ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after merge"));
+            ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, sigma).setName("sigma after merge"));
+        }
+        
+        seg.setThresholder(new ConstantValue(0.3)).filterRegions(pop, input, parent.getMask());
+        seg.setIsDarkBackground(false).setThresholder(new ConstantValue(0.05)).filterRegions(pop, sigma, parent.getMask());
+        
+        if (testMode) {
+            ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after delete"));
+            ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("labels before merge by shape"));
+        }
+        // merge 
+        SplitAndMergeBacteriaShape samShape = new SplitAndMergeBacteriaShape();
+        samShape.curvaturePerCluster = false;
+        samShape.compareMethod = SplitAndMergeBacteriaShape.compareBySize;
+        samShape.setTestMode(testMode);
+        samShape.merge(pop, 0, 0);
+        if (testMode) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after merge by shape"));
+        
+        pop.filter(new RegionPopulation.Size().setMin(50));
+        
+        pop.localThreshold(smoothed, 1.25, true, false);
+        
+        if (testMode) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after delete by size and local thld"));
+        
+        //SplitAndMergeShape sam = new SplitAndMergeShape();
+        
+        return pop;
+    }
+    private static RegionPopulation partitionImage(Image wsMap, ImageMask mask) {
+        int minSizePropagation = 5;
+        ImageInteger seeds = Filters.localExtrema(wsMap, null, false, mask, Filters.getNeighborhood(1, 1, wsMap)); 
+        // add  seeds on sides to partition image properly
+        int[] xs = new int[]{0, wsMap.getSizeX()-1};
+        for (int y = 0; y<wsMap.getSizeY(); ++y) {
+            for (int x : xs) {
+                if (mask.insideMask(x, y, 0)) seeds.setPixel(x, y, 0, 1);
+            }
+        }
+        WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
+        WatershedTransform wt = new WatershedTransform(wsMap, mask, Arrays.asList(ImageLabeller.labelImage(seeds)), false, null, sfc);
+        wt.setLowConnectivity(false);
+        wt.run();
+        return wt.getObjectPopulation();
     }
     
     @Override
     public double split(Image input, Region o, List<Region> result) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //SplitAndMergeBacteriaShape sam = new SplitAndMergeBacteriaShape();
+        return Double.POSITIVE_INFINITY;
     }
 
     @Override
     public double computeMergeCost(Image input, List<Region> objects) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return Double.POSITIVE_INFINITY;
     }
 
     @Override
     public Parameter[] getParameters() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return new Parameter[0];
     }
     
 }

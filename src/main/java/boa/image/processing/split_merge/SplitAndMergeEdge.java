@@ -49,10 +49,10 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
     public final double splitThresholdValue;
     Function<Set<Voxel>, Double> interfaceValue;
 
-    public SplitAndMergeEdge(Image edgeMap, double splitThreshold, boolean median) {
+    public SplitAndMergeEdge(Image edgeMap, double splitThreshold, double quantile) {
         this.edge = edgeMap;
         splitThresholdValue=splitThreshold;
-        if (median) {
+        if (quantile>=0 && quantile<=1) {
             interfaceValue = voxels->{
                 if (voxels.isEmpty()) {
                     return Double.NaN;
@@ -60,10 +60,11 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
                     float[] values = new float[voxels.size()];
                     int idx = 0;
                     for (Voxel v : voxels)  values[idx++]=edge.getPixel(v.x, v.y, v.z);
-                    return ArrayUtil.median(values);
+                    return ArrayUtil.quantile(values, quantile);
                 }
             };
-        } else {
+        } else throw new IllegalArgumentException("Quantile should be >=0 & <=1");
+        /*else {
             interfaceValue = voxels->{
                 if (voxels.isEmpty()) {
                     return Double.NaN;
@@ -73,7 +74,7 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
                     return edgeSum;
                 }
             };
-        }
+        }*/
     }
     public SplitAndMergeEdge setInterfaceValue(Function<Set<Voxel>, Double> interfaceValue) {
         this.interfaceValue=interfaceValue;

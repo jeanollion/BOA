@@ -167,84 +167,84 @@ public class EdgeDetector implements Segmenter, ToolTip {
         WatershedTransform wt = new WatershedTransform(getWsMap(input, mask), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, mask))), false, null, sfc);
         wt.setLowConnectivity(false);
         wt.run();
-        return wt.getObjectPopulation();
-    }
-    public RegionPopulation run(Image input, ImageMask mask) {
-        RegionPopulation allRegions = partitionImage(input, mask);
-        
-        /*
-        // merge background regions : Do not solve the problem of 2 class of foreground intensities: when around foregrond region of highest intensity, background regions are of intensity comparable to lower foreground regions
-        double thldMerge = IJAutoThresholder.runThresholder(input, parent.getMask(), AutoThresholder.Method.Triangle);
-        if (testMode) logger.debug("thld: {}", thldMerge);
-        SplitAndMerge sm = new SplitAndMerge(input, thldMerge, 1, s->{
-            float[] values = new float[s.size()]; int i=0;
-            for (Voxel v : s) values[i++] = input.getPixel(v.x, v.y, v.z);
-            return ArrayUtil.quantiles(values, 0.5)[0];
-        });
-        sm.setTestMode(testMode);
-        sm.merge(allRegions, 3, 0);
-        */
+        RegionPopulation res =  wt.getObjectPopulation();
         if (testMode) {
-            ImageWindowManagerFactory.showImage(allRegions.getLabelMap().duplicate("Segmented Regions"));
+            ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("Segmented Regions"));
             ImageWindowManagerFactory.showImage(seedMap.setName("Seeds"));
             ImageWindowManagerFactory.showImage(wsMap.setName("Watershed Map"));
         }
-        if (this.thresholdMethod.getSelectedIndex()==0) {
-            double thld = threshold.instanciatePlugin().runSimpleThresholder(input, mask);
-            if (testMode) ImageWindowManagerFactory.showImage(generateRegionValueMap(allRegions, input).setName("Intensity value Map. Threshold: "+thld+" thldMethod: "+this.threshold.getPluginName()));
-            allRegions.filter(new RegionPopulation.MedianIntensity(thld, darkBackground.getSelected(), input));
-        } else if (this.thresholdMethod.getSelectedIndex()==1) { // thld on value map
-            Map<Region, Double>[] values = new Map[1];
-            Image valueMap = generateRegionValueMap(allRegions, input, values);
-            double thld = threshold.instanciatePlugin().runSimpleThresholder(valueMap , mask);
-            if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("Intensity value Map. Threshold: "+thld));
-            if (darkBackground.getSelected()) values[0].entrySet().removeIf(e->e.getValue()>=thld);
-            else values[0].entrySet().removeIf(e->e.getValue()<=thld);
-            allRegions.getObjects().removeAll(values[0].keySet());
-            allRegions.relabel(true);
-        } else { // use of secondary map to select border regions and compute thld
-            Map<Region, Double>[] values = new Map[1];
-            Image valueMap = generateRegionValueMap(allRegions, input, values);
-            double thld1 = IJAutoThresholder.runThresholder(valueMap, mask, AutoThresholder.Method.Otsu);
-            if (testMode) ImageWindowManagerFactory.showImage(valueMap.duplicate("Primary thld value map. Thld: "+thld1));
-            Map<Region, Double>[] values2 = new Map[1];
-            Image valueMap2 = generateRegionValueMap(allRegions, getSecondaryThresholdMap(input, mask), values2);
-            double thld2 = IJAutoThresholder.runThresholder(valueMap2, mask, AutoThresholder.Method.Otsu);
-            // select objects under thld2 | above thld -> foreground, interface ou backgruond. Others are interface or border (majority) and set value to thld on valueMap 
-            if (darkBackground.getSelected()) {
-                for (Region o : allRegions.getObjects()) {
-                    if (values[0].get(o)>=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
-                }
-            } else {
-                for (Region o : allRegions.getObjects()) {
-                    if (values[0].get(o)<=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
-                }
-            }
-            Histogram h = valueMap.getHisto256(mask);
-            // search for largest segment with no values
-            int sMax = 0, eMax = 0;
-            for (int s = 0; s<254; ++s) {
-                if (h.data[s]!=0) continue;
-                int e = s;
-                while(e<254 && h.data[e+1]==0) ++e;
-                if (e-s>eMax-sMax) {
-                    eMax = e;
-                    sMax = s;
-                }
-            }
-            double thld  = h.getValueFromIdx((eMax+sMax)/2.0);
-            //double thld = BackgroundThresholder.runThresholder(valueMap, parent.getMask(), 4, 4, 1, thld1); // run background thlder with thld1 as limit to select border form interfaces
-            if (testMode) {
-                ImageWindowManagerFactory.showImage(valueMap2.setName("Secondary thld value map. Thld: "+thld2));
-                ImageWindowManagerFactory.showImage(valueMap.setName("Value map. Thld: "+thld));
-            }
-            if (darkBackground.getSelected()) values[0].entrySet().removeIf(e->e.getValue()>=thld);
-            else values[0].entrySet().removeIf(e->e.getValue()<=thld);
-            allRegions.getObjects().removeAll(values[0].keySet());
-            allRegions.relabel(true);
-        }
+        return res;
+    }
+    public RegionPopulation run(Image input, ImageMask mask) {
+        RegionPopulation allRegions = partitionImage(input, mask);
+        filterRegions(allRegions, input, mask);
         return allRegions;
     }
+    
+    public void filterRegions(RegionPopulation pop, Image input, ImageMask mask) {
+        switch (this.thresholdMethod.getSelectedIndex()) {
+            case 0:
+                {
+                    double thld = threshold.instanciatePlugin().runSimpleThresholder(input, mask);
+                    if (testMode) ImageWindowManagerFactory.showImage(generateRegionValueMap(pop, input).setName("Intensity value Map. Threshold: "+thld+" thldMethod: "+this.threshold.getPluginName()));
+                    pop.filter(new RegionPopulation.MedianIntensity(thld, darkBackground.getSelected(), input));
+                    break;
+                }
+            case 1:
+                {
+                    // thld on value map
+                    Map<Region, Double>[] values = new Map[1];
+                    Image valueMap = generateRegionValueMap(pop, input, values);
+                    double thld = threshold.instanciatePlugin().runSimpleThresholder(valueMap , mask);
+                    if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("Intensity value Map. Threshold: "+thld));
+                    if (darkBackground.getSelected()) values[0].entrySet().removeIf(e->e.getValue()>=thld);
+                    else values[0].entrySet().removeIf(e->e.getValue()<=thld);
+                    pop.getObjects().removeAll(values[0].keySet());
+                    pop.relabel(true);
+                    break;
+                }
+            default:
+                {
+                    // use of secondary map to select border regions and compute thld
+                    Map<Region, Double>[] values = new Map[1];
+                    Image valueMap = generateRegionValueMap(pop, input, values);
+                    double thld1 = IJAutoThresholder.runThresholder(valueMap, mask, AutoThresholder.Method.Otsu);
+                    if (testMode) ImageWindowManagerFactory.showImage(valueMap.duplicate("Primary thld value map. Thld: "+thld1));
+                    Map<Region, Double>[] values2 = new Map[1];
+                    Image valueMap2 = generateRegionValueMap(pop, getSecondaryThresholdMap(input, mask), values2);
+                    double thld2 = IJAutoThresholder.runThresholder(valueMap2, mask, AutoThresholder.Method.Otsu);
+                    // select objects under thld2 | above thld -> foreground, interface ou backgruond. Others are interface or border (majority) and set value to thld on valueMap
+                    if (darkBackground.getSelected()) {
+                        for (Region o : pop.getObjects()) {
+                            if (values[0].get(o)>=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
+                        }
+                    } else {
+                        for (Region o : pop.getObjects()) {
+                            if (values[0].get(o)<=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
+                        }
+                    }       Histogram h = valueMap.getHisto256(mask);
+                    int sMax = 0, eMax = 0;
+                    for (int s = 0; s<254; ++s) {
+                        if (h.data[s]!=0) continue;
+                        int e = s;
+                        while(e<254 && h.data[e+1]==0) ++e;
+                        if (e-s>eMax-sMax) {
+                            eMax = e;
+                            sMax = s;
+                        }
+                    }       double thld  = h.getValueFromIdx((eMax+sMax)/2.0);
+                    //double thld = BackgroundThresholder.runThresholder(valueMap, parent.getMask(), 4, 4, 1, thld1); // run background thlder with thld1 as limit to select border form interfaces
+                    if (testMode) {
+                        ImageWindowManagerFactory.showImage(valueMap2.setName("Secondary thld value map. Thld: "+thld2));
+                        ImageWindowManagerFactory.showImage(valueMap.setName("Value map. Thld: "+thld));
+                    }       if (darkBackground.getSelected()) values[0].entrySet().removeIf(e->e.getValue()>=thld);
+                    else values[0].entrySet().removeIf(e->e.getValue()<=thld);
+                    pop.getObjects().removeAll(values[0].keySet());
+                    pop.relabel(true);
+                    break;
+                }
+        }
+    } 
 
     public static Image generateRegionValueMap(RegionPopulation pop, Image image) {
         return generateRegionValueMap(pop, image, null);
@@ -263,7 +263,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
         }
         return valueMap;
     }
-    protected static Function<Region, Double> valueFunction(Image image) {
+    protected static Function<Region, Double> valueFunction(Image image) { // default: median value
         return r->BasicMeasurements.getQuantileValue(r, image, false, 0.5)[0];
     }
     @Override

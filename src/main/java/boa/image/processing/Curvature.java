@@ -57,8 +57,8 @@ public class Curvature {
         fourier.Init(r, mask.getScaleXY());
         //logger.debug("Curvature: length: {}, closed?: {}", fourier.NPT, fourier.closed());
         double reso = mask.getScaleXY();
-        final ArrayList<RealPoint> points = new ArrayList<RealPoint>(fourier.points.length);
-        final ArrayList<Double> values = new ArrayList<Double>(fourier.points.length);
+        final ArrayList<RealPoint> points = new ArrayList<>(fourier.points.length);
+        final ArrayList<Double> values = new ArrayList<>(fourier.points.length);
         for ( int i = 0; i <fourier.points.length ; ++i ) {
             points.add( new RealPoint( new double[]{ mask.getOffsetX()+fourier.points[i].x / reso, mask.getOffsetY() + fourier.points[i].y / reso}  ));
             try {
@@ -68,7 +68,7 @@ public class Curvature {
                 return null;
             }
         }
-        return new KDTree<Double>(values, points);
+        return new KDTree<>(values, points);
     }
     public static ImageFloat getCurvatureMask(ImageInteger mask, int scale_cur) {
         KDTree<Double> tree = computeCurvature(mask, scale_cur);

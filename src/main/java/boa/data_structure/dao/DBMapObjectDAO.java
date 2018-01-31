@@ -106,7 +106,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                         res = createFileDB(getDBFile(structureIdx), readOnly);
                         dbS.put(structureIdx, res);
                     } catch (org.mapdb.DBException ex) {
-                        logger.error("DB already opened. Try to close other processes", ex);
+                        logger.error("Could not create DB readOnly: "+readOnly, ex);
                         return null;
                     }
                 } else {
@@ -584,10 +584,15 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (res==null) {
             synchronized(measurementdbS) {
                 if (!measurementdbS.containsKey(structureIdx)) {
-                    DB db = DBMapUtils.createFileDB(getMeasurementDBFile(structureIdx), readOnly);
-                    HTreeMap<String, String> dbMap = DBMapUtils.createHTreeMap(db, "measurements");
-                    res = new Pair(db, dbMap);
-                    measurementdbS.put(structureIdx, res);
+                    try {
+                        DB db = DBMapUtils.createFileDB(getMeasurementDBFile(structureIdx), readOnly);
+                        HTreeMap<String, String> dbMap = DBMapUtils.createHTreeMap(db, "measurements");
+                        res = new Pair(db, dbMap);
+                        measurementdbS.put(structureIdx, res);
+                    }  catch (org.mapdb.DBException ex) {
+                        logger.error("Couldnot create DB: readOnly:"+readOnly, ex);
+                        return null;
+                    }
                 } else {
                     res = measurementdbS.get(structureIdx);
                 }
@@ -634,6 +639,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public Measurements getMeasurements(StructureObject o) {
         Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(o.getStructureIdx());
+        if (mDB==null) return null;
         try {
             String mS = mDB.value.get(o.getId());
             if (mS==null) return null;

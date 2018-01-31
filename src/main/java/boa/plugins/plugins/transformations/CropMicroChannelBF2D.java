@@ -116,6 +116,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         
         double derScale = 2;
         int xErode = Math.max(1, (int)(derScale/2d));
+        xErode = 0;
         if (testMode) logger.debug("xErode: {}", xErode);
         /*
         1) search for optical aberation + crop
