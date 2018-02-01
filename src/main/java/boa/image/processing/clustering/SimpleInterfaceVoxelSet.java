@@ -35,7 +35,7 @@ public class SimpleInterfaceVoxelSet extends InterfaceVoxelSet<SimpleInterfaceVo
     }
 
     @Override
-    public void updateSortValue() {
+    public void updateInterface() {
         
     }
 

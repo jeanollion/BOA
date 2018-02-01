@@ -36,5 +36,5 @@ public interface Interface<E, T extends Interface<E, T>> extends Comparable<T> {
     public void performFusion();
     public boolean checkFusion();
     public void fusionInterface(T otherInterface, Comparator<? super E> elementComparator);
-    public void updateSortValue();
+    public void updateInterface();
 }

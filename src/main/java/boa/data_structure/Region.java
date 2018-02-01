@@ -368,6 +368,26 @@ public class Region {
         //logger.debug("contour: {} (total: {})", res.size(), getVoxels().size());
         return res;
     }
+    public Set<Voxel> getOutterContour() {
+        ImageMask mask = getMask();
+        EllipsoidalNeighborhood neigh = !is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true); // 1 and not 1.5 -> diagonal
+        for (int i = 0; i<neigh.dx.length; ++i) {
+            neigh.dx[i]-=mask.getOffsetX();
+            neigh.dy[i]-=mask.getOffsetY();
+            if (!is2D()) neigh.dz[i]-=mask.getOffsetZ();
+        }
+        Set<Voxel> res = new HashSet<>();
+        Voxel n = new Voxel(0, 0, 0);
+        for (Voxel v: getVoxels()) {
+            for (int i = 0; i<neigh.dx.length; ++i) {
+                n.x=v.x+neigh.dx[i];
+                n.y=v.y+neigh.dy[i];
+                n.z=v.z+neigh.dz[i];
+                if (!mask.contains(n.x, n.y, n.z) || !mask.insideMask(n.x, n.y, n.z)) res.add(n.duplicate());
+            }
+        }
+        return res;
+    }
     /**
      * 
      * @param v

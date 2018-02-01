@@ -55,17 +55,14 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
     }
      /**
      * 
-     * @param popWS population to merge according to criterion on hessian value @ interface / value @ interface
-     * @param minSize after merge, objects smaller than this size will be erased
+     * @param popWS population to merge according to criterion on hessian value @ interface / value @ interfacepopWS.filterAndMergeWithConnected(new RegionPopulation.Size().setMin(minSize));
      * @param objectMergeLimit 
      * @return 
      */
-    public RegionPopulation merge(RegionPopulation popWS, int minSize, int objectMergeLimit) {
+    public RegionPopulation merge(RegionPopulation popWS, int objectMergeLimit) {
         RegionCluster.verbose=testMode;
         RegionCluster.mergeSort(popWS,  getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
         //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
-        popWS.filterAndMergeWithConnected(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
-        popWS.filterAndMergeWithConnected(new RegionPopulation.Size().setMin(minSize)); // remove small objects
         popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         if (testMode) ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map"));
         return popWS;
@@ -74,11 +71,10 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
      * 
      * @param segmentationMask
      * @param minSizePropagation
-     * @param minSize
      * @param objectMergeLimit
      * @return 
      */
-    public RegionPopulation splitAndMerge(ImageInteger segmentationMask, int minSizePropagation, int minSize, int objectMergeLimit) {
+    public RegionPopulation splitAndMerge(ImageInteger segmentationMask, int minSizePropagation, int objectMergeLimit) {
         WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
         RegionPopulation popWS = WatershedTransform.watershed(getWatershedMap(), segmentationMask, false, null, sfc, false);
         if (testMode) {
@@ -86,33 +82,10 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
             ImageWindowManagerFactory.showImage(getWatershedMap());
             ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map before merge"));
         }
-        return merge(popWS, minSize, objectMergeLimit);
+        return merge(popWS, objectMergeLimit);
     }
     public RegionCluster<I> getInterfaces(RegionPopulation population, boolean lowConnectivity) {
         return new RegionCluster<>(population, false, lowConnectivity, getFactory());
     }
-    public static void smoothRegions(RegionPopulation pop, boolean lowConnectivity, boolean eraseVoxelsIfConnectedToBackground) {
-        Neighborhood n = Filters.getNeighborhood(lowConnectivity?1:1.5, lowConnectivity?1:1.5, pop.getImageProperties());
-        HashMapGetCreate<Integer, int[]> count = new HashMapGetCreate<>(9, i->new int[1]);
-        Map<Integer, Region> regionByLabel = pop.getObjects().stream().collect(Collectors.toMap(r->r.getLabel(), r->r));
-        Iterator<Region> rIt = pop.getObjects().iterator();
-        while(rIt.hasNext()) {
-            Region r = rIt.next();
-            Iterator<Voxel> it = r.getVoxels().iterator();
-            while(it.hasNext()) {
-                Voxel v = it.next();
-                n.setPixels(v, pop.getLabelMap(), null);
-                for (int i = 0; i<n.getValueCount(); ++i) count.getAndCreateIfNecessary((int)n.getPixelValues()[i])[0]++;
-                if (!eraseVoxelsIfConnectedToBackground) count.remove(0);
-                int maxLabel = Collections.max(count.entrySet(), (e1, e2)->Integer.compare(e1.getValue()[0], e2.getValue()[0])).getKey();
-                if (maxLabel!=r.getLabel() && count.get(maxLabel)[0]>count.get(r.getLabel())[0]) {
-                    it.remove();
-                    if (maxLabel>0) regionByLabel.get(maxLabel).getVoxels().add(v);
-                    pop.getLabelMap().setPixel(v.x, v.y, v.z, maxLabel);
-                }
-                count.clear();
-            }
-            if (r.getVoxels().isEmpty()) rIt.remove();
-        }
-    }
+    
 }

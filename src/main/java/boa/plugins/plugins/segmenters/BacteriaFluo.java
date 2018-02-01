@@ -152,7 +152,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         splitAndMerge = initializeSplitAndMerge(input);
         EdgeDetector seg = initEdgeDetector();
         RegionPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
-        RegionPopulation res = splitAndMerge.splitAndMerge(splitPop.getLabelMap(), minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 0);
+        RegionPopulation res = splitAndMerge.splitAndMerge(splitPop.getLabelMap(), minSizePropagation.getValue().intValue(), 0);
         res.localThreshold(getSmoothed(input), localThresholdFactor.getValue().doubleValue(), isDarkBackground.getSelected(), true);
         if (debug) ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
         res.filter(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
@@ -213,7 +213,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         } 
         Set<SplitAndMergeHessian.Interface> allInterfaces = c.getInterfaces(clusters.get(0));
         for (SplitAndMergeHessian.Interface i : allInterfaces) {
-            i.updateSortValue();
+            i.updateInterface();
             if (i.value>maxCost) maxCost = i.value;
         }
 
@@ -226,7 +226,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         o1.draw(splitAndMerge.getSplitMask(), o1.getLabel());
         o2.draw(splitAndMerge.getSplitMask(), o2.getLabel());
         SplitAndMergeHessian.Interface inter = RegionCluster.getInteface(o1, o2, splitAndMerge.tempSplitMask, splitAndMerge.getFactory());
-        inter.updateSortValue();
+        inter.updateInterface();
         o1.draw(splitAndMerge.getSplitMask(), 0);
         o2.draw(splitAndMerge.getSplitMask(), 0);
         return inter;
@@ -254,7 +254,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         splitAndMerge.setTestMode(splitVerbose);
         // ici -> bug avec offsets? 
         //logger.debug("in off: {}, object off: {}, inExt off: {}, maskExt off: {}", input.getBoundingBox(), object.getMask().getBoundingBox(), inExt.getBoundingBox(), maskExt.getBoundingBox());
-        RegionPopulation res = splitAndMerge.splitAndMerge(maskExt, minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 2);
+        RegionPopulation res = splitAndMerge.splitAndMerge(maskExt, minSizePropagation.getValue().intValue(), 2);
         extent = new BoundingBox(ext, -ext, ext, -ext, 0, 0);
         ImageInteger labels = res.getLabelMap().extend(extent);
         RegionPopulation pop= new RegionPopulation(labels, true);
@@ -274,7 +274,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         EdgeDetector seg = initEdgeDetector();
         RegionPopulation pop = seg.run(input, segmentationMask);
-        pop = splitAndMerge.merge(pop, minSize.getValue().intValue(), 0);
+        pop = splitAndMerge.merge(pop, 0);
         pop.filter(o->{
             for(Region so : seedObjects ) if (o.intersect(so)) return true;
             return false;

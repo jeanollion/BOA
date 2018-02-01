@@ -103,7 +103,7 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
             voxels = new HashSet<>();
         }
 
-        @Override public void updateSortValue() {
+        @Override public void updateInterface() {
             value = interfaceValue.apply(voxels);
         }
 
@@ -118,7 +118,6 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
         @Override
         public boolean checkFusion() {
             if (voxels.size()<=5) return false;
-            // criterion = - hessian @ border / intensity @ border < threshold
             if (testMode) logger.debug("check fusion: {}+{}, size: {}, value: {}, threhsold: {}, fusion: {}", e1.getLabel(), e2.getLabel(), voxels.size(), value, splitThresholdValue, value<splitThresholdValue);
             return value<splitThresholdValue;
         }

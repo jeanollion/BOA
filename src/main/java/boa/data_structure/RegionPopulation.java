@@ -24,6 +24,7 @@ import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
+import boa.image.ImageFloat;
 import boa.image.ImageInt;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
@@ -49,9 +50,6 @@ import java.util.logging.Logger;
 import boa.measurement.BasicMeasurements;
 import boa.measurement.GeometricalMeasurements;
 import boa.plugins.ObjectFeature;
-import static boa.plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
-import static boa.plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
-import static boa.plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
 import boa.plugins.plugins.trackers.ObjectIdxTracker.IndexingOrder;
 import boa.image.processing.Filters;
 import boa.image.processing.WatershedTransform;
@@ -62,6 +60,7 @@ import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 import static boa.utils.Utils.comparatorInt;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -479,6 +478,54 @@ public class RegionPopulation {
             }
         }
     }
+    public Region getBackground(ImageMask mask) {
+        int bckLabel = getObjects().isEmpty() ? 1 : Collections.max(getObjects(), (o1, o2)->Integer.compare(o1.getLabel(), o2.getLabel())).getLabel()+1;
+        ImageInteger bckMask = getLabelMap().duplicate().resetOffset();
+        if (mask!=null) ImageOperations.andNot(mask, bckMask, bckMask);
+        else ImageOperations.not(bckMask, bckMask);
+        return new Region(bckMask, bckLabel, bckMask.getSizeZ()==1);
+    }
+    public void smoothRegions(double radius, boolean eraseVoxelsIfConnectedToBackground, ImageMask mask) {
+        Neighborhood n = Filters.getNeighborhood(radius, getImageProperties());
+        HashMapGetCreate<Integer, int[]> count = new HashMapGetCreate<>(9, i->new int[1]);
+        
+        Region bck = getBackground(mask);
+        bck.getVoxels();
+        getObjects().add(bck);
+        bck.draw(labelImage, bck.getLabel());
+        Map<Integer, Region> regionByLabel = getObjects().stream().collect(Collectors.toMap(r->r.getLabel(), r->r));
+        Iterator<Region> rIt = getObjects().iterator();
+        Set<Region> modified = new HashSet<>();
+        while(rIt.hasNext()) {
+            modified.clear();
+            Region r = rIt.next();
+            Iterator<Voxel> it = r.getVoxels().iterator();
+            while(it.hasNext()) {
+                Voxel v = it.next();
+                n.setPixels(v, getLabelMap(), mask);
+                for (int i = 0; i<n.getValueCount(); ++i) count.getAndCreateIfNecessary((int)n.getPixelValues()[i])[0]++;
+                if (!eraseVoxelsIfConnectedToBackground) count.remove(bck.getLabel());
+                int maxLabel = Collections.max(count.entrySet(), (e1, e2)->Integer.compare(e1.getValue()[0], e2.getValue()[0])).getKey();
+                if (maxLabel!=r.getLabel() && count.get(maxLabel)[0]>count.get(r.getLabel())[0]) {
+                    it.remove();
+                    modified.add(r);
+                    //if (maxLabel>0) {
+                        regionByLabel.get(maxLabel).getVoxels().add(v);
+                        modified.add(regionByLabel.get(maxLabel));
+                    //}
+                    getLabelMap().setPixel(v.x, v.y, v.z, maxLabel);
+                }
+                count.clear();
+            }
+            if (r.getVoxels().isEmpty()) {
+                rIt.remove();
+                modified.remove(r);
+            }
+            for (Region mod : modified) mod.resetMask();
+        }
+        bck.draw(labelImage, 0);
+        getObjects().remove(bck);
+    }
     
     public RegionPopulation filter(SimpleFilter filter) {
         return filter(filter, null);
@@ -639,6 +686,18 @@ public class RegionPopulation {
         relabel(false);
     }
     
+    public Image getLocalThicknessMap() {
+        Image ltmap = new ImageFloat("Local Thickness Map "+getImageProperties().getScaleXY()+ " z:"+getImageProperties().getScaleZ(), getImageProperties());
+        for (Region r : getObjects()) {
+            Image lt = boa.image.processing.localthickness.LocalThickness.localThickness(r.getMask(), getImageProperties().getScaleZ()/getImageProperties().getScaleXY(), true, 1);
+            for (Voxel v : r.getVoxels()) {
+                ltmap.setPixel(v.x, v.y, v.z, lt.getPixelWithOffset(v.x, v.y, v.z));
+            }
+        }
+        //Image ltmap = LocalThickness.localThickness(this.getLabelMap(), 1, 1, true, 1);
+        return ltmap;
+    }
+    
     private static double[] getCenterArray(BoundingBox b) {
         return new double[]{b.getXMean(), b.getYMean(), b.getZMean()};
     }
@@ -784,7 +843,23 @@ public class RegionPopulation {
             }
         }
     }
-
+    public static class LocalThickness implements SimpleFilter {
+        double thld;
+        boolean keepOver = true;
+        boolean strict = true;
+        public LocalThickness(double threshold) {
+            this.thld=threshold;
+        }
+        public LocalThickness keepOverThreshold(boolean keepOver) {
+            this.keepOver=keepOver;
+            return this;
+        }
+        @Override
+        public boolean keepObject(Region object) {
+            double lt = GeometricalMeasurements.localThickness(object);
+            return lt>=thld == keepOver;
+        }
+    }
     public static class Size implements Filter {
 
         int min = -1, max = -1;

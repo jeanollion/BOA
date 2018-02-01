@@ -109,7 +109,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<SplitAndMergeHessian.Int
             voxels = new HashSet<>();
         }
 
-        @Override public void updateSortValue() {
+        @Override public void updateInterface() {
             value = interfaceValue.apply(voxels);
         }
 

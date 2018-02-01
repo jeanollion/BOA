@@ -20,6 +20,7 @@ package boa.measurement;
 import boa.data_structure.Region;
 import boa.data_structure.Voxel;
 import boa.image.Image;
+import boa.image.processing.localthickness.LocalThickness;
 import java.util.ArrayList;
 import java.util.List;
 import boa.utils.ArrayUtil;
@@ -78,7 +79,10 @@ public class GeometricalMeasurements {
     public static double getDistanceSquare(double[] c1, double[] c2, double scaleXY, double scaleZ) {
         return Math.pow((c1[0]-c2[0])*scaleXY, 2) + Math.pow((c1[1]-c2[1])*scaleXY, 2) + Math.pow((c1[2]-c2[2])*scaleZ, 2);
     }
-
+    public static double localThickness(Region object) {
+        Image ltMap = LocalThickness.localThickness(object.getMask(), object.is2D()?1:object.getScaleXY()/object.getScaleZ(), true, 1);
+        return BasicMeasurements.getQuantileValue(object, ltMap, true, 0.5)[0];
+    }
     public static double meanThicknessZ(Region object) {
         double mean = 0;
         double count = 0;

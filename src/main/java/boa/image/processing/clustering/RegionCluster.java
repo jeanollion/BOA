@@ -21,6 +21,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
@@ -47,11 +48,7 @@ import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollection<Region, I> {
     RegionPopulation population;
     //public boolean testMode = false;
-    public final static Comparator<Region> regionComparator = new Comparator<Region>() {
-        public int compare(Region o1, Region o2) {
-            return Integer.compare(o1.getLabel(), o2.getLabel());
-        };
-    };
+    public final static Comparator<Region> regionComparator = (Region o1, Region o2) -> Integer.compare(o1.getLabel(), o2.getLabel());
     
     public RegionCluster(RegionPopulation population, boolean background, boolean lowConnectivity, InterfaceFactory<Region, I> interfaceFactory) {
         super(population.getObjects(), regionComparator, interfaceFactory);
@@ -206,7 +203,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         super.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
         if (verbose) {
             population.redrawLabelMap(true);
-            new IJImageDisplayer().showImage(population.getLabelMap().duplicate("labelMap after merge"));
+            ImageWindowManagerFactory.showImage(population.getLabelMap().duplicate("labelMap after merge"));
         }
         if (nInit > population.getObjects().size()) population.relabel(true);
         return population.getObjects();
@@ -214,7 +211,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     
     public void mergeSmallObjects(double sizeLimit, int numberOfObjecsToKeep, BiFunction<Region, Set<Region>, Region> noInterfaceCase) {
         if (numberOfObjecsToKeep<0) numberOfObjecsToKeep=0;
-        for (I i : interfaces) i.updateSortValue();
+        for (I i : interfaces) i.updateInterface();
         TreeSet<Region> queue = new TreeSet<>((e1, e2) -> Integer.compare(e1.getSize(), e2.getSize()));
         queue.addAll(allElements);
         while(queue.size()>numberOfObjecsToKeep) {
@@ -230,7 +227,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
                 if (strongestInterface!=null) {
                     if (verbose) logger.debug("mergeSmallObjects: {}, size: {}, interface: {}, all: {}", s.getLabel(), s.getSize(), strongestInterface, inter);
                     strongestInterface.performFusion();
-                    updateInterfacesAfterFusion(strongestInterface);
+                    updateInterfacesAfterFusion(strongestInterface, interfaces);
                     allElements.remove(strongestInterface.getE2());
                     interfaces.remove(strongestInterface);
                     queue.remove(strongestInterface.getE2());

@@ -5,6 +5,7 @@
 package boa.image.processing.localthickness;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -66,27 +67,37 @@ public class LocalThickness {
 	public float[][] data;
 	public int w,h,d;
         public float scale, scaleInv, scaleSq, scaleInvSq;
-        
-        public static ImageFloat localThickness(ImageInteger in, float radiusXY, float radiusZ, boolean inside, int nbCPUs) {
-            ImageFloat edm = EDT.transform(in, inside, radiusXY, radiusZ, nbCPUs);
+        /**
+         * 
+         * @param in
+         * @param scaleZScaleXYRatio scaleZ / scaleXY
+         * @param inside if true, computes local thickness inside mask, if false compute local thickness of the background
+         * @param nbCPUs
+         * @return local thickness (in pixels)
+         */
+        public static ImageFloat localThickness(ImageInteger in, double scaleZScaleXYRatio, boolean inside, int nbCPUs) {
+            ImageFloat edm = EDT.transform(in, inside, 1, (float)scaleZScaleXYRatio, nbCPUs);
             DistanceRidge dr = new DistanceRidge();
-            ImagePlus distRidge = dr.run(IJImageWrapper.getImagePlus(edm), radiusXY, radiusZ, nbCPUs);
+            ImagePlus distRidge = dr.run(IJImageWrapper.getImagePlus(edm), (float)scaleZScaleXYRatio, nbCPUs);
             LocalThickness lt = new LocalThickness();
-            lt.run(distRidge, radiusXY, radiusZ, nbCPUs);
+            lt.run(distRidge, (float)scaleZScaleXYRatio, nbCPUs);
             CleanUpLocalThickness cult = new CleanUpLocalThickness();
-            ImagePlus localThickness = cult.run(distRidge);
+            ImagePlus localThickness = cult.run(distRidge); // TODO use array of EDM to save memory
             distRidge.flush();
-            return (ImageFloat) IJImageWrapper.wrap(localThickness);
+            ImageFloat res = (ImageFloat) IJImageWrapper.wrap(localThickness);
+            res.addOffset(in);
+            res.setCalibration(in);
+            return res;
         }
         
-	public void run(ImagePlus imp, float scaleXY, float scaleZ, int nbCPUs) {
+	public void run(ImagePlus imp, float scaleZScaleXYRatio, int nbCPUs) {
                 
 		ImageStack stack = imp.getStack();
 		w = stack.getWidth();
 		h = stack.getHeight();
 		d = imp.getStackSize();
-                this.scale=scaleXY/scaleZ;
-                this.scaleInv=scaleZ/scaleXY;
+                this.scale=d>1?1/scaleZScaleXYRatio:1;
+                this.scaleInv=d>1?scaleZScaleXYRatio:1;
                 this.scaleSq=scale*scale;
                 this.scaleInvSq=scaleInv*scaleInv;
 		int wh = w*h;

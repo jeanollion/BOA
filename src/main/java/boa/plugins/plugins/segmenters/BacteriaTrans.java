@@ -337,7 +337,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             result.add(o2);
             InterfaceBT inter = getInterface(o1, o2);
             
-            inter.updateSortValue();
+            inter.updateInterface();
             double cost = getCost(inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), false); 
             
             //new IJImageDisplayer().showImage(pop.getLabelMap().duplicate("split"));
@@ -418,7 +418,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         pv.updateCurvature(clusters);
         Set<InterfaceBT> allInterfaces = c.getInterfaces(clusters.get(0));
         for (InterfaceBT i : allInterfaces) { // get the min curvature value = worst case
-            i.updateSortValue();
+            i.updateInterface();
             //logger.debug("interface: {}", i);
             if (Double.isInfinite(minCurv) && (i.getE1().getSize()<=minSize || i.getE2().getSize()<=minSize)) { // small objects can merge without cost
                 minCurv=pv.curvatureThreshold;
@@ -767,7 +767,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 return ProcessingVariables.this.curvatureMap.get(e1);
             }
             
-            @Override public void updateSortValue() {
+            @Override public void updateInterface() {
                 if (voxels.size()<=-1) curvatureValue=Double.NEGATIVE_INFINITY; // when border is too small curvature may not be computable, but objects should not be merged
                 else if (getCurvature()!=null) {
                     curvatureValue = getMeanOfMinCurvature();

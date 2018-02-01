@@ -66,13 +66,13 @@ public class DistanceRidge {
 	public float[][] data;
 	public int w,h,d;
         public float scale, scaleInv, scaleSq, scaleInvSq;
-	public ImagePlus run(ImagePlus imp, float scaleXY, float scaleZ, int nbCPUs) {
+	public ImagePlus run(ImagePlus imp, float scaleZScaleXYRatio, int nbCPUs) {
 		ImageStack stack = imp.getStack();
 		w = stack.getWidth();
 		h = stack.getHeight();
 		d = imp.getStackSize();
-                this.scale=scaleXY/scaleZ;
-                this.scaleInv=scaleZ/scaleXY;
+                this.scale=d>1?1/scaleZScaleXYRatio:1;
+                this.scaleInv=d>1?scaleZScaleXYRatio:1;
                 this.scaleSq=scale*scale;
                 this.scaleInvSq=scaleInv*scaleInv;
 		//Create 32 bit floating point stack for output, s.  Will also use it for g in Transormation 1.
