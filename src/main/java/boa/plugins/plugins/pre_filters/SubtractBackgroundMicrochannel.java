@@ -56,16 +56,16 @@ import boa.plugins.ToolTip;
  */
 public class SubtractBackgroundMicrochannel implements PreFilter, ToolTip {
     BooleanParameter method = new BooleanParameter("Method", "Rolling Ball", "Sliding Paraboloid", false);
-    BooleanParameter imageType = new BooleanParameter("Image Background", "Dark", "Light", false);
+    BooleanParameter isDarkBck = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
     BooleanParameter corners = new BooleanParameter("Correct corners", false);
-    NumberParameter radius = new BoundedNumberParameter("Radius", 2, 1000000, 0.01, null);
-    Parameter[] parameters = new Parameter[]{radius, method, imageType, smooth, corners};
+    NumberParameter radius = new BoundedNumberParameter("Radius", 2, 200, 0.01, null);
+    Parameter[] parameters = new Parameter[]{radius, method, isDarkBck, smooth, corners};
     String toolTip = "<html>Apply IJ's subtractbackground to image mirrored only on upper and lower side. Phase Constrast Image should be saturated before in order to avoide to bright values</html>";
     public SubtractBackgroundMicrochannel(double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {
         this.radius.setValue(radius);
         method.setSelected(!doSlidingParaboloid);
-        this.imageType.setSelected(!lightBackground);
+        this.isDarkBck.setSelected(!lightBackground);
         this.smooth.setSelected(smooth);
         this.corners.setSelected(corners);
     }
@@ -102,17 +102,21 @@ public class SubtractBackgroundMicrochannel implements PreFilter, ToolTip {
         //ImageWindowManagerFactory.showImage(toFilter);
         double scale = radius.getValue().doubleValue();
         //scale = input.getSizeY();
-        toFilter = IJSubtractBackground.filter(toFilter, scale , !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), false, false);
+        toFilter = IJSubtractBackground.filter(toFilter, scale , !method.getSelected(), !isDarkBck.getSelected(), smooth.getSelected(), false, false);
         Image crop = toFilter.crop(new BoundingBox(0, input.getSizeX()-1, input.getSizeY(), 2*input.getSizeY()-1, 0, input.getSizeZ()-1));
-        // adjust filtered image to get same center value as input image
-        double medF = ImageOperations.getMeanAndSigma(crop, null)[0]; // mean is more robust when no cell
-        double med = ImageOperations.getMeanAndSigma(input, null)[0];
-        //double medF = ImageOperations.getPercentile(crop, null, null, 0.5)[0];
-        //double med = ImageOperations.getPercentile(input, null, null, 0.5)[0];
-        //logger.debug("sub back micro adjust: {} ({} & {})", med-medF, med, medF);
-        if (medF!=med) {
-            ImageOperations.affineOperation(crop, crop, 1, med-medF);
-        } 
+        
+        // adjust filtered image to get homogeneous images among time.
+        double currentValueM = ImageOperations.getMeanAndSigma(crop, null)[0]; // mean is more robust when no cell
+        double refValueM = ImageOperations.getMeanAndSigma(input, null)[0];
+        double diffM = refValueM-currentValueM;
+        
+        double quantile = isDarkBck.getSelected() ? 0.99 : 0.01;
+        double currentValueQ = ImageOperations.getQuantiles(crop, null, null, quantile)[0];
+        double refValueQ = ImageOperations.getQuantiles(input, null, null, quantile)[0];
+        double diffQ = refValueQ - currentValueQ;
+        //logger.debug("sub back micro adjust: {} (ref {} & {}) mean values: {} (ref {} & {})", diffQ, refValueQ, currentValueQ,diffM, refValueM, currentValueM);
+        ImageOperations.affineOperation(crop, crop, 1, Math.max(diffQ, diffM)); // when empty microchannel -> diffM is higer than diff quantile -> preserves better background value
+         
         crop.setCalibration(input);
         crop.resetOffset().addOffset(input);
         return crop;

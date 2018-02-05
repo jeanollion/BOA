@@ -57,44 +57,58 @@ public class BacteriaShape implements SegmenterSplitAndMerge {
         if (testMode) ImageWindowManagerFactory.showImage(sigma);
         RegionPopulation pop = partitionImage(sigma, parent.getMask());
         pop.smoothRegions(2, true, parent.getMask()); // regularize borders
-        if (testMode) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after partition"));
+        if (testMode) {
+            ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after partition"));
+            ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("labels after partition"));
+        }
         
         EdgeDetector seg = new EdgeDetector().setThrehsoldingMethod(1);
         //seg.setThresholder(new ConstantValue(0.2)).filterRegions(pop, input, parent.getMask());
-        
-        SplitAndMergeEdge sam = new SplitAndMergeEdge(sigma, 0.03, 0.25); // merge according to quantile value of sigma @ border between regions
-        //sam.setTestMode(testMode);
+        // merge according to quantile value of sigma @ border between regions
+        SplitAndMergeEdge sam = new SplitAndMergeEdge(sigma, input, 0.06, 0.25); // without norm 0.25 -> 0.03 sur-seg, 0.04 merge  head of cell with background when low intensity | with normalization: 0.06-0.08 
+        sam.compareMethod = sam.compareByMedianIntensity(input, true);
+        sam.setTestMode(testMode);
         sam.merge(pop, 0);
         if (testMode) {
             ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after merge"));
-            ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, sigma).setName("sigma after merge"));
         }
         pop.filter(new ContactBorder(input.getSizeY()/2, input, ContactBorder.Border.Xl)); 
         pop.filter(new ContactBorder(input.getSizeY()/2, input, ContactBorder.Border.Xr)); 
-        seg.setThresholder(new ConstantValue(0.3)).filterRegions(pop, input, parent.getMask());
+        seg.setThresholder(new ConstantValue(0.4)).filterRegions(pop, input, parent.getMask());
         //seg.setIsDarkBackground(false).setThresholder(new ConstantValue(0.05)).filterRegions(pop, sigma, parent.getMask());
+        
+        sam = new SplitAndMergeEdge(sigma, input, 0.09, 0.25);
+        sam.setTestMode(testMode);
+        sam.merge(pop, 0);
         
         if (testMode) {
             ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after delete"));
             ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("labels before merge by shape"));
-            
         }
         // merge 
         SplitAndMergeBacteriaShape samShape = new SplitAndMergeBacteriaShape();
         samShape.curvaturePerCluster = false;
         samShape.useThicknessCriterion=false;
-        samShape.thresholdCurvSides=-0.02;
+        samShape.thresholdCurvSides=-0.03;
+        samShape.curvatureScale=6;
         samShape.thresholdCurvMean=Double.NEGATIVE_INFINITY;
-        samShape.compareMethod = SplitAndMergeBacteriaShape.compareBySize(true);
+        samShape.compareMethod = samShape.compareBySize(true);
         samShape.setTestMode(testMode);
         samShape.merge(pop, 0);
         if (testMode) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after merge by shape"));
         
         pop.filter(new RegionPopulation.Size().setMin(100));
         pop.filter(new RegionPopulation.LocalThickness(10));
+        seg.setThresholder(new ConstantValue(0.5)).filterRegions(pop, input, parent.getMask());
         pop.localThreshold(smoothed, 2.5, true, false);
         
         if (testMode) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after delete by size and local thld"));
+        
+        samShape = new SplitAndMergeBacteriaShape();
+        samShape.splitAndMerge(pop.getLabelMap(), 50, 0);
+        
+        if (testMode) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, input).setName("after split & merge"));
+        
         // TODO add criterion on thickness at interface using local thickness ? -> fix it before
         return pop;
     }

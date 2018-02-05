@@ -27,6 +27,7 @@ import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
 import boa.image.ImageMask;
+import boa.image.ImageProperties;
 import boa.image.processing.Curvature;
 import boa.image.processing.EDT;
 import boa.image.processing.Filters;
@@ -58,7 +59,10 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import net.imglib2.KDTree;
 import net.imglib2.Point;
+import net.imglib2.RealLocalizable;
+import net.imglib2.RealPoint;
 import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
 /**
  *
@@ -67,8 +71,7 @@ import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShape> {
     protected final HashMap<Region, KDTree<Double>> curvatureMap = new HashMap<>();
     protected Image distanceMap;
-    protected ImageMask mask;
-
+    
     public boolean curvaturePerCluster = true;
     public int curvatureScale=6;
     //public double curvatureSearchScale=2.5;
@@ -90,7 +93,6 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
     
     private double yLimLastObject = Double.NaN;
     public BiFunction<? super InterfaceLocalShape, ? super InterfaceLocalShape, Integer> compareMethod=null;
-    protected HashMapGetCreate<Region, Image> localThicknessMap = new HashMapGetCreate<>(r->LocalThickness.localThickness(r.getMask(), 1, true, 1));
     @Override
     public Image getWatershedMap() {
         return distanceMap;
@@ -110,13 +112,13 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
     
     @Override
     public RegionPopulation merge(RegionPopulation popWS, int objectMergeLimit) {
-        if (distanceMap == null) setDistanceMap(popWS.getLabelMap()); // REVOIR BESOIN DE DISTANCE MAP A CE STADE. UTILISATION DE MAX DISTANCE POUR RELATIVE THICKNESS A REVIOR
+        if (distanceMap == null && (useThicknessCriterion || curvaturePerCluster)) setDistanceMap(popWS.getLabelMap()); // REVOIR BESOIN DE DISTANCE MAP A CE STADE. UTILISATION DE MAX DISTANCE POUR RELATIVE THICKNESS A REVIOR
         popWS.smoothRegions(2, true, null);
         RegionCluster<InterfaceLocalShape> c = new RegionCluster(popWS, false, true, getFactory());
         RegionCluster.verbose=this.testMode;
         if (minSizeFusion>0) c.mergeSmallObjects(minSizeFusion, objectMergeLimit, null);
         if (ignoreEndOfChannelRegionWhenMerginSmallRegions && !popWS.getObjects().isEmpty()) yLimLastObject = Collections.max(popWS.getObjects(), (o1, o2)->Double.compare(o1.getBounds().getyMax(), o2.getBounds().getyMax())).getBounds().getyMax();
-        if (curvaturePerCluster) updateCurvature(c.getClusters());
+        if (curvaturePerCluster) updateCurvature(c.getClusters(), popWS.getLabelMap());
         c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
         if (minSizeFusion>0) {
             BiFunction<Region, Set<Region>, Region> noInterfaceCase = (smallO, set) -> {
@@ -148,9 +150,9 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         return merge(popWS, objectMergeLimit);
     }
     
-    protected void updateCurvature(List<Set<Region>> clusters) { // need to be called in order to use curvature in InterfaceBT
+    protected void updateCurvature(List<Set<Region>> clusters, ImageProperties props) { // need to be called in order to use curvature in InterfaceBT
         curvatureMap.clear();
-        ImageByte clusterMap = new ImageByte("cluster map", mask).resetOffset(); // offset is added if getCurvature method
+        ImageByte clusterMap = new ImageByte("cluster map", props).resetOffset(); // offset is added if getCurvature method
         clusterMap.setCalibration(1, 1);
         Iterator<Set<Region>> it = clusters.iterator();
         while(it.hasNext()) {
@@ -174,7 +176,16 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         }
     }
     
-    
+    private static double[] getCenter(Collection<Voxel> vox) {
+        double[] xy = new double[2];
+        for (Voxel v : vox) {
+            xy[0]+=v.x;
+            xy[1]+=v.y;
+        }
+        xy[0]/=vox.size();
+        xy[1]/=vox.size();
+        return xy;
+    }
     
     public class InterfaceLocalShape extends InterfaceRegionImpl<InterfaceLocalShape> implements RegionCluster.InterfaceVoxels<InterfaceLocalShape> {
         double maxDistance=Double.NEGATIVE_INFINITY;
@@ -218,7 +229,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             else {
                 if (localCurvatureMap==null) {
                     localCurvatureMap = Curvature.computeCurvature(getJoinedMask(), curvatureScale);
-                    if (testMode && ((e1.getLabel()==25 || e2.getLabel()==25))) {
+                    if (testMode && ((e1.getLabel()==1 && e2.getLabel()==3))) {
                         ImageWindowManagerFactory.showImage(joinedMask);
                         ImageWindowManagerFactory.showImage(Curvature.getCurvatureMask(getJoinedMask(), localCurvatureMap));
                     }
@@ -239,8 +250,8 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         }
         @Override
         public void performFusion() {
-            localThicknessMap.remove(e1);
-            localThicknessMap.remove(e2);
+            SplitAndMergeBacteriaShape.this.regionChanged(e1);
+            SplitAndMergeBacteriaShape.this.regionChanged(e2);
             super.performFusion();
         }
         @Override 
@@ -265,29 +276,58 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             // criterion on curvature
             // curvature has been computed @ upadateSortValue
             if (testMode) logger.debug("check fusion interface: {}+{}, Mean curvature: {} ({} & {}), Threshold: {} & {}", e1.getLabel(), e2.getLabel(), curvatureValue, curvL, curvR, thresholdCurvMean, thresholdCurvSides);
-            if (curvCriterionOnBothSides && (curvL<thresholdCurvSides || curvR<thresholdCurvSides)) return false;
+            if (curvCriterionOnBothSides && (Double.isNaN(curvL) || curvL<thresholdCurvSides || Double.isNaN(curvR) || curvR<thresholdCurvSides)) return false;
             if (!curvCriterionOnBothSides && (curvatureValue<thresholdCurvMean || (curvL<thresholdCurvSides && (Double.isNaN(curvR) || curvR<thresholdCurvSides)))) return false;
             if (!useThicknessCriterion) return true;
             
-            //criterion on local thickness //TODO: revoir
+            
             double max1 = Double.NEGATIVE_INFINITY;
             double max2 = Double.NEGATIVE_INFINITY;
-            Image localThick1 = localThicknessMap.getAndCreateIfNecessary(e1);
-            Image localThick2 = localThicknessMap.getAndCreateIfNecessary(e2);
-            for (Voxel v : e1.getVoxels()) if (localThick1.getPixelWithOffset(v.x, v.y, v.z)>max1 && v.getDistance(maxVoxel)<relativeThicknessMaxDistance) max1 = localThick1.getPixelWithOffset(v.x, v.y, v.z);
-            for (Voxel v : e2.getVoxels()) if (localThick2.getPixelWithOffset(v.x, v.y, v.z)>max2 && v.getDistance(maxVoxel)<relativeThicknessMaxDistance) max2 = localThick2.getPixelWithOffset(v.x, v.y, v.z);
+            for (Voxel v : e1.getVoxels()) if (getEDM().getPixel(v.x, v.y, v.z)>max1 && v.getDistance(maxVoxel)<relativeThicknessMaxDistance) max1 = getEDM().getPixel(v.x, v.y, v.z);
+            for (Voxel v : e2.getVoxels()) if (getEDM().getPixel(v.x, v.y, v.z)>max2 && v.getDistance(maxVoxel)<relativeThicknessMaxDistance) max2 = getEDM().getPixel(v.x, v.y, v.z);
 
             double norm = Math.min(max1, max2);
             value = maxDistance/norm;
             if (testMode) logger.debug("Thickness criterioninterface: {}+{}, norm: {} maxInter: {}, criterion value: {} threshold: {} fusion: {}, scale: {}", e1.getLabel(), e2.getLabel(), norm, maxDistance,value, relativeThicknessThreshold, value>relativeThicknessThreshold, e1.getScaleXY() );
             return  value>relativeThicknessThreshold;
         }
-
+        private Map<RealLocalizable, double[]> getResult(RadiusNeighborSearchOnKDTree<Double> search, RealLocalizable r) {
+            double searchScale = 3;
+            search.search(r, searchScale, false);
+            int n = search.numNeighbors();
+            HashMap<RealLocalizable, double[]> leftRes = new HashMap<>(search.numNeighbors());
+            for (int i = 0; i<n; ++i) {
+                leftRes.put(search.getPosition(i), new double[]{search.getSquareDistance(i), search.getSampler(i).get()});
+            }
+            return leftRes;
+        }
+        private double dSq(RealLocalizable r1, RealLocalizable r2) {
+            return Math.pow(r1.getDoublePosition(0)-r2.getDoublePosition(0), 2) + Math.pow(r1.getDoublePosition(1)-r2.getDoublePosition(1), 2);
+        }
+        private double[] getMinCurvature(Collection<Voxel> left, Collection<Voxel> right) {
+            RealPoint l = new RealPoint(getCenter(left));
+            RealPoint r = new RealPoint(getCenter(right));
+            RadiusNeighborSearchOnKDTree<Double> search = new RadiusNeighborSearchOnKDTree(getCurvatureMap());
+            Map<RealLocalizable, double[]> resL = getResult(search, l);
+            Map<RealLocalizable, double[]> resR = getResult(search, r);
+            resL.entrySet().removeIf(p->dSq(r, p.getKey())<=p.getValue()[0]); // remove points closer to other border
+            resR.entrySet().removeIf(p->dSq(l, p.getKey())<=p.getValue()[0]);
+            // get closest point
+            Comparator<double[]> comp = (d1, d2) -> {
+                int c = Double.compare(d1[0], d2[0]); // min distance
+                if (c!=0) return c;
+                return Double.compare(d1[1], d2[1]); // min curvature
+            };
+            double[] res = new double[]{Double.NaN, Double.NaN};
+            if (!resL.isEmpty()) res[0] = Collections.min(resL.values(), comp)[1];
+            if (!resR.isEmpty()) res[1] = Collections.min(resR.values(), comp)[1];
+            return res;
+        }
         private double getMinCurvature(Collection<Voxel> voxels) { // returns negative infinity if no border
             if (voxels.isEmpty()) return Double.NEGATIVE_INFINITY;
             //RadiusNeighborSearchOnKDTree<Double> search = new RadiusNeighborSearchOnKDTree(getCurvature());
             NearestNeighborSearchOnKDTree<Double> search = new NearestNeighborSearchOnKDTree(getCurvatureMap());
-
+            
             double min = Double.POSITIVE_INFINITY;
             for (Voxel v : voxels) {
                 search.search(new Point(new int[]{v.x, v.y}));
@@ -313,11 +353,15 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             return min;
         }
         public double getMeanOfMinCurvature() {
-            if (!borderVoxels.isEmpty()) curvL = getMinCurvature(borderVoxels);
-            else curvL=Double.NaN;
-            if (!borderVoxels2.isEmpty()) curvR = getMinCurvature(borderVoxels2);
-            else curvR=Double.NaN;
-            if (borderVoxels.isEmpty() && borderVoxels2.isEmpty()) {
+            curvL=Double.NaN;
+            curvR=Double.NaN;
+            if (!borderVoxels.isEmpty() && !borderVoxels2.isEmpty()) {
+                double[] curv = getMinCurvature(borderVoxels, borderVoxels2);
+                curvL = curv[0];
+                curvR = curv[1];
+            } else if (!borderVoxels.isEmpty()) curvL = getMinCurvature(borderVoxels);
+            
+            if (Double.isNaN(curvL)&&Double.isNaN(curvR)) {
                 if (testMode) logger.debug("{} : NO BORDER VOXELS");
                 if (voxels.isEmpty()) return Double.NEGATIVE_INFINITY;
                 else return Double.POSITIVE_INFINITY;
@@ -353,7 +397,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             addVoxel(getEDM(), v2);
         }
         private void addVoxel(Image image, Voxel v) {
-            double pixVal =image.getPixel(v.x, v.y, v.z);
+            double pixVal =image!=null ? image.getPixel(v.x, v.y, v.z) : 0;
             if (pixVal>maxDistance) {
                 maxDistance = pixVal;
                 maxVoxel = v;
@@ -391,10 +435,14 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             else {
                 if (testMode) logger.error("interface: {}, #{} sides found!!", this, l.size());
             }
+            if (testMode) {
+                for (Voxel v : borderVoxels) joinedMask.setPixelWithOffset(v.x, v.y, v.z, 3);
+                for (Voxel v : borderVoxels2) joinedMask.setPixelWithOffset(v.x, v.y, v.z, 4);
+            }
         }
 
         @Override public int compareTo(InterfaceLocalShape t) { // decreasingOrder of curvature value
-            int c = compareMethod!=null ? compareMethod.apply(this, t) : Double.compare(t.curvatureValue, curvatureValue);
+            int c = compareMethod!=null ? compareMethod.apply(this, t) : Double.compare(t.curvatureValue, curvatureValue); // convex interfaces first
             if (c==0) return super.compareElements(t, RegionCluster.regionComparator); // consitency with equals method
             else return c;
         }
@@ -404,49 +452,6 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             return "Interface: " + e1.getLabel()+"+"+e2.getLabel()+ " curvature: "+curvatureValue;
         }
     }
-    public  static BiFunction<? super InterfaceLocalShape, ? super InterfaceLocalShape, Integer> compareByMedianIntensity(Image intensityMap, boolean highIntensityFisrt) {
-        return (i1, i2) -> {
-            double i11  = BasicMeasurements.getQuantileValue(i1.getE1(), intensityMap, false, 0.5)[0];
-            double i12  = BasicMeasurements.getQuantileValue(i1.getE2(), intensityMap, false, 0.5)[0];
-            double i21  = BasicMeasurements.getQuantileValue(i2.getE1(), intensityMap, false, 0.5)[0];
-            double i22  = BasicMeasurements.getQuantileValue(i2.getE2(), intensityMap, false, 0.5)[0];
-            if (highIntensityFisrt) {
-                double max1 = Math.max(i11, i12);
-                double max2 = Math.max(i21, i22);
-                int c = Double.compare(max1, max2);
-                if (c!=0) return -c;
-                double min1 = Math.min(i11, i12);
-                double min2 = Math.min(i21, i22);
-                return -Double.compare(min1, min2);
-            } else {
-                double min1 = Math.min(i11, i12);
-                double min2 = Math.min(i21, i22);
-                int c = Double.compare(min1, min2);
-                if (c!=0) return c;
-                double max1 = Math.max(i11, i12);
-                double max2 = Math.max(i21, i22);
-                return Double.compare(max1, max2);
-            }
-        };
-    }
-    public final static  BiFunction<? super InterfaceLocalShape, ? super InterfaceLocalShape, Integer> compareBySize(boolean largerFirst) {
-        /*return (i1, i2) -> {
-            int[] maxMin1 = i1.getE1().getSize()>i1.getE2().getSize() ? new int[]{i1.getE1().getSize(), i1.getE2().getSize()} : new int[]{i1.getE2().getSize(), i1.getE1().getSize()};
-            int[] maxMin2 = i2.getE1().getSize()>i2.getE2().getSize() ? new int[]{i2.getE1().getSize(), i2.getE2().getSize()} : new int[]{i2.getE2().getSize(), i2.getE1().getSize()};
-            if (largerFirst) {
-                int c = Integer.compare(maxMin1[0], maxMin2[0]);
-                if (c!=0) return -c;
-                return -Integer.compare(maxMin1[1], maxMin2[1]);
-            } else {
-                int c = Integer.compare(maxMin1[1], maxMin2[1]);
-                if (c!=0) return c;
-                return Integer.compare(maxMin1[0], maxMin2[0]);
-            }  
-        };*/
-        return (i1, i2) -> {
-            int s1 = i1.getE1().getSize() + i1.getE2().getSize();
-            int s2 = i2.getE1().getSize() + i2.getE2().getSize();
-            return largerFirst ? Integer.compare(s2, s1) : Integer.compare(s1, s2);
-        };
-    }
+    
+    
 }

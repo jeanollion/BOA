@@ -29,12 +29,14 @@ import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.measurement.BasicMeasurements;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.utils.HashMapGetCreate;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -44,6 +46,7 @@ import java.util.stream.Collectors;
 public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionCluster.InterfaceVoxels<I>> {
     public boolean testMode;
     protected ClusterCollection.InterfaceFactory<Region, I> factory;
+    
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
@@ -87,5 +90,55 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
     public RegionCluster<I> getInterfaces(RegionPopulation population, boolean lowConnectivity) {
         return new RegionCluster<>(population, false, lowConnectivity, getFactory());
     }
-    
+    public final BiFunction<? super I, ? super I, Integer> compareBySize(boolean largerFirst) {
+        return (i1, i2) -> {
+            int[] maxMin1 = i1.getE1().getSize()>i1.getE2().getSize() ? new int[]{i1.getE1().getSize(), i1.getE2().getSize()} : new int[]{i1.getE2().getSize(), i1.getE1().getSize()};
+            int[] maxMin2 = i2.getE1().getSize()>i2.getE2().getSize() ? new int[]{i2.getE1().getSize(), i2.getE2().getSize()} : new int[]{i2.getE2().getSize(), i2.getE1().getSize()};
+            if (largerFirst) {
+                int c = Integer.compare(maxMin1[0], maxMin2[0]);
+                if (c!=0) return -c;
+                return Integer.compare(maxMin1[1], maxMin2[1]); // smaller first
+            } else {
+                int c = Integer.compare(maxMin1[1], maxMin2[1]);
+                if (c!=0) return c;
+                return Integer.compare(maxMin1[0], maxMin2[0]);
+            }  
+        };
+        /*return (i1, i2) -> {
+            int s1 = i1.getE1().getSize() + i1.getE2().getSize();
+            int s2 = i2.getE1().getSize() + i2.getE2().getSize();
+            return largerFirst ? Integer.compare(s2, s1) : Integer.compare(s1, s2);
+        };*/
+    }
+    protected void regionChanged(Region r) {
+        if (medianValues!=null) medianValues.remove(r);
+    }
+    HashMapGetCreate<Region, Double> medianValues;
+    public BiFunction<? super I, ? super I, Integer> compareByMedianIntensity(Image intensityMap, boolean highIntensityFisrt) {
+        medianValues= new HashMapGetCreate<>(r -> BasicMeasurements.getQuantileValue(r, intensityMap, false, 0.5)[0]);
+        return (i1, i2) -> {
+            double i11  = medianValues.getAndCreateIfNecessary(i1.getE1());
+            double i12  = medianValues.getAndCreateIfNecessary(i1.getE2());
+            double i21  = medianValues.getAndCreateIfNecessary(i2.getE1());
+            double i22  = medianValues.getAndCreateIfNecessary(i2.getE2());
+            
+            if (highIntensityFisrt) {
+                double min1 = Math.min(i11, i12);
+                double min2 = Math.min(i21, i22);
+                int c = Double.compare(min1, min2);
+                if (c!=0) return -c; // max of mins first
+                double max1 = Math.max(i11, i12);
+                double max2 = Math.max(i21, i22);
+                return -Double.compare(max1, max2); // max of maxs first
+            } else {
+                double max1 = Math.max(i11, i12);
+                double max2 = Math.max(i21, i22);
+                int c = Double.compare(max1, max2);
+                if (c!=0) return c;
+                double min1 = Math.min(i11, i12);
+                double min2 = Math.min(i21, i22);
+                return Double.compare(min1, min2);
+            }
+        };
+    }
 }

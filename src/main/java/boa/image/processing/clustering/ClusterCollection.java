@@ -209,30 +209,18 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         Collection<I> l1 = interfaceByElement.get(i.getE1());
         Collection<I> l2 = interfaceByElement.remove(i.getE2());
         boolean change = false;
-        if (l1!=null) {
-            l1.remove(i);
-            // e1 has change so update all his interfaces
-            if (!l1.isEmpty()) change = true; 
-            for (I otherI : l1) otherI.updateInterface();
-        }
+        
         if (l2!=null) {
             for (I otherInterface : l2) { // appends interfaces of deleted region (e2) to new region (e1)
                 if (!otherInterface.equals(i)) {
                     change = true;
                     E otherElement = otherInterface.getOther(i.getE2());
                     I existingInterface=null;
-                    if (l1!=null) { // look for existing interface between e1 and otherElement
-                        for (I j : l1) {
-                            if (j.isInterfaceOf(i.getE1(), otherElement)) {
-                                existingInterface=j;
-                                break;
-                            }
-                        }
-                    }
+                    if (l1!=null) existingInterface = Utils.getFirst(l1, j->j.isInterfaceOf(i.getE1(), otherElement)); // look for existing interface between e1 and otherElement
                     if (existingInterface!=null) { // if interface is already present in e1, simply merge the interfaces
                         if (verbose) logger.debug("merge {} with {}", existingInterface, otherInterface);
-                        interfaces.remove(otherInterface);
-                        if (interfaces instanceof Set) interfaces.remove(existingInterface);// sort value will change 
+                        remove(interfaces, otherInterface);
+                        if (interfaces instanceof Set) remove(interfaces, existingInterface);// sort value will change 
                         Collection<I> otherInterfaces = interfaceByElement.get(otherElement);
                         if (otherInterfaces!=null) otherInterfaces.remove(otherInterface); // will be replaced by existingInterface
                         
@@ -243,22 +231,30 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
                         
                     } else { // if not add a new interface between E1 and otherElement
                         if (verbose) logger.debug("switch {}", otherInterface);
-                        if (interfaces instanceof Set) interfaces.remove(otherInterface); // hashCode will change because of switch
+                        if (interfaces instanceof Set) remove(interfaces,otherInterface); // hashCode will change because of switch
                         Collection<I> otherInterfaces = interfaceByElement.get(otherElement);
                         if (otherInterfaces!=null) otherInterfaces.remove(otherInterface); // hashCode will change because of switch
                         
                         otherInterface.swichElements(i.getE1(), i.getE2(), elementComparator);
-                        otherInterface.updateInterface(); // TODO should be called in the method only if necessayr, depending on interface ? 
-                        if (interfaces instanceof Set)interfaces.add(otherInterface);
+                        otherInterface.updateInterface(); // TODO should be called in the method only if necessary, depending on interface ? 
+                        if (interfaces instanceof Set) interfaces.add(otherInterface);
                         if (otherInterfaces!=null) otherInterfaces.add(otherInterface);
                         if (l1!=null) l1.add(otherInterface);
                     }
                 }
             }
         }
+        if (l1!=null) {  // e1 has change so update all his interfaces // perform updates after removing interfaces, if not may not be removed
+            l1.remove(i);
+            if (!l1.isEmpty()) change = true; 
+            for (I otherI : l1) otherI.updateInterface();
+        }
         return change;
     }
-    
+    private static  <I> void remove(Collection<I> col, I i) {
+        boolean r = col.remove(i);
+        if (!r) col.removeIf(in->in.equals(i));
+    }
 
     public static interface InterfaceFactory<E, T extends Interface<E, T>> {
         public T create(E e1, E e2, Comparator<? super E> elementComparator);

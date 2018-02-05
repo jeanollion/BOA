@@ -62,7 +62,9 @@ public class Curvature {
         for ( int i = 0; i <fourier.points.length ; ++i ) {
             points.add( new RealPoint( new double[]{ mask.getOffsetX()+fourier.points[i].x / reso, mask.getOffsetY() + fourier.points[i].y / reso}  ));
             try {
-                values.add(fourier.curvature(i, scale, false));
+                double v = fourier.curvature(i, scale, false);
+                if (Double.isNaN(v)) v = 0; // straight line
+                values.add(v);
             } catch(Exception e) {
                 logger.debug("error computing curvature: {}", e);
                 return null;

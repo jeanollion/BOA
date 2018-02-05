@@ -19,6 +19,7 @@ package boa.data_structure;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import static boa.data_structure.Region.logger;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static ij.process.AutoThresholder.Method.Otsu;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
@@ -506,7 +507,11 @@ public class RegionPopulation {
                 for (int i = 0; i<n.getValueCount(); ++i) count.getAndCreateIfNecessary((int)n.getPixelValues()[i])[0]++;
                 if (!eraseVoxelsIfConnectedToBackground) count.remove(bck.getLabel());
                 int maxLabel = Collections.max(count.entrySet(), (e1, e2)->Integer.compare(e1.getValue()[0], e2.getValue()[0])).getKey();
-                if (maxLabel!=r.getLabel() && count.get(maxLabel)[0]>count.get(r.getLabel())[0]) {
+                if (!count.containsKey(r.getLabel())) {
+                    logger.error("smooth interface: {} not present @Voxel: {}/ bck: {}, counts: {}", r.getLabel(), v, bck.getLabel(), Utils.toStringList(count.entrySet(), e->e.getKey()+"->"+e.getValue()[0]));
+                }
+                
+                if (maxLabel!=r.getLabel() &&  count.get(maxLabel)[0]> count.get(r.getLabel())[0]) {
                     it.remove();
                     modified.add(r);
                     //if (maxLabel>0) {

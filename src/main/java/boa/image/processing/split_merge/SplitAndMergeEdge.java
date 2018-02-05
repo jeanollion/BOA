@@ -37,6 +37,7 @@ import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
 import boa.utils.ArrayUtil;
+import java.util.function.BiFunction;
 
 /**
  *
@@ -47,20 +48,28 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
     Image intensityMap;
     public ImageByte tempSplitMask;
     public final double splitThresholdValue;
-    Function<Set<Voxel>, Double> interfaceValue;
+    Function<Interface, Double> interfaceValue;
 
-    public SplitAndMergeEdge(Image edgeMap, double splitThreshold, double quantile) {
+    public SplitAndMergeEdge(Image edgeMap, Image input, double splitThreshold, double quantile) {
         this.edge = edgeMap;
         splitThresholdValue=splitThreshold;
         if (quantile>=0 && quantile<=1) {
-            interfaceValue = voxels->{
+            interfaceValue = i->{
+                Collection<Voxel> voxels = i.getVoxels();
                 if (voxels.isEmpty()) {
                     return Double.NaN;
                 } else {
                     float[] values = new float[voxels.size()];
                     int idx = 0;
                     for (Voxel v : voxels)  values[idx++]=edge.getPixel(v.x, v.y, v.z);
-                    return ArrayUtil.quantile(values, quantile);
+                    double val= ArrayUtil.quantile(values, quantile);
+                    // normalize by intensity
+                    float[] nValues = new float[i.getE1().getVoxels().size()+i.getE2().getVoxels().size()];
+                    idx = 0;
+                    for (Voxel v : i.getE1().getVoxels()) nValues[idx++]=input.getPixel(v.x, v.y, v.z);
+                    for (Voxel v : i.getE2().getVoxels()) nValues[idx++]=input.getPixel(v.x, v.y, v.z);
+                    val /=ArrayUtil.quantile(nValues, 0.5);
+                    return val;
                 }
             };
         } else throw new IllegalArgumentException("Quantile should be >=0 & <=1");
@@ -76,7 +85,8 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
             };
         }*/
     }
-    public SplitAndMergeEdge setInterfaceValue(Function<Set<Voxel>, Double> interfaceValue) {
+    public BiFunction<? super Interface, ? super Interface, Integer> compareMethod=null;
+    public SplitAndMergeEdge setInterfaceValue(Function<Interface, Double> interfaceValue) {
         this.interfaceValue=interfaceValue;
         return this;
     }
@@ -102,9 +112,13 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
             super(e1, e2);
             voxels = new HashSet<>();
         }
-
+        @Override public void performFusion() {
+            SplitAndMergeEdge.this.regionChanged(e1);
+            SplitAndMergeEdge.this.regionChanged(e2);
+            super.performFusion();
+        }
         @Override public void updateInterface() {
-            value = interfaceValue.apply(voxels);
+            value = interfaceValue.apply(this);
         }
 
         @Override 
@@ -130,8 +144,8 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
 
         @Override
         public int compareTo(Interface t) {
-            int c = Double.compare(value, t.value); // increasing values
-            if (c==0) return super.compareElements(t, RegionCluster.regionComparator);
+            int c = compareMethod!=null ? compareMethod.apply(this, t) : Double.compare(value, t.value); // small edges first
+            if (c==0) return super.compareElements(t, RegionCluster.regionComparator); // consitency with equals method
             else return c;
         }
         @Override
