@@ -68,7 +68,7 @@ public class TestProcessBacteriaPhase {
         //String dbName = "TestThomasRawStacks";
         int field = 0;
         int microChannel =0;
-        int[] time =new int[]{1, 100};
+        int[] time =new int[]{30, 30}; //1->27 -> merge avec bck
         //setMask=true;
         //thld = 776;
         

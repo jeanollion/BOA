@@ -46,7 +46,8 @@ import java.util.stream.Collectors;
 public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionCluster.InterfaceVoxels<I>> {
     public boolean testMode;
     protected ClusterCollection.InterfaceFactory<Region, I> factory;
-    
+    protected HashMapGetCreate<Region, Double> medianValues;
+    protected Image intensityMap;
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
@@ -113,9 +114,13 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
     protected void regionChanged(Region r) {
         if (medianValues!=null) medianValues.remove(r);
     }
-    HashMapGetCreate<Region, Double> medianValues;
-    public BiFunction<? super I, ? super I, Integer> compareByMedianIntensity(Image intensityMap, boolean highIntensityFisrt) {
-        medianValues= new HashMapGetCreate<>(r -> BasicMeasurements.getQuantileValue(r, intensityMap, false, 0.5)[0]);
+    protected void setMedianValueMap() {
+        if (intensityMap==null) throw new IllegalArgumentException("IntensityMap should be set first!");
+        if (medianValues==null) medianValues= new HashMapGetCreate<>(r -> BasicMeasurements.getQuantileValue(r, intensityMap, false, 0.5)[0]);
+    }
+    
+    public BiFunction<? super I, ? super I, Integer> compareByMedianIntensity(boolean highIntensityFisrt) {
+        setMedianValueMap();
         return (i1, i2) -> {
             double i11  = medianValues.getAndCreateIfNecessary(i1.getE1());
             double i12  = medianValues.getAndCreateIfNecessary(i1.getE2());

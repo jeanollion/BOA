@@ -130,7 +130,7 @@ public class ObjectCountThresholder implements Thresholder {
         for (Spot s : instance.getSpotArray()) {
             if (s!=null) {
                 if (s.voxels.size()>1) count++;
-                else if (!s.voxels.isEmpty() && s.voxels.get(0).value>value==bright) ++count; 
+                else if (!s.voxels.isEmpty() && s.voxels.iterator().next().value>value==bright) ++count; 
             }
         }
         return count;

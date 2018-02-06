@@ -67,9 +67,9 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         int[][] neigh = inputLabels.getSizeZ()>1 ? (lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf) : (lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half);
         for (Region o : population.getObjects()) {
             for (Voxel vox : o.getVoxels()) {
-                vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region, because voxel value could be different
+                vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region, because voxel can overlap & voxel can be used to store values interface-wise
                 for (int i = 0; i<neigh.length; ++i) {
-                    n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]); // en avant pour les interactions avec d'autre spots / 0
+                    n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]); // only forward for interaction with other spots & background
                     if (inputLabels.contains(n.x, n.y, n.z)) { 
                         otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
                         if (otherLabel!=o.getLabel()) {
@@ -83,16 +83,18 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
                         InterfaceRegion inter = getInterface(o, objects.get(0), true); 
                         inter.addPair(n, vox);
                     }
-                    n = new Voxel(vox.x-neigh[i][0], vox.y-neigh[i][1], vox.z-neigh[i][2]);// eventuellement aussi en arriere juste pour interaction avec 0 = background
-                    if (inputLabels.contains(n.x, n.y, n.z)) {
-                        otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);  
-                        if (background && otherLabel==0) {
-                            InterfaceRegion inter = getInterface(o, objects.get(otherLabel), true); 
+                    if (background) { // backward for background only
+                        n = new Voxel(vox.x-neigh[i][0], vox.y-neigh[i][1], vox.z-neigh[i][2]);
+                        if (inputLabels.contains(n.x, n.y, n.z)) {
+                            otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);  
+                            if (background && otherLabel==0) {
+                                InterfaceRegion inter = getInterface(o, objects.get(otherLabel), true); 
+                                inter.addPair(n, vox);
+                            }
+                        } else {
+                            InterfaceRegion inter = getInterface(o, objects.get(0), true); 
                             inter.addPair(n, vox);
                         }
-                    } else if (background) {
-                        InterfaceRegion inter = getInterface(o, objects.get(0), true); 
-                        inter.addPair(n, vox);
                     }
                 }
             } 
@@ -245,6 +247,18 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
                 if (!cluster.population.getLabelMap().contains(v.x, v.y, v.z)) continue; // case of background pixels -> can be out of bound
                 if (cluster.population.getLabelMap().getPixelInt(v.x, v.y, v.z)==i.getE1().getLabel()) im.setPixel(v.x, v.y, v.z, i.getE2().getLabel());
                 else im.setPixel(v.x, v.y, v.z, i.getE1().getLabel());
+            }
+        }
+        return im;
+    }
+    public static <I extends InterfaceVoxels<I>> ImageFloat drawInterfaceValues(RegionCluster<I> cluster, Function<I, Double> value) {
+        ImageFloat im = new ImageFloat("Interface Values", cluster.population.getImageProperties());
+        for (I i : cluster.interfaces) {
+            double val = value.apply(i);
+            for (Voxel v : i.getVoxels()) {
+                if (!cluster.population.getLabelMap().contains(v.x, v.y, v.z)) continue; // case of background pixels -> can be out of bound
+                if (cluster.population.getLabelMap().getPixelInt(v.x, v.y, v.z)==i.getE1().getLabel()) im.setPixel(v.x, v.y, v.z, val);
+                else im.setPixel(v.x, v.y, v.z, val);
             }
         }
         return im;

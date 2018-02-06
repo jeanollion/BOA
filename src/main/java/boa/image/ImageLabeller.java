@@ -114,8 +114,8 @@ public class ImageLabeller {
 
             @Override
             public boolean checkFusionCriteria(WatershedTransform.Spot s1, WatershedTransform.Spot s2, Voxel currentVoxel) {
-                Voxel v1 = s1.voxels.get(0);
-                Voxel v2 = s2.voxels.get(0);
+                Voxel v1 = s1.voxels.iterator().next();
+                Voxel v2 = s2.voxels.iterator().next();
                 return mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(v2.x, v2.y, v2.z) && mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(currentVoxel.x, currentVoxel.y, currentVoxel.z);
             }
         };
