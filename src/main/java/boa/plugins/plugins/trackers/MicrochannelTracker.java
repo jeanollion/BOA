@@ -51,7 +51,6 @@ import boa.plugins.MultiThreaded;
 import boa.plugins.Segmenter;
 import boa.plugins.Thresholder;
 import boa.plugins.TrackerSegmenter;
-import boa.plugins.OverridableThreshold;
 import boa.plugins.OverridableThresholdWithSimpleThresholder;
 import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
@@ -70,6 +69,7 @@ import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
 import java.util.TreeMap;
+import boa.plugins.OverridableThresholdMap;
 
 /**
  *
@@ -136,7 +136,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         if (segmenters[0] instanceof OverridableThresholdWithSimpleThresholder) {
             Image[] inputImagesToThld = new Image[inputImages.length];
             for (int i = 0; i<parentTrack.size(); ++i) {
-                inputImagesToThld[i] = ((OverridableThresholdWithSimpleThresholder)segmenters[i]).getThresholdImage(inputImages[i], structureIdx, parentTrack.get(i));
+                inputImagesToThld[i] = ((OverridableThresholdWithSimpleThresholder)segmenters[i]).getImageForThresholdComputation(inputImages[i], structureIdx, parentTrack.get(i));
             }
             Image globalImage = Image.mergeZPlanes(Arrays.asList(inputImagesToThld)); //TODO error if not same size... 
             //ImageWindowManagerFactory.showImage(globalImage);

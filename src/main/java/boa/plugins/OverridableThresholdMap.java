@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 jollion
+ * Copyright (C) 2016 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,12 +19,17 @@ package boa.plugins;
 
 import boa.data_structure.StructureObjectProcessing;
 import boa.image.Image;
+import boa.image.ImageInteger;
 
 /**
  *
  * @author jollion
  */
-public interface OverridableThreshold {
-    public void setThresholdValue(double threshold);
-    public Image getImageForThresholdComputation(Image input, int structureIdx, StructureObjectProcessing parent);
+public interface OverridableThresholdMap extends OverridableThreshold{
+    //@FunctionalInterface public static interface ThresholdByPixel { public void getThreshold(int x, int y, int z);}
+    
+    public void setThresholdedImage(ImageInteger thresholdedImage);
+    /*public static ImageInteger thresholdImage(Image image, ThresholdByPixel thresholdFunction) {
+        
+    }*/
 }

@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.function.Predicate;
 
 /**
  *
@@ -157,9 +158,11 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         List<Set<Interface<E, I>>> interfaceClusters = getClusters();
         // create one ClusterCollection per cluster and apply mergeSort
     }*/
-    Function<I, Boolean> allowFusion;
-    public void setOverrideCheckFusionFunction(Function<I, Boolean> allowFusion) {
-        this.allowFusion=allowFusion;
+    Predicate<I> forbidFusion = null;
+    public void addForbidFusionPredicate(Predicate<I> forbidFusion) {
+        if (forbidFusion==null) return;
+        if (this.forbidFusion!=null) this.forbidFusion = this.forbidFusion.or(forbidFusion);
+        else this.forbidFusion=forbidFusion;
     }
     public List<E> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfElementsToKeep) {
         if (verbose) logger.debug("MERGE SORT check: {}, interfacesToKeep: {}, elements to keep: {}", checkCriterion, numberOfInterfacesToKeep, numberOfElementsToKeep);
@@ -177,7 +180,8 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         Iterator<I> it = interfaces.iterator();
         while (it.hasNext() && interfaces.size()>numberOfInterfacesToKeep && allElements.size()>numberOfElementsToKeep) {
             I i = it.next();
-            if ( (allowFusion==null || allowFusion.apply(i)) && (!checkCriterion || i.checkFusion() ) ) {
+            if (forbidFusion!=null && forbidFusion.test(i)) continue; // do not remove interface as the test could change after fusions
+            if (!checkCriterion || i.checkFusion() ) {
                 if (verbose) logger.debug("fusion {}", i);
                 it.remove();
                 allElements.remove(i.getE2());
@@ -197,9 +201,14 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         long t1 = System.currentTimeMillis();
         if (verbose) logger.debug("Merge sort: total time : {} total interfaces: {} after merge: {}", t1-t0, interfaces.size(), interfaces.size());
         
-        return new ArrayList<E>(interfaceByElement.keySet());
+        return new ArrayList<>(interfaceByElement.keySet());
     }   
-
+    protected void removeInterface(I i) {
+        Collection<I> l1 = interfaceByElement.get(i.getE1());
+        Collection<I> l2 = interfaceByElement.remove(i.getE2());
+        if (l1!=null) l1.remove(i);
+        if (l2!=null) l2.remove(i);
+    }
     /**
      * Update all connected interface after a fusion
      * @param i

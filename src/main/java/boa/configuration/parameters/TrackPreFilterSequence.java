@@ -69,7 +69,10 @@ public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter> 
             }
             first = false;
         }
-        if (!e.getExceptions().isEmpty()) throw e;
+        if (!e.getExceptions().isEmpty()) {
+            //for (Pair<String, Exception> ex : e.getExceptions()) logger.debug(ex.key, ex.value);
+            throw e;
+        }
         return images;
     }
     @Override public TrackPreFilterSequence addAtFirst(TrackPreFilter... instances) {

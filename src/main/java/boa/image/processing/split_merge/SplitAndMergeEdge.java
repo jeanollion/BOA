@@ -51,9 +51,9 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
     public final double splitThresholdValue;
     Function<Interface, Double> interfaceValue;
 
-    public SplitAndMergeEdge(Image edgeMap, Image intensityMap, double splitThreshold) {
+    public SplitAndMergeEdge(Image edgeMap, Image intensityMap, double splitThreshold, boolean normalizeEdgeValues) {
+        super(intensityMap);
         this.edge = edgeMap;
-        this.intensityMap=intensityMap;
         splitThresholdValue=splitThreshold;
         interfaceValue = i->{
             Collection<Voxel> voxels = i.getVoxels();
@@ -64,37 +64,15 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
                 int idx = 0;
                 for (Voxel v : voxels)  values[idx++]=edge.getPixel(v.x, v.y, v.z);
                 double val= ArrayUtil.quantile(values, 0.5);
-
-                return val;
-            }
-        };
-    }
-    public SplitAndMergeEdge setNormedEdgeValueFunction(double quantile, double thldDiff) {
-        if (thldDiff>0) setMedianValueMap();
-        interfaceValue = i->{
-            Collection<Voxel> voxels = i.getVoxels();
-            if (voxels.isEmpty()) {
-                return Double.NaN;
-            } else {
-                float[] values = new float[voxels.size()];
-                int idx = 0;
-                for (Voxel v : voxels)  values[idx++]=edge.getPixel(v.x, v.y, v.z);
-                double val= ArrayUtil.quantile(values, quantile);
-                if (intensityMap!=null) {// normalize by intensity (mean better than median, better than mean @ edge)
+                if (normalizeEdgeValues) {// normalize by intensity (mean better than median, better than mean @ edge)
                     double sum = BasicMeasurements.getSum(i.getE1(), intensityMap, false)+BasicMeasurements.getSum(i.getE2(), intensityMap, false);
                     val= val/(sum/(double)(i.getE1().getSize()+i.getE2().getSize()));
-
-                }
-                if (thldDiff>0) {
-                    double med1 = medianValues.getAndCreateIfNecessary(i.getE1());
-                    double med2 = medianValues.getAndCreateIfNecessary(i.getE2());
-                    if ( Math.abs(med1-med2)>thldDiff ) val = splitThresholdValue+Double.MIN_VALUE;
                 }
                 return val;
             }
         };
-        return this;
     }
+
     public BiFunction<? super Interface, ? super Interface, Integer> compareMethod=null;
     public Image drawInterfaceValues(RegionPopulation pop) {
         return RegionCluster.drawInterfaceValues(new RegionCluster<>(pop, false, true, getFactory()), i->{i.updateInterface(); return i.value;});

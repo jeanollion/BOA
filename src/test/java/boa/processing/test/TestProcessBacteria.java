@@ -29,7 +29,7 @@ import ij.ImageJ;
 import boa.image.Image;
 import boa.image.ImageMask;
 import boa.plugins.PluginFactory;
-import boa.plugins.plugins.segmenters.BacteriaFluo;
+import boa.plugins.plugins.segmenters.BacteriaIntensity;
 
 /**
  *
@@ -39,13 +39,14 @@ public class TestProcessBacteria {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        int field = 5;
+        int field = 0;
         int microChannel =1;
         int time =0;
         
         
         //String dbName = "fluo171219_WT_750ms";
-        String dbName = "fluo170512_WT";
+        //String dbName = "fluo170512_WT";
+        String dbName = "MutH_150324";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     
@@ -56,8 +57,8 @@ public class TestProcessBacteria {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
-        BacteriaFluo.debug=true;
-        BacteriaFluo seg = new BacteriaFluo();
+        BacteriaIntensity seg = new BacteriaIntensity();
+        seg.testMode= true;
         RegionPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);

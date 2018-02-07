@@ -62,22 +62,23 @@ import boa.measurement.GeometricalMeasurements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.plugins.MultiThreaded;
+import boa.plugins.OverridableThreshold;
 import boa.plugins.Segmenter;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
-import boa.plugins.OverridableThreshold;
 import boa.plugins.ParameterSetup;
 import boa.plugins.ParameterSetupTracker;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
-import boa.plugins.plugins.segmenters.BacteriaFluo;
-import boa.plugins.plugins.segmenters.BacteriaTrans;
+import boa.plugins.plugins.segmenters.BacteriaIntensity;
+import boa.plugins.legacy.BacteriaTrans;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.TrackAssigner.compareScores;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
-import boa.utils.ThreadRunner;
 import boa.utils.Utils;
 import java.util.stream.Collectors;
+import boa.plugins.OverridableThresholdMap;
+import boa.plugins.TrackPreFilter;
 
 /**
  *
@@ -115,7 +116,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     @Override public SegmenterSplitAndMerge getSegmenter() {
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
-        if (s instanceof OverridableThreshold) ((OverridableThreshold)s).setThresholdValue(threshold!= null ? threshold.getThreshold(): debugThreshold);
+        if (s instanceof OverridableThresholdMap) ((OverridableThresholdMap)s).setThresholdValue(threshold!= null ? threshold.getThreshold(): debugThreshold);
         return s;
     }
 
@@ -128,7 +129,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     @Override
     public boolean canBeTested(String p) {
         if (adaptativeCoefficient.getName().equals(p) || frameHalfWindow.getName().equals(p) || yHalfWindow.getName().equals(p) || contrastThreshold.getName().equals(p)) {
-            return getSegmenter() instanceof OverridableThreshold;
+            return getSegmenter() instanceof OverridableThresholdMap;
         }
         return segmenter.getName().equals(p) || maxGrowthRate.getName().equals(p)|| minGrowthRate.getName().equals(p)|| costLimit.getName().equals(p)|| cumCostLimit.getName().equals(p)|| endOfChannelContactThreshold.getName().equals(p);
     }
@@ -252,13 +253,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (debug) logger.debug("minF: {}, maxF: {}", minT, maxT);
         // 0) optional compute threshold for all images
         TreeMap<StructureObject, Image> preFilteredImages = trackPreFilters.filter(structureIdx, parentTrack, executor);
+        TrackPreFilter.getMaskMap(preFilteredImages);
         if (correction) inputImages=preFilteredImages.entrySet().stream().collect(Collectors.toMap(e->e.getKey().getFrame(), e->e.getValue()));
         SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters);
         applyToSegmenter = (frame, s) -> {
             if (s instanceof OverridableThreshold) {
                 if (threshold!=null) {
-                    if (threshold.hasAdaptativeByY()) {
-                        ((OverridableThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
+                    if (s instanceof OverridableThresholdMap && threshold.hasAdaptativeByY()) {
+                        ((OverridableThresholdMap)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
                         //if (frame==52) ImageWindowManagerFactory.showImage(threshold.getThresholdedPlane(frame, false));
                     }
                     else ((OverridableThreshold)s).setThresholdValue(threshold.getThreshold(frame));
@@ -270,13 +272,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         //if (true) return;
         if (Double.isNaN(debugThreshold) && this.thresholdMethod.getSelectedIndex()>0 && getSegmenter() instanceof OverridableThreshold) {
             List<Image> planes = new ArrayList<>(parentsByF.size());
-            for (int t = minT; t<maxT; ++t) planes.add(((OverridableThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, getParent(t, true)));
+            for (int t = minT; t<maxT; ++t) planes.add(((OverridableThreshold)getSegmenter()).getImageForThresholdComputation(getImage(t), structureIdx, getParent(t, true)));
             logger.debug("threshold method: {}. Adaptative coeff: {}, hwf: {}, hwy: {}", this.thresholdMethod.getSelectedItem(), adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
             //logger.debug("minF: [{}-{}], nb planes: {}, nbParents: {}", minT, maxT, planes.size(), this.parentsByF.size());
             int method = thresholdMethod.getSelectedIndex();
             
             switch (method) {
-                case 1:
+                case 1: 
+                    break;
                 case 2:
                     threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold.getValue().doubleValue());
                     break;
@@ -300,7 +303,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 logger.debug("frame range: {}", fr);
                 if (fr!=null) for (int i = fr[0]; i<fr[1]; i+=100) logger.debug("thld={} F={}", threshold.getThreshold(i), i);
             }
-            if (fr !=null && thresholdMethod.getSelectedIndex()==2) { // adaptative by F & Y
+            if (fr !=null && thresholdMethod.getSelectedIndex()==2 && getSegmenter() instanceof OverridableThresholdMap ) { // adaptative by F & Y
                 ((ThresholdLocalContrast)threshold).setAdaptativeByFY(frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
             }            
             threshold.freeMemory();
@@ -310,13 +313,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (bactTestFrame>=0) {// for testing purpose in context of whole track
             logger.debug("test frame: {}, ", bactTestFrame);
             BacteriaTrans.debug=true;
-            BacteriaFluo.debug=true;
+            BacteriaIntensity.verbose=true;
             List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
             subParentTrack.removeIf(o->o.getFrame()<bactTestFrame||o.getFrame()>bactTestFrame);
             ImageWindowManagerFactory.showImage(this.parentsByF.get(bactTestFrame).getRawImage(structureIdx));
             so.segmentAndTrack(structureIdx, subParentTrack, preFilteredImages, null, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
             BacteriaTrans.debug=false;
-            BacteriaFluo.debug=false;
+            BacteriaIntensity.verbose=false;
             return;
         }
         
@@ -332,7 +335,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         subParentTrack.removeIf(o->o.getFrame()<minT||o.getFrame()>=maxT);
         List<Pair<String, Exception>> l = so.segmentAndTrack(structureIdx, subParentTrack, preFilteredImages, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
         for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);
-
+        
         //for (StructureObject p : parents.subList(minT, maxT)) populations.get(p.getFrame()) = Utils.transform(p.getChildren(structureIdx), o->o.getObject());
         // trim empty frames
         while (minT<maxT && getObjects(minT).isEmpty()) ++minT;

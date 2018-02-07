@@ -37,10 +37,10 @@ import java.util.Iterator;
 import java.util.List;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
-import boa.plugins.OverridableThreshold;
-import boa.plugins.plugins.segmenters.BacteriaFluo;
+import boa.plugins.plugins.segmenters.BacteriaIntensity;
 import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
 import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
+import boa.plugins.OverridableThresholdMap;
 
 /**
  *
@@ -69,7 +69,7 @@ public class TestProcessMicrochannels {
         //ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 50, 0.6d, 100);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
-        ((OverridableThreshold)s).setThresholdValue(10.5);
+        ((OverridableThresholdMap)s).setThresholdValue(10.5);
         RegionPopulation pop=s.runSegmenter(input, 0, root);
         logger.debug("object count: {}", pop.getObjects().size());
         ImageDisplayer disp = new IJImageDisplayer();

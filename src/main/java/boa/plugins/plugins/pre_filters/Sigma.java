@@ -37,15 +37,15 @@ import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
  *
  * @author jollion
  */
-public class Median implements PreFilter, Filter {
+public class Sigma implements PreFilter, Filter {
     ScaleXYZParameter radius = new ScaleXYZParameter("Radius", 2, 1, true).setToolTipText("Radius in pixel");
     Parameter[] parameters = new Parameter[]{radius};
-    public Median() {}
-    public Median(double radius) {
+    public Sigma() {}
+    public Sigma(double radius) {
         this.radius.setScaleXY(radius);
         this.radius.setUseImageCalibration(true);
     }
-    public Median(double radiusXY, double radiusZ) {
+    public Sigma(double radiusXY, double radiusZ) {
         this.radius.setScaleXY(radiusXY);
         this.radius.setScaleZ(radiusZ);
     }
@@ -55,7 +55,7 @@ public class Median implements PreFilter, Filter {
     }
     
     public static Image filter(Image input, double radiusXY, double radiusZ) {
-        return Filters.median(input, null, Filters.getNeighborhood(radiusXY, radiusZ, input));
+        return Filters.sigma(input, null, Filters.getNeighborhood(radiusXY, radiusZ, input));
     }
     @Override
     public Parameter[] getParameters() {

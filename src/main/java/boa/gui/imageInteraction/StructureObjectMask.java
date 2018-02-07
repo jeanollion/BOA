@@ -75,7 +75,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         } else {
             objects = parents.get(0).getChildren(childStructureIdx);
             if (objects==null) {
-                logger.error("no objects for parent: {}, structure: {}", parents.get(0), childStructureIdx);
+                //logger.error("no objects for parent: {}, structure: {}", parents.get(0), childStructureIdx);
                 offsets= new BoundingBox[0];
             }
             else offsets = new BoundingBox[objects.size()];

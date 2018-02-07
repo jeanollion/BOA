@@ -40,6 +40,7 @@ import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
+import java.util.function.Predicate;
 
 /**
  *
@@ -178,15 +179,15 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         mergeSort(population, interfaceFactory, true, 0, 0);
     }
     
-    public void setFixedPoints(final List<Region> points) {
-        Function<I, Boolean> f = i -> {
+    public void setUnmergeablePoints(final List<Region> points) {
+        Predicate<I> f = i -> {
             Region inclPoint1 = containsPoint(i.getE1(), points);
             if (inclPoint1==null) return true;
             Region inclPoint2 = containsPoint(i.getE2(), points);
             if (inclPoint2==null || inclPoint1.equals(inclPoint2)) return true;
             else return false;
         };
-        super.setOverrideCheckFusionFunction(f);
+        super.addForbidFusionPredicate(f);
     }
     private static Region containsPoint(Region o, List<Region> points) {
         if (o.is2D()) {
@@ -203,10 +204,6 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     @Override public List<Region> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
         int nInit = population.getObjects().size();
         super.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
-        if (verbose) {
-            population.redrawLabelMap(true);
-            ImageWindowManagerFactory.showImage(population.getLabelMap().duplicate("labelMap after merge"));
-        }
         if (nInit > population.getObjects().size()) population.relabel(true);
         return population.getObjects();
     }

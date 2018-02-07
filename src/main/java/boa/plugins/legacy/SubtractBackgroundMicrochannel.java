@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.pre_filters;
+package boa.plugins.legacy;
 
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BooleanParameter;
@@ -49,6 +49,7 @@ import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.ImageTransformation;
 import boa.image.processing.RegionFactory;
 import boa.plugins.ToolTip;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 
 /**
  *

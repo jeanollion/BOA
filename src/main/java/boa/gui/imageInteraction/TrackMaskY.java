@@ -36,11 +36,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.SwingUtilities;
 import boa.utils.Pair;
 
 /**
@@ -49,8 +44,10 @@ import boa.utils.Pair;
  */
 public class TrackMaskY extends TrackMask {
     int maxParentX, maxParentZ;
-    
     public TrackMaskY(List<StructureObject> parentTrack, int childStructureIdx) {
+        this(parentTrack, childStructureIdx, false);
+    }
+    public TrackMaskY(List<StructureObject> parentTrack, int childStructureIdx, boolean middleXZ) {
         super(parentTrack, childStructureIdx);
         int maxX=0, maxZ=0;
         for (int i = 0; i<parentTrack.size(); ++i) { // compute global Y and Z max to center parent masks
@@ -63,8 +60,8 @@ public class TrackMaskY extends TrackMask {
         int currentOffsetY=0;
         for (int i = 0; i<parentTrack.size(); ++i) {
             trackOffset[i] = parentTrack.get(i).getBounds().duplicate().translateToOrigin(); 
-            //trackOffset[i].translate(currentOffsetX, (int)(maxParentY/2.0-trackOffset[i].getSizeY()/2.0), (int)(maxParentZ/2.0-trackOffset[i].getSizeZ()/2.0)); // Y & Z middle of parent track
-            trackOffset[i].translate(0, currentOffsetY, 0); // X & Z up of parent track
+            if (middleXZ) trackOffset[i].translate((int)(0.5+maxParentX/2.0-trackOffset[i].getSizeX()/2.0), currentOffsetY , (int)(0.5+maxParentZ/2.0-trackOffset[i].getSizeZ()/2.0)); // Y & Z middle of parent track
+            else trackOffset[i].translate(0, currentOffsetY, 0); // X & Z up of parent track
             trackObjects[i] = new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i]);
             currentOffsetY+=interval+trackOffset[i].getSizeY();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetY);

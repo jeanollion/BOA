@@ -61,12 +61,12 @@ import boa.plugins.plugins.post_filters.FeatureFilter;
 import boa.plugins.plugins.pre_filters.BandPass;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.plugins.plugins.pre_filters.Median;
-import boa.plugins.plugins.pre_filters.SubtractBackgroundMicrochannel;
+import boa.plugins.legacy.SubtractBackgroundMicrochannel;
 import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
-import boa.plugins.plugins.segmenters.BacteriaFluo;
-import boa.plugins.plugins.segmenters.BacteriaTrans;
+import boa.plugins.plugins.segmenters.BacteriaIntensity;
+import boa.plugins.legacy.BacteriaTrans;
 import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
@@ -486,9 +486,8 @@ public class GenerateXP {
                             new TrackLengthFilter().setMinSize(5), 
                             new RemoveTracksStartingAfterFrame())
             );
-            bacteria.setProcessingScheme(
-                    new SegmentAndTrack(
-                            new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.25, 1.25)
+            bacteria.setProcessingScheme(new SegmentAndTrack(
+                            new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaIntensity()).setCostParameters(0.25, 1.25)
                     ).addTrackPostFilters(
                             new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria()), 
                             new RemoveTrackByFeature().setFeature(new Size(), 300, true).setQuantileValue(0.25)

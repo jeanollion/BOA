@@ -47,7 +47,10 @@ public class Filters {
     public static <T extends Image> T mean(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Mean(), neighborhood);
     }
-    
+    public static <T extends Image> T sigma(Image image, T output, Neighborhood neighborhood) {
+        if (output==null) output = (T)new ImageFloat(Sigma.class.getSimpleName()+" of: "+image.getName(), image);
+        return applyFilter(image, output, new Sigma(), neighborhood);
+    }
     public static <T extends Image> T sigmaMu(Image image, T output, Neighborhood neighborhood) {
         if (output==null) output = (T)new ImageFloat(SigmaMu.class.getSimpleName()+" of: "+image.getName(), image);
         return applyFilter(image, output, new SigmaMu(), neighborhood);

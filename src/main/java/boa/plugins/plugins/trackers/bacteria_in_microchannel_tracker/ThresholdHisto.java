@@ -33,7 +33,6 @@ import java.util.function.Function;
 import org.apache.commons.lang.ArrayUtils;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.Segmenter;
-import boa.plugins.OverridableThreshold;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
@@ -41,6 +40,10 @@ import boa.utils.ArrayUtil;
 import boa.utils.SlidingOperator;
 import static boa.utils.SlidingOperator.performSlide;
 import boa.utils.Utils;
+import boa.plugins.OverridableThresholdMap;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -53,7 +56,7 @@ public class ThresholdHisto extends Threshold {
     int saturateValue256;
     double[] thresholdF;
     double[] thldCoeffY;
-    final List<Histogram> histos;
+    final Map<Image, Histogram> histos;
     Histogram histoAll;
     final AutoThresholder.Method thldMethod;
     //final static AutoThresholder.Method saturateMethod = AutoThresholder.Method.Shanbhag; // Avec sub: shanbhag. Pas de sub: : MaxEntropy / Triangle
@@ -70,15 +73,15 @@ public class ThresholdHisto extends Threshold {
         return getThreshold(frame) * thldCoeffY[y];
     }
     
-    public ThresholdHisto(List<Image> planes, int offsetFrame, AutoThresholder.Method method, AutoThresholder.Method saturateMethod) {
+    public ThresholdHisto(TreeMap<StructureObject, Image> planes, int offsetFrame, AutoThresholder.Method method, AutoThresholder.Method saturateMethod) {
         super(planes, offsetFrame);
         thldMethod = method;
         this.frameRange=new int[]{0, planes.size()-1};
         long t0 = System.currentTimeMillis();
         double[] minAndMax = new double[2];
-        histos = Histogram.getHisto256AsList(planes, minAndMax);
+        histos = Histogram.getHistoAll256(maskMap, minAndMax);
         long t1 = System.currentTimeMillis();
-        Iterator<Histogram> it = histos.iterator();
+        Iterator<Histogram> it = histos.values().iterator();
         histoAll = it.next().duplicate();
         while(it.hasNext()) histoAll.add(it.next());
         if (saturateMethod!=null) { // saturate histogram to remove device aberations 
@@ -105,8 +108,8 @@ public class ThresholdHisto extends Threshold {
         frameRange=new int[]{fr[0]-offsetFrame, fr[1]-offsetFrame};
         if (debug || debugCorr) logger.debug("set frame range: sat: {}, fr: {}", saturateValue256, frameRange);
         if (saturateValue256<255 || frameRange[0]>0 || frameRange[1]<planes.size()-1) { // update min and max if necessary
-            List<Image> planesSub = planes.subList(frameRange[0], frameRange[1]+1);
-            double[] minAndMaxNew = ImageOperations.getMinAndMax(planesSub);
+            Map<StructureObject, Image> planesSub = planes.entrySet().stream().filter(e->e.getKey().getFrame()<fr[0]||e.getKey().getFrame()>fr[1]).collect(Collectors.toMap(e->e.getKey(), e->e.getValue()));
+            double[] minAndMaxNew = ImageOperations.getMinAndMax(planesSub.values());
             if (!Double.isNaN(saturateValue) && saturateValue<minAndMaxNew[1]) minAndMaxNew[1] = saturateValue;
             if (debug || debugCorr) logger.debug("set frame range, old mm: {}, new mm: {}", histoAll.minAndMax, minAndMaxNew);
             if (minAndMaxNew[0]!=histoAll.minAndMax[0] || minAndMaxNew[1]!=histoAll.minAndMax[1]) {
@@ -212,9 +215,9 @@ public class ThresholdHisto extends Threshold {
 
     @Override
     public void apply(StructureObject o, Segmenter s) {
-        if (!(s instanceof OverridableThreshold)) return;
-        if (hasAdaptativeByY()) ((OverridableThreshold)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
-        else ((OverridableThreshold)s).setThresholdValue(getThreshold(o.getFrame()));
+        if (!(s instanceof OverridableThresholdMap)) return;
+        if (hasAdaptativeByY()) ((OverridableThresholdMap)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
+        else ((OverridableThresholdMap)s).setThresholdValue(getThreshold(o.getFrame()));
     }
     
 }
