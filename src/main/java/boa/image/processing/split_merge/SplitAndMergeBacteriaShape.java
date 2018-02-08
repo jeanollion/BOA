@@ -140,17 +140,18 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
     public RegionPopulation splitAndMerge(ImageInteger segmentationMask, int minSizePropagation, int objectMergeLimit) {
         setDistanceMap(segmentationMask);
         WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
-        ImageByte seeds = Filters.localExtrema(getEDM(), null, true, segmentationMask, Filters.getNeighborhood(3, 3, getEDM())); // TODO seed radius -> parameter ? 
-        RegionPopulation popWS =  WatershedTransform.watershed(getEDM(), segmentationMask, ImageLabeller.labelImageList(seeds), true, null, sfc, true);
+        ImageByte seeds = Filters.localExtrema(getWatershedMap(), null, true, segmentationMask, Filters.getNeighborhood(3, 3, getWatershedMap())); // TODO seed radius -> parameter ? 
+        RegionPopulation popWS =  WatershedTransform.watershed(getWatershedMap(), segmentationMask, ImageLabeller.labelImageList(seeds), true, null, sfc, true);
         if (testMode) {
             popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
+            ImageWindowManagerFactory.showImage(seeds.duplicate("seeds"));
             ImageWindowManagerFactory.showImage(getWatershedMap());
             ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map before merge"));
         }
         return merge(popWS, objectMergeLimit);
     }
     
-    protected void updateCurvature(List<Set<Region>> clusters, ImageProperties props) { // need to be called in order to use curvature in InterfaceBT
+    public void updateCurvature(List<Set<Region>> clusters, ImageProperties props) { // need to be called in order to use curvature in InterfaceBT
         curvatureMap.clear();
         ImageByte clusterMap = new ImageByte("cluster map", props).resetOffset(); // offset is added if getCurvature method
         clusterMap.setCalibration(1, 1);
@@ -204,6 +205,9 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         }
         @Override public Collection<Voxel> getVoxels() {
             return voxels;
+        }
+        public double getCurvatureValue() {
+            return curvatureValue;
         }
         private ImageInteger getJoinedMask() {
             if (joinedMask==null) {

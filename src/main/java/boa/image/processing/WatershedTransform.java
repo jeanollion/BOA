@@ -222,6 +222,30 @@ public class WatershedTransform {
         public abstract void add(Voxel v, int label);
         public abstract int getLabel();
     }
+    private class MinDiffWsMap implements Score {
+        double centerV = 0;
+        double curDiff = -Double.MAX_VALUE;
+        int curLabel;
+        @Override
+        public void add(Voxel v, int label) {
+            //double diff=!decreasingPropagation ? watershedMap.getPixel(v.x, v.y, v.z) : -watershedMap.getPixel(v.x, v.y, v.z);
+            double diff = Math.abs(centerV - watershedMap.getPixel(v.x, v.y, v.z)-centerV);
+            if (diff<curDiff) {
+                curDiff=diff;
+                curLabel = label;
+            }
+        }
+        @Override
+        public int getLabel() {
+            return curLabel;
+        }
+        @Override
+        public void setUp(Voxel center) {
+            centerV = center.value;
+            curDiff = Double.POSITIVE_INFINITY; // reset
+            curLabel=0;
+        }
+    }
     private class MaxDiffWsMap implements Score {
         double centerV = 0;
         double curDiff = -Double.MAX_VALUE;
@@ -242,7 +266,7 @@ public class WatershedTransform {
         @Override
         public void setUp(Voxel center) {
             centerV = center.value;
-            curDiff = -Double.MAX_VALUE; // reset
+            curDiff = Double.NEGATIVE_INFINITY; // reset
             curLabel=0;
         }
     }
