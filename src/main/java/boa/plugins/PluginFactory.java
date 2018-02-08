@@ -46,7 +46,7 @@ public class PluginFactory {
 
     private final static TreeMap<String, Class> plugins = new TreeMap<>();
     private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
-    private final static Map<String, String> refactoredNames = new HashMap<String, String>(){{put("BacteriaLineageIndex", "BacteriaLineageMeasurements");}};
+    private final static Map<String, String> refactoredNamesOldMapNew = new HashMap<String, String>(){{put("BacteriaFluo", "BacteriaIntensity");}};
     
     public static void findPlugins(String packageName) {
         logger.info("looking for plugin in package: {}", packageName);
@@ -219,7 +219,7 @@ public class PluginFactory {
             Object res = null;
             if (plugins.containsKey(s)) {
                 res = plugins.get(s).newInstance();
-            } else if (refactoredNames.containsKey(s)) return getPlugin(refactoredNames.get(s));
+            } else if (refactoredNamesOldMapNew.containsKey(s)) return getPlugin(refactoredNamesOldMapNew.get(s));
             
             if (res != null && res instanceof Plugin) {
                 return ((Plugin) res);
@@ -233,13 +233,13 @@ public class PluginFactory {
     }
     public static <T extends Plugin> Class<T> getPluginClass(Class<T> clazz, String className) {
         Class plugClass = plugins.get(className);
-        if (plugClass==null && refactoredNames.containsKey(className)) plugClass = plugins.get(refactoredNames.get(className));
+        if (plugClass==null && refactoredNamesOldMapNew.containsKey(className)) plugClass = plugins.get(refactoredNamesOldMapNew.get(className));
         return plugClass;
     }
     public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
         try {
             Class plugClass = plugins.get(className);
-            if (plugClass==null && refactoredNames.containsKey(className)) plugClass = plugins.get(refactoredNames.get(className));
+            if (plugClass==null && refactoredNamesOldMapNew.containsKey(className)) plugClass = plugins.get(refactoredNamesOldMapNew.get(className));
             if (plugClass==null) {
                 logger.error("plugin :{} of class: {} not found", className, clazz);
                 return null;

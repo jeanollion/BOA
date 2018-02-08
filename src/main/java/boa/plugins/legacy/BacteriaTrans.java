@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.segmenters;
+package boa.plugins.legacy;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
@@ -74,9 +74,8 @@ import static boa.plugins.Plugin.logger;
 import boa.plugins.Segmenter;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.Thresholder;
-import boa.plugins.OverridableThreshold;
 import boa.plugins.ParameterSetup;
-import boa.plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
+import boa.plugins.legacy.BacteriaTrans.ProcessingVariables.InterfaceBT;
 import boa.plugins.plugins.thresholders.ConstantValue;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.plugins.plugins.thresholders.LocalContrastThresholder;
@@ -96,12 +95,14 @@ import boa.image.processing.clustering.ClusterCollection.InterfaceFactory;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.clustering.RegionCluster.InterfaceVoxels;
+import boa.plugins.OverridableThresholdMap;
+import boa.plugins.plugins.segmenters.EdgeDetector;
 
 /**
  *
  * @author jollion
  */
-public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup, OverridableThreshold {
+public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup, OverridableThresholdMap {
     public static boolean debug = false;
     
     // configuration-related attributes
@@ -167,7 +168,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     @Override public void setThresholdValue(double threhsold) {
         thresholdValue = threhsold;
     }
-    @Override public Image getThresholdImage(Image input, int structureIdx, StructureObjectProcessing parent) {
+    @Override public Image getImageForThresholdComputation(Image input, int structureIdx, StructureObjectProcessing parent) {
         return getProcessingVariables(input, parent.getMask()).getIntensityMap(); // TODO for all methdos with these argument : check if pv exists and has same input & parent ...
     }
     ImageInteger mask=null;
@@ -499,7 +500,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
         for (Region o : seedObjects) o.draw(pv.getSegmentationMask(), 1, null); // to ensure points are included in mask
         RegionCluster<InterfaceBT> c = new RegionCluster(res, false, true, pv.getFactory());
-        c.setFixedPoints(seedObjects);
+        c.setUnmergeablePoints(seedObjects);
         pv.updateCurvature(c.getClusters());
         c.mergeSort(false, 0, seedObjects.size());  
         Collections.sort(res.getObjects(), getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position

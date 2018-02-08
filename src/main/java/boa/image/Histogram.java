@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -147,6 +148,16 @@ public class Histogram {
         List<Histogram> res = new ArrayList<>(images.size());
         for (Image im : images) res.add(im.getHisto256(minAndMax[0], minAndMax[1], null, null));
         return res;
+    }
+    public static Map<Image, Histogram> getHistoAll256(Map<Image, ImageMask> images, double[] minAndMax) {
+        if (minAndMax==null) minAndMax=new double[2];
+        if (!(minAndMax[0] < minAndMax[1])) {
+            double[] mm = ImageOperations.getMinAndMax(images);
+            minAndMax[0] = mm[0];
+            minAndMax[1] = mm[1];
+        }
+        final double[] mm = minAndMax;
+        return images.entrySet().stream().collect(Collectors.toMap(e->e.getKey(), e->e.getKey().getHisto256(mm[0], mm[1], e.getValue(), null)));
     }
     public int count() {
         int sum = 0;

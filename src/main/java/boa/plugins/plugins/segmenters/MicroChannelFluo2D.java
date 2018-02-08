@@ -44,7 +44,6 @@ import java.util.Map;
 import boa.plugins.ParameterSetup;
 import boa.plugins.Segmenter;
 import boa.plugins.Thresholder;
-import boa.plugins.OverridableThreshold;
 import boa.plugins.OverridableThresholdWithSimpleThresholder;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
@@ -56,12 +55,13 @@ import boa.image.processing.ImageFeatures;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.utils.ArrayUtil;
 import static boa.utils.Utils.plotProfile;
+import boa.plugins.OverridableThresholdMap;
 
 /**
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableThresholdWithSimpleThresholder {
+public class MicroChannelFluo2D implements MicrochannelSegmenter, OverridableThresholdWithSimpleThresholder, OverridableThresholdMap {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 430, 5, null).setToolTipText("Height of microchannel in pixels");
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
@@ -184,7 +184,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter , OverridableTh
     }
 
     @Override
-    public Image getThresholdImage(Image input, int structureIdx, StructureObjectProcessing parent) {
+    public Image getImageForThresholdComputation(Image input, int structureIdx, StructureObjectProcessing parent) {
         return input;
     }
 

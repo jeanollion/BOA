@@ -31,13 +31,13 @@ public class IndividualThresholdWithGlobalAttributes extends ThresholdHisto {
     SimpleThresholder localThresholder; 
     SimpleThresholder globalThresholder;
     AutoThresholder.Method localMethod;
-    public IndividualThresholdWithGlobalAttributes(List<Image> planes, int offsetFrame, AutoThresholder.Method localMethod, AutoThresholder.Method globalMethod) {
+    public IndividualThresholdWithGlobalAttributes(List<Image> planes, int offsetFrame, AutoThresholder.Method localMethod, AutoThresholder.Method globalMethod, boolean globalMinValue) {
         super(planes, offsetFrame, globalMethod, null);
         this.localMethod=localMethod;
         this.thresholdF = new double[planes.size()];
         for (int i = 0; i<thresholdF.length; ++i) {
             double thld = IJAutoThresholder.runThresholder(localMethod, this.histos.get(i));
-            thresholdF[i] = Math.min(thresholdValue, thld);
+            thresholdF[i] = globalMinValue?Math.max(thresholdValue, thld):Math.min(thresholdValue, thld);
         }
     }
     

@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import boa.plugins.plugins.segmenters.BacteriaTrans;
+import boa.plugins.legacy.BacteriaTrans;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.logger;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;

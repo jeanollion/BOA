@@ -17,10 +17,14 @@
  */
 package boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker;
 
+import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
+import boa.image.ImageMask;
+import boa.plugins.TrackPreFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,18 +32,24 @@ import java.util.List;
 import boa.plugins.plugins.processing_scheme.SegmentOnly.ApplyToSegmenter;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.logger;
 import boa.utils.Utils;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
  * @author jollion
  */
 public abstract class Threshold implements ApplyToSegmenter {
-    final List<Image> planes;
+    final TreeMap<StructureObject, Image> planes;
+    final Map<Integer, StructureObject> parentsByF;
+    final Map<Image, ImageMask> maskMap;
     final int offsetFrame;
     int[] frameRange;
-    public Threshold(List<Image> planes, int offsetFrame) {
+    public Threshold(TreeMap<StructureObject, Image> planes, int offsetFrame) {
         this.planes=planes;
+        parentsByF = StructureObjectUtils.splitByFrame(planes.keySet());
         this.offsetFrame=offsetFrame;
+        this.maskMap = TrackPreFilter.getMaskMap(planes);
     }
     public abstract boolean hasAdaptativeByY();
     /**
@@ -53,8 +63,8 @@ public abstract class Threshold implements ApplyToSegmenter {
     public abstract void freeMemory();
     public static boolean showOne = false;
     public ImageByte getThresholdedPlane(int f, boolean backgroundUnderThreshold) {
-        int frame=f-offsetFrame;
-        Image im = planes.get(frame);
+        StructureObject p = parentsByF.get(f);
+        Image im = planes.get(p);
         ImageByte res=  new ImageByte("thld", im);
         res.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
             if (im.getPixel(x, y, z) > getThreshold(f, y) == backgroundUnderThreshold) res.setPixel(x, y, z, 1);

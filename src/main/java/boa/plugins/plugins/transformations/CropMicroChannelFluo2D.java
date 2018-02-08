@@ -45,7 +45,6 @@ import java.util.List;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
 import boa.plugins.TransformationTimeIndependent;
-import boa.plugins.OverridableThreshold;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.thresholders.ConstantValue;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
@@ -60,6 +59,7 @@ import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 import static boa.utils.Utils.plotProfile;
+import boa.plugins.OverridableThresholdMap;
 
 /**
  *

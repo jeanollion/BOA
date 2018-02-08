@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.pre_filters;
+package boa.plugins.legacy;
 
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BooleanParameter;
@@ -49,6 +49,7 @@ import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.ImageTransformation;
 import boa.image.processing.RegionFactory;
 import boa.plugins.ToolTip;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 
 /**
  *
@@ -58,7 +59,7 @@ public class SubtractBackgroundMicrochannel implements PreFilter, ToolTip {
     BooleanParameter method = new BooleanParameter("Method", "Rolling Ball", "Sliding Paraboloid", false);
     BooleanParameter isDarkBck = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
-    BooleanParameter corners = new BooleanParameter("Correct corners", false);
+    BooleanParameter corners = new BooleanParameter("Correct corners", true);
     NumberParameter radius = new BoundedNumberParameter("Radius", 2, 200, 0.01, null);
     Parameter[] parameters = new Parameter[]{radius, method, isDarkBck, smooth, corners};
     String toolTip = "<html>Apply IJ's subtractbackground to image mirrored only on upper and lower side. Phase Constrast Image should be saturated before in order to avoide to bright values</html>";
@@ -76,23 +77,24 @@ public class SubtractBackgroundMicrochannel implements PreFilter, ToolTip {
     public Image runPreFilter(Image input, ImageMask mask) {
         input = TypeConverter.toFloat(input, null); // automaticaly copies data
         // remove pixels in corners if corners are detected
-        ImageInteger cornerMask = ImageOperations.andNot(new BlankMask(input), mask, null);
-        List<Region> corners = ImageLabeller.labelImageList(cornerMask);
-        if (!corners.isEmpty()) {
-            //ImageWindowManagerFactory.showImage(input.duplicate("before corner"));
-            Region parent = new Region(TypeConverter.toImageInteger(mask, null), 1, mask.getSizeZ()==1);
-            List<Voxel> contour =parent.translate(parent.getBounds().duplicate().reverseOffset()).getContour();
-            for (Region o : corners) {
-                for (Voxel v : o.getVoxels()) {
-                    Voxel closest = Voxel.getClosest(v, contour);
-                    //logger.debug("v: {}={}->{}={}", v, input.getPixel(v.x, v.y, v.z), closest, input.getPixel(closest.x, closest.y, closest.z));
-                    input.setPixel(v.x, v.y, v.z, input.getPixel(closest.x, closest.y, closest.z));
-                    
+        /*if (!(mask instanceof BlankMask)) {
+            ImageInteger cornerMask = ImageOperations.andNot(new BlankMask(input), mask, null);
+            List<Region> corners = ImageLabeller.labelImageList(cornerMask);
+            if (!corners.isEmpty()) {
+                //ImageWindowManagerFactory.showImage(input.duplicate("before corner"));
+                Region parent = new Region(TypeConverter.toImageInteger(mask, null), 1, mask.getSizeZ()==1);
+                List<Voxel> contour =parent.translate(parent.getBounds().duplicate().reverseOffset()).getContour();
+                for (Region o : corners) {
+                    for (Voxel v : o.getVoxels()) {
+                        Voxel closest = Voxel.getClosest(v, contour);
+                        //logger.debug("v: {}={}->{}={}", v, input.getPixel(v.x, v.y, v.z), closest, input.getPixel(closest.x, closest.y, closest.z));
+                        input.setPixel(v.x, v.y, v.z, input.getPixel(closest.x, closest.y, closest.z));
+
+                    }
                 }
+                //ImageWindowManagerFactory.showImage(input.duplicate("after corner"));
             }
-            //ImageWindowManagerFactory.showImage(input.duplicate("after corner"));
-        }
-        
+        }*/
         // mirror image on both Y ends
         ImageFloat toFilter = new ImageFloat("", input.getSizeX(), 3*input.getSizeY(), input.getSizeZ());
         ImageOperations.pasteImage(input, toFilter, new BoundingBox(0, input.getSizeY(), 0));
@@ -102,7 +104,7 @@ public class SubtractBackgroundMicrochannel implements PreFilter, ToolTip {
         //ImageWindowManagerFactory.showImage(toFilter);
         double scale = radius.getValue().doubleValue();
         //scale = input.getSizeY();
-        toFilter = IJSubtractBackground.filter(toFilter, scale , !method.getSelected(), !isDarkBck.getSelected(), smooth.getSelected(), false, false);
+        toFilter = IJSubtractBackground.filter(toFilter, scale , !method.getSelected(), !isDarkBck.getSelected(), smooth.getSelected(), corners.getSelected(), false);
         Image crop = toFilter.crop(new BoundingBox(0, input.getSizeX()-1, input.getSizeY(), 2*input.getSizeY()-1, 0, input.getSizeZ()-1));
         
         // adjust filtered image to get homogeneous images among time.

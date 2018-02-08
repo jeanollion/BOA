@@ -37,34 +37,78 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
  *
  * @author jollion
+ * @param <I>
  */
 public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionCluster.InterfaceVoxels<I>> {
     public boolean testMode;
     protected ClusterCollection.InterfaceFactory<Region, I> factory;
-    
+    protected HashMapGetCreate<Region, Double> medianValues;
+    protected Image intensityMap;
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
+    public SplitAndMerge(Image intensityMap) {
+        this.intensityMap=intensityMap;
+        medianValues= new HashMapGetCreate<>(r -> BasicMeasurements.getQuantileValue(r, intensityMap, false, 0.5)[0]);
+    }
+    /**
+     * 
+     * @return A map containing median values of a given region within the map {@param intensityMap}, updated when a fusion occurs
+     */
+    public HashMapGetCreate<Region, Double> getMedianValues() {
+        return medianValues;
+    }
+    
     public abstract Image getWatershedMap();
     protected abstract ClusterCollection.InterfaceFactory<Region, I> createFactory();
     public ClusterCollection.InterfaceFactory<Region, I> getFactory() {
         if (factory == null) factory = createFactory();
         return factory;
     }
+
+    public void addForbidFusion(Predicate<I> forbidFusion) {
+        if (forbidFusion==null) return;
+        if (this.forbidFusion!=null) this.forbidFusion=this.forbidFusion.or(forbidFusion);
+        else this.forbidFusion = forbidFusion;
+    }
+    public void forbidFusionForegroundBackground(Predicate<Region> isBackground, Predicate<Region> isForeground) {
+        this.addForbidFusion(i->{
+            if (isBackground.test(i.getE1()) && isForeground.test(i.getE2())) return true;
+            if (isForeground.test(i.getE1()) && isBackground.test(i.getE2())) return true;
+            return false;
+        });
+        
+    }
+    /**
+     * Fusion is forbidden if difference of median values within regions is superior to {@param thldDiff}
+     * @param thldDiff 
+     */
+    public void addForbidByMedianDifference(double thldDiff) {
+        this.addForbidFusion(i->{
+            double med1 = medianValues.getAndCreateIfNecessary(i.getE1());
+            double med2 = medianValues.getAndCreateIfNecessary(i.getE2());
+            return Math.abs(med1-med2)>thldDiff;
+        });
+    }
+    
+    protected Predicate<I> forbidFusion;
      /**
      * 
      * @param popWS population to merge according to criterion on hessian value @ interface / value @ interfacepopWS.filterAndMergeWithConnected(new RegionPopulation.Size().setMin(minSize));
-     * @param objectMergeLimit 
+     * @param numberOfObjectsToKeep 
      * @return 
      */
-    public RegionPopulation merge(RegionPopulation popWS, int objectMergeLimit) {
+    public RegionPopulation merge(RegionPopulation popWS, int numberOfObjectsToKeep) {
         RegionCluster.verbose=testMode;
-        RegionCluster.mergeSort(popWS,  getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
+        RegionCluster<I> c = new RegionCluster<>(popWS, false, true, getFactory());
+        c.addForbidFusionPredicate(forbidFusion);
+        c.mergeSort(numberOfObjectsToKeep<=1, 0, numberOfObjectsToKeep);
         //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
         popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         if (testMode) ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map"));
@@ -113,9 +157,8 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
     protected void regionChanged(Region r) {
         if (medianValues!=null) medianValues.remove(r);
     }
-    HashMapGetCreate<Region, Double> medianValues;
-    public BiFunction<? super I, ? super I, Integer> compareByMedianIntensity(Image intensityMap, boolean highIntensityFisrt) {
-        medianValues= new HashMapGetCreate<>(r -> BasicMeasurements.getQuantileValue(r, intensityMap, false, 0.5)[0]);
+    
+    public BiFunction<? super I, ? super I, Integer> compareByMedianIntensity(boolean highIntensityFisrt) {
         return (i1, i2) -> {
             double i11  = medianValues.getAndCreateIfNecessary(i1.getE1());
             double i12  = medianValues.getAndCreateIfNecessary(i1.getE2());

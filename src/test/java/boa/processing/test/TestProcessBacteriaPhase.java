@@ -46,8 +46,9 @@ import java.util.List;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
-import boa.plugins.plugins.segmenters.BacteriaShape;
-import boa.plugins.plugins.segmenters.BacteriaTrans;
+import boa.plugins.plugins.segmenters.BacteriaIntensity;
+import boa.plugins.legacy.BacteriaShape;
+import boa.plugins.legacy.BacteriaTrans;
 import java.util.Map;
 
 /**
@@ -68,7 +69,7 @@ public class TestProcessBacteriaPhase {
         //String dbName = "TestThomasRawStacks";
         int field = 0;
         int microChannel =1;
-        int[] time =new int[]{4, 4};
+        int[] time =new int[]{75, 75}; //47
         //setMask=true;
         //thld = 776;
         
@@ -138,14 +139,19 @@ public class TestProcessBacteriaPhase {
         Map<StructureObject, List<StructureObject>> allMCTracks = StructureObjectUtils.getAllTracks(rootTrack, 0);
         allMCTracks.entrySet().removeIf(o->o.getKey().getIdx()!=microChannel);
         List<StructureObject> parentTrack = allMCTracks.entrySet().iterator().next().getValue();
+        //parentTrack.removeIf(o -> o.getFrame()<1 || o.getFrame()>200); // GRANDE DIFFERENCE POUR SUBBACK -> vient de saturate?
         Map<StructureObject, Image> preFilteredImages;
         preFilteredImages = mDAO.getExperiment().getStructure(1).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {
             Image input = preFilteredImages.get(mc);
-            BacteriaShape seg = new BacteriaShape();
-            if (parentTrack.size()==1) seg.testMode=true;
+            Segmenter seg = mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
+            //BacteriaShape seg = new BacteriaShape();
+            if (parentTrack.size()==1) {
+                if (seg instanceof BacteriaIntensity) ((BacteriaIntensity)seg).testMode=true;
+                if (seg instanceof BacteriaShape) ((BacteriaShape)seg).testMode=true;
+            }
             /*BacteriaTrans.debug=true;
             BacteriaTrans seg = new BacteriaTrans();
             if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {

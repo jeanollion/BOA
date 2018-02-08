@@ -61,6 +61,7 @@ import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 import static boa.utils.Utils.comparatorInt;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -500,6 +501,7 @@ public class RegionPopulation {
         while(rIt.hasNext()) {
             modified.clear();
             Region r = rIt.next();
+            if (!eraseVoxelsIfConnectedToBackground && r==bck) continue;
             Iterator<Voxel> it = r.getVoxels().iterator();
             while(it.hasNext()) {
                 Voxel v = it.next();
@@ -531,13 +533,20 @@ public class RegionPopulation {
         bck.draw(labelImage, 0);
         getObjects().remove(bck);
     }
-    
+    public RegionPopulation subset(SimpleFilter filter) {
+        List<Region> keptObjects = new ArrayList<>();
+        if (filter instanceof Filter) ((Filter)filter).init(this);
+        for (Region o : getObjects()) {
+            if (filter.keepObject(o)) keptObjects.add(o);
+        }
+        return new RegionPopulation(keptObjects, this.getImageProperties());
+    }
     public RegionPopulation filter(SimpleFilter filter) {
         return filter(filter, null);
     }
     
     public RegionPopulation filterAndMergeWithConnected(SimpleFilter filter) {
-        List<Region> removed = new ArrayList<Region>();
+        List<Region> removed = new ArrayList<>();
         filter(filter, removed);
         if (!removed.isEmpty()) mergeWithConnected(removed);
         return this;
@@ -618,6 +627,10 @@ public class RegionPopulation {
     public void mergeAllConnected() {
         mergeAllConnected(Integer.MIN_VALUE);
     }
+    /**
+     * Merge all objects connected if their label is above {@param fromLabel}
+     * @param fromLabel 
+     */
     private void mergeAllConnected(int fromLabel) {
         relabel(); // objects label start from 1 -> idx = label-1
         getObjects();
@@ -678,6 +691,16 @@ public class RegionPopulation {
                 it.remove();
             }
         }
+    }
+    public void mergeWithConnectedWithinSubset(Predicate<Region> subsetObject) {
+        List<Region> toMerge=  getObjects().stream().filter(subsetObject).collect(Collectors.toList());
+        objects.removeAll(toMerge);
+        List<Region> oldObjects = objects;
+        objects = toMerge;
+        mergeAllConnected();
+        oldObjects.addAll(objects);
+        objects = oldObjects;
+        relabel(false);
     }
     
     public void sortBySpatialOrder(final IndexingOrder order) {

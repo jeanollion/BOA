@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import boa.plugins.Segmenter;
-import boa.plugins.OverridableThreshold;
 import boa.plugins.plugins.thresholders.LocalContrastThresholder;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
@@ -35,6 +34,7 @@ import boa.utils.ArrayUtil;
 import boa.utils.SlidingOperator;
 import static boa.utils.SlidingOperator.performSlide;
 import boa.utils.Utils;
+import boa.plugins.OverridableThresholdMap;
 
 /**
  *
@@ -337,7 +337,7 @@ public class ThresholdLocalContrast extends Threshold {
 
     @Override
     public void apply(StructureObject o, Segmenter s) {
-        if (hasAdaptativeByY()) ((OverridableThreshold)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
-        else ((OverridableThreshold)s).setThresholdValue(getThreshold(o.getFrame()));
+        if (hasAdaptativeByY()) ((OverridableThresholdMap)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
+        else ((OverridableThresholdMap)s).setThresholdValue(getThreshold(o.getFrame()));
     }
 }

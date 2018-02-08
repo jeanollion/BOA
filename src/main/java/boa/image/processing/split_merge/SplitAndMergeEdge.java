@@ -36,7 +36,9 @@ import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
+import boa.measurement.BasicMeasurements;
 import boa.utils.ArrayUtil;
+import boa.utils.HashMapGetCreate;
 import java.util.function.BiFunction;
 
 /**
@@ -45,47 +47,36 @@ import java.util.function.BiFunction;
  */
 public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface> {
     final Image edge;
-    Image intensityMap;
     public ImageByte tempSplitMask;
     public final double splitThresholdValue;
     Function<Interface, Double> interfaceValue;
 
-    public SplitAndMergeEdge(Image edgeMap, Image input, double splitThreshold, double quantile) {
+    public SplitAndMergeEdge(Image edgeMap, Image intensityMap, double splitThreshold, boolean normalizeEdgeValues) {
+        super(intensityMap);
         this.edge = edgeMap;
         splitThresholdValue=splitThreshold;
-        if (quantile>=0 && quantile<=1) {
-            interfaceValue = i->{
-                Collection<Voxel> voxels = i.getVoxels();
-                if (voxels.isEmpty()) {
-                    return Double.NaN;
-                } else {
-                    float[] values = new float[voxels.size()];
-                    int idx = 0;
-                    for (Voxel v : voxels)  values[idx++]=edge.getPixel(v.x, v.y, v.z);
-                    double val= ArrayUtil.quantile(values, quantile);
-                    // normalize by intensity
-                    float[] nValues = new float[i.getE1().getVoxels().size()+i.getE2().getVoxels().size()];
-                    idx = 0;
-                    for (Voxel v : i.getE1().getVoxels()) nValues[idx++]=input.getPixel(v.x, v.y, v.z);
-                    for (Voxel v : i.getE2().getVoxels()) nValues[idx++]=input.getPixel(v.x, v.y, v.z);
-                    val /=ArrayUtil.quantile(nValues, 0.5);
-                    return val;
+        interfaceValue = i->{
+            Collection<Voxel> voxels = i.getVoxels();
+            if (voxels.isEmpty()) {
+                return Double.NaN;
+            } else {
+                float[] values = new float[voxels.size()];
+                int idx = 0;
+                for (Voxel v : voxels)  values[idx++]=edge.getPixel(v.x, v.y, v.z);
+                double val= ArrayUtil.quantile(values, 0.5);
+                if (normalizeEdgeValues) {// normalize by intensity (mean better than median, better than mean @ edge)
+                    double sum = BasicMeasurements.getSum(i.getE1(), intensityMap, false)+BasicMeasurements.getSum(i.getE2(), intensityMap, false);
+                    val= val/(sum/(double)(i.getE1().getSize()+i.getE2().getSize()));
                 }
-            };
-        } else throw new IllegalArgumentException("Quantile should be >=0 & <=1");
-        /*else {
-            interfaceValue = voxels->{
-                if (voxels.isEmpty()) {
-                    return Double.NaN;
-                } else {
-                    double edgeSum = 0;
-                    for (Voxel v : voxels)  edgeSum+=edge.getPixel(v.x, v.y, v.z);
-                    return edgeSum;
-                }
-            };
-        }*/
+                return val;
+            }
+        };
     }
+
     public BiFunction<? super Interface, ? super Interface, Integer> compareMethod=null;
+    public Image drawInterfaceValues(RegionPopulation pop) {
+        return RegionCluster.drawInterfaceValues(new RegionCluster<>(pop, false, true, getFactory()), i->{i.updateInterface(); return i.value;});
+    }
     public SplitAndMergeEdge setInterfaceValue(Function<Interface, Double> interfaceValue) {
         this.interfaceValue=interfaceValue;
         return this;

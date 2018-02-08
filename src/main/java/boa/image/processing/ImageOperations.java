@@ -32,6 +32,7 @@ import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
 import boa.image.ImageMask;
 import static boa.image.Image.logger;
+import boa.image.TypeConverter;
 import static boa.image.processing.ImageOperations.Axis.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,12 +43,33 @@ import boa.utils.Utils;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 
 /**
  *
  * @author jollion
  */
 public class ImageOperations {
+    /**
+     * Adds a random value (norm in [0;1[, divided by 10^{@param decimal}) to each pixels of the image.
+     * @param input 
+     * @param mask only pixels within mask will be modified
+     * @param decimal decimal from which starts the radom value to add
+     * @return  same image if type is float, float cast of image if not.
+     */
+    public static Image jitterIntegerValues(Image input, ImageMask mask, double decimal) {
+        if (mask ==null) mask = new BlankMask(input);
+        ImageMask m=mask;
+        Image image = (input instanceof ImageFloat) ? input : TypeConverter.toFloat(input, null);
+        double div = decimal>0 ? Math.pow(10, decimal):0;
+        Random r = new Random();
+        double[] addValues = r.doubles(mask.count()).toArray();
+        int[] idx =new int[1];
+        image.getBoundingBox().translateToOrigin().loop((x, y, z)->{
+            if (m.insideMask(x, y, z)) image.setPixel(x, y, z, image.getPixel(x, y, z)+addValues[idx[0]++]/div);
+        });
+        return image;
+    }
     public static List<Region> filterObjects(ImageInteger image, ImageInteger output, Function<Region, Boolean> removeObject) {
         List<Region> l = ImageLabeller.labelImageList(image);
         List<Region> toRemove = new ArrayList<>(l.size());

@@ -51,6 +51,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<SplitAndMergeHessian.Int
     Function<Set<Voxel>, Double> interfaceValue;
 
     public SplitAndMergeHessian(Image input, double splitThreshold, double hessianScale) {
+        super(input);
         rawIntensityMap=input;
         splitThresholdValue=splitThreshold;
         this.hessianScale=hessianScale;
