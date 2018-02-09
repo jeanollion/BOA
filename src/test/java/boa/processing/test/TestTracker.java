@@ -72,9 +72,9 @@ public class TestTracker {
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx =0;
-        int mcIdx =0;
+        int mcIdx =4;
         int structureIdx = 1;
-        int[] frames = new int[]{48, 48};
+        int[] frames = new int[]{0, 1000};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);

@@ -47,12 +47,14 @@ import boa.plugins.OverridableThreshold;
 import boa.utils.ArrayUtil;
 import static boa.utils.Utils.plotProfile;
 import boa.plugins.OverridableThresholdMap;
+import boa.plugins.TrackParametrizable;
+import java.util.TreeMap;
 
 /**
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements MicrochannelSegmenter, OverridableThreshold, OverridableThresholdMap {
+public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametrizable<MicroChannelFluo2D> {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 430, 5, null).setToolTipText("Height of microchannel in pixels");
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
@@ -79,7 +81,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, OverridableThr
         double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runThresholder(input, parent) : thresholdValue;
         logger.debug("thresholder: {} : {}", threshold.getPluginName(), threshold.getParameters());
         CropMicroChannelFluo2D cropper = new CropMicroChannelFluo2D().setChannelDim(this.channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue()).setParameters(this.minObjectSize.getValue().intValue());
-        Result r = cropper.segmentMicroChannels(input, thresholdedImage, 0, yShift.getValue().intValue(), channelWidth.getValue().intValue(), thld);
+        Result r = cropper.segmentMicroChannels(input, null, 0, yShift.getValue().intValue(), channelWidth.getValue().intValue(), thld);
         if (r==null) return null;
         else return r.getObjectPopulation(input, true);
     }
@@ -88,7 +90,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, OverridableThr
     public Result segment(Image input) {
         double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runSimpleThresholder(input, null) : thresholdValue;
         CropMicroChannelFluo2D cropper = new CropMicroChannelFluo2D().setChannelDim(this.channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue()).setParameters(this.minObjectSize.getValue().intValue());
-        Result r = cropper.segmentMicroChannels(input, thresholdedImage, 0, yShift.getValue().intValue(), channelWidth.getValue().intValue(), thld);
+        Result r = cropper.segmentMicroChannels(input, null, 0, yShift.getValue().intValue(), channelWidth.getValue().intValue(), thld);
         return r;
     }
     
@@ -163,22 +165,12 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, OverridableThr
 
     // use threshold implementation
     protected double thresholdValue = Double.NaN;
-    ImageInteger thresholdedImage = null;
 
 
     @Override
-    public void setThresholdValue(double threhsold) {
-        this.thresholdValue=threhsold;
-    }
-
-    @Override
-    public Image getImageForThresholdComputation(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return input;
-    }
-
-    @Override
-    public void setThresholdedImage(ImageInteger thresholdedImage) {
-        this.thresholdedImage= thresholdedImage;
+    public ApplyToSegmenter<MicroChannelFluo2D> run(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages) {
+        double thld = TrackParametrizable.getGlobalThreshold(structureIdx, preFilteredImages, this.threshold.instanciatePlugin());
+        return (p, s)->s.thresholdValue=thld;
     }
 
 }

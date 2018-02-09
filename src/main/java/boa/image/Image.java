@@ -264,7 +264,7 @@ public abstract class Image implements ImageProperties {
         return (T)this;
     }
     
-    public BoundingBox getBoundingBox() {
+    @Override public BoundingBox getBoundingBox() {
         BoundingBox res = new BoundingBox(0, sizeX-1, 0, sizeY-1, 0, sizeZ-1);
         res.translate(offsetX, offsetY, offsetZ);
         return res;

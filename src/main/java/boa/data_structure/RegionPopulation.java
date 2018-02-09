@@ -398,13 +398,12 @@ public class RegionPopulation {
                 }
             }
         }
-        ArrayList<Region> seeds = new ArrayList<Region>(Arrays.asList(RegionFactory.getObjectsImage(seedMap, false)));        
+        ArrayList<Region> seeds = new ArrayList<>(Arrays.asList(RegionFactory.getObjectsImage(seedMap, false)));        
         RegionPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null, lowConnectivity);
         this.objects = pop.getObjects();
         objects.remove(0); // remove background object
         relabel(true);
     }
-    
     public RegionPopulation localThreshold(Image erodeMap, double iqrFactor, boolean darkBackground, boolean keepOnlyBiggestObject) {
         //if (debug) ImageWindowManagerFactory.showImage(erodeMap);
         List<Region> addedObjects = new ArrayList<>();
@@ -511,6 +510,7 @@ public class RegionPopulation {
                 int maxLabel = Collections.max(count.entrySet(), (e1, e2)->Integer.compare(e1.getValue()[0], e2.getValue()[0])).getKey();
                 if (!count.containsKey(r.getLabel())) {
                     logger.error("smooth interface: {} not present @Voxel: {}/ bck: {}, counts: {}", r.getLabel(), v, bck.getLabel(), Utils.toStringList(count.entrySet(), e->e.getKey()+"->"+e.getValue()[0]));
+                    ImageWindowManagerFactory.showImage(labelImage);
                 }
                 
                 if (maxLabel!=r.getLabel() &&  count.get(maxLabel)[0]> count.get(r.getLabel())[0]) {

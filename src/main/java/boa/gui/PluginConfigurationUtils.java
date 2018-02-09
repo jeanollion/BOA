@@ -41,7 +41,8 @@ import boa.plugins.ParameterSetupTracker;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
-import boa.plugins.TrackSegmenterParametrizer.ApplyToSegmenter;
+import boa.plugins.TrackParametrizable;
+import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.Transformation;
@@ -105,14 +106,14 @@ public class PluginConfigurationUtils {
                             parent = dupMap.get(parent.getId()); 
                             parentTrack = parentTrack.stream().map(p->dupMap.get(p.getId())).collect(Collectors.toList());
                             TreeMap<StructureObject, Image> preFilteredImages = psc.getTrackPreFilters(true).filter(parentStrutureIdx, parentTrack, null);
-                            ApplyToSegmenter  applyToSeg = psc.getTrackSegmenterParametrizer().run(o.getStructureIdx(), parentTrack, preFilteredImages, psc.getSegmenter(), null);
+                            
                             if (ps instanceof Segmenter) { // case segmenter -> segment only & call to test method
+                                ApplyToSegmenter  applyToSeg = TrackParametrizable.getApplyToSegmenter(structureIdx, (Segmenter)ps, preFilteredImages, null);
                                 SegmentOnly so; 
                                 if (psc instanceof SegmentOnly) {
                                     so = (SegmentOnly)psc;
                                     so.getPreFilters().removeAll();
                                     so.getTrackPreFilters(false).removeAll();
-                                    so.getTrackSegmenterParametrizer().removeAll();
                                 }
                                 else so = new SegmentOnly((Segmenter)ps).setPostFilters(psc.getPostFilters());
                                 
@@ -148,7 +149,7 @@ public class PluginConfigurationUtils {
                                 ps.setTestParameter(parameters[idx].getName());
                                 TrackPostFilterSequence tpf=null;
                                 if (psc instanceof ProcessingSchemeWithTracking) tpf = ((ProcessingSchemeWithTracking)psc).getTrackPostFilters();
-                                if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getTrackPreFilters(true), psc.getTrackSegmenterParametrizer(), psc.getPostFilters());
+                                if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getTrackPreFilters(true), psc.getPostFilters());
                                 else ((Tracker)ps).track(structureIdx, parentTrack);
                                 if (tpf!=null) tpf.filter(structureIdx, parentTrack, null);
                                 

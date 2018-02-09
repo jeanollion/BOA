@@ -70,23 +70,25 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
             //pasteImage(im, allImagesY, tm.getObjectOffset(o));
         }
         int sizeY = allImagesY.getSizeY();
-        allImagesY = mirrorY(allImagesY); // mirror image on both Y ends
+        int offsetY = (int)(allImagesY.getSizeY()*0.5);
+        allImagesY = mirrorY(allImagesY, offsetY); // mirror image on both Y ends
+        
         // apply filter
         double radius = allImagesY.getSizeY()/(this.radius.getValue().doubleValue()*tm.mirror);
         IJSubtractBackground.filter(allImagesY, radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);
-        allImagesY = allImagesY.crop(new BoundingBox(0, allImagesY.getSizeX()-1, sizeY, 2*sizeY-1, 0, allImagesY.getSizeZ()-1)); // crop
+        allImagesY = allImagesY.crop(allImagesY.getBoundingBox().setyMin(offsetY).setyMax(offsetY+sizeY-1)); // crop
         // recover data
         idx = 0;
         for (StructureObject o : tm.parents) ImageOperations.pasteImage(allImagesY, preFilteredImages.get(o), null, tm.getObjectOffset(idx++, 1));
         logger.debug("done");
     }
     
-    private static ImageFloat mirrorY(ImageFloat input) { 
-        ImageFloat res = new ImageFloat("", input.getSizeX(), 3*input.getSizeY(), input.getSizeZ());
-        ImageOperations.pasteImage(input, res, new BoundingBox(0, input.getSizeY(), 0));
+    private static ImageFloat mirrorY(ImageFloat input, int size) { 
+        ImageFloat res = new ImageFloat("", input.getSizeX(), input.getSizeY()+2*size, input.getSizeZ());
+        ImageOperations.pasteImage(input, res, new BoundingBox(0, size, 0));
         Image imageFlip = ImageTransformation.flip(input, ImageTransformation.Axis.Y);
-        ImageOperations.pasteImage(imageFlip, res, null);
-        ImageOperations.pasteImage(imageFlip, res, new BoundingBox(0, 2*input.getSizeY(), 0));
+        ImageOperations.pasteImage(imageFlip, res, null, input.getBoundingBox().translateToOrigin().setyMin(input.getSizeY()-size));
+        ImageOperations.pasteImage(imageFlip, res, new BoundingBox(0, size+input.getSizeY(), 0), input.getBoundingBox().translateToOrigin().setyMax(size-1));
         return res;
     }
     private static void correctCorners(ImageMask mask, Image input) {

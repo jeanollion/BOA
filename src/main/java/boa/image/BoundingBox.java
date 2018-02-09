@@ -66,28 +66,34 @@ public class BoundingBox implements JSONSerializable {
         count=1;
     }
 
-    public void setxMin(int xMin) {
+    public BoundingBox setxMin(int xMin) {
         this.xMin = xMin;
+        return this;
     }
 
-    public void setxMax(int xMax) {
+    public BoundingBox setxMax(int xMax) {
         this.xMax = xMax;
+        return this;
     }
 
-    public void setyMin(int yMin) {
+    public BoundingBox setyMin(int yMin) {
         this.yMin = yMin;
+        return this;
     }
 
-    public void setyMax(int yMax) {
+    public BoundingBox setyMax(int yMax) {
         this.yMax = yMax;
+        return this;
     }
 
-    public void setzMin(int zMin) {
+    public BoundingBox setzMin(int zMin) {
         this.zMin = zMin;
+        return this;
     }
 
-    public void setzMax(int zMax) {
+    public BoundingBox setzMax(int zMax) {
         this.zMax = zMax;
+        return this;
     }
     
     

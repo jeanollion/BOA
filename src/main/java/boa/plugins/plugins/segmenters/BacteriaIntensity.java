@@ -63,6 +63,8 @@ import boa.plugins.Thresholder;
 import boa.plugins.ToolTip;
 import boa.plugins.plugins.pre_filters.Median;
 import boa.plugins.plugins.pre_filters.Sigma;
+import boa.plugins.plugins.thresholders.CompareThresholds;
+import boa.plugins.plugins.trackers.ObjectIdxTracker;
 
 /**
  *
@@ -71,7 +73,8 @@ import boa.plugins.plugins.pre_filters.Sigma;
 public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThreshold, ManualSegmenter, ObjectSplitter, ParameterSetup, ToolTip {
     public static boolean verbose = false;
     public boolean testMode = false;
-    
+    protected double threshold=Double.NaN;
+    protected double minThld = 0;
     // configuration-related attributes
     PluginParameter<SimpleThresholder> threhsolder = new PluginParameter<>("Local Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.3, 0, 1).setToolTipText("Lower value splits more. At step 2) regions are merge if sum(hessian)|interface / sum(raw intensity)|interface < (this parameter)"); // TODO was 0.12 before change of scale (hess *= sqrt(2pi)-> *2.5 
@@ -91,8 +94,6 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     
     //segmentation-related attributes (kept for split and merge methods)
     SplitAndMergeHessian splitAndMerge;
-    Image smoothed;
-    double threshold = Double.NaN;
     
     public BacteriaIntensity() {
         testMode = verbose;
@@ -126,13 +127,6 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         res.setTestMode(testMode);
         return res;
     }
-    protected Image getSmoothed(Image input) {
-        if (smoothed==null) {
-            if (smoothScale.getValue().doubleValue()>=1) smoothed = ImageFeatures.gaussianSmooth(input, smoothScale.getValue().doubleValue(), false);
-            // median?
-        }
-        return smoothed;
-    }
     
     protected EdgeDetector initEdgeDetector() {
         EdgeDetector seg = new EdgeDetector().setIsDarkBackground(true); // keep defaults parameters ? 
@@ -141,8 +135,8 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)); // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2)
         //seg.setPreFilters(new Sigma(3).setMedianRadius(3));
         //seg.setSecondaryThresholdMap(splitAndMerge.getHessian()); // not efficient when hyperfluo cells but not saturated..
-        if (Double.isNaN(threshold)) seg.setThrehsoldingMethod(1).setThresholder(threhsolder.instanciatePlugin());
-        else seg.setThrehsoldingMethod(1).setThresholder(new ConstantValue(threshold));
+        if (Double.isNaN(threshold)) seg.setThrehsoldingMethod(1).setThresholder(Double.isNaN(minThld) ? threhsolder.instanciatePlugin(): new CompareThresholds(threhsolder.instanciatePlugin(), new ConstantValue(minThld), true)); // honors min value
+        else seg.setThrehsoldingMethod(1).setThresholder(new ConstantValue(Math.max(threshold, minThld)));
         
         //seg.setThrehsoldingMethod(0).setThresholder(new BackgroundThresholder(3, 3, 2).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu))); // useless if secondary map
         //seg.setWsPriorityMap(getSmoothed(input));
@@ -152,10 +146,10 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         splitAndMerge = initializeSplitAndMerge(input);
         EdgeDetector seg = initEdgeDetector();
         RegionPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
+        splitPop.smoothRegions(1, true, parent.getMask());
         RegionPopulation res = splitAndMerge.splitAndMerge(splitPop.getLabelMap(), minSizePropagation.getValue().intValue(), 0);
-        res.localThreshold(getSmoothed(input), localThresholdFactor.getValue().doubleValue(), true, true);
+        res = localThreshold(input, res, parent, structureIdx);
         if (testMode) {
-            ImageWindowManagerFactory.showImage(getSmoothed(input).setName("smoothed map for local threshold"));
             ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
         }
         res.filter(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
@@ -171,7 +165,14 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
                 ImageWindowManagerFactory.showImage(hess);
             }
         }
+        res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         return res;
+    }
+    
+    protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx) {
+        Image smooth = smoothScale.getValue().doubleValue()>=1 ? ImageFeatures.gaussianSmooth(input, smoothScale.getValue().doubleValue(), false):input;
+        pop.localThreshold(smooth, localThresholdFactor.getValue().doubleValue(), true, true);
+        return pop;
     }
     
     
@@ -282,7 +283,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
             for(Region so : seedObjects ) if (o.intersect(so)) return true;
             return false;
         });
-        pop.localThreshold(getSmoothed(input), localThresholdFactor.getValue().doubleValue(), true, true);
+        localThreshold(input, pop, parent, structureIdx);
         //RegionPopulation pop =  WatershedTransform.watershed(splitAndMerge.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(getNormalizedHessian(input), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
         
         if (verboseManualSeg) {

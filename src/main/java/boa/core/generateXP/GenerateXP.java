@@ -104,13 +104,12 @@ import boa.plugins.plugins.transformations.AutoFlipY;
 import boa.plugins.plugins.transformations.RemoveDeadPixels;
 import boa.image.processing.ImageTransformation;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
+import boa.plugins.plugins.segmenters.BacteriaIntensityPhase;
 import boa.plugins.plugins.track_post_filter.AverageMask;
 import boa.plugins.plugins.track_pre_filters.NormalizeTrack;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.plugins.plugins.track_pre_filters.Saturate;
 import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
-import boa.plugins.plugins.track_segmenter_parametrizer.GlobalThreshold;
-import boa.plugins.plugins.track_segmenter_parametrizer.ThresholderWithGlobalTrackValue;
 
 
 /**
@@ -484,7 +483,6 @@ public class GenerateXP {
                     new MicrochannelTracker().setSegmenter(
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
-                    ).addTrackSegmenterParametrizer(new GlobalThreshold()
                     ).addTrackPostFilters(new RemoveMicrochannelsTouchingBackgroundOnSides(2),
                             new RemoveMicrochannelsWithOverexpression(99, 5).setTrim(true),
                             new TrackLengthFilter().setMinSize(5), 
@@ -576,13 +574,13 @@ public class GenerateXP {
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
-                            .setSegmenter(new BacteriaIntensity())
+                            .setSegmenter(new BacteriaIntensityPhase())
                             .setCostParameters(1.5, 3)
                             .setCorrectMotherCell(true)
                     ).addTrackPreFilters(
                         new SubtractBackgroundMicrochannels(),
                         new NormalizeTrack(1, true)
-                    ).addTrackSegmenterParametrizer(new ThresholderWithGlobalTrackValue())
+                    )
             );
             /*bacteria.setProcessingScheme(
                     new SegmentAndTrack(

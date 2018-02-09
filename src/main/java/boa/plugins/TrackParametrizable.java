@@ -47,12 +47,13 @@ import java.util.stream.Collectors;
 /**
  *
  * @author jollion
+ * @param <S> segmenter type
  */
-public interface TrackParametrizable {
-    @FunctionalInterface public static interface ApplyToSegmenter { public void apply(StructureObject parent, Segmenter segmenter);}
+public interface TrackParametrizable<S extends Segmenter> {
+    @FunctionalInterface public static interface ApplyToSegmenter<S> { public void apply(StructureObject parent, S segmenter);}
     public ApplyToSegmenter run(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages);
     // + static helpers methods
-    public static ApplyToSegmenter getApplyToSegmenter(int structureIdx, Segmenter segmenter, TreeMap<StructureObject, Image> preFilteredImages, ExecutorService executor) {
+    public static <S extends Segmenter> ApplyToSegmenter<S> getApplyToSegmenter(int structureIdx, S segmenter, TreeMap<StructureObject, Image> preFilteredImages, ExecutorService executor) {
         if (segmenter instanceof TrackParametrizable) {
             TrackParametrizable tp = (TrackParametrizable)segmenter;
             if (executor!=null && tp instanceof MultiThreaded) ((MultiThreaded)tp).setExecutor(executor);
@@ -85,9 +86,10 @@ public interface TrackParametrizable {
      * @param structureIdx
      * @param preFilteredImages
      * @param thldForVoidMC 
-     * @return set of void microchannels
+     * @param outputSet will add the void microchannels inside this set
+     * @return the minimal threshold
      */
-    public static Set<StructureObject> getVoidMicrochannels(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, double thldForVoidMC) {
+    public static double getVoidMicrochannels(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, double thldForVoidMC, Set<StructureObject> outputSet) {
         double bimodalThld = 0.4d;
         float[] thlds = new float[preFilteredImages.size()];
         int idx = 0;
@@ -113,15 +115,14 @@ public interface TrackParametrizable {
         
         // test bimodal: normed difference of mean of 2 classes
         double diff = (msOver[0]-msUnder[0]) / thld;
-        logger.debug("test void microchannel otsu: bimodal: diff: {}  bimodal: {}", diff, diff>bimodalThld);
+        logger.debug("test void microchannel otsu: bimodal: diff: {}  bimodal: {}, minValue: {}", diff, diff>bimodalThld, thld);
         if (diff>bimodalThld) { // bimodal
-            Set<StructureObject> res = new HashSet<>((int)msUnder[2]);
             idx = 0;
-            for (StructureObject s : preFilteredImages.keySet()) if (thlds[idx++]<thld) res.add(s);
-            return res;
+            for (StructureObject s : preFilteredImages.keySet()) if (thlds[idx++]<thld) outputSet.add(s);
+            return thld;
         }
-        if (thld<thldForVoidMC) return preFilteredImages.keySet();
-        return Collections.EMPTY_SET;
+        if (thld<thldForVoidMC) outputSet.addAll(preFilteredImages.keySet());
+        return Double.NaN;
     }
     
 }

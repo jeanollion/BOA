@@ -129,8 +129,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         final Result[] boundingBoxes = new Result[parentTrack.size()];
         TreeMap<StructureObject, Image> ii = trackPreFilters.filter(structureIdx, parentTrack, executor);
         Image[] inputImages = ii.values().toArray(new Image[parentTrack.size()]);
-        // CHECK THAT GLOBAL THLD IS SET IN CONFIG
-        ApplyToSegmenter applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, segmenter.instanciatePlugin(), ii, executor);
+        ApplyToSegmenter<? super MicrochannelSegmenter> applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, segmenter.instanciatePlugin(), ii, executor);
         ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
             MicrochannelSegmenter s = segmenter.instanciatePlugin();
             if (applyToSegmenter !=null) applyToSegmenter.apply(parent, s);

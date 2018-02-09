@@ -21,11 +21,16 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
+import boa.image.ImageInteger;
+import boa.image.processing.Filters;
+import boa.image.processing.ImageFeatures;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.measurement.BasicMeasurements;
 import boa.plugins.TrackParametrizable;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -34,7 +39,7 @@ import java.util.TreeMap;
  * Bacteria segmentation within microchannels, for phas images
  * @author jollion
  */
-public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackParametrizable {
+public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackParametrizable<BacteriaIntensityPhase> {
     public BacteriaIntensityPhase() {
         this.splitThreshold.setValue(0.2);
         this.minSize.setValue(50);
@@ -60,9 +65,11 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
                 for (Voxel v : voxels) hessSum+=sam.getHessian().getPixel(v.x, v.y, v.z);
                 double val = hessSum/voxels.size();
                 if (normalizeEdgeValues) {// normalize by mean intensity within 2 regions
-                    double sum = BasicMeasurements.getSum(i.getE1(), sam.getIntensityMap(), false)+BasicMeasurements.getSum(i.getE2(), sam.getIntensityMap(), false);
-                    sum /= ((double)(i.getE1().getSize()+i.getE2().getSize()));
-                    val/=sum;
+                    double mean1 = BasicMeasurements.getMeanValue(i.getE1(), sam.getIntensityMap(), false);
+                    double mean2 = BasicMeasurements.getMeanValue(i.getE2(), sam.getIntensityMap(), false);
+                    double norm = Math.max(mean1, mean2);
+                    //sum /= ((double)(i.getE1().getSize()+i.getE2().getSize()));
+                    val/=norm;
                 }
                 
                 return val;
@@ -73,8 +80,23 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     
     boolean isVoid = false;
     @Override
-    public ApplyToSegmenter run(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages) {
-        Set<StructureObject> voidMC = TrackParametrizable.getVoidMicrochannels(structureIdx, preFilteredImages, 0.4);
-        return (p, s) -> {if (voidMC.contains(p)) ((BacteriaIntensityPhase)s).isVoid=true;};
+    public ApplyToSegmenter<BacteriaIntensityPhase> run(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages) {
+        Set<StructureObject> voidMC = new HashSet<>();
+        double minThld = TrackParametrizable.getVoidMicrochannels(structureIdx, preFilteredImages, 0.4, voidMC);
+        return (p, s) -> {
+            if (voidMC.contains(p)) s.isVoid=true; 
+            s.minThld=minThld;
+        };
+    }
+    
+    @Override
+    protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx) {
+        ImageInteger dilated = Filters.applyFilter(pop.getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(parent.getMask()), Filters.getNeighborhood(2, input));
+        pop = new RegionPopulation(dilated, true);
+        Image smooth = ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
+        pop.localThreshold(smooth, localThresholdFactor.getValue().doubleValue(), false, false);
+        pop.smoothRegions(2, true, parent.getMask());
+        // close ? 
+        return pop;
     }
 }
