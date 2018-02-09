@@ -79,7 +79,7 @@ import boa.utils.Utils;
 public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSetupTracker {
     public static boolean registerTMI=false;
     public static TrackMateInterface<SpotWithinCompartment> debugTMI;
-    protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MutationSegmenter(), false);
+    protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new MutationSegmenter(), false);
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", 1, false, false);
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5);
     //NumberParameter spotQualityThreshold = new BoundedNumberParameter("Spot Quality Threshold", 3, 4, 0, null);
@@ -133,8 +133,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, TrackPreFilterSequence trackPreFilters, PostFilterSequence postFilters) {
         long t0 = System.currentTimeMillis();
         SegmentOnly ps = new SegmentOnly(segmenter.instanciatePlugin()).setTrackPreFilters(trackPreFilters).setPostFilters(postFilters);
-        List<Pair<String, Exception>> ex = ps.segmentAndTrack(structureIdx, parentTrack, executor);
-        if (!ex.isEmpty()) throw new MultipleException(ex);
+        ps.segmentAndTrack(structureIdx, parentTrack, executor);
         long t1= System.currentTimeMillis();
         track(structureIdx, parentTrack, true);
     }

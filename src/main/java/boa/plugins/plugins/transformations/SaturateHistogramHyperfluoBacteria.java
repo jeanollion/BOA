@@ -108,12 +108,11 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         Double[] thlds = new Double[allImages.size()];
         ReusableQueue.Reset<ImageByte> r = im -> {ImageOperations.fill(im, 0, null); return im;};
         ReusableQueue<ImageByte> masks = new ReusableQueue<>(()->new ImageByte("", allImages.get(0)), r);
-        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(allImages, false, (Image image, int idx) -> {
+        ThreadRunner.execute(allImages, false, (Image image, int idx) -> {
             ImageByte mask = masks.pull();
             thlds[idx] = getThld(image, pThld, thresholdBck.instanciatePlugin(), thresholdHyper.instanciatePlugin() , mask, minimumCount, idx);
             masks.push(mask);
         });
-        for (Pair<String, Exception> e : exceptions) logger.error(e.key, e.value);
         List<Double> thldsList = new ArrayList<>(Arrays.asList(thlds));
         thldsList.removeIf(d -> Double.isInfinite(d) || Double.isNaN(d));
         if (testMode) logger.debug("SaturateHisto: #satu: {},, list: {}", thldsList.size(), thldsList);

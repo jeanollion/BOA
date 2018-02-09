@@ -64,6 +64,10 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
     public HashMapGetCreate<Region, Double> getMedianValues() {
         return medianValues;
     }
+
+    public Image getIntensityMap() {
+        return intensityMap;
+    }
     
     public abstract Image getWatershedMap();
     protected abstract ClusterCollection.InterfaceFactory<Region, I> createFactory();

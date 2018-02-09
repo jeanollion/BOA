@@ -385,10 +385,13 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 String position = db.getExperiment().getPosition(pIdx).getName();
                 try {
                     run(position, deleteAllField);
+                } catch (MultipleException e) {
+                    errors.addAll(e.getExceptions());
                 } catch (Exception e) {
-                    errors.add(new Pair(position, e));
+                    errors.add(new Pair("Error while processing: db"+db.getDBName()+" pos:"+position, e));
                 }
             }
+            
             for (Pair<String, int[]> e  : this.extractMeasurementDir) extractMeasurements(e.key==null?db.getDir():e.key, e.value);
             if (exportData) exportData();
             db.clearCache();
@@ -414,10 +417,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             logger.info("Processing: DB: {}, Position: {}", dbName, position);
             for (int s : structures) { // TODO take code from processor
                 publish("Processing structure: "+s);
-                List<Pair<String, Exception>> e = Processor.processAndTrackStructures(db.getDao(position), true, trackOnly, s);
-                errors.addAll(e);
+                Processor.processAndTrackStructures(db.getDao(position), true, trackOnly, s);
                 incrementProgress();
-                
                 if (generateTrackImages && !db.getExperiment().getAllDirectChildStructures(s).isEmpty()) {
                     publish("Generating Track Images for Structure: "+s);
                     Processor.generateTrackImages(db.getDao(position), s, this);
@@ -440,8 +441,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             publish("Measurements...");
             logger.info("Measurements: DB: {}, Field: {}", dbName, position);
             db.getDao(position).deleteAllMeasurements();
-            List<Pair<String, Exception>> e = Processor.performMeasurements(db.getDao(position), this);
-            errors.addAll(e);
+            Processor.performMeasurements(db.getDao(position), this);
             incrementProgress();
             //publishMemoryUsage("After Measurements");
         }

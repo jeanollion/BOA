@@ -56,6 +56,7 @@ import boa.plugins.TrackCorrector;
 import boa.plugins.Tracker;
 import boa.plugins.Transformation;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
+import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
@@ -151,14 +152,19 @@ public class Processor {
             deleteObjects=false;
         }
         for (String fieldName : xp.getPositionsAsString()) {
+            try {
             processAndTrackStructures(db.getDao(fieldName), deleteObjects, false, structures);
+            } catch (MultipleException e) {
+                  for (Pair<String, Exception> p : e.getExceptions()) logger.error(p.key, p.value);
+            } catch (Exception e) {
+                logger.error("error while processing", e);
+            }
             db.getDao(fieldName).clearCache();
             db.getExperiment().getPosition(fieldName).flushImages(true, true);
         }
     }
     
-    public static List<Pair<String, Exception>> processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, boolean trackOnly, int... structures) {
-        List<Pair<String, Exception>> errors = new ArrayList<>();
+    public static void processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, boolean trackOnly, int... structures) {
         Experiment xp = dao.getExperiment();
         if (deleteObjects) {
             if (structures.length==0 || structures.length==xp.getStructureCount()) dao.deleteAllObjects();
@@ -170,26 +176,23 @@ public class Processor {
         List<StructureObject> root = getOrCreateRootTrack(dao);
         if (root==null || root.isEmpty()) {
             logger.error("Field: {} no pre-processed image found", dao.getPositionName());
-            errors.add(new Pair("db: "+dao.getMasterDAO().getDBName()+" pos: "+dao.getPositionName(), new Exception("no pre-processed image found")));
-            return errors;
+            throw new RuntimeException("ERROR db: "+dao.getMasterDAO().getDBName()+" pos: "+dao.getPositionName()+ " no pre-processed image found");
         }
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
         for (int s: structures) {
             if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {}", dao.getPositionName(), s);
             else logger.info("Tracking: Field: {}, Structure: {}", dao.getPositionName(), s);
-            List<Pair<String, Exception>> e = executeProcessingScheme(root, s, trackOnly, false);
-            errors.addAll(e);
+            executeProcessingScheme(root, s, trackOnly, false);
         }
-        return errors;
     }
     
-    public static List<Pair<String, Exception>> executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly, final boolean deleteChildren) {
-        if (parentTrack.isEmpty()) return Collections.EMPTY_LIST;
+    public static void executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly, final boolean deleteChildren) {
+        if (parentTrack.isEmpty()) return ;
         final ObjectDAO dao = parentTrack.get(0).getDAO();
         Experiment xp = parentTrack.get(0).getExperiment();
         final ProcessingScheme ps = xp.getStructure(structureIdx).getProcessingScheme();
         int directParentStructure = xp.getStructure(structureIdx).getParentStructure();
-        if (trackOnly && ps instanceof SegmentOnly) return Collections.EMPTY_LIST;
+        if (trackOnly && ps instanceof SegmentOnly) return  ;
         StructureObjectUtils.setAllChildren(parentTrack, structureIdx);
         Map<StructureObject, List<StructureObject>> allParentTracks;
         if (directParentStructure==-1 || parentTrack.get(0).getStructureIdx()==directParentStructure) { // parents = roots or parentTrack is parent structure
@@ -203,12 +206,10 @@ public class Processor {
         ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs(), ThreadRunner.priorityThreadFactory(Thread.MAX_PRIORITY));
         //ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs());
         //ExecutorService subExecutor = Executors.newSingleThreadExecutor(); // TODO: see what's more effective!
-        final List[] ex = new List[allParentTracks.size()];
         ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx) -> {
-            ex[idx] = execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao, subExecutor);
+            execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao, subExecutor);
         };
-        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(allParentTracks.values(), false, ta);
-        for (List l : ex) if (l!=null) exceptions.addAll(l);
+        ThreadRunner.execute(allParentTracks.values(), false, ta);
         
         // store in DAO
         List<StructureObject> children = new ArrayList<>();
@@ -232,13 +233,19 @@ public class Processor {
                 dao.getMasterDAO().getSelectionDAO().store(errors);
             }
         }
-        return exceptions;
     }
     
     private static List<Pair<String, Exception>> execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao, ExecutorService executor) {
-        if (!trackOnly && deleteChildren) dao.deleteChildren(parentTrack, structureIdx);
-        if (trackOnly) return ps.trackOnly(structureIdx, parentTrack, executor);
-        else return ps.segmentAndTrack(structureIdx, parentTrack, executor);
+        try {
+            if (!trackOnly && deleteChildren) dao.deleteChildren(parentTrack, structureIdx);
+            if (trackOnly) ps.trackOnly(structureIdx, parentTrack, executor);
+            else ps.segmentAndTrack(structureIdx, parentTrack, executor);
+        } catch(MultipleException e) {
+            return e.getExceptions();
+        } catch(Exception e) {
+            return new ArrayList<Pair<String, Exception>>() {{add(new Pair("", e));}};
+        }
+        return Collections.EMPTY_LIST;
     }
     
     // measurement-related methods
@@ -254,16 +261,12 @@ public class Processor {
         }
     }
     
-    public static List<Pair<String, Exception>> performMeasurements(final ObjectDAO dao, ProgressCallback pcb) {
+    public static void performMeasurements(final ObjectDAO dao, ProgressCallback pcb) {
         long t0 = System.currentTimeMillis();
         List<StructureObject> roots = dao.getRoots();
         logger.debug("{} number of roots: {}", dao.getPositionName(), roots.size());
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
-        List<Pair<String, Exception>> errors = new ArrayList<>();
-        if (roots.isEmpty()) {
-            errors.add(new Pair("db: "+dao.getMasterDAO().getDBName()+" position: "+dao.getPositionName(), new Exception("no root")));
-            return errors;
-        }
+        if (roots.isEmpty()) throw new RuntimeException("ERROR db: "+dao.getMasterDAO().getDBName()+" position: "+dao.getPositionName()+ " no root");
         Map<StructureObject, List<StructureObject>> rootTrack = new HashMap<>(1); rootTrack.put(roots.get(0), roots);
         boolean containsObjects=false;
         for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
@@ -285,9 +288,7 @@ public class Processor {
             }
             if (pcb!=null) pcb.log("Executing: #"+actionPool.size()+" measurements");
             if (!actionPool.isEmpty()) containsObjects=true;
-            List<Pair<String, Exception>> errorsLocal = ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
-            errors.addAll(errorsLocal);
-
+            ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
         }
         long t1 = System.currentTimeMillis();
         final Set<StructureObject> allModifiedObjects = new HashSet<>();
@@ -300,13 +301,12 @@ public class Processor {
         }
         logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getPositionName(), t1-t0, allModifiedObjects.size());
         dao.upsertMeasurements(allModifiedObjects);
-        if (containsObjects && allModifiedObjects.isEmpty()) errors.add(new Pair(dao.getPositionName(), new Exception("No Measurement preformed")));
-        return errors;
+        if (containsObjects && allModifiedObjects.isEmpty()) throw new RuntimeException("ERROR db: "+dao.getMasterDAO().getDBName()+" position: "+dao.getPositionName()+"No Measurement preformed");
     }
     
     
     private static Set<Integer> getOutputStructures(List<Measurement> mList) {
-        Set<Integer> l = new HashSet<Integer>(5);
+        Set<Integer> l = new HashSet<>(5);
         for (Measurement m : mList) for (MeasurementKey k : m.getMeasurementKeys()) l.add(k.getStoreStructureIdx());
         return l;
     }

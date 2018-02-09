@@ -36,26 +36,25 @@ import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
+import boa.image.processing.split_merge.SplitAndMergeHessian.Interface;
 
 /**
  *
  * @author jollion
  */
-public class SplitAndMergeHessian extends SplitAndMerge<SplitAndMergeHessian.Interface> {
+public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
     Image hessian;
-    final Image rawIntensityMap;
-    Image intensityMap;
     Image normalizedHessian;
     public ImageByte tempSplitMask;
     public final double splitThresholdValue, hessianScale;
-    Function<Set<Voxel>, Double> interfaceValue;
+    Function<Interface, Double> interfaceValue;
 
     public SplitAndMergeHessian(Image input, double splitThreshold, double hessianScale) {
         super(input);
-        rawIntensityMap=input;
         splitThresholdValue=splitThreshold;
         this.hessianScale=hessianScale;
-        interfaceValue = voxels->{
+        interfaceValue = i->{
+            Collection<Voxel> voxels = i.getVoxels();
             if (voxels.isEmpty()) {
                 return Double.NaN;
             } else {
@@ -63,13 +62,13 @@ public class SplitAndMergeHessian extends SplitAndMerge<SplitAndMergeHessian.Int
                 getHessian();
                 for (Voxel v : voxels) {
                     hessSum+=hessian.getPixel(v.x, v.y, v.z);
-                    intensitySum += rawIntensityMap.getPixel(v.x, v.y, v.z);
+                    intensitySum += intensityMap.getPixel(v.x, v.y, v.z);
                 }
                 return hessSum / intensitySum;
             }
         };
     }
-    public SplitAndMergeHessian setInterfaceValue(Function<Set<Voxel>, Double> interfaceValue) {
+    public SplitAndMergeHessian setInterfaceValue(Function<Interface, Double> interfaceValue) {
         this.interfaceValue=interfaceValue;
         return this;
     }
@@ -82,7 +81,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<SplitAndMergeHessian.Int
     public Image getHessian() {
         if (hessian ==null) {
             synchronized(this) {
-                if (hessian==null) hessian=ImageFeatures.getHessian(rawIntensityMap, hessianScale, false)[0].setName("hessian");
+                if (hessian==null) hessian=ImageFeatures.getHessian(intensityMap, hessianScale, false)[0].setName("hessian");
             }
         }
         return hessian;
@@ -92,7 +91,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<SplitAndMergeHessian.Int
     }
 
     public ImageByte getSplitMask() {
-        if (tempSplitMask==null) tempSplitMask = new ImageByte("split mask", rawIntensityMap);
+        if (tempSplitMask==null) tempSplitMask = new ImageByte("split mask", intensityMap);
         return tempSplitMask;
     }
     
@@ -111,7 +110,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<SplitAndMergeHessian.Int
         }
 
         @Override public void updateInterface() {
-            value = interfaceValue.apply(voxels);
+            value = interfaceValue.apply(this);
         }
 
         @Override 

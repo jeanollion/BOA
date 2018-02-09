@@ -38,7 +38,8 @@ import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
  * @author jollion
  */
 public class Sigma implements PreFilter, Filter {
-    ScaleXYZParameter radius = new ScaleXYZParameter("Radius", 2, 1, true).setToolTipText("Radius in pixel");
+    ScaleXYZParameter radius = new ScaleXYZParameter("Radius", 3, 1, true).setToolTipText("Radius in pixel");
+    ScaleXYZParameter medianRadius = new ScaleXYZParameter("Median Filtering Radius", 0, 1, true).setToolTipText("Radius for median filtering, prior to sigma, in pixel. 0 = no median filtering");
     Parameter[] parameters = new Parameter[]{radius};
     public Sigma() {}
     public Sigma(double radius) {
@@ -49,12 +50,23 @@ public class Sigma implements PreFilter, Filter {
         this.radius.setScaleXY(radiusXY);
         this.radius.setScaleZ(radiusZ);
     }
+    public Sigma setMedianRadius(double radius) {
+        this.medianRadius.setScaleXY(radius);
+        this.medianRadius.setUseImageCalibration(true);
+        return this;
+    }
+    public Sigma setMedianRadius(double radiusXY, double radiusZ) {
+        this.medianRadius.setScaleXY(radiusXY);
+        this.medianRadius.setScaleZ(radiusZ);
+        return this;
+    }
     @Override
     public Image runPreFilter(Image input, ImageMask mask) {
-        return filter(input, radius.getScaleXY(), radius.getScaleZ(input.getScaleXY(), input.getScaleZ()));
+        return filter(input, radius.getScaleXY(), radius.getScaleZ(input.getScaleXY(), input.getScaleZ()), medianRadius.getScaleXY(), medianRadius.getScaleZ(input.getScaleXY(), input.getScaleZ()));
     }
     
-    public static Image filter(Image input, double radiusXY, double radiusZ) {
+    public static Image filter(Image input, double radiusXY, double radiusZ, double medianXY, double medianZ) {
+        if (medianXY>1) input = Filters.median(input, null, Filters.getNeighborhood(medianXY, medianZ, input));
         return Filters.sigma(input, null, Filters.getNeighborhood(radiusXY, radiusZ, input));
     }
     @Override

@@ -196,7 +196,7 @@ public class ImageStabilizerXY implements Transformation {
         ReusableQueueWithSourceObject<Bucket, Integer> pyramids = new ReusableQueueWithSourceObject(f, r, true);
         List<Entry<Integer, Integer>> l = new ArrayList<>(mapImageToRef.entrySet());
         Collections.shuffle(l); // shuffle so that pyramids with given gradient have more chance to be used several times
-        List<Pair<String, Exception>> ex = ThreadRunner.execute(l, false, (Entry<Integer, Integer> p, int idx) -> {
+        ThreadRunner.execute(l, false, (Entry<Integer, Integer> p, int idx) -> {
             double[] outParams = new double[2];
             if (p.getKey()==tRef) translationTXYArray[p.getKey()] = new Double[]{0d, 0d};
             else {
@@ -206,7 +206,6 @@ public class ImageStabilizerXY implements Transformation {
             }
             if (debug) logger.debug("t: {}, tRef: {}, dX: {}, dY: {}, rmse: {}, iterations: {}", p.getKey(), p.getValue(), translationTXYArray[p.getKey()][0], translationTXYArray[p.getKey()][1], outParams[0], outParams[1]);
         });
-        if (debug) for (Pair<String, Exception> p : ex) logger.debug(p.key, p.value);
         // translate shifts
         for (int i = 1; i<segments.length; ++i) {
             Double[] ref = translationTXYArray[segments[i][2]];

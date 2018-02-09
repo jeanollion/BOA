@@ -21,12 +21,18 @@ import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
+import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
+import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.imageInteraction.TrackMaskY;
+import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageFloat;
+import boa.image.ImageInteger;
+import boa.image.ImageLabeller;
+import boa.image.ImageMask;
 import boa.image.TypeConverter;
 import boa.image.processing.ImageOperations;
 import static boa.image.processing.ImageOperations.pasteImage;
@@ -34,6 +40,7 @@ import boa.image.processing.ImageTransformation;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 
 /**
@@ -49,29 +56,29 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) throws Exception {
         //smooth.setSelected(true);
         // construct one single image 
-        TrackMaskY tm = new TrackMaskY(new ArrayList<>(preFilteredImages.keySet()), structureIdx, true);
+        TrackMaskYWithMirroring tm = new TrackMaskYWithMirroring(new ArrayList<>(preFilteredImages.keySet()), true, false);
         ImageFloat allImagesY = (ImageFloat)tm.generateEmptyImage("sub mc", new ImageFloat("", 0, 0, 0));
-        ImageFloat floatImage=null;
-        for (StructureObject o : tm.getParents()) {
+        int idx = 0;
+        for (StructureObject o : tm.parents) {
             Image im = preFilteredImages.get(o);
-            if (!(im instanceof ImageFloat)) {
-                floatImage = TypeConverter.toFloat(im, floatImage);
-                im = floatImage;
+            if (!(im instanceof ImageFloat) || !canModifyImages) {
+                im = TypeConverter.toFloat(im, null);
+                preFilteredImages.replace(o, im);
             }
-            pasteImage(im, allImagesY, tm.getObjectOffset(o));
+            correctCorners(o.getMask(), im);
+            tm.pasteMirror(im, allImagesY, idx++);
+            //pasteImage(im, allImagesY, tm.getObjectOffset(o));
         }
         int sizeY = allImagesY.getSizeY();
         allImagesY = mirrorY(allImagesY); // mirror image on both Y ends
         // apply filter
-        double radius = allImagesY.getSizeY()/this.radius.getValue().doubleValue();
+        double radius = allImagesY.getSizeY()/(this.radius.getValue().doubleValue()*tm.mirror);
         IJSubtractBackground.filter(allImagesY, radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);
         allImagesY = allImagesY.crop(new BoundingBox(0, allImagesY.getSizeX()-1, sizeY, 2*sizeY-1, 0, allImagesY.getSizeZ()-1)); // crop
         // recover data
-        if (canModifyImages && floatImage==null) { // paste inside original images
-            for (StructureObject o : tm.getParents()) ImageOperations.pasteImage(allImagesY, preFilteredImages.get(o), null, tm.getObjectOffset(o));
-        } else { // crop and replace original images
-            for (StructureObject o : tm.getParents()) preFilteredImages.replace(o, allImagesY.crop(tm.getObjectOffset(o)));
-        }
+        idx = 0;
+        for (StructureObject o : tm.parents) ImageOperations.pasteImage(allImagesY, preFilteredImages.get(o), null, tm.getObjectOffset(idx++, 1));
+        logger.debug("done");
     }
     
     private static ImageFloat mirrorY(ImageFloat input) { 
@@ -82,10 +89,79 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
         ImageOperations.pasteImage(imageFlip, res, new BoundingBox(0, 2*input.getSizeY(), 0));
         return res;
     }
+    private static void correctCorners(ImageMask mask, Image input) {
+        if (!(mask instanceof BlankMask)) {
+            ImageInteger cornerMask = ImageOperations.andNot(new BlankMask(input), mask, null);
+            List<Region> corners = ImageLabeller.labelImageList(cornerMask);
+            if (!corners.isEmpty()) {
+                //Region parent = new Region((ImageInteger)TypeConverter.toCommonImageType(mask), 1, mask.getSizeZ()==1);
+                //List<Voxel> contour =parent.translate(parent.getBounds().duplicate().reverseOffset()).getContour();
+                for (Region o : corners) {
+                    for (Voxel v : o.getVoxels()) {
+                        Voxel closest = v.duplicate();
+                        closest.y++;
+                        while (v.y<mask.getSizeY() && !mask.insideMask(closest.x, closest.y, closest.z)) ++closest.y;
+                        if (v.y<mask.getSizeY()) input.setPixel(v.x, v.y, v.z, input.getPixel(closest.x, closest.y, closest.z));
+                    }
+                }
+            }
+        }
+    }
 
     @Override
     public Parameter[] getParameters() {
         return parameters;
     }
-    
+    private static class TrackMaskYWithMirroring {
+        int maxParentX, maxParentZ;
+        BoundingBox[] trackOffset;
+        List<StructureObject> parents;
+        int mirror=1;
+        private TrackMaskYWithMirroring(List<StructureObject> parentTrack, boolean middleXZ, boolean mirror) {
+            trackOffset = new BoundingBox[parentTrack.size()];
+            if (mirror) this.mirror=3;
+            this.parents=parentTrack;
+            int maxX=0, maxZ=0;
+            for (int i = 0; i<parentTrack.size(); ++i) { // compute global Y and Z max to center parent masks
+                if (maxX<parentTrack.get(i).getObject().getBounds().getSizeX()) maxX=parentTrack.get(i).getObject().getBounds().getSizeX();
+                if (maxZ<parentTrack.get(i).getObject().getBounds().getSizeZ()) maxZ=parentTrack.get(i).getObject().getBounds().getSizeZ();
+            }
+            maxParentX=maxX;
+            maxParentZ=maxZ;
+            logger.trace("track mask image object: max parent X-size: {} z-size: {}", maxParentX, maxParentZ);
+            int currentOffsetY=0;
+            for (int i = 0; i<parentTrack.size(); ++i) {
+                trackOffset[i] = parentTrack.get(i).getBounds().duplicate().translateToOrigin(); 
+                if (middleXZ) trackOffset[i].translate((int)(0.5+maxParentX/2.0-trackOffset[i].getSizeX()/2.0), currentOffsetY , (int)(0.5+maxParentZ/2.0-trackOffset[i].getSizeZ()/2.0)); // Y & Z middle of parent track
+                else trackOffset[i].translate(0, currentOffsetY, 0); // X & Z up of parent track
+                currentOffsetY+=trackOffset[i].getSizeY()*this.mirror;
+                logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetY);
+            }
+        }
+        public Image generateEmptyImage(String name, Image type) {
+            return Image.createEmptyImage(name, type, new BlankMask("", this.maxParentX, trackOffset[trackOffset.length-1].getyMin()+trackOffset[trackOffset.length-1].getSizeY()*mirror, Math.max(type.getSizeZ(), this.maxParentZ)).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
+        }   
+        public BoundingBox getObjectOffset(int idx, int position) {
+            if (mirror==1) return trackOffset[idx];
+            switch (position) {
+                case 0:
+                    return trackOffset[idx];
+                case 1:
+                    return trackOffset[idx].duplicate().translate(0, trackOffset[idx].getSizeY(), 0);
+                    
+                case 2:
+                    return trackOffset[idx].duplicate().translate(0, trackOffset[idx].getSizeY()*2, 0);
+                    
+                default:
+                    return null;
+            }
+        }
+        public void pasteMirror(Image source, Image dest, int idx) {
+            pasteImage(source, dest, getObjectOffset(idx, 1)); // center
+            if (mirror==1) return;
+            Image imageFlip = ImageTransformation.flip(source, ImageTransformation.Axis.Y);
+            pasteImage(imageFlip, dest, getObjectOffset(idx, 0));
+            pasteImage(imageFlip, dest, getObjectOffset(idx, 2));
+        }
+    }
 }

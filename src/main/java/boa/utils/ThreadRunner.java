@@ -142,16 +142,16 @@ public class ThreadRunner {
     public static int getMaxCPUs() {
         return Runtime.getRuntime().availableProcessors();
     }
-    public static <T> List<Pair<String, Exception>> execute(final T[] array, final boolean setToNull, final ThreadAction<T> action) {
-        return execute(array, setToNull, action, null, null);
+    public static <T> void execute(final T[] array, final boolean setToNull, final ThreadAction<T> action) {
+        execute(array, setToNull, action, null, null);
     }
-    public static <T> List<Pair<String, Exception>> execute(final T[] array, final boolean setToNull, final ThreadAction<T> action, ProgressCallback pcb) {
-        return execute(array, setToNull, action, null, pcb);
+    public static <T> void execute(final T[] array, final boolean setToNull, final ThreadAction<T> action, ProgressCallback pcb) {
+        execute(array, setToNull, action, null, pcb);
     }
     
-    public static <T> List<Pair<String, Exception>> execute(T[] array, final boolean setToNull, final ThreadAction<T> action, ExecutorService executor, ProgressCallback pcb) {
-        if (array==null) return Collections.EMPTY_LIST;
-        if (array.length==0) return Collections.EMPTY_LIST;
+    public static <T> void execute(T[] array, final boolean setToNull, final ThreadAction<T> action, ExecutorService executor, ProgressCallback pcb) {
+        if (array==null) return;
+        if (array.length==0) return;
         if (array.length==1) {
             List<Pair<String, Exception>> errors = new ArrayList<>(1);
             try {
@@ -159,7 +159,7 @@ public class ThreadRunner {
             } catch (Exception e) {
                 errors.add(new Pair(array[0].toString(), e));
             }
-            return errors;
+            if (!errors.isEmpty()) throw new MultipleException(errors);
         }
         if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         CompletionService<Pair<String, Exception>> completion = new ExecutorCompletionService<>(executor);
@@ -193,17 +193,17 @@ public class ThreadRunner {
             }
             if (pcb!=null) pcb.incrementProgress();
         }
-        return errors;
+        if (!errors.isEmpty()) throw new MultipleException(errors);
     }
-    public static <T> List<Pair<String, Exception>> execute(Collection<T> array, boolean removeElements, final ThreadAction<T> action) {
-        return execute(array, removeElements, action, null, null);
+    public static <T> void execute(Collection<T> array, boolean removeElements, final ThreadAction<T> action) {
+        execute(array, removeElements, action, null, null);
     }
-    public static <T> List<Pair<String, Exception>> execute(Collection<T> array, boolean removeElements, final ThreadAction<T> action, ProgressCallback pcb) {
-        return execute(array, removeElements, action, null, pcb);
+    public static <T> void execute(Collection<T> array, boolean removeElements, final ThreadAction<T> action, ProgressCallback pcb) {
+        execute(array, removeElements, action, null, pcb);
     }
-    public static <T> List<Pair<String, Exception>> execute(Collection<T> array, boolean removeElements, final ThreadAction<T> action,  ExecutorService executor, ProgressCallback pcb) {
-        if (array==null) return Collections.EMPTY_LIST;
-        if (array.isEmpty()) return Collections.EMPTY_LIST;
+    public static <T> void execute(Collection<T> array, boolean removeElements, final ThreadAction<T> action,  ExecutorService executor, ProgressCallback pcb) {
+        if (array==null) return;
+        if (array.isEmpty()) return;
         if (array.size()==1) {
             List<Pair<String, Exception>> errors = new ArrayList<>(1);
             T e = array.iterator().next();
@@ -212,7 +212,7 @@ public class ThreadRunner {
             } catch (Exception ex) {              
                 errors.add(new Pair(e.toString(), ex));           
             }
-            return errors;
+            if (!errors.isEmpty()) throw new MultipleException(errors);
         }
         if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         CompletionService<Pair<String, Exception>> completion = new ExecutorCompletionService<>(executor);
@@ -250,7 +250,10 @@ public class ThreadRunner {
             }
             if (pcb!=null) pcb.incrementProgress();
         }
-        return errors;
+        if (!errors.isEmpty()) {
+            throw new Error(errors.get(0).value);
+            //throw new MultipleException(errors);
+        }
     }
     
     public static interface ThreadAction<T> {

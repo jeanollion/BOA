@@ -22,7 +22,6 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PostFilterSequence;
-import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -64,7 +63,7 @@ public class FixedObjectsTracker implements TrackerSegmenter {
                 break;
             }
         }
-        // TODO take into acount trackPreFilters
+        // TODO take into acount trackPreFilters & track parametrizer
         Image input;
         if (av>1) {
             List<Image> toAv = new ArrayList<>(av);

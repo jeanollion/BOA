@@ -252,13 +252,11 @@ public class CompareObjects {
         runOnPositions(pos);
     }
     public void runOnPositions(String... positions) {
-        List<Pair<String, Exception>> exList = ThreadRunner.execute(positions, true, (String position, int idx) -> {
+        ThreadRunner.execute(positions, true, (String position, int idx) -> {
             //setQuality(position); // specific to mutations!! 
             runPosition(position);
         }, null);
-        for (Pair<String, Exception> ex:exList) {
-            logger.error(ex.key, ex.value);
-        }
+
         if (this.fp!=null) db.getSelectionDAO().store(fp);
         if (this.fn!=null) db.getSelectionDAO().store(fn);
         if (this.fpRef!=null) dbRef.getSelectionDAO().store(fpRef);

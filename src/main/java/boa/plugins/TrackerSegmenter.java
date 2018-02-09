@@ -29,7 +29,7 @@ import java.util.List;
  */
 public interface TrackerSegmenter extends Tracker {
     /**
-     * This method segment & assign the children of each element of the {@param parentTrack}, and sets the track links for each child
+     * This method segment & assign the children of each element of the {@param parentTrack}, and sets the track links for each child. Segmenter might implement TrackParametrizable, should be honored in this method
      * @param structureIdx index of child structure to be segmented and tracked
      * @param parentTrack parent track, sorted in the order of increasing timePoint
      * @param trackPreFilters filters to apply before segmentation

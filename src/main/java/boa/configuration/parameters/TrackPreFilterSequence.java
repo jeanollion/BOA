@@ -70,7 +70,7 @@ public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter> 
             first = false;
         }
         if (!e.getExceptions().isEmpty()) {
-            //for (Pair<String, Exception> ex : e.getExceptions()) logger.debug(ex.key, ex.value);
+            for (Pair<String, Exception> ex : e.getExceptions()) logger.debug(ex.key, ex.value);
             throw e;
         }
         return images;

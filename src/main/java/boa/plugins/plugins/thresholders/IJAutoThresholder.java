@@ -31,13 +31,14 @@ import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
+import boa.plugins.ThresholderHisto;
 import boa.utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class IJAutoThresholder implements SimpleThresholder {
+public class IJAutoThresholder implements SimpleThresholder, ThresholderHisto {
     ChoiceParameter method = new ChoiceParameter("Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
     
     public IJAutoThresholder setMethod(AutoThresholder.Method method) {
@@ -57,6 +58,11 @@ public class IJAutoThresholder implements SimpleThresholder {
     
     public static double runThresholder(Image input, ImageMask mask, Method method) {
         return runThresholder(input, mask, null, method, 0);
+    }
+    
+    @Override
+    public double runThresholderHisto(Histogram histogram) {
+        return runThresholder(Method.valueOf(method.getSelectedItem()), histogram);
     }
     
     public static double runThresholder(Image input, ImageMask mask, BoundingBox limits, Method method, double percentageSuplementalBackground) {
@@ -84,5 +90,7 @@ public class IJAutoThresholder implements SimpleThresholder {
     public boolean does3D() {
         return true;
     }
+
+    
     
 }

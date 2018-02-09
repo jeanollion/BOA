@@ -232,9 +232,13 @@ public class JSONUtils {
                 Entry e = (Entry)((JSONObject)o).entrySet().iterator().next();
                 Parameter r = recieveMap.get((String)e.getKey());
                 if (r!=null) {
-                    r.initFromJSONEntry(e.getValue());
-                    ++count;
+                    try {
+                        r.initFromJSONEntry(e.getValue());
+                        ++count;
+                    } catch(Exception ex) {
+                        logger.error("Error While initializing parameter: {} with: {}", r, e);
                     }
+                }
             }
             return count==json.size()||count==list.size();
         } else { 

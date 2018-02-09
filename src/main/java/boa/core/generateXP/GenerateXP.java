@@ -108,6 +108,9 @@ import boa.plugins.plugins.track_post_filter.AverageMask;
 import boa.plugins.plugins.track_pre_filters.NormalizeTrack;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.plugins.plugins.track_pre_filters.Saturate;
+import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
+import boa.plugins.plugins.track_segmenter_parametrizer.GlobalThreshold;
+import boa.plugins.plugins.track_segmenter_parametrizer.ThresholderWithGlobalTrackValue;
 
 
 /**
@@ -456,7 +459,7 @@ public class GenerateXP {
         ps.addTransformation(0, null, cropper).setActivated(true);
         //ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, 0).setCropper(cropper)).setActivated(false); // additional translation to correct chromatic shift
     }
-    public static void setPreprocessingTrans(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
+    public static void setPreprocessingPhase(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.setFrameDuration(4);
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
         ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, true)));
@@ -467,7 +470,7 @@ public class GenerateXP {
     }
     public static void setPreprocessingTransAndMut(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.removeAllTransformations();
-        setPreprocessingTrans(ps, trimFramesStart, trimFramesEnd, scaleXY );
+        setPreprocessingPhase(ps, trimFramesStart, trimFramesEnd, scaleXY );
         ps.addTransformation(1, null, new RemoveStripesSignalExclusion(-1));
         //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, 0, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(false); // nearest -> translation entiers //flip?-1:1 depends on FLIP !!!
     }
@@ -481,6 +484,7 @@ public class GenerateXP {
                     new MicrochannelTracker().setSegmenter(
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
+                    ).addTrackSegmenterParametrizer(new GlobalThreshold()
                     ).addTrackPostFilters(new RemoveMicrochannelsTouchingBackgroundOnSides(2),
                             new RemoveMicrochannelsWithOverexpression(99, 5).setTrim(true),
                             new TrackLengthFilter().setMinSize(5), 
@@ -523,8 +527,8 @@ public class GenerateXP {
         Structure mc = new Structure("Microchannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);
-        setParametersTrans(xp, true, true);
-        if (setUpPreProcessing) setPreprocessingTrans(xp.getPreProcessingTemplate(), trimFramesStart, trimFramesEnd, scaleXY);
+        setParametersPhase(xp, true, true);
+        if (setUpPreProcessing) setPreprocessingPhase(xp.getPreProcessingTemplate(), trimFramesStart, trimFramesEnd, scaleXY);
         return xp;
     }
     public static void deletePositions(Experiment xp, boolean[] deletePositions) {
@@ -555,7 +559,7 @@ public class GenerateXP {
             }
         }
     }
-    public static void setParametersTrans(Experiment xp, boolean processing, boolean measurements) {
+    public static void setParametersPhase(Experiment xp, boolean processing, boolean measurements) {
         Structure mc = xp.getStructure(0);
         Structure bacteria = xp.getStructure(1);
         if (processing) {
@@ -563,7 +567,7 @@ public class GenerateXP {
             if (!subTransPre) mcpc = new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D())).addPreFilters(new IJSubtractBackground(0.3, true, false, true, false));
             else mcpc =new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D()));
             mcpc.addTrackPostFilters(
-                new TrackLengthFilter().setMinSize(100),  
+                new TrackLengthFilter().setMinSize(10),  
                 new RemoveTracksStartingAfterFrame(),
                 new SegmentationPostFilter().addPostFilters(new FitMicrochannelHeadToEdges()),
                 new AverageMask()
@@ -572,14 +576,13 @@ public class GenerateXP {
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
-                            .setSegmenter(new BacteriaTrans())
-                            .setCostParameters(1.5, 3).setThresholdParameters(5, 1, 25, 15)
+                            .setSegmenter(new BacteriaIntensity())
+                            .setCostParameters(1.5, 3)
                             .setCorrectMotherCell(true)
                     ).addTrackPreFilters(
-                        new Saturate(0.03),
-                        new PreFilters().add(new SubtractBackgroundMicrochannel()),
-                        new NormalizeTrack(0.99, true)
-                    )
+                        new SubtractBackgroundMicrochannels(),
+                        new NormalizeTrack(1, true)
+                    ).addTrackSegmenterParametrizer(new ThresholderWithGlobalTrackValue())
             );
             /*bacteria.setProcessingScheme(
                     new SegmentAndTrack(
@@ -588,10 +591,7 @@ public class GenerateXP {
                             .setCostParameters(1.5, 3).setThresholdParameters(0, 1, 25, 15) // was 2
                     )) // was not
             );*/
-            bacteria.setManualSegmenter(new BacteriaTrans()
-                    .setThreshold(new IJAutoThresholder().setMethod(AutoThresholder.Method.MaxEntropy))
-                    .setObjectParameters(50, 1)
-            );
+            
         }
         if (measurements) {
             xp.clearMeasurements();

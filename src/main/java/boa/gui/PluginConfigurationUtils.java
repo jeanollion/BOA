@@ -41,6 +41,7 @@ import boa.plugins.ParameterSetupTracker;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
+import boa.plugins.TrackSegmenterParametrizer.ApplyToSegmenter;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.Transformation;
@@ -59,6 +60,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -96,20 +99,34 @@ public class PluginConfigurationUtils {
                             StructureObject o = sel.get(0);
                             int parentStrutureIdx = o.getExperiment().getStructure(structureIdx).getParentStructure();
                             int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
+                            StructureObject parent = (o.getStructureIdx()>parentStrutureIdx) ? o.getParent(parentStrutureIdx) : o.getChildren(parentStrutureIdx).get(0);
+                            List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parent.getTrackHead(), false);
+                            Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut( parentTrack, true);  // don't modify object directly. 
+                            parent = dupMap.get(parent.getId()); 
+                            parentTrack = parentTrack.stream().map(p->dupMap.get(p.getId())).collect(Collectors.toList());
+                            TreeMap<StructureObject, Image> preFilteredImages = psc.getTrackPreFilters(true).filter(parentStrutureIdx, parentTrack, null);
+                            ApplyToSegmenter  applyToSeg = psc.getTrackSegmenterParametrizer().run(o.getStructureIdx(), parentTrack, preFilteredImages, psc.getSegmenter(), null);
                             if (ps instanceof Segmenter) { // case segmenter -> segment only & call to test method
                                 SegmentOnly so; 
-                                if (psc instanceof SegmentOnly) so = (SegmentOnly)psc;
-                                else so = new SegmentOnly((Segmenter)ps).setPreFilters(psc.getPreFilters()).setPostFilters(psc.getPostFilters());
-                                StructureObject parent = (o.getStructureIdx()>parentStrutureIdx) ? o.getParent(parentStrutureIdx) : o.getChildren(parentStrutureIdx).get(0);
-                                Map<String, StructureObject> dupMap = StructureObjectUtils.duplicateRootTrackAndChangeDAO(true, parent);  
-                                parent = dupMap.get(parent.getId()); // don't modify object directly. 
+                                if (psc instanceof SegmentOnly) {
+                                    so = (SegmentOnly)psc;
+                                    so.getPreFilters().removeAll();
+                                    so.getTrackPreFilters(false).removeAll();
+                                    so.getTrackSegmenterParametrizer().removeAll();
+                                }
+                                else so = new SegmentOnly((Segmenter)ps).setPostFilters(psc.getPostFilters());
+                                
                                 if (segParentStrutureIdx!=parentStrutureIdx && o.getStructureIdx()==segParentStrutureIdx) {
                                     final List<StructureObject> selF = sel;
                                     parent.getChildren(segParentStrutureIdx).removeIf(oo -> !selF.contains(oo));
                                 }
                                 sel = new ArrayList<>();
                                 sel.add(parent);
-                                so.segmentAndTrack(structureIdx, sel, null, (p, s)->((ParameterSetup)s).setTestParameter(parameters[idx].getName()));
+                                ApplyToSegmenter  apply = (p, s)->{
+                                    applyToSeg.apply(p, s); 
+                                    ((ParameterSetup)s).setTestParameter(parameters[idx].getName());
+                                };
+                                so.segmentAndTrack(structureIdx, sel, preFilteredImages, apply, null);
                                 
                             } else if (ps instanceof Tracker) {
                                 boolean segAndTrack = false;
@@ -124,8 +141,6 @@ public class PluginConfigurationUtils {
                                 int i = 0;
                                 while (i+1<sel.size() && sel.get(i+1).getFrame()==sel.get(i).getFrame()+1) ++i;
                                 sel = sel.subList(0, i+1);
-                                Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut(sel, false); // true ? 
-                                List<StructureObject> parentTrack = Utils.transform(sel, oo->dupMap.get(oo.getId()));
                                 logger.debug("getImage: {}, getXP: {}", parentTrack.get(0).getRawImage(0)!=null, parentTrack.get(0).getExperiment()!=null);
                                 // run testing
                                 logger.debug("testing parameter: {}, seg & track: {}", parameters[idx], segAndTrack);
@@ -133,7 +148,7 @@ public class PluginConfigurationUtils {
                                 ps.setTestParameter(parameters[idx].getName());
                                 TrackPostFilterSequence tpf=null;
                                 if (psc instanceof ProcessingSchemeWithTracking) tpf = ((ProcessingSchemeWithTracking)psc).getTrackPostFilters();
-                                if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getTrackPreFilters(true), psc.getPostFilters());
+                                if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getTrackPreFilters(true), psc.getTrackSegmenterParametrizer(), psc.getPostFilters());
                                 else ((Tracker)ps).track(structureIdx, parentTrack);
                                 if (tpf!=null) tpf.filter(structureIdx, parentTrack, null);
                                 

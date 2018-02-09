@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 jollion
+ * Copyright (C) 2018 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,10 +17,12 @@
  */
 package boa.plugins;
 
+import boa.image.Histogram;
+
 /**
  *
  * @author jollion
  */
-public interface OverridableThresholdWithSimpleThresholder extends OverridableThreshold {
-    public SimpleThresholder getThresholder();
+public interface ThresholderHisto extends Plugin {
+    public double runThresholderHisto(Histogram histogram);
 }

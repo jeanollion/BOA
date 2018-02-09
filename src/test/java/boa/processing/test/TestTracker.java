@@ -72,9 +72,9 @@ public class TestTracker {
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx =0;
-        int mcIdx =7;
+        int mcIdx =0;
         int structureIdx = 1;
-        int[] frames = new int[]{1, 1000};
+        int[] frames = new int[]{48, 48};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -127,16 +127,15 @@ public class TestTracker {
         LAPTracker.registerTMI=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
-        List<Pair<String, Exception>> l;
+
         CropMicroChannelFluo2D.debug=false;
         if (ps instanceof ProcessingSchemeWithTracking && structureIdx==0) {
             TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)ps).getTrackPostFilters();
             for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) if (pp.instanciatePlugin() instanceof TrackLengthFilter) pp.setActivated(false);
         }
         
-        if (trackOnly) l=ps.trackOnly(structureIdx, parentTrack, null);
-        else l=ps.segmentAndTrack(structureIdx, parentTrack, null);
-        for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);
+        ps.trackOnly(structureIdx, parentTrack, null);
+        ps.segmentAndTrack(structureIdx, parentTrack, null);
         logger.debug("track: {} ({}) children of {} = ({})", StructureObjectUtils.getAllTracks(parentTrack, structureIdx).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, structureIdx).values(), o->o.size()), parentTrack.get(0), parentTrack.get(0).getChildren(structureIdx));
 
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();

@@ -36,16 +36,6 @@ import boa.image.ImageLabeller;
 import boa.image.processing.ImageOperations;
 import static boa.image.processing.ImageOperations.threshold;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import boa.plugins.ParameterSetup;
-import boa.plugins.Segmenter;
-import boa.plugins.Thresholder;
-import boa.plugins.OverridableThresholdWithSimpleThresholder;
-import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
 import boa.plugins.plugins.transformations.CropMicroChannels;
@@ -53,6 +43,7 @@ import boa.plugins.plugins.transformations.CropMicroChannels.Result;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
+import boa.plugins.OverridableThreshold;
 import boa.utils.ArrayUtil;
 import static boa.utils.Utils.plotProfile;
 import boa.plugins.OverridableThresholdMap;
@@ -61,7 +52,7 @@ import boa.plugins.OverridableThresholdMap;
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements MicrochannelSegmenter, OverridableThresholdWithSimpleThresholder, OverridableThresholdMap {
+public class MicroChannelFluo2D implements MicrochannelSegmenter, OverridableThreshold, OverridableThresholdMap {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 430, 5, null).setToolTipText("Height of microchannel in pixels");
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
@@ -173,10 +164,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, OverridableThr
     // use threshold implementation
     protected double thresholdValue = Double.NaN;
     ImageInteger thresholdedImage = null;
-    @Override
-    public boa.plugins.SimpleThresholder getThresholder() {
-        return this.threshold.instanciatePlugin();
-    }
+
 
     @Override
     public void setThresholdValue(double threhsold) {

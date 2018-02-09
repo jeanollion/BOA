@@ -62,7 +62,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
     public void filter(int structureIdx, List<StructureObject> parentTrack) throws MultipleException {
         if (postFilters.getChildCount()==0) return;
         List<StructureObject> objectsToRemove = new ArrayList<>();
-        List<Pair<String, Exception>> errors = ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
+        ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             
             pop.translate(parent.getBounds().duplicate().reverseOffset(), false); // go back to relative landmark
@@ -92,10 +92,6 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
                 for (StructureObject th : trackHeads) objectsToRemove.addAll(StructureObjectUtils.getTrack(th, false));
                 ManualCorrection.deleteObjects(null, objectsToRemove, false);
             }
-        }
-        
-        if (!errors.isEmpty()) { // throw one exception for all
-            throw new MultipleException(errors);
         }
     }
 

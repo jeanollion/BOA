@@ -41,7 +41,7 @@ public class GenerateXPConfig {
         exportXP(path, xpTrans, false);
         
         Experiment xpTransFluo = GenerateXP.generateXPFluo("MotherMachinePhaseContrastAndMutations", null, true, 0, 0, Double.NaN, null);
-        GenerateXP.setParametersTrans(xpTransFluo, true, false);
+        GenerateXP.setParametersPhase(xpTransFluo, true, false);
         PreProcessingChain ps = xpTransFluo.getPreProcessingTemplate();
         ps.removeAllTransformations();
         GenerateXP.setPreprocessingTransAndMut(ps, 0, 0, Double.NaN);

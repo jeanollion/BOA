@@ -44,12 +44,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import boa.plugins.PluginFactory;
+import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
-import boa.plugins.plugins.pre_filters.IJSubtractBackground;
+import boa.plugins.TrackParametrizable;
+import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
 import boa.plugins.legacy.BacteriaShape;
 import boa.plugins.legacy.BacteriaTrans;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *
@@ -66,10 +69,11 @@ public class TestProcessBacteriaPhase {
         //String dbName = "MF1_170523";
         //String dbName = "MutD5_141209";
         String dbName = "MutH_150324";
+        //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
         int microChannel =1;
-        int[] time =new int[]{75, 75}; //47
+        int[] time =new int[]{1, 200}; //22
         //setMask=true;
         //thld = 776;
         
@@ -140,31 +144,22 @@ public class TestProcessBacteriaPhase {
         allMCTracks.entrySet().removeIf(o->o.getKey().getIdx()!=microChannel);
         List<StructureObject> parentTrack = allMCTracks.entrySet().iterator().next().getValue();
         //parentTrack.removeIf(o -> o.getFrame()<1 || o.getFrame()>200); // GRANDE DIFFERENCE POUR SUBBACK -> vient de saturate?
-        Map<StructureObject, Image> preFilteredImages;
-        preFilteredImages = mDAO.getExperiment().getStructure(1).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
+        TreeMap<StructureObject, Image> preFilteredImages;
+        ProcessingScheme psc = mDAO.getExperiment().getStructure(1).getProcessingScheme();
+        preFilteredImages = psc.getTrackPreFilters(true).filter(0, parentTrack, null);
+        ApplyToSegmenter apply = TrackParametrizable.getApplyToSegmenter(timePointMax, psc.getSegmenter(), preFilteredImages, null);
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {
             Image input = preFilteredImages.get(mc);
-            Segmenter seg = mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
-            //BacteriaShape seg = new BacteriaShape();
+            Segmenter seg = psc.getSegmenter();
+            if (apply!=null) apply.apply(mc, seg);
             if (parentTrack.size()==1) {
                 if (seg instanceof BacteriaIntensity) ((BacteriaIntensity)seg).testMode=true;
                 if (seg instanceof BacteriaShape) ((BacteriaShape)seg).testMode=true;
             }
-            /*BacteriaTrans.debug=true;
-            BacteriaTrans seg = new BacteriaTrans();
-            if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
-                seg = (BacteriaTrans) mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
-                if (setMask) seg.setThresholdedImage((ImageInteger)ImageReader.openIJTif("/data/Images/MOP/ThldPlaneF"+timePointMin+".tif")); //open radius = 3 ou appliquer le filtre pour objets phase ? 
-                logger.debug("using seg from XP: {}", seg);
-                if (!mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().getActivatedChildren().isEmpty()) ImageWindowManagerFactory.showImage(input);
-                input = mDAO.getExperiment().getStructure(1).getProcessingScheme().getPreFilters().filter(input, mc.getMask()).setName("preFiltered");
-                if (normalize) input = ImageOperations.normalize(input, null, null);
-            }
-            if (!Double.isNaN(thld)) seg.setThresholdValue(thld);*/
             mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
-            mc.setRawImage(0, input);
+            //mc.setRawImage(0, input);
             logger.debug("seg: tp {}, #objects: {}", mc.getFrame(), mc.getChildren(1).size());
         }
         //if (true) return;

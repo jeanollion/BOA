@@ -225,7 +225,7 @@ public class ImageOperations {
     public static void pasteImage(Image source, Image dest, BoundingBox offset) {
         if (source.getClass()!=dest.getClass()) throw new IllegalArgumentException("Paste Image: source and destination should be of the same type (source: "+source.getClass().getSimpleName()+ " destination: "+dest.getClass().getSimpleName()+")");
         if (offset == null) offset = new BoundingBox(0, 0, 0);
-        if (source.getSizeX()+offset.getxMin()>dest.getSizeX() || source.getSizeY()+offset.getyMin()>dest.getSizeY() || source.getSizeZ()+offset.getzMin()>dest.getSizeZ()) throw new IllegalArgumentException("Paste Image: source ("+source.getBoundingBox()+") does not fit in destination ("+dest.getBoundingBox()+")");
+        if (source.getSizeX()+offset.getxMin()>dest.getSizeX() || source.getSizeY()+offset.getyMin()>dest.getSizeY() || source.getSizeZ()+offset.getzMin()>dest.getSizeZ()) throw new IllegalArgumentException("Paste Image: source ("+source.getBoundingBox().translateToOrigin()+") does not fit in destination ("+dest.getBoundingBox().translateToOrigin()+") offset: "+offset );
         Object[] sourceP = source.getPixelArray();
         Object[] destP = dest.getPixelArray();
         final int offDestFinal = dest.getSizeX()*offset.getyMin()+offset.getxMin();

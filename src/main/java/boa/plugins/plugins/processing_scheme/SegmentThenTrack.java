@@ -41,9 +41,6 @@ import boa.plugins.TrackPostFilter;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.Tracker;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
-import boa.utils.MultipleException;
-import boa.utils.Pair;
-import boa.utils.ThreadRunner;
 
 /**
  *
@@ -125,64 +122,49 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
     public Tracker getTracker() {return tracker.instanciatePlugin();}
 
     @Override
-    public List<Pair<String, Exception>> segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
-        return segmentThenTrack(structureIdx, parentTrack, executor);
+    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
+        segmentThenTrack(structureIdx, parentTrack, executor);
     }
     
     //@Override
-    public List<Pair<String, Exception>> segmentThenTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
-        if (parentTrack.isEmpty()) return Collections.EMPTY_LIST;
+    public void segmentThenTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
+        if (parentTrack.isEmpty()) return;
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
-            return Collections.EMPTY_LIST;
+            return;
         }
         if (!tracker.isOnePluginSet()) {
             logger.info("No tracker set for structure: {}", structureIdx);
-            return Collections.EMPTY_LIST;
+            return;
         }
-        List<Pair<String, Exception>> res = new ArrayList<>();
-        List<Pair<String, Exception>> l = segmentOnly(structureIdx, parentTrack, executor);
-        List<Pair<String, Exception>> l2 = trackOnly(structureIdx, parentTrack, executor);
-        res.addAll(l);
-        res.addAll(l2);
-        try {
-            trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
-        }catch (MultipleException me) {
-            l.addAll(me.getExceptions());
-        } catch (Exception ex) {
-            l.add(new Pair(parentTrack.get(0).toString(), ex));
-        }
-        return res;
+        segmentOnly(structureIdx, parentTrack, executor);
+        trackOnly(structureIdx, parentTrack, executor);
+        trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
     }
-    public List<Pair<String, Exception>> segmentOnly(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
+    public void segmentOnly(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
-            return Collections.EMPTY_LIST;
+            return;
         }
-        if (parentTrack.isEmpty()) return Collections.EMPTY_LIST;
+        if (parentTrack.isEmpty()) return;
         SegmentOnly seg = new SegmentOnly(segmenter.instanciatePlugin()).setPreFilters(preFilters).setTrackPreFilters(trackPreFilters).setPostFilters(postFilters);
-        return seg.segmentAndTrack(structureIdx, parentTrack, executor);
+        seg.segmentAndTrack(structureIdx, parentTrack, executor);
     }
 
     @Override
-    public List<Pair<String, Exception>> trackOnly(final int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {
+    public void trackOnly(final int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {
         if (!tracker.isOnePluginSet()) {
             logger.info("No tracker set for structure: {}", structureIdx);
-            return Collections.EMPTY_LIST;
+            return;
         }
         for (StructureObject parent : parentTrack) {
             for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks(true, true);
         }
-        List<Pair<String, Exception>> l = Collections.EMPTY_LIST;
-        try {
-            Tracker t = tracker.instanciatePlugin();
-            if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
-            t.track(structureIdx, parentTrack);
-        } catch (Exception ex) {
-            l = new ArrayList<>(1);
-            l.add(new Pair(parentTrack.get(0).toString(), ex));
-        }
-        return l;
+        
+        Tracker t = tracker.instanciatePlugin();
+        if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
+        t.track(structureIdx, parentTrack);
+        
     }
 
     @Override

@@ -79,7 +79,7 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
         if (!feature.isOnePluginSet()) return;
         Map<Region, Double> valueMap = new HashMap<>();
         // compute feature for each object, by parent
-        List<Pair<String, Exception>> errors = ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
+        ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             ObjectFeature f = feature.instanciatePlugin();
             f.setUp(parent, structureIdx, pop);
@@ -105,10 +105,6 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
             }
         }
         if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false); // only delete
-        
-        if (!errors.isEmpty()) { // throw one exception for all
-            throw new MultipleException(errors);
-        }
     }
 
     @Override

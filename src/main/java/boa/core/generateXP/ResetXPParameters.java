@@ -56,7 +56,7 @@ public class ResetXPParameters {
             logger.error("DB {} not found", dbName);
             return;
         }
-        GenerateXP.setParametersTrans(db.getExperiment(), processing, measurements);
+        GenerateXP.setParametersPhase(db.getExperiment(), processing, measurements);
         db.updateExperiment();
     }
     public static void resetParametersFluo(String dbName, String dir, boolean processing, boolean measurements) {

@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker;
+package boa.plugins.legacy.trackHisto;
 
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;

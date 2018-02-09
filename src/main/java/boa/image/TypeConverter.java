@@ -108,10 +108,10 @@ public class TypeConverter {
         }
         return output;
     }
-    public static boolean isCommonImageType(Image image) {
+    public static boolean isCommonImageType(ImageProperties image) {
         return (image instanceof ImageByte || image instanceof ImageShort || image instanceof ImageFloat);
     }
-    public static boolean isNumeric(Image image) {
+    public static boolean isNumeric(ImageProperties image) {
         return (image instanceof ImageByte || image instanceof ImageShort || image instanceof ImageFloat || image instanceof ImageInt);
     }
     /**
@@ -119,15 +119,15 @@ public class TypeConverter {
      * @param image input image
      * @return an image of type ImageByte, ImageShort or ImageFloat. If {@param image} is of type ImageByte, ImageShort or ImageFloat {@Return}={@param image}. If {@param image} is of type ImageInt, it is cast as a ShortImage {@link TypeConverter#toShort(image.Image) } if its maximum value is inferior to 65535 or a FloatImage {@link TypeConverter#toFloat(image.Image) }. If {@param image} is a mask if will be converted to a mask: {@link TypeConverter#toByteMask(image.ImageMask) }
      */
-    public static Image toCommonImageType(Image image) {
-        if (isCommonImageType(image)) return image;
+    public static Image toCommonImageType(ImageProperties image) {
+        if (isCommonImageType(image)) return (Image)image;
         else if (image instanceof ImageInt) {
-            double[] mm = image.getMinAndMax(null);
-            if (mm[1]>(65535)) return toFloat(image, null);
-            else return toShort(image, null);
+            double[] mm = ((Image)image).getMinAndMax(null);
+            if (mm[1]>(65535)) return toFloat((Image)image, null);
+            else return toShort((Image)image, null);
         }
         else if (image instanceof ImageMask) return toByteMask((ImageMask)image, null, 1);
-        else return toFloat(image, null);
+        else return toFloat((Image)image, null);
     }
     
     public static <T extends Image> T cast(Image source, T output) {

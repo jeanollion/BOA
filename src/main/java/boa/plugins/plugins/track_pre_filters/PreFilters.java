@@ -52,8 +52,7 @@ public class PreFilters implements TrackPreFilter, MultiThreaded {
         ThreadRunner.ThreadAction<Map.Entry<StructureObject, Image>> ta = (Map.Entry<StructureObject, Image> e, int idx) -> {
             e.setValue(preFilters.filter(e.getValue(), e.getKey().getMask()));
         };
-        List<Pair<String, Exception>> ex = ThreadRunner.execute(col, false, ta, executor, null);
-        if (!ex.isEmpty()) throw new MultipleException(ex);
+        ThreadRunner.execute(col, false, ta, executor, null);
     }
 
     @Override

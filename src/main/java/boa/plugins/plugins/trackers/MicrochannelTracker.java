@@ -50,9 +50,9 @@ import java.util.stream.Collectors;
 import boa.plugins.MultiThreaded;
 import boa.plugins.Segmenter;
 import boa.plugins.Thresholder;
+import boa.plugins.TrackParametrizable;
+import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.TrackerSegmenter;
-import boa.plugins.OverridableThresholdWithSimpleThresholder;
-import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
 import boa.plugins.plugins.segmenters.MicrochannelSegmenter;
 import static boa.plugins.plugins.trackers.ObjectIdxTracker.getComparator;
@@ -69,7 +69,6 @@ import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
 import java.util.TreeMap;
-import boa.plugins.OverridableThresholdMap;
 
 /**
  *
@@ -128,38 +127,25 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         if (parentTrack.isEmpty()) return;
         // segmentation
         final Result[] boundingBoxes = new Result[parentTrack.size()];
-        
-        MicrochannelSegmenter[] segmenters = new MicrochannelSegmenter[parentTrack.size()];
-        for (int i = 0; i<parentTrack.size(); ++i) segmenters[i] = getSegmenter();
         TreeMap<StructureObject, Image> ii = trackPreFilters.filter(structureIdx, parentTrack, executor);
         Image[] inputImages = ii.values().toArray(new Image[parentTrack.size()]);
-        if (segmenters[0] instanceof OverridableThresholdWithSimpleThresholder) {
-            Image[] inputImagesToThld = new Image[inputImages.length];
-            for (int i = 0; i<parentTrack.size(); ++i) {
-                inputImagesToThld[i] = ((OverridableThresholdWithSimpleThresholder)segmenters[i]).getImageForThresholdComputation(inputImages[i], structureIdx, parentTrack.get(i));
-            }
-            Image globalImage = Image.mergeZPlanes(Arrays.asList(inputImagesToThld)); //TODO error if not same size... 
-            //ImageWindowManagerFactory.showImage(globalImage);
-            boa.plugins.SimpleThresholder t = ((OverridableThresholdWithSimpleThresholder)segmenters[0]).getThresholder();
-            double globalThld = t.runSimpleThresholder(globalImage, null);
-            for (int i = 0; i<parentTrack.size(); ++i) ((OverridableThresholdWithSimpleThresholder)segmenters[i]).setThresholdValue(globalThld);
-            logger.debug("MicrochannelTracker on {}: global Treshold = {}", parentTrack.get(0), globalThld);
-        }
+        // CHECK THAT GLOBAL THLD IS SET IN CONFIG
+        ApplyToSegmenter applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, segmenter.instanciatePlugin(), ii, executor);
         ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
-            boundingBoxes[idx] = segmenters[idx].segment(inputImages[idx]);
+            MicrochannelSegmenter s = segmenter.instanciatePlugin();
+            if (applyToSegmenter !=null) applyToSegmenter.apply(parent, s);
+            boundingBoxes[idx] = s.segment(inputImages[idx]);
             if (boundingBoxes[idx]==null) parent.setChildren(new ArrayList<>(), structureIdx); // if not set and call to getChildren() -> DAO will set old children
             //else parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards // TODO if post filter remove objects or modify -> how to link with result object??
             else parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx); // no Y - shift here because the mean shift is added afterwards
             inputImages[idx]=null;
-            segmenters[idx]=null;
         };
         /*MicrochannelPhase2D.debug=true;
         ta.run(parentTrack.get(0), structureIdx);
         MicrochannelPhase2D.debug=false;
         */
         
-        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(parentTrack, false, ta, executor, null);
-        for (Pair<String, Exception> p : exceptions) logger.debug(p.key, p.value);
+        ThreadRunner.execute(parentTrack, false, ta, executor, null);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
         if (debug && boundingBoxes.length>0) {
