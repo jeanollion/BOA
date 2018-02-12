@@ -72,8 +72,8 @@ public class TestProcessBacteriaPhase {
         //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =4;
-        int[] time =new int[]{0, 1000}; //22
+        int microChannel =5;
+        int[] time =new int[]{459, 459}; //22
         //setMask=true;
         //thld = 776;
         
@@ -103,11 +103,11 @@ public class TestProcessBacteriaPhase {
         List<Region> res = new ArrayList<>();
         //pop.translate(input.getBoundingBox(), true);
         ImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(pop.getObjects().get(oIdx).getMask().crop(input.getBoundingBox().translateToOrigin()));
+        disp.showImage(pop.getRegions().get(oIdx).getMask().crop(input.getBoundingBox().translateToOrigin()));
         //seg.split(input.resetOffset().crop(pop.getObjects().get(oIdx).getBounds()), pop.getObjects().get(oIdx), res);
         BacteriaTrans seg = new BacteriaTrans();
         seg.setSplitVerboseMode(true);
-        seg.split(input, pop.getObjects().get(oIdx), res);
+        seg.split(input, pop.getRegions().get(oIdx), res);
         
         ImageByte splitMap = new ImageByte("splitted objects", pop.getLabelMap());
         int label=1;

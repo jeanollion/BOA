@@ -1,6 +1,11 @@
 package boa.image;
 
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.utils.ArrayUtil;
+import boa.utils.StreamConcatenation;
+import boa.utils.Utils;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 public class BlankMask extends ImageInteger implements ImageMask {
 
@@ -27,7 +32,18 @@ public class BlankMask extends ImageInteger implements ImageMask {
     public BlankMask(String name, BoundingBox bounds, float scaleXY, float scaleZ) {
         this(name, bounds.getSizeX(), bounds.getSizeY(), bounds.getSizeZ(), bounds.getxMin(), bounds.getyMin(), bounds.getzMin(), scaleXY, scaleZ);
     }
-    
+    public DoubleStream streamPlane(int z) {
+        return IntStream.range(0, 1).mapToDouble(i->1);
+    }
+    public DoubleStream stream() {
+        return IntStream.range(0, 1).mapToDouble(i->1);
+    }
+    @Override public IntStream streamIntPlane(int z) {
+        return IntStream.range(0, 1).map(i->1);
+    }
+    @Override public IntStream streamInt() {
+        return IntStream.range(0, 1).map(i->1);
+    }
     @Override
     public Image getZPlane(int idxZ) {
         return new BlankMask(name, sizeX, sizeY, 1, offsetX, offsetY, offsetZ+idxZ, scaleXY, scaleZ);

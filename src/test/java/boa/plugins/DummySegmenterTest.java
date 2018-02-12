@@ -37,7 +37,7 @@ public class DummySegmenterTest {
         DummySegmenter s = new DummySegmenter(true, 2);
         ImageByte in = new ImageByte("", 50, 50, 2);
         RegionPopulation pop = s.runSegmenter(in, 0, null);
-        assertEquals("number of objects", 2, pop.getObjects().size());
+        assertEquals("number of objects", 2, pop.getRegions().size());
         ImageInteger image = pop.getLabelMap();
         Region[] obs = ImageLabeller.labelImage(image);
         assertEquals("number of objects from image", 2, obs.length);

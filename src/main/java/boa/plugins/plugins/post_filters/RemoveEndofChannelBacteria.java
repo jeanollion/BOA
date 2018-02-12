@@ -63,7 +63,7 @@ public class RemoveEndofChannelBacteria implements PostFilter {
         final double contactSideThld = contactSidesProportion.getValue().doubleValue();
         final double sizeLimit  = this.sizeLimit.getValue().doubleValue();
         childPopulation.filter(o->{
-            if (doNotRemoveIfOnlyOne.getSelected() && childPopulation.getObjects().size()==1) return true;
+            if (doNotRemoveIfOnlyOne.getSelected() && childPopulation.getRegions().size()==1) return true;
             double thickX = GeometricalMeasurements.medianThicknessX(o);
             if (contactThld>0) {
                 double contactDown = yDown.getContact(o);

@@ -63,9 +63,9 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
     }
     public static void fitHead(Image edgeMap, RegionPopulation inputPop) {
         if (debug) ImageWindowManagerFactory.showImage(edgeMap);
-        for (Region o : inputPop.getObjects()) cutHead(edgeMap, 3, o);
+        for (Region o : inputPop.getRegions()) cutHead(edgeMap, 3, o);
         inputPop.redrawLabelMap(true);
-        if (debug && !inputPop.getObjects().isEmpty()) logger.debug("object mask type: {}", inputPop.getObjects().get(0).getMask().getClass().getSimpleName());
+        if (debug && !inputPop.getRegions().isEmpty()) logger.debug("object mask type: {}", inputPop.getRegions().get(0).getMask().getClass().getSimpleName());
     }
     
     private static void cutHead(Image edgeMap, int margin, Region object) {
@@ -91,9 +91,9 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         seeds.addAll(ImageLabeller.labelImageList(maxL));
         //seeds.add(new Region(new Voxel((gradLocal.getSizeX()-1)/2, (gradLocal.getSizeY()-1)/2, 0), ++label, (float)scaleXY, (float)scaleZ));
         RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, null, false);
-        pop.getObjects().removeIf(o->!o.getVoxels().contains(corner1)&&!o.getVoxels().contains(corner2));
+        pop.getRegions().removeIf(o->!o.getVoxels().contains(corner1)&&!o.getVoxels().contains(corner2));
         pop.translate(head, true);
-        for (Region o : pop.getObjects()) {
+        for (Region o : pop.getRegions()) {
             object.removeVoxels(o.getVoxels());
             if (debug)logger.debug("object: {} remove: {} voxels, left: {}", o, o.getVoxels().size(), object.getVoxels().size());
         }

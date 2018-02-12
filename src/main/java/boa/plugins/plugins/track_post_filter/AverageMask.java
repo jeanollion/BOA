@@ -77,7 +77,7 @@ public class AverageMask implements TrackPostFilter{
                 }
                 RegionPopulation pop = new RegionPopulation(mask, true);
                 pop.translate(mask.getBoundingBox(), true);
-                o.setObject(pop.getObjects().get(0));
+                o.setObject(pop.getRegions().get(0));
             }
         }
     }

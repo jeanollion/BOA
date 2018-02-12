@@ -67,9 +67,9 @@ public class WatershedSegmenter implements Segmenter {
         }
         double thld = threshlod.instanciatePlugin().runSimpleThresholder(intensityMap, parent.getMask());
         
-        int tot = pop.getObjects().size();
+        int tot = pop.getRegions().size();
         pop.filter(new MeanIntensity(thld, foregroundOverThreshold.getSelected(), intensityMap));
-        if (debug) logger.debug("WatershedSegmenter: threshold: {}, kept: {}/{}", thld, pop.getObjects().size(), tot);
+        if (debug) logger.debug("WatershedSegmenter: threshold: {}, kept: {}/{}", thld, pop.getRegions().size(), tot);
         return pop;
     }
     

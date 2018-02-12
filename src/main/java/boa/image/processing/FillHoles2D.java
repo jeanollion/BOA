@@ -57,13 +57,13 @@ public class FillHoles2D {
         RegionPopulation closePop = new RegionPopulation(close, false);
         if (debug) disp.showImage(closePop.getLabelMap().duplicate("close XOR"));
         closePop.filter(new InterfaceSizeFilter(foregroundPop, minSizeFusion, backgroundProportion));
-        if (!closePop.getObjects().isEmpty()) {
+        if (!closePop.getRegions().isEmpty()) {
             if (debug) {
                 closePop.relabel(true);
                 disp.showImage(closePop.getLabelMap().duplicate("close XOR after filter"));
                 disp.showImage(foregroundPop.getLabelMap().duplicate("seg map before close"));
             }
-            for (Region o : closePop.getObjects()) o.draw(image, 1);
+            for (Region o : closePop.getRegions()) o.draw(image, 1);
             return true;
         } else return false;
     }
@@ -73,7 +73,7 @@ public class FillHoles2D {
     // 21/May/2008
 
     public static void fillHoles(RegionPopulation pop) {
-        for (Region o : pop.getObjects()) {
+        for (Region o : pop.getRegions()) {
             fillHoles(o.getMask(), 2);
             o.resetVoxels();
             o.getVoxels();
@@ -146,9 +146,9 @@ public class FillHoles2D {
         public void init(RegionPopulation population) {
             if (!population.getImageProperties().sameSize(foregroundObjects.getImageProperties())) throw new IllegalArgumentException("Foreground objects population should have same bounds as current population");
             ClusterCollection.InterfaceFactory<Region, SimpleInterfaceVoxelSet> f = (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new SimpleInterfaceVoxelSet(e1, e2);
-            List<Region> allObjects = new ArrayList<>(population.getObjects().size()+foregroundObjects.getObjects().size());
-            allObjects.addAll(population.getObjects());
-            allObjects.addAll(foregroundObjects.getObjects());
+            List<Region> allObjects = new ArrayList<>(population.getRegions().size()+foregroundObjects.getRegions().size());
+            allObjects.addAll(population.getRegions());
+            allObjects.addAll(foregroundObjects.getRegions());
             RegionPopulation mixedPop = new RegionPopulation(allObjects, population.getImageProperties());
             mixedPop.relabel();
             clust = new RegionCluster(mixedPop, true, false, f); // high connectivity -> more selective 

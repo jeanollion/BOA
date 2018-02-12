@@ -415,16 +415,20 @@ public class Region {
      * @param image
      * @param threshold
      * @param removeIfLowerThanThreshold
+     * @param keepOnlyBiggestObject
      * @param contour will be modified if a set
+     * @return if any change was made
      */
-    public void erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, boolean keepOnlyBiggestObject, Collection<Voxel> contour) {
+    public boolean erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, boolean keepOnlyBiggestObject, Collection<Voxel> contour) {
+        boolean changes = false;
         TreeSet<Voxel> heap = contour==null ? new TreeSet<>(getContour()) : new TreeSet<>(contour);
-        EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
+        EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
         ImageInteger mask = getMask();
         int xx, yy, zz;
         while(!heap.isEmpty()) {
             Voxel v = heap.pollFirst();
             if (removeIfLowerThanThreshold ? image.getPixel(v.x, v.y, v.z)<=threshold : image.getPixel(v.x, v.y, v.z)>=threshold) {
+                changes = true;
                 mask.setPixel(v.x-mask.getOffsetX(), v.y-mask.getOffsetY(), v.z-mask.getOffsetZ(), 0);
                 for (int i = 0; i<neigh.dx.length; ++i) {
                     xx=v.x+neigh.dx[i];
@@ -436,15 +440,48 @@ public class Region {
                 }
             }
         }
-        if (keepOnlyBiggestObject) { // check if 2 objects and erase all but smallest
+        if (changes && keepOnlyBiggestObject) { // check if 2 objects and erase all but smallest
             List<Region> objects = ImageLabeller.labelImageListLowConnectivity(mask);
             if (objects.size()>1) {
                 objects.remove(Collections.max(objects, comparatorInt(o->o.getSize())));
                 for (Region toErase: objects) toErase.draw(mask, 0);
             }
         }
-        voxels = null; // reset voxels
-        // TODO reset bounds ?
+        if (changes)  voxels = null; // reset voxels
+        return changes;
+    }
+    public boolean erodeContoursEdge(Image image, boolean keepOnlyBiggestObject) {
+        boolean changes = false;
+        TreeSet<Voxel> heap = new TreeSet<>(getContour());
+        EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
+        ImageInteger mask = getMask();
+        int xx, yy, zz;
+        while(!heap.isEmpty()) {
+            Voxel v = heap.pollFirst();
+            double value = image.getPixel(v.x, v.y, v.z);
+            for (int i = 0; i<neigh.dx.length; ++i) {
+                xx=v.x+neigh.dx[i];
+                yy=v.y+neigh.dy[i];
+                zz=v.z+neigh.dz[i];
+                if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) {
+                    double value2 = image.getPixel(xx, yy, zz);
+                    if (value2>value) {
+                        changes = true;
+                        mask.setPixel(v.x-mask.getOffsetX(), v.y-mask.getOffsetY(), v.z-mask.getOffsetZ(), 0);
+                        heap.add(new Voxel(xx, yy, zz));
+                    }
+                }
+            }
+        }
+        if (changes && keepOnlyBiggestObject) { // check if 2 objects and erase all but smallest
+            List<Region> objects = ImageLabeller.labelImageListLowConnectivity(mask);
+            if (objects.size()>1) {
+                objects.remove(Collections.max(objects, comparatorInt(o->o.getSize())));
+                for (Region toErase: objects) toErase.draw(mask, 0);
+            }
+        }
+        if (changes) voxels = null; // reset voxels
+        return changes;
     }
     
     public void dilateContours(Image image, double threshold, boolean addIfHigherThanThreshold, Collection<Voxel> contour, ImageInteger labelMap) {

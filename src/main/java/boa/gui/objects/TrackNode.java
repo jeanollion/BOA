@@ -292,6 +292,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
                             */
                             for (TrackNode n : root.generator.getSelectedTrackNodes()) {
+                                logger.debug("run seg & track on : {}", n);
                                 Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
                             }
                             
@@ -315,9 +316,6 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                         public void actionPerformed(ActionEvent ae) {
                             final int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             logger.debug("running tracking for structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
-                            /*Experiment xp = root.generator.getExperiment();
-                            Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
-                            */
                             for (TrackNode n : root.generator.getSelectedTrackNodes()) {
                                 Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
                             }

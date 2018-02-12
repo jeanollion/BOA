@@ -249,7 +249,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         for (int i = 0; i<pops.length; ++i) { // TODO voir si en 3D pas mieux avec gaussian
             int z = i/scale.length;
             setCenterAndQuality(wsMap[i], smooth, pops[i], z);
-            for (Region o : pops[i].getObjects()) {
+            for (Region o : pops[i].getRegions()) {
                 if (planeByPlane && lapSPZ.length>1) { // keep track of z coordinate
                     o.setCenter(new double[]{o.getCenter()[0], o.getCenter()[1], 0}); // adding z dimention
                     o.translate(0, 0, z);
@@ -258,8 +258,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         }
         RegionPopulation pop = MultiScaleWatershedTransform.combine(pops, input);
         if (debug) {
-            logger.debug("Parent: {}: Q: {}", parent, Utils.toStringList(pop.getObjects(), o->""+o.getQuality()));
-            logger.debug("Parent: {}: C: {}", parent ,Utils.toStringList(pop.getObjects(), o->""+Utils.toStringArray(o.getCenter())));
+            logger.debug("Parent: {}: Q: {}", parent, Utils.toStringList(pop.getRegions(), o->""+o.getQuality()));
+            logger.debug("Parent: {}: C: {}", parent ,Utils.toStringList(pop.getRegions(), o->""+Utils.toStringArray(o.getCenter())));
         }
         pop.filter(new RegionPopulation.RemoveFlatObjects(false));
         pop.filter(new RegionPopulation.Size().setMin(minSpotSize));
@@ -273,7 +273,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
                 ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("LaplacianMap scale space ", new Image[][]{seedsSPZ});
             }
             if (testParam.equals(this.scale.getName()) || testParam.equals(this.intensityThreshold.getName())) ImageWindowManagerFactory.showImage(pv.getSmoothedMap().setName("IntensityMap"));
-            logger.debug("Quality: {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()+""));
+            logger.debug("Quality: {}", Utils.toStringList(pop.getRegions(), o->o.getQuality()+""));
             ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("segmented image"));
         }
         if (intermediateImages!=null) {
@@ -295,8 +295,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         return pop;
     }
     private static void setCenterAndQuality(Image map, Image map2, RegionPopulation pop, int z) {
-        SubPixelLocalizator.setSubPixelCenter(map, pop.getObjects(), true); // lap -> better in case of close objects
-        for (Region o : pop.getObjects()) { // quality criterion : sqrt (smooth * lap)
+        SubPixelLocalizator.setSubPixelCenter(map, pop.getRegions(), true); // lap -> better in case of close objects
+        for (Region o : pop.getRegions()) { // quality criterion : sqrt (smooth * lap)
             if (o.getQuality()==0) { // localizator didnt work
                 double[] center = o.getMassCenter(map, false);
                 if (center[0]>map.getSizeX()-1) center[0] = map.getSizeX()-1;
@@ -324,7 +324,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     
     public void printSubLoc(String name, Image locMap, Image smooth, Image lap, RegionPopulation pop, BoundingBox globBound) {
         BoundingBox b = locMap.getBoundingBox().translate(globBound.reverseOffset());
-        List<Region> objects = pop.getObjects();
+        List<Region> objects = pop.getRegions();
         
         for(Region o : objects) o.setCenter(o.getMassCenter(locMap, false));
         pop.translate(b, false);

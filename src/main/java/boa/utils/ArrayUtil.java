@@ -28,13 +28,35 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import boa.image.processing.ImageFeatures;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 /**
  *
  * @author jollion
  */
 public class ArrayUtil {
-    
+    public static DoubleStream stream(float[] array) {
+        return IntStream.range(0, array.length).mapToDouble(i->array[i]);
+    }
+    public static DoubleStream stream(byte[] array) {
+        return IntStream.range(0, array.length).mapToDouble(i->array[i]);
+    }
+    public static DoubleStream stream(short[] array) {
+        return IntStream.range(0, array.length).mapToDouble(i->array[i]);
+    }
+    public static DoubleStream stream(int[] array) {
+        return IntStream.range(0, array.length).mapToDouble(i->array[i]);
+    }
+    public static IntStream streamInt(byte[] array) {
+        return IntStream.range(0, array.length).map(i->array[i]);
+    }
+    public static IntStream streamInt(short[] array) {
+        return IntStream.range(0, array.length).map(i->array[i]);
+    }
+    public static IntStream streamInt(int[] array) {
+        return IntStream.range(0, array.length).map(i->array[i]);
+    }
     public static float selectKth(float[] arr, int k) { // from : http://blog.teamleadnet.com/2012/07/quick-select-algorithm-find-kth-element.html
         if (arr == null) throw new IllegalArgumentException("Select K: array null");
         if ( arr.length <= k) throw new IllegalArgumentException("Select K: k>=length of array");

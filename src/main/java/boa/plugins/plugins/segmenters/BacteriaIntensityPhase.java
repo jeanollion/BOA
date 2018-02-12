@@ -24,15 +24,20 @@ import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageInteger;
+import boa.image.ImageMask;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
+import boa.image.processing.ImageOperations;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.measurement.BasicMeasurements;
 import boa.plugins.TrackParametrizable;
+import boa.plugins.plugins.pre_filters.Sigma;
+import boa.utils.DoubleStatistics;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 
 /**
@@ -41,8 +46,11 @@ import java.util.TreeMap;
  */
 public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackParametrizable<BacteriaIntensityPhase> {
     public BacteriaIntensityPhase() {
-        this.splitThreshold.setValue(0.2);
+        this.splitThreshold.setValue(3.7);
         this.minSize.setValue(50);
+        this.hessianScale.setValue(1.5);
+        localThresholdFactor.setToolTipText("Factor defining the local threshold. Lower value of this factor will yield in smaller cells. T = mean_w - sigma_w * (this factor), with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
+        localThresholdFactor.setValue(1);
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         if (isVoid) return null;
@@ -50,29 +58,42 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     }
     final private String toolTip = "<html>Bacteria segmentation within microchannels, for phase images normalized and inverted (foreground is bright)</ br>"
             + "Same algorithm as BacteriaIntensity with minor changes:<br />"
-            + "Split/Merge criterion is absolute value of hessian at interface between to regions<br />"
-            + "An optional procedure to merge head of first cell that tend to be cut in some cell-lines</html>";
+            + "Split/Merge criterion is value of hessian at interface between to regions normalized by the std value of hessian within all segmented regions<br />"
+            + "local threshold step is performed on the raw images</html>";
     
-    boolean normalizeEdgeValues = true;
     @Override public String getToolTipText() {return toolTip;}
-    @Override public SplitAndMergeHessian initializeSplitAndMerge(Image input) {
-        SplitAndMergeHessian sam = super.initializeSplitAndMerge(input);
+    boolean localNormalization = false; // testing
+    @Override public SplitAndMergeHessian initializeSplitAndMerge(Image input, ImageMask foregroundMask) {
+        SplitAndMergeHessian sam = super.initializeSplitAndMerge(input, foregroundMask);
+        double sd1 = localNormalization?0:1.5*ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask)[1];
+        double sd = localNormalization?0:ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask, v->v<sd1 && v>-sd1)[1];
+        //double sd= localNormalization?0:ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask)[1];
+        //if (testMode) logger.debug("Hessian normalization first round sd: {} second round sd: {}", sd1/1.5d, sd);
         sam.setInterfaceValue(i-> {
             Collection<Voxel> voxels = i.getVoxels();
             if (voxels.isEmpty()) return Double.NaN;
             else {
+                Image hessian = sam.getHessian();
                 double hessSum = 0;
-                for (Voxel v : voxels) hessSum+=sam.getHessian().getPixel(v.x, v.y, v.z);
+                for (Voxel v : voxels) hessSum+=hessian.getPixel(v.x, v.y, v.z);
                 double val = hessSum/voxels.size();
-                if (normalizeEdgeValues) {// normalize by mean intensity within 2 regions
-                    double mean1 = BasicMeasurements.getMeanValue(i.getE1(), sam.getIntensityMap(), false);
-                    double mean2 = BasicMeasurements.getMeanValue(i.getE2(), sam.getIntensityMap(), false);
-                    double norm = Math.max(mean1, mean2);
-                    //sum /= ((double)(i.getE1().getSize()+i.getE2().getSize()));
-                    val/=norm;
+                if (localNormalization) {
+                    if (true) {
+                        DoubleStatistics stats1= DoubleStatistics.getStats(i.getE1().getVoxels().stream().mapToDouble(v->(double)hessian.getPixel(v.x, v.y, v.z))); 
+                        double sdLoc1 = Math.sqrt(stats1.getSumOfSquare()/stats1.getCount()); // mean is supposed to be zero
+                        DoubleStatistics stats2= DoubleStatistics.getStats(i.getE2().getVoxels().stream().mapToDouble(v->(double)hessian.getPixel(v.x, v.y, v.z))); 
+                        double sdLoc2 = Math.sqrt(stats2.getSumOfSquare()/stats2.getCount()); // mean is supposed to be zero
+                        //double sdLoc = stats.getStandardDeviation();
+                        return val/Math.max(sdLoc1, sdLoc2);
+                    } else {
+                        DoubleStatistics stats = DoubleStatistics.getStats(Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->(double)hessian.getPixel(v.x, v.y, v.z))); // join view
+                        double sdLoc = Math.sqrt(stats.getSumOfSquare()/stats.getCount()); // mean is supposed to be zero
+                        //double sdLoc = stats.getStandardDeviation();
+                        return val/sdLoc;
+                    }
+                } else {
+                    return val/sd; // normalize by global hessian STD 
                 }
-                
-                return val;
             }
         });
         return sam;
@@ -91,12 +112,11 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     
     @Override
     protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx) {
-        ImageInteger dilated = Filters.applyFilter(pop.getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(parent.getMask()), Filters.getNeighborhood(2, input));
-        pop = new RegionPopulation(dilated, true);
+        double dilRadius = 2;
         Image smooth = ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
-        pop.localThreshold(smooth, localThresholdFactor.getValue().doubleValue(), false, false);
+        Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), 3, 3, 3, 3);
+        pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, parent.getMask());
         pop.smoothRegions(2, true, parent.getMask());
-        // close ? 
         return pop;
     }
 }

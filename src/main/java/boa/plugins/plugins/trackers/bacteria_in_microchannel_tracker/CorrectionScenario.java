@@ -44,7 +44,7 @@ public abstract class CorrectionScenario {
          * @return 
          */
         public List<CorrectionScenario> getWholeScenario(int lengthLimit, double costLimit, double cumulativeCostLimit) {
-            ArrayList<CorrectionScenario> res = new ArrayList<CorrectionScenario>();
+            ArrayList<CorrectionScenario> res = new ArrayList<>();
             CorrectionScenario cur = this;
             if (cur instanceof MergeScenario && ((MergeScenario)cur).listO.isEmpty()) return Collections.emptyList();
             double sum = 0;

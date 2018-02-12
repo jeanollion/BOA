@@ -208,7 +208,7 @@ public class Assignment {
         public double getPreviousSizeIncrement() {
             if (Double.isNaN(previousSizeIncrement) && !prevObjects.isEmpty()) {
                 previousSizeIncrement = ta.sizeIncrements.getAndCreateIfNecessary(prevObjects.get(0));
-                if (prevObjects.size()>1 && !prevFromSameLine()) {  // size-weighted barycenter of size increment from lineage
+                if (prevObjects.size()>1 && !prevFromSameLine()) {  // compute size-weighted barycenter of size increment from lineage
                     double totalSize= ta.sizeFunction.apply(prevObjects.get(0));
                     previousSizeIncrement *= totalSize;
                     for (int i = 1; i<prevObjects.size(); ++i) { 
@@ -246,14 +246,14 @@ public class Assignment {
             return new double[]{getErrorCount(), Math.abs(prevSizeIncrement - sizeNext/sizePrev)};
         }
         
-        public int getErrorCount() {
+        public double getErrorCount() {
             int res = Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1); // max erro @ prev OU @ next
             //int res =  Math.max(0, nextObjects.size()-2) + prevObjects.size()-1; // division in more than 2 + merging
             //if ((!verifyInequality() || significantSizeIncrementError()) && !truncatedEndOfChannel()) ++res; // bad size increment
             if (!truncatedEndOfChannel()) {
                 if (!verifyInequality()) res+=1;
                 else {
-                    int sig = significantSizeIncrementError();
+                    double sig = significantSizeIncrementError();
                     res+=sig*SIErrorValue;
                 }
             }
@@ -262,7 +262,7 @@ public class Assignment {
             return res;        
         }
         
-        public int significantSizeIncrementError() {
+        public double significantSizeIncrementError() {
             if (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE) {
             double prevSizeIncrement = getPreviousSizeIncrement();
             if (Double.isNaN(prevSizeIncrement)) {
@@ -270,7 +270,8 @@ public class Assignment {
             } else {
                 double sizeIncrement = sizeNext/sizePrev;
                 if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}: {}, sizeIncrementError check: SI:{} lineage SI: {}, error: {}", ta.verboseLevel, this, sizeIncrement, prevSizeIncrement, Math.abs(prevSizeIncrement-sizeIncrement));
-                return (int)(Math.abs(prevSizeIncrement-sizeIncrement)/significativeSIErrorThld);
+                double err =  (Math.abs(prevSizeIncrement-sizeIncrement)/significativeSIErrorThld);
+                return err>1 ? err:0;
             }
             } else return verifyInequality() ? 0:1;
         }

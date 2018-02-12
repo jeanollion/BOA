@@ -80,7 +80,7 @@ public class TestProcessMicrochannelsPhase {
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelMap());
-        logger.debug("{} objects found", pop.getObjects().size());
+        logger.debug("{} objects found", pop.getRegions().size());
         // test split
         //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
         //disp.showImage(popSplit.getLabelImage());
@@ -104,7 +104,7 @@ public class TestProcessMicrochannelsPhase {
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         
         ImageWindowManagerFactory.showImage(pop.getLabelMap());
-        logger.debug("{} objects found", pop.getObjects().size());
+        logger.debug("{} objects found", pop.getRegions().size());
         // test split
         //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
         //disp.showImage(popSplit.getLabelImage());

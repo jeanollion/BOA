@@ -115,7 +115,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             RegionPopulation pop =  WatershedTransform.watershed(watershedMap, mask, WatershedTransform.duplicateSeeds(seeds), decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2), false);
             List<Region> remove = new ArrayList<Region>();
             pop.filter(new RegionPopulation.Size().setMin(minSize), remove);
-            if (verbose) logger.debug("seeds: {}, objects: {}, removed: {}", seeds.size(), pop.getObjects().size()+remove.size(), remove.size());
+            if (verbose) logger.debug("seeds: {}, objects: {}, removed: {}", seeds.size(), pop.getRegions().size()+remove.size(), remove.size());
             while (!remove.isEmpty() && seeds.size()>=2) {
                 remove.clear();
                 boolean oneSeedRemoved = false;
@@ -132,9 +132,9 @@ public class WatershedObjectSplitter implements ObjectSplitter {
                 }
                 pop =  WatershedTransform.watershed(watershedMap, mask, WatershedTransform.duplicateSeeds(seeds), decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2), false);
                 pop.filter(new RegionPopulation.Size().setMin(minSize), remove);
-                if (verbose) logger.debug("seeds: {}, objects: {}, removed: {}", seeds.size(), pop.getObjects().size()+remove.size(), remove.size());
+                if (verbose) logger.debug("seeds: {}, objects: {}, removed: {}", seeds.size(), pop.getRegions().size()+remove.size(), remove.size());
             }
-            if (pop.getObjects().size()>2) pop.mergeWithConnected(pop.getObjects().subList(2, pop.getObjects().size())); // split only in 2
+            if (pop.getRegions().size()>2) pop.mergeWithConnected(pop.getRegions().subList(2, pop.getRegions().size())); // split only in 2
             
             if (verbose) {
                 new IJImageDisplayer().showImage(localMax);

@@ -52,7 +52,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     public final static Comparator<Region> regionComparator = (Region o1, Region o2) -> Integer.compare(o1.getLabel(), o2.getLabel());
     
     public RegionCluster(RegionPopulation population, boolean background, boolean lowConnectivity, InterfaceFactory<Region, I> interfaceFactory) {
-        super(population.getObjects(), regionComparator, interfaceFactory);
+        super(population.getRegions(), regionComparator, interfaceFactory);
         this.population=population;
         setInterfaces(background, lowConnectivity);
     }
@@ -60,13 +60,13 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     
     protected void setInterfaces(boolean background, boolean lowConnectivity) {
         Map<Integer, Region> objects = new HashMap<>();
-        for (Region o : population.getObjects()) objects.put(o.getLabel(), o);
+        for (Region o : population.getRegions()) objects.put(o.getLabel(), o);
         if (background) objects.put(0, new Region(new ArrayList<>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getSizeZ()==1, population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
         ImageInteger inputLabels = population.getLabelMap();
         Voxel n;
         int otherLabel;
         int[][] neigh = inputLabels.getSizeZ()>1 ? (lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf) : (lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half);
-        for (Region o : population.getObjects()) {
+        for (Region o : population.getRegions()) {
             for (Voxel vox : o.getVoxels()) {
                 vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region, because voxel can overlap & voxel can be used to store values interface-wise
                 for (int i = 0; i<neigh.length; ++i) {
@@ -202,10 +202,10 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         return null;
     }
     @Override public List<Region> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
-        int nInit = population.getObjects().size();
+        int nInit = population.getRegions().size();
         super.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
-        if (nInit > population.getObjects().size()) population.relabel(true);
-        return population.getObjects();
+        if (nInit > population.getRegions().size()) population.relabel(true);
+        return population.getRegions();
     }
     
     public void mergeSmallObjects(double sizeLimit, int numberOfObjecsToKeep, BiFunction<Region, Set<Region>, Region> noInterfaceCase) {

@@ -185,8 +185,8 @@ public class SegmentOnly implements ProcessingScheme {
                 if (pops[i]!=null) {
                     List<Region> objects =  parentObjectMap.getAndCreateIfNecessary(parent);
                     int label = objects.size();
-                    if (label>0) for (Region o : pops[i].getObjects()) o.setLabel(label++);
-                    objects.addAll(pops[i].getObjects());
+                    if (label>0) for (Region o : pops[i].getRegions()) o.setLabel(label++);
+                    objects.addAll(pops[i].getRegions());
                 }
                 else logger.debug("pop null for subParent: {}", allParents.get(i));
             }

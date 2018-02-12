@@ -61,7 +61,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import boa.plugins.OverridableThresholdMap;
-import boa.plugins.OverridableThresholdWithSimpleThresholder;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
 import boa.plugins.plugins.segmenters.EdgeDetector;
@@ -73,7 +72,7 @@ import java.util.Set;
  *
  * @author jollion
  */
-public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, OverridableThresholdWithSimpleThresholder {
+public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, OverridableThreshold {
     public boolean testMode = false;
     PluginParameter<SimpleThresholder> thresholder = new PluginParameter<>("Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu) , false).setToolTipText("Main Intensity threshold. Threshold is computed on the partitionned image filled with median value at ecah region"); 
     protected NumberParameter medianRadius = new BoundedNumberParameter("Median Radius", 1, 3, 1, null).setToolTipText("Radius for median filtering in pixels: edge-preserving high-frequency noise removal");
@@ -221,7 +220,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         ContactBorder left =  new ContactBorder(0, pop.getImageProperties(), ContactBorder.Border.Xl);
         ContactBorder right =  new ContactBorder(0, pop.getImageProperties(), ContactBorder.Border.Xr);
         double thld = pop.getImageProperties().getSizeY()/2d;
-        return pop.getObjects().stream().filter(r-> left.getContact(r)>thld||right.getContact(r)>thld).collect(Collectors.toList());
+        return pop.getRegions().stream().filter(r-> left.getContact(r)>thld||right.getContact(r)>thld).collect(Collectors.toList());
     }
 
    
@@ -261,8 +260,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         sam.ignoreEndOfChannelRegionWhenMerginSmallRegions = false;
         sam.testMode=testMode;
         RegionPopulation pop = sam.splitAndMerge(o.getMask(), 50, 2);
-        if (pop.getObjects().size()!=2) return Double.POSITIVE_INFINITY;
-        result.addAll(pop.getObjects());
+        if (pop.getRegions().size()!=2) return Double.POSITIVE_INFINITY;
+        result.addAll(pop.getRegions());
         RegionCluster<SplitAndMergeBacteriaShape.InterfaceLocalShape> c = new RegionCluster(pop, false, true, sam.getFactory());
         SplitAndMergeBacteriaShape.InterfaceLocalShape i = c.getAllInterfaces().iterator().next();
         i.updateInterface();
@@ -330,8 +329,4 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         return input; // should partition image and return the median value map?
     }
     
-    @Override
-    public SimpleThresholder getThresholder() {
-        return this.thresholder.instanciatePlugin();
-    }
 }

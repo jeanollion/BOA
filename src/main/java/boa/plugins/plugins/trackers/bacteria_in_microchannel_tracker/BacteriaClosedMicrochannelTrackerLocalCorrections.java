@@ -88,7 +88,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     // parametrization-related attributes
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
     BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum Size Increment", 2, 1.5, 1, null);
-    BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum size increment", 2, 0.85, 0.01, null); // augmenter à 0.9 ?
+    BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum size increment", 2, 0.7, 0.01, null); // augmenter à 0.9 ?
     //BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.80, 0.01, 1);
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1.5, 0, null);
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
@@ -226,6 +226,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         // 1) Segment
         SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters);
         if (correction) { // record prefilters & applyToSegmenter
+            logger.debug("run preFilters & apply to seg");
             TreeMap<StructureObject, Image> preFilteredImages = trackPreFilters.filter(structureIdx, parentTrack, executor);
             inputImages=preFilteredImages.entrySet().stream().collect(Collectors.toMap(e->e.getKey().getFrame(), e->e.getValue()));
             applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, segmenter.instanciatePlugin(), preFilteredImages, executor);
@@ -1047,9 +1048,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     */
     public int[] performCorrection(Assignment a, int frame) {
         if (debugCorr && a.ta.verboseLevel<verboseLevelLimit) logger.debug("t: {}: performing correction, {}", frame, a.toString(true));
-        if (a.objectCountNext()==1) return performCorrectionSplitOrMergeOverMultipleTime(a, frame);
-        else return performCorrectionMultipleObjects(a, frame);
-        //else return null;
+        if (a.objectCountNext()==1 || (a.objectCountNext()==2 && a.objectCountPrev()==2)) return performCorrectionSplitOrMergeOverMultipleTime(a, frame);
+        //else return performCorrectionMultipleObjects(a, frame);
+        else return null;
     }
     private int[] performCorrectionSplitOrMergeOverMultipleTime(Assignment a, int frame) {
         MergeScenario m = new MergeScenario(this, a.idxPrev, a.prevObjects, frame-1);

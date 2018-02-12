@@ -1,6 +1,11 @@
 package boa.image;
 
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.utils.ArrayUtil;
+import boa.utils.StreamConcatenation;
+import boa.utils.Utils;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 public class ImageFloat extends Image {
 
@@ -15,7 +20,6 @@ public class ImageFloat extends Image {
         super(name, properties);
         this.pixels=new float[sizeZ][sizeXY];
     }
-    
     public ImageFloat(String name, int sizeX, int sizeY, int sizeZ) {
         super(name, sizeX, sizeY, sizeZ);
         if (sizeZ>0 && sizeX>0 && sizeY>0) this.pixels=new float[sizeZ][sizeX*sizeY];
@@ -42,7 +46,21 @@ public class ImageFloat extends Image {
             return res;
         }
     }
-    
+    @Override public DoubleStream streamPlane(int z) {
+        return ArrayUtil.stream(pixels[z]);
+    }
+    @Override public DoubleStream stream() {
+        if (sizeZ==1) return ArrayUtil.stream(pixels[0]);
+        return StreamConcatenation.concat(Utils.transform(pixels, new DoubleStream[sizeZ], array ->ArrayUtil.stream(array)));
+    }
+    public DoubleStream streamPlane(int z, ImageMask mask) {
+        return IntStream.range(0, pixels[z].length).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
+    }
+    public DoubleStream stream(ImageMask mask) {
+        if (sizeZ==1) return streamPlane(0);
+        DoubleStream[] streamZ = IntStream.range(0, sizeZ).mapToObj(z->streamPlane(z, mask)).toArray(s->new DoubleStream[s]);
+        return StreamConcatenation.concat(streamZ);
+    }
     @Override
     public float getPixel(int x, int y, int z) {
         return pixels[z][x+y*sizeX];

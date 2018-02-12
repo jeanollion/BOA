@@ -278,13 +278,13 @@ public class CompareObjects {
         
         for (StructureObject parent : Utils.flattenMap(parentTrackRef)) {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
-            if (pop.getObjects().isEmpty()) continue;
+            if (pop.getRegions().isEmpty()) continue;
             //logger.debug("quality was : {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()));
             Image raw = parent.getRawImage(structureIdx);
             Image pprocessed = pf.filter(raw, parent.getMask());
             Image[] maps = seg.computeMaps(raw, pprocessed);
             for (StructureObject parentB : parent.getChildObjects(1)) {
-                List<Region> objects = parentB.getObject().getIncludedObjects(pop.getObjects());
+                List<Region> objects = parentB.getObject().getIncludedObjects(pop.getRegions());
                 if (objects.isEmpty()) continue;
                 Image[] subMaps = Utils.transform(maps, new Image[maps.length], i->i.crop(parentB.getRelativeBoundingBox(parent)));
                 MutationSegmenter currentSeg = (MutationSegmenter)ps.getSegmenter();

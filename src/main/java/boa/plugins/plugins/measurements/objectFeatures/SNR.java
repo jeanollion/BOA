@@ -77,7 +77,7 @@ public class SNR extends IntensityMeasurement {
     }
     @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         super.setUp(parent, childStructureIdx, childPopulation);
-        if (childPopulation.getObjects().isEmpty()) return this;
+        if (childPopulation.getRegions().isEmpty()) return this;
         if (!childPopulation.isAbsoluteLandmark()) childrenOffset = parent.getBounds(); // the step it still at processing, thus their offset of objects is related to their direct parent
         else childrenOffset = new BoundingBox(0, 0, 0); // absolute offsets
         parentOffsetRev = parent.getBounds().duplicate().reverseOffset();
@@ -85,7 +85,7 @@ public class SNR extends IntensityMeasurement {
         // get parents
         List<Region> parents;
         if (backgroundObject.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
-            parents = parent.getObjectPopulation(backgroundObject.getSelectedStructureIdx()).getObjects();
+            parents = parent.getObjectPopulation(backgroundObject.getSelectedStructureIdx()).getRegions();
         } else {
             parents = new ArrayList<Region>(1);
             parents.add(parent.getObject());
@@ -94,7 +94,7 @@ public class SNR extends IntensityMeasurement {
         double dilRad = this.dilateExcluded.getValue().doubleValue();
         // assign parents to children by inclusion
         HashMapGetCreate<Region, List<Pair<Region, Region>>> parentChildrenMap = new HashMapGetCreate<>(parents.size(), new HashMapGetCreate.ListFactory());
-        for (Region o : childPopulation.getObjects()) {
+        for (Region o : childPopulation.getRegions()) {
             Region p = StructureObjectUtils.getInclusionParent(o, parents, childrenOffset, null);
             if (p!=null) {
                 Region oDil = o;

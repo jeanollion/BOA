@@ -123,7 +123,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         c.addForbidFusionPredicate(forbidFusion);
         RegionCluster.verbose=this.testMode;
         if (minSizeFusion>0) c.mergeSmallObjects(minSizeFusion, objectMergeLimit, null);
-        if (ignoreEndOfChannelRegionWhenMerginSmallRegions && !popWS.getObjects().isEmpty()) yLimLastObject = Collections.max(popWS.getObjects(), (o1, o2)->Double.compare(o1.getBounds().getyMax(), o2.getBounds().getyMax())).getBounds().getyMax();
+        if (ignoreEndOfChannelRegionWhenMerginSmallRegions && !popWS.getRegions().isEmpty()) yLimLastObject = Collections.max(popWS.getRegions(), (o1, o2)->Double.compare(o1.getBounds().getyMax(), o2.getBounds().getyMax())).getBounds().getyMax();
         if (curvaturePerCluster) updateCurvature(c.getClusters(), popWS.getLabelMap());
         c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
         if (minSizeFusion>0) {
@@ -137,7 +137,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             }; 
             c.mergeSmallObjects(minSizeFusion, objectMergeLimit, noInterfaceCase);
         }
-        Collections.sort(popWS.getObjects(), getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
+        Collections.sort(popWS.getRegions(), getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
         popWS.relabel(true);
         distanceMap = null;
         return popWS;
@@ -441,7 +441,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             for (Voxel v : allBorderVoxels) mask.setPixelWithOffset(v.x, v.y, v.z, 1);
             RegionPopulation pop = new RegionPopulation(mask, false);
             pop.translate(b, false);
-            List<Region> l = pop.getObjects();
+            List<Region> l = pop.getRegions();
             if (l.isEmpty()) logger.error("interface: {}, no side found", this);
             else if (l.size()>=1) { // case of small borders -> only one distinct side
                 borderVoxels.addAll(l.get(0).getVoxels());   

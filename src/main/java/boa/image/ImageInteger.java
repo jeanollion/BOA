@@ -1,6 +1,7 @@
 package boa.image;
 
 import java.util.TreeMap;
+import java.util.stream.IntStream;
 
 public abstract class ImageInteger extends Image implements ImageMask {
 
@@ -37,7 +38,8 @@ public abstract class ImageInteger extends Image implements ImageMask {
     public abstract void setPixelWithOffset(int x, int y, int z, int value);
     public abstract void setPixel(int xy, int z, int value);
     public abstract void setPixelWithOffset(int xy, int z, int value);
-    
+    public abstract IntStream streamInt();
+    public abstract IntStream streamIntPlane(int z);
     /**
      * 
      * @param addBorder

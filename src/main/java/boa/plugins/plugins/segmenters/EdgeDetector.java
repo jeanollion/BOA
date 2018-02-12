@@ -199,7 +199,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
                     if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("Intensity value Map. Threshold: "+thld));
                     if (darkBackground.getSelected()) values[0].entrySet().removeIf(e->e.getValue()>=thld);
                     else values[0].entrySet().removeIf(e->e.getValue()<=thld);
-                    pop.getObjects().removeAll(values[0].keySet());
+                    pop.getRegions().removeAll(values[0].keySet());
                     pop.relabel(true);
                     break;
                 }
@@ -215,11 +215,11 @@ public class EdgeDetector implements Segmenter, ToolTip {
                     double thld2 = IJAutoThresholder.runThresholder(valueMap2, mask, AutoThresholder.Method.Otsu);
                     // select objects under thld2 | above thld -> foreground, interface ou backgruond. Others are interface or border (majority) and set value to thld on valueMap
                     if (darkBackground.getSelected()) {
-                        for (Region o : pop.getObjects()) {
+                        for (Region o : pop.getRegions()) {
                             if (values[0].get(o)>=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
                         }
                     } else {
-                        for (Region o : pop.getObjects()) {
+                        for (Region o : pop.getRegions()) {
                             if (values[0].get(o)<=thld1 || values2[0].get(o)<thld2) o.draw(valueMap, thld1);
                         }
                     }       Histogram h = valueMap.getHisto256(mask);
@@ -239,7 +239,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
                         ImageWindowManagerFactory.showImage(valueMap.setName("Value map. Thld: "+thld));
                     }       if (darkBackground.getSelected()) values[0].entrySet().removeIf(e->e.getValue()>=thld);
                     else values[0].entrySet().removeIf(e->e.getValue()<=thld);
-                    pop.getObjects().removeAll(values[0].keySet());
+                    pop.getRegions().removeAll(values[0].keySet());
                     pop.relabel(true);
                     break;
                 }
@@ -252,7 +252,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
     public static Image generateRegionValueMap(RegionPopulation pop, Image image, Map<Region, Double>[] values) {
         Function<Region, Double> valueFunction = valueFunction(image);
         //Function<Region, Double> valueFunction = o->BasicMeasurements.getMeanValue(o, image, false);
-        Map<Region, Double> objectValues = pop.getObjects().stream().collect(Collectors.toMap(o->o, valueFunction));
+        Map<Region, Double> objectValues = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction));
         if (values!=null) values[0] = objectValues;
         return generateRegionValueMap(image, objectValues);
     }

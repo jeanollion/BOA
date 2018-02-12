@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.utils.Utils;
+import java.util.stream.DoubleStream;
 
 
 public abstract class Image implements ImageProperties {
@@ -195,7 +196,8 @@ public abstract class Image implements ImageProperties {
     public abstract Image newImage(String name, ImageProperties properties);
     public abstract <T extends Image> T crop(BoundingBox bounds);
     public abstract <T extends Image> T cropWithOffset(BoundingBox bounds);
-    
+    public abstract DoubleStream stream();
+    public abstract DoubleStream streamPlane(int z);
     /**
      * 
      * @param <T> image type

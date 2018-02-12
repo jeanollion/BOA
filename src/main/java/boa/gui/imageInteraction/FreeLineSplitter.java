@@ -83,7 +83,7 @@ public class FreeLineSplitter implements ObjectSplitter {
             toMerge.remove(biggest);
             RegionPopulation mergedPop =  new RegionPopulation(toMerge, input);
             mergedPop.mergeAllConnected();
-            objects = mergedPop.getObjects();
+            objects = mergedPop.getRegions();
             objects.add(biggest);
             res = new RegionPopulation(objects, input);
         }

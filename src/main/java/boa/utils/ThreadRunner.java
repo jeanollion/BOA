@@ -160,6 +160,7 @@ public class ThreadRunner {
                 errors.add(new Pair(array[0].toString(), e));
             }
             if (!errors.isEmpty()) throw new MultipleException(errors);
+            return;
         }
         if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         CompletionService<Pair<String, Exception>> completion = new ExecutorCompletionService<>(executor);
@@ -213,6 +214,7 @@ public class ThreadRunner {
                 errors.add(new Pair(e.toString(), ex));           
             }
             if (!errors.isEmpty()) throw new MultipleException(errors);
+            return;
         }
         if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
         CompletionService<Pair<String, Exception>> completion = new ExecutorCompletionService<>(executor);
@@ -251,8 +253,8 @@ public class ThreadRunner {
             if (pcb!=null) pcb.incrementProgress();
         }
         if (!errors.isEmpty()) {
-            throw new Error(errors.get(0).value);
-            //throw new MultipleException(errors);
+            //throw new Error(errors.get(0).value);
+            throw new MultipleException(errors);
         }
     }
     

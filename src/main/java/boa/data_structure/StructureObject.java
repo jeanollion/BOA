@@ -277,10 +277,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         population.relabel();
         if (!population.isAbsoluteLandmark()) population.translate(getBounds(), true); // from parent-relative coordinates to absolute coordinates
-        ArrayList<StructureObject> res = new ArrayList<>(population.getObjects().size());
+        ArrayList<StructureObject> res = new ArrayList<>(population.getRegions().size());
         childrenSM.set(res, structureIdx);
         int i = 0;
-        for (Region o : population.getObjects()) res.add(new StructureObject(timePoint, structureIdx, i++, o, this));
+        for (Region o : population.getRegions()) res.add(new StructureObject(timePoint, structureIdx, i++, o, this));
         return res;
     }
     
@@ -695,18 +695,18 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
         RegionPopulation pop = splitter.splitObject(getRawImage(structureIdx),  getObject());
-        if (pop==null || pop.getObjects().size()==1) {
+        if (pop==null || pop.getRegions().size()==1) {
             logger.warn("split error: {}", this);
             return null;
         }
         // first object returned by splitter is updated to current structureObject
         if (!pop.isAbsoluteLandmark()) pop.translate(this.getBounds(), true); 
         objectModified=true;
-        this.object=pop.getObjects().get(0).setLabel(idx+1);
+        this.object=pop.getRegions().get(0).setLabel(idx+1);
         flushImages();
-        if (pop.getObjects().size()>2) pop.mergeWithConnected(pop.getObjects().subList(2, pop.getObjects().size()));
+        if (pop.getRegions().size()>2) pop.mergeWithConnected(pop.getRegions().subList(2, pop.getRegions().size()));
        
-        StructureObject res = new StructureObject(timePoint, structureIdx, idx+1, pop.getObjects().get(1).setLabel(idx+2), getParent());
+        StructureObject res = new StructureObject(timePoint, structureIdx, idx+1, pop.getRegions().get(1).setLabel(idx+2), getParent());
         getParent().getChildren(structureIdx).add(getParent().getChildren(structureIdx).indexOf(this)+1, res);
         setAttribute(correctionSplit, true);
         res.setAttribute(correctionSplitNew, true);

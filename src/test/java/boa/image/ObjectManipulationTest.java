@@ -142,9 +142,9 @@ public class ObjectManipulationTest {
         TestUtils.assertImage(imRelabel, (ImageByte)popObj.getLabelMap(), 0);
         
         RegionPopulation popIm = new RegionPopulation(im, true);
-        assertEquals("number of objects", 2, popIm.getObjects().size());
-        assertObject3DVoxels(o1, popIm.getObjects().get(0));
-        assertObject3DVoxels(o3, popIm.getObjects().get(1));
+        assertEquals("number of objects", 2, popIm.getRegions().size());
+        assertObject3DVoxels(o1, popIm.getRegions().get(0));
+        assertObject3DVoxels(o3, popIm.getRegions().get(1));
     }
     
     public static void assertObject3DVoxels(Region expected, Region actual) {

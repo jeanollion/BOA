@@ -50,13 +50,13 @@ import java.util.TreeMap;
 public class SubtractBackgroundMicrochannels implements TrackPreFilter{
     BooleanParameter isDarkBck = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
-    NumberParameter radius = new BoundedNumberParameter("Radius", 3, 1, 0.01, null).setToolTipText("Higher value -> less homogeneity/more precision. Radius of the paraboloïd will be the sum of all michrochannel length divided by this value.");
+    NumberParameter radius = new BoundedNumberParameter("Radius", 0, 10000, 1, null).setToolTipText("Higher value -> less homogeneity/faster. Radius of the paraboloïd will be this value * mean Y size of microchannels");
     Parameter[] parameters = new Parameter[]{radius, isDarkBck, smooth};
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) throws Exception {
         //smooth.setSelected(true);
         // construct one single image 
-        TrackMaskYWithMirroring tm = new TrackMaskYWithMirroring(new ArrayList<>(preFilteredImages.keySet()), true, false);
+        TrackMaskYWithMirroring tm = new TrackMaskYWithMirroring(new ArrayList<>(preFilteredImages.keySet()), true, true);
         ImageFloat allImagesY = (ImageFloat)tm.generateEmptyImage("sub mc", new ImageFloat("", 0, 0, 0));
         int idx = 0;
         for (StructureObject o : tm.parents) {
@@ -70,11 +70,12 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
             //pasteImage(im, allImagesY, tm.getObjectOffset(o));
         }
         int sizeY = allImagesY.getSizeY();
-        int offsetY = (int)(allImagesY.getSizeY()*0.5);
+        double mirrorProportion = radius.getValue().doubleValue()<preFilteredImages.size()*0.75 ? 0.5 : 1;
+        int offsetY = (int)(allImagesY.getSizeY()*mirrorProportion);
         allImagesY = mirrorY(allImagesY, offsetY); // mirror image on both Y ends
         
         // apply filter
-        double radius = allImagesY.getSizeY()/(this.radius.getValue().doubleValue()*tm.mirror);
+        double radius = (sizeY/(double)preFilteredImages.size())*(this.radius.getValue().doubleValue());
         IJSubtractBackground.filter(allImagesY, radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);
         allImagesY = allImagesY.crop(allImagesY.getBoundingBox().setyMin(offsetY).setyMax(offsetY+sizeY-1)); // crop
         // recover data

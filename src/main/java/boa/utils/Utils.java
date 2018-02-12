@@ -93,6 +93,7 @@ import boa.measurement.MeasurementExtractor;
  * @author jollion
  */
 public class Utils {
+    
     public static String getMemoryUsage() {
         long used = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         String of = Utils.getOpenedFileCount();

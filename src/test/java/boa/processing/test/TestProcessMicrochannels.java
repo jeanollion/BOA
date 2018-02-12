@@ -71,7 +71,7 @@ public class TestProcessMicrochannels {
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
         ((OverridableThresholdMap)s).setThresholdValue(10.5);
         RegionPopulation pop=s.runSegmenter(input, 0, root);
-        logger.debug("object count: {}", pop.getObjects().size());
+        logger.debug("object count: {}", pop.getRegions().size());
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelMap());

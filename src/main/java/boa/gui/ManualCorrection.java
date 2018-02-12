@@ -439,8 +439,8 @@ public class ManualCorrection {
                 }
                 RegionPopulation seg = segmenter.manualSegment(input, e.getKey(), refMask, structureIdx, e.getValue());
                 //seg.filter(new RegionPopulation.Size().setMin(2)); // remove seeds
-                logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
-                if (!test && !seg.getObjects().isEmpty()) {
+                logger.debug("{} children segmented in parent: {}", seg.getRegions().size(), e.getKey());
+                if (!test && !seg.getRegions().isEmpty()) {
                     StructureObject parent = e.getKey().getParent(parentStructureIdx);
                     if (!parent.equals(e.getKey())) seg.translate(e.getKey().getRelativeBoundingBox(parent), false);
                     oldChildren = parent.getChildren(structureIdx);

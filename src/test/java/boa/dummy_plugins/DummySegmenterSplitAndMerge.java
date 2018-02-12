@@ -35,7 +35,7 @@ public class DummySegmenterSplitAndMerge extends SimpleThresholder implements Se
         super(new ConstantValue(1));
     }
     public double split(Image image, Region o, List<Region> result) {
-        result.addAll(s.splitObject(null, o).getObjects());
+        result.addAll(s.splitObject(null, o).getRegions());
         return 1;
     }
 

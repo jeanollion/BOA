@@ -260,7 +260,7 @@ public class MultiScaleWatershedTransform {
     }
     public static RegionPopulation combine(RegionPopulation[] pops, ImageProperties ip) {
         ArrayList<Region> allObjects = new ArrayList<>();
-        for (int i = 0; i<pops.length; ++i) allObjects.addAll(pops[i].getObjects());
+        for (int i = 0; i<pops.length; ++i) allObjects.addAll(pops[i].getRegions());
         return new RegionPopulation(allObjects, ip);
     }
     

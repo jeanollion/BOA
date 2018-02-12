@@ -2,6 +2,11 @@ package boa.image;
 
 import ij.process.StackStatistics;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.utils.ArrayUtil;
+import boa.utils.StreamConcatenation;
+import boa.utils.Utils;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 public class ImageShort extends ImageInteger {
 
@@ -42,7 +47,20 @@ public class ImageShort extends ImageInteger {
             return res;
         }
     }
-    
+    public DoubleStream streamPlane(int z) {
+        return ArrayUtil.stream(pixels[z]);
+    }
+    public DoubleStream stream() {
+        if (sizeZ==1) return ArrayUtil.stream(pixels[0]);
+        return StreamConcatenation.concat(Utils.transform(pixels, new DoubleStream[sizeZ], array ->ArrayUtil.stream(array)));
+    }
+    @Override public IntStream streamIntPlane(int z) {
+        return ArrayUtil.streamInt(pixels[z]);
+    }
+    @Override public IntStream streamInt() {
+        if (sizeZ==1) return ArrayUtil.streamInt(pixels[0]);
+        return StreamConcatenation.concat(Utils.transform(pixels, new IntStream[sizeZ], array ->ArrayUtil.streamInt(array)));
+    }
     @Override
     public int getPixelInt(int x, int y, int z) {
         return pixels[z][x + y * sizeX] & 0xffff;
