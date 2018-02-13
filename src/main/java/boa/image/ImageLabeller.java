@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import boa.image.processing.WatershedTransform;
+import java.util.Set;
 
 /**
  *
@@ -125,11 +126,7 @@ public class ImageLabeller {
     protected Region[] getObjects() {
         Region[] res = new Region[spots.size()];
         int label = 0;
-        for (Spot s : spots.values()) {
-            ArrayList<Voxel> voxels = s.voxels;
-            voxels = new ArrayList(new HashSet(voxels)); // revmove duplicate voxels because of neighbourhood overlap
-            res[label++]= new Region(voxels, label, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ());
-        }
+        for (Spot s : spots.values()) res[label++]= new Region(s.voxels, label, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ());
         return res;
     }
     
@@ -171,12 +168,12 @@ public class ImageLabeller {
     
     private class Spot {
 
-        ArrayList<Voxel> voxels;
+        Set<Voxel> voxels;
         int label;
 
         public Spot(int label, Voxel v) {
             this.label = label;
-            this.voxels = new ArrayList<Voxel>();
+            this.voxels = new HashSet<>();
             voxels.add(v);
             labels[v.z][v.x+v.y*sizeX] = label;
         }

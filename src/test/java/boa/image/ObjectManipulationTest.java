@@ -67,19 +67,7 @@ public class ObjectManipulationTest {
         o3 = new Region(im.cropLabel(3, bound3), 3, false);
         
     }
-    @Test
-    public void testGetObjectsVoxels() {
-        Region[] obs = RegionFactory.getRegions(im, false);
-        assertEquals("object number", 2, obs.length);
-        assertEquals("object1 vox number:", 2, obs[0].getVoxels().size());
-        assertTrue("object1 vox1:", new Voxel(0, 0, 0).equals(obs[0].getVoxels().get(0)));
-        assertTrue("object1 vox2:", new Voxel(1, 0, 0).equals(obs[0].getVoxels().get(1)));
-        assertEquals("object3 vox number:", 2, obs[1].getVoxels().size());
-        assertTrue("object3 vox1:", new Voxel(2, 1, 1).equals(obs[1].getVoxels().get(0)));
-        assertTrue("object3 vox2:", new Voxel(3, 1, 1).equals(obs[1].getVoxels().get(1)));
-        assertObject3DVoxels(o1, obs[0]);
-        assertObject3DVoxels(o3, obs[1]);
-    }
+
     
     @Test
     public void testGetObjectsBounds() {
@@ -131,29 +119,7 @@ public class ObjectManipulationTest {
         TestUtils.assertImage(imRelabel, im2, 0);
     }
     
-    @Test 
-    public void testObjectPopulation() {
-        RegionPopulation popObj = new RegionPopulation(new ArrayList<Region>(Arrays.asList(new Region[]{o1, o3})), im);
-        TestUtils.assertImage(im, (ImageByte)popObj.getLabelMap(), 0);
-        popObj.relabel();
-        TestUtils.assertImage(imRelabel, (ImageByte)popObj.getLabelMap(), 0);
-        popObj = new RegionPopulation(new ArrayList<Region>(Arrays.asList(new Region[]{o1, o3})), im);
-        popObj.relabel();
-        TestUtils.assertImage(imRelabel, (ImageByte)popObj.getLabelMap(), 0);
-        
-        RegionPopulation popIm = new RegionPopulation(im, true);
-        assertEquals("number of objects", 2, popIm.getRegions().size());
-        assertObject3DVoxels(o1, popIm.getRegions().get(0));
-        assertObject3DVoxels(o3, popIm.getRegions().get(1));
-    }
     
-    public static void assertObject3DVoxels(Region expected, Region actual) {
-        assertEquals("object voxel number", expected.getVoxels().size(), actual.getVoxels().size());
-        for (int i = 0; i<expected.getVoxels().size(); ++i) {
-            TestUtils.logger.trace("assert voxel: {} expected: {} actual: {}", i, expected.getVoxels().get(i), actual.getVoxels().get(i));
-            assertTrue("voxel: "+i, expected.getVoxels().get(i).equals(actual.getVoxels().get(i)));
-        }
-    }
     
     
 }

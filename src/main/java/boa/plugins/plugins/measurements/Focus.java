@@ -34,6 +34,7 @@ import boa.plugins.Measurement;
 import boa.image.processing.ImageFeatures;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
+import java.util.Set;
 
 /**
  *
@@ -86,7 +87,7 @@ public class Focus implements Measurement {
         Image grad = ImageFeatures.getGradientMagnitude(input, scale.getValue().doubleValue(), false);
         double gradAtBorder = 0, intensity=0, borderCount=0, count=0;
         for (StructureObject o : object.getChildren(structureIdx)) {
-            List<Voxel> contour = o.getObject().getContour();
+            Set<Voxel> contour = o.getObject().getContour();
             for (Voxel v : contour) gradAtBorder+=grad.getPixelWithOffset(v.x, v.y, v.z);
             borderCount += contour.size();
             count+=o.getObject().getSize();

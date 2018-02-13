@@ -65,13 +65,13 @@ public class WatershedTransform {
     FusionCriterion fusionCriterion;
     public static List<Region> duplicateSeeds(List<Region> seeds) {
         List<Region> res = new ArrayList<>(seeds.size());
-        for (Region o : seeds) res.add(new Region(new ArrayList<>(o.getVoxels()), o.getLabel(), o.is2D(), o.getScaleXY(), o.getScaleZ()));
+        for (Region o : seeds) res.add(new Region(new HashSet<>(o.getVoxels()), o.getLabel(), o.is2D(), o.getScaleXY(), o.getScaleZ()));
         return res;
     }
     public static List<Region> createSeeds(List<Voxel> seeds, boolean is2D, float scaleXY, float scaleZ) {
         List<Region> res = new ArrayList<>(seeds.size());
         int label = 1;
-        for (Voxel v : seeds) res.add(new Region(new ArrayList<Voxel>(){{add(v);}}, label++, is2D, scaleXY, scaleZ));
+        for (Voxel v : seeds) res.add(new Region(new HashSet<Voxel>(){{add(v);}}, label++, is2D, scaleXY, scaleZ));
         return res;
     }
     public static RegionPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
@@ -469,7 +469,7 @@ public class WatershedTransform {
         }
         
         public Region toRegion(int label) {
-            return new Region(new ArrayList<>(voxels), label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
+            return new Region(voxels, label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
         }
         
         public double getQuality() {

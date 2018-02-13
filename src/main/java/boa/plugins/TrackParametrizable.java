@@ -51,20 +51,20 @@ import java.util.stream.Collectors;
  */
 public interface TrackParametrizable<S extends Segmenter> {
     @FunctionalInterface public static interface ApplyToSegmenter<S> { public void apply(StructureObject parent, S segmenter);}
-    public ApplyToSegmenter run(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages);
+    public ApplyToSegmenter run(int structureIdx, List<StructureObject> parentTrack);
     // + static helpers methods
-    public static <S extends Segmenter> ApplyToSegmenter<S> getApplyToSegmenter(int structureIdx, S segmenter, TreeMap<StructureObject, Image> preFilteredImages, ExecutorService executor) {
+    public static <S extends Segmenter> ApplyToSegmenter<S> getApplyToSegmenter(int structureIdx, List<StructureObject> parentTrack, S segmenter, ExecutorService executor) {
         if (segmenter instanceof TrackParametrizable) {
             TrackParametrizable tp = (TrackParametrizable)segmenter;
             if (executor!=null && tp instanceof MultiThreaded) ((MultiThreaded)tp).setExecutor(executor);
-            return tp.run(structureIdx, preFilteredImages);
+            return tp.run(structureIdx, parentTrack);
         }
         return null;
     }
     
     
-    public static double getGlobalThreshold(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, SimpleThresholder thlder) {
-        Map<Image, ImageMask> maskMap = TrackPreFilter.getMaskMap(preFilteredImages);
+    public static double getGlobalThreshold(int structureIdx, List<StructureObject> parentTrack, SimpleThresholder thlder) {
+        Map<Image, ImageMask> maskMap = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
         if (thlder instanceof ThresholderHisto) {
             Histogram hist = Histogram.getHisto256(maskMap, null);
             return ((ThresholderHisto)thlder).runThresholderHisto(hist);
@@ -89,12 +89,12 @@ public interface TrackParametrizable<S extends Segmenter> {
      * @param outputSet will add the void microchannels inside this set
      * @return the minimal threshold
      */
-    public static double getVoidMicrochannels(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, double thldForVoidMC, Set<StructureObject> outputSet) {
+    public static double getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, double thldForVoidMC, Set<StructureObject> outputSet) {
         double bimodalThld = 0.4d;
-        float[] thlds = new float[preFilteredImages.size()];
+        float[] thlds = new float[parentTrack.size()];
         int idx = 0;
         SimpleThresholder thlder = new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu);
-        for (Entry<StructureObject, Image> e : preFilteredImages.entrySet()) thlds[idx++] = (float)thlder.runSimpleThresholder(e.getValue(), e.getKey().getMask());
+        for ( StructureObject p : parentTrack) thlds[idx++] = (float)thlder.runSimpleThresholder(p.getPreFilteredImage(structureIdx), p.getMask());
         
         
         ImageFloat thldsIm = new ImageFloat("", thlds.length, thlds);
@@ -118,10 +118,10 @@ public interface TrackParametrizable<S extends Segmenter> {
         logger.debug("test void microchannel otsu: bimodal: diff: {}  bimodal: {}, minValue: {}", diff, diff>bimodalThld, thld);
         if (diff>bimodalThld) { // bimodal
             idx = 0;
-            for (StructureObject s : preFilteredImages.keySet()) if (thlds[idx++]<thld) outputSet.add(s);
+            for (StructureObject s : parentTrack) if (thlds[idx++]<thld) outputSet.add(s);
             return thld;
         }
-        if (thld<thldForVoidMC) outputSet.addAll(preFilteredImages.keySet());
+        if (thld<thldForVoidMC) outputSet.addAll(parentTrack);
         return Double.NaN;
     }
     

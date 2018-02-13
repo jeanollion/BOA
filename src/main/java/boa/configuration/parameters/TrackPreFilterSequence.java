@@ -33,6 +33,7 @@ import boa.utils.Pair;
 import boa.utils.Utils;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -52,28 +53,18 @@ public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter> 
         return res;
     }
     
-    public TreeMap<StructureObject, Image> filter(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) throws MultipleException {
-        if (parentTrack.isEmpty()) return new TreeMap<>();
-        MultipleException e = new MultipleException();
+    public void filter(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) throws MultipleException {
+        if (parentTrack.isEmpty()) return;
         boolean first = true;
         TreeMap<StructureObject, Image> images = new TreeMap<>(parentTrack.stream().collect(Collectors.toMap(o->o, o->o.getRawImage(structureIdx))));
         for (TrackPreFilter p : this.get()) {
             if (p instanceof MultiThreaded) ((MultiThreaded)p).setExecutor(executor);
-            try {
-                //logger.debug("executing tpf: {}", p.getClass().getSimpleName());
-                p.filter(structureIdx, images, first);
-            } catch (MultipleException me) {
-                e.getExceptions().addAll(me.getExceptions());
-            } catch (Exception ee) {
-                e.getExceptions().add(new Pair(parentTrack.get(0).toString(), ee));
-            }
+            p.filter(structureIdx, images, first);
             first = false;
         }
-        if (!e.getExceptions().isEmpty()) {
-            for (Pair<String, Exception> ex : e.getExceptions()) logger.debug(ex.key, ex.value);
-            throw e;
+        for (Entry<StructureObject, Image> en : images.entrySet()) {
+            en.getKey().setPreFilteredImage(en.getValue(), structureIdx);
         }
-        return images;
     }
     @Override public TrackPreFilterSequence addAtFirst(TrackPreFilter... instances) {
         super.add(instances);

@@ -41,7 +41,7 @@ public class RemoveTracksStartingAfterFrame implements TrackPostFilter {
         this.startFrame.setValue(startFrame);
     }
     @Override
-    public void filter(int structureIdx, List<StructureObject> parentTrack) throws Exception {
+    public void filter(int structureIdx, List<StructureObject> parentTrack) {
         int start = startFrame.getValue().intValue();
         List<StructureObject> objectsToRemove = new ArrayList<>();
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);

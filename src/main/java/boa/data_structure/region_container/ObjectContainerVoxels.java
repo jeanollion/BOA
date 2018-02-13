@@ -29,6 +29,9 @@ import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import boa.utils.JSONUtils;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -57,7 +60,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
 
     private void createCoordsArrays(Region object) {
         if (!object.is2D()) {
-            List<Voxel> voxels = object.getVoxels();
+            Collection<Voxel> voxels = object.getVoxels();
             x = new int[voxels.size()];
             y = new int[voxels.size()];
             z = new int[voxels.size()];
@@ -68,7 +71,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
                 z[idx++] = v.z;
             }
         } else {
-            List<Voxel> voxels = object.getVoxels();
+            Collection<Voxel> voxels = object.getVoxels();
             x = new int[voxels.size()];
             y = new int[voxels.size()];
             z = null;
@@ -80,11 +83,11 @@ public class ObjectContainerVoxels extends ObjectContainer {
         }
     }
 
-    private ArrayList<Voxel> getVoxels() {
+    private Set<Voxel> getVoxels() {
         if (x == null || y == null) {
-            return new ArrayList(0);
+            return new HashSet(0);
         }
-        ArrayList<Voxel> voxels = new ArrayList<>(x.length);
+        HashSet<Voxel> voxels = new HashSet<>(x.length);
         if (z != null) {
             for (int i = 0; i < x.length; ++i) voxels.add(new Voxel(x[i], y[i], z[i]));
         } else {

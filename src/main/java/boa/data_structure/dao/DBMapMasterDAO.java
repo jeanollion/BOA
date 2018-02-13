@@ -194,7 +194,6 @@ public class DBMapMasterDAO implements MasterDAO {
     public void clearCache(String position) {
         DBMapObjectDAO dao = DAOs.remove(position);
         if (dao!=null) dao.clearCache();
-        getExperiment().getPosition(position).flushImages(true, true);
     }
     public synchronized void clearCache(boolean xpDAO, boolean objectDAO, boolean selectionDAO) {
         if (objectDAO) {

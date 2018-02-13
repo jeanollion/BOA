@@ -56,10 +56,10 @@ import boa.utils.Utils;
  */
 public class MicroscopyField extends SimpleContainerParameter implements ListElementErasable {
     
-    private MultipleImageContainer images;
+    private MultipleImageContainer sourceImages;
     PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
     TimePointParameter defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP, false);
-    InputImagesImpl inputImages;
+    InputImagesImpl preProcessedImages;
     public static final int defaultTP = 50;
     //ui: bouton droit = selectionner un champ?
     
@@ -67,7 +67,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     public Object toJSONEntry() {
         JSONObject res= new JSONObject();
         res.put("name", name);
-        if (images!=null) res.put("images", images.toJSONEntry()); 
+        if (sourceImages!=null) res.put("images", sourceImages.toJSONEntry()); 
         res.put("preProcessingChain", preProcessingChain.toJSONEntry());
         res.put("defaultFrame", defaultTimePoint.toJSONEntry());
         return res;
@@ -77,7 +77,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jsonO = (JSONObject)jsonEntry;
         name = (String)jsonO.get("name");
-        if (jsonO.containsKey("images")) images = MultipleImageContainer.createImageContainerFromJSON((JSONObject)jsonO.get("images"));
+        if (jsonO.containsKey("images")) sourceImages = MultipleImageContainer.createImageContainerFromJSON((JSONObject)jsonO.get("images"));
         preProcessingChain.initFromJSONEntry(jsonO.get("preProcessingChain"));
         defaultTimePoint.initFromJSONEntry(jsonO.get("defaultFrame"));
     }
@@ -106,71 +106,71 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return preProcessingChain;
     }
     private int getEndTrimFrame() {
-        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getFrameNumber()-1);
+        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(sourceImages.getFrameNumber()-1);
         return preProcessingChain.trimFramesEnd.getSelectedTimePoint();
     }
     public int getStartTrimFrame() {
-        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getFrameNumber()-1);
+        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(sourceImages.getFrameNumber()-1);
         if (preProcessingChain.trimFramesStart.getSelectedTimePoint()>preProcessingChain.trimFramesEnd.getSelectedTimePoint()) preProcessingChain.trimFramesStart.setTimePoint(preProcessingChain.trimFramesEnd.getSelectedTimePoint());
         return preProcessingChain.trimFramesStart.getSelectedTimePoint();
     }
     public boolean singleFrame(int structureIdx) {
-        if (images==null) return false;
+        if (sourceImages==null) return false;
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
         return singleFrameChannel(channelIdx);
     }
     public boolean singleFrameChannel(int channelIdx) {
-        if (images==null) return false;
-        return images.singleFrame(channelIdx);
+        if (sourceImages==null) return false;
+        return sourceImages.singleFrame(channelIdx);
     }
     public InputImagesImpl getInputImages() {
-        if (inputImages!=null && inputImages.getFrameNumber()!=getTimePointNumber(false)) {  
-            logger.warn("current inputImages has: {} frames while there are {} input images", inputImages.getFrameNumber(), getTimePointNumber(false));
+        if (preProcessedImages!=null && preProcessedImages.getFrameNumber()!=getTimePointNumber(false)) {  
+            logger.warn("current inputImages has: {} frames while there are {} input images", preProcessedImages.getFrameNumber(), getTimePointNumber(false));
         }
-        if (inputImages==null) { // || inputImages.getFrameNumber()!=getTimePointNumber(false) // should be flushed when modified from gui
+        if (preProcessedImages==null) { // || inputImages.getFrameNumber()!=getTimePointNumber(false) // should be flushed when modified from gui
             synchronized(this) {
-                if (inputImages==null) { //inputImages.getFrameNumber()!=getTimePointNumber(false)
-                    logger.debug("generate input images with {} frames (old: {}) ", getTimePointNumber(false), inputImages!=null?inputImages.getFrameNumber() : "null");
+                if (preProcessedImages==null) { //inputImages.getFrameNumber()!=getTimePointNumber(false)
+                    logger.debug("generate input images with {} frames (old: {}) ", getTimePointNumber(false), preProcessedImages!=null?preProcessedImages.getFrameNumber() : "null");
                     ImageDAO dao = getExperiment().getImageDAO();
-                    if (dao==null || images==null) return null;
+                    if (dao==null || sourceImages==null) return null;
                     int tpOff = getStartTrimFrame();
                     int tpNp = getEndTrimFrame() - tpOff+1;
-                    InputImage[][] res = new InputImage[images.getChannelNumber()][];
-                    for (int c = 0; c<images.getChannelNumber(); ++c) {
-                        res[c] = images.singleFrame(c) ? new InputImage[1] : new InputImage[tpNp];
+                    InputImage[][] res = new InputImage[sourceImages.getChannelNumber()][];
+                    for (int c = 0; c<sourceImages.getChannelNumber(); ++c) {
+                        res[c] = sourceImages.singleFrame(c) ? new InputImage[1] : new InputImage[tpNp];
                         for (int t = 0; t<res[c].length; ++t) {
-                            res[c][t] = new InputImage(c, t+tpOff, t, name, images, dao);
+                            res[c][t] = new InputImage(c, t+tpOff, t, name, sourceImages, dao);
                         } 
                     }
                     int defTp = defaultTimePoint.getSelectedTimePoint()-tpOff;
                     if (defTp<0) defTp=0;
                     if (defTp>=tpNp) defTp=tpNp-1;   
-                    inputImages = new InputImagesImpl(res, defTp, getExperiment().getFocusChannelAndAlgorithm());
+                    preProcessedImages = new InputImagesImpl(res, defTp, getExperiment().getFocusChannelAndAlgorithm());
                 }
             }
             //logger.debug("creation input images: def tp: {}, total: {}, tp: {}",defaultTimePoint.getSelectedTimePoint(),images.getTimePointNumber(), inputImages.getDefaultTimePoint());
         }
-        return inputImages;
+        return preProcessedImages;
     }
     
     public void flushImages(boolean raw, boolean preProcessed) {
-        if (raw && inputImages!=null) {
-            inputImages.flush();
-            inputImages = null;
+        if (preProcessed && preProcessedImages!=null) {
+            preProcessedImages.flush();
+            preProcessedImages = null;
         }
-        if (preProcessed && images!=null) images.close();
+        if (raw && sourceImages!=null) sourceImages.close();
     }
     
     public BlankMask getMask() {
         BlankMask mask = getExperiment().getImageDAO().getPreProcessedImageProperties(name);
         if (mask==null) return null;
         // TODO: recreate image if configuration data has been already computed
-        mask.setCalibration(images.getScaleXY(), images.getScaleZ());
+        mask.setCalibration(sourceImages.getScaleXY(), sourceImages.getScaleZ());
         return mask;
     }
     
     public ArrayList<StructureObject> createRootObjects(ObjectDAO dao) {
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>(getTimePointNumber(false));
+        ArrayList<StructureObject> res = new ArrayList<>(getTimePointNumber(false));
         if (getMask()==null) {
             logger.warn("Could not initiate root objects, perform preProcessing first");
             return null;
@@ -188,14 +188,14 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     
     public float getScaleXY(){
         if (!preProcessingChain.useCustomScale()) {
-            if (images!=null && images.getScaleXY()!=0) return images.getScaleXY();
+            if (sourceImages!=null && sourceImages.getScaleXY()!=0) return sourceImages.getScaleXY();
             else return 1;
         } else return (float)preProcessingChain.getScaleXY();
         
     }
     public float getScaleZ(){
         if (!preProcessingChain.useCustomScale()) {
-            if (images!=null && images.getScaleZ()!=0) return images.getScaleZ();
+            if (sourceImages!=null && sourceImages.getScaleZ()!=0) return sourceImages.getScaleZ();
             else return 1;
         } else return (float)preProcessingChain.getScaleZ();
     }
@@ -204,8 +204,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     }
     
     public int getTimePointNumber(boolean useRawInputFrames) {
-        if (images!=null) {
-            if (useRawInputFrames) return images.getFrameNumber();
+        if (sourceImages!=null) {
+            if (useRawInputFrames) return sourceImages.getFrameNumber();
             else return getEndTrimFrame() - getStartTrimFrame()+1;
         }
         else return 0;
@@ -220,23 +220,23 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     }
     
     public int getSizeZ(int channelIdx) {
-        if (images!=null) return images.getSizeZ(channelIdx);
+        if (sourceImages!=null) return sourceImages.getSizeZ(channelIdx);
         else return -1;
     }
     
     public void setImages(MultipleImageContainer images) {
-        this.images=images;
+        this.sourceImages=images;
     }
     
     @Override public MicroscopyField duplicate() {
         MicroscopyField mf = super.duplicate();
-        if (images!=null) mf.setImages(images.duplicate());
+        if (sourceImages!=null) mf.setImages(sourceImages.duplicate());
         return mf;
     }
     
     @Override
     public String toString() {
-        if (images!=null) return name+ "(#"+getIndex()+")";// + " number of time points: "+images.getTimePointNumber();
+        if (sourceImages!=null) return name+ "(#"+getIndex()+")";// + " number of time points: "+images.getTimePointNumber();
         return name + " no selected images";
     }
     
@@ -251,7 +251,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         super.setContentFrom(other);
         if (other instanceof MicroscopyField) {
             MicroscopyField otherP = (MicroscopyField) other;
-            if (otherP.images!=null) images = otherP.images.duplicate();
+            if (otherP.sourceImages!=null) sourceImages = otherP.sourceImages.duplicate();
         }
     }
     @Override 
@@ -259,12 +259,12 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         if (!super.sameContent(other)) return false;
         if (other instanceof MicroscopyField) {
             MicroscopyField otherP = (MicroscopyField) other;
-            if (otherP.images!=null && images!=null) {
-                if (!images.sameContent(otherP.images)) {
+            if (otherP.sourceImages!=null && sourceImages!=null) {
+                if (!sourceImages.sameContent(otherP.sourceImages)) {
                     logger.debug("Position: {}!={} content differs at images");
                     return true; // just warn, do not concerns configuration
                 } else return true;
-            } else if (otherP.images==null && images==null) return true;
+            } else if (otherP.sourceImages==null && sourceImages==null) return true;
             else return false;
         }
         return false;

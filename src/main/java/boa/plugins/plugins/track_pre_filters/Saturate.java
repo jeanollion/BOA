@@ -48,7 +48,7 @@ public class Saturate implements TrackPreFilter, ToolTip {
     }
     
     @Override
-    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) throws Exception {
+    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         Map<Image, ImageMask> maskMap = TrackPreFilter.getMaskMap(preFilteredImages);
         Histogram histo = Histogram.getHisto256(maskMap, null);
         double sv = IJAutoThresholder.runThresholder(AutoThresholder.Method.MaxEntropy, histo); //Shanbhag

@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 /**
@@ -173,24 +174,22 @@ public class ThreadRunner {
                     action.run(e, i);
                 } catch (Exception ex) {
                     return new Pair(e.toString(), ex);
-                } finally {
-                    return null;
                 }
+                return null;
             });
             if (setToNull) array[idx]=null;
             ++idx;
         }
         if (pcb!=null) pcb.incrementTaskNumber(idx);
         for (int i = 0; i<idx; ++i) {
-            Pair<String, Exception> e;
             try {
-                e = completion.take().get();
+                Pair<String, Exception> e = completion.take().get();
                 if (e!=null) {
                     if (e.value instanceof MultipleException) errors.addAll(((MultipleException)e.value).getExceptions());
                     else errors.add(e);
                 }
             } catch (InterruptedException|ExecutionException ex) {
-                errors.add(new Pair("Execution exception", ex));
+                errors.add(new Pair("Execution exception: "+array[i], ex));
             }
             if (pcb!=null) pcb.incrementProgress();
         }
@@ -240,15 +239,14 @@ public class ThreadRunner {
         }
         if (pcb!=null) pcb.incrementTaskNumber(count);
         for (int i = 0; i<count; ++i) {
-            Pair<String, Exception> e;
             try {
-                e = completion.take().get();
+                Pair<String, Exception> e = completion.take().get();
                 if (e!=null) {
                     if (e.value instanceof MultipleException) errors.addAll(((MultipleException)e.value).getExceptions());
                     else errors.add(e);
                 }
             } catch (InterruptedException|ExecutionException ex) {
-                errors.add(new Pair("Execution exception", ex));
+                errors.add(new Pair("Execution exception:"+Utils.getElementAt(array, i), ex));
             }
             if (pcb!=null) pcb.incrementProgress();
         }
@@ -310,6 +308,62 @@ public class ThreadRunner {
             if (t.getPriority() != priority)
                 t.setPriority(priority);
             return t;
+        }
+    }
+    
+    public static void executeUntilFreeMemory(Runnable r) {
+        executeUntilFreeMemory(r, 100);
+    }
+    public static void executeUntilFreeMemory(Runnable r, int maxTryouts) {
+        int idx = 0;
+        OutOfMemoryError outOfMemoryError=null;
+        while(idx++<maxTryouts) {
+            try {
+                r.run();
+                if (idx>1) logger.debug("ok");
+                return;
+            } catch (OutOfMemoryError e) {
+                outOfMemoryError=e;
+                try {
+                    logger.debug("R: sleeping until free memory available... Free: {}/{} GB", (Runtime.getRuntime().freeMemory()/1000000)/1000d, (Runtime.getRuntime().totalMemory()/1000000)/1000d);
+                    System.gc();
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    return;
+                }
+            }
+        }
+        throw outOfMemoryError;
+    }
+    public static <T> T executeUntilFreeMemory(Supplier<T> s) {
+        return executeUntilFreeMemory(s, 100);
+    }
+    public static <T> T executeUntilFreeMemory(Supplier<T> r, int maxTryouts) {
+        int idx = 0;
+        OutOfMemoryError outOfMemoryError=null;
+        while(idx++<maxTryouts) {
+            try {
+                T t = r.get();
+                if (idx>1) logger.debug("ok");
+                return t;
+            } catch (OutOfMemoryError e) {
+                outOfMemoryError=e;
+                try {
+                    logger.debug("S: sleeping until free memory available... Free: {}/{} GB", Runtime.getRuntime().freeMemory()/1000000d, Runtime.getRuntime().totalMemory()/1000000d);
+                    System.gc();
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                    return null;
+                }
+            }
+        }
+        throw outOfMemoryError;
+    }
+    public static void sleep(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ex) {
+            
         }
     }
 }

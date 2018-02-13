@@ -53,7 +53,7 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
     }
     
     @Override
-    public void filter(int structureIdx, List<StructureObject> parentTrack) throws Exception {
+    public void filter(int structureIdx, List<StructureObject> parentTrack) {
         if (backgroundStructure.getSelectedStructureIdx()<0) throw new IllegalArgumentException("Background structure not configured");
         if (parentTrack.isEmpty()) return;
         Map<Integer, StructureObject> parentTrackByF = StructureObjectUtils.splitByFrame(parentTrack);

@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import static boa.plugins.Plugin.logger;
 import boa.utils.ArrayUtil;
+import java.util.Collection;
 
 /**
  *
@@ -44,7 +45,7 @@ public class BasicMeasurements {
     public static double getMeanValue(Region object, Image image, boolean useOffset) {
         return getMeanValue(object.getVoxels(), image, useOffset);
     }
-    public static double getMeanValue(List<Voxel> voxels, Image image, boolean useOffset) {
+    public static double getMeanValue(Collection<Voxel> voxels, Image image, boolean useOffset) {
         double value=0;
         if (useOffset) for (Voxel v : voxels) value+=image.getPixelWithOffset(v.x, v.y, v.z);
         else for (Voxel v : voxels) value+=image.getPixel(v.x, v.y, v.z);
@@ -73,7 +74,7 @@ public class BasicMeasurements {
             return Math.sqrt(value2-value*value);
         } else return Double.NaN;
     }
-    public static double[] getMeanSdValue(List<Voxel> voxels, Image image, boolean useOffset) {
+    public static double[] getMeanSdValue(Collection<Voxel> voxels, Image image, boolean useOffset) {
         double value=0;
         double value2=0;
         double tmp;
@@ -104,7 +105,7 @@ public class BasicMeasurements {
      * @param image
      * @return [SNR, Mean ForeGround, Mean BackGround, Sd Background]
      */
-    public static double[] getSNR(List<Voxel> foreground, List<Voxel> background, Image image, boolean useOffset) { 
+    public static double[] getSNR(Collection<Voxel> foreground, Collection<Voxel> background, Image image, boolean useOffset) { 
         if (foreground.isEmpty() || background.isEmpty()) return null;
         List<Voxel> bck = new ArrayList<Voxel> (background);
         bck.removeAll(foreground);

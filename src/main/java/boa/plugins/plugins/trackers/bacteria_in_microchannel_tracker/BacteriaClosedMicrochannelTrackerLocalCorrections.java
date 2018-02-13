@@ -226,11 +226,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         // 1) Segment
         SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters);
         if (correction) { // record prefilters & applyToSegmenter
-            logger.debug("run preFilters & apply to seg");
-            TreeMap<StructureObject, Image> preFilteredImages = trackPreFilters.filter(structureIdx, parentTrack, executor);
-            inputImages=preFilteredImages.entrySet().stream().collect(Collectors.toMap(e->e.getKey().getFrame(), e->e.getValue()));
-            applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, segmenter.instanciatePlugin(), preFilteredImages, executor);
-            so.segmentAndTrack(structureIdx, parentTrack, preFilteredImages, applyToSegmenter, executor);
+            trackPreFilters.filter(structureIdx, parentTrack, executor);
+            inputImages=parentTrack.stream().collect(Collectors.toMap(p->p.getFrame(), p->p.getPreFilteredImage(structureIdx)));
+            applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
+            so.segmentAndTrack(structureIdx, parentTrack, applyToSegmenter, executor);
         } else { // no need to record the preFilters images
             so.setTrackPreFilters(trackPreFilters);
             so.segmentAndTrack(structureIdx, parentTrack, executor);

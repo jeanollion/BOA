@@ -61,7 +61,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     protected void setInterfaces(boolean background, boolean lowConnectivity) {
         Map<Integer, Region> objects = new HashMap<>();
         for (Region o : population.getRegions()) objects.put(o.getLabel(), o);
-        if (background) objects.put(0, new Region(new ArrayList<>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getSizeZ()==1, population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
+        if (background) objects.put(0, new Region(new HashSet<>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getSizeZ()==1, population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
         ImageInteger inputLabels = population.getLabelMap();
         Voxel n;
         int otherLabel;

@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  * @author jollion
  */
 public interface TrackPreFilter  extends Plugin {
-    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) throws Exception;
+    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages);
     /*public static List<Image> getContinuousImageList(TreeMap<StructureObject, Image> images) {
         
     }*/

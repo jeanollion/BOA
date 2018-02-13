@@ -35,6 +35,7 @@ import boa.plugins.plugins.pre_filters.Sigma;
 import boa.utils.DoubleStatistics;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
@@ -101,9 +102,9 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     
     boolean isVoid = false;
     @Override
-    public ApplyToSegmenter<BacteriaIntensityPhase> run(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages) {
+    public ApplyToSegmenter<BacteriaIntensityPhase> run(int structureIdx, List<StructureObject> parentTrack) {
         Set<StructureObject> voidMC = new HashSet<>();
-        double minThld = TrackParametrizable.getVoidMicrochannels(structureIdx, preFilteredImages, 0.4, voidMC);
+        double minThld = TrackParametrizable.getVoidMicrochannels(structureIdx, parentTrack, 0.4, voidMC);
         return (p, s) -> {
             if (voidMC.contains(p)) s.isVoid=true; 
             s.minThld=minThld;

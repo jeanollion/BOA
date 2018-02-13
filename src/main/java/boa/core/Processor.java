@@ -142,6 +142,7 @@ public class Processor {
                 dao.setRoots(res);
             }
         }
+        if (res==null || res.isEmpty()) throw new RuntimeException("ERROR db: "+dao.getMasterDAO().getDBName()+" pos: "+dao.getPositionName()+ " no pre-processed image found");
         return res;
     }
     
@@ -160,29 +161,27 @@ public class Processor {
                 logger.error("error while processing", e);
             }
             db.getDao(fieldName).clearCache();
-            db.getExperiment().getPosition(fieldName).flushImages(true, true);
         }
     }
-    
+    public static void deleteObjects(ObjectDAO dao, int...structures) {
+        Experiment xp = dao.getExperiment();
+        if (structures.length==0 || structures.length==xp.getStructureCount()) dao.deleteAllObjects();
+        else dao.deleteObjectsByStructureIdx(structures);
+        ImageDAO imageDAO = xp.getImageDAO();
+        if (structures.length==0) for (int s : xp.getStructuresInHierarchicalOrderAsArray()) imageDAO.deleteTrackImages(dao.getPositionName(), s);
+        else for (int s : structures) imageDAO.deleteTrackImages(dao.getPositionName(), s);
+    }
     public static void processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, boolean trackOnly, int... structures) {
         Experiment xp = dao.getExperiment();
-        if (deleteObjects) {
-            if (structures.length==0 || structures.length==xp.getStructureCount()) dao.deleteAllObjects();
-            else dao.deleteObjectsByStructureIdx(structures);
-            ImageDAO imageDAO = xp.getImageDAO();
-            if (structures.length==0) for (int s : xp.getStructuresInHierarchicalOrderAsArray()) imageDAO.deleteTrackImages(dao.getPositionName(), s);
-            else for (int s : structures) imageDAO.deleteTrackImages(dao.getPositionName(), s);
-        } 
+        if (deleteObjects) deleteObjects(dao, structures);
         List<StructureObject> root = getOrCreateRootTrack(dao);
-        if (root==null || root.isEmpty()) {
-            logger.error("Field: {} no pre-processed image found", dao.getPositionName());
-            throw new RuntimeException("ERROR db: "+dao.getMasterDAO().getDBName()+" pos: "+dao.getPositionName()+ " no pre-processed image found");
-        }
+
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
         for (int s: structures) {
-            if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {}", dao.getPositionName(), s);
+            if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {} available mem: {}/{}GB", dao.getPositionName(), s, (Runtime.getRuntime().freeMemory()/1000000)/1000d, (Runtime.getRuntime().totalMemory()/1000000)/1000d);
             else logger.info("Tracking: Field: {}, Structure: {}", dao.getPositionName(), s);
             executeProcessingScheme(root, s, trackOnly, false);
+            System.gc();
         }
     }
     
@@ -201,11 +200,19 @@ public class Processor {
         } else {
             allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, directParentStructure);
         }
+        if (directParentStructure>=0 && parentTrack.get(0).isRoot()) { // get raw images and erase root images to free memory
+            for (List<StructureObject> l : allParentTracks.values()) {
+                for (StructureObject o : l) o.getRawImage(structureIdx);
+            }
+            for (StructureObject o : parentTrack) o.setRawImage(structureIdx, null);
+            System.gc();
+            logger.info("After clear root images: Structure: {} available mem: {}/{}GB", structureIdx, (Runtime.getRuntime().freeMemory()/1000000)/1000d, (Runtime.getRuntime().totalMemory()/1000000)/1000d);
+        }
         logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
         // one thread per track + common executor for processing scheme
         ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs(), ThreadRunner.priorityThreadFactory(Thread.MAX_PRIORITY));
         //ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs());
-        //ExecutorService subExecutor = Executors.newSingleThreadExecutor(); // TODO: see what's more effective!
+        //ExecutorService subExecutor = Executors.newSingleThreadExecutor(); // TODO: see what's more efficient!
         ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx) -> {
             execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao, subExecutor);
         };
@@ -235,17 +242,22 @@ public class Processor {
         }
     }
     
-    private static List<Pair<String, Exception>> execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao, ExecutorService executor) {
-        try {
-            if (!trackOnly && deleteChildren) dao.deleteChildren(parentTrack, structureIdx);
-            if (trackOnly) ps.trackOnly(structureIdx, parentTrack, executor);
-            else ps.segmentAndTrack(structureIdx, parentTrack, executor);
-        } catch(MultipleException e) {
-            return e.getExceptions();
-        } catch(Exception e) {
-            return new ArrayList<Pair<String, Exception>>() {{add(new Pair("", e));}};
+    private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao, ExecutorService executor) {
+        if (!trackOnly && deleteChildren) dao.deleteChildren(parentTrack, structureIdx);
+        if (trackOnly) ps.trackOnly(structureIdx, parentTrack, executor);
+        else {
+            try {
+                ps.segmentAndTrack(structureIdx, parentTrack, executor);
+                logger.debug("ps executed on track: {}, structure: {}", parentTrack.get(0), structureIdx);
+            } catch(Exception e) {
+                throw e;
+            } finally {
+                for (StructureObject o : parentTrack) o.setPreFilteredImage(null, structureIdx); // erase preFiltered images
+                logger.debug("prefiltered images erased: {} for structure: {}", parentTrack.get(0), structureIdx);
+            }
+            
+            
         }
-        return Collections.EMPTY_LIST;
     }
     
     // measurement-related methods

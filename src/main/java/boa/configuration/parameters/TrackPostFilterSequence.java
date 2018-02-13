@@ -42,19 +42,12 @@ public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter
     
     public void filter(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) throws MultipleException {
         if (parentTrack.isEmpty()) return;
-        MultipleException e = new MultipleException();
+        int count=0;
         for (TrackPostFilter p : this.get()) {
             if (p instanceof MultiThreaded) ((MultiThreaded)p).setExecutor(executor);
-            try {
-                //logger.debug("executing tpf: {}", p.getClass().getSimpleName());
-                p.filter(structureIdx, parentTrack);
-            } catch (MultipleException me) {
-                e.getExceptions().addAll(me.getExceptions());
-            } catch (Exception ee) {
-                e.getExceptions().add(new Pair(parentTrack.get(0).toString(), ee));
-            }
+            p.filter(structureIdx, parentTrack);
+            logger.debug("track post-filter: {}/{} done", ++count, this.getChildCount());
         }
-        if (!e.getExceptions().isEmpty()) throw e;
     }
     @Override public TrackPostFilterSequence add(TrackPostFilter... instances) {
         super.add(instances);

@@ -123,9 +123,9 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
         if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
         TrackPreFilterSequence tpf = trackPreFilters.duplicate().addAtFirst(new PreFilters().add(preFilters));
         t.segmentAndTrack(structureIdx, parentTrack, tpf, postFilters);
-        //logger.debug("executing #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
+        logger.debug("executing #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
         trackPostFilters.filter(structureIdx, parentTrack, executor); 
-        
+        logger.debug("executed #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
     }
 
     @Override

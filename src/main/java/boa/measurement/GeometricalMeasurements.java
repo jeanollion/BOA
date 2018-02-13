@@ -24,6 +24,7 @@ import boa.image.processing.localthickness.LocalThickness;
 import java.util.ArrayList;
 import java.util.List;
 import boa.utils.ArrayUtil;
+import java.util.Iterator;
 
 /**
  *
@@ -38,10 +39,11 @@ public class GeometricalMeasurements {
     }
     public static double getFeretMax(Region o) {
         double d2Max = 0;
-        List<Voxel> list = o.getContour();
+        List<Voxel> list = new ArrayList<>(o.getContour());
         int voxCount = list.size();
         double scaleXY = o.getScaleXY();
         double scaleZ = o.getScaleZ();
+        Iterator<Voxel> it = list.iterator();
         for (int i = 0; i<voxCount-1; ++i) {
             for (int j = i+1; j<voxCount; ++j) {
                 double d2Temp = list.get(i).getDistanceSquare(list.get(j), scaleXY, scaleZ);

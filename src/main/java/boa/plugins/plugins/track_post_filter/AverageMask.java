@@ -21,13 +21,16 @@ import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PostFilterSequence;
+import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.BlankMask;
 import boa.image.ImageFloat;
 import boa.image.ImageInt;
 import boa.image.ImageInteger;
+import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import java.util.Collections;
 import java.util.List;
@@ -43,11 +46,12 @@ public class AverageMask implements TrackPostFilter{
     //PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     //BooleanParameter postFilterOnAverageImage = new BooleanParameter("Run post-filters on", "Average Image Over Frames", "Each Frame", true);
     @Override
-    public void filter(int structureIdx, List<StructureObject> parentTrack) throws Exception {
+    public void filter(int structureIdx, List<StructureObject> parentTrack)  {
         Map<StructureObject, List<StructureObject>> allTracks=  StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         for (List<StructureObject> track : allTracks.values()) averageMask(track);
     }
     private void averageMask(List<StructureObject> track) {
+        if (track.size()<=1) return;
         if (referencePoint.getSelectedIndex()==0) { // upper left corner
             // size = maximal size
             int maxX = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().getSizeX(), o2.getMask().getSizeX())).getMask().getSizeX();
@@ -64,21 +68,20 @@ public class AverageMask implements TrackPostFilter{
                     }
                 }
             }
-            int threshold = track.size()/2;
-            sum = ImageOperations.threshold(sum, threshold, true, false);
+            int threshold = (int)((track.size()+1)/2d);
+            //logger.debug("average mask average computed");
             for (StructureObject o : track) {
+                logger.debug("o: {} had voxels: {}", o, o.getObject().voxelsCreated());
                 ImageInteger mask = o.getMask();
-                for (int z = 0; z<mask.getSizeZ(); ++z) {
-                    for (int y=0; y<mask.getSizeY(); ++y) {
-                        for (int x=0; x<mask.getSizeX(); ++x) {
-                            mask.setPixel(x, y, z, sum.insideMask(x, y, z)?1:0);
-                        }
-                    }
-                }
-                RegionPopulation pop = new RegionPopulation(mask, true);
+                mask.getBoundingBox().translateToOrigin().loop((x, y, z)->{ mask.setPixel(x, y, z, sum.getPixelInt(x, y, z)>=threshold?1:0);});
+                RegionPopulation pop = new RegionPopulation(mask, true); // re-create object because bounds might have changed
                 pop.translate(mask.getBoundingBox(), true);
-                o.setObject(pop.getRegions().get(0));
+                Region r = pop.getRegions().get(0);
+                //logger.debug("o: {} had voxels after average?: {}", o, r.voxelsCreated());
+                r.resetVoxels(); // free memory
+                o.setObject(r);
             }
+            //logger.debug("average mask done");
         }
     }
     @Override

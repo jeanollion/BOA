@@ -91,11 +91,15 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         seeds.addAll(ImageLabeller.labelImageList(maxL));
         //seeds.add(new Region(new Voxel((gradLocal.getSizeX()-1)/2, (gradLocal.getSizeY()-1)/2, 0), ++label, (float)scaleXY, (float)scaleZ));
         RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, null, false);
+        if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf"));
         pop.getRegions().removeIf(o->!o.getVoxels().contains(corner1)&&!o.getVoxels().contains(corner2));
         pop.translate(head, true);
+        int count = debug?object.getVoxels().size():0;
         for (Region o : pop.getRegions()) {
             object.removeVoxels(o.getVoxels());
-            if (debug)logger.debug("object: {} remove: {} voxels, left: {}", o, o.getVoxels().size(), object.getVoxels().size());
+            if (debug)logger.debug("object: {} remove: {} voxels, left: {}/{}", object.getLabel(), o.getVoxels().size(), object.getVoxels().size(), count);
         }
+        object.resetVoxels();
+        //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
     }
 }

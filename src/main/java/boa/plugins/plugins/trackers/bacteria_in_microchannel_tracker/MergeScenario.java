@@ -26,6 +26,8 @@ import static boa.plugins.Plugin.logger;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.TrackAttribute;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -61,7 +63,7 @@ public class MergeScenario extends CorrectionScenario {
 
         @Override
         protected void applyScenario() {
-            List<Voxel> vox = new ArrayList<>();
+            Set<Voxel> vox = new HashSet<>();
             Region o = tracker.populations.get(timePointMin).get(idxMin); 
             for (int i = idxMax; i>=idxMin; --i) {
                 Region rem = tracker.populations.get(timePointMin).remove(i);

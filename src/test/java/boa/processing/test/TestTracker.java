@@ -73,8 +73,8 @@ public class TestTracker {
         //String dbName = "MutD5_141202";
         int pIdx =0;
         int mcIdx =4;
-        int structureIdx = 1;
-        int[] frames = new int[]{0, 1000};
+        int structureIdx = 0;
+        int[] frames = new int[]{0, 10};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -134,8 +134,8 @@ public class TestTracker {
             for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) if (pp.instanciatePlugin() instanceof TrackLengthFilter) pp.setActivated(false);
         }
         
-        ps.trackOnly(structureIdx, parentTrack, null);
-        ps.segmentAndTrack(structureIdx, parentTrack, null);
+        if (trackOnly) ps.trackOnly(structureIdx, parentTrack, null);
+        else ps.segmentAndTrack(structureIdx, parentTrack, null);
         logger.debug("track: {} ({}) children of {} = ({})", StructureObjectUtils.getAllTracks(parentTrack, structureIdx).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, structureIdx).values(), o->o.size()), parentTrack.get(0), parentTrack.get(0).getChildren(structureIdx));
 
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
@@ -144,8 +144,8 @@ public class TestTracker {
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
         // display preFilteredImages
         if (displayOnFilteredImages && !ps.getTrackPreFilters(true).isEmpty()) {
-            Map<StructureObject, Image> pfImages = ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
-            for (Entry<StructureObject, Image> e : pfImages.entrySet()) e.getKey().setRawImage(structureIdx, e.getValue());
+            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+            for (StructureObject p : parentTrack)p.setRawImage(structureIdx, p.getPreFilteredImage(structureIdx));
         }
         
         Image interactiveImage = i.generateRawImage(structureIdx, true);

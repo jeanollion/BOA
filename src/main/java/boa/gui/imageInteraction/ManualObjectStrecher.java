@@ -37,6 +37,7 @@ import boa.image.processing.FillHoles2D;
 import boa.image.processing.Filters;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.Set;
 
 /**
  *
@@ -55,9 +56,9 @@ public class ManualObjectStrecher {
             Region childObject = child.getObject().duplicate();
             BoundingBox offset = p.key.getBounds().duplicate().reverseOffset().translate(p.value);
             childObject.translate(offset); // translate object in ROI referencial
-            List<Voxel> contour = childObject.getContour();
+            Set<Voxel> contour = childObject.getContour();
             if (contour.isEmpty()) continue;
-            Voxel left = contour.get(0), right = contour.get(0);
+            Voxel left = contour.iterator().next(), right = left;
             for (Voxel v : contour) { // get upper leftmost & upper rightmost voxels
                 if (v.x<left.x) left=v;
                 else if (v.x==left.x && v.y<left.y) left = v;

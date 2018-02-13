@@ -46,7 +46,7 @@ public class PreFilters implements TrackPreFilter, MultiThreaded {
     }
     
     @Override
-    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) throws Exception {
+    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         if (preFilters.isEmpty()) return;
         Collection<Map.Entry<StructureObject, Image>> col = preFilteredImages.entrySet();
         ThreadRunner.ThreadAction<Map.Entry<StructureObject, Image>> ta = (Map.Entry<StructureObject, Image> e, int idx) -> {

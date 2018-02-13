@@ -56,6 +56,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     private transient boolean objectModified=false;
     protected ObjectContainer objectContainer;
     protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
+    protected transient SmallArray<Image> preFilteredImagesS=new SmallArray<>();
     protected transient SmallArray<Image> trackImagesC=new SmallArray<>();
     protected transient BoundingBox offsetInTrackImage;
     
@@ -827,6 +828,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return rawImagesC.get(channelIdx);
     }
+    public Image getPreFilteredImage(int structureIdx) {
+        return this.preFilteredImagesS.get(structureIdx);
+    }
+    public void setPreFilteredImage(Image image, int structureIdx) {
+        this.preFilteredImagesS.set(image, structureIdx);
+    }
     public Image getTrackImage(int structureIdx) {
         //logger.debug("get Track image for : {}, id: {}, thId: {}, isTH?: {}, th: {}", this, id, this.trackHeadId, isTrackHead, this.trackHead);
         //logger.debug("get Track Image for: {} th {}", this, getTrackHead());
@@ -937,6 +944,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void flushImages() {
         for (int i = 0; i<rawImagesC.getBucketSize(); ++i) rawImagesC.setQuick(null, i);
         for (int i = 0; i<trackImagesC.getBucketSize(); ++i) trackImagesC.setQuick(null, i);
+        for (int i = 0; i<preFilteredImagesS.getBucketSize(); ++i) preFilteredImagesS.setQuick(null, i);
         this.offsetInTrackImage=null;
     }
     

@@ -93,7 +93,14 @@ import boa.measurement.MeasurementExtractor;
  * @author jollion
  */
 public class Utils {
-    
+    public static <T> T getElementAt(Collection<T> collection, int idx) {
+        if (collection.size()<=idx) return null;
+        if (collection instanceof List) return ((List<T>)collection).get(idx);
+        Iterator<T> it = collection.iterator();
+        int i = 0;
+        while (i++<idx) {it.next();}
+        return it.next();
+    }
     public static String getMemoryUsage() {
         long used = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         String of = Utils.getOpenedFileCount();

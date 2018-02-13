@@ -39,6 +39,7 @@ import static boa.image.processing.ImageOperations.pasteImage;
 import boa.image.processing.ImageTransformation;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
+import boa.utils.ThreadRunner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
@@ -53,7 +54,7 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
     NumberParameter radius = new BoundedNumberParameter("Radius", 0, 10000, 1, null).setToolTipText("Higher value -> less homogeneity/faster. Radius of the paraboloïd will be this value * mean Y size of microchannels");
     Parameter[] parameters = new Parameter[]{radius, isDarkBck, smooth};
     @Override
-    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) throws Exception {
+    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         //smooth.setSelected(true);
         // construct one single image 
         TrackMaskYWithMirroring tm = new TrackMaskYWithMirroring(new ArrayList<>(preFilteredImages.keySet()), true, true);
@@ -72,17 +73,21 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
         int sizeY = allImagesY.getSizeY();
         double mirrorProportion = radius.getValue().doubleValue()<preFilteredImages.size()*0.75 ? 0.5 : 1;
         int offsetY = (int)(allImagesY.getSizeY()*mirrorProportion);
-        allImagesY = mirrorY(allImagesY, offsetY); // mirror image on both Y ends
-        
+        ImageFloat[] allImagesYArray = new ImageFloat[]{allImagesY};
+        allImagesY = ThreadRunner.executeUntilFreeMemory(()-> {return mirrorY(allImagesYArray[0], offsetY);}, 200); // mirror image on both Y ends
+        allImagesYArray[0] = allImagesY;
         // apply filter
         double radius = (sizeY/(double)preFilteredImages.size())*(this.radius.getValue().doubleValue());
-        IJSubtractBackground.filter(allImagesY, radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);
+        logger.debug("necessary memory: {}MB", allImagesY.getSizeXY()*32/8000000);
+        ThreadRunner.executeUntilFreeMemory(()-> {IJSubtractBackground.filter(allImagesYArray[0], radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);});
         allImagesY = allImagesY.crop(allImagesY.getBoundingBox().setyMin(offsetY).setyMax(offsetY+sizeY-1)); // crop
         // recover data
         idx = 0;
         for (StructureObject o : tm.parents) ImageOperations.pasteImage(allImagesY, preFilteredImages.get(o), null, tm.getObjectOffset(idx++, 1));
-        logger.debug("done");
+        logger.debug("subtrack backgroun microchannel done");
     }
+    
+    
     
     private static ImageFloat mirrorY(ImageFloat input, int size) { 
         ImageFloat res = new ImageFloat("", input.getSizeX(), input.getSizeY()+2*size, input.getSizeZ());
@@ -103,8 +108,8 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
                     for (Voxel v : o.getVoxels()) {
                         Voxel closest = v.duplicate();
                         closest.y++;
-                        while (v.y<mask.getSizeY() && !mask.insideMask(closest.x, closest.y, closest.z)) ++closest.y;
-                        if (v.y<mask.getSizeY()) input.setPixel(v.x, v.y, v.z, input.getPixel(closest.x, closest.y, closest.z));
+                        while (closest.y<mask.getSizeY() && !mask.insideMask(closest.x, closest.y, closest.z)) ++closest.y;
+                        if (closest.y<mask.getSizeY()) input.setPixel(v.x, v.y, v.z, input.getPixel(closest.x, closest.y, closest.z));
                     }
                 }
             }

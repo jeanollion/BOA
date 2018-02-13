@@ -35,13 +35,11 @@ import org.mapdb.Serializer;
 public class DBMapUtils {
     public static DB createFileDB(String path, boolean readOnly) {
         //logger.debug("creating file db: {}, is dir: {}, exists: {}", path, new File(path).isDirectory(),new File(path).exists());
-        //return DBMaker.newFileDB(new File(path)).cacheDisable().closeOnJvmShutdown().make(); // v1        //
         if (readOnly) return DBMaker.fileDB(path).transactionEnable().fileLockDisable().readOnly().closeOnJvmShutdown().make();
-        return DBMaker.fileDB(path).transactionEnable().closeOnJvmShutdown().make(); // v3   https://jankotek.gitbooks.io/mapdb/performance/
+        return DBMaker.fileDB(path).transactionEnable().closeOnJvmShutdown().make(); //  https://jankotek.gitbooks.io/mapdb/performance/
         
     }
     public static HTreeMap<String, String> createHTreeMap(DB db, String key) {
-        //return db.createHashMap(key).keySerializer(Serializer.STRING).valueSerializer(Serializer.STRING).makeOrGet();
         try {
             return db.hashMap(key, Serializer.STRING, Serializer.STRING).createOrOpen(); 
         } catch (UnsupportedOperationException e) { // read-only case
@@ -49,22 +47,17 @@ public class DBMapUtils {
         }
     }
     public static <K, V> Set<Entry<K, V>> getEntrySet(HTreeMap<K, V> map) {
-        //return map.entrySet(); //v1
         if (map==null) return Collections.EMPTY_SET; // read-only case
-        return map.getEntries(); //v3
+        return map.getEntries(); 
     }
     public static <V> Collection<V> getValues(HTreeMap<?, V> map) {
-        //return map.values(); // v1
         if (map==null) return Collections.EMPTY_SET;
-        return map.getValues(); // v3
+        return map.getValues(); 
     }
     public static Iterable<String> getNames(DB db) {
-        //return db.getAll().keySet(); // v1
-        return db.getAllNames(); //v3
+        return db.getAllNames(); 
     }
     public static void deleteDBFile(String path) {
         new File(path).delete();
-        //new File(path+".p").delete(); // v1
-        //new File(path+".t").delete(); // v1 
     }
 }

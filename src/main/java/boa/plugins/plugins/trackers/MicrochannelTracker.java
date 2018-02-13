@@ -55,10 +55,9 @@ import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
 import boa.plugins.plugins.segmenters.MicrochannelSegmenter;
+import boa.plugins.plugins.segmenters.MicrochannelSegmenter.Result;
 import static boa.plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface;
-import boa.plugins.plugins.transformations.CropMicroChannelBF2D;
-import boa.plugins.plugins.transformations.CropMicroChannels.Result;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import boa.utils.HashMapGetCreate.Factory;
@@ -127,17 +126,16 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         if (parentTrack.isEmpty()) return;
         // segmentation
         final Result[] boundingBoxes = new Result[parentTrack.size()];
-        TreeMap<StructureObject, Image> ii = trackPreFilters.filter(structureIdx, parentTrack, executor);
-        Image[] inputImages = ii.values().toArray(new Image[parentTrack.size()]);
-        ApplyToSegmenter<? super MicrochannelSegmenter> applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, segmenter.instanciatePlugin(), ii, executor);
+        trackPreFilters.filter(structureIdx, parentTrack, executor);
+        ApplyToSegmenter<? super MicrochannelSegmenter> applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
         ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
             MicrochannelSegmenter s = segmenter.instanciatePlugin();
             if (applyToSegmenter !=null) applyToSegmenter.apply(parent, s);
-            boundingBoxes[idx] = s.segment(inputImages[idx]);
+            boundingBoxes[idx] = s.segment(parent.getPreFilteredImage(structureIdx));
             if (boundingBoxes[idx]==null) parent.setChildren(new ArrayList<>(), structureIdx); // if not set and call to getChildren() -> DAO will set old children
             //else parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards // TODO if post filter remove objects or modify -> how to link with result object??
-            else parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx); // no Y - shift here because the mean shift is added afterwards
-            inputImages[idx]=null;
+            else parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(parent.getPreFilteredImage(structureIdx), false), structureIdx); // no Y - shift here because the mean shift is added afterwards
+            parent.setPreFilteredImage(null, structureIdx); // save memory
         };
         /*MicrochannelPhase2D.debug=true;
         ta.run(parentTrack.get(0), structureIdx);
@@ -261,6 +259,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                 if (idx!=c.getIdx()) c.setIdx(idx);
             }
         }
+        
         if (debug) logger.debug("mc end: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
     }
 

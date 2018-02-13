@@ -64,7 +64,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
         List<StructureObject> objectsToRemove = new ArrayList<>();
         ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
-            
+            logger.debug("seg post-filter: {}", parent);
             pop.translate(parent.getBounds().duplicate().reverseOffset(), false); // go back to relative landmark
             pop=postFilters.filter(pop, structureIdx, parent);
             List<StructureObject> toRemove=null;
@@ -80,10 +80,10 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
                     objectsToRemove.addAll(toRemove);
                 }
             }
-            // TOBE ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
+            // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
         }, executor, null);
         if (!objectsToRemove.isEmpty()) { 
-            //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove);
+            //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
             if (this.deleteMethod.getSelectedIndex()==0) ManualCorrection.deleteObjects(null, objectsToRemove, false); // only delete
             else if (this.deleteMethod.getSelectedIndex()==2) ManualCorrection.prune(null, objectsToRemove, false); // prune tracks
             else if (this.deleteMethod.getSelectedIndex()==1) { 

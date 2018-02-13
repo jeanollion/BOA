@@ -50,7 +50,7 @@ public class Region {
     protected ImageInteger mask; //lazy -> use getter // bounds par rapport au root si absoluteLandMark==true, au parent sinon
     protected BoundingBox bounds;
     protected int label;
-    protected List<Voxel> voxels; //lazy -> use getter // coordonnées des voxel = coord dans l'image mask + offset du masque.  
+    protected Set<Voxel> voxels; //lazy -> use getter // coordonnées des voxel = coord dans l'image mask + offset du masque.  
     protected float scaleXY=1, scaleZ=1;
     protected boolean absoluteLandmark=false; // false = coordinates relative to the direct parent
     protected double quality=Double.NaN;
@@ -58,6 +58,8 @@ public class Region {
     final protected boolean is2D;
     /**
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
+     * @param label
+     * @param is2D
      */
     public Region(ImageInteger mask, int label, boolean is2D) {
         this.mask=mask;
@@ -68,18 +70,19 @@ public class Region {
         this.is2D=is2D;
     }
     
-    public Region(List<Voxel> voxels, int label, boolean is2D, float scaleXY, float scaleZ) {
-        this.voxels=voxels;
+    public Region(Set<Voxel> voxels, int label, boolean is2D, float scaleXY, float scaleZ) {
+        if (voxels instanceof Set) this.voxels = (Set)voxels;
+        else this.voxels=new HashSet<>(voxels);
         this.label=label;
         this.scaleXY=scaleXY;
         this.scaleZ=scaleXY;
         this.is2D=is2D;
     }
     public Region(final Voxel voxel, int label, boolean is2D, float scaleXY, float scaleZ) {
-        this(new ArrayList<Voxel>(){{add(voxel);}}, label, is2D, scaleXY, scaleZ);
+        this(new HashSet<Voxel>(){{add(voxel);}}, label, is2D, scaleXY, scaleZ);
     }
     
-    public Region(List<Voxel> voxels, int label, BoundingBox bounds, boolean is2D, float scaleXY, float scaleZ) {
+    public Region(Set<Voxel> voxels, int label, BoundingBox bounds, boolean is2D, float scaleXY, float scaleZ) {
         this(voxels, label, is2D, scaleXY, scaleZ);
         this.bounds=bounds;
     }
@@ -108,7 +111,7 @@ public class Region {
             return new Region((ImageInteger)mask.duplicate(""), label, is2D).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
         }
         else if (this.voxels!=null) {
-            ArrayList<Voxel> vox = new ArrayList<> (voxels.size());
+            Set<Voxel> vox = new HashSet<> (voxels.size());
             for (Voxel v : voxels) vox.add(v.duplicate());
             if (bounds==null) return new Region(vox, label, is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
             else return new Region(vox, label, bounds.duplicate(), is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
@@ -135,7 +138,7 @@ public class Region {
     
     public double getMeanVoxelValue() {
         if (getVoxels().isEmpty()) return Double.NaN;
-        else if (voxels.size()==1) return voxels.get(0).value;
+        else if (voxels.size()==1) return voxels.iterator().next().value;
         else {
             double sum = 0;
             for (Voxel v : voxels) sum+=v.value;
@@ -144,7 +147,7 @@ public class Region {
     }
     public Voxel getExtremum(boolean max) {
         if (getVoxels().isEmpty()) return null;
-        Voxel res = getVoxels().get(0);
+        Voxel res = getVoxels().iterator().next();
         if (max) {
             for (Voxel v : getVoxels()) if (v.value>res.value) res = v;
         } else {
@@ -156,7 +159,7 @@ public class Region {
         if (getVoxels().isEmpty()) return null;
         Iterator<Voxel> it = getVoxels().iterator();
         Voxel res = it.next();
-        List<Voxel> resList = new ArrayList<Voxel>();
+        List<Voxel> resList = new ArrayList<>();
         if (max) {
             while(it.hasNext()) {
                 Voxel v = it.next();
@@ -251,22 +254,22 @@ public class Region {
         }
     }
     
-    public synchronized void addVoxels(List<Voxel> voxelsToAdd) {
+    public synchronized void addVoxels(Collection<Voxel> voxelsToAdd) {
         this.getVoxels().addAll(voxelsToAdd);
         this.bounds=null;
         this.mask=null;
     }
-    public synchronized void removeVoxels(List<Voxel> voxelsToRemove) {
+    public synchronized void removeVoxels(Collection<Voxel> voxelsToRemove) {
         this.getVoxels().removeAll(voxelsToRemove);
         this.bounds=null;
         this.mask=null;
     }
     public synchronized void resetVoxels() {
-        if (mask==null) throw new IllegalArgumentException("Cannot reset voxels if no mask is present");
+        if (mask==null) getMask();
         voxels = null;
     }
     public synchronized void resetMask() {
-        if (voxels==null) throw new IllegalArgumentException("Cannot reset mask if no voxels are present");
+        if (voxels==null) getVoxels();
         mask = null;
         this.bounds=null;
     }
@@ -283,7 +286,7 @@ public class Region {
     private void createVoxels() {
         //logger.debug("create voxels: mask offset: {}", mask.getBoundingBox());
         if (mask.getPixelArray()==null) logger.debug("mask pixel null for object: {}", this);
-        ArrayList<Voxel> voxels_=new ArrayList<>();
+        HashSet<Voxel> voxels_=new HashSet<>();
         /*if (is2D()) {
             for (int y = 0; y < mask.getSizeY(); ++y) {
                 for (int x = 0; x < mask.getSizeX(); ++x) {
@@ -335,7 +338,7 @@ public class Region {
         return res;
     }
     
-    public List<Voxel> getVoxels() {
+    public Set<Voxel> getVoxels() {
         if (voxels==null) {
             synchronized(this) { // "Double-Checked Locking"
                 if (voxels==null) {
@@ -353,7 +356,7 @@ public class Region {
      * 
      * @return subset of object's voxels that are in contact with background, edge or other object
      */
-    public List<Voxel> getContour() {
+    public Set<Voxel> getContour() {
         ImageMask mask = getMask();
         EllipsoidalNeighborhood neigh = !is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true); // 1 and not 1.5 -> diagonal
         
@@ -362,7 +365,7 @@ public class Region {
             neigh.dy[i]-=mask.getOffsetY();
             if (!is2D()) neigh.dz[i]-=mask.getOffsetZ();
         }
-        ArrayList<Voxel> res = new ArrayList<>();
+        Set<Voxel> res = new HashSet<>();
         for (Voxel v: getVoxels()) if (touchBorder(v, neigh, mask)) res.add(v);
         // TODO : method without getVoxels 
         //logger.debug("contour: {} (total: {})", res.size(), getVoxels().size());
@@ -492,7 +495,6 @@ public class Region {
             return l>0 && l!=label;
         });
         //heap.removeAll(labelMap);
-        Set<Voxel> voxels = new HashSet<>(getVoxels());
         EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
         //logger.debug("start heap: {},  voxels : {}", heap.size(), voxels.size());
         while(!heap.isEmpty()) {
@@ -508,7 +510,6 @@ public class Region {
                 }
             }
         }
-        this.voxels = new ArrayList<>(voxels); 
         bounds = null; // reset boudns
         this.mask=null; // reset voxels
     }

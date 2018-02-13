@@ -45,7 +45,7 @@ public class NormalizeTrack  implements TrackPreFilter {
         this.invert.setSelected(invert);
     }
     @Override
-    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImage) throws Exception {
+    public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImage) {
         Histogram histo = Histogram.getHisto256(preFilteredImages.values(), null);
         double[] minAndMax = new double[2];
         minAndMax[0] = histo.minAndMax[0];

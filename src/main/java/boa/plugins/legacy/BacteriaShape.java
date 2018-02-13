@@ -101,7 +101,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         List<Region> sideBackObjects = sideBackground? getSideBackgroundRegions(pop):Collections.EMPTY_LIST;
         if (!sideBackObjects.isEmpty()) { //check that thld is higher thant side objects
             for (Region r : sideBackObjects) {
-                Voxel v = r.getVoxels().get(0);
+                Voxel v = r.getVoxels().iterator().next();
                 double med = medianValueMap.getPixel(v.x, v.y, v.z);
                 if (threshold<=med) threshold = med*1.1;
             }

@@ -49,7 +49,7 @@ public class RemoveSaturatedMicrochannels implements TrackPostFilter {
         this.minPercentageOfSaturatedPixels.setValue(percentageOfSaturatedPixels);
     }
     @Override
-    public void filter(int structureIdx, List<StructureObject> parentTrack) throws Exception {
+    public void filter(int structureIdx, List<StructureObject> parentTrack) {
         
         List<StructureObject> objectsToRemove = new ArrayList<>();
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);

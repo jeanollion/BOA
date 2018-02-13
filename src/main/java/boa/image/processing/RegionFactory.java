@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -36,7 +37,7 @@ import java.util.TreeMap;
  */
 public class RegionFactory {
     public static Region[] getRegions(ImageInteger labelImage, boolean ensureContinuousLabels) {
-        HashMapGetCreate<Integer, List<Voxel>> objects = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory<>());
+        HashMapGetCreate<Integer, Set<Voxel>> objects = new HashMapGetCreate<>(new HashMapGetCreate.SetFactory<>());
         int label;
         int sizeX = labelImage.getSizeX();
         for (int z = 0; z < labelImage.getSizeZ(); ++z) {
@@ -45,10 +46,10 @@ public class RegionFactory {
                 if (label != 0) objects.getAndCreateIfNecessary(label).add(new Voxel(xy % sizeX, xy / sizeX, z));
             }
         }
-        TreeMap<Integer, List<Voxel>> tm = new TreeMap(objects);
+        TreeMap<Integer, Set<Voxel>> tm = new TreeMap(objects);
         Region[] res = new Region[tm.size()];
         int i = 0;
-        for (Entry<Integer, List<Voxel>> e : tm.entrySet()) {
+        for (Entry<Integer, Set<Voxel>> e : tm.entrySet()) {
             res[i] = new Region(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1, labelImage.getScaleXY(), labelImage.getScaleZ());
             ++i;
         }

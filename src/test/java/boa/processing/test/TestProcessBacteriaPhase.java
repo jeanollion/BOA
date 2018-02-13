@@ -144,14 +144,13 @@ public class TestProcessBacteriaPhase {
         allMCTracks.entrySet().removeIf(o->o.getKey().getIdx()!=microChannel);
         List<StructureObject> parentTrack = allMCTracks.entrySet().iterator().next().getValue();
         //parentTrack.removeIf(o -> o.getFrame()<1 || o.getFrame()>200); // GRANDE DIFFERENCE POUR SUBBACK -> vient de saturate?
-        TreeMap<StructureObject, Image> preFilteredImages;
         ProcessingScheme psc = mDAO.getExperiment().getStructure(1).getProcessingScheme();
-        preFilteredImages = psc.getTrackPreFilters(true).filter(0, parentTrack, null);
-        ApplyToSegmenter apply = TrackParametrizable.getApplyToSegmenter(timePointMax, psc.getSegmenter(), preFilteredImages, null);
+        psc.getTrackPreFilters(true).filter(0, parentTrack, null);
+        ApplyToSegmenter apply = TrackParametrizable.getApplyToSegmenter(timePointMax, parentTrack, psc.getSegmenter(), null);
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {
-            Image input = preFilteredImages.get(mc);
+            Image input = mc.getPreFilteredImage(timePointMax);
             Segmenter seg = psc.getSegmenter();
             if (apply!=null) apply.apply(mc, seg);
             if (parentTrack.size()==1) {

@@ -105,10 +105,10 @@ public class PluginConfigurationUtils {
                             Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut( parentTrack, true);  // don't modify object directly. 
                             parent = dupMap.get(parent.getId()); 
                             parentTrack = parentTrack.stream().map(p->dupMap.get(p.getId())).collect(Collectors.toList());
-                            TreeMap<StructureObject, Image> preFilteredImages = psc.getTrackPreFilters(true).filter(parentStrutureIdx, parentTrack, null);
+                            psc.getTrackPreFilters(true).filter(parentStrutureIdx, parentTrack, null);
                             
                             if (ps instanceof Segmenter) { // case segmenter -> segment only & call to test method
-                                ApplyToSegmenter  applyToSeg = TrackParametrizable.getApplyToSegmenter(structureIdx, (Segmenter)ps, preFilteredImages, null);
+                                ApplyToSegmenter  applyToSeg = TrackParametrizable.getApplyToSegmenter(structureIdx, parentTrack, (Segmenter)ps, null);
                                 SegmentOnly so; 
                                 if (psc instanceof SegmentOnly) {
                                     so = (SegmentOnly)psc;
@@ -127,7 +127,7 @@ public class PluginConfigurationUtils {
                                     applyToSeg.apply(p, s); 
                                     ((ParameterSetup)s).setTestParameter(parameters[idx].getName());
                                 };
-                                so.segmentAndTrack(structureIdx, sel, preFilteredImages, apply, null);
+                                so.segmentAndTrack(structureIdx, sel, apply, null);
                                 
                             } else if (ps instanceof Tracker) {
                                 boolean segAndTrack = false;

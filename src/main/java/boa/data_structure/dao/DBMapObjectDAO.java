@@ -348,10 +348,12 @@ public class DBMapObjectDAO implements ObjectDAO {
         }
         
     }
-
     @Override
     public void clearCache() {
-        for (Map<?, StructureObject> obs : cache.values()) for (StructureObject so : obs.values()) so.flushImages();
+        for (Map<String, StructureObject> obs : cache.values()) {
+            for (StructureObject so : obs.values()) so.flushImages();
+            logger.debug("clear chache: {} objects", obs.size());
+        }
         cache.clear();
         allObjectsRetrievedInCache.clear();
         closeAllFiles(true);
@@ -361,6 +363,8 @@ public class DBMapObjectDAO implements ObjectDAO {
     public synchronized void deleteAllObjects() {
         closeAllObjectFiles(false);
         closeAllMeasurementFiles(false);
+        cache.clear();
+        allObjectsRetrievedInCache.clear();
         if (readOnly) return;
         File f = new File(dir);
         if (f.exists() && f.isDirectory()) for (File subF : f.listFiles())  subF.delete();
@@ -375,7 +379,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         //cache.clear();
         //allObjectsRetrieved.clear();
     }
-    private void closeAllFiles(boolean commit) {
+    public void closeAllFiles(boolean commit) {
         closeAllObjectFiles(commit);
         closeAllMeasurementFiles(commit);
     }

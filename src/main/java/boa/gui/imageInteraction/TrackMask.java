@@ -141,22 +141,12 @@ public abstract class TrackMask extends ImageObjectInterface {
             public String run(int i) {
                 //long t0 = System.currentTimeMillis();
                 Image image = trackObjects[i].generateRawImage(structureIdx, false);
-                //long t1 = System.currentTimeMillis();
-                //double[] mm = image.getMinAndMax(null);
-                //if (mm[0]<minAndMax[0]) minAndMax[0]=mm[0];
-                //if (mm[1]>minAndMax[1]) minAndMax[1]=mm[1];
-                //long t2 = System.currentTimeMillis();
                 pasteImage(image, displayImage, trackOffset[i]);
-                //long t3 = System.currentTimeMillis();
-                //long t4=t3;
                 if (count>=updateImageFrequency || i==trackObjects.length-1) {
                     ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage); //, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1])
                     //t4 = System.currentTimeMillis();
                     count=0;
                 } else count++;
-                //logger.debug("i: {}, count: {}, open: {}, min&max: {}, paste: {}, update: {}", i, count, t1-t0, t2-t1, t3-t2, t4-t3);
-                //totalTime[0]+=t4-t0;
-                //if (i==trackObjects.length-1) logger.debug("total time: {}", totalTime[0]);
                 return null;
             }
 

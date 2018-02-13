@@ -63,6 +63,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import boa.utils.Pair;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -280,14 +282,14 @@ public class SaveAndRetriveSegmentationData {
         RoiManager rm = getRM();
         rm.runCommand("open", roiListDir);
         Roi[] rois=  rm.getRoisAsArray();
-        ArrayList<Region> res = new ArrayList<Region>();
+        ArrayList<Region> res = new ArrayList<>();
         for (int i = 0 ; i<rois.length; ++i) { // only for 2D ROI
             if (rois[i] instanceof PointRoi) {
                 //if (!points) continue;
                 Polygon p = ((PointRoi)rois[i]).getPolygon();
                 //logger.debug("ROI: {}, is point and has: {} points", i, p.npoints);
                 Voxel v = new Voxel(p.xpoints[0], p.ypoints[0], 0);
-                ArrayList<Voxel> vox = new ArrayList<Voxel>(1);
+                Set<Voxel> vox = new HashSet<>(1);
                 vox.add(v);
                 res.add(new Region(vox, i+1, true, 1, 1));
             } else {

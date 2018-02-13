@@ -49,7 +49,7 @@ public class TrackLengthFilter implements TrackPostFilter {
     }
     
     @Override
-    public void filter(int structureIdx, List<StructureObject> parentTrack) throws Exception {
+    public void filter(int structureIdx, List<StructureObject> parentTrack) {
         int min = minSize.getValue().intValue();
         int max = maxSize.getValue().intValue();
         List<StructureObject> objectsToRemove = new ArrayList<>();

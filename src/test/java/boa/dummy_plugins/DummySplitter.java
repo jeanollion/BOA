@@ -24,6 +24,8 @@ import boa.data_structure.Voxel;
 import boa.image.Image;
 import java.util.ArrayList;
 import boa.plugins.ObjectSplitter;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -33,8 +35,8 @@ public class DummySplitter implements ObjectSplitter {
 
     public RegionPopulation splitObject(Image input, Region object) {
         double yMid  = object.getBounds().getYMean();
-        ArrayList<Voxel> v1 = new ArrayList<Voxel>(object.getVoxels().size()/2+1);
-        ArrayList<Voxel> v2 = new ArrayList<Voxel>(object.getVoxels().size()/2+1);
+        Set<Voxel> v1 = new HashSet<>(object.getVoxels().size()/2+1);
+        Set<Voxel> v2 = new HashSet<>(object.getVoxels().size()/2+1);
         for (Voxel v : object.getVoxels()) {
             if (v.y<yMid) v1.add(v);
             else v2.add(v);

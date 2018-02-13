@@ -29,7 +29,13 @@ import boa.ui.PropertyUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static boa.core.TaskRunner.logger;
 import boa.configuration.experiment.PreProcessingChain;
+import static boa.core.Processor.deleteObjects;
+import static boa.core.Processor.executeProcessingScheme;
+import static boa.core.Processor.getOrCreateRootTrack;
+import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.dao.DBMapMasterDAO;
+import boa.data_structure.dao.DBMapObjectDAO;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.MasterDAOFactory;
 import ij.IJ;
@@ -384,40 +390,45 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             for (int pIdx : positions) {
                 String position = db.getExperiment().getPosition(pIdx).getName();
                 try {
-                    run(position, deleteAllField);
+                    process(position, deleteAllField);
                 } catch (MultipleException e) {
                     errors.addAll(e.getExceptions());
                 } catch (Exception e) {
                     errors.add(new Pair("Error while processing: db"+db.getDBName()+" pos:"+position, e));
+                } finally {
+                    db.getExperiment().getPosition(position).flushImages(true, true);
+                    db.clearCache(position);
+                    db.getSelectionDAO().clearCache();
+                    ImageWindowManagerFactory.getImageManager().flush();
+                    System.gc();
+                    publishMemoryUsage("After clearing cache");
                 }
             }
             
             for (Pair<String, int[]> e  : this.extractMeasurementDir) extractMeasurements(e.key==null?db.getDir():e.key, e.value);
             if (exportData) exportData();
             db.clearCache();
-            //db.getExperiment();
-            //db=null;
         }
-    private void run(String position, boolean deleteAllField) throws Exception {
+    private void process(String position, boolean deleteAllField) throws Exception {
         publish("Position: "+position);
         if (deleteAllField) db.getDao(position).deleteAllObjects();
         if (preProcess) {
             publish("Pre-Processing: DB: "+dbName+", Position: "+position);
             logger.info("Pre-Processing: DB: {}, Position: {}", dbName, position);
-            try {
-                Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, preProcess, this);
-            } catch (Exception e) {
-                errors.add(new Pair(position, e));
-            }
-            db.getExperiment().getPosition(position).flushImages(true, false);
+            Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, preProcess, this);
+            db.getExperiment().getPosition(position).flushImages(true, true); // pre-processed images are open once again by root objects.
+            System.gc();
             incrementProgress();
+            publishMemoryUsage("After PreProcessing:");
         }
-        //publishMemoryUsage("After PreProcessing:");
-        if (segmentAndTrack || trackOnly) {
+        
+        if ((segmentAndTrack || trackOnly)) {
             logger.info("Processing: DB: {}, Position: {}", dbName, position);
+            deleteObjects(db.getDao(position), structures);
+            List<StructureObject> root = getOrCreateRootTrack(db.getDao(position));
             for (int s : structures) { // TODO take code from processor
                 publish("Processing structure: "+s);
-                Processor.processAndTrackStructures(db.getDao(position), true, trackOnly, s);
+                executeProcessingScheme(root, s, trackOnly, false);
                 incrementProgress();
                 if (generateTrackImages && !db.getExperiment().getAllDirectChildStructures(s).isEmpty()) {
                     publish("Generating Track Images for Structure: "+s);
@@ -425,6 +436,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     incrementProgress();
                 }
             }
+            // possible memory leak at this stage : list of voxels of big objects -> TODO make a precedure to erase voxels within objects
             //publishMemoryUsage("After Processing:");
         } else if (generateTrackImages) {
             publish("Generating Track Images...");
@@ -445,13 +457,6 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             incrementProgress();
             //publishMemoryUsage("After Measurements");
         }
-        
-        if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
-        db.clearCache(position); // also flush images
-        db.getSelectionDAO().clearCache();
-        ImageWindowManagerFactory.getImageManager().flush();
-        System.gc();
-        publishMemoryUsage("After clearing cache");
     }
     public void publishMemoryUsage(String message) {
         publish(message+Utils.getMemoryUsage());

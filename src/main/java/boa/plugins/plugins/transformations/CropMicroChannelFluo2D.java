@@ -60,6 +60,8 @@ import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 import static boa.utils.Utils.plotProfile;
 import boa.plugins.OverridableThresholdMap;
+import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
+import boa.plugins.plugins.segmenters.MicrochannelSegmenter.Result;
 
 /**
  *
@@ -104,13 +106,18 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     @Override
     public BoundingBox getBoundingBox(Image image) {
         double thld = this.threshold.instanciatePlugin().runSimpleThresholder(image, null);
-        return getBoundingBox(image, null, cropMargin.getValue().intValue(), margin.getValue().intValue(), thld, xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
+        return getBoundingBox(image, null , thld);
     }
     
-    public BoundingBox getBoundingBox(Image image, ImageInteger thresholdedImage, int cropMargin, int margin, double threshold, int xStart, int xStop, int yStart, int yStop) {
+    public BoundingBox getBoundingBox(Image image, ImageInteger thresholdedImage, double threshold) {
         if (debug) testMode = true;
-        Result r = segmentMicroChannels(image, thresholdedImage, margin, 0, 0, threshold);
+        Result r = MicroChannelFluo2D.segmentMicroChannels(image, thresholdedImage, margin.getValue().intValue(), 0, 0, this.channelHeight.getValue().intValue(), this.fillingProportion.getValue().doubleValue(), threshold, this.minObjectSize.getValue().intValue(), testMode);
         if (r == null) return null;
+        int cropMargin = this.cropMargin.getValue().intValue();
+        int xStart = this.xStart.getValue().intValue();
+        int xStop = this.xStop.getValue().intValue();
+        int yStart = this.yStart.getValue().intValue();
+        int yStop = this.yStop.getValue().intValue();
         int yMin = Math.max(yStart, r.yMin);
         if (yStop==0) yStop = image.getSizeY()-1;
         if (xStop==0) xStop = image.getSizeX()-1;
@@ -126,95 +133,6 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         
     }
     
-    public Result segmentMicroChannels(Image image, ImageInteger thresholdedImage, int Xmargin, int yShift, int channelWidth, double thld) {
-        if (debug) testMode = true;
-        double thldX = channelHeight.getValue().doubleValue() * fillingProportion.getValue().doubleValue(); // only take into account roughly filled channels
-        thldX /= (double) (image.getSizeY() * image.getSizeZ() ); // mean X projection
-        /*
-        1) rough segmentation of cells with threshold
-        2) selection of filled channels using X-projection & threshold on length
-        3) computation of Y start using the minimal Y of objects within the selected channels from step 2 (median value of yMins)
-        */
-        
-        if (Double.isNaN(thld) && thresholdedImage==null) thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3, Double.MAX_VALUE, null);//IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
-        if (testMode) logger.debug("crop micochannels threshold : {}", thld);
-        ImageInteger mask = thresholdedImage == null ? ImageOperations.threshold(image, thld, true, true) : thresholdedImage;
-        Filters.binaryClose(mask, mask, Filters.getNeighborhood(1, 0, image)); // case of low intensity signal -> noisy. // remove small objects?
-        List<Region> bacteria = ImageOperations.filterObjects(mask, mask, o->o.getSize()<minObjectSize.getValue().intValue());
-        
-        float[] xProj = ImageOperations.meanProjection(mask, ImageOperations.Axis.X, null);
-        ImageFloat imProjX = new ImageFloat("proj(X)", mask.getSizeX(), new float[][]{xProj});
-        ImageByte projXThlded = ImageOperations.threshold(imProjX, thldX, true, false).setName("proj(X) thlded: "+thldX);
-        if (testMode) {
-            ImageWindowManagerFactory.showImage(mask);
-            Utils.plotProfile(imProjX, 0, 0, true);
-            Utils.plotProfile(projXThlded, 0, 0, true);
-        }
-        List<Region> xObjectList = ImageLabeller.labelImageList(projXThlded);
-        if (xObjectList.isEmpty()) return null;
-        if (channelWidth<=1) channelWidth=(int)xObjectList.stream().mapToInt(o->o.getBounds().getSizeX()).average().getAsDouble();
-        Xmargin = Math.max(Xmargin, channelWidth/2+1);
-        if (testMode) logger.debug("channelWidth: {}, marging: {}", channelWidth, Xmargin);
-        Iterator<Region> it = xObjectList.iterator();
-        int rightLimit = image.getSizeX() - Xmargin;
-        while(it.hasNext()) {
-            BoundingBox b = it.next().getBounds();
-            if (b.getXMean()<Xmargin || b.getXMean()>rightLimit) it.remove(); //if (b.getxMin()<Xmargin || b.getxMax()>rightLimit) it.remove(); //
-        }
-        if (xObjectList.isEmpty()) return null;
-        // fusion of overlapping objects
-        it = xObjectList.iterator();
-        Region prev = it.next();
-        while(it.hasNext()) {
-            Region next = it.next();
-            if (prev.getBounds().getxMax()+1>next.getBounds().getxMin()) { 
-                prev.addVoxels(next.getVoxels());
-                it.remove();
-            } else prev= next;
-        }
-        
-        Region[] xObjects = xObjectList.toArray(new Region[xObjectList.size()]);
-        if (xObjects.length==0) return null;
-        
-        if (testMode) ImageWindowManagerFactory.showImage(new RegionPopulation(bacteria, mask).getLabelMap().setName("segmented bacteria"));
-        if (testMode) logger.debug("mc: {}, objects: {}", Utils.toStringArray(xObjects, o->o.getBounds()), bacteria.size());
-        if (bacteria.isEmpty()) return null;
-        int[] yMins = new int[xObjects.length];
-        Arrays.fill(yMins, Integer.MAX_VALUE);
-        for (Region o : bacteria) {
-            BoundingBox b = o.getBounds();
-            //if (debug) logger.debug("object: {}");
-            X_SEARCH : for (int i = 0; i<xObjects.length; ++i) {
-                BoundingBox inter = b.getIntersection(xObjects[i].getBounds());
-                if (inter.getSizeX() >= 2 ) {
-                    if (b.getyMin()<yMins[i]) yMins[i] = b.getyMin();
-                    break X_SEARCH;
-                }
-            }
-        }
-        // get median value of yMins
-        List<Integer> yMinsList = new ArrayList<>(yMins.length);
-        for (int yMin : yMins) if (yMin!=Integer.MAX_VALUE) yMinsList.add(yMin);
-        if (yMinsList.isEmpty()) return null;
-        //int yMin = (int)Math.round(ArrayUtil.medianInt(yMinsList));
-        //if (debug) logger.debug("Ymin: {}, among: {} values : {}, shift: {}", yMin, yMinsList.size(), yMins, yShift);
-        int yMin = Collections.min(yMinsList);
-        
-        List<int[]> sortedMinMaxYShiftList = new ArrayList<>(xObjects.length);
-        
-        for (int i = 0; i<xObjects.length; ++i) {
-            if (yMins[i]==Integer.MAX_VALUE) continue;
-            int xMin = (int) (xObjects[i].getBounds().getXMean() - channelWidth / 2.0);
-            int xMax = (int) (xObjects[i].getBounds().getXMean() +  channelWidth / 2.0); // mc remains centered
-            if (xMin<0 || xMax>=image.getSizeX()) continue;  // exclude outofbounds objects
-            int[] minMaxYShift = new int[]{xMin, xMax, yMins[i]-yMin<yShift ? 0 : yMins[i]-yMin};
-            sortedMinMaxYShiftList.add(minMaxYShift);
-        }
-        Collections.sort(sortedMinMaxYShiftList, (i1, i2) -> Integer.compare(i1[0], i2[0]));
-        return new Result(sortedMinMaxYShiftList, Math.max(0, yMin-yShift), yMin+channelHeight.getValue().intValue()-yShift);
-        //return new Result(xObjects, yMin, yMin+channelHeight);
-        
-    }
 
     @Override public Parameter[] getParameters() {
         return parameters;
