@@ -695,7 +695,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
-        RegionPopulation pop = splitter.splitObject(getRawImage(structureIdx),  getObject());
+        RegionPopulation pop = splitter.splitObject(getParent().getPreFilteredImage(structureIdx).cropWithOffset(getBounds()), getObject()); //getRawImage(structureIdx)
         if (pop==null || pop.getRegions().size()==1) {
             logger.warn("split error: {}", this);
             return null;
@@ -832,6 +832,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return this.preFilteredImagesS.get(structureIdx);
     }
     public void setPreFilteredImage(Image image, int structureIdx) {
+        if (!image.sameSize(getMask())) throw new IllegalArgumentException("PreFiltered Image should have same dimensions as object");
+        image.setCalibration(this.getMask());
+        image.resetOffset().addOffset(this.getBounds()); // ensure same offset
         this.preFilteredImagesS.set(image, structureIdx);
     }
     public Image getTrackImage(int structureIdx) {

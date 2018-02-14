@@ -299,7 +299,7 @@ public class ThreadRunner {
     }
     
     public static void executeUntilFreeMemory(Runnable r) {
-        executeUntilFreeMemory(r, 100);
+        executeUntilFreeMemory(r, 10);
     }
     public static void executeUntilFreeMemory(Runnable r, int maxTryouts) {
         int idx = 0;
@@ -323,7 +323,7 @@ public class ThreadRunner {
         throw outOfMemoryError;
     }
     public static <T> T executeUntilFreeMemory(Supplier<T> s) {
-        return executeUntilFreeMemory(s, 100);
+        return executeUntilFreeMemory(s, 10);
     }
     public static <T> T executeUntilFreeMemory(Supplier<T> r, int maxTryouts) {
         int idx = 0;

@@ -28,6 +28,7 @@ import boa.gui.objects.StructureNode;
 import boa.data_structure.SelectionUtils;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.experiment.Experiment;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.Region;
 import boa.data_structure.dao.ObjectDAO;
@@ -68,6 +69,7 @@ import boa.plugins.plugins.trackers.trackmate.TrackMateInterface;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.stream.Stream;
 
 /**
  *
@@ -402,12 +404,11 @@ public class ManualCorrection {
         }
         
         Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, segmentationParentStructureIdx);
-        if (points!=null) {
+        if (points!=null && !points.isEmpty()) {
+            ensurePreFilteredImages(points.keySet().stream(), structureIdx, db.getExperiment(), db.getDao(points.keySet().iterator().next().getPositionName()));
             logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, segmentationParentStructureIdx);
             List<StructureObject> segmentedObjects = new ArrayList<>();
-            PreFilterSequence preFilters = db.getExperiment().getStructure(structureIdx).getProcessingScheme().getPreFilters();
-            HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parent->preFilters.filter(parent.getRawImage(structureIdx), parent.getMask()));
-            HashMapGetCreate<StructureObject, Image[]> subMaps = segInstance instanceof UseMaps? new HashMapGetCreate<>(parent->((UseMaps)segInstance).computeMaps(parent.getRawImage(structureIdx), inputImages.getAndCreateIfNecessary(parent))) : null;
+            HashMapGetCreate<StructureObject, Image[]> subMaps = segInstance instanceof UseMaps? new HashMapGetCreate<>(parent->((UseMaps)segInstance).computeMaps(parent.getRawImage(structureIdx), parent.getPreFilteredImage(structureIdx))) : null;
             
             for (Map.Entry<StructureObject, List<int[]>> e : points.entrySet()) {
                 ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
@@ -415,13 +416,13 @@ public class ManualCorrection {
                 StructureObject globalParent = e.getKey().getParent(parentStructureIdx);
                 StructureObject subParent = e.getKey();
                 boolean subSegmentation = !subParent.equals(globalParent);
-                boolean ref2D = subParent.is2D() && inputImages.getAndCreateIfNecessarySyncOnKey(globalParent).getSizeZ()>1;
+                boolean ref2D = subParent.is2D() && globalParent.getPreFilteredImage(structureIdx).getSizeZ()>1;
                 if (subMaps!=null) {
                     Image[] maps = subMaps.getAndCreateIfNecessarySyncOnKey(e.getKey().getParent(parentStructureIdx));
                     if (subSegmentation) ((UseMaps)segmenter).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(ref2D? subParent.getBounds().duplicate().fitToImageZ(i):subParent.getBounds())));
                     else ((UseMaps)segmenter).setMaps(maps);
                 }
-                Image input = inputImages.getAndCreateIfNecessarySyncOnKey(globalParent);
+                Image input = globalParent.getPreFilteredImage(structureIdx);
                 if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
                 
                 // generate image mask without old objects
@@ -474,6 +475,27 @@ public class ManualCorrection {
     public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay, boolean test) {
         splitObjects(db, objects, updateDisplay, test, null);
     }
+    public static void ensurePreFilteredImages(Stream<StructureObject> parents, int structureIdx, Experiment xp , ObjectDAO dao) {
+        TrackPreFilterSequence tpf = xp.getStructure(structureIdx).getProcessingScheme().getTrackPreFilters(false);
+        TrackPreFilterSequence tpfWithPF = xp.getStructure(structureIdx).getProcessingScheme().getTrackPreFilters(true);
+        if (tpf.get().isEmpty()) { // only preFilters on current objects
+            PreFilterSequence pf = xp.getStructure(structureIdx).getProcessingScheme().getPreFilters();
+            parents.forEach(parent ->{
+                if (parent.getPreFilteredImage(structureIdx)==null) {
+                    parent.setPreFilteredImage(pf.filter(parent.getRawImage(structureIdx), parent.getMask()), structureIdx);
+                }
+            });
+            return;
+        } else if (dao==null) throw new RuntimeException("Cannot split objects because track preFilters are present and DAO not preset");
+        else {
+            parents.map(o->o.getTrackHead()).distinct().forEach(p->{
+                logger.debug("tpf for : {}", p);
+                if (p.getPreFilteredImage(structureIdx)==null) {
+                    tpfWithPF.filter(structureIdx, dao.getTrack(p), null);
+                }
+            });
+        }
+    }
     public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay, boolean test, ObjectSplitter defaultSplitter) {
         int structureIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
         if (objects.isEmpty()) return;
@@ -484,15 +506,16 @@ public class ManualCorrection {
             logger.warn("No splitter configured");
             return;
         }
-        Map<String, List<StructureObject>> objectsByFieldName = StructureObjectUtils.splitByPosition(objects);
-        for (String f : objectsByFieldName.keySet()) {
+        Map<String, List<StructureObject>> objectsByPosition = StructureObjectUtils.splitByPosition(objects);
+        for (String f : objectsByPosition.keySet()) {
             ObjectDAO dao = db==null? null : db.getDao(f);
             List<StructureObject> objectsToStore = new ArrayList<>();
             List<StructureObject> newObjects = new ArrayList<>();
-            for (StructureObject objectToSplit : objectsByFieldName.get(f)) {
+            ensurePreFilteredImages(objectsByPosition.get(f).stream().map(o->o.getParent()), structureIdx, xp, dao);
+            for (StructureObject objectToSplit : objectsByPosition.get(f)) {
                 if (defaultSplitter==null) splitter = xp.getStructure(structureIdx).getObjectSplitter();
                 splitter.setSplitVerboseMode(test);
-                if (test) splitter.splitObject(objectToSplit.getRawImage(objectToSplit.getStructureIdx()), objectToSplit.getObject());
+                if (test) splitter.splitObject(objectToSplit.getParent().getPreFilteredImage(structureIdx).cropWithOffset(objectToSplit.getBounds()), objectToSplit.getObject());
                 else {
                     StructureObject newObject = objectToSplit.split(splitter);
                     if (newObject==null) logger.warn("Object could not be splitted!");

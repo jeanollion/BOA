@@ -24,8 +24,6 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import boa.gui.imageInteraction.TrackMaskY;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Image;
@@ -78,7 +76,7 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
         allImagesYArray[0] = allImagesY;
         // apply filter
         double radius = (sizeY/(double)preFilteredImages.size())*(this.radius.getValue().doubleValue());
-        logger.debug("necessary memory: {}MB", allImagesY.getSizeXY()*32/8000000);
+        //logger.debug("necessary memory: {}MB", allImagesY.getSizeXY()*32/8000000);
         ThreadRunner.executeUntilFreeMemory(()-> {IJSubtractBackground.filter(allImagesYArray[0], radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);});
         allImagesY = allImagesY.crop(allImagesY.getBoundingBox().setyMin(offsetY).setyMax(offsetY+sizeY-1)); // crop
         // recover data
