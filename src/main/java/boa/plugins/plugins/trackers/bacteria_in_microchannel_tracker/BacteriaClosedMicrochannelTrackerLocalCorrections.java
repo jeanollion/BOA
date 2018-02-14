@@ -72,9 +72,6 @@ import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
-import boa.plugins.plugins.segmenters.BacteriaIntensity;
-import boa.plugins.legacy.BacteriaTrans;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.TrackAssigner.compareScores;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.Utils;
@@ -583,6 +580,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         areFromSameLine = (o1, o2) -> objectAttributeMap.containsKey(o1) && objectAttributeMap.containsKey(o2) ? objectAttributeMap.get(o1).prev == objectAttributeMap.get(o2).prev : false;
         
     }
+    protected StructureObject getParent(int frame) {
+        return getParent(frame, false);
+    }
     protected StructureObject getParent(int frame, boolean searchClosestIfAbsent) {
         StructureObject parent = parentsByF.get(frame);
         if (parent==null && searchClosestIfAbsent) {
@@ -605,7 +605,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             StructureObject parent = this.parentsByF.get(timePoint);
             List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
             if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
-                if (segment) o.getObject().translate(parent.getBounds().duplicate().reverseOffset()); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
+                if (segment) o.getObject().translate(parent.getBounds().duplicate().reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
                 return o.getObject();
             }));
             else populations.put(timePoint, Collections.EMPTY_LIST); 
@@ -1062,12 +1062,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
      */
     private int[] performCorrectionSplitOrMergeOverMultipleTime(Assignment a, int frame) {
         List<CorrectionScenario> allScenarios = new ArrayList<>();
-        MergeScenario m = new MergeScenario(this, a.idxPrev, a.prevObjects, frame-1);
-        allScenarios.add(m.getWholeScenario(maxCorrectionLength, costLim, cumCostLim)); // merge scenario
-        
-        SplitScenario ss =new SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, a.nextObjects.get(0), frame);
-        allScenarios.add(ss.getWholeScenario(maxCorrectionLength, costLim, cumCostLim));
-        
+        if (a.prevFromSameLine()) {
+            MergeScenario m = new MergeScenario(this, a.idxPrev, a.prevObjects, frame-1);
+            allScenarios.add(m.getWholeScenario(maxCorrectionLength, costLim, cumCostLim)); // merge scenario
+        }
+        for (Region r : a.nextObjects) {
+            SplitScenario ss =new SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, r, frame);
+            allScenarios.add(ss.getWholeScenario(maxCorrectionLength, costLim, cumCostLim));
+        }
         return getBestScenario(allScenarios, a.ta.verboseLevel);
     }
     /**

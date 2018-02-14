@@ -23,9 +23,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import boa.plugins.legacy.BacteriaTrans;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.logger;
-import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import java.util.HashSet;
 import java.util.Set;
@@ -82,7 +79,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
             super(frame);
             this.source=source;
             values = new ArrayList(2);
-            cost = tracker.getSegmenter(frame).split(tracker.getImage(frame), source, values);
+            cost = tracker.getSegmenter(frame).split(tracker.getParent(frame), tracker.structureIdx, source, values);
             if (Double.isInfinite(cost) || Double.isNaN(cost) || values.size()!=2) {
                 cost = Double.POSITIVE_INFINITY;
                 values.clear();
@@ -115,7 +112,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
         public Merge(int frame, Pair<Region, Region> source) {
             super(frame);
             this.source = source;
-            cost = tracker.getSegmenter(frame).computeMergeCost(tracker.getImage(frame), listSource());
+            cost = tracker.getSegmenter(frame).computeMergeCost(tracker.getParent(frame), tracker.structureIdx, listSource());
             Set<Voxel> vox = new HashSet(source.key.getVoxels().size()+source.value.getVoxels().size());
             vox.addAll(source.key.getVoxels()); vox.addAll(source.value.getVoxels());
             value =new Region(vox, source.key.getLabel(), source.key.is2D(), source.key.getScaleXY(), source.key.getScaleZ());

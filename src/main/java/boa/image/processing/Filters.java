@@ -405,7 +405,7 @@ public class Filters {
         @Override
         public void setUp(Image image, Neighborhood neighborhood) {
             super.setUp(image, neighborhood);
-            if (mask!=null && !image.sameSize(mask)) throw new IllegalArgumentException("Mask and Image to filter should have same dimentions");
+            if (mask!=null && !image.sameSize(mask)) throw new IllegalArgumentException("Mask and Image to filter should have same dimentions: mask: "+mask.getBoundingBox()+" image: "+image.getBoundingBox());
             else if (mask==null) mask=new BlankMask(image);
         }
         @Override public float applyFilter(int x, int y, int z) {

@@ -66,7 +66,6 @@ import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
-import boa.plugins.legacy.BacteriaTrans;
 import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
@@ -580,6 +579,9 @@ public class GenerateXP {
                     ).addTrackPreFilters(
                         new SubtractBackgroundMicrochannels(),
                         new NormalizeTrack(1, true)
+                    ).addTrackPostFilters(
+                            new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria().setContactSidesProportion(0)), 
+                            new RemoveTrackByFeature().setFeature(new Size(), 10, true).setStatistics(2)
                     )
             );
             /*bacteria.setProcessingScheme(

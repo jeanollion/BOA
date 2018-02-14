@@ -18,6 +18,7 @@
 package boa.plugins;
 
 import boa.data_structure.Region;
+import boa.data_structure.StructureObject;
 import boa.image.Image;
 import java.util.Collection;
 import java.util.List;
@@ -29,16 +30,19 @@ import java.util.List;
 public interface SegmenterSplitAndMerge extends Segmenter {
     /**
      * Split an object into several objects
+     * @param parent
+     * @param structureIdx
      * @param o object to be splitted
      * @param result list in which put the resulting objects
      * @return a value representing the cost of splitting the object, NaN if the object could not be split
      */
-    public double split(Image input, Region o, List<Region> result);
+    public double split(StructureObject parent, int structureIdx, Region o, List<Region> result);
     /**
      * Compute Merge Cost & removes from the list objects that are not in contact with the first object from the list
-     * @param input
+     * @param parent
+     * @param structureIdx
      * @param objects objects to be merged
      * @return a value representing the cost of merging the objects, NaN if none of the objects are in contact. 
      */
-    public double computeMergeCost(Image input, List<Region> objects);
+    public double computeMergeCost(StructureObject parent, int structureIdx, List<Region> objects);
 }

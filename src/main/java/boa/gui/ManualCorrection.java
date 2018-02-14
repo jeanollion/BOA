@@ -515,7 +515,7 @@ public class ManualCorrection {
             for (StructureObject objectToSplit : objectsByPosition.get(f)) {
                 if (defaultSplitter==null) splitter = xp.getStructure(structureIdx).getObjectSplitter();
                 splitter.setSplitVerboseMode(test);
-                if (test) splitter.splitObject(objectToSplit.getParent().getPreFilteredImage(structureIdx).cropWithOffset(objectToSplit.getBounds()), objectToSplit.getObject());
+                if (test) splitter.splitObject(objectToSplit.getParent(), objectToSplit.getStructureIdx(), objectToSplit.getObject());
                 else {
                     StructureObject newObject = objectToSplit.split(splitter);
                     if (newObject==null) logger.warn("Object could not be splitted!");

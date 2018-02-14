@@ -50,7 +50,6 @@ import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
 import boa.plugins.legacy.BacteriaShape;
-import boa.plugins.legacy.BacteriaTrans;
 import boa.utils.Utils;
 import java.util.Map;
 import java.util.TreeMap;
@@ -81,59 +80,6 @@ public class TestProcessBacteriaPhase {
         //testSegBacteriesFromXP(dbName, field, time, microChannel);
         testSegBacteriesFromXP(dbName, field, microChannel, time[0], time[1]);
         //testSplit(dbName, field, time, microChannel, 1, true);
-    }
-    
-    public static void testSplit(String dbName, int position, int timePoint, int microChannel, int oIdx, boolean useSegmentedObjectsFromDB) {
-        MasterDAO mDAO = new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(position);
-        StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
-        logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
-        StructureObject mc = root.getChildren(0).get(microChannel);
-        RegionPopulation pop;
-        Image input = mc.getRawImage(1);
-        if (useSegmentedObjectsFromDB) {
-            pop=mc.getObjectPopulation(1);
-            pop.translate(pop.getObjectOffset().reverseOffset(), false); // translate object to relative landmark
-        } else {
-            BacteriaTrans seg = new BacteriaTrans();
-            if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
-            pop = seg.runSegmenter(input, 1, mc);
-            seg.setSplitVerboseMode(true);
-        }
-        
-        List<Region> res = new ArrayList<>();
-        //pop.translate(input.getBoundingBox(), true);
-        ImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(pop.getRegions().get(oIdx).getMask().crop(input.getBoundingBox().translateToOrigin()));
-        //seg.split(input.resetOffset().crop(pop.getObjects().get(oIdx).getBounds()), pop.getObjects().get(oIdx), res);
-        BacteriaTrans seg = new BacteriaTrans();
-        seg.setSplitVerboseMode(true);
-        seg.split(input, pop.getRegions().get(oIdx), res);
-        
-        ImageByte splitMap = new ImageByte("splitted objects", pop.getLabelMap());
-        int label=1;
-        for (Region o : res) o.draw(splitMap, label++);
-        disp.showImage(splitMap);
-    }
-    
-    public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int timePoint, int microChannel) {
-        MasterDAO mDAO = new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
-        StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
-        logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
-        StructureObject mc = root.getChildren(0).get(microChannel);
-        Image input = mc.getRawImage(1);
-        BacteriaTrans.debug=true;
-        
-        BacteriaTrans seg = new BacteriaTrans();
-        if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
-            seg = (BacteriaTrans) mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
-        }
-        
-        if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
-        RegionPopulation pop = seg.runSegmenter(input, 1, mc);
-        ImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(pop.getLabelMap());
     }
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int microChannel, int timePointMin, int timePointMax) {

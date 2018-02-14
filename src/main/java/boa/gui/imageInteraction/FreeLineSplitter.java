@@ -58,7 +58,8 @@ public class FreeLineSplitter implements ObjectSplitter {
         }
     }
     @Override
-    public RegionPopulation splitObject(Image input, Region object) {
+    public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
+        Image input = parent.getPreFilteredImage(structureIdx);
         ImageInteger mask = object.getMask();
         ImageInteger splitMask = mask.duplicate("splitMask");
         BoundingBox off=offsetMap.get(object);

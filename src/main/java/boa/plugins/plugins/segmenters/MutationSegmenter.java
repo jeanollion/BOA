@@ -420,7 +420,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     }
 
     @Override
-    public RegionPopulation splitObject(Image input, Region object) {
+    public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
+        Image input = parent.getPreFilteredImage(structureIdx);
         ImageFloat wsMap = ImageFeatures.getLaplacian(input, 1.5, false, false);
         return WatershedObjectSplitter.splitInTwo(wsMap, object.getMask(), true, true, manualSplitVerbose);
     }

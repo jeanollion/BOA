@@ -24,6 +24,7 @@ import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.RegionPopulation.ContactBorder;
+import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
@@ -255,7 +256,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
     
     
     @Override
-    public double split(Image input, Region o, List<Region> result) {
+    public double split(StructureObject parent, int structureIdx, Region o, List<Region> result) {
+        Image input = parent.getPreFilteredImage(structureIdx);
         SplitAndMergeBacteriaShape sam = new SplitAndMergeBacteriaShape(input);
         sam.ignoreEndOfChannelRegionWhenMerginSmallRegions = false;
         sam.testMode=testMode;
@@ -269,7 +271,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
     }
 
     @Override
-    public double computeMergeCost(Image input, List<Region> objects) {
+    public double computeMergeCost(StructureObject parent, int structureIdx, List<Region> objects) {
+        Image input = parent.getPreFilteredImage(structureIdx);
         SplitAndMergeBacteriaShape sam = new SplitAndMergeBacteriaShape(input);
         sam.ignoreEndOfChannelRegionWhenMerginSmallRegions = false;
         sam.testMode=testMode;
@@ -299,7 +302,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
     }
 
     @Override
-    public RegionPopulation splitObject(Image input, Region object) {
+    public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
+        Image input = parent.getPreFilteredImage(structureIdx);
         SplitAndMergeBacteriaShape sam = new SplitAndMergeBacteriaShape(input);
         sam.testMode=testMode;
         sam.ignoreEndOfChannelRegionWhenMerginSmallRegions = false;

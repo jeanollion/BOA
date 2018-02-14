@@ -696,7 +696,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
-        RegionPopulation pop = splitter.splitObject(getParent().getPreFilteredImage(structureIdx).cropWithOffset(getBounds()), getObject()); //getRawImage(structureIdx)
+        RegionPopulation pop = splitter.splitObject(getParent(), structureIdx, getObject()); //getRawImage(structureIdx)
         if (pop==null || pop.getRegions().size()==1) {
             logger.warn("split error: {}", this);
             return null;

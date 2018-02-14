@@ -33,6 +33,7 @@ import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.image.ImageProperties;
 import boa.image.ImageShort;
+import boa.image.TypeConverter;
 import boa.image.processing.RegionFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -575,6 +576,7 @@ public class RegionPopulation {
         }
     }
     public Region getBackground(ImageMask mask) {
+        if (mask!=null && !mask.sameSize(getLabelMap())) throw new RuntimeException("Mask should have same size as label map: mask: "+mask.getBoundingBox()+" lm:"+this.getLabelMap().getBoundingBox());
         int bckLabel = getRegions().isEmpty() ? 1 : Collections.max(getRegions(), (o1, o2)->Integer.compare(o1.getLabel(), o2.getLabel())).getLabel()+1;
         ImageInteger bckMask = getLabelMap().duplicate().resetOffset();
         if (mask!=null) ImageOperations.andNot(mask, bckMask, bckMask);
@@ -582,6 +584,7 @@ public class RegionPopulation {
         return new Region(bckMask, bckLabel, bckMask.getSizeZ()==1);
     }
     public void smoothRegions(double radius, boolean eraseVoxelsIfConnectedToBackground, ImageMask mask) {
+        if (mask!=null && !mask.sameSize(getLabelMap())) throw new RuntimeException("Mask should have same size as label map: mask: "+mask.getBoundingBox()+" lm:"+this.getLabelMap().getBoundingBox());
         Neighborhood n = Filters.getNeighborhood(radius, getImageProperties());
         HashMapGetCreate<Integer, int[]> count = new HashMapGetCreate<>(9, i->new int[1]);
         
@@ -602,12 +605,13 @@ public class RegionPopulation {
                 n.setPixels(v, getLabelMap(), mask);
                 for (int i = 0; i<n.getValueCount(); ++i) count.getAndCreateIfNecessary((int)n.getPixelValues()[i])[0]++;
                 if (!eraseVoxelsIfConnectedToBackground) count.remove(bck.getLabel());
-                int maxLabel = Collections.max(count.entrySet(), (e1, e2)->Integer.compare(e1.getValue()[0], e2.getValue()[0])).getKey();
+                
                 if (!count.containsKey(r.getLabel())) {
                     logger.error("smooth interface: {} not present @Voxel: {}/ bck: {}, counts: {}", r.getLabel(), v, bck.getLabel(), Utils.toStringList(count.entrySet(), e->e.getKey()+"->"+e.getValue()[0]));
                     ImageWindowManagerFactory.showImage(labelImage);
+                    if (mask!=null) ImageWindowManagerFactory.showImage(TypeConverter.toImageInteger(mask, null));
                 }
-                
+                int maxLabel = Collections.max(count.entrySet(), (e1, e2)->Integer.compare(e1.getValue()[0], e2.getValue()[0])).getKey();
                 if (maxLabel!=r.getLabel() &&  count.get(maxLabel)[0]> count.get(r.getLabel())[0]) {
                     it.remove();
                     modified.add(r);

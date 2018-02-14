@@ -19,13 +19,13 @@ package boa.plugins;
 
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
-import boa.image.Image;
+import boa.data_structure.StructureObject;
 
 /**
  *
  * @author jollion
  */
 public interface ObjectSplitter extends ImageProcessingPlugin {
-    public RegionPopulation splitObject(Image input, Region object);
+    public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object);
     public void setSplitVerboseMode(boolean verbose);
 }

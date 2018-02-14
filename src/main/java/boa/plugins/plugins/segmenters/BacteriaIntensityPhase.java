@@ -25,6 +25,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
+import boa.image.TypeConverter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations;
@@ -115,9 +116,17 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx) {
         double dilRadius = 2;
         Image smooth = ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
-        Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), 3, 3, 3, 3);
-        pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, parent.getMask());
-        pop.smoothRegions(2, true, parent.getMask());
+        Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), 3, 1, 3, 1);
+        ImageMask mask = parent.getMask();
+        boolean fromSplit = !input.sameSize(smooth);
+        if (fromSplit) { // when called from split -> population is a subset of object to split
+            smooth= pop.isAbsoluteLandmark() ? smooth.cropWithOffset(input.getBoundingBox()) : smooth.crop(input.getBoundingBox());
+            edgeMap = pop.isAbsoluteLandmark() ? edgeMap.cropWithOffset(input.getBoundingBox()) : edgeMap.crop(input.getBoundingBox()); 
+            mask = TypeConverter.toImageInteger(mask, null);
+            mask = pop.isAbsoluteLandmark() ?  ((ImageInteger)mask).cropWithOffset(input.getBoundingBox()) : ((ImageInteger)mask).crop(input.getBoundingBox());
+        } 
+        pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask);
+        pop.smoothRegions(2, !fromSplit, mask);
         return pop;
     }
 }

@@ -24,6 +24,7 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
+import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
 import boa.image.BoundingBox;
 import boa.image.Image;
@@ -56,8 +57,9 @@ public class WatershedObjectSplitter implements ObjectSplitter {
     public void setSplitVerboseMode(boolean verbose) {
         this.splitVerbose=verbose;
     }
-    
-    public RegionPopulation splitObject(Image input, Region object) {
+    @Override
+    public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
+        Image input = parent.getPreFilteredImage(structureIdx);
         double sScale = smoothScale.getValue().doubleValue();
         if (sScale>0) input = ImageFeatures.gaussianSmooth(input, sScale, false);
         return splitInTwo(input, object.getMask(), true, keepOnlyTwoSeeds.getSelected(), splitVerbose);

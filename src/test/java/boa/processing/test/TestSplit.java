@@ -65,9 +65,7 @@ public class TestSplit {
         }
         
         splitter.setSplitVerboseMode(true);
-        Image input = parent.getRawImage(structureIdx);
-        input = input.cropWithOffset(o.getBounds());
-        splitter.splitObject(input, o.getObject());
+        splitter.splitObject(parent, structureIdx, o.getObject());
         
     }
 }

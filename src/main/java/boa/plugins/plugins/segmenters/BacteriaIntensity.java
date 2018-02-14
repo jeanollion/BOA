@@ -17,10 +17,6 @@
  */
 package boa.plugins.plugins.segmenters;
 
-import boa.plugins.legacy.BacteriaTrans;
-import boa.configuration.parameters.BooleanParameter;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
@@ -171,6 +167,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     
     protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx) {
         Image smooth = smoothScale.getValue().doubleValue()>=1 ? ImageFeatures.gaussianSmooth(input, smoothScale.getValue().doubleValue(), false):input;
+        if (!pop.getLabelMap().sameSize(smooth)) smooth=smooth.cropWithOffset(pop.getLabelMap().getBoundingBox()); // when called from split -> population is a subset of parent mask
         pop.localThreshold(smooth, localThresholdFactor.getValue().doubleValue(), true, true);
         return pop;
     }
@@ -184,9 +181,9 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     public boolean does3D() {
         return true;
     }
-
-    @Override public double split(Image input, Region o, List<Region> result) {
-        RegionPopulation pop =  splitObject(input, o); // init processing variables
+    // segmenter split and merge interface
+    @Override public double split(StructureObject parent, int structureIdx, Region o, List<Region> result) {
+        RegionPopulation pop =  splitObject(parent, structureIdx, o); // init processing variables
         pop.translate(o.getBounds().duplicate().reverseOffset(), false);
         if (pop.getRegions().size()<=1) return Double.POSITIVE_INFINITY;
         else {
@@ -196,15 +193,16 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
             result.add(o1);
             result.add(o2);
             SplitAndMergeHessian.Interface inter = getInterface(o1, o2);
-            double cost = BacteriaTrans.getCost(inter.value, splitAndMerge.splitThresholdValue, true);
+            double cost = getCost(inter.value, splitAndMerge.splitThresholdValue, true);
             pop.translate(o.getBounds(), true);
             return cost;
         }
         
     }
 
-    @Override public double computeMergeCost(Image input, List<Region> objects) {
+    @Override public double computeMergeCost(StructureObject parent, int structureIdx, List<Region> objects) {
         if (objects.isEmpty() || objects.size()==1) return 0;
+        Image input = parent.getPreFilteredImage(structureIdx);
         RegionPopulation mergePop = new RegionPopulation(objects, input, false);
         splitAndMerge = this.initializeSplitAndMerge(input, mergePop.getLabelMap());
         RegionCluster c = new RegionCluster(mergePop, false, true, splitAndMerge.getFactory());
@@ -222,7 +220,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         }
 
         if (maxCost==Double.MIN_VALUE) return Double.POSITIVE_INFINITY;
-        return BacteriaTrans.getCost(maxCost, splitAndMerge.splitThresholdValue, false);
+        return getCost(maxCost, splitAndMerge.splitThresholdValue, false);
         
     }
     
@@ -235,7 +233,15 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         o2.draw(splitAndMerge.getSplitMask(), 0);
         return inter;
     }
-    
+    public static double getCost(double value, double threshold, boolean valueShouldBeBelowThresholdForAPositiveCost)  {
+        if (valueShouldBeBelowThresholdForAPositiveCost) {
+            if (value>=threshold) return 0;
+            else return (threshold-value);
+        } else {
+            if (value<=threshold) return 0;
+            else return (value-threshold);
+        }
+    }
     
     // object splitter interface
     boolean splitVerbose;
@@ -243,15 +249,15 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         this.splitVerbose=verbose;
     }
     
-    @Override public RegionPopulation splitObject(Image input, Region object) {
-        if (!input.sameSize(object.getMask())) {
-            input = input.crop(object.getBounds());
-            //mask = mask.crop(input.getBoundingBox()); // problem with crop & offsets when bb is larger & has an offset
+    @Override public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
+        Image input = parent.getPreFilteredImage(structureIdx);
+        if (!input.sameSize(object.getMask()))  {
+            logger.debug("split object: crop input image: {} mask: {}, object is absolute: {}", input.getBoundingBox(), object.getBounds(), object.isAbsoluteLandMark());
+            input = object.isAbsoluteLandMark() ? input.cropWithOffset(object.getBounds()) : input.crop(object.getBounds());
         }
-        // avoid border effects: dilate image
+        // limit border effects: dilate image
         int ext = (int)this.hessianScale.getValue().doubleValue()+1;
         BoundingBox extent = new BoundingBox(-ext, ext, -ext, ext, 0, 0);
-       
         Image inExt = input.extend(extent);
         ImageInteger maskExt = object.getMask().extend(extent);
         splitAndMerge = initializeSplitAndMerge(inExt, maskExt);
@@ -262,7 +268,9 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         extent = new BoundingBox(ext, -ext, ext, -ext, 0, 0);
         ImageInteger labels = res.getLabelMap().extend(extent);
         RegionPopulation pop= new RegionPopulation(labels, true);
-        pop.translate(object.getBounds(), true);
+        pop.translate(object.getBounds(), object.isAbsoluteLandMark());
+        //input.addOffset(object.getBounds());
+        pop = localThreshold(input, pop, parent, structureIdx); 
         return pop;
     }
 

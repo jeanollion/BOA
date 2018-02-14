@@ -51,9 +51,9 @@ import boa.utils.Utils;
  */
 public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
     PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, false);
-    ChoiceParameter statistics = new ChoiceParameter("Statistics", new String[]{"Mean", "Median", "Quatile"}, "mean", false);
+    ChoiceParameter statistics = new ChoiceParameter("Statistics", new String[]{"Mean", "Median", "Quantile"}, "mean", false);
     NumberParameter quantile = new BoundedNumberParameter("Quantile", 3, 0.5, 0, 1);
-    ConditionalParameter statCond = new ConditionalParameter(statistics).setActionParameters("Quatile", new Parameter[]{quantile});
+    ConditionalParameter statCond = new ConditionalParameter(statistics).setActionParameters("Quantile", new Parameter[]{quantile});
     NumberParameter threshold = new NumberParameter("Threshold", 4, 0);
     BooleanParameter keepOverThreshold = new BooleanParameter("Keep over threshold", true);
     ExecutorService executor;
