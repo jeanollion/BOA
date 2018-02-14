@@ -109,7 +109,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             } 
             for (RearrangeAssignment ass : assignements) if (ass.objects.size()>2) ass.mergeUntil(2);
         }
-        if (debugCorr) logger.debug("Rearrange objects: tp: {}, {}, cost: {}", timePointMax, assignment.toString(false), cost);
+        if (debugCorr) logger.debug("Rearrange objects: tp: {}, {}, cost: {}", frameMax, assignment.toString(false), cost);
     }
     
     private boolean needToMerge() {
@@ -132,7 +132,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
     }
         
     protected RearrangeAssignment assignUntil(boolean reset, BiFunction<RearrangeAssignment, Integer, RearrangeAssignment> exitFunction) { // assigns from start with custom exit function -> if return non null value -> exit assignment loop with value
-        List<Region> allObjects = getObjects(timePointMax);
+        List<Region> allObjects = getObjects(frameMax);
         if (reset) for (int rangeIdx = 0; rangeIdx<assignements.size(); ++rangeIdx) assignements.get(rangeIdx).clear();
         int currentOIdx = 0;
         if (!reset) {
@@ -156,27 +156,27 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
 
     @Override
     protected void applyScenario() {
-        for (int i = this.assignment.idxNextEnd()-1; i>=assignment.idxNext; --i) tracker.objectAttributeMap.remove(tracker.populations.get(timePointMin).remove(i));
-        List<Region> allObjects = getObjects(timePointMax);
+        for (int i = this.assignment.idxNextEnd()-1; i>=assignment.idxNext; --i) tracker.objectAttributeMap.remove(tracker.populations.get(frameMin).remove(i));
+        List<Region> allObjects = getObjects(frameMax);
         sortAndRelabel();
         int idx = assignment.idxNext;
         for (Region o : allObjects) {
-            tracker.populations.get(timePointMin).add(idx, o);
-            tracker.objectAttributeMap.put(o, tracker.new TrackAttribute(o, idx, timePointMax));
+            tracker.populations.get(frameMin).add(idx, o);
+            tracker.objectAttributeMap.put(o, tracker.new TrackAttribute(o, idx, frameMax));
             idx++;
         }
-        tracker.resetIndices(timePointMax);
+        tracker.resetIndices(frameMax);
     }
     
     public void sortAndRelabel() {
-        List<Region> allObjects = getObjects(timePointMax);
+        List<Region> allObjects = getObjects(frameMax);
         Collections.sort(allObjects, getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ));
         for (int i = 0; i<allObjects.size(); ++i) allObjects.get(i).setLabel(i+1);
     }
     
     @Override 
     public String toString() {
-        return "Rearrange@"+timePointMax+"["+this.assignment.idxNext+";"+(assignment.idxNextEnd()-1)+"]/c="+cost;
+        return "Rearrange@"+frameMax+"["+this.assignment.idxNext+";"+(assignment.idxNextEnd()-1)+"]/c="+cost;
     }
     
     protected class RearrangeAssignment {
@@ -216,12 +216,12 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         public boolean split() { 
             TreeSet<Split> res = new TreeSet<>();
             for (Region o : objects) {
-                Split s = getSplit(timePointMax, o);
+                Split s = getSplit(frameMax, o);
                 if (Double.isFinite(s.cost)) res.add(s);
             }
             if (res.isEmpty()) return false;
             Split s = res.first(); // lowest cost
-            List<Region> allObjects = getObjects(timePointMax);
+            List<Region> allObjects = getObjects(frameMax);
             if (debugCorr) logger.debug("RO: split: {}, cost: {}", allObjects.indexOf(s.source)+assignment.idxNext, s.cost);
             s.apply(objects);
             s.apply(getObjects(s.frame));
@@ -241,7 +241,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
                 Region currentO = it.next();
                 Assignment ass = assignments.getAssignmentContaining(currentO, true);
                 if (ass!=null && ass == lastAss && (ass.objectCountNext()<ass.objectCountPrev())) {
-                    Merge m = getMerge(timePointMax, new Pair(lastO, currentO));
+                    Merge m = getMerge(frameMax, new Pair(lastO, currentO));
                     if (debugCorr) logger.debug("RO: merge using next: cost: {} assignement containing objects {}", m.cost, ass);
                     if (true || Double.isFinite(m.cost)) {
                         m.apply(objects);
@@ -284,7 +284,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             Region lastO = it.next();
             while (it.hasNext()) {
                 Region currentO = it.next();
-                Merge m = getMerge(timePointMax, new Pair(lastO, currentO));
+                Merge m = getMerge(frameMax, new Pair(lastO, currentO));
                 if (Double.isFinite(m.cost)) res.add(m);
                 lastO = currentO;
             }
@@ -293,7 +293,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         }
         
         @Override public String toString() {
-            return "RO:["+tracker.populations.get(timePointMax-1).indexOf(this.prevObject)+"]->["+(objects.isEmpty()? "" : getObjects(timePointMax).indexOf(objects.get(0))+";"+getObjects(timePointMax).indexOf(getLastObject()))+"]/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
+            return "RO:["+tracker.populations.get(frameMax-1).indexOf(this.prevObject)+"]->["+(objects.isEmpty()? "" : getObjects(frameMax).indexOf(objects.get(0))+";"+getObjects(frameMax).indexOf(getLastObject()))+"]/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
         }
         
         

@@ -51,6 +51,7 @@ import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
 import boa.plugins.legacy.BacteriaShape;
 import boa.plugins.legacy.BacteriaTrans;
+import boa.utils.Utils;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -71,9 +72,9 @@ public class TestProcessBacteriaPhase {
         String dbName = "MutH_150324";
         //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
-        int field = 0;
-        int microChannel =5;
-        int[] time =new int[]{459, 459}; //22
+        int field = 4;
+        int microChannel =0;
+        int[] time =new int[]{528, 528}; //22
         //setMask=true;
         //thld = 776;
         
@@ -140,17 +141,16 @@ public class TestProcessBacteriaPhase {
         mDAO.setReadOnly(true);
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
-        Map<StructureObject, List<StructureObject>> allMCTracks = StructureObjectUtils.getAllTracks(rootTrack, 0);
-        allMCTracks.entrySet().removeIf(o->o.getKey().getIdx()!=microChannel);
-        List<StructureObject> parentTrack = allMCTracks.entrySet().iterator().next().getValue();
-        //parentTrack.removeIf(o -> o.getFrame()<1 || o.getFrame()>200); // GRANDE DIFFERENCE POUR SUBBACK -> vient de saturate?
+        List<StructureObject> parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(rootTrack, 0), o->o.getIdx()==microChannel);
+        
         ProcessingScheme psc = mDAO.getExperiment().getStructure(1).getProcessingScheme();
         psc.getTrackPreFilters(true).filter(0, parentTrack, null);
-        ApplyToSegmenter apply = TrackParametrizable.getApplyToSegmenter(timePointMax, parentTrack, psc.getSegmenter(), null);
+        ApplyToSegmenter apply = TrackParametrizable.getApplyToSegmenter(0, parentTrack, psc.getSegmenter(), null);
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {
-            Image input = mc.getPreFilteredImage(timePointMax);
+            Image input = mc.getPreFilteredImage(0);
+            if (input==null) throw new RuntimeException("no preFIltered image!!");
             Segmenter seg = psc.getSegmenter();
             if (apply!=null) apply.apply(mc, seg);
             if (parentTrack.size()==1) {

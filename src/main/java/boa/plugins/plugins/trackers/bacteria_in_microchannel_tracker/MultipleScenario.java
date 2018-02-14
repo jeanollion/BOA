@@ -27,8 +27,10 @@ public class MultipleScenario extends CorrectionScenario {
         final List<CorrectionScenario> scenarios;
 
         public MultipleScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, List<CorrectionScenario> sortedScenarios) {
-            super(sortedScenarios.isEmpty()? 0 :sortedScenarios.get(0).timePointMin, sortedScenarios.isEmpty()? 0 : sortedScenarios.get(sortedScenarios.size()-1).timePointMax, tracker);
+            super(sortedScenarios.isEmpty()? 0 :sortedScenarios.get(0).frameMin, sortedScenarios.isEmpty()? 0 : sortedScenarios.get(sortedScenarios.size()-1).frameMax, tracker);
             this.scenarios = sortedScenarios;
+            if (scenarios.isEmpty()) this.cost = Double.POSITIVE_INFINITY;
+            else for (CorrectionScenario s : scenarios) this.cost+=s.cost;
         }
         
         @Override

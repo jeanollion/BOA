@@ -72,22 +72,22 @@ public class SplitScenario extends CorrectionScenario {
             TreeMap<Pair<Double, Region>, List<Region>> res = new TreeMap(comp);
             for (Region oo : objects) {
                 List<Region> so= new ArrayList<>();
-                double c = tracker.getSegmenter(timePointMin).split(tracker.getImage(timePointMin), oo, so);
+                double c = tracker.getSegmenter(frameMin).split(tracker.getImage(frameMin), oo, so);
                 if (so.size()>=2 && Double.isFinite(c) && !Double.isNaN(c)) res.put(new Pair(c, oo), so);
             }
             return res;
         }
         @Override protected SplitScenario getNextScenario() { // until next division event OR reach end of channel & division with 2n sister lost
-            if (timePointMin == tracker.maxT-1) return null;
+            if (frameMin == tracker.maxT-1) return null;
             TrackAttribute ta = tracker.objectAttributeMap.get(o);
             if (ta==null) return null;
             if (ta.next==null) {
-                if (debugCorr) logger.debug("getNextScenario: assign @:{}", timePointMin+1);
-                tracker.setAssignmentToTrackAttributes(timePointMin+1, false);
+                if (debugCorr) logger.debug("getNextScenario: assign @:{}", frameMin+1);
+                tracker.setAssignmentToTrackAttributes(frameMin+1, false);
             }
             if (ta.next!=null) {
-                if (ta.division || (ta.next.idx==tracker.getObjects(timePointMin+1).size()-1 && o.getSize() * tracker.minGR > ta.next.getSize())) return null;
-                else return new SplitScenario(tracker, ta.next.o, timePointMin+1);
+                if (ta.division || (ta.next.idx==tracker.getObjects(frameMin+1).size()-1 && o.getSize() * tracker.minGR > ta.next.getSize())) return null;
+                else return new SplitScenario(tracker, ta.next.o, frameMin+1);
             }
             else return null;
         }
@@ -95,16 +95,16 @@ public class SplitScenario extends CorrectionScenario {
         @Override
         protected void applyScenario() {
             Collections.sort(splitObjects, getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
-            int idx = tracker.populations.get(timePointMin).indexOf(o);
-            tracker.populations.get(timePointMin).remove(idx);
-            tracker.populations.get(timePointMin).addAll(idx, splitObjects);
+            int idx = tracker.populations.get(frameMin).indexOf(o);
+            tracker.populations.get(frameMin).remove(idx);
+            tracker.populations.get(frameMin).addAll(idx, splitObjects);
             tracker.objectAttributeMap.remove(o);
             int curIdx = idx;
-            for (Region splitObject : splitObjects) tracker.objectAttributeMap.put(splitObject, tracker.new TrackAttribute(splitObject, curIdx++, timePointMin).setFlag(Flag.correctionSplit));
-            tracker.resetIndices(timePointMin);
+            for (Region splitObject : splitObjects) tracker.objectAttributeMap.put(splitObject, tracker.new TrackAttribute(splitObject, curIdx++, frameMin).setFlag(Flag.correctionSplit));
+            tracker.resetIndices(frameMin);
         }
         @Override 
         public String toString() {
-            return "Split@"+timePointMin+"["+tracker.populations.get(timePointMin).indexOf(o)+"]/c="+cost;
+            return "Split@"+frameMin+"["+tracker.populations.get(frameMin).indexOf(o)+"]/c="+cost;
         }
     }

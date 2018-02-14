@@ -47,7 +47,7 @@ public class MergeScenario extends CorrectionScenario {
             if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", frame, idxMin, listO.size(), cost);
         }
         @Override protected MergeScenario getNextScenario() { // @ previous time, until there is one single parent ie no more bacteria to merge
-            if (timePointMin==0 || idxMin==idxMax) return null;
+            if (frameMin==0 || idxMin==idxMax) return null;
             int iMin = Integer.MAX_VALUE;
             int iMax = -1;
             for (Region o : listO) {
@@ -58,25 +58,25 @@ public class MergeScenario extends CorrectionScenario {
             }
             if (iMin==iMax) return null; // no need to merge
             if (iMin==Integer.MAX_VALUE || iMax==-1) return null; // no previous objects 
-            return new MergeScenario(tracker, iMin,tracker.getObjects(timePointMin-1).subList(iMin, iMax+1), timePointMin-1);
+            return new MergeScenario(tracker, iMin,tracker.getObjects(frameMin-1).subList(iMin, iMax+1), frameMin-1);
         }
 
         @Override
         protected void applyScenario() {
             Set<Voxel> vox = new HashSet<>();
-            Region o = tracker.populations.get(timePointMin).get(idxMin); 
+            Region o = tracker.populations.get(frameMin).get(idxMin); 
             for (int i = idxMax; i>=idxMin; --i) {
-                Region rem = tracker.populations.get(timePointMin).remove(i);
+                Region rem = tracker.populations.get(frameMin).remove(i);
                 vox.addAll(rem.getVoxels());
                 tracker.objectAttributeMap.remove(rem);
             }
             Region merged = new Region(vox, idxMin+1, o.is2D(), o.getScaleXY(), o.getScaleZ());
-            tracker.populations.get(timePointMin).add(idxMin, merged);
-            tracker.objectAttributeMap.put(merged, tracker.new TrackAttribute(merged, idxMin, timePointMin));
-            tracker.resetIndices(timePointMin);
+            tracker.populations.get(frameMin).add(idxMin, merged);
+            tracker.objectAttributeMap.put(merged, tracker.new TrackAttribute(merged, idxMin, frameMin));
+            tracker.resetIndices(frameMin);
         }
         @Override 
         public String toString() {
-            return "Merge@"+timePointMin+"["+idxMin+";"+idxMax+"]/c="+cost;
+            return "Merge@"+frameMin+"["+idxMin+";"+idxMax+"]/c="+cost;
         }
     }

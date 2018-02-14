@@ -28,11 +28,11 @@ import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClo
  */
 public abstract class CorrectionScenario {
         double cost=0;
-        final int timePointMin, timePointMax;
+        final int frameMin, frameMax;
         final BacteriaClosedMicrochannelTrackerLocalCorrections tracker;
         protected CorrectionScenario(int timePointMin, int timePointMax, BacteriaClosedMicrochannelTrackerLocalCorrections tracker) {
-            this.timePointMin=timePointMin; 
-            this.timePointMax=timePointMax;
+            this.frameMin=timePointMin; 
+            this.frameMax=timePointMax;
             this.tracker= tracker;
         }
         protected abstract CorrectionScenario getNextScenario();
@@ -43,20 +43,22 @@ public abstract class CorrectionScenario {
          * @param cumulativeCostLimit if >0 cost limit for the whole scenario
          * @return 
          */
-        public List<CorrectionScenario> getWholeScenario(int lengthLimit, double costLimit, double cumulativeCostLimit) {
+        public CorrectionScenario getWholeScenario(int lengthLimit, double costLimit, double cumulativeCostLimit) {
             ArrayList<CorrectionScenario> res = new ArrayList<>();
             CorrectionScenario cur = this;
-            if (cur instanceof MergeScenario && ((MergeScenario)cur).listO.isEmpty()) return Collections.emptyList();
+            if (cur instanceof MergeScenario && ((MergeScenario)cur).listO.isEmpty()) return new MultipleScenario(tracker, Collections.emptyList());
             double sum = 0;
             while(cur!=null && (!Double.isNaN(cur.cost)) && Double.isFinite(cur.cost)) {
                 res.add(cur);
                 sum+=cur.cost;
-                if (cur.cost > costLimit) return Collections.emptyList();
-                if (cumulativeCostLimit>0 && sum>cumulativeCostLimit) return Collections.emptyList();
-                if (lengthLimit>0 && res.size()>=lengthLimit) return Collections.emptyList();
+                if (cur.cost > costLimit) return new MultipleScenario(tracker, Collections.emptyList());
+                if (cumulativeCostLimit>0 && sum>cumulativeCostLimit) return new MultipleScenario(tracker, Collections.emptyList());
+                if (lengthLimit>0 && res.size()>=lengthLimit) return new MultipleScenario(tracker, Collections.emptyList());
                 cur = cur.getNextScenario();
             }
-            return res;
+            if (res.size()==1) return res.get(0);
+            Collections.sort(res, (s1, s2)->Integer.compare(s1.frameMax, s2.frameMax));
+            return new MultipleScenario(tracker, res);
         }
         protected abstract void applyScenario();
     }

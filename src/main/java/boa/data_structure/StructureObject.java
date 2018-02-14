@@ -108,6 +108,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         res.trackHead=trackHead;
         res.rawImagesC=rawImagesC.duplicate();
         res.trackImagesC=trackImagesC.duplicate();
+        res.preFilteredImagesS=preFilteredImagesS.duplicate();
         res.offsetInTrackImage=offsetInTrackImage;
         if (attributes!=null && !attributes.isEmpty()) { // deep copy of attributes
             res.attributes=new HashMap<>(attributes.size());
@@ -832,9 +833,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return this.preFilteredImagesS.get(structureIdx);
     }
     public void setPreFilteredImage(Image image, int structureIdx) {
-        if (!image.sameSize(getMask())) throw new IllegalArgumentException("PreFiltered Image should have same dimensions as object");
-        image.setCalibration(this.getMask());
-        image.resetOffset().addOffset(this.getBounds()); // ensure same offset
+        if (image!=null) {
+            if (!image.sameSize(getMask())) throw new IllegalArgumentException("PreFiltered Image should have same dimensions as object");
+            image.setCalibration(getMask());
+            image.resetOffset().addOffset(getBounds()); // ensure same offset
+        }
         this.preFilteredImagesS.set(image, structureIdx);
     }
     public Image getTrackImage(int structureIdx) {

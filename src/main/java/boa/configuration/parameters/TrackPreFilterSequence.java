@@ -52,9 +52,13 @@ public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter> 
         res.setContentFrom(this);
         return res;
     }
-    
+    private static boolean allPFImagesAreSet(List<StructureObject> parentTrack, int structureIdx) {
+        for (StructureObject o : parentTrack) if (o.getPreFilteredImage(structureIdx)==null) return false;
+        return true;
+    }
     public void filter(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) throws MultipleException {
         if (parentTrack.isEmpty()) return;
+        if (isEmpty() && allPFImagesAreSet(parentTrack, structureIdx)) return; // if no preFilters &  only add raw images if no prefiltered image is present
         boolean first = true;
         TreeMap<StructureObject, Image> images = new TreeMap<>(parentTrack.stream().collect(Collectors.toMap(o->o, o->o.getRawImage(structureIdx))));
         for (TrackPreFilter p : this.get()) {
