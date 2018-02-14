@@ -34,6 +34,7 @@ import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.utils.Utils;
+import java.util.function.Consumer;
 
 /**
  *
@@ -71,6 +72,17 @@ public class BasicObjectDAO implements ObjectDAO {
         // no cache..
     }
 
+    @Override
+    public void applyOnAllOpenedObjects(Consumer<StructureObject> function) {
+        applyRec(rootTrack.values(), function);
+    }
+    private void applyRec(Collection<StructureObject> col, Consumer<StructureObject> function) {
+        for (StructureObject o : col) {
+            function.accept(o);
+            for (int s : this.getExperiment().getAllDirectChildStructures(o.getStructureIdx())) applyRec(o.getChildren(s), function);
+        }
+    }
+    
     @Override
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
         //logger.debug("try to get children of : {} from structure: {}", this, structureIdx);

@@ -30,10 +30,8 @@ import org.json.simple.JSONObject;
  */
 
 public abstract class ObjectContainer {
-    public static int MAX_VOX_3D = 1200000; //(1 vox = 12B)
-    public static int MAX_VOX_2D = 1900000; //(1 vox =8B)
-    public static final int MAX_VOX_3D_EMB = 20;
-    public static final int MAX_VOX_2D_EMB = 30;
+    public static final int MAX_VOX_3D = 20;
+    public static final int MAX_VOX_2D = 30;
     protected transient StructureObject structureObject;
     BoundingBox bounds;
     boolean is2D;

@@ -435,8 +435,12 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     Processor.generateTrackImages(db.getDao(position), s, this);
                     incrementProgress();
                 }
+                db.getDao(position).applyOnAllOpenedObjects(o->{if (o.hasObject()) o.getObject().clearVoxels();}); // possible memory leak at this stage : list of voxels of big objects -> no necessary for further processing. 
+                // TODO : when no more processing with direct parent as root: get all images of direct root children & remove images from root
+                System.gc();
+                publishMemoryUsage("After Processing structure:"+s);
             }
-            // possible memory leak at this stage : list of voxels of big objects -> TODO make a precedure to erase voxels within objects
+            
             //publishMemoryUsage("After Processing:");
         } else if (generateTrackImages) {
             publish("Generating Track Images...");

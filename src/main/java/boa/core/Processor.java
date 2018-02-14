@@ -200,14 +200,6 @@ public class Processor {
         } else {
             allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, directParentStructure);
         }
-        if (directParentStructure>=0 && parentTrack.get(0).isRoot()) { // get raw images and erase root images to free memory
-            for (List<StructureObject> l : allParentTracks.values()) {
-                for (StructureObject o : l) o.getRawImage(structureIdx);
-            }
-            for (StructureObject o : parentTrack) o.setRawImage(structureIdx, null);
-            System.gc();
-            logger.info("After clear root images: Structure: {} available mem: {}/{}GB", structureIdx, (Runtime.getRuntime().freeMemory()/1000000)/1000d, (Runtime.getRuntime().totalMemory()/1000000)/1000d);
-        }
         logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
         // one thread per track + common executor for processing scheme
         ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs(), ThreadRunner.priorityThreadFactory(Thread.MAX_PRIORITY));

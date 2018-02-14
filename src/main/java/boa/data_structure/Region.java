@@ -4,8 +4,6 @@ import com.google.common.collect.Sets;
 import boa.data_structure.region_container.ObjectContainer;
 import static boa.data_structure.region_container.ObjectContainer.MAX_VOX_3D;
 import static boa.data_structure.region_container.ObjectContainer.MAX_VOX_2D;
-import static boa.data_structure.region_container.ObjectContainer.MAX_VOX_2D_EMB;
-import static boa.data_structure.region_container.ObjectContainer.MAX_VOX_3D_EMB;
 import boa.data_structure.region_container.ObjectContainerBlankMask;
 import boa.data_structure.region_container.ObjectContainerIjRoi;
 import boa.data_structure.region_container.ObjectContainerVoxels;
@@ -146,7 +144,7 @@ public class Region {
             return sum/(double)voxels.size();
         }
     }
-    public Voxel getExtremum(boolean max) {
+    public Voxel getExtremumVoxelValue(boolean max) {
         if (getVoxels().isEmpty()) return null;
         Voxel res = getVoxels().iterator().next();
         if (max) {
@@ -197,7 +195,7 @@ public class Region {
             center[0] = mask.getBoundingBox().getXMean();
             center[1] = mask.getBoundingBox().getYMean();
             center[2] = mask.getBoundingBox().getZMean();
-        } else {
+        } else if (voxels!=null) {
             for (Voxel v : getVoxels()) {
                 center[0] += v.x;
                 center[1] += v.y;
@@ -207,6 +205,17 @@ public class Region {
             center[0]/=count;
             center[1]/=count;
             center[2]/=count;
+        } else {
+            int[] count = new int[1];
+            ImageMask.loopWithOffset(mask, (x, y, z)->{
+                center[0] += x;
+                center[1] += y;
+                center[2] += z;
+                ++count[0];
+            });
+            center[0]/=count[0];
+            center[1]/=count[0];
+            center[2]/=count[0];
         }
         if (scaled) {
             center[0] *=this.getScaleXY();
@@ -215,7 +224,7 @@ public class Region {
         }
         return center;
     }
-    public double[] getMassCenter(Image image, boolean scaled) {
+    public double[] getMassCenter(Image image, boolean scaled) { // TODO also perform from mask
         getVoxels();
         synchronized(voxels) {
             double[] center = new double[3];
@@ -397,18 +406,17 @@ public class Region {
      * @return subset of object's voxels that are in contact with background, edge or other object
      */
     public Set<Voxel> getContour() {
-        ImageMask mask = getMask();
+        getMask();
         EllipsoidalNeighborhood neigh = !is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true); // 1 and not 1.5 -> diagonal
-        
-        for (int i = 0; i<neigh.dx.length; ++i) {
-            neigh.dx[i]-=mask.getOffsetX();
-            neigh.dy[i]-=mask.getOffsetY();
-            if (!is2D()) neigh.dz[i]-=mask.getOffsetZ();
-        }
         Set<Voxel> res = new HashSet<>();
-        for (Voxel v: getVoxels()) if (touchBorder(v, neigh, mask)) res.add(v);
-        // TODO : method without getVoxels 
-        //logger.debug("contour: {} (total: {})", res.size(), getVoxels().size());
+        if (voxels!=null) {
+            for (int i = 0; i<neigh.dx.length; ++i) {
+                neigh.dx[i]-=mask.getOffsetX();
+                neigh.dy[i]-=mask.getOffsetY();
+                if (!is2D()) neigh.dz[i]-=mask.getOffsetZ();
+            }
+            for (Voxel v: getVoxels()) if (touchBorder(v.x, v.y, v.z, neigh, mask)) res.add(v);
+        } else ImageMask.loop(mask, (x, y, z)->{ if (touchBorder(x, y, z, neigh, mask)) res.add(new Voxel(x+mask.getOffsetX(), y+mask.getOffsetY(), z+mask.getOffsetZ()));});
         return res;
     }
     public Set<Voxel> getOutterContour() {
@@ -438,12 +446,12 @@ public class Region {
      * @param mask
      * @return 
      */
-    private static boolean touchBorder(Voxel v, EllipsoidalNeighborhood neigh, ImageMask mask) {
+    private static boolean touchBorder(int x, int y, int z, EllipsoidalNeighborhood neigh, ImageMask mask) {
         int xx, yy, zz;
         for (int i = 0; i<neigh.dx.length; ++i) {
-            xx=v.x+neigh.dx[i];
-            yy=v.y+neigh.dy[i];
-            zz=v.z+neigh.dz[i];
+            xx=x+neigh.dx[i];
+            yy=y+neigh.dy[i];
+            zz=z+neigh.dz[i];
             if (!mask.contains(xx, yy, zz) || !mask.insideMask(xx, yy, zz)) return true;
         }
         return false;
@@ -594,23 +602,7 @@ public class Region {
             }
         } else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
     }
-    /*
-    // TODO faire une methode plus optimisée qui utilise les masques uniquement
-    public int getIntersectionCountMask(Region other, BoundingBox offset) {
-        if (offset==null) offset=new BoundingBox(0, 0, 0);
-        if (!this.getBounds().hasIntersection(other.getBounds().duplicate().translate(offset))) return 0;
-        else {
-            ImageMask otherMask = other.getMask();
-            int count = 0;
-            int offX = otherMask.getOffsetX()+offset.getxMin();
-            int offY = otherMask.getOffsetY()+offset.getyMin();
-            int offZ = otherMask.getOffsetZ()+offset.getzMin();
-            for (Voxel v : this.getVoxels()) {
-                if (otherMask.insideMask(v.x-offX, v.y-offY, v.z-offZ)) ++count;
-            }
-            return count;
-        }
-    }*/
+
     public boolean intersect(Region other) {
         if (is2D()||other.is2D()) return getBounds().intersect2D(other.getBounds());
         else return getBounds().intersect(other.getBounds());
@@ -676,8 +668,10 @@ public class Region {
         return currentParent;
     }
     
-    public void merge(Region other) {
-        //int nb = getVoxels().size();
+    public void merge(Region other) { //TODO do with masks only
+        /*if ((voxels==null||other.voxels==null)) {
+            if (other.getBounds().isIncluded(getBounds()))
+        }*/
         this.getVoxels().addAll(other.getVoxels()); // TODO check for duplicates?
         //logger.debug("merge:  {} + {}, nb voxel avant: {}, nb voxels après: {}", this.getLabel(), other.getLabel(), nb,getVoxels().size() );
         this.mask=null; // reset mask
@@ -686,26 +680,8 @@ public class Region {
     
     public ObjectContainer getObjectContainer(StructureObject structureObject) {
         if (mask instanceof BlankMask) return new ObjectContainerBlankMask(structureObject);
-        else if (!voxelsSizeOverLimit(true)) return new ObjectContainerVoxels(structureObject);
+        else if (!overVoxelSizeLimit()) return new ObjectContainerVoxels(structureObject);
         else return new ObjectContainerIjRoi(structureObject);
-        /*if (mask!=null) {
-            if (mask instanceof BlankMask) return new ObjectContainerBlankMask(structureObject);
-            else {
-                if (voxels!=null) {
-                    if (!voxelsSizeOverLimit(true)) return new ObjectContainerVoxels(structureObject);
-                    else if (!voxelsSizeOverLimit(false)) return new ObjectContainerVoxelsDB(structureObject);
-                    else return new ObjectContainerImage(structureObject);
-                } else {
-                    if (!maskSizeOverLimit(true)) return new ObjectContainerVoxels(structureObject);
-                    else if (!maskSizeOverLimit(false)) return new ObjectContainerVoxelsDB(structureObject);
-                    else return new ObjectContainerImage(structureObject);
-                }
-            }
-        } else if (voxels!=null) {
-            if (voxelsSizeOverLimit(false)) return new ObjectContainerImage(structureObject);
-            else if (voxelsSizeOverLimit(true)) return new ObjectContainerVoxelsDB(structureObject);
-            else return new ObjectContainerVoxels(structureObject);
-        } else return null;*/
     }
     
     public void setVoxelValues(Image image, boolean useOffset) {
@@ -804,19 +780,15 @@ public class Region {
         }
     }
     
-    private boolean voxelsSizeOverLimit(boolean emb) {
-        int limit = emb? (!is2D() ? MAX_VOX_3D_EMB :MAX_VOX_2D_EMB) : (!is2D() ? MAX_VOX_3D :MAX_VOX_2D);
-        return getVoxels().size()>limit;
-    }
-    private boolean maskSizeOverLimit(boolean emb) {
-        int limit = emb? (!is2D() ? MAX_VOX_3D_EMB :MAX_VOX_2D_EMB) : (!is2D() ? MAX_VOX_3D :MAX_VOX_2D);
-        int count = 0;
+    private boolean overVoxelSizeLimit() {
+        int limit =  (!is2D() ? MAX_VOX_3D :MAX_VOX_2D);
+        if (mask==null) return voxels.size()>limit;
+        if (mask instanceof BlankMask) return true;
+        int count =0;
         for (int z = 0; z < mask.getSizeZ(); ++z) {
-            for (int y = 0; y < mask.getSizeY(); ++y) {
-                for (int x = 0; x < mask.getSizeX(); ++x) {
-                    if (mask.insideMask(x, y, z)) {
-                        if (++count==limit) return true;
-                    }
+            for (int xy = 0; xy < mask.getSizeXY(); ++xy) {
+                if (mask.insideMask(xy, z)) {
+                    if (++count==limit) return true;
                 }
             }
         }

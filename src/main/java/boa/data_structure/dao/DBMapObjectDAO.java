@@ -49,6 +49,7 @@ import boa.utils.JSONUtils;
 import static boa.utils.JSONUtils.parse;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.function.Consumer;
 
 /**
  *
@@ -346,14 +347,19 @@ public class DBMapObjectDAO implements ObjectDAO {
             }
             DBMapUtils.deleteDBFile(getDBFile(structureIdx));
         }
-        
+    }
+    @Override
+    public void applyOnAllOpenedObjects(Consumer<StructureObject> function) {
+        for (Map<String, StructureObject> obs : cache.values()) {
+            for (StructureObject so : obs.values()) function.accept(so);
+        }
     }
     @Override
     public void clearCache() {
-        for (Map<String, StructureObject> obs : cache.values()) {
-            for (StructureObject so : obs.values()) so.flushImages();
-            logger.debug("clear chache: {} objects", obs.size());
-        }
+        applyOnAllOpenedObjects(o->{
+            o.flushImages();
+            if (o.hasObject()) o.getObject().clearVoxels();
+        }); // free memory in case objects are stored elsewhere (eg selection, tack mask...)
         cache.clear();
         allObjectsRetrievedInCache.clear();
         closeAllFiles(true);

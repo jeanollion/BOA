@@ -326,7 +326,7 @@ public class RegionPopulation {
         int label=1;
         List<Region> seeds = new ArrayList<>(getRegions().size());
         for (final Region o : getRegions()) {
-            seeds.add(new Region(o.getExtremum(maxOfObjectVoxels), label++, o.is2D(), o.getScaleXY(), o.getScaleZ()));
+            seeds.add(new Region(o.getExtremumVoxelValue(maxOfObjectVoxels), label++, o.is2D(), o.getScaleXY(), o.getScaleZ()));
         }
         return seeds;
     }
