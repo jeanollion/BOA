@@ -28,6 +28,7 @@ import boa.configuration.parameters.TrackPostFilterSequence;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
 import ij.ImageJ;
 import boa.image.Image;
 import java.util.ArrayList;
@@ -60,15 +61,19 @@ public class TestProcessMicrochannelsPhase {
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
         MasterDAO mDAO =new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
+        
         StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
         if (root==null) root = f.createRootObjects(mDAO.getDao(f.getName())).get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
+        root = StructureObjectUtils.duplicateRootTrackAndChangeDAO(false, root).get(root.getId());
+        ArrayList<StructureObject> parentTrack = new ArrayList<>(); parentTrack.add(root);
         Image input = root.getRawImage(0);
         MicrochannelPhase2D.debug=true;
         //MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
-        input = mDAO.getExperiment().getStructure(0).getProcessingScheme().getPreFilters().filter(input, root.getMask());
-        RegionPopulation pop = s.runSegmenter(input, 0, root);
+        mDAO.getExperiment().getStructure(0).getProcessingScheme().getTrackPreFilters(true).filter(timePoint, parentTrack, null);
+        RegionPopulation pop = s.runSegmenter(root.getPreFilteredImage(0), 0, root);
+        root.setChildrenObjects(pop, 0);
         FitMicrochannelHeadToEdges.debug=true;
         if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
             TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters();

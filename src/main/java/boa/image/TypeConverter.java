@@ -18,6 +18,7 @@
 package boa.image;
 
 import boa.image.processing.ImageOperations;
+import java.util.Arrays;
 
 
 /**
@@ -101,9 +102,13 @@ public class TypeConverter {
         if (value<0) value = 0;
         byte  v = (byte)value;
         byte[][] newPixels = output.getPixelArray();
-        for (int z = 0; z<image.getSizeZ(); ++z) {
-            for (int xy = 0; xy<image.getSizeXY(); ++xy) {
-                if (image.insideMask(xy, z)) newPixels[z][xy] = v;
+        if (image instanceof BlankMask) {
+            for (int z = 0; z<image.getSizeZ(); ++z) Arrays.fill(newPixels[z], (byte)1);
+        } else {
+            for (int z = 0; z<image.getSizeZ(); ++z) {
+                for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+                    if (image.insideMask(xy, z)) newPixels[z][xy] = v;
+                }
             }
         }
         return output;

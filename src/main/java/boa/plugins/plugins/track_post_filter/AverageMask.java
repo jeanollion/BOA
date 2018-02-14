@@ -51,7 +51,7 @@ public class AverageMask implements TrackPostFilter{
         for (List<StructureObject> track : allTracks.values()) averageMask(track);
     }
     private void averageMask(List<StructureObject> track) {
-        if (track.size()<=1) return;
+        //if (track.size()<=1) return;
         if (referencePoint.getSelectedIndex()==0) { // upper left corner
             // size = maximal size
             int maxX = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().getSizeX(), o2.getMask().getSizeX())).getMask().getSizeX();
@@ -69,19 +69,13 @@ public class AverageMask implements TrackPostFilter{
                 }
             }
             int threshold = (int)((track.size()+1)/2d);
-            //logger.debug("average mask average computed");
             for (StructureObject o : track) {
-                logger.debug("o: {} had voxels: {}", o, o.getObject().voxelsCreated());
                 ImageInteger mask = o.getMask();
+                if (mask instanceof BlankMask) continue;
                 mask.getBoundingBox().translateToOrigin().loop((x, y, z)->{ mask.setPixel(x, y, z, sum.getPixelInt(x, y, z)>=threshold?1:0);});
-                RegionPopulation pop = new RegionPopulation(mask, true); // re-create object because bounds might have changed
-                pop.translate(mask.getBoundingBox(), true);
-                Region r = pop.getRegions().get(0);
-                //logger.debug("o: {} had voxels after average?: {}", o, r.voxelsCreated());
-                r.resetVoxels(); // free memory
-                o.setObject(r);
+                o.getObject().resetMask(); // reset mask because bounds might have changed
+                o.getObject().clearVoxels();
             }
-            //logger.debug("average mask done");
         }
     }
     @Override

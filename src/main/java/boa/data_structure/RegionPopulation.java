@@ -623,7 +623,7 @@ public class RegionPopulation {
                 rIt.remove();
                 modified.remove(r);
             }
-            for (Region mod : modified) mod.resetMask();
+            for (Region mod : modified) mod.clearMask();
         }
         bck.draw(labelImage, 0);
         getRegions().remove(bck);

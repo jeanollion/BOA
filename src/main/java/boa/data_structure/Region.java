@@ -34,6 +34,7 @@ import java.util.TreeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.image.processing.Filters;
+import boa.image.processing.RegionFactory;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.utils.ArrayUtil;
@@ -255,23 +256,62 @@ public class Region {
     }
     
     public synchronized void addVoxels(Collection<Voxel> voxelsToAdd) {
-        this.getVoxels().addAll(voxelsToAdd);
+        if (voxels!=null) voxels.addAll(voxelsToAdd);
+        if (mask!=null) {
+            // check if all voxels are within mask
+            boolean within = true;
+            for (Voxel v : voxelsToAdd) {if (!mask.containsWithOffset(v.x, v.y, v.z)); within=false; break;}
+            if (!within) mask = null;
+            else if (!(mask instanceof BlankMask)) for (Voxel v : voxelsToAdd) mask.setPixelWithOffset(v.x, v.y, v.z, 1);
+        }
         this.bounds=null;
-        this.mask=null;
+    }
+    public synchronized void remove(Region r) {
+        if (this.mask!=null && r.mask!=null) remove(r.mask);
+        else if (this.voxels!=null && r.voxels!=null) removeVoxels(r.voxels);
+        else remove(r.getMask());
     }
     public synchronized void removeVoxels(Collection<Voxel> voxelsToRemove) {
-        this.getVoxels().removeAll(voxelsToRemove);
+        if (voxels!=null) voxels.removeAll(voxelsToRemove);
+        if (mask!=null) {
+            if (mask instanceof BlankMask) mask=null;
+            else for (Voxel v : voxelsToRemove) mask.setPixelWithOffset(v.x, v.y, v.z, 0);
+        }
         this.bounds=null;
-        this.mask=null;
     }
-    public synchronized void resetVoxels() {
+    public synchronized void remove(ImageMask otherMask) {
+        getMask();
+        if (mask instanceof BlankMask) mask = TypeConverter.toByteMask(mask, null, 1);
+        otherMask.getBoundingBox().getIntersection(getBounds()).loop((x, y, z)-> {
+            if (otherMask.insideMaskWithOffset(x, y, z)) {
+                mask.setPixelWithOffset(x, y, z, 0);
+                if (voxels!=null) voxels.remove(new Voxel(x, y, z));
+            }
+        });
+    }
+    public boolean contains(Voxel v) {
+        if (voxels!=null) return voxels.contains(v);
+        else return mask.containsWithOffset(v.x, v.y, v.z) && mask.insideMaskWithOffset(v.x, v.y, v.z);
+    }
+    public synchronized void clearVoxels() {
         if (mask==null) getMask();
         voxels = null;
     }
-    public synchronized void resetMask() {
+    public synchronized void clearMask() {
         if (voxels==null) getVoxels();
         mask = null;
         this.bounds=null;
+    }
+    public synchronized void resetMask() {
+        if (mask!=null) { // do it from mask
+            if (mask instanceof BlankMask) return;
+            Region other = RegionFactory.getObjectImage(mask); // landmask = mask
+            this.mask=other.mask;
+            this.bounds=  other.getBounds();
+        } else { // mask will be created from voxels
+            mask = null;
+            bounds = null;
+        }
     }
     protected void createMask() {
         ImageByte mask_ = new ImageByte("", getBounds().getImageProperties(scaleXY, scaleZ));

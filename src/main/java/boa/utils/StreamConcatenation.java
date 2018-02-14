@@ -18,6 +18,7 @@
 package boa.utils;
 
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Spliterator;
@@ -45,7 +46,9 @@ public final class StreamConcatenation {
   private StreamConcatenation() {
     throw new AssertionError("This class cannot be instantiated");
   }
-
+  public static <T> Stream<T> concat(Collection<Stream<? extends T>> streams) {
+      return concat(streams.toArray(new Stream[streams.size()]));
+  }
   /**
    * Creates a lazily concatenated stream whose elements are the elements of
    * each of the input streams.  In other words, the returned stream contains

@@ -154,13 +154,7 @@ public class ThreadRunner {
         if (array==null) return;
         if (array.length==0) return;
         if (array.length==1) {
-            List<Pair<String, Exception>> errors = new ArrayList<>(1);
-            try {
-                action.run(array[0], 0);
-            } catch (Exception e) {
-                errors.add(new Pair(array[0].toString(), e));
-            }
-            if (!errors.isEmpty()) throw new MultipleException(errors);
+            action.run(array[0], 0);
             return;
         }
         if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
@@ -205,14 +199,7 @@ public class ThreadRunner {
         if (array==null) return;
         if (array.isEmpty()) return;
         if (array.size()==1) {
-            List<Pair<String, Exception>> errors = new ArrayList<>(1);
-            T e = array.iterator().next();
-            try {
-                action.run(array.iterator().next(), 0);
-            } catch (Exception ex) {              
-                errors.add(new Pair(e.toString(), ex));           
-            }
-            if (!errors.isEmpty()) throw new MultipleException(errors);
+            action.run(array.iterator().next(), 0);
             return;
         }
         if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());

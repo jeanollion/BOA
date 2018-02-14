@@ -255,8 +255,6 @@ public class Processor {
                 for (StructureObject o : parentTrack) o.setPreFilteredImage(null, structureIdx); // erase preFiltered images
                 logger.debug("prefiltered images erased: {} for structure: {}", parentTrack.get(0), structureIdx);
             }
-            
-            
         }
     }
     

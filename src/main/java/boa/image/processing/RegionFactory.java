@@ -19,10 +19,12 @@ package boa.image.processing;
 
 import boa.data_structure.Region;
 import boa.data_structure.Voxel;
+import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
+import boa.image.TypeConverter;
 import boa.utils.HashMapGetCreate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,23 +59,17 @@ public class RegionFactory {
     }
   
     public static TreeMap<Integer, BoundingBox> getBounds(ImageInteger labelImage) {
-        HashMap<Integer, BoundingBox> bounds = new HashMap<>();
-        int label;
-        int sizeX = labelImage.getSizeX();
-        for (int z = 0; z<labelImage.getSizeZ(); ++z) {
-            for (int xy = 0; xy < labelImage.getSizeXY(); ++xy) {
-                label = labelImage.getPixelInt(xy, z);
-                if (label != 0) {
-                    BoundingBox b = bounds.get(label);
-                    if (b == null) {
-                        b = new BoundingBox(xy % sizeX, xy / sizeX, z);
-                        bounds.put(label, b);
-                    } else b.expand(xy % sizeX, xy / sizeX, z);
-                    
-                }
-            }
-        }
+        HashMapGetCreate<Integer, BoundingBox> bounds = new HashMapGetCreate<>(i->new BoundingBox());
+        labelImage.getBoundingBox().translateToOrigin().loop((x, y, z)-> {
+            int label = labelImage.getPixelInt(x, y, z);
+            if (label>0) bounds.getAndCreateIfNecessary(label).expand(x, y, z);
+        });
         return new TreeMap<>(bounds);
+    }
+    public static BoundingBox getBounds(ImageMask mask) {
+        BoundingBox bounds = new BoundingBox();
+        ImageMask.loop(mask, (x, y, z)->{bounds.expand(x, y, z);});
+        return bounds;
     }
     
     public static Region[] getObjectsImage(ImageInteger labelImage, boolean ensureContinuousLabels) {
@@ -92,7 +88,27 @@ public class RegionFactory {
         }
         return res;
     }
-    
+    /**
+     * 
+     * @param mask
+     * @return region where of voxels contained within {@param mask}
+     * the returned region has the same landmask as the mask
+     */
+    public static Region getObjectImage(ImageMask mask) {
+        if (mask instanceof BlankMask) return new Region((BlankMask)mask, 1, ((BlankMask) mask).getSizeZ()==1);
+        BoundingBox bounds = getBounds(mask);
+        if (bounds.equals(mask.getBoundingBox().translateToOrigin())) {
+            if (mask instanceof ImageInteger) return new Region((ImageInteger)mask, 1, mask.getSizeZ()==1);
+            else return new Region(TypeConverter.toImageInteger(mask, null), 1, mask.getSizeZ()==1);
+        } else {
+            ImageByte newMask = new ImageByte("", bounds.getImageProperties(mask.getScaleXY(), mask.getScaleZ()));
+            newMask.getBoundingBox().loop((x, y, z)->{
+                if (mask.insideMask(x, y, z)) newMask.setPixelWithOffset(x, y, z, 1); // bounds has for landmask mask
+            });
+            newMask.addOffset(mask.getBoundingBox()); 
+            return new Region(newMask, 1, mask.getSizeZ()==1);
+        }
+    }
     public static void relabelImage(ImageInteger labelImage){
         relabelImage(labelImage, null);
     }

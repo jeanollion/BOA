@@ -64,14 +64,16 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
         List<StructureObject> objectsToRemove = new ArrayList<>();
         ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
-            logger.debug("seg post-filter: {}", parent);
+            //logger.debug("seg post-filter: {}", parent);
             pop.translate(parent.getBounds().duplicate().reverseOffset(), false); // go back to relative landmark
             pop=postFilters.filter(pop, structureIdx, parent);
             List<StructureObject> toRemove=null;
-            for (StructureObject o : parent.getChildren(structureIdx)) {
-                if (!pop.getRegions().contains(o.getObject())) {
-                    if (toRemove==null) toRemove= new ArrayList<>();
-                    toRemove.add(o);
+            if (parent.getChildren(structureIdx)!=null) {
+                for (StructureObject o : parent.getChildren(structureIdx)) {
+                    if (!pop.getRegions().contains(o.getObject())) {
+                        if (toRemove==null) toRemove= new ArrayList<>();
+                        toRemove.add(o);
+                    }
                 }
             }
             pop.translate(parent.getBounds(), true); // go back to absolute landmark
