@@ -167,7 +167,6 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     
     protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx) {
         Image smooth = smoothScale.getValue().doubleValue()>=1 ? ImageFeatures.gaussianSmooth(input, smoothScale.getValue().doubleValue(), false):input;
-        if (!pop.getLabelMap().sameSize(smooth)) smooth=smooth.cropWithOffset(pop.getLabelMap().getBoundingBox()); // when called from split -> population is a subset of parent mask
         pop.localThreshold(smooth, localThresholdFactor.getValue().doubleValue(), true, true);
         return pop;
     }
@@ -183,8 +182,8 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     }
     // segmenter split and merge interface
     @Override public double split(StructureObject parent, int structureIdx, Region o, List<Region> result) {
-        RegionPopulation pop =  splitObject(parent, structureIdx, o); // init processing variables
-        pop.translate(o.getBounds().duplicate().reverseOffset(), false);
+        RegionPopulation pop =  splitObject(parent, structureIdx, o); // after this step pop is in relative landmark compared to image
+        //pop.translate(o.getBounds().duplicate().reverseOffset(), false);
         if (pop.getRegions().size()<=1) return Double.POSITIVE_INFINITY;
         else {
             if (pop.getRegions().size()>2) pop.mergeWithConnected(pop.getRegions().subList(2, pop.getRegions().size()));
@@ -203,12 +202,11 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     @Override public double computeMergeCost(StructureObject parent, int structureIdx, List<Region> objects) {
         if (objects.isEmpty() || objects.size()==1) return 0;
         Image input = parent.getPreFilteredImage(structureIdx);
-        RegionPopulation mergePop = new RegionPopulation(objects, input, false);
+        RegionPopulation mergePop = new RegionPopulation(objects, input, objects.get(0).isAbsoluteLandMark());
         splitAndMerge = this.initializeSplitAndMerge(input, mergePop.getLabelMap());
         RegionCluster c = new RegionCluster(mergePop, false, true, splitAndMerge.getFactory());
         List<Set<Region>> clusters = c.getClusters();
         double maxCost = Double.NEGATIVE_INFINITY;
-        //logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
         if (clusters.size()>1) { // merge impossible : presence of disconnected objects
             if (testMode) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
             return Double.POSITIVE_INFINITY;
@@ -251,27 +249,11 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     
     @Override public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
         Image input = parent.getPreFilteredImage(structureIdx);
-        if (!input.sameSize(object.getMask()))  {
-            logger.debug("split object: crop input image: {} mask: {}, object is absolute: {}", input.getBoundingBox(), object.getBounds(), object.isAbsoluteLandMark());
-            input = object.isAbsoluteLandMark() ? input.cropWithOffset(object.getBounds()) : input.crop(object.getBounds());
-        }
-        // limit border effects: dilate image
-        int ext = (int)this.hessianScale.getValue().doubleValue()+1;
-        BoundingBox extent = new BoundingBox(-ext, ext, -ext, ext, 0, 0);
-        Image inExt = input.extend(extent);
-        ImageInteger maskExt = object.getMask().extend(extent);
-        splitAndMerge = initializeSplitAndMerge(inExt, maskExt);
+        ImageInteger mask = object.isAbsoluteLandMark() ? object.getMask().cropWithOffset(input.getBoundingBox()) :object.getMask().cropWithOffset(input.getBoundingBox().translateToOrigin()); // extend mask to get the same size as the image
+        splitAndMerge = initializeSplitAndMerge(input, mask);
         splitAndMerge.setTestMode(splitVerbose);
-        // ici -> bug avec offsets? 
-        //logger.debug("in off: {}, object off: {}, inExt off: {}, maskExt off: {}", input.getBoundingBox(), object.getMask().getBoundingBox(), inExt.getBoundingBox(), maskExt.getBoundingBox());
-        RegionPopulation res = splitAndMerge.splitAndMerge(maskExt, minSizePropagation.getValue().intValue(), 2);
-        extent = new BoundingBox(ext, -ext, ext, -ext, 0, 0);
-        ImageInteger labels = res.getLabelMap().extend(extent);
-        RegionPopulation pop= new RegionPopulation(labels, true);
-        pop.translate(object.getBounds(), object.isAbsoluteLandMark());
-        //input.addOffset(object.getBounds());
-        pop = localThreshold(input, pop, parent, structureIdx); 
-        return pop;
+        RegionPopulation res = splitAndMerge.splitAndMerge(mask, minSizePropagation.getValue().intValue(), 2);
+        return localThreshold(input, res, parent, structureIdx); 
     }
 
     

@@ -466,6 +466,16 @@ public class BoundingBox implements JSONSerializable {
         return this;
     }
     
+    public BoundingBox extend(BoundingBox extent) {
+        xMax += extent.getxMax();
+        xMin += extent.getxMin();
+        yMax += extent.getyMax();
+        yMin += extent.getyMin();
+        zMax += extent.getzMax();
+        zMin += extent.getzMin();
+        return this;
+    }
+    
     public boolean isOffsetNull() {
         return xMin==0 && yMin==0 && zMin==0;
     }

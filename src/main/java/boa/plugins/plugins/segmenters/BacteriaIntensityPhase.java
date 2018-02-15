@@ -118,15 +118,8 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         Image smooth = ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
         Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), 3, 1, 3, 1);
         ImageMask mask = parent.getMask();
-        boolean fromSplit = !input.sameSize(smooth);
-        if (fromSplit) { // when called from split -> population is a subset of object to split
-            smooth= pop.isAbsoluteLandmark() ? smooth.cropWithOffset(input.getBoundingBox()) : smooth.crop(input.getBoundingBox());
-            edgeMap = pop.isAbsoluteLandmark() ? edgeMap.cropWithOffset(input.getBoundingBox()) : edgeMap.crop(input.getBoundingBox()); 
-            mask = TypeConverter.toImageInteger(mask, null);
-            mask = pop.isAbsoluteLandmark() ?  ((ImageInteger)mask).cropWithOffset(input.getBoundingBox()) : ((ImageInteger)mask).crop(input.getBoundingBox());
-        } 
         pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask);
-        pop.smoothRegions(2, !fromSplit, mask);
+        pop.smoothRegions(2, true, mask);
         return pop;
     }
 }

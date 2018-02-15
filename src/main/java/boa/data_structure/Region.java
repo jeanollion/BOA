@@ -699,19 +699,13 @@ public class Region {
     public void draw(Image image, double value) {
         if (voxels !=null) {
             //logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
-            for (Voxel v : getVoxels()) image.setPixel(v.x, v.y, v.z, value);
+            if (isAbsoluteLandMark()) for (Voxel v : getVoxels()) image.setPixelWithOffset(v.x, v.y, v.z, value);
+            else for (Voxel v : getVoxels()) image.setPixel(v.x, v.y, v.z, value);
         }
         else {
             //logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} mask offsetX: {} mask offsetY: {} mask offsetZ: {}", this, label, mask, mask.getOffsetX(), mask.getOffsetY(), mask.getOffsetZ());
-            for (int z = 0; z < mask.getSizeZ(); ++z) {
-                for (int y = 0; y < mask.getSizeY(); ++y) {
-                    for (int x = 0; x < mask.getSizeX(); ++x) {
-                        if (mask.insideMask(x, y, z)) {
-                            image.setPixel(x+mask.getOffsetX(), y+mask.getOffsetY(), z+mask.getOffsetZ(), value);
-                        }
-                    }
-                }
-            }
+            if (isAbsoluteLandMark()) ImageMask.loopWithOffset(mask, (x, y, z)-> { image.setPixelWithOffset(x, y, z, value); });
+            else ImageMask.loopWithOffset(mask, (x, y, z)-> { image.setPixel(x, y, z, value); });
         }
     }
     /**

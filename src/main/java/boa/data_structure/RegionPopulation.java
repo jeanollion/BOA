@@ -151,10 +151,7 @@ public class RegionPopulation {
             this.properties = new BlankMask("", properties);
         }
         this.absoluteLandmark=absoluteLandmark;
-        for (Region o : objects) {
-            //o.setIs2D(properties.getSizeZ()==1);
-            o.setIsAbsoluteLandmark(absoluteLandmark);
-        }
+        for (Region o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
         labelImage = labelMap;
         this.relabel(true);
     }
