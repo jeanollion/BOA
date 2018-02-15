@@ -186,6 +186,16 @@ public class ThresholdMask implements ImageMask {
     public boolean containsWithOffset(int x, int y, int z) {
         return image.containsWithOffset(x, y, z);
     }
+    
+    @Override
+    public boolean contains(int xy, int z) {
+        return image.contains(xy, z);
+    }
+
+    @Override
+    public boolean containsWithOffset(int xy, int z) {
+        return image.containsWithOffset(xy, z);
+    }
 
     @Override
     public BoundingBox getBoundingBox() {

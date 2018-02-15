@@ -1089,7 +1089,7 @@ public class RegionPopulation {
         @Override public void init(RegionPopulation population) {}
         @Override
         public boolean keepObject(Region object) {
-            double mean = BasicMeasurements.getMeanValue(object, intensityMap, false);
+            double mean = BasicMeasurements.getMeanValue(object, intensityMap);
             return mean >= threshold == keepOverThreshold;
         }
     }
@@ -1107,7 +1107,7 @@ public class RegionPopulation {
         @Override public void init(RegionPopulation population) {}
         @Override
         public boolean keepObject(Region object) {
-            double median = BasicMeasurements.getQuantileValue(object, intensityMap, false, 0.5)[0];
+            double median = BasicMeasurements.getQuantileValue(object, intensityMap, 0.5)[0];
             return median >= threshold == keepOverThreshold;
         }
     }

@@ -91,7 +91,7 @@ public class Focus implements Measurement {
             for (Voxel v : contour) gradAtBorder+=grad.getPixelWithOffset(v.x, v.y, v.z);
             borderCount += contour.size();
             count+=o.getObject().getSize();
-            intensity+=BasicMeasurements.getSum(o.getObject(), input, true);
+            intensity+=BasicMeasurements.getSum(o.getObject(), input);
         }
         gradAtBorder/=borderCount;
         intensity/=count;

@@ -7,8 +7,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.utils.ArrayUtil;
+import boa.utils.StreamConcatenation;
 import boa.utils.Utils;
 import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 
 public abstract class Image implements ImageProperties {
@@ -196,8 +199,20 @@ public abstract class Image implements ImageProperties {
     public abstract Image newImage(String name, ImageProperties properties);
     public abstract <T extends Image> T crop(BoundingBox bounds);
     public abstract <T extends Image> T cropWithOffset(BoundingBox bounds);
-    public abstract DoubleStream stream();
+    public DoubleStream stream() {
+        if (sizeZ==1) return streamPlane(0);
+        return StreamConcatenation.concat((DoubleStream[])IntStream.range(0, sizeZ).mapToObj(z->streamPlane(z)).toArray(s->new DoubleStream[s]));
+    }
     public abstract DoubleStream streamPlane(int z);
+    public DoubleStream stream(ImageMask mask, boolean maskHasAbsoluteOffset) {
+        int minZ = maskHasAbsoluteOffset? Math.max(offsetZ, mask.getOffsetZ()) : mask.getOffsetZ();
+        int maxZ = maskHasAbsoluteOffset ? Math.min(offsetZ+sizeZ, mask.getOffsetZ()+mask.getSizeZ()) : Math.min(sizeZ, mask.getSizeZ()+mask.getOffsetZ());
+        if (minZ>=maxZ) return DoubleStream.empty();
+        if (minZ==maxZ-1) return streamPlane(minZ-(maskHasAbsoluteOffset?offsetZ:0), mask, maskHasAbsoluteOffset);
+        return StreamConcatenation.concat((DoubleStream[])IntStream.range(minZ-(maskHasAbsoluteOffset?offsetZ:0), maxZ-(maskHasAbsoluteOffset?offsetZ:0)).mapToObj(z->streamPlane(z, mask, maskHasAbsoluteOffset)).filter(s->s!=DoubleStream.empty()).toArray(s->new DoubleStream[s]));
+    }
+    public abstract DoubleStream streamPlane(int z, ImageMask mask, boolean useOffset);
+    
     /**
      * 
      * @param <T> image type
@@ -223,6 +238,17 @@ public abstract class Image implements ImageProperties {
     public boolean containsWithOffset(int x, int y, int z) {
         x-=offsetX; y-=offsetY; z-=offsetZ;
         return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
+    }
+    
+    @Override
+    public boolean contains(int xy, int z) {
+        return (xy >= 0 && xy < sizeXY && z >= 0 && z < sizeZ);
+    }
+
+    @Override
+    public boolean containsWithOffset(int xy, int z) {
+        xy-=offsetXY; z-=offsetZ;
+        return (xy >= 0 && xy < sizeXY && z >= 0 && z < sizeZ);
     }
     
     public <T extends Image> T resetOffset() {

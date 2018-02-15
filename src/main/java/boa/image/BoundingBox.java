@@ -280,7 +280,12 @@ public class BoundingBox implements JSONSerializable {
     public boolean sameBounds(ImageProperties properties) {
         return xMin==properties.getOffsetX() && yMin==properties.getOffsetY() && zMin==properties.getOffsetZ() && xMax==(properties.getSizeX()-1+properties.getOffsetX()) && yMax==(properties.getSizeY()-1+properties.getOffsetY()) && zMax==(properties.getSizeZ()-1+properties.getOffsetZ());
     }
-    
+    public boolean sameSize(ImageProperties properties) {
+        return getSizeX() == properties.getSizeX() && getSizeY() == properties.getSizeY() && getSizeZ() == properties.getSizeZ();
+    }
+    public boolean sameSize(BoundingBox bounds) {
+        return getSizeX() == bounds.getSizeX() && getSizeY() == bounds.getSizeY() && getSizeZ() == bounds.getSizeZ();
+    }
     /**
      * Translate the bounding box in the 3 axes
      * @param dX translation in the X-Axis in pixels

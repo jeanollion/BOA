@@ -32,6 +32,8 @@ import boa.measurement.GeometricalMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -96,11 +98,11 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
             if (v.y>yMax) yMax=v.y;
         }
         logger.debug("vox xMax: {}, yMax: {}", xMax, yMax);*/
-        object.getMeasurements().setValue("BacteriaMeanIntensity", BasicMeasurements.getMeanValue(o, bactImage, true));
+        object.getMeasurements().setValue("BacteriaMeanIntensity", BasicMeasurements.getMeanValue(o, bactImage));
         List<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex());
-        if (mutList.isEmpty()) object.getMeasurements().setValue("MutationMeanIntensity", BasicMeasurements.getMeanValue(o, mutImage, true));
+        if (mutList.isEmpty()) object.getMeasurements().setValue("MutationMeanIntensity", BasicMeasurements.getMeanValue(o, mutImage));
         if (!mutList.isEmpty()) {
-            List<Voxel> mutVox = new ArrayList<Voxel>();
+            Set<Voxel> mutVox = new HashSet<>();
             for (StructureObject m : mutList) mutVox.addAll(m.getObject().getVoxels());
             double[] snr = BasicMeasurements.getSNR(mutVox, o.getVoxels(), mutImage, true);
             object.getMeasurements().setValue("MutationSNR", snr[0]);
@@ -119,7 +121,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
             object.getMeasurements().setValue("M_MutationCount", ObjectInclusionCount.count(mm, mutList, 0, true));
             t4 = System.currentTimeMillis();
             object.getMeasurements().setValue("M_FeretMax", GeometricalMeasurements.getFeretMax(mm.getObject()));
-            object.getMeasurements().setValue("M_MeanValue", BasicMeasurements.getMeanValue(mm.getObject(), bactImage, true));
+            object.getMeasurements().setValue("M_MeanValue", BasicMeasurements.getMeanValue(mm.getObject(), bactImage));
             object.getMeasurements().setValue("M_Volume", GeometricalMeasurements.getVolume(mm.getObject()));
             t5 = System.currentTimeMillis();
             

@@ -264,7 +264,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
         return valueMap;
     }
     protected static Function<Region, Double> valueFunction(Image image) { // default: median value
-        return r->BasicMeasurements.getQuantileValue(r, image, false, 0.5)[0];
+        return r->BasicMeasurements.getQuantileValue(r, image, 0.5)[0];
     }
     @Override
     public Parameter[] getParameters() {

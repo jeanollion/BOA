@@ -46,19 +46,79 @@ public class ImageByte extends ImageInteger {
             return res;
         }
     }
-    public DoubleStream streamPlane(int z) {
+    @Override public DoubleStream streamPlane(int z) {
         return ArrayUtil.stream(pixels[z]);
     }
-    public DoubleStream stream() {
-        if (sizeZ==1) return ArrayUtil.stream(pixels[0]);
-        return StreamConcatenation.concat(Utils.transform(pixels, new DoubleStream[sizeZ], array ->ArrayUtil.stream(array)));
+    @Override public DoubleStream streamPlane(int z, ImageMask mask, boolean maskHasAbsoluteOffset) {
+        if (maskHasAbsoluteOffset) {
+            if (z<0 || z>=sizeZ || z+offsetZ-mask.getOffsetZ()<0 || z+offsetZ-mask.getOffsetZ()>=mask.getSizeZ()) return DoubleStream.empty();
+            BoundingBox inter = getBoundingBox().getIntersection2D(mask.getBoundingBox());
+            if (inter.getSizeXY()==0) return DoubleStream.empty();
+            if (inter.equals(this) && inter.equals(mask)) return IntStream.range(0,sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
+            else { // loop within intersection
+                int sX = inter.getSizeX();
+                int offX = inter.getxMin();
+                int offY = inter.getyMin();
+                return IntStream.range(0,inter.getSizeXY()).mapToDouble(i->{
+                        int x = i%sX+offX;
+                        int y = i/sX+offY;
+                        return mask.insideMaskWithOffset(x, y, z+offsetZ)?pixels[z][x+y*sizeX-offsetXY]:Double.NaN;}
+                ).filter(v->!Double.isNaN(v));
+            }
+        }
+        else { // masks is relative to image
+            if (z<0 || z>=sizeZ || z-mask.getOffsetZ()<0 || z-mask.getOffsetZ()>mask.getSizeZ()) return DoubleStream.empty();
+            BoundingBox inter = getBoundingBox().translateToOrigin().getIntersection2D(mask.getBoundingBox());
+            if (inter.getSizeXY()==0) return DoubleStream.empty();
+            if (inter.equals(mask) && inter.sameSize(this)) return IntStream.range(0, sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
+            else {
+                int sX = inter.getSizeX();
+                int offX = inter.getxMin();
+                int offY = inter.getyMin();
+                return IntStream.range(0,inter.getSizeXY()).mapToDouble(i->{
+                        int x = i%sX+offX;
+                        int y = i/sX+offY;
+                        return mask.insideMaskWithOffset(x, y, z)?pixels[z][x+y*sizeX]:Double.NaN;}
+                ).filter(v->!Double.isNaN(v));
+            }
+        }
     }
     @Override public IntStream streamIntPlane(int z) {
         return ArrayUtil.streamInt(pixels[z]);
     }
-    @Override public IntStream streamInt() {
-        if (sizeZ==1) return ArrayUtil.streamInt(pixels[0]);
-        return StreamConcatenation.concat(Utils.transform(pixels, new IntStream[sizeZ], array ->ArrayUtil.streamInt(array)));
+    @Override public IntStream streamIntPlane(int z, ImageMask mask, boolean maskHasAbsoluteOffset) {
+        if (maskHasAbsoluteOffset) {
+            if (z<0 || z>=sizeZ || z+offsetZ-mask.getOffsetZ()<0 || z+offsetZ-mask.getOffsetZ()>=mask.getSizeZ()) return IntStream.empty();
+            BoundingBox inter = getBoundingBox().getIntersection2D(mask.getBoundingBox());
+            if (inter.getSizeXY()==0) return IntStream.empty();
+            if (inter.equals(this) && inter.equals(mask)) return IntStream.range(0,sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+            else { // loop within intersection
+                int sX = inter.getSizeX();
+                int offX = inter.getxMin();
+                int offY = inter.getyMin();
+                return IntStream.range(0,inter.getSizeXY()).map(i->{
+                        int x = i%sX+offX;
+                        int y = i/sX+offY;
+                        return mask.insideMaskWithOffset(x, y, z+offsetZ)?pixels[z][x+y*sizeX-offsetXY]:Integer.MAX_VALUE;}
+                ).filter(v->v!=Integer.MAX_VALUE);
+            }
+        }
+        else { // masks is relative to image
+            if (z<0 || z>=sizeZ || z-mask.getOffsetZ()<0 || z-mask.getOffsetZ()>mask.getSizeZ()) return IntStream.empty();
+            BoundingBox inter = getBoundingBox().translateToOrigin().getIntersection2D(mask.getBoundingBox());
+            if (inter.getSizeXY()==0) return IntStream.empty();
+            if (inter.equals(mask) && inter.sameSize(this)) return IntStream.range(0, sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+            else {
+                int sX = inter.getSizeX();
+                int offX = inter.getxMin();
+                int offY = inter.getyMin();
+                return IntStream.range(0,inter.getSizeXY()).map(i->{
+                        int x = i%sX+offX;
+                        int y = i/sX+offY;
+                        return mask.insideMaskWithOffset(x, y, z)?pixels[z][x+y*sizeX]:Integer.MAX_VALUE;}
+                ).filter(v->v!=Integer.MAX_VALUE);
+            }
+        }
     }
     @Override
     public int getPixelInt(int x, int y, int z) {

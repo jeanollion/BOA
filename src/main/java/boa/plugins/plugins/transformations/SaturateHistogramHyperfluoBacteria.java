@@ -144,7 +144,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
             double thldHyper2 = IJAutoThresholder.runThresholder(im, thldMask, AutoThresholder.Method.Otsu);
             // ThldHyper is over-estimated. ThldHyper = maximum value of objects that do not contain pixel over ThldHyp +1
             List<Region> objects = ImageLabeller.labelImageList(thldMask);
-            List<Double> maxValues = Utils.transform(objects, o->BasicMeasurements.getMaxValue(o, im, false));
+            List<Double> maxValues = Utils.transform(objects, o->BasicMeasurements.getMaxValue(o, im));
             maxValues.removeIf(v->v>=thldHyper2);
             double thldHyper3 = maxValues.isEmpty() ? thldHyper2 : Math.min(Collections.max(maxValues)*1.15, thldHyper2);
             if (testMode) logger.debug("SaturateHisto: {} proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {}), max values of non-saturated objects: {}", idx, proportion, count/im.getSizeXYZ(), thldBack, thldHyper2, thldHyper,thldHyper3);

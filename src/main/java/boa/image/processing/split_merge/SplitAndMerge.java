@@ -55,7 +55,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
     }
     public SplitAndMerge(Image intensityMap) {
         this.intensityMap=intensityMap;
-        medianValues= new HashMapGetCreate<>(r -> BasicMeasurements.getQuantileValue(r, intensityMap, false, 0.5)[0]);
+        medianValues= new HashMapGetCreate<>(r -> BasicMeasurements.getQuantileValue(r, intensityMap, 0.5)[0]);
     }
     /**
      * 

@@ -127,6 +127,16 @@ public class ImageMask2D implements ImageMask {
     public boolean containsWithOffset(int x, int y, int z) {
         return z>=mask.getOffsetZ() && mask.containsWithOffset(x, y, this.z);
     }
+    
+    @Override
+    public boolean contains(int xy, int z) {
+        return z>=0 && mask.contains(xy, this.z);
+    }
+
+    @Override
+    public boolean containsWithOffset(int xy, int z) {
+        return z>=mask.getOffsetZ() && mask.containsWithOffset(xy, this.z);
+    }
 
     @Override
     public BoundingBox getBoundingBox() {

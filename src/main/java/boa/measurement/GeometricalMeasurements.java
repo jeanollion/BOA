@@ -83,7 +83,7 @@ public class GeometricalMeasurements {
     }
     public static double localThickness(Region object) {
         Image ltMap = LocalThickness.localThickness(object.getMask(), object.is2D()?1:object.getScaleXY()/object.getScaleZ(), true, 1);
-        return BasicMeasurements.getQuantileValue(object, ltMap, true, 0.5)[0];
+        return BasicMeasurements.getQuantileValue(object, ltMap, 0.5)[0];
     }
     public static double meanThicknessZ(Region object) {
         double mean = 0;

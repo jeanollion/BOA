@@ -127,7 +127,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         
         // merge background and forground values respectively. remain intermediate region either background or foreground
         FilterSideBackground removeBackgroundRegions = new FilterSideBackground(0.2, 0.75, input); // was 0.33
-        HashMapGetCreate<Region, Double> median = new HashMapGetCreate<>(r->BasicMeasurements.getQuantileValue(r, input, false, 0.5)[0]);
+        HashMapGetCreate<Region, Double> median = new HashMapGetCreate<>(r->BasicMeasurements.getQuantileValue(r, input, 0.5)[0]);
         pop.mergeWithConnectedWithinSubset(o->median.getAndCreateIfNecessary(o)<=backgroundThld);
         pop.mergeWithConnectedWithinSubset(o->median.getAndCreateIfNecessary(o)>=foregroundThld && removeBackgroundRegions.keepObject(o));
         median.clear();

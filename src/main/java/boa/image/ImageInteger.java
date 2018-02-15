@@ -1,6 +1,8 @@
 package boa.image;
 
+import boa.utils.StreamConcatenation;
 import java.util.TreeMap;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 public abstract class ImageInteger extends Image implements ImageMask {
@@ -38,8 +40,19 @@ public abstract class ImageInteger extends Image implements ImageMask {
     public abstract void setPixelWithOffset(int x, int y, int z, int value);
     public abstract void setPixel(int xy, int z, int value);
     public abstract void setPixelWithOffset(int xy, int z, int value);
-    public abstract IntStream streamInt();
+    public IntStream streamInt(ImageMask mask, boolean useOffset) {
+        int minZ = useOffset? Math.max(offsetZ, mask.getOffsetZ()) : 0;
+        int maxZ = useOffset ? Math.min(offsetZ+sizeZ, mask.getOffsetZ()+mask.getSizeZ()) :  Math.min(sizeZ, mask.getSizeZ());
+        if (minZ>=maxZ) return IntStream.empty();
+        if (minZ==maxZ-1) return streamIntPlane(minZ, mask, useOffset);
+        return StreamConcatenation.concat((IntStream[])IntStream.range(minZ, maxZ).mapToObj(z->streamIntPlane(z, mask, useOffset)).filter(s->s!=IntStream.empty()).toArray(s->new IntStream[s]));
+    }
+    public IntStream streamInt() {
+        if (sizeZ==1) return streamIntPlane(0);
+        return StreamConcatenation.concat((IntStream[])IntStream.range(0, sizeZ).mapToObj(z->streamIntPlane(z)).toArray(s->new IntStream[s]));
+    }
     public abstract IntStream streamIntPlane(int z);
+    public abstract IntStream streamIntPlane(int z, ImageMask mask, boolean useOffset);
     /**
      * 
      * @param addBorder

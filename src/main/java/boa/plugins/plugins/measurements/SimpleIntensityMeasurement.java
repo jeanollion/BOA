@@ -71,7 +71,7 @@ public class SimpleIntensityMeasurement implements Measurement {
     @Override public void performMeasurement(StructureObject object) {
         StructureObject parent = object.isRoot() ? object : object.getParent();
         Image image = parent.getRawImage(structureImage.getSelectedStructureIdx());
-        double[] meanSd = BasicMeasurements.getMeanSdValue(object.getObject().getVoxels(), image, true);
+        double[] meanSd = BasicMeasurements.getMeanSdValue(object.getObject(), image);
         object.getMeasurements().setValue(prefix.getValue()+"Mean", meanSd[0]);
         object.getMeasurements().setValue(prefix.getValue()+"Sigma", meanSd[1]);
     }

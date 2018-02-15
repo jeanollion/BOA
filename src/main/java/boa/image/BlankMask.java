@@ -32,17 +32,27 @@ public class BlankMask extends ImageInteger implements ImageMask {
     public BlankMask(String name, BoundingBox bounds, float scaleXY, float scaleZ) {
         this(name, bounds.getSizeX(), bounds.getSizeY(), bounds.getSizeZ(), bounds.getxMin(), bounds.getyMin(), bounds.getzMin(), scaleXY, scaleZ);
     }
+    @Override
     public DoubleStream streamPlane(int z) {
-        return IntStream.range(0, 1).mapToDouble(i->1);
+        return IntStream.range(0, sizeXY).mapToDouble(i->1);
     }
+    @Override
     public DoubleStream stream() {
-        return IntStream.range(0, 1).mapToDouble(i->1);
+        return IntStream.range(0, sizeXYZ).mapToDouble(i->1);
     }
     @Override public IntStream streamIntPlane(int z) {
-        return IntStream.range(0, 1).map(i->1);
+        return IntStream.range(0, sizeXY).map(i->1);
     }
     @Override public IntStream streamInt() {
-        return IntStream.range(0, 1).map(i->1);
+        return IntStream.range(0, sizeXYZ).map(i->1);
+    }
+    @Override public DoubleStream streamPlane(int z, ImageMask mask, boolean useOffset) {
+        if (useOffset) return IntStream.range(offsetXY, sizeXY+offsetXY).mapToDouble(i->mask.containsWithOffset(i, z) && mask.insideMaskWithOffset(i, z)?1:Double.NaN).filter(v->!Double.isNaN(v));
+        else return IntStream.range(0, sizeXY).mapToDouble(i->mask.insideMask(i, z)?1:Double.NaN).filter(v->!Double.isNaN(v));
+    }
+    @Override public IntStream streamIntPlane(int z, ImageMask mask, boolean useOffset) {
+        if (useOffset) return IntStream.range(offsetXY, sizeXY+offsetXY).map(i->mask.containsWithOffset(i, z) && mask.insideMaskWithOffset(i, z)?1:Integer.MAX_VALUE).filter(v->!Double.isNaN(v));
+        else return IntStream.range(0, sizeXY).map(i->mask.insideMask(i, z)?1:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
     }
     @Override
     public Image getZPlane(int idxZ) {
@@ -51,39 +61,27 @@ public class BlankMask extends ImageInteger implements ImageMask {
 
     @Override
     public boolean insideMask(int x, int y, int z) {
-        //return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
-        return true;
+        return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
     }
 
     @Override
     public boolean insideMask(int xy, int z) {
-        return true;
+        return (xy >= 0 && xy < sizeXY && z >= 0 && z < sizeZ);
     }
     
     @Override public int count() {
         return sizeZ * sizeXY;
     }
     
-    
+    @Override
     public boolean insideMaskWithOffset(int x, int y, int z) {
-        //x-=offsetX; y-=offsetY; z-=offsetZ;
-        //return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
-        return true;
-    }
-
-    public boolean insideMaskWithOffset(int xy, int z) {
-        return true;
-    }
-    
-    @Override
-    public boolean contains(int x, int y, int z) {
-        return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
-    }
-
-    @Override
-    public boolean containsWithOffset(int x, int y, int z) {
         x-=offsetX; y-=offsetY; z-=offsetZ;
         return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
+    }
+    @Override
+    public boolean insideMaskWithOffset(int xy, int z) {
+        xy-=offsetXY;  z-=offsetZ;
+        return (xy >= 0 && xy < sizeXY &&  z >= 0 && z < sizeZ);
     }
 
     @Override

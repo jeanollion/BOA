@@ -109,8 +109,8 @@ public class MutationTrackMeasurements implements Measurement {
             Image intensities = parent.getRawImage(mutation.getSelectedStructureIdx());
             double[] objectCenter = object.getObject().getCenter();
             if (objectCenter==null) objectCenter = object.getObject().getMassCenter(intensities, false);
-            object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getObject(), intensities, true));
-            object.getMeasurements().setValue("SumIntensity", BasicMeasurements.getSum(object.getObject(), intensities, true));
+            object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getObject(), intensities));
+            object.getMeasurements().setValue("SumIntensity", BasicMeasurements.getSum(object.getObject(), intensities));
             
             StructureObject parentBacteria = object.getParent(bacteria.getSelectedStructureIdx());
             if (parentBacteria!=null) {

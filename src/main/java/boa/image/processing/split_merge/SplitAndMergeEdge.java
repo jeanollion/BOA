@@ -65,7 +65,7 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
                 for (Voxel v : voxels)  values[idx++]=edge.getPixel(v.x, v.y, v.z);
                 double val= ArrayUtil.quantile(values, 0.5);
                 if (normalizeEdgeValues) {// normalize by intensity (mean better than median, better than mean @ edge)
-                    double sum = BasicMeasurements.getSum(i.getE1(), intensityMap, false)+BasicMeasurements.getSum(i.getE2(), intensityMap, false);
+                    double sum = BasicMeasurements.getSum(i.getE1(), intensityMap)+BasicMeasurements.getSum(i.getE2(), intensityMap);
                     val= val/(sum/(double)(i.getE1().getSize()+i.getE2().getSize()));
                 }
                 return val;
