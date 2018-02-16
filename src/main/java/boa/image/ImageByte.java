@@ -7,7 +7,7 @@ import boa.utils.Utils;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
-public class ImageByte extends ImageInteger {
+public class ImageByte extends ImageInteger<ImageByte> {
 
     private byte[][] pixels;
 
@@ -222,7 +222,9 @@ public class ImageByte extends ImageInteger {
     public ImageByte duplicate(String name) {
         byte[][] newPixels = new byte[sizeZ][sizeXY];
         for (int z = 0; z< sizeZ; ++z) System.arraycopy(pixels[z], 0, newPixels[z], 0, sizeXY);
-        return new ImageByte(name, sizeX, newPixels).setCalibration(this).addOffset(this);
+        ImageByte res = new ImageByte(name, sizeX, newPixels);
+        res.setCalibration(this).addOffset(this);
+        return res;
     }
 
     public boolean insideMask(int x, int y, int z) {
@@ -306,7 +308,7 @@ public class ImageByte extends ImageInteger {
     }
     @Override
     public Histogram getHisto256(ImageMask mask, BoundingBox limits) {
-        if (mask==null) mask=new BlankMask("", this);
+        if (mask==null) mask=new BlankMask(this);
         if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
         int[] histo = new int[256];
         for (int z = limits.zMin; z <= limits.zMax; z++) {

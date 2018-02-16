@@ -210,7 +210,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         // TODO: test is Use Scale is taken into acount.
         
         Image smooth = pv.getSmoothedMap();
-        Image[] lapSPZ = Image.mergeImagesInZ(Arrays.asList(pv.getLaplacianMap())).toArray(new Image[0]); // in case there are several z
+        Image[] lapSPZ = ((List<Image>)Image.mergeImagesInZ(Arrays.asList(pv.getLaplacianMap()))).toArray(new Image[0]); // in case there are several z
         double[] radii = new double[scale.length];
         for (int z = 0; z<radii.length; ++z) radii[z] = Math.max(1, scale[z]); //-0.5
         Neighborhood n = radii.length>1 ? boa.image.processing.neighborhood.ConicalNeighborhood.generateScaleSpaceNeighborhood(radii, false) : new CylindricalNeighborhood(radii[0], 1, false);
@@ -242,7 +242,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         }
         
         ImageByte[] seedMaps = arrangeSpAndZPlanes(seedsSPZ, planeByPlane).toArray(new ImageByte[0]);
-        Image[] wsMap = arrangeSpAndZPlanes(lapSPZ, planeByPlane).toArray(new Image[0]);
+        Image[] wsMap = ((List<Image>)arrangeSpAndZPlanes(lapSPZ, planeByPlane)).toArray(new Image[0]);
         RegionPopulation[] pops =  MultiScaleWatershedTransform.watershed(wsMap, parentMask, seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdPropagation), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize));
         //ObjectPopulation pop =  watershed(lap, parent.getMask(), seedPop.getObjects(), true, new ThresholdPropagationOnWatershedMap(thresholdPropagation), new SizeFusionCriterion(minSpotSize), false);
         SubPixelLocalizator.debug=debug;
@@ -310,7 +310,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             o.setQuality(Math.sqrt(map.getPixel(o.getCenter()[0], o.getCenter()[1], zz) * map2.getPixel(o.getCenter()[0], o.getCenter()[1], zz)));
         }
     }
-    private static <T extends Image> List<T> arrangeSpAndZPlanes(T[] spZ, boolean ZbyZ) {
+    private static <T extends Image<T>> List<T> arrangeSpAndZPlanes(T[] spZ, boolean ZbyZ) {
         if (ZbyZ) {
             List<T> res = new ArrayList<>(spZ.length * spZ[0].getSizeZ());
             for (int z = 0; z<spZ.length; ++z) {

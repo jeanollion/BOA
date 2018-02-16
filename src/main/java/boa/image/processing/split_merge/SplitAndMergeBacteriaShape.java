@@ -224,8 +224,8 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         private ImageInteger getJoinedMask() {
             if (joinedMask==null) {
                 // getJoinedMask of 2 objects
-                ImageInteger m1 = e1.getMask();
-                ImageInteger m2 = e2.getMask();
+                ImageInteger m1 = e1.getMaskAsImageInteger();
+                ImageInteger m2 = e2.getMaskAsImageInteger();
                 BoundingBox joinBox = m1.getBoundingBox(); 
                 joinBox.expand(m2.getBoundingBox());
                 ImageByte mask = new ImageByte("joinedMask:"+e1.getLabel()+"+"+e2.getLabel(), joinBox.getImageProperties());//.setCalibration(m1);

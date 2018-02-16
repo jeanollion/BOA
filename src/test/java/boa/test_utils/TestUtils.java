@@ -73,8 +73,8 @@ public class TestUtils {
         }
     }
     
-    public static <T extends Image> T generateRandomImage(int sizeX, int sizeY, int sizeZ, T outputType) {
-        T res = Image.createEmptyImage("", outputType, new BlankMask("", sizeX, sizeY, sizeZ));
+    public static <T extends Image<T>> T generateRandomImage(int sizeX, int sizeY, int sizeZ, T outputType) {
+        T res = Image.createEmptyImage("", outputType, new BlankMask(sizeX, sizeY, sizeZ));
         int maxValue=res instanceof ImageByte? 255: 65535;
         for (int z = 0; z < sizeZ; ++z) {
             for (int xy = 0; xy < sizeY*sizeX; ++xy) {

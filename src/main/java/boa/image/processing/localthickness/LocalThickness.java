@@ -75,7 +75,7 @@ public class LocalThickness {
          * @param nbCPUs
          * @return local thickness (in pixels)
          */
-        public static ImageFloat localThickness(ImageInteger in, double scaleZScaleXYRatio, boolean inside, int nbCPUs) {
+        public static ImageFloat localThickness(ImageMask in, double scaleZScaleXYRatio, boolean inside, int nbCPUs) {
             ImageFloat edm = EDT.transform(in, inside, 1, (float)scaleZScaleXYRatio, nbCPUs);
             DistanceRidge dr = new DistanceRidge();
             ImagePlus distRidge = dr.run(IJImageWrapper.getImagePlus(edm), (float)scaleZScaleXYRatio, nbCPUs);

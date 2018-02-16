@@ -145,7 +145,7 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
             }
         }
         public Image generateEmptyImage(String name, Image type) {
-            return Image.createEmptyImage(name, type, new BlankMask("", this.maxParentX, trackOffset[trackOffset.length-1].getyMin()+trackOffset[trackOffset.length-1].getSizeY()*mirror, Math.max(type.getSizeZ(), this.maxParentZ)).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
+            return Image.createEmptyImage(name, type, new BlankMask( this.maxParentX, trackOffset[trackOffset.length-1].getyMin()+trackOffset[trackOffset.length-1].getSizeY()*mirror, Math.max(type.getSizeZ(), this.maxParentZ)).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
         }   
         public BoundingBox getObjectOffset(int idx, int position) {
             if (mirror==1) return trackOffset[idx];

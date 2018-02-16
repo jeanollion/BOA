@@ -82,7 +82,7 @@ public class InputImage {
             if (intermediateImageSavedToDAO) image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
             if (image==null) {
                 image = container.getImage(inputTimePoint, channelIdx);
-                originalImageType = Image.createEmptyImage("source Type", image, new BlankMask("", 0, 0, 0));
+                originalImageType = Image.createEmptyImage("source Type", image, new BlankMask( 0, 0, 0));
             }
         }
         applyTransformations();
@@ -95,7 +95,7 @@ public class InputImage {
             if (image==null) {
                 image = imageSources.getImage(inputTimePoint, channelIdx);
                 if (image==null) throw new RuntimeException("Image not found: position:"+microscopyFieldName+" channel:"+channelIdx+" frame:"+timePoint);
-                originalImageType = Image.createEmptyImage("source Type", image, new BlankMask("", 0, 0, 0));
+                originalImageType = Image.createEmptyImage("source Type", image, new BlankMask( 0, 0, 0));
             }
         }
         applyTransformations();

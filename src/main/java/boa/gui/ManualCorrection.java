@@ -44,6 +44,7 @@ import fiji.plugin.trackmate.Spot;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
+import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.ImageMask2D;
 import boa.image.TypeConverter;
@@ -426,7 +427,7 @@ public class ManualCorrection {
                 if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
                 
                 // generate image mask without old objects
-                ImageByte mask = TypeConverter.cast(e.getKey().getMask().duplicate(), new ImageByte("Manual Segmentation Mask", 0, 0, 0));
+                ImageByte mask = e.getKey().getMask() instanceof ImageInteger ? TypeConverter.cast((ImageInteger)e.getKey().getMask(), new ImageByte("Manual Segmentation Mask", 0, 0, 0)) : TypeConverter.toByteMask(e.getKey().getMask(), null, 1);
                 
                 List<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
                 for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));

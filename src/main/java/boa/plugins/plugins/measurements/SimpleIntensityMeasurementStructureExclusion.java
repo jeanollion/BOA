@@ -109,7 +109,7 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
         for (StructureObject o : children) {
             Region ob = o.getObject();
             if (dilateExcludeRadius>0)  {
-                ImageInteger oMask = o.getMask();
+                ImageInteger oMask = o.getObject().getMaskAsImageInteger();
                 oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilateExcludeRadius, oMask), false, true);
                 ob = new Region(oMask, 1, ob.is2D());
             }

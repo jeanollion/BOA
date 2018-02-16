@@ -37,7 +37,7 @@ public class BinaryClose implements PostFilter {
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Neighborhood n = Filters.getNeighborhood(scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parent.getMask());
         for (Region o : childPopulation.getRegions()) {
-            ImageInteger closed = Filters.binaryCloseExtend(o.getMask(), n);
+            ImageInteger closed = Filters.binaryCloseExtend(o.getMaskAsImageInteger(), n);
             o.setMask(closed);
         }
         return childPopulation;

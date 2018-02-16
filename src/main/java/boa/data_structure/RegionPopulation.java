@@ -73,7 +73,7 @@ import java.util.stream.Collectors;
  */
 public class RegionPopulation {
 
-    private ImageInteger labelImage;
+    private ImageInteger<? extends ImageInteger> labelImage;
     private List<Region> objects;
     private ImageProperties properties;
     //private boolean absoluteLandmark=false;
@@ -83,7 +83,7 @@ public class RegionPopulation {
      * @param properties 
      */
     public RegionPopulation(ImageProperties properties) {
-        this.properties = new BlankMask("", properties);
+        this.properties = new BlankMask( properties);
         this.objects=new ArrayList<>();
     }
     
@@ -116,7 +116,7 @@ public class RegionPopulation {
             this.objects = new ArrayList<>();
         }
         checkObjectValidity();
-        this.properties = new BlankMask("", properties); // can be null in case label image is set afterwards
+        this.properties = new BlankMask( properties); // can be null in case label image is set afterwards
     }
     
     private void checkObjectValidity() {
@@ -131,7 +131,7 @@ public class RegionPopulation {
             for (Region o : objects) ob.add(o.duplicate());
             return new RegionPopulation(ob, properties).setConnectivity(lowConnectivity);
         } else if (labelImage!=null) {
-            return new RegionPopulation((ImageInteger)labelImage.duplicate(""), true).setConnectivity(lowConnectivity);
+            return new RegionPopulation(labelImage.duplicate(""), true).setConnectivity(lowConnectivity);
         }
         return new RegionPopulation(null , properties).setConnectivity(lowConnectivity);
     }
@@ -156,7 +156,7 @@ public class RegionPopulation {
         return this;
     }
     
-    public ImageInteger getLabelMap() {
+    public ImageInteger<? extends ImageInteger<?>> getLabelMap() {
         if (labelImage == null) constructLabelImage();
         return labelImage;
     }
@@ -222,7 +222,7 @@ public class RegionPopulation {
     public ImageProperties getImageProperties() {
         if (properties == null) {
             if (labelImage != null) {
-                properties = new BlankMask("", labelImage);
+                properties = new BlankMask( labelImage);
             } else if (objects!=null && !objects.isEmpty()) { //unscaled, no offset for label image..
                 BoundingBox box = new BoundingBox();
                 for (Region o : objects) {
@@ -340,7 +340,7 @@ public class RegionPopulation {
             }
         }
         if (dilateRegionRadius>0) {
-            labelImage = Filters.applyFilter(getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(mask), Filters.getNeighborhood(dilateRegionRadius, mask));
+            labelImage =  (ImageInteger)Filters.applyFilter(getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(mask), Filters.getNeighborhood(dilateRegionRadius, mask));
             constructObjects();
         }
         for (Region r : getRegions()) {
@@ -351,9 +351,11 @@ public class RegionPopulation {
                 List<Region> subRegions = ImageLabeller.labelImageListLowConnectivity(r.mask);
                 if (subRegions.size()>1) {
                     subRegions.remove(0);
+                    r.ensureMaskIsImageInteger();
+                    ImageInteger regionMask = r.getMaskAsImageInteger();
                     for (Region toErase: subRegions) {
-                        toErase.draw(r.mask, 0);
-                        toErase.translate(r.mask.getBoundingBox());
+                        toErase.draw(regionMask, 0);
+                        toErase.translate(r.getBounds());
                     }
                     addedObjects.addAll(subRegions);
                 }
@@ -366,7 +368,7 @@ public class RegionPopulation {
     }
     public RegionPopulation localThresholdEdges(Image erodeMap, Image edgeMap, double iqrFactor, boolean darkBackground, boolean keepOnlyBiggestObject, double dilateRegionRadius, ImageMask mask) {
         if (dilateRegionRadius>0) {
-            labelImage = Filters.applyFilter(getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(mask), Filters.getNeighborhood(dilateRegionRadius, mask));
+            labelImage =  (ImageInteger)Filters.applyFilter(getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(mask), Filters.getNeighborhood(dilateRegionRadius, mask));
             constructObjects();
         }
         List<Region> addedObjects = new ArrayList<>();
@@ -405,9 +407,11 @@ public class RegionPopulation {
                 List<Region> subRegions = ImageLabeller.labelImageListLowConnectivity(r.mask);
                 if (subRegions.size()>1) {
                     subRegions.remove(0);
+                    r.ensureMaskIsImageInteger();
+                    ImageInteger regionMask = r.getMaskAsImageInteger();
                     for (Region toErase: subRegions) {
-                        toErase.draw(r.mask, 0);
-                        toErase.translate(r.mask.getBoundingBox());
+                        toErase.draw(regionMask, 0);
+                        toErase.translate(r.getBounds());
                     }
                     addedObjects.addAll(subRegions);
                 }
@@ -422,12 +426,12 @@ public class RegionPopulation {
     public RegionPopulation erodToEdges(Image erodeMap, boolean keepOnlyBiggestObject, double dilateRegionRadius, ImageMask mask) {
         //if (debug) ImageWindowManagerFactory.showImage(erodeMap);
         if (dilateRegionRadius>0) {
-            labelImage = Filters.applyFilter(getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(mask), Filters.getNeighborhood(dilateRegionRadius, mask));
+            labelImage = (ImageInteger)Filters.applyFilter(getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(mask), Filters.getNeighborhood(dilateRegionRadius, mask));
             constructObjects();
         }
         List<Region> addedObjects = new ArrayList<>();
         if (dilateRegionRadius>0) {
-            labelImage = Filters.applyFilter(getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(mask), Filters.getNeighborhood(dilateRegionRadius, mask));
+            labelImage =  (ImageInteger)Filters.applyFilter(getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(mask), Filters.getNeighborhood(dilateRegionRadius, mask));
             constructObjects();
         }
         for (Region r : getRegions()) {
@@ -436,9 +440,11 @@ public class RegionPopulation {
                 List<Region> subRegions = ImageLabeller.labelImageListLowConnectivity(r.mask);
                 if (subRegions.size()>1) {
                     subRegions.remove(0);
+                    r.ensureMaskIsImageInteger();
+                    ImageInteger regionMask = r.getMaskAsImageInteger();
                     for (Region toErase: subRegions) {
-                        toErase.draw(r.mask, 0);
-                        toErase.translate(r.mask.getBoundingBox());
+                        toErase.draw(regionMask, 0);
+                        toErase.translate(r.getBounds());
                     }
                     addedObjects.addAll(subRegions);
                 }

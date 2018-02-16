@@ -143,7 +143,7 @@ public class GenerateFilms {
             }
         }
         // paste images in Y
-        Image res = Image.createEmptyImage("film", imageTC[0][0], new BlankMask("", imageTC[0][0].getSizeX(), imageTC[0][0].getSizeY()*imageTC[0].length, imageTC.length));
+        Image res = Image.createEmptyImage("", imageTC[0][0], new BlankMask( imageTC[0][0].getSizeX(), imageTC[0][0].getSizeY()*imageTC[0].length, imageTC.length));
         int yOff= 0;
         for (int c = 0; c<imageTC[0].length; ++c) {
             for (int t = 0; t<imageTC.length; ++t) {

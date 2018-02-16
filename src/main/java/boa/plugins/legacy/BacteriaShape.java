@@ -262,7 +262,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         SplitAndMergeBacteriaShape sam = new SplitAndMergeBacteriaShape(input);
         sam.ignoreEndOfChannelRegionWhenMerginSmallRegions = false;
         sam.testMode=testMode;
-        RegionPopulation pop = sam.splitAndMerge(o.getMask(), 50, 2);
+        RegionPopulation pop = sam.splitAndMerge(o.getMaskAsImageInteger(), 50, 2);
         if (pop.getRegions().size()!=2) return Double.POSITIVE_INFINITY;
         result.addAll(pop.getRegions());
         RegionCluster<SplitAndMergeBacteriaShape.InterfaceLocalShape> c = new RegionCluster(pop, false, true, sam.getFactory());
@@ -308,7 +308,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         SplitAndMergeBacteriaShape sam = new SplitAndMergeBacteriaShape(input);
         sam.testMode=testMode;
         sam.ignoreEndOfChannelRegionWhenMerginSmallRegions = false;
-        RegionPopulation pop = sam.splitAndMerge(object.getMask(), 50, 2);
+        RegionPopulation pop = sam.splitAndMerge(object.getMaskAsImageInteger(), 50, 2);
         pop.translate(object.getBounds(), true);
         return pop;
     }

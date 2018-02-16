@@ -14,7 +14,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 
-public abstract class Image implements ImageProperties {
+public abstract class Image<I extends Image<I>> implements ImageProperties<I> {
     public final static Logger logger = LoggerFactory.getLogger(Image.class);
 
     protected String name;
@@ -54,47 +54,46 @@ public abstract class Image implements ImageProperties {
         this(name, properties.getSizeX(), properties.getSizeY(), properties.getSizeZ(), properties.getOffsetX(), properties.getOffsetY(), properties.getOffsetZ(), properties.getScaleXY(), properties.getScaleZ());
     }
     
-    public <T extends Image> T setName(String name) {
+    public I setName(String name) {
         this.name=name;
-        return (T)this;
+        return (I)this;
     }
     
-    public ImageProperties getProperties() {return new BlankMask(name, this);}
+    public ImageProperties getProperties() {return new BlankMask(this);}
     
-    public static <T extends Image> T createEmptyImage(String name, T imageType, ImageProperties properties) {
+    public static <T extends Image<T>> T createEmptyImage(String name, T imageType, ImageProperties properties) {
         if (imageType instanceof ImageByte) return (T)new ImageByte(name, properties);
         else if (imageType instanceof ImageShort) return (T)new ImageShort(name, properties);
         else if (imageType instanceof ImageInt) return (T)new ImageInt(name, properties);
         else if (imageType instanceof ImageFloat) return (T)new ImageFloat(name, properties);
-        else return (T)new BlankMask(name, properties);
+        else throw new IllegalArgumentException("unsupported image type");
     }
     
-    public static <T extends Image> T createImageFrom2DPixelArray(String name, Object pixelArray, int sizeX) {
-        if (pixelArray instanceof byte[]) return (T)new ImageByte(name, sizeX, (byte[])pixelArray);
-        else if (pixelArray instanceof short[]) return (T)new ImageShort(name, sizeX, (short[])pixelArray);
-        else if (pixelArray instanceof float[]) return (T)new ImageFloat(name, sizeX, (float[])pixelArray);
-        else if (pixelArray instanceof int[]) return (T)new ImageInt(name, sizeX, (int[])pixelArray);
+    public static Image createImageFrom2DPixelArray(String name, Object pixelArray, int sizeX) {
+        if (pixelArray instanceof byte[]) return new ImageByte(name, sizeX, (byte[])pixelArray);
+        else if (pixelArray instanceof short[]) return new ImageShort(name, sizeX, (short[])pixelArray);
+        else if (pixelArray instanceof float[]) return new ImageFloat(name, sizeX, (float[])pixelArray);
+        else if (pixelArray instanceof int[]) return new ImageInt(name, sizeX, (int[])pixelArray);
         else throw new IllegalArgumentException("Pixel Array should be of type byte, short, float or int");
     }
     
-    public abstract <T extends Image> T getZPlane(int idxZ);
+    public abstract I getZPlane(int idxZ);
     
     /**
      * 
-     * @param <T> type of Image
      * @param zLimit array containing minimal Z plane idx (included) and maximal Z-plane idx (included).
      * @return List of Z planes
      */
-    public <T extends Image> ArrayList<T> splitZPlanes(int... zLimit) {
+    public ArrayList<I> splitZPlanes(int... zLimit) {
         int zMin = 0;
         int zMax = this.getSizeZ()-1;
         if (zLimit.length>0) zMin = Math.max(zMin, zLimit[0]);
         if (zLimit.length>1) zMax = Math.min(zMax, zLimit[1]);
-        ArrayList<T> res = new ArrayList<T>(getSizeZ());
-        for (int i = zMin; i<=zMax; ++i) res.add((T)getZPlane(i));
+        ArrayList<I> res = new ArrayList<>(getSizeZ());
+        for (int i = zMin; i<=zMax; ++i) res.add(getZPlane(i));
         return res;
     }
-    public static <T extends Image> T mergeZPlanesResize(List<T> planes, boolean expand) {
+    public static <T extends Image<T>> T mergeZPlanesResize(List<T> planes, boolean expand) {
         if (planes==null || planes.isEmpty()) return null;
         Iterator<T> it = planes.iterator();
         BoundingBox bds  = it.next().getBoundingBox().translateToOrigin();
@@ -105,7 +104,7 @@ public abstract class Image implements ImageProperties {
         planes = Utils.transform(planes, p -> p.getBoundingBox().translateToOrigin().equals(bds) ? p : p.crop(bds.duplicate().center(p.getBoundingBox().translateToOrigin())));
         return mergeZPlanes(planes);
     }
-    public static <T extends Image> T mergeZPlanes(List<T> planes) {
+    public static <T extends Image<T>> T mergeZPlanes(List<T> planes) {
         if (planes==null || planes.isEmpty()) return null;
         //for (T im : planes) if (im.getSizeZ()>1) throw
         String title = "merged planes";
@@ -137,7 +136,7 @@ public abstract class Image implements ImageProperties {
      * @param images images to merge
      * @return array of image, dimention of array = z dimention of original image, each image has the corresponding z plane of each image of {@param images}
      */
-    public static <T extends Image> List<T> mergeImagesInZ(List<T> images) {
+    public static <T extends Image<T>> List<T> mergeImagesInZ(List<T> images) {
         if (images==null || images.isEmpty()) return null;
         if (!sameSize(images)) throw new IllegalArgumentException("All images should have same size");
         int sizeZ = images.get(0).getSizeZ();
@@ -153,7 +152,7 @@ public abstract class Image implements ImageProperties {
             return res;
         }
     }
-    public static <T extends Image> boolean sameSize(Collection<T> images) {
+    public static <T extends Image<T>> boolean sameSize(Collection<T> images) {
         if (images==null || images.isEmpty()) return true;
         Iterator<T> it = images.iterator();
         T ref=it.next();
@@ -194,11 +193,11 @@ public abstract class Image implements ImageProperties {
     public abstract void setPixel(int xy, int z, double value);
     public abstract void setPixelWithOffset(int xy, int z, double value);
     public abstract Object[] getPixelArray();
-    public abstract <T extends Image> T duplicate(String name);
-    public <T extends Image> T duplicate() {return duplicate(name);}
+    public abstract I duplicate(String name);
+    public I duplicate() {return duplicate(name);}
     public abstract Image newImage(String name, ImageProperties properties);
-    public abstract <T extends Image> T crop(BoundingBox bounds);
-    public abstract <T extends Image> T cropWithOffset(BoundingBox bounds);
+    public abstract I crop(BoundingBox bounds);
+    public abstract I cropWithOffset(BoundingBox bounds);
     public DoubleStream stream() {
         if (sizeZ==1) return streamPlane(0);
         return StreamConcatenation.concat((DoubleStream[])IntStream.range(0, sizeZ).mapToObj(z->streamPlane(z)).toArray(s->new DoubleStream[s]));
@@ -215,11 +214,10 @@ public abstract class Image implements ImageProperties {
     
     /**
      * 
-     * @param <T> image type
      * @param extent minimal values: if negative, will extend the image, if positive will crop the image. maximal values: if positive will extend the image, if negative will crop the image
      * @return 
      */
-    public <T extends Image> T extend(BoundingBox extent) {
+    public I extend(BoundingBox extent) {
         BoundingBox resizeBB = getBoundingBox().translateToOrigin().extend(extent);
         if (getSizeZ()==1) {
             resizeBB.zMin=0;
@@ -240,56 +238,46 @@ public abstract class Image implements ImageProperties {
         return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
     }
     
-    @Override
-    public boolean contains(int xy, int z) {
-        return (xy >= 0 && xy < sizeXY && z >= 0 && z < sizeZ);
-    }
-
-    @Override
-    public boolean containsWithOffset(int xy, int z) {
-        xy-=offsetXY; z-=offsetZ;
-        return (xy >= 0 && xy < sizeXY && z >= 0 && z < sizeZ);
-    }
     
-    public <T extends Image> T resetOffset() {
+    public I resetOffset() {
         offsetX=offsetY=offsetZ=offsetXY=0;
-        return (T)this;
+        return (I)this;
     }
     
-    public <T extends Image> T addOffset(ImageProperties properties) {
+    @Override public I addOffset(ImageProperties properties) {
         this.offsetX+=properties.getOffsetX();
         this.offsetY+=properties.getOffsetY();
         this.offsetZ+=properties.getOffsetZ();
         this.offsetXY = offsetX + sizeX * offsetY;
-        return (T)this;
+        return (I)this;
     }
     
-    public <T extends Image> T addOffset(int offsetX, int offsetY, int offsetZ) {
+    public I addOffset(int offsetX, int offsetY, int offsetZ) {
         this.offsetX+=offsetX;
         this.offsetY+=offsetY;
         this.offsetZ+=offsetZ;
         this.offsetXY = this.offsetX + sizeX * this.offsetY;
-        return (T)this;
+        return (I)this;
     }
     
-    public <T extends Image> T addOffset(BoundingBox bounds) {
+    @Override public I addOffset(BoundingBox bounds) {
         this.offsetX+=bounds.xMin;
         this.offsetY+=bounds.yMin;
         this.offsetZ+=bounds.zMin;
         this.offsetXY = offsetX + sizeX * offsetY;
-        return (T)this;
-    }
-
-    public <T extends Image> T setCalibration(ImageProperties properties) {
-        this.scaleXY=properties.getScaleXY();
-        this.scaleZ=properties.getScaleZ();
-        return (T)this;
+        return (I)this;
     }
     
-    public <T extends Image> T setCalibration(float scaleXY, float scaleZ) {
+    @Override public I setCalibration(ImageProperties properties) {
+        this.scaleXY=properties.getScaleXY();
+        this.scaleZ=properties.getScaleZ();
+        return (I)this;
+    }
+    
+    @Override public I setCalibration(float scaleXY, float scaleZ) {
         this.scaleXY=scaleXY;
         this.scaleZ=scaleZ;
-        return (T)this;
+        return (I)this;
     }
     
     @Override public BoundingBox getBoundingBox() {
@@ -306,7 +294,7 @@ public abstract class Image implements ImageProperties {
      * @return float[]{min, max}
      */
     public double[] getMinAndMax(ImageMask mask, BoundingBox limits) {
-        if (mask==null) mask = new BlankMask("", this);
+        if (mask==null) mask = new BlankMask(this);
         if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
         float min = Float.POSITIVE_INFINITY, max = Float.NEGATIVE_INFINITY;
         for (int z = limits.zMin; z <= limits.zMax; z++) {

@@ -138,7 +138,7 @@ public class ImageOperations {
             setBackground=false;
         }
         else if (!dest.sameDimensions(image)) {
-            dest = Image.createEmptyImage(dest.getName(), dest, image);
+            dest = (ImageInteger)Image.createEmptyImage(dest.getName(), dest, image);
             setBackground=false;
         }
         if (setBackground) {
@@ -268,14 +268,14 @@ public class ImageOperations {
         }
     }
 
-    public static <T extends Image> T addImage(Image source1, Image source2, T output, double coeff) {
+    public static <T extends Image<T>> T addImage(Image source1, Image source2, T output, double coeff) {
         String name = source1.getName()+" + "+coeff+" x "+source2.getName();
         if (!source1.sameDimensions(source2)) throw new IllegalArgumentException("sources images have different sizes");
         if (output==null) {
             if (coeff<0 || (int)coeff != coeff) output = (T)new ImageFloat(name, source1);
             else output = (T)Image.createEmptyImage(name, source1, source1);
         }
-        else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(name, output, source1);
+        else if (!output.sameDimensions(source1)) output = (T)Image.createEmptyImage(name, output, source1);
         float round = output instanceof ImageInteger?0.5f:0;
         if (coeff==1) {
             for (int z = 0; z<output.getSizeZ(); ++z) {
@@ -389,7 +389,7 @@ public class ImageOperations {
         return output;
     }
     
-    public static <T extends Image> T multiply(Image source1, Image source2, T output) {
+    public static <T extends Image<T>> T multiply(Image source1, Image source2, T output) {
         if (!source1.sameDimensions(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");
         if (output==null) output = (T)new ImageFloat(source1.getName()+" x "+source2.getName(), source1);
         else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
@@ -400,7 +400,7 @@ public class ImageOperations {
         }
         return output;
     }
-    public static <T extends Image> T addValue(Image source1, double value, T output) {
+    public static <T extends Image<T>> T addValue(Image source1, double value, T output) {
         if (output==null) output = (T)new ImageFloat(source1.getName()+" + "+value, source1);
         else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(source1.getName()+" + "+value, output, source1);
         for (int z = 0; z<output.getSizeZ(); ++z) {
@@ -411,7 +411,7 @@ public class ImageOperations {
         return output;
     }
     
-    public static <T extends Image> T divide(Image source1, Image source2, T output, double... multiplicativeCoefficient) {
+    public static <T extends Image<T>> T divide(Image source1, Image source2, T output, double... multiplicativeCoefficient) {
         if (!source1.sameDimensions(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");
         if (output==null) output = (T)new ImageFloat(source1.getName()+" x "+source2.getName(), source1);
         else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
@@ -497,7 +497,7 @@ public class ImageOperations {
         return out;
     }*/
     
-    public static <T extends Image> T trim(T source, ImageMask mask, T output) {
+    public static <T extends Image<T>> T trim(T source, ImageMask mask, T output) {
         if (output==null) output = (T)Image.createEmptyImage(source.getName(), source, source);
         if (!output.sameDimensions(source)) output = Image.createEmptyImage("outside", source, source);
         for (int z = 0; z<source.getSizeZ(); ++z) {
@@ -509,7 +509,7 @@ public class ImageOperations {
         return output;
     }
     
-    public static <T extends ImageInteger> T not(ImageMask source1, T output) {
+    public static <T extends ImageInteger<T>> T not(ImageMask source1, T output) {
         if (output==null) output = (T)new ImageByte("not", source1);
         if (!output.sameDimensions(source1)) output = Image.createEmptyImage("not", output, source1);
         for (int z = 0; z<source1.getSizeZ(); ++z) {
@@ -640,8 +640,8 @@ public class ImageOperations {
         return res;
     }
     public static ImageFloat meanZProjection(Image input) {return meanZProjection(input, null);}
-    public static <T extends Image> T meanZProjection(Image input, T output) {
-        BlankMask properties =  new BlankMask("", input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
+    public static <T extends Image<T>> T meanZProjection(Image input, T output) {
+        BlankMask properties =  new BlankMask( input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
         if (output ==null) output = (T)new ImageFloat("mean Z projection", properties);
         else if (!output.sameDimensions(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
         float size = input.getSizeZ();
@@ -652,9 +652,9 @@ public class ImageOperations {
         }
         return output;
     }
-    public static <T extends Image> T maxZProjection(T input, int... zLim) {return maxZProjection(input, null, zLim);}
-    public static <T extends Image> T maxZProjection(T input, T output, int... zLim) {
-        BlankMask properties =  new BlankMask("", input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
+    public static <T extends Image<T>> T maxZProjection(T input, int... zLim) {return maxZProjection(input, null, zLim);}
+    public static <T extends Image<T>> T maxZProjection(T input, T output, int... zLim) {
+        BlankMask properties =  new BlankMask( input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
         if (output ==null) output = (T)Image.createEmptyImage("max Z projection", input, properties);
         else if (!output.sameDimensions(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
         int zMin = 0;

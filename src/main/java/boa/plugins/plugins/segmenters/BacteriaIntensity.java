@@ -253,7 +253,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
      */
     @Override public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
         Image input = parent.getPreFilteredImage(structureIdx);
-        ImageInteger mask = object.isAbsoluteLandMark() ? object.getMask().cropWithOffset(input.getBoundingBox()) :object.getMask().cropWithOffset(input.getBoundingBox().translateToOrigin()); // extend mask to get the same size as the image
+        ImageInteger mask = object.isAbsoluteLandMark() ? object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox()) :object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox().translateToOrigin()); // extend mask to get the same size as the image
         splitAndMerge = initializeSplitAndMerge(input, mask);
         splitAndMerge.setTestMode(splitVerbose);
         RegionPopulation res = splitAndMerge.splitAndMerge(mask, minSizePropagation.getValue().intValue(), 2);

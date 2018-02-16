@@ -188,16 +188,6 @@ public class ThresholdMask implements ImageMask {
     }
     
     @Override
-    public boolean contains(int xy, int z) {
-        return image.contains(xy, z);
-    }
-
-    @Override
-    public boolean containsWithOffset(int xy, int z) {
-        return image.containsWithOffset(xy, z);
-    }
-
-    @Override
     public BoundingBox getBoundingBox() {
         return image.getBoundingBox();
     }
@@ -210,6 +200,35 @@ public class ThresholdMask implements ImageMask {
     @Override
     public ImageProperties getProperties() {
         return image.getProperties();
+    }
+
+    @Override
+    public ThresholdMask duplicateMask() {
+        return new ThresholdMask(new BlankMask(image), insideMask, insideMaskXY, is2D);
+    }
+
+    @Override
+    public ThresholdMask addOffset(BoundingBox bounds) {
+        this.image.addOffset(bounds);
+        return this;
+    }
+
+    @Override
+    public ThresholdMask setCalibration(ImageProperties properties) {
+        this.image.setCalibration(properties);
+        return this;
+    }
+
+    @Override
+    public ThresholdMask setCalibration(float scaleXY, float scaleZ) {
+        image.setCalibration(scaleXY, scaleZ);
+        return this;
+    }
+
+    @Override
+    public ThresholdMask addOffset(ImageProperties bounds) {
+        this.image.addOffset(bounds);
+        return this;
     }
     public interface InsideMaskFunction {
         public boolean insideMask(int x, int y, int z);

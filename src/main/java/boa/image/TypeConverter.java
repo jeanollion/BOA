@@ -103,7 +103,7 @@ public class TypeConverter {
         byte  v = (byte)value;
         byte[][] newPixels = output.getPixelArray();
         if (image instanceof BlankMask) {
-            for (int z = 0; z<image.getSizeZ(); ++z) Arrays.fill(newPixels[z], (byte)1);
+            for (int z = 0; z<image.getSizeZ(); ++z) Arrays.fill(newPixels[z], (byte)value);
         } else {
             for (int z = 0; z<image.getSizeZ(); ++z) {
                 for (int xy = 0; xy<image.getSizeXY(); ++xy) {

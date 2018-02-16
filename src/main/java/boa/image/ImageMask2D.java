@@ -129,16 +129,6 @@ public class ImageMask2D implements ImageMask {
     }
     
     @Override
-    public boolean contains(int xy, int z) {
-        return z>=0 && mask.contains(xy, this.z);
-    }
-
-    @Override
-    public boolean containsWithOffset(int xy, int z) {
-        return z>=mask.getOffsetZ() && mask.containsWithOffset(xy, this.z);
-    }
-
-    @Override
     public BoundingBox getBoundingBox() {
         return mask.getBoundingBox();
     }
@@ -151,6 +141,35 @@ public class ImageMask2D implements ImageMask {
     @Override
     public ImageProperties getProperties() {
         return mask.getProperties();
+    }
+
+    @Override
+    public ImageMask2D duplicateMask() {
+        return new ImageMask2D(mask.duplicateMask(), z);
+    }
+
+    @Override
+    public ImageMask2D addOffset(BoundingBox bounds) {
+        mask.addOffset(bounds); // TODO will modify mask -> should it be duplicated ? 
+        return this;
+    }
+
+    @Override
+    public ImageMask2D setCalibration(ImageProperties properties) {
+        this.mask.setCalibration(properties);
+        return this;
+    }
+
+    @Override
+    public ImageMask2D setCalibration(float scaleXY, float scaleZ) {
+        mask.setCalibration(scaleXY, scaleZ);
+        return this;
+    }
+
+    @Override
+    public ImageMask2D addOffset(ImageProperties bounds) {
+        mask.addOffset(bounds);
+        return this;
     }
     
 }

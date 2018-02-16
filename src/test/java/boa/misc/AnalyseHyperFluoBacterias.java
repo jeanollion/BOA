@@ -114,7 +114,7 @@ public class AnalyseHyperFluoBacterias {
         IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();
         if (images!=null && !images.isEmpty()) {
             List<ImageInteger> utlraCrop = Utils.transform(images, i->crop(i));
-            Roi3D r = IJImageWindowManager.createRoi(Image.mergeZPlanes(utlraCrop), new BoundingBox(0, 0, 0), true);
+            Roi3D r = IJImageWindowManager.createRoi((ImageInteger)Image.mergeZPlanes(utlraCrop), new BoundingBox(0, 0, 0), true);
             ImagePlus ip = (ImagePlus) ImageWindowManagerFactory.showImage(Image.mergeZPlanes(images).setName(name));
             iwm.displayObject(ip, r);
         }
@@ -130,7 +130,7 @@ public class AnalyseHyperFluoBacterias {
         new SaturateHistogramHyperfluoBacteria().saturateHistogram(image);
         return new AutoRotationXY().rotate(image);
     }
-    private static ImageInteger crop(Image image) {
+    private static ImageInteger<? extends ImageInteger> crop(Image image) {
         
         BoundingBox bds = new CropMicroChannelFluo2D().setThresholder(new BackgroundThresholder(3, 6, 3)).getBoundingBox(image);
         //BoundingBox bds = CropMicroChannelFluo2D.getBoundingBox(image, 30, 0, 350, thld, 0.6, 200, 0, 0, 0, 0);

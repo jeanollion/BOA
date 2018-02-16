@@ -87,7 +87,7 @@ public class Histogram {
 
     public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, BoundingBox limits) {
         if (mask == null) {
-            mask = new BlankMask("", input);
+            mask = new BlankMask(input);
         }
         double[] mm = input.getMinAndMax(mask, limits);
         if (input instanceof ImageByte) {

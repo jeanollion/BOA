@@ -95,11 +95,10 @@ public class RegionFactory {
      * the returned region has the same landmask as the mask
      */
     public static Region getObjectImage(ImageMask mask) {
-        if (mask instanceof BlankMask) return new Region((BlankMask)mask, 1, ((BlankMask) mask).getSizeZ()==1);
+        if (mask instanceof BlankMask) return new Region(mask, 1, mask.getSizeZ()==1);
         BoundingBox bounds = getBounds(mask);
         if (bounds.equals(mask.getBoundingBox().translateToOrigin())) {
-            if (mask instanceof ImageInteger) return new Region((ImageInteger)mask, 1, mask.getSizeZ()==1);
-            else return new Region(TypeConverter.toImageInteger(mask, null), 1, mask.getSizeZ()==1);
+            return  new Region(mask, 1, mask.getSizeZ()==1);
         } else {
             ImageByte newMask = new ImageByte("", bounds.getImageProperties(mask.getScaleXY(), mask.getScaleZ()));
             newMask.getBoundingBox().loop((x, y, z)->{

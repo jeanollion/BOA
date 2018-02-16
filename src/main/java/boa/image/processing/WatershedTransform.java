@@ -111,7 +111,7 @@ public class WatershedTransform {
      * @param fusionCriterion 
      */
     public WatershedTransform(Image watershedMap, ImageMask mask, List<Region> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
-        if (mask==null) mask=new BlankMask("", watershedMap);
+        if (mask==null) mask=new BlankMask( watershedMap);
         this.decreasingPropagation = decreasingPropagation;
         heap = decreasingPropagation ? new TreeSet<>(Voxel.getInvertedComparator()) : new TreeSet<>();
         //heap = decreasingPropagation ? new PriorityQueue<>(Voxel.getInvertedComparator()) : new PriorityQueue<>();

@@ -5,7 +5,7 @@ import java.util.TreeMap;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
-public abstract class ImageInteger extends Image implements ImageMask {
+public abstract class ImageInteger<I extends ImageInteger<I>> extends Image<I> implements ImageMask<I> {
 
     protected ImageInteger(String name, int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, float scaleXY, float scaleZ) {
         super(name, sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ, scaleXY, scaleZ);
@@ -31,7 +31,10 @@ public abstract class ImageInteger extends Image implements ImageMask {
         else return Integer.MAX_VALUE;
     }
     
-    @Override public abstract <T extends Image> T duplicate(String name);
+    @Override public abstract I duplicate(String name);
+    @Override public I duplicateMask() {
+        return duplicate("");
+    }
     public abstract int getPixelInt(int x, int y, int z);
     public abstract int getPixelInt(int xy, int z);
     public abstract int getPixelIntWithOffset(int x, int y, int z);

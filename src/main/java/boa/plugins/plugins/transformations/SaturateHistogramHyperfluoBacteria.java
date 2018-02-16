@@ -82,7 +82,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         int tpMax = inputImages.getFrameNumber();
         //int count =0;
         for (int f = 0; f<tpMax; ++f) {
-            Image image = inputImages.getImage(channelIdx, f);
+            Image<? extends Image> image = inputImages.getImage(channelIdx, f);
             if (image.getSizeZ()>1) {
                 int plane = inputImages.getBestFocusPlane(f);
                 if (plane<0) throw new RuntimeException("SaturateHistogramHyperFluoBacteria can only be run on 2D images AND no autofocus algorithm was set");

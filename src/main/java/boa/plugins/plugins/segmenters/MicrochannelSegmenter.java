@@ -81,7 +81,7 @@ public interface MicrochannelSegmenter extends Segmenter {
         public Region getRegion(int idx, float scaleXY, float scaleZ, boolean includeYMinShift, int zMax) {
             BoundingBox bds = getBounds(idx, includeYMinShift);
             if (zMax>1) bds.expandZ(zMax);
-            return new Region(new BlankMask("mask of:" + idx+1, bds.getImageProperties(scaleXY, scaleZ)), idx+1, bds.getSizeZ()==1);
+            return new Region(new BlankMask( bds.getImageProperties(scaleXY, scaleZ)), idx+1, bds.getSizeZ()==1);
         }
         public RegionPopulation getObjectPopulation(ImageProperties im, boolean includeYMinShift) {
             List<Region> l = new ArrayList<>(xMin.length);

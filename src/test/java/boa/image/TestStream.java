@@ -73,7 +73,7 @@ public class TestStream {
         mask.addOffset(im);
         values = im.stream(mask, true).sorted().toArray();
         assertArrayEquals("stream mask, abs off", new double[]{4}, values, 0.0);
-        BlankMask mask2 = new BlankMask("", 3, 1, 3).addOffset(1, 1, 0);
+        BlankMask mask2 = new BlankMask(3, 1, 3).addOffset(new BoundingBox(1, 1, 0));
         test = new double[mask2.getSizeXYZ()];
         test[test.length-1] = 4;
         test[test.length-2] = 3;

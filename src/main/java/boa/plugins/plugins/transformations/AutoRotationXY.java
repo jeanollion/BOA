@@ -134,7 +134,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         
         List<Double> angles = new ArrayList<>(fn);
         for (int f : frames) {
-            Image image = inputImages.getImage(channelIdx, f);
+            Image<? extends Image> image = inputImages.getImage(channelIdx, f);
             image = prefilters.filter(image);
             if (image.getSizeZ()>1) {
                 int plane = inputImages.getBestFocusPlane(f);

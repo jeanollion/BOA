@@ -27,6 +27,8 @@ import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
+import boa.image.ImageMask;
+import boa.image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,8 +62,8 @@ public class FreeLineSplitter implements ObjectSplitter {
     @Override
     public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
         Image input = parent.getPreFilteredImage(structureIdx);
-        ImageInteger mask = object.getMask();
-        ImageInteger splitMask = mask.duplicate("splitMask");
+        ImageMask mask = object.getMask();
+        ImageInteger splitMask = mask instanceof ImageInteger ? ((ImageInteger)mask).duplicate("splitMask") : TypeConverter.toImageInteger(mask, null);
         BoundingBox off=offsetMap.get(object);
         if (off==null) {
             logger.debug("no offset found");

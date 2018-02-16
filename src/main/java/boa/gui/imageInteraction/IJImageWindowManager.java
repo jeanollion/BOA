@@ -52,6 +52,7 @@ import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
+import boa.image.TypeConverter;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Component;
@@ -359,7 +360,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
      * @param is3D
      * @return mapping of Roi to Z-slice (taking into account the provided offset)
      */
-    public static Roi3D createRoi(ImageInteger mask, BoundingBox offset, boolean is3D) { 
+    public static Roi3D createRoi(ImageMask mask, BoundingBox offset, boolean is3D) { 
         if (offset==null) {
             logger.error("ROI creation : offset null for mask: {}", mask.getName());
             return null;
@@ -376,9 +377,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             return res;
         }
         ThresholdToSelection tts = new ThresholdToSelection();
-        ImagePlus maskPlus = IJImageWrapper.getImagePlus(mask);
+        ImageInteger maskIm = TypeConverter.toImageInteger(mask, null);
+        ImagePlus maskPlus = IJImageWrapper.getImagePlus(maskIm);
         tts.setup("", maskPlus);
-        int maxLevel = ImageInteger.getMaxValue(mask, true);
+        int maxLevel = ImageInteger.getMaxValue(maskIm, true); // TODO necessary ??
         for (int z = 0; z<mask.getSizeZ(); ++z) {
             ImageProcessor ip = maskPlus.getStack().getProcessor(z+1);
             ip.setThreshold(1, maxLevel, ImageProcessor.NO_LUT_UPDATE);

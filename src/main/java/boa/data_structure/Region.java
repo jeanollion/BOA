@@ -46,7 +46,7 @@ import static boa.utils.Utils.comparatorInt;
  */
 public class Region {
     public final static Logger logger = LoggerFactory.getLogger(Region.class);
-    protected ImageInteger mask; //lazy -> use getter // bounds par rapport au root si absoluteLandMark==true, au parent sinon
+    protected ImageMask mask; //lazy -> use getter // bounds par rapport au root si absoluteLandMark==true, au parent sinon
     protected BoundingBox bounds;
     protected int label;
     protected Set<Voxel> voxels; //lazy -> use getter // coordonnées des voxel = coord dans l'image mask + offset du masque.  
@@ -60,7 +60,7 @@ public class Region {
      * @param label
      * @param is2D
      */
-    public Region(ImageInteger mask, int label, boolean is2D) {
+    public Region(ImageMask mask, int label, boolean is2D) {
         this.mask=mask;
         this.bounds=mask.getBoundingBox();
         this.label=label;
@@ -107,7 +107,7 @@ public class Region {
     
     public Region duplicate() {
         if (this.mask!=null) {
-            return new Region((ImageInteger)mask.duplicate(""), label, is2D).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
+            return new Region(mask.duplicateMask(), label, is2D).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
         }
         else if (this.voxels!=null) {
             Set<Voxel> vox = new HashSet<> (voxels.size());
@@ -271,7 +271,11 @@ public class Region {
             boolean within = true;
             for (Voxel v : voxelsToAdd) {if (!mask.containsWithOffset(v.x, v.y, v.z)); within=false; break;}
             if (!within) mask = null;
-            else if (!(mask instanceof BlankMask)) for (Voxel v : voxelsToAdd) mask.setPixelWithOffset(v.x, v.y, v.z, 1);
+            else {
+                ensureMaskIsImageInteger();
+                ImageInteger mask = getMaskAsImageInteger();
+                for (Voxel v : voxelsToAdd) mask.setPixelWithOffset(v.x, v.y, v.z, 1);
+            }
         }
         this.bounds=null;
     }
@@ -283,14 +287,16 @@ public class Region {
     public synchronized void removeVoxels(Collection<Voxel> voxelsToRemove) {
         if (voxels!=null) voxels.removeAll(voxelsToRemove);
         if (mask!=null) {
-            if (mask instanceof BlankMask) mask=null;
-            else for (Voxel v : voxelsToRemove) mask.setPixelWithOffset(v.x, v.y, v.z, 0);
+            ensureMaskIsImageInteger();
+            ImageInteger mask = getMaskAsImageInteger();
+            for (Voxel v : voxelsToRemove) mask.setPixelWithOffset(v.x, v.y, v.z, 0);
         }
         this.bounds=null;
     }
     public synchronized void andNot(ImageMask otherMask) {
         getMask();
-        if (mask instanceof BlankMask) mask = TypeConverter.toByteMask(mask, null, 1);
+        ensureMaskIsImageInteger();
+        ImageInteger mask = getMaskAsImageInteger();
         otherMask.getBoundingBox().getIntersection(getBounds()).loop((x, y, z)-> {
             if (otherMask.insideMaskWithOffset(x, y, z)) {
                 mask.setPixelWithOffset(x, y, z, 0);
@@ -334,27 +340,8 @@ public class Region {
 
     private void createVoxels() {
         //logger.debug("create voxels: mask offset: {}", mask.getBoundingBox());
-        if (mask.getPixelArray()==null) logger.debug("mask pixel null for object: {}", this);
         HashSet<Voxel> voxels_=new HashSet<>();
-        /*if (is2D()) {
-            for (int y = 0; y < mask.getSizeY(); ++y) {
-                for (int x = 0; x < mask.getSizeX(); ++x) {
-                    if (mask.insideMask(x, y, 0)) {
-                        voxels_.add( new Voxel2D(x + mask.getOffsetX(), y + mask.getOffsetY(), mask.getOffsetZ()));
-                    }
-                }
-            }
-        } else {*/
-            for (int z = 0; z < mask.getSizeZ(); ++z) {
-                for (int y = 0; y < mask.getSizeY(); ++y) {
-                    for (int x = 0; x < mask.getSizeX(); ++x) {
-                        if (mask.insideMask(x, y, z)) {
-                            voxels_.add( new Voxel(x + mask.getOffsetX(), y + mask.getOffsetY(), z + mask.getOffsetZ()));
-                        }
-                    }
-                }
-            }
-        //}
+        ImageMask.loopWithOffset(mask, (x, y, z)->voxels_.add(new Voxel(x, y, z)));
         voxels=voxels_;
     }
     
@@ -366,7 +353,7 @@ public class Region {
      * 
      * @return an image conatining only the object: its bounds are the one of the object and pixel values >0 where the objects has a voxel. The offset of the image is this offset of the object. 
      */
-    public ImageInteger getMask() {
+    public ImageMask<? extends ImageMask> getMask() {
         if (mask==null && voxels!=null) {
             synchronized(this) { // "Double-Checked Locking"
                 if (mask==null) {
@@ -375,6 +362,16 @@ public class Region {
             }
         }
         return mask;
+    }
+    public ImageInteger<? extends ImageInteger> getMaskAsImageInteger() {
+        return TypeConverter.toImageInteger(mask, null);
+    }
+    public void ensureMaskIsImageInteger() {
+        if (!(mask instanceof ImageInteger)) {
+            synchronized(this) {
+                mask = getMaskAsImageInteger();
+            }
+        }
     }
     /**
      * 
@@ -457,7 +454,7 @@ public class Region {
         return false;
     }
     public void erode(Neighborhood neigh) {
-        mask = Filters.min(getMask(), null, neigh);
+        mask = Filters.min(getMaskAsImageInteger(), null, neigh);
         voxels = null; // reset voxels
         // TODO reset bounds?
     }
@@ -474,7 +471,8 @@ public class Region {
         boolean changes = false;
         TreeSet<Voxel> heap = contour==null ? new TreeSet<>(getContour()) : new TreeSet<>(contour);
         EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
-        ImageInteger mask = getMask();
+        ensureMaskIsImageInteger();
+        ImageInteger mask = getMaskAsImageInteger();
         int xx, yy, zz;
         while(!heap.isEmpty()) {
             Voxel v = heap.pollFirst();
@@ -505,7 +503,8 @@ public class Region {
         boolean changes = false;
         TreeSet<Voxel> heap = new TreeSet<>(getContour());
         EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
-        ImageInteger mask = getMask();
+        ensureMaskIsImageInteger();
+        ImageInteger mask = getMaskAsImageInteger();
         int xx, yy, zz;
         while(!heap.isEmpty()) {
             Voxel v = heap.pollFirst();
@@ -797,7 +796,7 @@ public class Region {
     
     public Region translate(int offsetX, int offsetY, int offsetZ) {
         if (offsetX==0 && offsetY==0 && offsetZ==0) return this;
-        if (mask!=null) mask.addOffset(offsetX, offsetY, offsetZ);
+        if (mask!=null) mask.addOffset(new BoundingBox(offsetX, offsetY, offsetZ));
         if (bounds!=null) bounds.translate(offsetX, offsetY, offsetZ);
         if (voxels!=null) for (Voxel v : voxels) v.translate(offsetX, offsetY, offsetZ);
         if (center!=null) {

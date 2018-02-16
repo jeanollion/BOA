@@ -111,7 +111,7 @@ public class AutoFlipY implements Transformation, ToolTip {
             int countFlip = 0;
             int countNoFlip = 0;
             for (int f: frames) {
-                Image image = inputImages.getImage(channelIdx, f);
+                Image<? extends Image> image = inputImages.getImage(channelIdx, f);
                 if (image.getSizeZ()>1) {
                     int plane = inputImages.getBestFocusPlane(f);
                     if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
@@ -137,7 +137,7 @@ public class AutoFlipY implements Transformation, ToolTip {
             int countFlip = 0;
             int countNoFlip = 0;
             for (int f: frames) {
-                Image image = inputImages.getImage(channelIdx, f);
+                Image<? extends Image> image = inputImages.getImage(channelIdx, f);
                 if (image.getSizeZ()>1) {
                     int plane = inputImages.getBestFocusPlane(f);
                     if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
@@ -185,8 +185,8 @@ public class AutoFlipY implements Transformation, ToolTip {
         1) search for optical aberration
         2) get x variance for each line above and under aberration -> microchannels are where variance is maximal
         */
-        ImageMask upper = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
-        ImageMask lower = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY()+image.getSizeY()/2, image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        ImageMask upper = new BlankMask( image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        ImageMask lower = new BlankMask( image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY()+image.getSizeY()/2, image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
         double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null)[0];
         double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null)[0];
         if (testMode) logger.debug("AutoFlipY: upper half mean {} lower: {}", upperMean, lowerMean);
@@ -195,8 +195,8 @@ public class AutoFlipY implements Transformation, ToolTip {
         else return null;
     }
     private Boolean isFlipFluoUpperHalf(Image image) {
-        ImageMask upper = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
-        ImageMask lower = new BlankMask("", image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY()+image.getSizeY()/2, image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        ImageMask upper = new BlankMask( image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        ImageMask lower = new BlankMask( image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY()+image.getSizeY()/2, image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
         double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null)[0];
         double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null)[0];
         if (testMode) logger.debug("AutoFlipY: upper half mean {} lower: {}", upperMean, lowerMean);

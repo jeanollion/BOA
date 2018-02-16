@@ -44,64 +44,64 @@ public class Filters {
     public static Neighborhood getNeighborhood(double radiusXY, ImageProperties image) {return image.getSizeZ()>1 ?getNeighborhood(radiusXY, image.getScaleXY()/image.getScaleZ(), image) : getNeighborhood(radiusXY, 1, image);}
     public static Neighborhood getNeighborhood(double radiusXY, double radiusZ, ImageProperties image) {return image.getSizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
       
-    public static <T extends Image> T mean(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T mean(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Mean(), neighborhood);
     }
-    public static <T extends Image> T sigma(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T sigma(Image image, T output, Neighborhood neighborhood) {
         if (output==null) output = (T)new ImageFloat(Sigma.class.getSimpleName()+" of: "+image.getName(), image);
         return applyFilter(image, output, new Sigma(), neighborhood);
     }
-    public static <T extends Image> T sigmaMu(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T sigmaMu(Image image, T output, Neighborhood neighborhood) {
         if (output==null) output = (T)new ImageFloat(SigmaMu.class.getSimpleName()+" of: "+image.getName(), image);
         return applyFilter(image, output, new SigmaMu(), neighborhood);
     }
     
-    public static <T extends Image> T median(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T median(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Median(), neighborhood);
     }
     
-    public static <T extends Image> T max(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T max(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Max(), neighborhood);
     }
     
-    public static <T extends Image> T min(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T min(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Min(), neighborhood);
     }
     
-    public static <T extends ImageInteger> T binaryMax(ImageInteger image, T output, Neighborhood neighborhood, boolean outOfBoundIsNonNull, boolean extendImage) {
+    public static <T extends ImageInteger<T>, I extends ImageInteger<I>> T binaryMax(I image, T output, Neighborhood neighborhood, boolean outOfBoundIsNonNull, boolean extendImage) {
         if (extendImage) image =  image.extend(neighborhood.getBoundingBox());
         return applyFilter(image, output, new BinaryMax(outOfBoundIsNonNull), neighborhood);
     }
     
-    public static <T extends ImageInteger> T binaryMin(ImageInteger image, T output, Neighborhood neighborhood, boolean outOfBoundIsNull) {
+    public static <T extends ImageInteger<T>> T binaryMin(ImageInteger image, T output, Neighborhood neighborhood, boolean outOfBoundIsNull) {
         return applyFilter(image, output, new BinaryMin(outOfBoundIsNull), neighborhood);
     }
     
-    public static <T extends Image> T open(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T open(Image image, T output, Neighborhood neighborhood) {
         ImageFloat min = applyFilter(image, new ImageFloat("", 0, 0, 0), new Min(), neighborhood);
         //if (output == image) output = Image.createEmptyImage("open", output, output);
         return applyFilter(min, output, new Max(), neighborhood);
     }
     
-    public static <T extends Image> T close(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T close(Image image, T output, Neighborhood neighborhood) {
         ImageFloat max = applyFilter(image, new ImageFloat("", 0, 0, 0), new Max(), neighborhood);
         return applyFilter(max, output, new Min(), neighborhood);
     }
     
-    public static <T extends ImageInteger> T binaryOpen(ImageInteger image, T output, Neighborhood neighborhood) {
+    public static <T extends ImageInteger<T>> T binaryOpen(ImageInteger image, T output, Neighborhood neighborhood) {
         ImageByte min = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMin(true), neighborhood);
         //if (output == image) output = Image.createEmptyImage("binary open", output, output);
         return applyFilter(min, output, new BinaryMax(false), neighborhood);
     }
 
-    public static <T extends ImageInteger> T binaryCloseExtend(T image, Neighborhood neighborhood) {
+    public static <T extends ImageInteger<T>> T binaryCloseExtend(ImageInteger<T> image, Neighborhood neighborhood) {
         BoundingBox extent = neighborhood.getBoundingBox();
         T resized =  image.extend(extent);
         ImageByte max = applyFilter(resized, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
         T min = applyFilter(max, resized, new BinaryMin(false), neighborhood);
         return min.crop(image.getBoundingBox().translateToOrigin().translate(extent.duplicate().reverseOffset()));
     }
-    public static <T extends ImageInteger> T binaryClose(ImageInteger image, T output, Neighborhood neighborhood) {
+    public static <T extends ImageInteger<T>> T binaryClose(ImageInteger image, T output, Neighborhood neighborhood) {
         ImageByte max = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
         return applyFilter(max, output, new BinaryMin(false), neighborhood);
     }
@@ -112,21 +112,21 @@ public class Filters {
         T min = applyFilter(max, resized, new BinaryMinLabelWise(false), neighborhood);
         return min.crop(image.getBoundingBox().translateToOrigin().translate(extent.duplicate().reverseOffset()));
     }*/
-    public static <T extends Image> T tophat(Image image, Image imageForBackground, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T tophat(Image image, Image imageForBackground, T output, Neighborhood neighborhood) {
         T open =open(imageForBackground, output, neighborhood).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, open, open, -1); //1-open
         open.resetOffset().addOffset(image);
         return open;
     }
     
-    public static <T extends Image> T tophat(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T tophat(Image image, T output, Neighborhood neighborhood) {
         T open =open(image, output, neighborhood).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, open, open, -1); //1-open
         open.resetOffset().addOffset(image);
         return open;
     }
     
-    public static <T extends Image> T tophatInv(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T tophatInv(Image image, T output, Neighborhood neighborhood) {
         T close =close(image, output, neighborhood).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, close, close, -1); //1-close
         close.resetOffset().addOffset(image);
@@ -166,7 +166,7 @@ public class Filters {
         return applyFilter(image, res, filter, neighborhood);
     }
     
-    public static <T extends Image, F extends Filter> T applyFilter(Image image, T output, F filter, Neighborhood neighborhood) {
+    public static <T extends Image<T>, F extends Filter> T applyFilter(Image image, T output, F filter, Neighborhood neighborhood) {
         if (filter==null) throw new IllegalArgumentException("Apply Filter Error: Filter cannot be null");
         //if (neighborhood==null) throw new IllegalArgumentException("Apply Filter ("+filter.getClass().getSimpleName()+") Error: Neighborhood cannot be null");
         T res;

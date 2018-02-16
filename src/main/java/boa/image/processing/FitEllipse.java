@@ -225,7 +225,7 @@ public class FitEllipse {
     
     public static EllipseFit2D fitEllipse2D(Region object) {
         FitEllipse fitter = new FitEllipse();
-        ImageInteger mask = object.getMask();
+        ImageInteger<? extends ImageInteger> mask = object.getMaskAsImageInteger();
         if (mask.getSizeZ()>1) mask = mask.getZPlane(mask.getSizeZ()/2);
         
         fitter.fit(mask);

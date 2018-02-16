@@ -7,7 +7,7 @@ import boa.utils.Utils;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
-public class ImageFloat extends Image {
+public class ImageFloat extends Image<ImageFloat> {
 
     final private float[][] pixels;
 
@@ -152,7 +152,7 @@ public class ImageFloat extends Image {
     public ImageFloat duplicate(String name) {
         float[][] newPixels = new float[sizeZ][sizeXY];
         for (int z = 0; z< sizeZ; ++z) System.arraycopy(pixels[z], 0, newPixels[z], 0, sizeXY);
-        return new ImageFloat(name, sizeX, newPixels).setCalibration(this).addOffset(this);
+        return (ImageFloat)new ImageFloat(name, sizeX, newPixels).setCalibration(this).addOffset(this);
     }
     
     @Override
@@ -188,12 +188,12 @@ public class ImageFloat extends Image {
 
     @Override
     public Histogram getHisto256(ImageMask mask, BoundingBox limit) {
-        if (mask == null) mask = new BlankMask("", this);
+        if (mask == null) mask = new BlankMask(this);
         double[] minAndMax = getMinAndMax(mask);
         return getHisto256(minAndMax[0], minAndMax[1], mask, limit);
     }
     @Override public Histogram getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {
-        if (mask == null) mask = new BlankMask("", this);
+        if (mask == null) mask = new BlankMask(this);
         if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
         double coeff = 256d / (max - min);
         int idx;

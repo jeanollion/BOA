@@ -98,7 +98,7 @@ public class SNR extends IntensityMeasurement {
             if (p!=null) {
                 Region oDil = o;
                 if (dilRad>0)  {
-                    ImageInteger oMask = o.getMask();
+                    ImageInteger oMask = o.getMaskAsImageInteger();
                     oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilRad, dilRad, oMask), false, true);
                     oDil = new Region(oMask, 1, o.is2D()).setIsAbsoluteLandmark(o.isAbsoluteLandMark());
                 }

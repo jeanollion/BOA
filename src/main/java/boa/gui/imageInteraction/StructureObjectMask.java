@@ -104,7 +104,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         }
         getOffsets();
         for (int i = 0; i < offsets.length; ++i) {
-            if (offsets[i].contains(x, y, z)) {
+            if (offsets[i].containsWithOffset(x, y, z)) {
                 if (objects.get(i).getMask().insideMask(x - offsets[i].getxMin(), y - offsets[i].getyMin(), z - offsets[i].getzMin())) {
                     return new Pair(objects.get(i), offsets[i]);
                 }

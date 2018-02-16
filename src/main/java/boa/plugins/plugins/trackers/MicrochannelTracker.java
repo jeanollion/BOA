@@ -229,7 +229,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                 }
                 int height = b.getSizeY();
                 if (height+offY>parentBounds.getyMax()) height = parentBounds.getyMax()-offY;
-                BlankMask m = new BlankMask("", width, height, b.getSizeZ(), offX, offY, b.getzMin(), o.getScaleXY(), o.getScaleZ());
+                BlankMask m = new BlankMask( width, height, b.getSizeZ(), offX, offY, b.getzMin(), o.getScaleXY(), o.getScaleZ());
                 o.setObject(new Region(m, o.getIdx()+1, o.is2D()));
             }
         }
@@ -305,7 +305,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
                             int offY = deltaOffY + ref.getBounds().getyMin();
                             int offZ = deltaOffZ + ref.getBounds().getzMin();
                             
-                            BlankMask m = new BlankMask("", xSize, ySize+offY>=parent.getBounds().getSizeY()?parent.getBounds().getSizeY()-offY:ySize, zSize, offX, offY, offZ, ref.getScaleXY(), ref.getScaleZ());
+                            BlankMask m = new BlankMask( xSize, ySize+offY>=parent.getBounds().getSizeY()?parent.getBounds().getSizeY()-offY:ySize, zSize, offX, offY, offZ, ref.getScaleXY(), ref.getScaleZ());
                             BoundingBox bds = m.getBoundingBox();
                             int maxIntersect = parent.getChildren(structureIdx).stream().mapToInt(o->o.getBounds().getIntersection(bds).getSizeXYZ()).max().getAsInt();
                             if (!bds.isIncluded2D(parent.getBounds()) || maxIntersect>0) {

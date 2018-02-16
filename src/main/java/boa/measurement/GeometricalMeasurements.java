@@ -82,7 +82,7 @@ public class GeometricalMeasurements {
         return Math.pow((c1[0]-c2[0])*scaleXY, 2) + Math.pow((c1[1]-c2[1])*scaleXY, 2) + Math.pow((c1[2]-c2[2])*scaleZ, 2);
     }
     public static double localThickness(Region object) {
-        Image ltMap = LocalThickness.localThickness(object.getMask(), object.is2D()?1:object.getScaleXY()/object.getScaleZ(), true, 1);
+        Image ltMap = LocalThickness.localThickness(object.getMaskAsImageInteger(), object.is2D()?1:object.getScaleXY()/object.getScaleZ(), true, 1);
         return BasicMeasurements.getQuantileValue(object, ltMap, 0.5)[0];
     }
     public static double meanThicknessZ(Region object) {

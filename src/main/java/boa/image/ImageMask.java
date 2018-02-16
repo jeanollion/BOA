@@ -2,7 +2,7 @@ package boa.image;
 
 import boa.image.BoundingBox.LoopFunction;
 
-public interface ImageMask extends ImageProperties {
+public interface ImageMask<I extends ImageMask> extends ImageProperties<I> {
 
     public boolean insideMask(int x, int y, int z);
     public boolean insideMask(int xy, int z);
@@ -19,4 +19,5 @@ public interface ImageMask extends ImageProperties {
         mask.getBoundingBox().loop((x, y, z)-> {if (mask.insideMaskWithOffset(x, y, z)) function.loop(x, y, z);});
         if (function instanceof BoundingBox.LoopFunction2) ((BoundingBox.LoopFunction2)function).tearDown();
     }
+    public ImageMask duplicateMask();
 }

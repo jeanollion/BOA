@@ -66,7 +66,7 @@ public class IJAutoThresholder implements SimpleThresholder, ThresholderHisto {
     }
     
     public static double runThresholder(Image input, ImageMask mask, BoundingBox limits, Method method, double percentageSuplementalBackground) {
-        if (mask==null) mask=new BlankMask("", input);
+        if (mask==null) mask=new BlankMask( input);
         Histogram histo = input.getHisto256(mask, limits);
         histo.data[0]+=(int)(percentageSuplementalBackground * input.getSizeXYZ()+0.5);
         histo.removeSaturatingValue(4, true);

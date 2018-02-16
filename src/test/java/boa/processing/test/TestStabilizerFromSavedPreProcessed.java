@@ -37,7 +37,7 @@ public class TestStabilizerFromSavedPreProcessed {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         String dir = "/data/Images/Fluo/MopStab/160501_18_c0_small.tif";
-        Image im = ImageReader.openImage(dir);
+        Image<? extends Image> im = ImageReader.openImage(dir);
         Image[][] imCT = new Image[1][im.getSizeZ()];
         int z = 0;
         for (Image i : im.splitZPlanes()) imCT[0][z++] = i;

@@ -85,7 +85,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
         if (r==null) return null;
         ArrayList<Region> objects = new ArrayList<>(r.size());
         for (int idx = 0; idx<r.xMax.length; ++idx) {
-            objects.add(new Region(new BlankMask("mask of microchannel:" + idx+1, r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1, true));
+            objects.add(new Region(new BlankMask(r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1, true));
             logger.debug("object!: {}", objects.get(objects.size()-1).getBounds());
         }
         return new RegionPopulation(objects, input);

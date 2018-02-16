@@ -12,6 +12,7 @@ import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageInteger;
+import boa.image.ImageMask;
 import boa.image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -95,7 +96,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public StructureObject duplicate(boolean generateNewID, boolean duplicateObject) {
         StructureObject res;
-        if (isRoot()) res = new StructureObject(timePoint, (BlankMask)(duplicateObject?getMask().duplicate():getMask()), dao);
+        if (isRoot()) res = new StructureObject(timePoint, (BlankMask)(duplicateObject?getMask().duplicateMask():getMask()), dao);
         else res= new StructureObject(timePoint, structureIdx, idx, duplicateObject?getObject().duplicate():getObject(), getParent());
         if (!generateNewID) res.id=id;
         res.previousId=previousId;
@@ -740,7 +741,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     public ImageProperties getMaskProperties() {return getObject().getImageProperties();}
-    public ImageInteger getMask() {return getObject().getMask().setName("Mask of:"+this);}
+    public ImageMask getMask() {return getObject().getMask();}
     public BoundingBox getBounds() {return getObject().getBounds();}
     protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
     public void updateObjectContainer(){

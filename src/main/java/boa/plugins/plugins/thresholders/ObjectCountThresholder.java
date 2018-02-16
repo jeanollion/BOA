@@ -64,7 +64,7 @@ public class ObjectCountThresholder implements Thresholder {
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
-        ImageMask mask = structureObject!=null ? structureObject.getMask() : new BlankMask("", input);
+        ImageMask mask = structureObject!=null ? structureObject.getMask() : new BlankMask( input);
         return runThresholder(input, mask);
     }
     

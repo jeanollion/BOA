@@ -58,7 +58,7 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         if (channelIdx<0) throw new IllegalArgumentException("Channel no configured");
-        Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
+        Image<? extends Image> image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
         // check configuration validity
         if (xStop.getValue().intValue()==0 || xStop.getValue().intValue()>=image.getSizeX()) xStop.setValue(image.getSizeX()-1);
         if (xStart.getValue().intValue()>=xStop.getValue().intValue()) {

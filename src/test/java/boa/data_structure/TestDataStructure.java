@@ -69,9 +69,9 @@ public class TestDataStructure {
         xp.setOutputDirectory(testFolder.newFolder("testDB").getAbsolutePath());
         db.setExperiment(xp);
         String f = "test";
-        StructureObject r = new StructureObject(0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
-        StructureObject r2 = new StructureObject(1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
-        StructureObject r3 = new StructureObject(2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
+        StructureObject r = new StructureObject(0, new BlankMask(1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
+        StructureObject r2 = new StructureObject(1, new BlankMask(1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
+        StructureObject r3 = new StructureObject(2, new BlankMask(1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
         setTrackLinks(r, r2, true, true);
         setTrackLinks(r2, r3, true, true);
         //r2.setPreviousInTrack(r, true);

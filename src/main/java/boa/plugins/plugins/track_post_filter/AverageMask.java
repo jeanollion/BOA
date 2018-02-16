@@ -57,21 +57,21 @@ public class AverageMask implements TrackPostFilter{
             int maxX = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().getSizeX(), o2.getMask().getSizeX())).getMask().getSizeX();
             int maxY = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().getSizeY(), o2.getMask().getSizeY())).getMask().getSizeY();
             int maxZ = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().getSizeZ(), o2.getMask().getSizeZ())).getMask().getSizeZ();
-            ImageInteger sum = ImageInteger.createEmptyLabelImage("average mask", track.size()+1, new BlankMask("", maxX, maxY, maxZ));
+            ImageInteger sum = ImageInteger.createEmptyLabelImage("average mask", track.size()+1, new BlankMask( maxX, maxY, maxZ));
             for (StructureObject o : track) {
-                ImageInteger mask = o.getMask();
+                ImageMask mask = o.getMask();
                 for (int z = 0; z<sum.getSizeZ(); ++z) {
                     for (int y=0; y<sum.getSizeY(); ++y) {
                         for (int x=0; x<sum.getSizeX(); ++x) {
-                            if (mask.contains(x, y, z)) sum.setPixel(x, y, z, sum.getPixel(x, y, z)+mask.getPixel(x, y, z));
+                            if (mask.contains(x, y, z)) sum.setPixel(x, y, z, sum.getPixel(x, y, z)+1);
                         }
                     }
                 }
             }
             int threshold = (int)((track.size()+1)/2d);
             for (StructureObject o : track) {
-                ImageInteger mask = o.getMask();
-                if (mask instanceof BlankMask) continue;
+                o.getObject().ensureMaskIsImageInteger();
+                ImageInteger mask = o.getObject().getMaskAsImageInteger();
                 mask.getBoundingBox().translateToOrigin().loop((x, y, z)->{ mask.setPixel(x, y, z, sum.getPixelInt(x, y, z)>=threshold?1:0);});
                 o.getObject().resetMask(); // reset mask because bounds might have changed
                 o.getObject().clearVoxels();

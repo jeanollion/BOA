@@ -172,7 +172,7 @@ public class ImageReader {
         int sizeX = reader.getSizeX();
         int sizeY = reader.getSizeY();
         int sizeZ = invertTZ?reader.getSizeT():reader.getSizeZ();
-        //if (coords.getBounds()!=null) coords.getBounds().trimToImage(new BlankMask("", sizeX, sizeY, sizeZ));
+        //if (coords.getBounds()!=null) coords.getBounds().trimToImage(new BlankMask( sizeX, sizeY, sizeZ));
         
         int zMin, zMax;
         if (coords.getBounds()!=null) {

@@ -72,9 +72,9 @@ public class FillHoles2D {
 
     public static void fillHoles(RegionPopulation pop) {
         for (Region o : pop.getRegions()) {
-            fillHoles(o.getMask(), 2);
+            o.ensureMaskIsImageInteger();
+            fillHoles(o.getMaskAsImageInteger(), 2);
             o.clearVoxels();
-            o.getVoxels();
         }
         pop.relabel(true);
     }

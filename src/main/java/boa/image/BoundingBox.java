@@ -114,7 +114,7 @@ public class BoundingBox implements JSONSerializable {
         zMax=zMin+image.getSizeZ()-1;
     }
     
-    public boolean contains(int x, int y, int z) {
+    public boolean containsWithOffset(int x, int y, int z) {
         return xMin<=x && xMax>=x && yMin<=y && yMax>=y && zMin<=z && zMax>=z;
     }
     
@@ -439,15 +439,15 @@ public class BoundingBox implements JSONSerializable {
     }
     
     public BlankMask getImageProperties(float scaleXY, float scaleZ) {
-        return new BlankMask("", this, scaleXY, scaleZ);
+        return new BlankMask(this, scaleXY, scaleZ);
     }
     
     public BlankMask getImageProperties(String name, float scaleXY, float scaleZ) {
-        return new BlankMask(name, this, scaleXY, scaleZ);
+        return new BlankMask(this, scaleXY, scaleZ);
     }
     
     public ImageProperties getImageProperties() {
-        return new BlankMask("", this, 1, 1);
+        return new BlankMask(this, 1, 1);
     }
     
     public BoundingBox duplicate() {
