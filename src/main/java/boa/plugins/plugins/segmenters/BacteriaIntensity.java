@@ -144,7 +144,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         splitPop.smoothRegions(1, true, parent.getMask());
         splitAndMerge = initializeSplitAndMerge(input, splitPop.getLabelMap());
         RegionPopulation res = splitAndMerge.splitAndMerge(splitPop.getLabelMap(), minSizePropagation.getValue().intValue(), 0);
-        res = localThreshold(input, res, parent, structureIdx);
+        res = localThreshold(input, res, parent, structureIdx, false);
         if (testMode) {
             ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("After local threshold"));
         }
@@ -165,7 +165,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         return res;
     }
     
-    protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx) {
+    protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx, boolean callFromSplit) {
         Image smooth = smoothScale.getValue().doubleValue()>=1 ? ImageFeatures.gaussianSmooth(input, smoothScale.getValue().doubleValue(), false):input;
         pop.localThreshold(smooth, localThresholdFactor.getValue().doubleValue(), true, true);
         return pop;
@@ -185,7 +185,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         RegionPopulation pop =  splitObject(parent, structureIdx, o); // after this step pop is in same landmark as o
         if (pop.getRegions().size()<=1) return Double.POSITIVE_INFINITY;
         else {
-            if (pop.getRegions().size()>2) pop.mergeWithConnected(pop.getRegions().subList(2, pop.getRegions().size()));
+            
             Region o1 = pop.getRegions().get(0);
             Region o2 = pop.getRegions().get(1);
             result.add(o1);
@@ -249,7 +249,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
      * @param parent
      * @param structureIdx
      * @param object
-     * @return splitted objects in same landmark as {@param object}
+     * @return split objects in same landmark as {@param object}
      */
     @Override public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
         Image input = parent.getPreFilteredImage(structureIdx);
@@ -257,8 +257,9 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         splitAndMerge = initializeSplitAndMerge(input, mask);
         splitAndMerge.setTestMode(splitVerbose);
         RegionPopulation res = splitAndMerge.splitAndMerge(mask, minSizePropagation.getValue().intValue(), 2);
-        res =  localThreshold(input, res, parent, structureIdx); 
+        res =  localThreshold(input, res, parent, structureIdx, true); 
         if (object.isAbsoluteLandMark()) res.translate(parent.getBounds(), true);
+        if (res.getRegions().size()>2) RegionCluster.mergeUntil(res, 2, 0); // merge 2 most connected
         return res;
     }
 
@@ -280,7 +281,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
             for(Region so : seedObjects ) if (o.intersect(so)) return true;
             return false;
         });
-        localThreshold(input, pop, parent, structureIdx);
+        localThreshold(input, pop, parent, structureIdx, false);
         //RegionPopulation pop =  WatershedTransform.watershed(splitAndMerge.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(getNormalizedHessian(input), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
         
         if (verboseManualSeg) {

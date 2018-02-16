@@ -18,6 +18,7 @@
 package boa.image.processing.clustering;
 
 import boa.data_structure.Region;
+import java.util.Comparator;
 
 /**
  *
@@ -41,7 +42,10 @@ public class SimpleInterfaceVoxelSet extends InterfaceVoxelSet<SimpleInterfaceVo
 
     @Override
     public int compareTo(SimpleInterfaceVoxelSet o) {
-        return 0;
+        return -Integer.compare(voxels.size(), o.voxels.size()); // biggest interface first
     }
     
+    public static ClusterCollection.InterfaceFactory<Region, SimpleInterfaceVoxelSet> interfaceFactory() {
+        return (e1, e2)->new SimpleInterfaceVoxelSet(e1, e2);
+    }
 }

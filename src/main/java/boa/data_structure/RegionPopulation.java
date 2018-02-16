@@ -371,34 +371,36 @@ public class RegionPopulation {
         }
         List<Region> addedObjects = new ArrayList<>();
         Map<Integer, Double> labelMapThld = new HashMap<>(getRegions().size());
-        for (Region o : getRegions()) {
-            List<Double> values = Utils.transform(o.getVoxels(), (Voxel v) -> (double) erodeMap.getPixel(v.x, v.y, v.z));
-            List<Double> valuesEdge = Utils.transform(o.getVoxels(), (Voxel v) -> (double) edgeMap.getPixel(v.x, v.y, v.z));
+        for (Region r : getRegions()) {
+            double[] values = erodeMap.stream(r.getMask(), r.isAbsoluteLandMark()).toArray();
+            double[] valuesEdge = edgeMap.stream(r.getMask(), r.isAbsoluteLandMark()).toArray();
             double meanW= 0, mean=0, sumEdge = 0;
-            for (int i = 0; i<values.size(); ++i) {
-                sumEdge +=valuesEdge.get(i);
-                meanW+=valuesEdge.get(i)*values.get(i);
-                mean+=values.get(i);
+            for (int i = 0; i<values.length; ++i) {
+                sumEdge +=valuesEdge[i];
+                meanW+=valuesEdge[i]*values[i];
+                mean+=values[i];
             }
             meanW/=sumEdge;
-            mean/=values.size();
+            mean/=values.length;
             double sigmaW = 0;
-            for (int i = 0; i<values.size(); ++i) sigmaW+=Math.pow(values.get(i)-mean, 2)*valuesEdge.get(i);
+            for (int i = 0; i<values.length; ++i) sigmaW+=Math.pow(values[i]-mean, 2)*valuesEdge[i];
             sigmaW = Math.sqrt(sigmaW/sumEdge);
             double thld;
             if (darkBackground) {
                 thld = meanW-iqrFactor*sigmaW;
-                if (dilateRegionRadius>0 || values.get(0)<thld) labelMapThld.put(o.getLabel(), thld); // if no dilatation: put the threshold only if some pixels are under thld
+                if ( values[ArrayUtil.min(values)]<thld) labelMapThld.put(r.getLabel(), thld); // if no dilatation: put the threshold only if some pixels are under thld
             } else {
                 thld = meanW+iqrFactor*sigmaW;
-                if (dilateRegionRadius>0 || values.get(values.size() - 1)>thld) labelMapThld.put(o.getLabel(), thld);
+                if ( values[ArrayUtil.max(values)]>thld) labelMapThld.put(r.getLabel(), thld);
             }
+            //logger.debug("local thld edge: object: {}, thld: {}, mean: {}, w_mean: {} w_sigma {} count: {}", r.getLabel(), thld, mean, meanW, sigmaW, sumEdge, values.length);
         }
         
         for (Region r : getRegions()) {
             if (!labelMapThld.containsKey(r.getLabel())) continue;
             double thld = labelMapThld.get(r.getLabel());
             boolean change = r.erodeContours(erodeMap, thld, darkBackground, keepOnlyBiggestObject, r.getContour());
+            //logger.debug("local thld edge: object: {}, thld: {}, changes: {}, absLandMark: {}", r.getLabel(), thld, change, r.isAbsoluteLandMark());
             if (change && !keepOnlyBiggestObject) {
                 List<Region> subRegions = ImageLabeller.labelImageListLowConnectivity(r.mask);
                 if (subRegions.size()>1) {

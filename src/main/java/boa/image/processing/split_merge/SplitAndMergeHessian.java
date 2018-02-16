@@ -97,7 +97,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
     
     @Override
     protected ClusterCollection.InterfaceFactory<Region, Interface> createFactory() {
-        return (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new Interface(e1, e2);
+        return (Region e1, Region e2) -> new Interface(e1, e2);
     }
     
     

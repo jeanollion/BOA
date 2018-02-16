@@ -103,37 +103,11 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         if (verbose) logger.debug("Interface collection: nb of interfaces:"+interfaces.size());
     }
     
-    /*public static InterfaceVoxelSet getInteface(Region o1, Region o2, ImageInteger labelImage) {
-        EllipsoidalNeighborhood neigh = labelImage.getSizeZ()>1 ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
-        Region min;
-        int otherLabel;
-        if (o1.getVoxels().size()<=o2.getVoxels().size()) {
-            min=o1;
-            otherLabel = o2.getLabel();
-        } else {
-            min = o2;
-            otherLabel = o1.getLabel();
-        }
-        int xx, yy, zz;
-        Set<Voxel> inter = new HashSet<Voxel>();
-        for (Voxel v : min.getVoxels()) {
-            for (int i = 0; i<neigh.dx.length; ++i) {
-                xx=v.x+neigh.dx[i];
-                yy=v.y+neigh.dy[i];
-                zz=v.z+neigh.dz[i];
-                if (labelImage.contains(xx, yy, zz) && labelImage.getPixelInt(xx, yy, zz)==otherLabel) {
-                    inter.add(v);
-                    inter.add(new Voxel(xx, yy, zz));
-                }
-            }
-        }
-        return new InterfaceVoxelSet(o1, o2, inter, regionComparator);
-    }*/
     public static <I extends InterfaceRegion<I>> I getInteface(Region o1, Region o2, ImageInteger labelImage, InterfaceFactory<Region, I> interfaceFactory) {
         EllipsoidalNeighborhood neigh = labelImage.getSizeZ()>1 ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
         Region min;
         int otherLabel;
-        I inter =  interfaceFactory.create(o1, o2, regionComparator);
+        I inter =  interfaceFactory.create(o1, o2);
         if (o1.getVoxels().size()<=o2.getVoxels().size()) {
             min=o1;
             otherLabel = o2.getLabel();
@@ -153,23 +127,6 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         return inter;
     }
     
-    /*public void setVoxelIntensities(Image image, boolean objects, boolean interfaces) {
-        if (objects) for (Region o : this.allElements) for (Voxel v : o.getVoxels()) v.value=image.getPixel(v.x, v.y, v.z);
-        if (interfaces) for (I i : this.interfaces) {
-            if (i.data instanceof Collection) {
-                try {
-                    Collection<Voxel> c = (Collection<Voxel>)i.data;
-                    for (Voxel v : c) v.value=image.getPixel(v.x, v.y, v.z);
-                } catch (Error e) {}
-            }
-        }
-    }*/ 
-    
-    /*public static void mergeSort(RegionPopulation population, Image voxelIntensityImage, FusionCriterion<Set<Voxel>> criterion, InterfaceSortMethod<Object3D, Set<Voxel>> interfaceSortMethod) {
-        RegionCluster<Set<Voxel>> c = new RegionCluster<Set<Voxel>>(population, false, interfaceVoxSetFactory);
-        if (voxelIntensityImage!=null) c.setVoxelIntensities(voxelIntensityImage, true, true);
-        c.mergeSort(criterion, new InterfaceDataFusionCollection<Set<Voxel>, Voxel>(), interfaceSortMethod);
-    }*/
     public static <I extends InterfaceRegion<I>> void mergeSort(RegionPopulation population, InterfaceFactory<Region, I> interfaceFactory, boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
         RegionCluster<I> c = new RegionCluster<>(population, false, true, interfaceFactory);
         c.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
@@ -221,7 +178,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
                 if (!inter.isEmpty()) strongestInterface = inter.first();
                 else if (noInterfaceCase!=null && !queue.isEmpty()) {
                     Region other = noInterfaceCase.apply(s, queue);
-                    if (other!=null) strongestInterface = interfaceFactory.create(s, other, regionComparator);
+                    if (other!=null) strongestInterface = interfaceFactory.create(s, other);
                 }
                 if (strongestInterface!=null) {
                     if (verbose) logger.debug("mergeSmallObjects: {}, size: {}, interface: {}, all: {}", s.getLabel(), s.getSize(), strongestInterface, inter);
@@ -263,5 +220,10 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     
     public static interface InterfaceVoxels<T extends Interface<Region, T>> extends InterfaceRegion<T> {
         public Collection<Voxel> getVoxels();
-    } 
+    }
+    
+    public static void mergeUntil(RegionPopulation pop, int objectLimit, int interfaceLimit) {
+        RegionCluster<SimpleInterfaceVoxelSet> cluster = new RegionCluster<>(pop, false, false, SimpleInterfaceVoxelSet.interfaceFactory());
+        cluster.mergeSort(false, interfaceLimit, objectLimit);
+    }
 }

@@ -99,8 +99,18 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
     public I getInterface(E e1, E e2, boolean createIfNull) {
         Collection<I> l = interfaceByElement.getAndCreateIfNecessary(e1);
         for (I i : l) if (i.isInterfaceOf(e2)) return i;
-        if (createIfNull && interfaceFactory!=null) return addInteraction(interfaceFactory.create(e1, e2, elementComparator));
+        if (createIfNull && interfaceFactory!=null) return addInteraction(interfaceFactory.create(getFirst(e1, e2), getSecond(e1, e2)));
         return null;
+    }
+    protected E getFirst(E e1, E e2) {
+        if (elementComparator==null) return e1;
+        int comp =  elementComparator.compare(e1, e2);
+        return comp<=0 ? e1: e2;
+    }
+    protected E getSecond(E e1, E e2) {
+        if (elementComparator==null) return e2;
+        int comp =  elementComparator.compare(e1, e2);
+        return comp<=0 ? e2: e1;
     }
     
     public List<Set<E>> getClusters() {
@@ -266,7 +276,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
     }
 
     public static interface InterfaceFactory<E, T extends Interface<E, T>> {
-        public T create(E e1, E e2, Comparator<? super E> elementComparator);
+        public T create(E e1, E e2);
     }
     
 }

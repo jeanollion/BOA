@@ -113,12 +113,14 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     }
     
     @Override
-    protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx) {
-        double dilRadius = 2;
+    protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx, boolean callFromSplit) {
+        double dilRadius = callFromSplit ? 0 : 2;
         Image smooth = ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
-        Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), 3, 1, 3, 1);
+        Image edgeMap = Sigma.filter(smooth, 3, 1, 3, 1);
+        if (splitVerbose) ImageWindowManagerFactory.showImage(edgeMap.setName("local threshold edge map"));
         ImageMask mask = parent.getMask();
         pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask);
+        if (splitVerbose) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after localThreshold"));
         pop.smoothRegions(2, true, mask);
         return pop;
     }

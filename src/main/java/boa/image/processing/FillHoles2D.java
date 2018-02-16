@@ -143,7 +143,7 @@ public class FillHoles2D {
         @Override
         public void init(RegionPopulation population) {
             if (!population.getImageProperties().sameDimensions(foregroundObjects.getImageProperties())) throw new IllegalArgumentException("Foreground objects population should have same bounds as current population");
-            ClusterCollection.InterfaceFactory<Region, SimpleInterfaceVoxelSet> f = (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new SimpleInterfaceVoxelSet(e1, e2);
+            ClusterCollection.InterfaceFactory<Region, SimpleInterfaceVoxelSet> f = (Region e1, Region e2) -> new SimpleInterfaceVoxelSet(e1, e2);
             List<Region> allObjects = new ArrayList<>(population.getRegions().size()+foregroundObjects.getRegions().size());
             allObjects.addAll(population.getRegions());
             allObjects.addAll(foregroundObjects.getRegions());

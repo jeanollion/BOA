@@ -105,7 +105,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
 
     @Override
     protected ClusterCollection.InterfaceFactory<Region, InterfaceLocalShape> createFactory() {
-        return (Region e1, Region e2, Comparator<? super Region> elementComparator) -> new InterfaceLocalShape(e1, e2);
+        return (Region e1, Region e2) -> new InterfaceLocalShape(e1, e2);
     }
     
     private Image getEDM() {
