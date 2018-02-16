@@ -70,7 +70,7 @@ public class TestProcessMutations {
         ImageInteger parentMask = parent.getMask();
         BoundingBox parentBounds = parent.getBounds();
         if (parentBounds.getSizeZ()==1 && input.getSizeZ()>1) parentBounds.fitToImageZ(input); // case of 2D ref image
-        Image localInput = input.sameSize(parentBounds.getImageProperties()) ? input : input.cropWithOffset(parentBounds);
+        Image localInput = input.sameDimensions(parentBounds.getImageProperties()) ? input : input.cropWithOffset(parentBounds);
         
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         MutationSegmenter.debug=true;
@@ -84,7 +84,7 @@ public class TestProcessMutations {
         if (seg instanceof UseMaps) {
             UseMaps s = (UseMaps)seg;
             Image[] maps = s.computeMaps(input, input);
-            if (!input.sameSize(parentBounds.getImageProperties())) maps = Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(parentBounds));
+            if (!input.sameDimensions(parentBounds.getImageProperties())) maps = Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(parentBounds));
             s.setMaps(maps);
             
         }

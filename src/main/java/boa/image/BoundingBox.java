@@ -280,10 +280,10 @@ public class BoundingBox implements JSONSerializable {
     public boolean sameBounds(ImageProperties properties) {
         return xMin==properties.getOffsetX() && yMin==properties.getOffsetY() && zMin==properties.getOffsetZ() && xMax==(properties.getSizeX()-1+properties.getOffsetX()) && yMax==(properties.getSizeY()-1+properties.getOffsetY()) && zMax==(properties.getSizeZ()-1+properties.getOffsetZ());
     }
-    public boolean sameSize(ImageProperties properties) {
+    public boolean sameDimensions(ImageProperties properties) {
         return getSizeX() == properties.getSizeX() && getSizeY() == properties.getSizeY() && getSizeZ() == properties.getSizeZ();
     }
-    public boolean sameSize(BoundingBox bounds) {
+    public boolean sameDimensions(BoundingBox bounds) {
         return getSizeX() == bounds.getSizeX() && getSizeY() == bounds.getSizeY() && getSizeZ() == bounds.getSizeZ();
     }
     /**

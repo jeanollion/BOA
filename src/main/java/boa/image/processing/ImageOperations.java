@@ -137,7 +137,7 @@ public class ImageOperations {
             dest=new ImageByte("", image);
             setBackground=false;
         }
-        else if (!dest.sameSize(image)) {
+        else if (!dest.sameDimensions(image)) {
             dest = Image.createEmptyImage(dest.getName(), dest, image);
             setBackground=false;
         }
@@ -270,12 +270,12 @@ public class ImageOperations {
 
     public static <T extends Image> T addImage(Image source1, Image source2, T output, double coeff) {
         String name = source1.getName()+" + "+coeff+" x "+source2.getName();
-        if (!source1.sameSize(source2)) throw new IllegalArgumentException("sources images have different sizes");
+        if (!source1.sameDimensions(source2)) throw new IllegalArgumentException("sources images have different sizes");
         if (output==null) {
             if (coeff<0 || (int)coeff != coeff) output = (T)new ImageFloat(name, source1);
             else output = (T)Image.createEmptyImage(name, source1, source1);
         }
-        else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
+        else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(name, output, source1);
         float round = output instanceof ImageInteger?0.5f:0;
         if (coeff==1) {
             for (int z = 0; z<output.getSizeZ(); ++z) {
@@ -311,7 +311,7 @@ public class ImageOperations {
         if (output==null) {
             if (multiplicativeCoefficient<0 || (int)multiplicativeCoefficient != multiplicativeCoefficient || additiveCoefficient<0) output = new ImageFloat(name, source1);
             else output = Image.createEmptyImage(name, source1, source1);
-        } else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
+        } else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(name, output, source1);
         additiveCoefficient += output instanceof ImageInteger?0.5:0;
         if (additiveCoefficient!=0 && multiplicativeCoefficient!=1) {
             for (int z = 0; z<output.getSizeZ(); ++z) {
@@ -347,7 +347,7 @@ public class ImageOperations {
         if (output==null) {
             if (multiplicativeCoefficient<0 || (int)multiplicativeCoefficient != multiplicativeCoefficient || additiveCoefficient<0) output = new ImageFloat(name, source1);
             else output = Image.createEmptyImage(name, source1, source1);
-        } else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
+        } else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(name, output, source1);
         double end = output instanceof ImageInteger?0.5:0;
         if (additiveCoefficient!=0 && multiplicativeCoefficient!=1) {
             for (int z = 0; z<output.getSizeZ(); ++z) {
@@ -377,7 +377,7 @@ public class ImageOperations {
         if (output==null) {
             if (multiplicativeCoefficient<0 || (int)multiplicativeCoefficient != multiplicativeCoefficient || additiveCoefficient<0) output = new ImageFloat(name, source1);
             else output = Image.createEmptyImage(name, source1, source1);
-        } else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
+        } else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(name, output, source1);
         final double end = output instanceof ImageInteger?0.5:0;
         final Image out = output;
         source1.getBoundingBox().loop(new LoopFunction() {
@@ -390,9 +390,9 @@ public class ImageOperations {
     }
     
     public static <T extends Image> T multiply(Image source1, Image source2, T output) {
-        if (!source1.sameSize(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");
+        if (!source1.sameDimensions(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");
         if (output==null) output = (T)new ImageFloat(source1.getName()+" x "+source2.getName(), source1);
-        else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
+        else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
         for (int z = 0; z<output.getSizeZ(); ++z) {
             for (int xy=0; xy<output.getSizeXY(); ++xy) {
                 output.setPixel(xy, z, source1.getPixel(xy, z)*source2.getPixel(xy, z));
@@ -402,7 +402,7 @@ public class ImageOperations {
     }
     public static <T extends Image> T addValue(Image source1, double value, T output) {
         if (output==null) output = (T)new ImageFloat(source1.getName()+" + "+value, source1);
-        else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" + "+value, output, source1);
+        else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(source1.getName()+" + "+value, output, source1);
         for (int z = 0; z<output.getSizeZ(); ++z) {
             for (int xy=0; xy<output.getSizeXY(); ++xy) {
                 output.setPixel(xy, z, source1.getPixel(xy, z)+value);
@@ -412,9 +412,9 @@ public class ImageOperations {
     }
     
     public static <T extends Image> T divide(Image source1, Image source2, T output, double... multiplicativeCoefficient) {
-        if (!source1.sameSize(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");
+        if (!source1.sameDimensions(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");
         if (output==null) output = (T)new ImageFloat(source1.getName()+" x "+source2.getName(), source1);
-        else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
+        else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
         if (multiplicativeCoefficient.length == 0) {
             for (int z = 0; z<output.getSizeZ(); ++z) {
                 for (int xy=0; xy<output.getSizeXY(); ++xy) {
@@ -499,7 +499,7 @@ public class ImageOperations {
     
     public static <T extends Image> T trim(T source, ImageMask mask, T output) {
         if (output==null) output = (T)Image.createEmptyImage(source.getName(), source, source);
-        if (!output.sameSize(source)) output = Image.createEmptyImage("outside", source, source);
+        if (!output.sameDimensions(source)) output = Image.createEmptyImage("outside", source, source);
         for (int z = 0; z<source.getSizeZ(); ++z) {
             for (int xy=0; xy<source.getSizeXY(); ++xy) {
                 if (!mask.insideMask(xy, z)) output.setPixel(xy, z, 0);
@@ -511,7 +511,7 @@ public class ImageOperations {
     
     public static <T extends ImageInteger> T not(ImageMask source1, T output) {
         if (output==null) output = (T)new ImageByte("not", source1);
-        if (!output.sameSize(source1)) output = Image.createEmptyImage("not", output, source1);
+        if (!output.sameDimensions(source1)) output = Image.createEmptyImage("not", output, source1);
         for (int z = 0; z<source1.getSizeZ(); ++z) {
             for (int xy=0; xy<source1.getSizeXY(); ++xy) {
                 if (source1.insideMask(xy, z)) output.setPixel(xy, z, 0);
@@ -643,7 +643,7 @@ public class ImageOperations {
     public static <T extends Image> T meanZProjection(Image input, T output) {
         BlankMask properties =  new BlankMask("", input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
         if (output ==null) output = (T)new ImageFloat("mean Z projection", properties);
-        else if (!output.sameSize(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
+        else if (!output.sameDimensions(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
         float size = input.getSizeZ();
         for (int xy = 0; xy<input.getSizeXY(); ++xy) {
             float sum = 0;
@@ -656,7 +656,7 @@ public class ImageOperations {
     public static <T extends Image> T maxZProjection(T input, T output, int... zLim) {
         BlankMask properties =  new BlankMask("", input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
         if (output ==null) output = (T)Image.createEmptyImage("max Z projection", input, properties);
-        else if (!output.sameSize(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
+        else if (!output.sameDimensions(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
         int zMin = 0;
         int zMax = input.getSizeZ()-1;
         if (zLim.length>0) zMin = zLim[0];
@@ -675,7 +675,7 @@ public class ImageOperations {
     
     public static ImageFloat normalize(Image input, ImageMask mask, ImageFloat output) {
         double[] mm = input.getMinAndMax(mask);
-        if (output==null || !output.sameSize(input)) output = new ImageFloat(input.getName()+" normalized", input);
+        if (output==null || !output.sameDimensions(input)) output = new ImageFloat(input.getName()+" normalized", input);
         if (mm[0]==mm[1]) return output;
         double scale = 1 / (mm[1] - mm[0]);
         double offset = -mm[0] * scale;
@@ -689,7 +689,7 @@ public class ImageOperations {
     }
     public static ImageFloat normalize(Image input, ImageMask mask, ImageFloat output, double pMin, double pMax, boolean saturate) {
         if (pMin>=pMax) throw new IllegalArgumentException("pMin should be < pMax");
-        if (output==null || !output.sameSize(input)) output = new ImageFloat(input.getName()+" normalized", input);
+        if (output==null || !output.sameDimensions(input)) output = new ImageFloat(input.getName()+" normalized", input);
         double[] minAndMax = new double[2];
         double[] mm = null;
         if (pMin<=0) {
@@ -820,7 +820,7 @@ public class ImageOperations {
     
     public static double[] getMeanAndSigma(Image image, ImageMask mask) {
         if (mask==null) mask = new BlankMask(image);
-        else if (!mask.sameSize(image)) throw new IllegalArgumentException("Mask should be of same size as image");
+        else if (!mask.sameDimensions(image)) throw new IllegalArgumentException("Mask should be of same size as image");
         double mean = 0;
         double count = 0;
         double values2 = 0;

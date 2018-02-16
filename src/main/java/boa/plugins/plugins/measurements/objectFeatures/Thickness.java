@@ -47,7 +47,7 @@ public class Thickness implements ObjectFeature {
     }
 
     @Override
-    public double performMeasurement(Region object, BoundingBox offset) {
+    public double performMeasurement(Region object) {
         double res = GeometricalMeasurements.localThickness(object);
         if (scaled.getSelectedIndex()==1) res*=object.getScaleXY();
         return res;

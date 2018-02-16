@@ -62,6 +62,8 @@ import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 import static boa.utils.Utils.comparatorInt;
+import static boa.utils.Utils.objectsAllHaveSameProperty;
+import static boa.utils.Utils.twoObjectsHaveSameProperty;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -74,7 +76,7 @@ public class RegionPopulation {
     private ImageInteger labelImage;
     private List<Region> objects;
     private ImageProperties properties;
-    private boolean absoluteLandmark=false;
+    //private boolean absoluteLandmark=false;
     private boolean lowConnectivity = false;
     /**
      * Creates an empty ObjectPopulation instance
@@ -101,94 +103,42 @@ public class RegionPopulation {
         }
     }
     
-    public RegionPopulation setLabelImage(ImageInteger image, boolean isLabeledImage, boolean lowConnectivity) {
-        this.lowConnectivity=lowConnectivity;
-        labelImage = image;
-        if (!isLabeledImage) {
-            objects = lowConnectivity ? ImageLabeller.labelImageListLowConnectivity(image) : ImageLabeller.labelImageList(image);
-            relabel(false); // in order to have consistent labels between image & object list
-        } else objects = null;
-        return this;
-    }
     public RegionPopulation setConnectivity(boolean low) {
         this.lowConnectivity = low;
         return this;
     }
 
     public RegionPopulation(List<Region> objects, ImageProperties properties) {
+        if (properties==null) throw new IllegalArgumentException("ImageProperties should no be null");
         if (objects != null) {
             this.objects = objects;
         } else {
             this.objects = new ArrayList<>();
         }
-        if (properties!=null) {
-            //for (Region o : objects)  if (o.is2D()==null) o.setIs2D(properties.getSizeZ()==1);
-            this.properties = new BlankMask("", properties);
-        }
+        checkObjectValidity();
+        this.properties = new BlankMask("", properties); // can be null in case label image is set afterwards
     }
     
-    public RegionPopulation(List<Region> objects, ImageProperties properties, boolean absoluteLandmark) {
-        if (objects != null) this.objects = objects;
-        else this.objects = new ArrayList<>();
-        if (properties!=null) {
-            //for (Region o : objects) o.setIs2D(properties.getSizeZ()==1);
-            this.properties = new BlankMask("", properties);
-        }
-        this.absoluteLandmark=absoluteLandmark;
-        for (Region o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
-        //checkForDuplicateLabel();
-    }
-    
-    public RegionPopulation(List<Region> objects, ImageInteger labelMap, ImageProperties properties, boolean absoluteLandmark) {
-        if (!labelMap.sameSize(properties)) throw new IllegalArgumentException("labelMap and ImageProperties should be of same dimensions");
-        if (objects != null) {
-            this.objects = objects;
-        } else {
-            this.objects = new ArrayList<Region>();
-        }
-        if (properties!=null) {
-            //for (Region o : objects) o.setIs2D(properties.getSizeZ()==1);
-            this.properties = new BlankMask("", properties);
-        }
-        this.absoluteLandmark=absoluteLandmark;
-        for (Region o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
-        labelImage = labelMap;
-        this.relabel(true);
-    }
-    
-    public boolean checkForDuplicateLabel() {
-        for (int i = 0; i<objects.size()-1; ++i) {
-            for (int j = i+1; j<objects.size(); ++j) {
-                if (objects.get(i).getLabel()==objects.get(j).getLabel()) {
-                    //throw new IllegalArgumentException("Duplicate label: idx:"+i+"&"+j+" label:"+objects.get(j).getLabel());
-                    return true;
-                }
-            }
-        }
-        return false;
+    private void checkObjectValidity() {
+        if (!objectsAllHaveSameProperty(objects, o->o.isAbsoluteLandMark())) throw new IllegalArgumentException("Regions should all have same landmark");
+        if (!objectsAllHaveSameProperty(objects, o->o.is2D)) throw new IllegalArgumentException("Regions should all be either 2D or 3D");
+        //if (twoObjectsHaveSameProperty(objects, o->o.getLabel())) relabel(false);
     }
     
     public RegionPopulation duplicate() {
         if (objects!=null) {
             ArrayList<Region> ob = new ArrayList<>(objects.size());
             for (Region o : objects) ob.add(o.duplicate());
-            return new RegionPopulation(ob, properties, absoluteLandmark).setConnectivity(lowConnectivity);
+            return new RegionPopulation(ob, properties).setConnectivity(lowConnectivity);
         } else if (labelImage!=null) {
             return new RegionPopulation((ImageInteger)labelImage.duplicate(""), true).setConnectivity(lowConnectivity);
         }
-        return new RegionPopulation(null , properties, absoluteLandmark).setConnectivity(lowConnectivity);
-    }
-    
-    /**
-     * 
-     * @return null if the objects offset are directly from the labelImage, or the value of the offset
-     */
-    public BoundingBox getObjectOffset() {
-        return properties.getBoundingBox();
+        return new RegionPopulation(null , properties).setConnectivity(lowConnectivity);
     }
     
     public boolean isAbsoluteLandmark() {
-        return this.absoluteLandmark;
+        if (objects==null || objects.isEmpty()) return false; // default
+        return objects.get(0).isAbsoluteLandMark();
     }
     
     public RegionPopulation addObjects(boolean updateLabelImage, Region... objects) {
@@ -201,6 +151,7 @@ public class RegionPopulation {
      */
     public RegionPopulation addObjects(List<Region> objects, boolean updateLabelImage) {
         this.objects.addAll(objects);
+        checkObjectValidity();
         if (updateLabelImage) relabel(true);
         return this;
     }
@@ -218,8 +169,9 @@ public class RegionPopulation {
     }
     
     private void draw(Region o, int label) {
-        if (this.absoluteLandmark) o.draw(labelImage, label, new BoundingBox(0, 0, 0)); // in order to remove the offset of the image
-        else o.draw(labelImage, label);
+        //if (this.absoluteLandmark) o.draw(labelImage, label, new BoundingBox(0, 0, 0)); // in order to remove the offset of the image
+        //else o.draw(labelImage, label);
+        o.draw(labelImage, label); // depends on object's landmark
     }
     
     private void constructLabelImage() {
@@ -256,7 +208,7 @@ public class RegionPopulation {
     
     public RegionPopulation setProperties(ImageProperties properties, boolean onlyIfSameSize) {
         if (labelImage != null) {
-            if (!onlyIfSameSize || labelImage.sameSize(properties)) {
+            if (!onlyIfSameSize || labelImage.sameDimensions(properties)) {
                 labelImage.resetOffset().addOffset(properties);
             }
             labelImage.setCalibration(properties);
@@ -298,20 +250,14 @@ public class RegionPopulation {
             for (Region o : getRegions()) draw(o, o.getLabel());
         }
     }
-    
-    public void translate(int offsetX, int offsetY, int offsetZ , boolean absoluteLandmark) {
-        for (Region o : getRegions()) {
-            o.translate(offsetX, offsetY, offsetZ);
-        }
-        this.absoluteLandmark=absoluteLandmark;
-    }
-    
+        
     public void translate(BoundingBox bounds, boolean absoluteLandmark) {
         for (Region o : getRegions()) {
             o.translate(bounds);
             o.setIsAbsoluteLandmark(absoluteLandmark);
         }
-        this.absoluteLandmark=absoluteLandmark;
+        this.properties = new BlankMask(this.properties).addOffset(bounds);
+        if (labelImage!=null) labelImage.addOffset(bounds);
     }
     
     public void setVoxelIntensities(Image intensityMap) {
@@ -328,21 +274,6 @@ public class RegionPopulation {
         }
         return seeds;
     }
-    public Map<Region, Region> getDilatedObjects(double radiusXY, double radiusZ, boolean onlyDilatedPart) {
-        Map<Region, Region> res = new HashMap<>(objects.size());
-        ImageInteger mask = ImageOperations.not(getLabelMap(), new ImageByte("", 0, 0, 0));
-        if (!absoluteLandmark) mask.resetOffset();
-        for (Region o : objects) {
-            res.put(o, new Region(ImageOperations.getDilatedMask(o.getMask(), radiusXY, radiusZ, mask, onlyDilatedPart), o.getLabel(), o.is2D()));
-        }
-        /*ImageInteger dilLabelMap = Image.createEmptyImage("dilatedObjects", getLabelMap(), getLabelMap());
-        for (Region o : res.values()) {
-            if (this.absoluteLandmark) o.draw(dilLabelMap, o.getLabel(), new BoundingBox(0, 0, 0)); // in order to remove the offset of the image
-            else o.draw(dilLabelMap, o.getLabel());
-        }
-        new IJImageDisplayer().showImage(dilLabelMap);*/
-        return res;
-    }
     
     public boolean isInContactWithOtherObject(Region o) {
         DisplacementNeighborhood n = (DisplacementNeighborhood) Filters.getNeighborhood(1.5, 1, properties);
@@ -355,31 +286,6 @@ public class RegionPopulation {
         return false;
     }
     
-    /*public void fitToEdges(Image edgeMap, ImageMask mask) {
-     // 1st pass: increase foreground
-     WatershedTransform wt = new WatershedTransform(edgeMap, mask, objects, false, null, null);
-     wt.setPropagationCriterion(wt.new MonotonalPropagation());
-     wt.run();
-     RegionPopulation pop =  wt.getObjectPopulation();
-     this.objects=pop.getObjects();
-     //set labelImage
-     if (pop.hasImage()) this.labelImage=pop.getLabelImage();
-     else this.labelImage=null;
-     // 2nd pass: increase background
-     ImageInteger background = ImageOperations.xor(getLabelImage(), mask, null);
-     wt = new WatershedTransform(edgeMap, mask, ImageLabeller.labelImageList(background), false, null, null);
-     wt.setPropagationCriterion(wt.new MonotonalPropagation());
-     wt.run();
-     ImageInteger segmentedMap = wt.getLabelImage();
-     for (Region o : objects) {
-     Iterator<Voxel> it = o.getVoxels().iterator();
-     while(it.hasNext()) {
-     Voxel v = it.next();
-     if (segmentedMap.insideMask(v.x, v.y, v.z)) it.remove();
-     }
-     }
-     this.labelImage=null; //reset labelImage
-     }*/
     public void fitToEdges(Image edgeMap, ImageMask mask) {
         // get seeds outsit label image
         ImageInteger seedMap = Filters.localExtrema(edgeMap, null, false, null, Filters.getNeighborhood(1.5, 1.5, edgeMap));
@@ -542,26 +448,6 @@ public class RegionPopulation {
         return this;
     }
     
-    /*public void localThreshold(Image intensity, int marginX, int marginY, int marginZ) {
-        ImageInteger background = ImageOperations.xor(getLabelMap(), new BlankMask("", properties), null);
-        for (Region o : getObjects()) {
-            o.draw(background, 1);
-            BoundingBox bounds = o.getBounds().duplicate();
-            bounds.expandX(bounds.getxMin() - marginX);
-            bounds.expandX(bounds.getxMax() + marginX);
-            bounds.expandY(bounds.getyMin() - marginY);
-            bounds.expandY(bounds.getyMax() + marginY);
-            bounds.expandZ(bounds.getzMin() - marginZ);
-            bounds.expandZ(bounds.getzMax() + marginZ);
-            bounds = bounds.getIntersection(intensity.getBoundingBox().translateToOrigin());
-            double thld = runThresholder(intensity, background, bounds, Otsu, 1);
-            //logger.debug("local threshold: object: {}, thld: {} with bounds: {}, thld with bcg bounds: {}, 2: {}", o.getLabel(), thld, bounds, runSimpleThresholder(intensity, background, bounds, Otsu, 1), runSimpleThresholder(intensity, background, bounds, Otsu, 2));
-            o.draw(background, 0);
-            localThreshold(o, intensity, thld);
-        }
-        relabel(false);
-    }*/
-    
     protected void localThreshold(Region o, Image intensity, double threshold) {
         Iterator<Voxel> it = o.getVoxels().iterator();
         while (it.hasNext()) {
@@ -573,7 +459,7 @@ public class RegionPopulation {
         }
     }
     public Region getBackground(ImageMask mask) {
-        if (mask!=null && !mask.sameSize(getLabelMap())) throw new RuntimeException("Mask should have same size as label map: mask: "+mask.getBoundingBox()+" lm:"+this.getLabelMap().getBoundingBox());
+        if (mask!=null && !mask.sameDimensions(getLabelMap())) throw new RuntimeException("Mask should have same size as label map: mask: "+mask.getBoundingBox()+" lm:"+this.getLabelMap().getBoundingBox());
         int bckLabel = getRegions().isEmpty() ? 1 : Collections.max(getRegions(), (o1, o2)->Integer.compare(o1.getLabel(), o2.getLabel())).getLabel()+1;
         ImageInteger bckMask = getLabelMap().duplicate().resetOffset();
         if (mask!=null) ImageOperations.andNot(mask, bckMask, bckMask);
@@ -581,7 +467,7 @@ public class RegionPopulation {
         return new Region(bckMask, bckLabel, bckMask.getSizeZ()==1);
     }
     public void smoothRegions(double radius, boolean eraseVoxelsIfConnectedToBackground, ImageMask mask) {
-        if (mask!=null && !mask.sameSize(getLabelMap())) throw new RuntimeException("Mask should have same size as label map: mask: "+mask.getBoundingBox()+" lm:"+this.getLabelMap().getBoundingBox());
+        if (mask!=null && !mask.sameDimensions(getLabelMap())) throw new RuntimeException("Mask should have same size as label map: mask: "+mask.getBoundingBox()+" lm:"+this.getLabelMap().getBoundingBox());
         Neighborhood n = Filters.getNeighborhood(radius, getImageProperties());
         HashMapGetCreate<Integer, int[]> count = new HashMapGetCreate<>(9, i->new int[1]);
         
@@ -635,7 +521,7 @@ public class RegionPopulation {
         for (Region o : getRegions()) {
             if (filter.keepObject(o)) keptObjects.add(o);
         }
-        return new RegionPopulation(keptObjects, this.getImageProperties());
+        return new RegionPopulation(keptObjects, this.getImageProperties()).setConnectivity(lowConnectivity);
     }
     public RegionPopulation filter(SimpleFilter filter) {
         return filter(filter, null);
@@ -708,15 +594,17 @@ public class RegionPopulation {
     public void mergeAll() {
         if (getRegions().isEmpty()) return;
         boolean one3D = false;
+        boolean absoluteLandMark=false;
         if (labelImage!=null) {
             for (Region o : getRegions()) draw(o, 1);
         }
         for (Region o : getRegions()) {
             o.setLabel(1);
             if (o.is2D()) one3D = true;
+            if (o.isAbsoluteLandMark()) absoluteLandMark= true;
         }
         Region o = new Region(getLabelMap(), 1, !one3D);
-        if (!this.absoluteLandmark) o.translate(o.getBounds().reverseOffset());
+        if (!absoluteLandMark) o.translate(o.getBounds().reverseOffset());
         objects.clear();
         objects.add(o);
     }
@@ -847,7 +735,6 @@ public class RegionPopulation {
         boolean keepOverThreshold, strict;
         ObjectFeature feature;
         double threshold;
-        BoundingBox offset;
         public Feature(ObjectFeature feature, double threshold, boolean keepOverThreshold, boolean strict) {
             this.feature=feature;
             this.threshold=threshold;
@@ -855,13 +742,11 @@ public class RegionPopulation {
             this.strict=strict;
         }
         @Override
-        public void init(RegionPopulation population) {
-            this.offset= population.absoluteLandmark ? null : population.getObjectOffset();
-        }
+        public void init(RegionPopulation population) { }
 
         @Override
         public boolean keepObject(Region object) {
-            double testValue = feature.performMeasurement(object, offset);
+            double testValue = feature.performMeasurement(object);
             if (Double.isNaN(testValue)) return true;
             //logger.debug("FeatureFilter: {}, object: {}, testValue: {}, threshold: {}", feature.getClass().getSimpleName(), object.getLabel(), testValue, threshold);
             if (keepOverThreshold) {

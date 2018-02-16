@@ -143,7 +143,7 @@ public class Filters {
     public static ImageByte localExtrema(Image image, ImageByte output, boolean maxLocal, ImageMask mask, Neighborhood neighborhood) {
         ImageByte res;
         String name = maxLocal?"MaxLocal of: "+image.getName():"MinLocal of: "+image.getName();
-        if (output==null || !output.sameSize(image) || output==image) res = new ImageByte(name, image);
+        if (output==null || !output.sameDimensions(image) || output==image) res = new ImageByte(name, image);
         else res = (ImageByte)output.setName(name);
         Filter filter = maxLocal?new LocalMax(mask):new LocalMin(mask);
         return applyFilter(image, res, filter, neighborhood);
@@ -160,7 +160,7 @@ public class Filters {
     public static ImageByte localExtrema(Image image, ImageByte output, boolean maxLocal, double threshold, ImageMask mask, Neighborhood neighborhood) {
         ImageByte res;
         String name = maxLocal?"MaxLocal of: "+image.getName():"MinLocal of: "+image.getName();
-        if (output==null || !output.sameSize(image) || output==image) res = new ImageByte(name, image);
+        if (output==null || !output.sameDimensions(image) || output==image) res = new ImageByte(name, image);
         else res = (ImageByte)output.setName(name);
         Filter filter = maxLocal?new LocalMaxThreshold(threshold, mask):new LocalMinThreshold(threshold, mask);
         return applyFilter(image, res, filter, neighborhood);
@@ -172,7 +172,7 @@ public class Filters {
         T res;
         String name = filter.getClass().getSimpleName()+" of: "+image.getName();
         if (output==null) res = (T)Image.createEmptyImage(name, image, image);
-        else if (!output.sameSize(image) || output==image) res = Image.createEmptyImage(name, output, image);
+        else if (!output.sameDimensions(image) || output==image) res = Image.createEmptyImage(name, output, image);
         else res = (T)output.setName(name);
         float round=res instanceof ImageFloat ? 0: 0.5f;
         filter.setUp(image, neighborhood);
@@ -405,7 +405,7 @@ public class Filters {
         @Override
         public void setUp(Image image, Neighborhood neighborhood) {
             super.setUp(image, neighborhood);
-            if (mask!=null && !image.sameSize(mask)) throw new IllegalArgumentException("Mask and Image to filter should have same dimentions: mask: "+mask.getBoundingBox()+" image: "+image.getBoundingBox());
+            if (mask!=null && !image.sameDimensions(mask)) throw new IllegalArgumentException("Mask and Image to filter should have same dimentions: mask: "+mask.getBoundingBox()+" image: "+image.getBoundingBox());
             else if (mask==null) mask=new BlankMask(image);
         }
         @Override public float applyFilter(int x, int y, int z) {

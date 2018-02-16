@@ -27,8 +27,8 @@ import boa.image.BoundingBox;
  */
 public class Mean extends IntensityMeasurement {
     @Override
-    public double performMeasurement(Region object, BoundingBox offset) {
-        return core.getIntensityMeasurements(object, offset).mean;
+    public double performMeasurement(Region object) {
+        return core.getIntensityMeasurements(object).mean;
     }
     @Override
     public String getDefaultName() {

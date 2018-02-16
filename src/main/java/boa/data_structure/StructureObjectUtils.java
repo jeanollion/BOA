@@ -178,7 +178,6 @@ public class StructureObjectUtils {
         int childStructure = children.get(0).getStructureIdx();
         for (StructureObject p : parent) p.setChildren(new ArrayList<StructureObject>(), childStructure);
         for (StructureObject c : children) {
-            BoundingBox b = c.getBounds();
             StructureObject currentParent=null;
             int currentIntersection=-1;
             for (StructureObject p : parent) {
@@ -187,8 +186,8 @@ public class StructureObjectUtils {
                         currentParent = p;
                     }
                     else { // in case of conflict: keep parent that intersect most
-                        if (currentIntersection==-1) currentIntersection = c.getObject().getIntersectionCountMaskMask(p.getObject(),null,  null);
-                        int otherIntersection = c.getObject().getIntersectionCountMaskMask(p.getObject(),null,  null);
+                        if (currentIntersection==-1) currentIntersection = c.getObject().getOverlapMaskMask(p.getObject(),null,  null);
+                        int otherIntersection = c.getObject().getOverlapMaskMask(p.getObject(),null,  null);
                         if (otherIntersection>currentIntersection) {
                             currentIntersection=otherIntersection;
                             currentParent=p;
@@ -202,15 +201,9 @@ public class StructureObjectUtils {
     }
     
     public static List<StructureObject> getIncludedStructureObjects(List<StructureObject> candidates, StructureObject container) {
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>();
+        ArrayList<StructureObject> res = new ArrayList<>();
         for (StructureObject c : candidates) if (c.getObject().intersect(container.getObject())) res.add(c); // strict inclusion?
         return res;
-    }
-    
-    // TODO remove this method
-    public static Region getInclusionParent(Region children, List<Region> parents, BoundingBox offset, BoundingBox offsetParent) {
-        if (parents.isEmpty() || children==null) return null;
-        return children.getContainer(parents, offset, offsetParent); 
     }
     
     public static StructureObject getInclusionParent(Region children, Collection<StructureObject> parents, BoundingBox offset) {

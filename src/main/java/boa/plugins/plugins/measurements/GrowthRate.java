@@ -105,7 +105,7 @@ public class GrowthRate implements Measurement {
                 int idx = 0;
                 for (StructureObject b : l) {
                     frame[idx] = b.getCalibratedTimePoint();
-                    length[idx++] = Math.log(ofMap.getAndCreateIfNecessary(b.getParent()).performMeasurement(b.getObject(), null));
+                    length[idx++] = Math.log(ofMap.getAndCreateIfNecessary(b.getParent()).performMeasurement(b.getObject()));
                 }
                 double[] beta = LinearRegression.run(frame, length);
                 double[] residuals = res? LinearRegression.getResiduals(frame, length, beta[0], beta[1]) : null;

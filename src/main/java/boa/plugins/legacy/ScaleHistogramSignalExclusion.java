@@ -111,8 +111,8 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     }
     
     public Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, boolean vertical, boolean excludeZero, ImageInteger exclusionMask, int timePoint) {
-        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new RuntimeException("Image and exclusion signal should have same dimensions");
-        if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new RuntimeException("Image and exclusion mask should have same dimensions");
+        if (exclusionSignal!=null && !image.sameDimensions(exclusionSignal)) throw new RuntimeException("Image and exclusion signal should have same dimensions");
+        if (exclusionMask!=null && !image.sameDimensions(exclusionMask)) throw new RuntimeException("Image and exclusion mask should have same dimensions");
         long t0 = System.currentTimeMillis();
         if (exclusionMask!=null) {
             ImageOperations.threshold(exclusionSignal, exclusionThreshold, false, true, true, exclusionMask);

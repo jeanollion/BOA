@@ -92,7 +92,7 @@ public class WatershedTransform {
     public static RegionPopulation watershed(Image watershedMap, ImageMask mask, List<Region> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
         WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion).setLowConnectivity(lowConnectivity);
         wt.run();
-        return wt.getObjectPopulation();
+        return wt.getRegionPopulation();
     }
     
     public static RegionPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, boolean lowConnectivity) {
@@ -144,7 +144,7 @@ public class WatershedTransform {
         return this;
     }
     public WatershedTransform setPriorityMap(Image priorityMap) {
-        if (!watershedMap.sameSize(priorityMap)) throw new IllegalArgumentException("PriorityMap should have same dimensions as watershed map");
+        if (!watershedMap.sameDimensions(priorityMap)) throw new IllegalArgumentException("PriorityMap should have same dimensions as watershed map");
         this.priorityMap=priorityMap;
         this.computeSpotCenter = true;
         return this;
@@ -393,14 +393,17 @@ public class WatershedTransform {
     }
     
     public ImageInteger getLabelImage() {return segmentedMap;}
-    
-    public RegionPopulation getObjectPopulation() {
+    /**
+     * 
+     * @return Result of watershed transform as RegionPopulation, relative landmark to the watershedMap
+     */
+    public RegionPopulation getRegionPopulation() {
         //int nb = 0;
         //for (Spot s : wt.spots) if (s!=null) nb++;
-        ArrayList<Region> res = new ArrayList<Region>(spotNumber);
+        ArrayList<Region> res = new ArrayList<>(spotNumber);
         int label = 1;
         for (Spot s : spots) if (s!=null) res.add(s.toRegion(label++));
-        return new RegionPopulation(res, watershedMap).setConnectivity(lowConnectivity);
+        return new RegionPopulation(res, new BlankMask(watershedMap).resetOffset()).setConnectivity(lowConnectivity);
     }
     public Spot[] getSpotArray() {
         return spots;

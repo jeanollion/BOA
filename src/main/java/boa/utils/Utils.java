@@ -93,6 +93,26 @@ import boa.measurement.MeasurementExtractor;
  * @author jollion
  */
 public class Utils {
+    public static <T, P> boolean objectsAllHaveSameProperty(Collection<T> objects, Function<T, P> propertyFunction) {
+        if (objects==null || objects.size()<=1) return true;
+        P property = null;
+        for (T o: objects) {
+            P p=propertyFunction.apply(o);
+            if (property==null) property = p;
+            else if (!property.equals(p)) return false;
+        }
+        return true;
+    }
+    public static <T, P> boolean twoObjectsHaveSameProperty(Collection<T> objects, Function<T, P> propertyFunction) {
+        if (objects==null || objects.size()<=1) return true;
+        Set<P> allProperties = new HashSet<>(objects.size());
+        for (T o: objects) {
+            P prop=propertyFunction.apply(o);
+            if (allProperties.contains(prop)) return true;
+            allProperties.add(prop);
+        }
+        return false;
+    }
     public static <T> T getElementAt(Collection<T> collection, int idx) {
         if (collection.size()<=idx) return null;
         if (collection instanceof List) return ((List<T>)collection).get(idx);

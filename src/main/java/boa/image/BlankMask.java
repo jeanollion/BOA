@@ -61,12 +61,14 @@ public class BlankMask extends ImageInteger implements ImageMask {
 
     @Override
     public boolean insideMask(int x, int y, int z) {
-        return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
+        return true; // contains should already be checked
+        //return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
     }
 
     @Override
     public boolean insideMask(int xy, int z) {
-        return (xy >= 0 && xy < sizeXY && z >= 0 && z < sizeZ);
+        return true; // contains should already be checked
+        //return (xy >= 0 && xy < sizeXY && z >= 0 && z < sizeZ);
     }
     
     @Override public int count() {
@@ -75,13 +77,15 @@ public class BlankMask extends ImageInteger implements ImageMask {
     
     @Override
     public boolean insideMaskWithOffset(int x, int y, int z) {
-        x-=offsetX; y-=offsetY; z-=offsetZ;
-        return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
+        return true; // contains should already be checked
+        //x-=offsetX; y-=offsetY; z-=offsetZ;
+        //return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
     }
     @Override
     public boolean insideMaskWithOffset(int xy, int z) {
-        xy-=offsetXY;  z-=offsetZ;
-        return (xy >= 0 && xy < sizeXY &&  z >= 0 && z < sizeZ);
+        return true; // contains should already be checked
+        //xy-=offsetXY;  z-=offsetZ;
+        //return (xy >= 0 && xy < sizeXY &&  z >= 0 && z < sizeZ);
     }
 
     @Override

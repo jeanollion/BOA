@@ -276,9 +276,9 @@ public class Region {
         this.bounds=null;
     }
     public synchronized void remove(Region r) {
-        if (this.mask!=null && r.mask!=null) remove(r.mask);
+        if (this.mask!=null && r.mask!=null) andNot(r.mask);
         else if (this.voxels!=null && r.voxels!=null) removeVoxels(r.voxels);
-        else remove(r.getMask());
+        else andNot(r.getMask());
     }
     public synchronized void removeVoxels(Collection<Voxel> voxelsToRemove) {
         if (voxels!=null) voxels.removeAll(voxelsToRemove);
@@ -288,7 +288,7 @@ public class Region {
         }
         this.bounds=null;
     }
-    public synchronized void remove(ImageMask otherMask) {
+    public synchronized void andNot(ImageMask otherMask) {
         getMask();
         if (mask instanceof BlankMask) mask = TypeConverter.toByteMask(mask, null, 1);
         otherMask.getBoundingBox().getIntersection(getBounds()).loop((x, y, z)-> {
@@ -608,13 +608,13 @@ public class Region {
         else return getBounds().intersect(other.getBounds());
     }
     /**
-     * 
-     * @param other
-     * @param offset added to the bounds of {@param this}
-     * @param offsetOther added to the bounds of {@param other}
-     * @return 
+     * Counts the overlap (in voxels) between this region and {@param other}, using masks of both region (no creation of voxels)
+     * @param other other region
+     * @param offset offset to add to this region so that is would be in absolute landmark
+     * @param offsetOther offset to add to {@param other} so that is would be in absolute landmark
+     * @return overlap (in voxels) between this region and {@param other}
      */
-    public int getIntersectionCountMaskMask(Region other, BoundingBox offset, BoundingBox offsetOther) {
+    public int getOverlapMaskMask(Region other, BoundingBox offset, BoundingBox offsetOther) {
         BoundingBox otherBounds = offsetOther==null? other.getBounds().duplicate() : other.getBounds().duplicate().translate(offsetOther);
         BoundingBox thisBounds = offset==null? getBounds().duplicate() : getBounds().duplicate().translate(offset);
         final boolean inter2D = is2D() || other.is2D();
@@ -648,13 +648,19 @@ public class Region {
         for (Region c : candidates) if (c.intersect(this)) res.add(c); // strict inclusion?
         return res;
     }
-    
-    public Region getContainer(Collection<Region> parents, BoundingBox offset, BoundingBox offsetParent) {
-        if (parents.isEmpty()) return null;
+    /**
+     * 
+     * @param containerCandidates
+     * @param offset offset to add to this region so that it would be in absolute landmark
+     * @param containerOffset  offset to add to the container regions so that they would be in absolute landmark
+     * @return the container with the most intersection
+     */
+    public Region getContainer(Collection<Region> containerCandidates, BoundingBox offset, BoundingBox containerOffset) {
+        if (containerCandidates.isEmpty()) return null;
         Region currentParent=null;
         int currentIntersection=-1;
-        for (Region p : parents) {
-            int inter = getIntersectionCountMaskMask(p, offset, offsetParent);
+        for (Region p : containerCandidates) {
+            int inter = getOverlapMaskMask(p, offset, containerOffset);
             if (inter>0) {
                 if (currentParent==null) {
                     currentParent = p;
@@ -692,7 +698,7 @@ public class Region {
         }
     }
     /**
-     * Draws with the offset of the object, without using the offset of the image
+     * Draws with the offset of the object, using the offset of the image if the object is in absolute landmark
      * @param image
      * @param label 
      */

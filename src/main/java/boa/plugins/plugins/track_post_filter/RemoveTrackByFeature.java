@@ -84,7 +84,7 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
             ObjectFeature f = feature.instanciatePlugin();
             f.setUp(parent, structureIdx, pop);
             Map<Region, Double> locValueMap = new HashMap<>(pop.getRegions().size());
-            for (Region o : pop.getRegions()) locValueMap.put(o, f.performMeasurement(o, null));
+            for (Region o : pop.getRegions()) locValueMap.put(o, f.performMeasurement(o));
             synchronized(valueMap) {
                 valueMap.putAll(locValueMap);
             }

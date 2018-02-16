@@ -35,6 +35,7 @@ import boa.data_structure.StructureObjectPreProcessing;
 import boa.data_structure.StructureObjectTracker;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
+import boa.image.BlankMask;
 import ij.process.AutoThresholder;
 import boa.image.Image;
 import boa.image.ImageByte;
@@ -421,7 +422,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     cObjects = populations.get(f);
                     //RemoveIncompleteDivisions(t);
                 }
-                children = parent.setChildrenObjects(new RegionPopulation(cObjects, null), structureIdx); // will translate all voxels
+                children = parent.setChildrenObjects(new RegionPopulation(cObjects, new BlankMask(parent.getMask()).resetOffset()), structureIdx); // will translate all voxels
                 setAttributesToStructureObjects(f, children, childrenPrev);
                 if (debug) for (StructureObject c : children) if (c.hasTrackLinkError(true, true)) ++errors;
             }
@@ -605,7 +606,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             StructureObject parent = this.parentsByF.get(timePoint);
             List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
             if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
-                if (segment) o.getObject().translate(parent.getBounds().duplicate().reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
+                if (segment || correction) o.getObject().translate(parent.getBounds().duplicate().reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
                 return o.getObject();
             }));
             else populations.put(timePoint, Collections.EMPTY_LIST); 

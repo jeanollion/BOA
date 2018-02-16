@@ -203,8 +203,8 @@ public class ThresholdMask implements ImageMask {
     }
 
     @Override
-    public boolean sameSize(ImageProperties image) {
-        return image.sameSize(image);
+    public boolean sameDimensions(ImageProperties image) {
+        return image.sameDimensions(image);
     }
 
     @Override

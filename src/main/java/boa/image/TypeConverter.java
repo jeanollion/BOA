@@ -34,7 +34,7 @@ public class TypeConverter {
      * @return a new ImageFloat values casted as float
      */
     public static ImageFloat toFloat(Image image, ImageFloat output) {
-        if (output==null || !output.sameSize(image)) output = new ImageFloat(image.getName(), image);
+        if (output==null || !output.sameDimensions(image)) output = new ImageFloat(image.getName(), image);
         if (image instanceof ImageFloat) ImageOperations.pasteImage(image, output, null);
         else {
             float[][] newPixels = output.getPixelArray();
@@ -54,7 +54,7 @@ public class TypeConverter {
      * @return a new ImageShort values casted as short (if values exceed 65535 they will be equal to 65535) 
      */
     public static ImageShort toShort(Image image, ImageShort output) {
-        if (output==null || !output.sameSize(image)) output = new ImageShort(image.getName(), image);
+        if (output==null || !output.sameDimensions(image)) output = new ImageShort(image.getName(), image);
         if (image instanceof ImageShort) ImageOperations.pasteImage(image, output, null);
         else {
             for (int z = 0; z<image.getSizeZ(); ++z) {
@@ -73,7 +73,7 @@ public class TypeConverter {
      * @return a new ImageShort values casted as short (if values exceed 65535 they will be equal to 65535) 
      */
     public static ImageByte toByte(Image image, ImageByte output) {
-        if (output==null || !output.sameSize(image)) output = new ImageByte(image.getName(), image);
+        if (output==null || !output.sameDimensions(image)) output = new ImageByte(image.getName(), image);
         if (image instanceof ImageByte) ImageOperations.pasteImage(image, output, null);
         else {
             for (int z = 0; z<image.getSizeZ(); ++z) {
@@ -97,7 +97,7 @@ public class TypeConverter {
      * @return a mask represented as an ImageByte, each non-zero voxel of {@param image} has a value of {@param value}
      */
     public static ImageByte toByteMask(ImageMask image, ImageByte output, int value) {
-        if (output==null || !output.sameSize(image)) output = new ImageByte(image.getName(), image);
+        if (output==null || !output.sameDimensions(image)) output = new ImageByte(image.getName(), image);
         if (value>255) value = 255;
         if (value<0) value = 0;
         byte  v = (byte)value;

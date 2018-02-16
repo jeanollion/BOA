@@ -29,7 +29,7 @@ import boa.plugins.ObjectFeature;
 public abstract class SimpleObjectFeature implements ObjectFeature {
     protected StructureObject parent;
     protected int childStructureIdx;
-    public Parameter[] getParameters() {
+    @Override public Parameter[] getParameters() {
         return new Parameter[0];
     }
 

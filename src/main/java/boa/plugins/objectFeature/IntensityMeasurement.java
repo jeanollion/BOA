@@ -39,7 +39,6 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
     protected IntensityMeasurementCore core;
     protected StructureParameter intensity = new StructureParameter("Intensity").setAutoConfiguration(true);
     protected Image intensityMap;
-    protected StructureObject parent;
     public IntensityMeasurement setIntensityStructure(int structureIdx) {
         this.intensity.setSelectedStructureIdx(structureIdx);
         return this;

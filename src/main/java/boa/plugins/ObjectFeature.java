@@ -30,6 +30,12 @@ import boa.image.BoundingBox;
 public interface ObjectFeature extends Plugin {
     @Override public Parameter[] getParameters();
     public ObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation);
-    public double performMeasurement(Region object, BoundingBox offset);
+    /**
+     * Performs a scalar measurement on a region
+     * Region's landmark will be used, so if it is in relative landmark, the images used should be of the same dimension as the parent mask 
+     * @param region
+     * @return performed measurement. 
+     */
+    public double performMeasurement(Region region);
     public String getDefaultName();
 }

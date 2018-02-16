@@ -27,12 +27,12 @@ import boa.image.BoundingBox;
  */
 public class Min extends IntensityMeasurement {
 
-    public double performMeasurement(Region object, BoundingBox offset) {
-        return core.getIntensityMeasurements(object, offset).min;
+    @Override public double performMeasurement(Region object) {
+        return core.getIntensityMeasurements(object).min;
     }
 
-    public String getDefaultName() {
-        return "min";
+    @Override public String getDefaultName() {
+        return "Min";
     }
     
 }

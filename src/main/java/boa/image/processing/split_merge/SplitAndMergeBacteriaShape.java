@@ -151,7 +151,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         WatershedTransform wt = new WatershedTransform(distanceMap, segmentationMask, ImageLabeller.labelImageList(seeds), true, null, sfc);
         wt.setLowConnectivity(true);
         wt.runDirectSegmentation();
-        RegionPopulation popWS = wt.getObjectPopulation();
+        RegionPopulation popWS = wt.getRegionPopulation();
         
         if (testMode) {
             popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);

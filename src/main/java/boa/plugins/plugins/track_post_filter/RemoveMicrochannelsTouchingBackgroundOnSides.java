@@ -86,7 +86,7 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
             cutObject = new Region(new BlankMask("", bds.getSizeX(), bds.getSizeY()-2*XMargin, bds.getSizeZ(), bds.getxMin(), bds.getyMin()+XMargin, bds.getzMin(), object.getScaleXY(), object.getScaleZ()), cutObject.getLabel(), cutObject.is2D());
         }
         for (Region o : bck.getRegions()) {
-            int inter = o.getIntersectionCountMaskMask(cutObject, null, null);
+            int inter = o.getOverlapMaskMask(cutObject, null, null);
             if (inter>0) {
                 logger.debug("remove track: {} (object: {}), intersection with bck object: {}", object, cutObject.getBounds(), inter);
                 return true;

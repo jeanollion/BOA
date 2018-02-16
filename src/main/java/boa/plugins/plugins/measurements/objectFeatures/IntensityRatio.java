@@ -29,19 +29,19 @@ import boa.utils.Utils;
 public class IntensityRatio extends SNR {
     
     
-    @Override public double performMeasurement(Region object, BoundingBox offset) {
+    @Override public double performMeasurement(Region object) {
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
         Region parentObject; 
-        if (childrenParentMap==null) parentObject = super.parent.getObject();
-        else parentObject=this.childrenParentMap.get(object);
+        if (foregroundMapBackground==null) parentObject = super.parent.getObject();
+        else parentObject=this.foregroundMapBackground.get(object);
         if (parentObject==null) return 0;
-        IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, null);
-        double fore = super.core.getIntensityMeasurements(object, offset).mean;
+        IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject);
+        double fore = super.core.getIntensityMeasurements(object).mean;
         return fore/iParent.mean ;
     }
 
     @Override public String getDefaultName() {
-        return "intensity ratio";
+        return "IntensityRatio";
     }
     
 }

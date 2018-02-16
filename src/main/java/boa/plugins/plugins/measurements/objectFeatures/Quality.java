@@ -40,7 +40,7 @@ public class Quality implements ObjectFeature {
     }
 
     @Override
-    public double performMeasurement(Region object, BoundingBox offset) {
+    public double performMeasurement(Region object) {
         double quality = object.getQuality();
         if (Double.isInfinite(quality)) return Double.NaN; // not measured
         return quality;

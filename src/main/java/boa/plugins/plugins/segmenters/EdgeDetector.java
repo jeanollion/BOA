@@ -167,7 +167,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
         WatershedTransform wt = new WatershedTransform(getWsMap(input, mask), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, mask))), false, null, sfc);
         wt.setLowConnectivity(false);
         wt.run();
-        RegionPopulation res =  wt.getObjectPopulation();
+        RegionPopulation res =  wt.getRegionPopulation();
         if (testMode) {
             ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("Segmented Regions"));
             ImageWindowManagerFactory.showImage(seedMap.setName("Seeds"));

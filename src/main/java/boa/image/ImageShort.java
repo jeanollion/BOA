@@ -55,7 +55,10 @@ public class ImageShort extends ImageInteger {
             if (z<0 || z>=sizeZ || z+offsetZ-mask.getOffsetZ()<0 || z+offsetZ-mask.getOffsetZ()>=mask.getSizeZ()) return DoubleStream.empty();
             BoundingBox inter = getBoundingBox().getIntersection2D(mask.getBoundingBox());
             if (inter.getSizeXY()==0) return DoubleStream.empty();
-            if (inter.equals(this) && inter.equals(mask)) return IntStream.range(0,sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
+            if (inter.equals(this) && inter.equals(mask)) {
+                if (mask instanceof BlankMask) return this.streamPlane(z);
+                else return IntStream.range(0,sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
+            }
             else { // loop within intersection
                 int sX = inter.getSizeX();
                 int offX = inter.getxMin();
@@ -71,7 +74,10 @@ public class ImageShort extends ImageInteger {
             if (z<0 || z>=sizeZ || z-mask.getOffsetZ()<0 || z-mask.getOffsetZ()>mask.getSizeZ()) return DoubleStream.empty();
             BoundingBox inter = getBoundingBox().translateToOrigin().getIntersection2D(mask.getBoundingBox());
             if (inter.getSizeXY()==0) return DoubleStream.empty();
-            if (inter.equals(mask) && inter.sameSize(this)) return IntStream.range(0, sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
+            if (inter.equals(mask) && inter.sameDimensions(this)) {
+                if (mask instanceof BlankMask) return this.streamPlane(z);
+                else return IntStream.range(0, sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
+            }
             else {
                 int sX = inter.getSizeX();
                 int offX = inter.getxMin();
@@ -92,7 +98,10 @@ public class ImageShort extends ImageInteger {
             if (z<0 || z>=sizeZ || z+offsetZ-mask.getOffsetZ()<0 || z+offsetZ-mask.getOffsetZ()>=mask.getSizeZ()) return IntStream.empty();
             BoundingBox inter = getBoundingBox().getIntersection2D(mask.getBoundingBox());
             if (inter.getSizeXY()==0) return IntStream.empty();
-            if (inter.equals(this) && inter.equals(mask)) return IntStream.range(0,sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+            if (inter.equals(this) && inter.equals(mask)) {
+                if (mask instanceof BlankMask) return this.streamIntPlane(z);
+                else return IntStream.range(0,sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+            }
             else { // loop within intersection
                 int sX = inter.getSizeX();
                 int offX = inter.getxMin();
@@ -108,7 +117,10 @@ public class ImageShort extends ImageInteger {
             if (z<0 || z>=sizeZ || z-mask.getOffsetZ()<0 || z-mask.getOffsetZ()>mask.getSizeZ()) return IntStream.empty();
             BoundingBox inter = getBoundingBox().translateToOrigin().getIntersection2D(mask.getBoundingBox());
             if (inter.getSizeXY()==0) return IntStream.empty();
-            if (inter.equals(mask) && inter.sameSize(this)) return IntStream.range(0, sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+            if (inter.equals(mask) && inter.sameDimensions(this)) {
+                if (mask instanceof BlankMask) return this.streamIntPlane(z);
+                else return IntStream.range(0, sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+            }
             else {
                 int sX = inter.getSizeX();
                 int offX = inter.getxMin();

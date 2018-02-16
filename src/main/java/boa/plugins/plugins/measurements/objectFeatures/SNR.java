@@ -48,21 +48,21 @@ import boa.utils.Utils;
  * @author jollion
  */
 public class SNR extends IntensityMeasurement {
-    protected SiblingStructureParameter backgroundObject = new SiblingStructureParameter("Background Object", true).setAutoConfiguration(true);
-    protected BoundedNumberParameter dilateExcluded = new BoundedNumberParameter("Radius for excluded structure dillatation", 1, 1, 0, null);
-    protected BoundedNumberParameter erodeBorders = new BoundedNumberParameter("Radius for border erosion", 1, 1, 0, null);
+    protected StructureParameter backgroundStructure = new StructureParameter("Background Structure");//.setAutoConfiguration(true);
+    protected BoundedNumberParameter dilateExcluded = new BoundedNumberParameter("Dilatation radius for foreground object", 1, 1, 0, null).setToolTipText("Dilated foreground object will be excluded from background mask");
+    protected BoundedNumberParameter erodeBorders = new BoundedNumberParameter("Radius for background mask erosion", 1, 1, 0, null).setToolTipText("Background mask will be erored in order to avoid border effects");
     protected ChoiceParameter formula = new ChoiceParameter("Formula", new String[]{"(F-B)/sd(B)", "F-B"}, "(F-B)/sd(B)", false);
     protected ChoiceParameter foregroundFormula = new ChoiceParameter("Foreground", new String[]{"mean", "max", "value at center"}, "mean", false);
-    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject, formula, foregroundFormula, dilateExcluded, erodeBorders};}
-    HashMap<Region, Region> childrenParentMap;
-    BoundingBox childrenOffset;
+    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundStructure, formula, foregroundFormula, dilateExcluded, erodeBorders};}
+    HashMap<Region, Region> foregroundMapBackground;
+    BoundingBox foregorundOffset;
     BoundingBox parentOffsetRev;
     public SNR() {}
     public SNR(int backgroundStructureIdx) {
-        backgroundObject.setSelectedStructureIdx(backgroundStructureIdx);
+        backgroundStructure.setSelectedStructureIdx(backgroundStructureIdx);
     }
     public SNR setBackgroundObjectStructureIdx(int structureIdx) {
-        backgroundObject.setSelectedStructureIdx(structureIdx);
+        backgroundStructure.setSelectedStructureIdx(structureIdx);
         return this;
     }
     public SNR setRadii(double dilateRadius, double erodeRadius) {
@@ -75,75 +75,69 @@ public class SNR extends IntensityMeasurement {
         this.foregroundFormula.setSelectedIndex(foreground);
         return this;
     }
-    @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
-        super.setUp(parent, childStructureIdx, childPopulation);
-        if (childPopulation.getRegions().isEmpty()) return this;
-        if (!childPopulation.isAbsoluteLandmark()) childrenOffset = parent.getBounds(); // the step it still at processing, thus their offset of objects is related to their direct parent
-        else childrenOffset = new BoundingBox(0, 0, 0); // absolute offsets
+    @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, RegionPopulation foregroundPopulation) {
+        super.setUp(parent, childStructureIdx, foregroundPopulation);
+        if (foregroundPopulation.getRegions().isEmpty()) return this;
+        if (!foregroundPopulation.isAbsoluteLandmark()) foregorundOffset = parent.getBounds(); // the step it still at processing, thus their offset of objects is related to their direct parent
+        else foregorundOffset = new BoundingBox(0, 0, 0); // absolute offsets
         parentOffsetRev = parent.getBounds().duplicate().reverseOffset();
         
-        // get parents
-        List<Region> parents;
-        if (backgroundObject.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
-            parents = parent.getObjectPopulation(backgroundObject.getSelectedStructureIdx()).getRegions();
+        List<Region> backgroundObjects;
+        if (backgroundStructure.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
+            backgroundObjects = parent.getObjectPopulation(backgroundStructure.getSelectedStructureIdx()).getRegions();
         } else {
-            parents = new ArrayList<Region>(1);
-            parents.add(parent.getObject());
+            backgroundObjects = new ArrayList<>(1);
+            backgroundObjects.add(parent.getObject());
         }
         double erodeRad= this.erodeBorders.getValue().doubleValue();
         double dilRad = this.dilateExcluded.getValue().doubleValue();
         // assign parents to children by inclusion
-        HashMapGetCreate<Region, List<Pair<Region, Region>>> parentChildrenMap = new HashMapGetCreate<>(parents.size(), new HashMapGetCreate.ListFactory());
-        for (Region o : childPopulation.getRegions()) {
-            Region p = StructureObjectUtils.getInclusionParent(o, parents, childrenOffset, null);
+        HashMapGetCreate<Region, List<Pair<Region, Region>>> backgroundMapForeground = new HashMapGetCreate<>(backgroundObjects.size(), new HashMapGetCreate.ListFactory());
+        for (Region o : foregroundPopulation.getRegions()) {
+            Region p = o.getContainer(backgroundObjects, foregorundOffset, null); // parents are in absolute offset
             if (p!=null) {
                 Region oDil = o;
                 if (dilRad>0)  {
                     ImageInteger oMask = o.getMask();
                     oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilRad, dilRad, oMask), false, true);
-                    oDil = new Region(oMask, 1, o.is2D());
+                    oDil = new Region(oMask, 1, o.is2D()).setIsAbsoluteLandmark(o.isAbsoluteLandMark());
                 }
-                parentChildrenMap.getAndCreateIfNecessary(p).add(new Pair(o, oDil));
+                backgroundMapForeground.getAndCreateIfNecessary(p).add(new Pair(o, oDil));
             }
         }
         
         // remove foreground objects from background mask & erodeit
-        childrenParentMap = new HashMap<Region, Region>();
-        for (Region p : parents) {
-            ImageMask ref = p.getMask();
-            List<Pair<Region, Region>> children = parentChildrenMap.get(p);
+        foregroundMapBackground = new HashMap<>();
+        for (Region backgroundRegion : backgroundObjects) {
+            ImageMask ref = backgroundRegion.getMask();
+            List<Pair<Region, Region>> children = backgroundMapForeground.get(backgroundRegion);
             if (children!=null) {
                 ImageByte mask  = TypeConverter.toByteMask(ref, null, 1).setName("SNR mask");
-                for (Pair<Region, Region> o : parentChildrenMap.get(p)) o.value.draw(mask, 0, childrenOffset);
-                /*if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) {
-                    for (Region o : parentChildrenMap.get(p)) o.draw(mask, 0);
-                } else {
-                    for (Region o : parentChildrenMap.get(p)) o.draw(mask, 0, childrenOffset);
-                }*/
+                for (Pair<Region, Region> o : backgroundMapForeground.get(backgroundRegion)) o.value.draw(mask, 0, foregorundOffset);// was with offset: absolute = 0 / relative = parent
                 if (erodeRad>0) {
-                    ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(erodeRad, erodeRad, mask), true); // erode mask // TODO dillate objects?
+                    ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(erodeRad, erodeRad, mask), true); // erode mask // TODO dilate objects?
                     if (maskErode.count()>0) mask = maskErode;
                 }
-                Region parentObject = new Region(mask, 1, p.is2D());
-                for (Pair<Region, Region> o : children) childrenParentMap.put(o.key, parentObject);
+                Region modifiedBackgroundRegion = new Region(mask, 1, backgroundRegion.is2D()).setIsAbsoluteLandmark(true);
+                for (Pair<Region, Region> o : children) foregroundMapBackground.put(o.key, modifiedBackgroundRegion);
                 
                 //ImageWindowManagerFactory.showImage( mask);
             }
-            
         }
+        //logger.debug("init SNR: (s: {}/b:{}) foreground with back: {}/{}", intensity.getSelectedStructureIdx(), this.backgroundStructure.getSelectedStructureIdx(), foregroundMapBackground.size(), foregroundPopulation.getRegions().size());
         return this;
     }
     @Override
-    public double performMeasurement(Region object, BoundingBox offset) {
+    public double performMeasurement(Region object) {
         
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
         Region parentObject; 
-        if (childrenParentMap==null) parentObject = super.parent.getObject();
-        else parentObject=this.childrenParentMap.get(object);
+        if (foregroundMapBackground==null) parentObject = super.parent.getObject();
+        else parentObject=this.foregroundMapBackground.get(object);
         if (parentObject==null) return 0;
-        IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, null);
-        IntensityMeasurements fore = super.core.getIntensityMeasurements(object, offset);
-        //logger.debug("SNR: object: {}, value: {}, fore:{}, back I: {} back SD: {}", object.getLabel(), (fore-iParent.mean ) / iParent.sd, fore, iParent.mean, iParent.sd);
+        IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject);
+        IntensityMeasurements fore = super.core.getIntensityMeasurements(object);
+        //logger.debug("SNR: parent: {} object: {}, value: {}, fore:{}, back I: {} back SD: {}", super.parent, object.getLabel(), getValue(getForeValue(fore), iParent.mean, iParent.sd), getForeValue(fore), iParent.mean, iParent.sd);
         return getValue(getForeValue(fore), iParent.mean, iParent.sd);
     }
     
@@ -161,8 +155,8 @@ public class SNR extends IntensityMeasurement {
         else return fore-back;
     }
 
-    public String getDefaultName() {
-        return "snr";
+    @Override public String getDefaultName() {
+        return "SNR";
     }
     
 }

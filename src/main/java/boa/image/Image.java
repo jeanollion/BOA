@@ -158,12 +158,12 @@ public abstract class Image implements ImageProperties {
         Iterator<T> it = images.iterator();
         T ref=it.next();
         while(it.hasNext()) {
-            if (!it.next().sameSize(ref)) return false;
+            if (!it.next().sameDimensions(ref)) return false;
         }
         return true;
     }
     @Override
-    public boolean sameSize(ImageProperties other) {
+    public boolean sameDimensions(ImageProperties other) {
         return sizeX==other.getSizeX() && sizeY==other.getSizeY() && sizeZ==other.getSizeZ();
     }
     

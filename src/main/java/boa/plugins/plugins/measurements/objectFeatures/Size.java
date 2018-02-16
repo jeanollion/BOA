@@ -46,7 +46,7 @@ public class Size implements ObjectFeature {
     }
 
     @Override
-    public double performMeasurement(Region object, BoundingBox offset) {
+    public double performMeasurement(Region object) {
         double size = object.getSize();
         if (scaled.getSelectedIndex()==1) {
             size*=Math.pow(object.getScaleXY(), 2);

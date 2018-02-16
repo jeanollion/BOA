@@ -18,6 +18,6 @@ public interface ImageProperties {
     public boolean contains(int xy, int z);
     public boolean containsWithOffset(int xy, int z);
     public BoundingBox getBoundingBox();
-    public boolean sameSize(ImageProperties image);
+    public boolean sameDimensions(ImageProperties image);
     public ImageProperties getProperties();
 }

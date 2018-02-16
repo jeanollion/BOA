@@ -99,7 +99,7 @@ public class ObjectInclusionCount implements Measurement {
                 if (proportionInclusion==0) ++count;
                 else {
                     if (o.getObject().getVoxels().isEmpty()) continue;
-                    double incl = (double)o.getObject().getIntersectionCountMaskMask(containerObject, null, null) / (double)o.getObject().getVoxels().size();
+                    double incl = (double)o.getObject().getOverlapMaskMask(containerObject, null, null) / (double)o.getObject().getVoxels().size();
                     //logger.debug("inclusion: {}, threshold: {}, container: {}, parent:{}", incl, percentageInclusion, container, o.getParent());
                     if (incl>=proportionInclusion) ++count;
                 }

@@ -144,8 +144,8 @@ public class ImageMask2D implements ImageMask {
     }
 
     @Override
-    public boolean sameSize(ImageProperties image) {
-        return mask.sameSize(image);
+    public boolean sameDimensions(ImageProperties image) {
+        return mask.sameDimensions(image);
     }
 
     @Override

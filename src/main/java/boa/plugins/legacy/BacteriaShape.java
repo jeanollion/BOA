@@ -28,6 +28,7 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.image.BlankMask;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
@@ -214,7 +215,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         WatershedTransform wt = new WatershedTransform(wsMap, mask, Arrays.asList(ImageLabeller.labelImage(seeds)), false, null, sfc);
         wt.setLowConnectivity(false); // was false
         wt.run();
-        return wt.getObjectPopulation();
+        return wt.getRegionPopulation();
     }
     
     public static List<Region> getSideBackgroundRegions(RegionPopulation pop) {
@@ -276,7 +277,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         SplitAndMergeBacteriaShape sam = new SplitAndMergeBacteriaShape(input);
         sam.ignoreEndOfChannelRegionWhenMerginSmallRegions = false;
         sam.testMode=testMode;
-        RegionPopulation mergePop = new RegionPopulation(objects, input, false);
+        RegionPopulation mergePop = new RegionPopulation(objects, new BlankMask(input).resetOffset());
         RegionCluster<SplitAndMergeBacteriaShape.InterfaceLocalShape> c = new RegionCluster(mergePop, false, true, sam.getFactory());
         List<Set<Region>> clusters = c.getClusters();
         if (clusters.size()>1) return Double.POSITIVE_INFINITY;

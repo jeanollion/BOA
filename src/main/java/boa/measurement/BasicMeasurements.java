@@ -65,9 +65,9 @@ public class BasicMeasurements {
         if (object.voxelsCreated()) return sum/(double)object.getVoxels().size();
         else return sum/(double)object.getMask().count();
     }
-    public static double getMeanValue(Collection<Voxel> voxels, Image image, boolean useOffset) {
+    public static double getMeanValue(Collection<Voxel> voxels, Image image, boolean voxelsInAbsoluteLandMark) {
         double value=0;
-        if (useOffset) for (Voxel v : voxels) value+=image.getPixelWithOffset(v.x, v.y, v.z);
+        if (voxelsInAbsoluteLandMark) for (Voxel v : voxels) value+=image.getPixelWithOffset(v.x, v.y, v.z);
         else for (Voxel v : voxels) value+=image.getPixel(v.x, v.y, v.z);
         return value/(double)voxels.size();
     }

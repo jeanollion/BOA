@@ -834,7 +834,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public void setPreFilteredImage(Image image, int structureIdx) {
         if (image!=null) {
-            if (!image.sameSize(getMask())) throw new IllegalArgumentException("PreFiltered Image should have same dimensions as object");
+            if (!image.sameDimensions(getMask())) throw new IllegalArgumentException("PreFiltered Image should have same dimensions as object");
             image.setCalibration(getMask());
             image.resetOffset().addOffset(getBounds()); // ensure same offset
         }
@@ -919,17 +919,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public BoundingBox getRelativeBoundingBox(StructureObject stop) throws RuntimeException {
-        /*if (stop==null) stop=getRoot();
-        BoundingBox res = getObject().getBounds().duplicate();
-        if (this.equals(stop)) return res.translateToOrigin();
-        StructureObject nextParent=this.getParent();
-        while(!stop.equals(nextParent)) {
-            res.translate(nextParent.getObject().getBounds());
-            nextParent=nextParent.getParent();
-            if (nextParent==null) throw new RuntimeException("GetRelativeBoundingBoxError: stop structure object is not in parent tree");
-            
-        }
-        return res;*/
         BoundingBox res = getObject().getBounds().duplicate();
         if (stop==null || stop == getRoot()) return res;
         else return res.translate(stop.getBounds().duplicate().reverseOffset());
@@ -960,7 +949,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         else {
             ArrayList<Region> objects = new ArrayList<>(child.size());
             for (StructureObject s : child) objects.add(s.getObject());
-            return new RegionPopulation(objects, this.getMaskProperties(), true);
+            return new RegionPopulation(objects, this.getMaskProperties());
         }
     }
     public void setAttributeList(String key, List<Double> value) {

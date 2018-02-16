@@ -27,6 +27,7 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
+import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.plugins.MultiThreaded;
@@ -189,7 +190,7 @@ public class SegmentOnly implements ProcessingScheme {
             }
             RegionPopulation pop=null;
             for (Entry<StructureObject, List<Region>> e : parentObjectMap.entrySet()) {
-                pop = new RegionPopulation(e.getValue(), e.getKey().getRawImage(structureIdx), true); // should keep 3D information
+                pop = new RegionPopulation(e.getValue(), e.getKey().getRawImage(structureIdx)); 
                 e.getKey().setChildrenObjects(pop, structureIdx);
             }
             if (singleFrame) {

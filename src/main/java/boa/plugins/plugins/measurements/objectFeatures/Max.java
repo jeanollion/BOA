@@ -27,12 +27,12 @@ import boa.image.BoundingBox;
  */
 public class Max extends IntensityMeasurement {
 
-    public double performMeasurement(Region object, BoundingBox offset) {
-        return core.getIntensityMeasurements(object, offset).max;
+    @Override public double performMeasurement(Region object) {
+        return core.getIntensityMeasurements(object).max;
     }
 
-    public String getDefaultName() {
-        return "max";
+    @Override public String getDefaultName() {
+        return "Max";
     }
     
 }

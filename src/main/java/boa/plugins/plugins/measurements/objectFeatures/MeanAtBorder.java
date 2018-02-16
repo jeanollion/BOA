@@ -22,6 +22,7 @@ import boa.data_structure.Region;
 import boa.data_structure.Voxel;
 import boa.image.BoundingBox;
 import boa.image.Image;
+import boa.measurement.BasicMeasurements;
 
 /**
  *
@@ -29,15 +30,8 @@ import boa.image.Image;
  */
 public class MeanAtBorder extends IntensityMeasurement {
     @Override
-    public double performMeasurement(Region object, BoundingBox offset) {
-        Image im = core.getIntensityMap(true);
-        if (offset==null) offset=new BoundingBox(0, 0, 0);
-        int offX=offset.getxMin()-intensityMap.getOffsetX();
-        int offY=offset.getyMin()-intensityMap.getOffsetY();
-        int offZ=offset.getzMin()-intensityMap.getOffsetZ();
-        double sum = 0;
-        for (Voxel v : object.getContour()) sum += im.getPixel(v.x+offX, v.y+offY, v.z+offZ);
-        return sum/=object.getContour().size();
+    public double performMeasurement(Region object) {
+        return BasicMeasurements.getMeanValue(object.getContour(), core.getIntensityMap(true), object.isAbsoluteLandMark());
     }
     @Override
     public String getDefaultName() {

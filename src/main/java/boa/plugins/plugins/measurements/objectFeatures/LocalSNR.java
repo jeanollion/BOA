@@ -46,9 +46,9 @@ import boa.utils.Utils;
  * @author jollion
  */
 public class LocalSNR extends SNR {
-    protected BoundedNumberParameter localBackgroundRadius = new BoundedNumberParameter("Local background radius", 1, 8, 0, null);
+    protected BoundedNumberParameter localBackgroundRadius = new BoundedNumberParameter("Local background radius", 1, 8, 0, null).setToolTipText("Defines the local background area, by dilating the foreground region with this radius and removing the foreground region from the dilated region");
     public static boolean debug;
-    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject, formula, foregroundFormula, dilateExcluded, erodeBorders, localBackgroundRadius};}
+    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundStructure, formula, foregroundFormula, dilateExcluded, erodeBorders, localBackgroundRadius};}
     public LocalSNR() {}
     
     public LocalSNR(int backgroundStructureIdx) {
@@ -58,26 +58,26 @@ public class LocalSNR extends SNR {
         localBackgroundRadius.setValue(backgroundRadius);
         return this;
     }
-    @Override public double performMeasurement(final Region object, BoundingBox offset) {
+    @Override public double performMeasurement(final Region object) {
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
-        if (offset==null) offset=new BoundingBox(0, 0, 0);
-        final Region parentObject; 
-        if (childrenParentMap==null) parentObject = super.parent.getObject();
-        else parentObject=this.childrenParentMap.get(object);
-        if (parentObject==null) return 0;
+        BoundingBox offset = object.isAbsoluteLandMark() ? new BoundingBox(0, 0, 0) : super.parent.getBounds();
+        final Region backgroundObject; 
+        if (foregroundMapBackground==null) backgroundObject = super.parent.getObject();
+        else backgroundObject=this.foregroundMapBackground.get(object);
+        if (backgroundObject==null) return 0;
         
         // create mask
-        ImageByte bckMask  = TypeConverter.toByteMask(object.getMask(), null, 1).setName("mask:");
-        bckMask.addOffset(offset);
-        bckMask = Filters.binaryMax(bckMask, null, Filters.getNeighborhood(localBackgroundRadius.getValue().doubleValue(), localBackgroundRadius.getValue().doubleValue(), bckMask), false, true);
-        ImageOperations.andWithOffset(bckMask, parentObject.getMask(), bckMask);
-        double[] meanSdBck = ImageOperations.getMeanAndSigmaWithOffset(intensityMap, bckMask, null);
-        IntensityMeasurements fore = super.core.getIntensityMeasurements(object, offset);
+        ImageByte localBackgroundMask  = TypeConverter.toByteMask(object.getMask(), null, 1).setName("mask:");
+        localBackgroundMask.addOffset(offset); // so that local background mask is in absolute landmark
+        localBackgroundMask = Filters.binaryMax(localBackgroundMask, null, Filters.getNeighborhood(localBackgroundRadius.getValue().doubleValue(), localBackgroundMask), false, true);
+        ImageOperations.andWithOffset(localBackgroundMask, backgroundObject.getMask(), localBackgroundMask); // do not dilate outside backgorund mask
+        double[] meanSdBck = ImageOperations.getMeanAndSigmaWithOffset(intensityMap, localBackgroundMask, null);
+        IntensityMeasurements fore = super.core.getIntensityMeasurements(object);
         
         double d = getValue(getForeValue(fore), meanSdBck[0], meanSdBck[1]);
         if (debug) {
-            logger.debug("SNR local object: {}, value: {}, rad: {}, count: {}, objectCount: {}, fore: {}, sd:{}, back: {}, sd: {}", object.getLabel(), d, localBackgroundRadius.getValue().doubleValue(), bckMask.count(), object.getMask().count(), fore.mean, fore.sd, meanSdBck[0], meanSdBck[1]);
-            ImageWindowManagerFactory.showImage(bckMask);
+            logger.debug("SNR local object: {}, value: {}, rad: {}, count: {}, objectCount: {}, fore: {}, sd:{}, back: {}, sd: {}", object.getLabel(), d, localBackgroundRadius.getValue().doubleValue(), localBackgroundMask.count(), object.getMask().count(), fore.mean, fore.sd, meanSdBck[0], meanSdBck[1]);
+            ImageWindowManagerFactory.showImage(localBackgroundMask);
         }
         return d;
         

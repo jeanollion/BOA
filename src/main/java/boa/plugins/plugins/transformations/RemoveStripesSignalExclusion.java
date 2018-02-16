@@ -213,7 +213,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
         return res;
     }
     public static Image removeMeanX(Image source, Image output, float[][] muZY) {
-        if (output==null || !output.sameSize(source)) {
+        if (output==null || !output.sameDimensions(source)) {
             output = new ImageFloat("", source);
         }
         for (int z = 0; z<output.getSizeZ(); ++z) {

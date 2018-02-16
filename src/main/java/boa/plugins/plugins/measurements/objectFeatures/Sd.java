@@ -27,8 +27,8 @@ import boa.image.BoundingBox;
  */
 public class Sd extends IntensityMeasurement {
 
-    public double performMeasurement(Region object, BoundingBox offset) {
-        return core.getIntensityMeasurements(object, offset).sd;
+    public double performMeasurement(Region object) {
+        return core.getIntensityMeasurements(object).sd;
     }
 
     public String getDefaultName() {
