@@ -3281,12 +3281,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         String config = promptDir("Select configuration file (or zip containing config file)", defDir, false);
         if (config==null) return;
-        File configF = new File(config);
+        if (!new File(config).isFile()) {
+            log("Select config file");
+            return;
+        }
+        if (!config.endsWith(".zip") && !config.endsWith(".json") && !config.endsWith(".txt")) {
+            log("Config file should en in .zip, .json or .txt");
+            return;
+        }
         List<String> dbNames = getDBNames();
-        Map<String, File> allXps = DBUtil.listExperiments(configF.getAbsolutePath(), false, null);
-        //Map<String, File> allXps = ImportExportJSON.listExperiments(configF.getAbsolutePath());
-        if (allXps.size()==1) {
-            String name = JOptionPane.showInputDialog("New XP name:", allXps.keySet().iterator().next());
+        Experiment xp = FileIO.readFisrtFromFile(config, s->JSONUtils.parse(Experiment.class, s));
+        String name=null;
+        if (xp!=null) {
+            name = JOptionPane.showInputDialog("New XP name:", Utils.removeExtension(new File(config).getName()));
             if (name==null) return;
             name = DBUtil.addPrefix(name, currentDBPrefix);
             if (!Utils.isValid(name, false)) {
@@ -3295,21 +3302,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             } else if (dbNames.contains(name)) {
                 log("XP already present");
                 return;
-            } else {
-                File f = allXps.values().iterator().next();
-                allXps.clear();
-                allXps.put(name, f);
-            }
+            } 
         } else {
-            log("Select only one file");
+            log("No xp found in file");
             return;
         }
-        for (String xp : allXps.keySet()) {
-            File zip = allXps.get(xp);
-            MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
-            mDAO.deleteAllObjects();
-            ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, false, false, false, false, ProgressCallback.get(instance));
-        }
+        MasterDAO mDAO = MasterDAOFactory.createDAO(name, this.getHostNameOrDir(name));
+        mDAO.deleteAllObjects();
+        ImportExportJSON.importFromFile(config, mDAO, true, false, false, false, false, ProgressCallback.get(instance));
+        
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, config);
     }//GEN-LAST:event_newXPFromTemplateMenuItemActionPerformed

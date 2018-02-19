@@ -114,15 +114,15 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         this.channelKeywords = channelKeywords;
         this.timeKeyword = timeKeyword;
         this.frameNumber = frameNumber;
-        initTimePointMap();
+        createFileMap();
         if (sizeZC==null) {
             int maxZ = -1;
-            sizeZC = new int[channelKeywords.length]; 
-            for (int channelNumber=0; channelNumber<sizeZC.length; ++channelNumber) {
+            this.sizeZC = new int[channelKeywords.length]; 
+            for (int channelNumber=0; channelNumber<this.sizeZC.length; ++channelNumber) {
                 ImageReader reader = new ImageReader(fileCT.get(channelNumber).get(0));
-                sizeZC[channelNumber] = reader.getSTCXYZNumbers()[0][4];
-                if (scaleXY<=0 && sizeZC[channelNumber]>maxZ) {
-                    maxZ =  sizeZC[channelNumber];
+                this.sizeZC[channelNumber] = reader.getSTCXYZNumbers()[0][4];
+                if (scaleXY<=0 && this.sizeZC[channelNumber]>maxZ) {
+                    maxZ =  this.sizeZC[channelNumber];
                     double[] sXYZ = reader.getScaleXYZ(1);
                     this.scaleXY = sXYZ[0];
                     this.scaleZ = sXYZ[2];
@@ -131,14 +131,15 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
                 reader.closeReader();
             }
         } else this.sizeZC=sizeZC;
+        logger.debug("sizeZC: {}", this.sizeZC);
         if (this.scaleXY<=0) {
-            ImageReader reader = new ImageReader(fileCT.get( ArrayUtil.max(sizeZC)).get(0));
+            ImageReader reader = new ImageReader(fileCT.get( ArrayUtil.max(this.sizeZC)).get(0));
             double[] sXYZ = reader.getScaleXYZ(1);
             this.scaleXY = sXYZ[0];
             this.scaleZ = sXYZ[2];
             reader.closeReader();
         }
-        
+        initTimePointMap();
         
     }
     public MultipleImageContainerPositionChannelFrame(String inputDir, String extension, String positionKey, String timeKeyword, String[] channelKeywords, int frameNumber) {

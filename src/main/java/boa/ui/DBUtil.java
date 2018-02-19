@@ -85,10 +85,10 @@ public class DBUtil {
         File f = new File(path);
         Map<String, File> configs = new HashMap<>();
         Set<Pair<String, File>> dup = new HashSet<>();
-        if (f.exists() && f.isDirectory()) { // only in directories included in path
+        if (f.isDirectory()) { // only in directories included in path
             File[] sub = f.listFiles(subF -> subF.isDirectory());
             for (File subF : sub) addConfig(subF, configs, dup);
-        }
+        } 
         if (!dup.isEmpty()) {
             for (Pair<String, File> p : dup) {
                 if (excludeDuplicated) configs.remove(p.key);
@@ -99,15 +99,16 @@ public class DBUtil {
     }
     public static void addConfig(File f, Map<String, File> configs, Set<Pair<String, File>> duplicated) {
         renameFromTxtToJSON(f); // TODO retro-compatibility rename txt to json
-        File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.json")); 
+        File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.json")||subF.getName().endsWith("_config.txt")); 
         if (dbs==null) return;
-        for (File c : dbs) {
-            String dbName = removeConfig(c.getName());
-            if (configs.containsKey(dbName)) {
-                duplicated.add(new Pair<>(dbName, c.getParentFile()));
-                duplicated.add(new Pair<>(dbName, configs.get(dbName)));
-            } else configs.put(dbName, c.getParentFile());
-        }
+        for (File c : dbs) addConfigFile(c, configs, duplicated);
+    }
+    private static void addConfigFile(File c, Map<String, File> configs, Set<Pair<String, File>> duplicated) {
+        String dbName = removeConfig(c.getName());
+        if (configs.containsKey(dbName)) {
+            duplicated.add(new Pair<>(dbName, c.getParentFile()));
+            duplicated.add(new Pair<>(dbName, configs.get(dbName)));
+        } else configs.put(dbName, c.getParentFile());
     }
     private static void renameFromTxtToJSON(File f) {
         File[] dbsTXT = f.listFiles(subF -> subF.getName().endsWith("_config.txt"));

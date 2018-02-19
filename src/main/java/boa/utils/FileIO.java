@@ -110,7 +110,12 @@ public class FileIO {
             logger.debug("Error while writing list to file", ex);
         }
     }
-    
+    public static <T> T readFisrtFromFile(String path, Function<String, T> converter) {
+        TextFile tf = new TextFile(path, false, false);
+        String line = tf.readFirstLine();
+        tf.close();
+        return converter.apply(line);
+    }
     public static <T> List<T> readFromFile(String path, Function<String, T> converter) {
         FileReader input = null;
         List<T> res = new ArrayList<>();
