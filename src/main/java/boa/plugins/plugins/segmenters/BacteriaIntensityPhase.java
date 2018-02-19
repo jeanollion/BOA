@@ -18,6 +18,8 @@
 package boa.plugins.plugins.segmenters;
 
 import boa.data_structure.RegionPopulation;
+import boa.data_structure.RegionPopulation.Border;
+import boa.data_structure.RegionPopulation.ContactBorderMask;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
@@ -49,7 +51,7 @@ import java.util.stream.Stream;
 public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackParametrizable<BacteriaIntensityPhase> {
     public BacteriaIntensityPhase() {
         this.splitThreshold.setValue(3.7);
-        this.minSize.setValue(50);
+        this.minSize.setValue(100);
         this.hessianScale.setValue(1.5);
         localThresholdFactor.setToolTipText("Factor defining the local threshold. Lower value of this factor will yield in smaller cells. T = mean_w - sigma_w * (this factor), with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
         localThresholdFactor.setValue(1);
@@ -64,11 +66,11 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             + "local threshold step is performed on the raw images</html>";
     
     @Override public String getToolTipText() {return toolTip;}
-    boolean localNormalization = false; // testing
+    //boolean localNormalization = false; // testing
     @Override public SplitAndMergeHessian initializeSplitAndMerge(Image input, ImageMask foregroundMask) {
         SplitAndMergeHessian sam = super.initializeSplitAndMerge(input, foregroundMask);
-        double sd1 = localNormalization?0:1.5*ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask)[1];
-        double sd = localNormalization?0:ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask, v->v<sd1 && v>-sd1)[1];
+        //double sd1 = localNormalization?0:1.5*ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask)[1];
+        //double sd = localNormalization?0:ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask, v->v<sd1 && v>-sd1)[1];
         //double sd= localNormalization?0:ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask)[1];
         //if (testMode) logger.debug("Hessian normalization first round sd: {} second round sd: {}", sd1/1.5d, sd);
         sam.setInterfaceValue(i-> {
@@ -79,7 +81,11 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
                 double hessSum = 0;
                 for (Voxel v : voxels) hessSum+=hessian.getPixel(v.x, v.y, v.z);
                 double val = hessSum/voxels.size();
-                if (localNormalization) {
+                // normalize using mean value
+                double m1 = sam.getMedianValues().getAndCreateIfNecessary(i.getE1());
+                double m2 = sam.getMedianValues().getAndCreateIfNecessary(i.getE2());
+                val /= Math.max(m1, m2);
+                /*if (localNormalization) {
                     if (true) {
                         DoubleStatistics stats1= DoubleStatistics.getStats(i.getE1().getVoxels().stream().mapToDouble(v->(double)hessian.getPixel(v.x, v.y, v.z))); 
                         double sdLoc1 = Math.sqrt(stats1.getSumOfSquare()/stats1.getCount()); // mean is supposed to be zero
@@ -95,7 +101,8 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
                     }
                 } else {
                     return val/sd; // normalize by global hessian STD 
-                }
+                }*/
+                return val;
             }
         });
         return sam;
@@ -110,6 +117,25 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             if (voidMC.contains(p)) s.isVoid=true; 
             s.minThld=minThld;
         };
+    }
+    @Override
+    protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+        // remove the artefact at the top of the channel
+        Image phaseContrast = parent.getRawImage(structureIdx);
+        // get the mean value within positive regions
+        double[] meanSigma = ImageOperations.getMeanAndSigma(phaseContrast, pop.getLabelMap());
+        double thld = meanSigma[0] + 0.25*meanSigma[1];
+        if (testMode) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, phaseContrast).setName("phase contrast value map: thld: "+ thld));
+        ContactBorderMask f = new ContactBorderMask(1, parent.getMask(), Border.YUp);
+        pop.filter(r->{
+            int contact = f.getContact(r); // consider only objects in contact with the top of the parent mask
+            if (contact == 0) return true;
+            if (contact<r.getVoxels().size()/5) return true;
+            double v = BasicMeasurements.getQuantileValue(r, phaseContrast, 0.5)[0];
+            logger.debug("check phase top artifact: contact: {}/{} mean: {} total foreground: {} (thld:{})", contact, r.getContour().size(), v, meanSigma, thld);
+            return v <= thld;
+        });
+        return pop;
     }
     
     @Override

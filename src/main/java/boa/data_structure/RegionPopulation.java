@@ -897,22 +897,20 @@ public class RegionPopulation {
             return (min < 0 || size >= min) && (max < 0 || size < max);
         }
     }
+    public static enum Border {
+        X(true, true, false, false, false), Xl(true, false, false, false, false), Xr(false, true, false, false, false), Xlr(true, true, false, false, false), Y(false, false, true, true, false), YDown(false, false, false, true, false), YUp(false, false, true, false, false), Z(false, false, false, false, true), XY(true, true, true, true, false), XYup(true, true, true, false, false), XYZ(true, true, true, true, true), XlYup(true, false, true, false, false), XrYup(false, true, true, false, false);            
+        boolean xl, xr, yup, ydown, z;
 
+        private Border(boolean xl, boolean xr, boolean yup, boolean ydown, boolean z) {
+            this.xl = xl;
+            this.xr = xr;
+            this.yup = yup;
+            this.ydown = ydown;
+            this.z = z;
+        }
+    };
     public static class ContactBorder implements Filter {
 
-        public static enum Border {
-
-            X(true, true, false, false, false), Xl(true, false, false, false, false), Xr(false, true, false, false, false), Xlr(true, true, false, false, false), Y(false, false, true, true, false), YDown(false, false, false, true, false), YUp(false, false, true, false, false), Z(false, false, false, false, true), XY(true, true, true, true, false), XYup(true, true, true, false, false), XYZ(true, true, true, true, true), XlYup(true, false, true, false, false), XrYup(false, true, true, false, false);            
-            boolean xl, xr, yup, ydown, z;
-
-            private Border(boolean xl, boolean xr, boolean yup, boolean ydown, boolean z) {
-                this.xl = xl;
-                this.xr = xr;
-                this.yup = yup;
-                this.ydown = ydown;
-                this.z = z;
-            }
-        };
         int contactLimit;
         ImageProperties mask;
         Border border;
@@ -964,7 +962,52 @@ public class RegionPopulation {
             return count;
         }
     }
+    public static class ContactBorderMask implements Filter {
 
+        int contactLimit;
+        ImageMask mask;
+        Border border;
+        public ContactBorderMask(int contactLimit, ImageMask mask, Border border) {
+            this.contactLimit = contactLimit;
+            this.mask = mask;
+            this.border = border;
+        }
+        public ContactBorderMask setLimit(int contactLimit) {
+            this.contactLimit=contactLimit;
+            return this;
+        }
+        public boolean contact(Voxel v) {
+            if (!mask.insideMask(v.x, v.y, v.z)) return false;
+            if (border.xl && (!mask.contains(v.x-1, v.y, v.z) || !mask.insideMask(v.x-1, v.y, v.z))) return true;
+            if (border.xr && (!mask.contains(v.x+1, v.y, v.z) || !mask.insideMask(v.x+1, v.y, v.z))) return true;
+            if (border.yup && (!mask.contains(v.x, v.y-1, v.z) || !mask.insideMask(v.x, v.y-1, v.z))) return true;
+            if (border.ydown && (!mask.contains(v.x, v.y+1, v.z) || !mask.insideMask(v.x, v.y+1, v.z))) return true;
+            if (border.z && (!mask.contains(v.x, v.y, v.z-1) || !mask.insideMask(v.x, v.y, v.z-1) || !mask.contains(v.x, v.y, v.z+1) || !mask.insideMask(v.x, v.y, v.z+1))) return true;
+            return false;
+        }
+        @Override public void init(RegionPopulation population) {}
+        @Override
+        public boolean keepObject(Region object) {
+            if (contactLimit <= 0) {
+                return true;
+            }
+            int count = 0;
+            for (Voxel v : object.getContour()) {
+                if (contact(v)) {
+                    ++count;
+                    if (count>=contactLimit) return false;
+                }
+            }
+            return true;
+        }
+        public int getContact(Region object) {
+            int count = 0;
+            for (Voxel v : object.getContour()) {
+                if (contact(v)) ++count;
+            }
+            return count;
+        }
+    }
     public static class MeanIntensity implements Filter {
 
         double threshold;

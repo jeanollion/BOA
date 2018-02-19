@@ -86,10 +86,10 @@ public interface TrackParametrizable<S extends Segmenter> {
      * @param structureIdx
      * @param preFilteredImages
      * @param thldForVoidMC 
-     * @param outputSet will add the void microchannels inside this set
+     * @param outputVoidMicrochannels will add the void microchannels inside this set
      * @return the minimal threshold
      */
-    public static double getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, double thldForVoidMC, Set<StructureObject> outputSet) {
+    public static double getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, double thldForVoidMC, Set<StructureObject> outputVoidMicrochannels) {
         double bimodalThld = 0.4d;
         float[] thlds = new float[parentTrack.size()];
         int idx = 0;
@@ -118,11 +118,18 @@ public interface TrackParametrizable<S extends Segmenter> {
         logger.debug("test void microchannel otsu: bimodal: diff: {}  bimodal: {}, minValue: {}", diff, diff>bimodalThld, thld);
         if (diff>bimodalThld) { // bimodal
             idx = 0;
-            for (StructureObject s : parentTrack) if (thlds[idx++]<thld) outputSet.add(s);
+            for (StructureObject s : parentTrack) if (thlds[idx++]<thld) outputVoidMicrochannels.add(s);
             return thld;
         }
-        if (thld<thldForVoidMC) outputSet.addAll(parentTrack);
-        return Double.NaN;
+        if (thld<thldForVoidMC) outputVoidMicrochannels.addAll(parentTrack);
+        if (outputVoidMicrochannels.size()==parentTrack.size()) return Double.POSITIVE_INFINITY;
+        //return Double.NaN;
+        // get global otsu thld for images with foreground
+        Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!outputVoidMicrochannels.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
+        Histogram histo = Histogram.getHisto256(imageMapMask, null);
+        double globalThld = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
+        logger.debug("global otsu thld: {}", globalThld);
+        return globalThld;
     }
     
 }

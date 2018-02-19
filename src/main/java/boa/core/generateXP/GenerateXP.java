@@ -575,7 +575,7 @@ public class GenerateXP {
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
                             .setSegmenter(new BacteriaIntensityPhase())
                             .setCostParameters(2, 20)
-                            .setCorrectMotherCell(true)
+                            .setCorrectMotherCell(false)
                     ).addTrackPreFilters(
                         new SubtractBackgroundMicrochannels(),
                         new NormalizeTrack(1, true)

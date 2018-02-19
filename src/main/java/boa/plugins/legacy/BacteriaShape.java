@@ -23,6 +23,7 @@ import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
+import boa.data_structure.RegionPopulation.Border;
 import boa.data_structure.RegionPopulation.ContactBorder;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
@@ -153,8 +154,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         
         if (sideBackground) {
             // erase objects on side (forced during partitioning -> context of microchannels)
-            pop.filter(new ContactBorder(input.getSizeY()/2, input, ContactBorder.Border.Xl)); 
-            pop.filter(new ContactBorder(input.getSizeY()/2, input, ContactBorder.Border.Xr)); 
+            pop.filter(new ContactBorder(input.getSizeY()/2, input, Border.Xl)); 
+            pop.filter(new ContactBorder(input.getSizeY()/2, input, Border.Xr)); 
         }
         pop.filter(removeBackgroundRegions);
         
@@ -219,8 +220,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
     }
     
     public static List<Region> getSideBackgroundRegions(RegionPopulation pop) {
-        ContactBorder left =  new ContactBorder(0, pop.getImageProperties(), ContactBorder.Border.Xl);
-        ContactBorder right =  new ContactBorder(0, pop.getImageProperties(), ContactBorder.Border.Xr);
+        ContactBorder left =  new ContactBorder(0, pop.getImageProperties(), Border.Xl);
+        ContactBorder right =  new ContactBorder(0, pop.getImageProperties(), Border.Xr);
         double thld = pop.getImageProperties().getSizeY()/2d;
         return pop.getRegions().stream().filter(r-> left.getContact(r)>thld||right.getContact(r)>thld).collect(Collectors.toList());
     }
@@ -236,8 +237,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
         public FilterSideBackground(double sizeXProportion, double contactYProportion, ImageProperties image) {
             this.sizeXProportion=sizeXProportion;
             this.contactYProportion=contactYProportion;
-            left =  new ContactBorder(0, image, ContactBorder.Border.Xl);
-            right =  new ContactBorder(0, image, ContactBorder.Border.Xr);
+            left =  new ContactBorder(0, image, Border.Xl);
+            right =  new ContactBorder(0, image, Border.Xr);
             sizeX = image.getSizeX();
             sizeY=image.getSizeY();
         }

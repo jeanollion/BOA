@@ -50,6 +50,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
      protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map");
     
     public static boolean debug = false;
+    public static int debugLabel = 1;
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Image edge = watershedMap.filter(parent.getRawImage(childStructureIdx), parent.getMask());
@@ -87,18 +88,18 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, innerHead.getImageProperties(1, 1), Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds before and"));
         //ImageOperations.andWithOffset(maxL, innerHead.getImageProperties(1, 1), maxL);
-        if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));
+        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));
         seeds.addAll(ImageLabeller.labelImageList(maxL));
         //seeds.add(new Region(new Voxel((gradLocal.getSizeX()-1)/2, (gradLocal.getSizeY()-1)/2, 0), ++label, (float)scaleXY, (float)scaleZ));
         RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, null, false);
-        if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf"));
+        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf"));
         pop.getRegions().removeIf(o->!o.contains(corner1)&&!o.contains(corner2));
         pop.relabel(true);
-        if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
+        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
         pop.translate(head, true);
         object.andNot(pop.getLabelMap());
         object.resetMask(); // in case bounds have changed
-        if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
+        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
     }
 }

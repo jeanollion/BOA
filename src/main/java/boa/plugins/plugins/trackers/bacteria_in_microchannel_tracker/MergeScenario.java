@@ -34,11 +34,11 @@ import java.util.Set;
  * @author jollion
  */
 public class MergeScenario extends CorrectionScenario {
-        int idxMin, idxMax;
+        int idxMin, idxMaxIncluded;
         List<Region> listO;
         public MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int idxMin, List<Region> objects, int frame) { // idxMax included
             super(frame, frame, tracker);
-            this.idxMax=idxMin+objects.size()-1;
+            this.idxMaxIncluded=idxMin+objects.size()-1;
             this.idxMin = idxMin;
             listO = objects;
             if (!listO.isEmpty()) {
@@ -47,7 +47,7 @@ public class MergeScenario extends CorrectionScenario {
             if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", frame, idxMin, listO.size(), cost);
         }
         @Override protected MergeScenario getNextScenario() { // @ previous time, until there is one single parent ie no more bacteria to merge
-            if (frameMin==0 || idxMin==idxMax) return null;
+            if (frameMin==0 || idxMin==idxMaxIncluded) return null;
             int iMin = Integer.MAX_VALUE;
             int iMax = -1;
             for (Region o : listO) {
@@ -65,7 +65,7 @@ public class MergeScenario extends CorrectionScenario {
         protected void applyScenario() {
             Set<Voxel> vox = new HashSet<>();
             Region o = tracker.populations.get(frameMin).get(idxMin); 
-            for (int i = idxMax; i>=idxMin; --i) {
+            for (int i = idxMaxIncluded; i>=idxMin; --i) {
                 Region rem = tracker.populations.get(frameMin).remove(i);
                 vox.addAll(rem.getVoxels());
                 tracker.objectAttributeMap.remove(rem);
@@ -77,6 +77,6 @@ public class MergeScenario extends CorrectionScenario {
         }
         @Override 
         public String toString() {
-            return "Merge@"+frameMin+"["+idxMin+";"+idxMax+"]/c="+cost;
+            return "Merge@"+frameMin+"["+idxMin+";"+idxMaxIncluded+"]/c="+cost;
         }
     }

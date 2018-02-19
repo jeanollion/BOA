@@ -240,9 +240,9 @@ public class TrackAssigner {
     public static int compareScores(double[] s1, double[] s2, boolean useScore) { // 0 = nb errors / 1 = score value. return -1 if first is better
         if (!useScore) return Double.compare(s1[0], s2[0]);
         else {
-            if (s1[0]<s2[0]) return -1;
+            if (s1[0]<s2[0]) return -1; // minimize errors
             else if (s1[0]>s2[0]) return 1;
-            else if (s1[1]<s2[1]) return -1;
+            else if (s1[1]<s2[1]) return -1; // minimize errors
             else if (s1[1]>s2[1]) return 1;
             else return 0;
         }

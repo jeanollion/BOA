@@ -22,7 +22,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.RegionPopulation.ContactBorder;
-import boa.data_structure.RegionPopulation.ContactBorder.Border;
+import boa.data_structure.RegionPopulation.Border;
 import boa.data_structure.RegionPopulation.Filter;
 import boa.data_structure.RegionPopulation.Size;
 import boa.data_structure.StructureObject;

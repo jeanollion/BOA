@@ -62,7 +62,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Typical Width (pixels)", 0, 20, 5, null);
     NumberParameter channelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
     NumberParameter channelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
-    NumberParameter yStartAdjustWindow = new BoundedNumberParameter("Y-Start Adjust Window (pixels)", 0, 5, 0, null).setToolTipText("Window within which y-coordinate of start of microchannel will be refined (in pixels)");
+    NumberParameter yStartAdjustWindow = new BoundedNumberParameter("Y-Start Adjust Window (pixels)", 0, 5, 0, null).setToolTipText("Window (in pixels) within which y-coordinate of start of microchannel will be refined, by searching for the first local maximum of the Y-derivate.");
     NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 3, 10, 0, null).setToolTipText("Threshold for Microchannel border detection (peaks of 1st derivative in X-axis)");
     NumberParameter sigmaThreshold = new BoundedNumberParameter("Border Sigma Threshold", 3, 0.75, 0, 1).setToolTipText("<html>Fine adjustement of X bounds: eliminate lines with no signals <br />After segmentation, standart deviation along y-axis of each line is compared to the one of the center of the microchannel. <br />When the ratio is inferior to this threhsold, the line is eliminated. <br />0 = no adjustement</html>");
     Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, localDerExtremaThld, sigmaThreshold};
@@ -86,7 +86,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
         ArrayList<Region> objects = new ArrayList<>(r.size());
         for (int idx = 0; idx<r.xMax.length; ++idx) {
             objects.add(new Region(new BlankMask(r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1, true));
-            logger.debug("object!: {}", objects.get(objects.size()-1).getBounds());
+            logger.debug("mc: {}: bds: {}", idx, objects.get(objects.size()-1).getBounds());
         }
         return new RegionPopulation(objects, input);
     }
@@ -253,7 +253,10 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter {
             for (int[] peak : peaks) {
                 BoundingBox win = new BoundingBox(peak[0], peak[1], Math.max(0, channelStartIdx-yStartAdjustWindow), Math.min(imDerY.getSizeY()-1, channelStartIdx+yStartAdjustWindow), 0, 0);
                 float[] proj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, win);
-                peak[2] = ArrayUtil.max(proj)-yStartAdjustWindow;
+                List<Integer> localMaxY = ArrayUtil.getRegionalExtrema(proj, 2, true);
+                //peak[2] = ArrayUtil.max(proj)-yStartAdjustWindow;
+                if (localMaxY.isEmpty()) continue;
+                peak[2] = localMaxY.get(0)-yStartAdjustWindow;
                 //if (debug) plotProfile("yProjDerAdjust", proj);
             }
         }

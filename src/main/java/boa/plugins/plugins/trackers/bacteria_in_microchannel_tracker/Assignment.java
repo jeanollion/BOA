@@ -28,6 +28,9 @@ import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.Bact
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -55,7 +58,9 @@ public class Assignment {
             return this;
         }
         public Assignment duplicate(TrackAssigner ta) {
-            return new Assignment(new ArrayList(prevObjects), new ArrayList(nextObjects), sizePrev, sizeNext, idxPrev, idxNext).setTrackAssigner(ta);
+            Assignment a = new Assignment(new ArrayList(prevObjects), new ArrayList(nextObjects), sizePrev, sizeNext, idxPrev, idxNext).setTrackAssigner(ta);
+            a.prevFromSameLine=this.prevFromSameLine;
+            return a;
         }
         public void transferData(Assignment other) {
             this.prevObjects=other.prevObjects;
@@ -66,6 +71,7 @@ public class Assignment {
             this.sizeNext=other.sizeNext;
             this.previousSizeIncrement=other.previousSizeIncrement;
             this.currentScore=other.currentScore;
+            this.prevFromSameLine=other.prevFromSameLine;
         }
         public Assignment(List<Region> prev, List<Region> next, double sizePrev, double sizeNext, int idxPrev, int idxNext) {
             this.sizeNext=sizeNext;
@@ -99,6 +105,25 @@ public class Assignment {
             }
             return prevFromSameLine;
         }
+        public Collection<List<Region>> splitPrevObjectsByLine() {
+            List<List<Region>> res = new ArrayList<>();
+            Iterator<Region> it = prevObjects.iterator();
+            List<Region> curList = new ArrayList<>(prevObjects.size());
+            res.add(curList);
+            Region curObject = it.next();
+            curList.add(curObject);
+            while(it.hasNext()) {
+                Region otherObject = it.next();
+                if (ta.areFromSameLine.apply(curObject,otherObject)) curList.add(otherObject);
+                else {
+                    curObject = otherObject;
+                    curList = new ArrayList<>(prevObjects.size());
+                    res.add(curList);
+                    curList.add(curObject);
+                }
+            }
+            return res;
+        }
         public Region getLastObject(boolean prev) {
             if (prev) {
                 if (prevObjects.isEmpty()) return null;
@@ -112,7 +137,7 @@ public class Assignment {
             if (idxPrevEnd()<ta.idxPrevLim) {
                 Region o = ta.prev.get(idxPrevEnd());
                 prevObjects.add(o);
-                if (prevFromSameLine!=null && prevFromSameLine) prevFromSameLine = ta.areFromSameLine.apply(prevObjects.get(0), o);
+                if (prevFromSameLine==null || prevFromSameLine) prevFromSameLine = ta.areFromSameLine.apply(prevObjects.get(0), o);
                 sizePrev+=ta.sizeFunction.apply(o);
                 previousSizeIncrement = Double.NaN;
                 currentScore=null;

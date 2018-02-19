@@ -40,6 +40,8 @@ import boa.plugins.Segmenter;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
+import boa.plugins.plugins.track_post_filter.AverageMask;
+import boa.plugins.plugins.track_post_filter.RemoveTracksStartingAfterFrame;
 import boa.plugins.plugins.track_post_filter.TrackLengthFilter;
 
 /**
@@ -50,10 +52,12 @@ public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        int time =0;
+        int time =326;
         int field = 0;
         //String dbName = "TestThomasRawStacks";
-        String dbName = "MutH_150324";
+        String dbName = "Aya2";
+        //String dbName = "MutH_150324";
+        FitMicrochannelHeadToEdges.debugLabel=6;
         testSegMicrochannelsFromXP(dbName, field, time);
         //testPostProcessTracking(dbName, field, time);
     }
@@ -71,13 +75,13 @@ public class TestProcessMicrochannelsPhase {
         MicrochannelPhase2D.debug=true;
         //MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
-        mDAO.getExperiment().getStructure(0).getProcessingScheme().getTrackPreFilters(true).filter(timePoint, parentTrack, null);
+        mDAO.getExperiment().getStructure(0).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
         RegionPopulation pop = s.runSegmenter(root.getPreFilteredImage(0), 0, root);
         root.setChildrenObjects(pop, 0);
         FitMicrochannelHeadToEdges.debug=true;
         if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
             TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters();
-            for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) if (pp.instanciatePlugin() instanceof TrackLengthFilter) pp.setActivated(false);
+            for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) if (pp.instanciatePlugin() instanceof TrackLengthFilter || pp.instanciatePlugin() instanceof AverageMask || pp.instanciatePlugin() instanceof RemoveTracksStartingAfterFrame) pp.setActivated(false);
             tpf.filter(0, Arrays.asList(new StructureObject[]{root}), null);
             pop = root.getObjectPopulation(0);
         }

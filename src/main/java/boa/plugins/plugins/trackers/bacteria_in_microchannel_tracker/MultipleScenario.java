@@ -42,5 +42,8 @@ public class MultipleScenario extends CorrectionScenario {
         protected void applyScenario() {
             for (CorrectionScenario s : scenarios) s.applyScenario();
         }
-        
+        @Override 
+        public String toString() {
+            return "MultipleScenario ["+frameMin+";"+frameMax+"]" + (this.scenarios.isEmpty() ? "": " first: "+scenarios.get(0).toString());
+        }
     }

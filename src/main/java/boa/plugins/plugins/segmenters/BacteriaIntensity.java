@@ -142,6 +142,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         EdgeDetector seg = initEdgeDetector();
         RegionPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
         splitPop.smoothRegions(1, true, parent.getMask());
+        splitPop = filterRegionsAfterEdgeDetector(parent, structureIdx, splitPop);
         splitAndMerge = initializeSplitAndMerge(input, splitPop.getLabelMap());
         RegionPopulation res = splitAndMerge.splitAndMerge(splitPop.getLabelMap(), minSizePropagation.getValue().intValue(), 0);
         res = localThreshold(input, res, parent, structureIdx, false);
@@ -165,6 +166,10 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         return res;
     }
     
+    protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+        return pop;
+    }
+    
     protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx, boolean callFromSplit) {
         Image smooth = smoothScale.getValue().doubleValue()>=1 ? ImageFeatures.gaussianSmooth(input, smoothScale.getValue().doubleValue(), false):input;
         pop.localThreshold(smooth, localThresholdFactor.getValue().doubleValue(), true, true);
@@ -182,10 +187,10 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     }
     // segmenter split and merge interface
     @Override public double split(StructureObject parent, int structureIdx, Region o, List<Region> result) {
+        result.clear();
         RegionPopulation pop =  splitObject(parent, structureIdx, o); // after this step pop is in same landmark as o
         if (pop.getRegions().size()<=1) return Double.POSITIVE_INFINITY;
         else {
-            
             Region o1 = pop.getRegions().get(0);
             Region o2 = pop.getRegions().get(1);
             result.add(o1);

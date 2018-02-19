@@ -50,6 +50,7 @@ import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
 import boa.plugins.legacy.BacteriaShape;
+import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.utils.Utils;
 import java.util.Map;
 import java.util.TreeMap;
@@ -65,15 +66,16 @@ public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-
+        
         //String dbName = "MF1_170523";
         //String dbName = "MutD5_141209";
-        String dbName = "MutH_150324";
+        //String dbName = "MutH_150324";
+        String dbName = "Aya2";
         //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =0;
-        int[] time =new int[]{528, 528}; //22
+        int microChannel =5;
+        int[] time =new int[]{20, 26}; //22
         //setMask=true;
         //thld = 776;
         

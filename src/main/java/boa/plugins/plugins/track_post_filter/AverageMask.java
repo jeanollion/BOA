@@ -42,6 +42,8 @@ import boa.plugins.TrackPostFilter;
  * @author jollion
  */
 public class AverageMask implements TrackPostFilter{
+    public static boolean debug = false;
+    public static int debugIdx = 0;
     ChoiceParameter referencePoint = new ChoiceParameter("Reference Point", new String[]{"Upper-left corner"}, "Upper-left corner", false);
     //PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     //BooleanParameter postFilterOnAverageImage = new BooleanParameter("Run post-filters on", "Average Image Over Frames", "Each Frame", true);
@@ -69,7 +71,7 @@ public class AverageMask implements TrackPostFilter{
                 }
             }
             int threshold = (int)((track.size()+1)/2d);
-            //if (false && track.get(0).getIdx()==0) ImageWindowManagerFactory.showImage(sum.setName("sum thld: "+threshold));
+            if (debug && track.get(0).getIdx()==debugIdx) ImageWindowManagerFactory.showImage(sum.setName("sum thld: "+threshold));
             
             for (StructureObject o : track) {
                 o.getObject().ensureMaskIsImageInteger();

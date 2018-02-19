@@ -39,12 +39,15 @@ import boa.utils.Pair;
 public class SplitScenario extends CorrectionScenario {
         Region o;
         List<Region> splitObjects;
+        int idx;
         public SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, Region o, int frame) {
             super(frame, frame, tracker);
             this.o=o;
             splitObjects= new ArrayList<>();
             cost = tracker.getSegmenter(frame).split(tracker.getParent(frame), tracker.structureIdx, o, splitObjects);
-            if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", frame, tracker.populations.get(frame).indexOf(o), cost, splitObjects.size());
+            idx = tracker.populations.get(frame).indexOf(o);
+            if (idx<0) throw new IllegalArgumentException("Error SplitScenario at frame: "+frame+" object with bounds: "+o.getBounds()+ " not found");
+            if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", frame, idx, cost, splitObjects.size());
         }
         public SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, Region o, int frame, int objectNumber) {
             super(frame, frame, tracker);
@@ -96,6 +99,9 @@ public class SplitScenario extends CorrectionScenario {
         protected void applyScenario() {
             Collections.sort(splitObjects, getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
             int idx = tracker.populations.get(frameMin).indexOf(o);
+            if (idx<0) {
+                logger.error("Error: split @ frame {} object of bds: {} not found ", frameMin , o.getBounds());
+            }
             tracker.populations.get(frameMin).remove(idx);
             tracker.populations.get(frameMin).addAll(idx, splitObjects);
             tracker.objectAttributeMap.remove(o);
@@ -105,6 +111,6 @@ public class SplitScenario extends CorrectionScenario {
         }
         @Override 
         public String toString() {
-            return "Split@"+frameMin+"["+tracker.populations.get(frameMin).indexOf(o)+"]/c="+cost;
+            return "Split@"+frameMin+"["+idx+"]/c="+cost;
         }
     }

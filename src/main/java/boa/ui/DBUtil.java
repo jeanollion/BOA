@@ -99,7 +99,7 @@ public class DBUtil {
     }
     public static void addConfig(File f, Map<String, File> configs, Set<Pair<String, File>> duplicated) {
         renameFromTxtToJSON(f); // TODO retro-compatibility rename txt to json
-        File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.json")||subF.getName().endsWith("_config.txt")); 
+        File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.json")); 
         if (dbs==null) return;
         for (File c : dbs) addConfigFile(c, configs, duplicated);
     }
