@@ -222,7 +222,7 @@ public class ImportExportJSON {
         if (dao.getSelectionDAO()!=null) w.write("selections.json", dao.getSelectionDAO().getSelections(), o -> JSONUtils.serialize(o));
     }
     public static Experiment readConfig(File f) {
-        if (f.getName().endsWith(".json")) {
+        if (f.getName().endsWith(".json")||f.getName().endsWith(".txt")) {
             List<Experiment> xp = FileIO.readFromFile(f.getAbsolutePath(), o->JSONUtils.parse(Experiment.class, o));
             if (xp.size()==1) return xp.get(0);
         } else if (f.getName().endsWith(".zip")) {
@@ -236,7 +236,7 @@ public class ImportExportJSON {
     }
     public static void importConfigurationFromFile(String path, MasterDAO dao, boolean structures, boolean preProcessingTemplate) {
         File f = new File(path);
-        if (f.getName().endsWith(".json")) {
+        if (f.getName().endsWith(".json")||f.getName().endsWith(".txt")) { //FIJI allows only to upload .txt
             List<Experiment> xp = FileIO.readFromFile(path, o->JSONUtils.parse(Experiment.class, o));
             if (xp.size()==1) {
                 Experiment source = xp.get(0);
@@ -258,7 +258,7 @@ public class ImportExportJSON {
     }
     public static void importFromFile(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, boolean preProcessedImages, boolean trackImages, ProgressCallback pcb) {
         File f = new File(path);
-        if (f.getName().endsWith(".json")) {
+        if (f.getName().endsWith(".json")||f.getName().endsWith(".txt")) {
             if (config) {
                 List<Experiment> xp = FileIO.readFromFile(path, o->JSONUtils.parse(Experiment.class, o));
                 if (xp.size()==1) {
