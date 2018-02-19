@@ -97,7 +97,8 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
         pop.translate(head, true);
         object.andNot(pop.getLabelMap());
-        object.resetMask();
+        object.resetMask(); // in case bounds have changed
+        if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
     }
 }

@@ -364,12 +364,12 @@ public class Region {
         return mask;
     }
     public ImageInteger<? extends ImageInteger> getMaskAsImageInteger() {
-        return TypeConverter.toImageInteger(mask, null);
+        return TypeConverter.toImageInteger(getMask(), null);
     }
     public void ensureMaskIsImageInteger() {
-        if (!(mask instanceof ImageInteger)) {
+        if (!(getMask() instanceof ImageInteger)) {
             synchronized(this) {
-                mask = getMaskAsImageInteger();
+                if (!(getMask() instanceof ImageInteger)) mask = getMaskAsImageInteger();
             }
         }
     }

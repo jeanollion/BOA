@@ -66,6 +66,7 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
+        //String dbName = "Aya2";
         String dbName = "MutH_150324";
         // String dbName = "fluo170512_WT";
         //String dbName = "fluo171219_WT_750ms";
@@ -73,8 +74,8 @@ public class TestTracker {
         //String dbName = "MutD5_141202";
         int pIdx =0;
         int mcIdx =1;
-        int structureIdx = 1;
-        int[] frames = new int[]{0, 1000};
+        int structureIdx = 0;
+        int[] frames = new int[]{0, 10};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
