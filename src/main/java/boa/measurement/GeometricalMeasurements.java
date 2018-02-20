@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import boa.utils.ArrayUtil;
 import java.util.Iterator;
+import java.util.stream.DoubleStream;
 
 /**
  *
@@ -43,7 +44,6 @@ public class GeometricalMeasurements {
         int voxCount = list.size();
         double scaleXY = o.getScaleXY();
         double scaleZ = o.getScaleZ();
-        Iterator<Voxel> it = list.iterator();
         for (int i = 0; i<voxCount-1; ++i) {
             for (int j = i+1; j<voxCount; ++j) {
                 double d2Temp = list.get(i).getDistanceSquare(list.get(j), scaleXY, scaleZ);
@@ -83,7 +83,8 @@ public class GeometricalMeasurements {
     }
     public static double localThickness(Region object) {
         Image ltMap = LocalThickness.localThickness(object.getMaskAsImageInteger(), object.is2D()?1:object.getScaleXY()/object.getScaleZ(), true, 1);
-        return BasicMeasurements.getQuantileValue(object, ltMap, 0.5)[0];
+        DoubleStream stream = ltMap.stream(object.getMask(), true).sorted();
+        return ArrayUtil.quantiles(stream.toArray(), 0.5)[0];
     }
     public static double meanThicknessZ(Region object) {
         double mean = 0;
@@ -168,6 +169,32 @@ public class GeometricalMeasurements {
         }
         return mean;
     }
+    public static double maxThicknessY(Region object) {
+        double maxT = Double.NEGATIVE_INFINITY;
+        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                int min = -1;
+                int max = -1;
+                for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        min = y;
+                        break;
+                    }
+                }
+                for (int y = object.getBounds().getSizeY() - 1; y >= 0; --y) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        max = y;
+                        break;
+                    }
+                }
+                if (min >= 0) {
+                    double cur = max - min + 1;
+                    if (cur>maxT) maxT=cur;
+                }
+            }
+        }
+        return maxT;
+    }
     public static double medianThicknessY(Region object) {
         List<Integer> values = new ArrayList<>();
         for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
@@ -222,6 +249,32 @@ public class GeometricalMeasurements {
         }
         return mean;
     }
+    public static double maxThicknessX(Region object) {
+        double maxT = Double.NEGATIVE_INFINITY;
+        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+            for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+                int min = -1;
+                int max = -1;
+                for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        min = x;
+                        break;
+                    }
+                }
+                for (int x = object.getBounds().getSizeX() - 1; x >= 0; --x) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        max = x;
+                        break;
+                    }
+                }
+                if (min >= 0) {
+                    double cur = max - min + 1;
+                    if (cur>maxT) maxT = cur;
+                }
+            }
+        }
+        return maxT;
+    }
     public static double medianThicknessX(Region object) {
         List<Integer> values = new ArrayList<>();
         for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
@@ -245,4 +298,5 @@ public class GeometricalMeasurements {
         }
         return ArrayUtil.medianInt(values);
     }
+    
 }

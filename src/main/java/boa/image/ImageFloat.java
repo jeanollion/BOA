@@ -211,4 +211,42 @@ public class ImageFloat extends Image<ImageFloat> {
         return new Histogram(histo, false, new double[]{min, max});
     }
     @Override public int getBitDepth() {return 32;}
+
+    // image mask implementation
+    
+    @Override
+    public boolean insideMask(int x, int y, int z) {
+        return pixels[z][x+y*sizeX]!=0;
+    }
+
+    @Override
+    public boolean insideMask(int xy, int z) {
+        return pixels[z][xy]!=0;
+    }
+    
+    @Override
+    public boolean insideMaskWithOffset(int x, int y, int z) {
+        return pixels[z-offsetZ][x-offsetXY + y * sizeX]!=0;
+    }
+
+    @Override
+    public boolean insideMaskWithOffset(int xy, int z) {
+        return pixels[z-offsetZ][xy - offsetXY ]!=0;
+    }
+
+    @Override
+    public int count() {
+        int count = 0;
+        for (int z = 0; z< sizeZ; ++z) {
+            for (int xy=0; xy<sizeXY; ++xy) {
+                if (pixels[z][xy]!=0) ++count;
+            }
+        }
+        return count;
+    }
+
+    @Override
+    public ImageMask duplicateMask() {
+        return duplicate("");
+    }
 }

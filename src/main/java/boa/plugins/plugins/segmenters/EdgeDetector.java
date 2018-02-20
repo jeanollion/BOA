@@ -95,10 +95,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
     }
 
     public ImageInteger getSeedMap(Image input,  ImageMask mask) {
-        if (seedMap==null) {
-            double radZ = Math.max(1, seedRadius.getValue().doubleValue() * input.getScaleXY() / input.getScaleZ());
-            seedMap = Filters.localExtrema(getWsMap(input, mask), null, false, mask, Filters.getNeighborhood(seedRadius.getValue().doubleValue(), radZ, getWsMap(input, mask)));
-        }
+        if (seedMap==null) seedMap = Filters.localExtrema(getWsMap(input, mask), null, false, mask, Filters.getNeighborhood(seedRadius.getValue().doubleValue(), getWsMap(input, mask)));
         return seedMap;
     }
     public EdgeDetector setSeedRadius(double radius) {

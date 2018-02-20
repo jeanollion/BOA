@@ -23,6 +23,7 @@ import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageInteger;
+import boa.image.ImageMask;
 import boa.image.processing.Filters;
 import boa.image.processing.WatershedTransform;
 import boa.image.processing.clustering.ClusterCollection;
@@ -125,15 +126,19 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
      * @param objectMergeLimit
      * @return 
      */
-    public RegionPopulation splitAndMerge(ImageInteger segmentationMask, int minSizePropagation, int objectMergeLimit) {
-        WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
-        RegionPopulation popWS = WatershedTransform.watershed(getWatershedMap(), segmentationMask, false, null, sfc, false);
+    public RegionPopulation splitAndMerge(ImageMask segmentationMask, int minSizePropagation, int objectMergeLimit) {
+        RegionPopulation popWS = split(segmentationMask, minSizePropagation);
         if (testMode) {
-            popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
             ImageWindowManagerFactory.showImage(getWatershedMap());
-            ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map before merge"));
+            ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map after split by hessian before merge"));
         }
         return merge(popWS, objectMergeLimit);
+    }
+    public RegionPopulation split(ImageMask segmentationMask, int minSizePropagation) {
+        WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
+        RegionPopulation popWS = WatershedTransform.watershed(getWatershedMap(), segmentationMask, false, null, sfc, false);
+        if (testMode) popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
+        return popWS;
     }
     public RegionCluster<I> getInterfaces(RegionPopulation population, boolean lowConnectivity) {
         return new RegionCluster<>(population, false, lowConnectivity, getFactory());

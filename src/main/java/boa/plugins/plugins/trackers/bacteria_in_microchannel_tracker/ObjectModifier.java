@@ -79,7 +79,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
             super(frame);
             this.source=source;
             values = new ArrayList(2);
-            cost = tracker.getSegmenter(frame).split(tracker.getParent(frame), tracker.structureIdx, source, values);
+            cost = tracker.segmenters.getAndCreateIfNecessary(frame).split(tracker.getParent(frame), tracker.structureIdx, source, values);
             if (Double.isInfinite(cost) || Double.isNaN(cost) || values.size()!=2) {
                 cost = Double.POSITIVE_INFINITY;
                 values.clear();
@@ -112,7 +112,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
         public Merge(int frame, Pair<Region, Region> source) {
             super(frame);
             this.source = source;
-            cost = tracker.getSegmenter(frame).computeMergeCost(tracker.getParent(frame), tracker.structureIdx, listSource());
+            cost = tracker.segmenters.getAndCreateIfNecessary(frame).computeMergeCost(tracker.getParent(frame), tracker.structureIdx, listSource());
             Set<Voxel> vox = new HashSet(source.key.getVoxels().size()+source.value.getVoxels().size());
             vox.addAll(source.key.getVoxels()); vox.addAll(source.value.getVoxels());
             value =new Region(vox, source.key.getLabel(), source.key.is2D(), source.key.getScaleXY(), source.key.getScaleZ());

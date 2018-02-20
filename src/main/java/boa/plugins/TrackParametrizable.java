@@ -84,12 +84,12 @@ public interface TrackParametrizable<S extends Segmenter> {
     /**
      * Detected whether all microchannels are void, only part of it or none.
      * @param structureIdx
-     * @param preFilteredImages
+     * @param parentTrack
      * @param thldForVoidMC 
      * @param outputVoidMicrochannels will add the void microchannels inside this set
-     * @return the minimal threshold
+     * @return [the minimal threshold if some channels are void or positive infinity if all channels are void ; the global threshold in non-empty microchannels]
      */
-    public static double getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, double thldForVoidMC, Set<StructureObject> outputVoidMicrochannels) {
+    public static double[] getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, double thldForVoidMC, Set<StructureObject> outputVoidMicrochannels) {
         double bimodalThld = 0.4d;
         float[] thlds = new float[parentTrack.size()];
         int idx = 0;
@@ -119,17 +119,16 @@ public interface TrackParametrizable<S extends Segmenter> {
         if (diff>bimodalThld) { // bimodal
             idx = 0;
             for (StructureObject s : parentTrack) if (thlds[idx++]<thld) outputVoidMicrochannels.add(s);
-            return thld;
         }
         if (thld<thldForVoidMC) outputVoidMicrochannels.addAll(parentTrack);
-        if (outputVoidMicrochannels.size()==parentTrack.size()) return Double.POSITIVE_INFINITY;
+        if (outputVoidMicrochannels.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         //return Double.NaN;
         // get global otsu thld for images with foreground
         Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!outputVoidMicrochannels.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
         Histogram histo = Histogram.getHisto256(imageMapMask, null);
         double globalThld = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
         logger.debug("global otsu thld: {}", globalThld);
-        return globalThld;
+        return new double[]{outputVoidMicrochannels.isEmpty() ? Double.NaN : thld, globalThld};
     }
     
 }

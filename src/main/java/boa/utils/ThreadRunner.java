@@ -239,6 +239,7 @@ public class ThreadRunner {
         }
         if (!errors.isEmpty()) {
             //throw new Error(errors.get(0).value);
+            logger.error("MultipleException: "+errors.get(0).key, errors.get(0).value);
             throw new MultipleException(errors);
         }
     }

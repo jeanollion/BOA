@@ -44,16 +44,16 @@ public class SplitScenario extends CorrectionScenario {
             super(frame, frame, tracker);
             this.o=o;
             splitObjects= new ArrayList<>();
-            cost = tracker.getSegmenter(frame).split(tracker.getParent(frame), tracker.structureIdx, o, splitObjects);
+            cost = tracker.segmenters.getAndCreateIfNecessary(frame).split(tracker.getParent(frame), tracker.structureIdx, o, splitObjects);
             idx = tracker.populations.get(frame).indexOf(o);
             if (idx<0) throw new IllegalArgumentException("Error SplitScenario at frame: "+frame+" object with bounds: "+o.getBounds()+ " not found");
             if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", frame, idx, cost, splitObjects.size());
         }
-        public SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, Region o, int frame, int objectNumber) {
+        /*public SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, Region o, int frame, int objectNumber) {
             super(frame, frame, tracker);
             this.o=o;
             splitObjects= new ArrayList<>();
-            cost = tracker.getSegmenter(frame).split(tracker.getParent(frame), tracker.structureIdx, o, splitObjects);
+            cost = tracker.segmenters.getAndCreateIfNecessary(frame).split(tracker.getParent(frame), tracker.structureIdx, o, splitObjects);
             if (splitObjects.size()>=2 && Double.isFinite(cost) && !Double.isNaN(cost)) {
                 while(splitObjects.size()<objectNumber) {
                     //Collections.sort(splitObjects, (o1, o2) -> Integer.compare(o2.getSize(), o1.getSize())); // biggest object first
@@ -68,14 +68,14 @@ public class SplitScenario extends CorrectionScenario {
                 }
             }
             if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", frame, tracker.populations.get(frame).indexOf(o), cost, splitObjects.size());
-        }
+        }*/
         
         private TreeMap<Pair<Double, Region>, List<Region>> split(List<Region> objects) {
             Comparator<Pair<Double, Region>> comp = (k1, k2) -> Double.compare(k1.key, k2.key);
             TreeMap<Pair<Double, Region>, List<Region>> res = new TreeMap(comp);
             for (Region oo : objects) {
                 List<Region> so= new ArrayList<>();
-                double c = tracker.getSegmenter(frameMin).split(tracker.getParent(frameMin), tracker.structureIdx, oo, so);
+                double c = tracker.segmenters.getAndCreateIfNecessary(frameMin).split(tracker.getParent(frameMin), tracker.structureIdx, oo, so);
                 if (so.size()>=2 && Double.isFinite(c) && !Double.isNaN(c)) res.put(new Pair(c, oo), so);
             }
             return res;
@@ -99,9 +99,7 @@ public class SplitScenario extends CorrectionScenario {
         protected void applyScenario() {
             Collections.sort(splitObjects, getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
             int idx = tracker.populations.get(frameMin).indexOf(o);
-            if (idx<0) {
-                logger.error("Error: split @ frame {} object of bds: {} not found ", frameMin , o.getBounds());
-            }
+            if (idx<0) throw new RuntimeException("Error SplitScenario at frame: "+frameMin+" object with bounds: "+o.getBounds()+ " not found");
             tracker.populations.get(frameMin).remove(idx);
             tracker.populations.get(frameMin).addAll(idx, splitObjects);
             tracker.objectAttributeMap.remove(o);

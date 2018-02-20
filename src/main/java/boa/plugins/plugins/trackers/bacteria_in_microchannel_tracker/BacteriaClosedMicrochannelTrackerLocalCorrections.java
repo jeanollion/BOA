@@ -74,6 +74,7 @@ import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.utils.ArrayUtil;
+import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
 import java.util.Collection;
@@ -115,11 +116,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return segmenter.instanciatePlugin();
     }
 
-    protected SegmenterSplitAndMerge getSegmenter(int frame) {
-        SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
-        applyToSegmenter.apply(parentsByF.get(frame), s);
-        return s;
-    }
 
     @Override
     public boolean canBeTested(String p) {
@@ -149,7 +145,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     Map<Integer, Image> inputImages;
     ApplyToSegmenter applyToSegmenter;
     TreeMap<Integer, StructureObject> parentsByF;
-    
+    HashMapGetCreate<Integer, SegmenterSplitAndMerge> segmenters = new HashMapGetCreate(f->{
+        SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
+        applyToSegmenter.apply(parentsByF.get(f), s);
+        return s;
+    });
     int minT, maxT;
     double maxGR, minGR, costLim, cumCostLim;
     double[] baseGrowthRate;
@@ -165,7 +165,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     final static int correctionLoopLimit=3;
     final static int sizeIncrementFrameNumber = 7; // number of frames for sizeIncrement computation
     final static double significativeSIErrorThld = 0.25; // size increment difference > to this value lead to an error
-    final static double SIErrorValue=3; //equivalence between a size-increment difference error and regular error 
+    final static double SIErrorValue=1; //equivalence between a size-increment difference error and regular error 
     final static double SIIncreaseThld = 0.1; // a cell is added to the assignment only is the error number is same or inferior and if the size increment difference is less than this value
     final static double SIQuiescentThld = 1.05; // under this value we consider cells are not growing -> if break in lineage no error count (cell dies)
     final static boolean setSIErrorsAsErrors = false; // SI errors are set as tracking errors in object attributes
@@ -580,7 +580,18 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         
         sizeFunction = o -> objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getSize() : getObjectSize(o);
         sizeIncrementFunction = o -> objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getLineageSizeIncrement() : Double.NaN;
-        areFromSameLine = (o1, o2) -> objectAttributeMap.containsKey(o1) && objectAttributeMap.containsKey(o2) ? objectAttributeMap.get(o1).prev == objectAttributeMap.get(o2).prev : false;
+        areFromSameLine = (o1, o2) -> {
+            if (!objectAttributeMap.containsKey(o1) || !objectAttributeMap.containsKey(o2)) return false;
+            TrackAttribute ta1 = objectAttributeMap.get(o1).prev;
+            TrackAttribute ta2 = objectAttributeMap.get(o2).prev;
+            while(ta1!=null && ta2!=null) {
+                if (ta1.equals(ta2)) return true;
+                if (ta1.division || ta2.division) return false;
+                ta1 = ta1.prev;
+                ta2 = ta2.prev;
+            }
+            return false;
+        };
         
     }
     protected StructureObject getParent(int frame) {
@@ -1053,9 +1064,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     */
     public int[] performCorrection(Assignment a, int frame) {
         if (debugCorr && a.ta.verboseLevel<verboseLevelLimit) logger.debug("t: {}: performing correction, {}", frame, a.toString(true));
-        return performCorrectionSplitOrMergeOverMultipleTime(a, frame); //if (a.objectCountNext()==1 || (a.objectCountNext()==2 && a.objectCountPrev()==2))
+        if (a.prevObjects.size()>1) return performCorrectionSplitAfterOrMergeBeforeOverMultipleTime(a, frame); //if (a.objectCountNext()==1 || (a.objectCountNext()==2 && a.objectCountPrev()==2))
         //else return performCorrectionMultipleObjects(a, frame);
-        //else return null;
+        else return null;
     }
     /**
      * Compares two correction scenarii: split at following frames or merge at previous frames
@@ -1063,20 +1074,29 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
      * @param frame frame where error is detected
      * @return frame range (minimal/maximal+1 ) where correction has been performed
      */
-    private int[] performCorrectionSplitOrMergeOverMultipleTime(Assignment a, int frame) {
+    private int[] performCorrectionSplitAfterOrMergeBeforeOverMultipleTime(Assignment a, int frame) {
         List<CorrectionScenario> allScenarios = new ArrayList<>();
-        /*if (a.prevFromSameLine()) {
-            MergeScenario m = new MergeScenario(this, a.idxPrev, a.prevObjects, frame-1);
-            allScenarios.add(m.getWholeScenario(maxCorrectionLength, costLim, cumCostLim)); // merge scenario
-        } else { // get all merge scenarios with cells that come from same line
-        */  Collection<List<Region>> objectsByLine = a.splitPrevObjectsByLine();
+        
+        MergeScenario m = new MergeScenario(this, a.idxPrev, a.prevObjects, frame-1);
+        allScenarios.add(m.getWholeScenario(maxCorrectionLength, costLim, cumCostLim)); // merge scenario
+        
+        // sub-merge scenarios
+        if (a.prevObjects.size()>4) { // limit to scenario with objects from same line
+            Collection<List<Region>> objectsByLine = a.splitPrevObjectsByLine();
             objectsByLine.removeIf(l->l.size()<=1);
             for (List<Region> l : objectsByLine) {
                 if (l.size()==1) throw new IllegalArgumentException("merge 1");
-                MergeScenario m = new MergeScenario(this, this.populations.get(frame-1).indexOf(l.get(0)), l, frame-1);
+                m = new MergeScenario(this, this.populations.get(frame-1).indexOf(l.get(0)), l, frame-1);
                 allScenarios.add(m.getWholeScenario(maxCorrectionLength, costLim, cumCostLim)); // merge scenario
             }
-        //}
+        } else { // all combinations
+            for (int objectNumber = 2; objectNumber<a.prevObjects.size(); ++objectNumber) {
+                for (int idx = 0; idx<=a.prevObjects.size()-objectNumber; ++idx) {
+                    m = new MergeScenario(this, this.populations.get(frame-1).indexOf(a.prevObjects.get(idx)), a.prevObjects.subList(idx, idx+objectNumber), frame-1);
+                    allScenarios.add(m.getWholeScenario(maxCorrectionLength, costLim, cumCostLim));
+                }
+            }
+        }
         for (Region r : a.nextObjects) {
             SplitScenario ss =new SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, r, frame);
             allScenarios.add(ss.getWholeScenario(maxCorrectionLength, costLim, cumCostLim));

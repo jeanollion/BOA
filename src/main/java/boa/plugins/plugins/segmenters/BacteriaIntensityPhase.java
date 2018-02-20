@@ -31,8 +31,11 @@ import boa.image.TypeConverter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations;
+import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
+import boa.image.processing.neighborhood.Neighborhood;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.measurement.BasicMeasurements;
+import boa.measurement.GeometricalMeasurements;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.pre_filters.Sigma;
 import boa.utils.DoubleStatistics;
@@ -41,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 
@@ -50,15 +54,16 @@ import java.util.stream.Stream;
  */
 public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackParametrizable<BacteriaIntensityPhase> {
     public BacteriaIntensityPhase() {
-        this.splitThreshold.setValue(3.7);
+        this.splitThreshold.setValue(0.1);
         this.minSize.setValue(100);
-        this.hessianScale.setValue(1.5);
+        this.hessianScale.setValue(3);
         localThresholdFactor.setToolTipText("Factor defining the local threshold. Lower value of this factor will yield in smaller cells. T = mean_w - sigma_w * (this factor), with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
         localThresholdFactor.setValue(1);
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         if (isVoid) return null;
-        return super.runSegmenter(input, structureIdx, parent);
+        RegionPopulation pop = super.runSegmenter(input, structureIdx, parent);
+        return filterBorderArtefacts(parent, structureIdx, pop);
     }
     final private String toolTip = "<html>Bacteria segmentation within microchannels, for phase images normalized and inverted (foreground is bright)</ br>"
             + "Same algorithm as BacteriaIntensity with minor changes:<br />"
@@ -81,10 +86,10 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
                 double hessSum = 0;
                 for (Voxel v : voxels) hessSum+=hessian.getPixel(v.x, v.y, v.z);
                 double val = hessSum/voxels.size();
-                // normalize using mean value
-                double m1 = sam.getMedianValues().getAndCreateIfNecessary(i.getE1());
-                double m2 = sam.getMedianValues().getAndCreateIfNecessary(i.getE2());
-                val /= Math.max(m1, m2);
+                // normalize using mean value (compare with max of mean or max of median
+                double mean = Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->(double)input.getPixel(v.x, v.y, v.z)).average().getAsDouble();
+                val/=mean;
+                //val /= Math.max(m1, m2);
                 /*if (localNormalization) {
                     if (true) {
                         DoubleStatistics stats1= DoubleStatistics.getStats(i.getE1().getVoxels().stream().mapToDouble(v->(double)hessian.getPixel(v.x, v.y, v.z))); 
@@ -108,33 +113,82 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         return sam;
     }
     
-    boolean isVoid = false;
+    
     @Override
-    public ApplyToSegmenter<BacteriaIntensityPhase> run(int structureIdx, List<StructureObject> parentTrack) {
-        Set<StructureObject> voidMC = new HashSet<>();
-        double minThld = TrackParametrizable.getVoidMicrochannels(structureIdx, parentTrack, 0.4, voidMC);
-        return (p, s) -> {
-            if (voidMC.contains(p)) s.isVoid=true; 
-            s.minThld=minThld;
-        };
+    protected EdgeDetector initEdgeDetector(StructureObjectProcessing parent, int structureIdx) {
+        EdgeDetector seg = super.initEdgeDetector(parent, structureIdx);
+        seg.seedRadius.setValue(1.5);
+        return seg;
+        /*ImageInteger seeds = seg.getSeedMap(parent.getPreFilteredImage(structureIdx), parent.getMask());
+        // add seeds at border of mask and remove seeds in contact
+        EllipsoidalNeighborhood n = new EllipsoidalNeighborhood(1.5, true);
+        ImageMask mask = parent.getMask();
+        ImageMask.loop(mask, (x, y, z)-> {
+            if (n.hasNullValue(x, y, z, mask, true)) { // located at the border
+                for (int i = 0; i<n.getSize(); ++i) { // remove seeds located directly at next to border
+                    int xx = x+n.dx[i];
+                    int yy = y+n.dy[i];
+                    if (mask.contains(xx, yy, z) && mask.insideMask(xx, yy, z) && seeds.insideMask(xx, yy, z)) {
+                        seeds.setPixel(xx, yy, z, 0);
+                    }
+                }
+            }
+        });
+        ImageMask.loop(mask, (x, y, z)-> { // set all borders as seeds
+            if (n.hasNullValue(x, y, z, mask, true)) seeds.setPixel(x, y, z, 1);
+        });
+        return seg;*/
+    }
+    @Override 
+    protected RegionPopulation filterRegionAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+        return filterBorderArtefacts(parent, structureIdx, pop);
     }
     @Override
     protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        // remove the artefact at the top of the channel
-        Image phaseContrast = parent.getRawImage(structureIdx);
-        // get the mean value within positive regions
-        double[] meanSigma = ImageOperations.getMeanAndSigma(phaseContrast, pop.getLabelMap());
-        double thld = meanSigma[0] + 0.25*meanSigma[1];
-        if (testMode) ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(pop, phaseContrast).setName("phase contrast value map: thld: "+ thld));
-        ContactBorderMask f = new ContactBorderMask(1, parent.getMask(), Border.YUp);
+        /*if (setBorderSeeds) {
+            ContactBorderMask contact = new ContactBorderMask(1, parent.getMask(), Border.XY);
+            pop.filter(r->contact.getContact(r)<1);
+        }*/
+        return filterBorderArtefacts(parent, structureIdx, pop);
+    }
+    protected RegionPopulation filterBorderArtefacts(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+        //if (setBorderSeeds) return pop;
+        boolean verbose = testMode;
+        double globThld = this.globalThreshold;
+        Image intensity = parent.getPreFilteredImage(structureIdx);
+        if (intensity==null) throw new IllegalArgumentException("no prefiltered image");
+        // filter border artefacts: thin objects in X direction, contact on one side of the image 
+        ContactBorderMask contactLeft = new ContactBorderMask(1, parent.getMask(), Border.Xl);
+        ContactBorderMask contactRight = new ContactBorderMask(1, parent.getMask(), Border.Xr);
+        double thicknessLimit = parent.getMask().getSizeX() * 0.4; // 0.33?
+        double thicknessLimit2 = parent.getMask().getSizeX() * 0.25; 
+        double thickYLimit = 15;
         pop.filter(r->{
-            int contact = f.getContact(r); // consider only objects in contact with the top of the parent mask
-            if (contact == 0) return true;
-            if (contact<r.getVoxels().size()/5) return true;
-            double v = BasicMeasurements.getQuantileValue(r, phaseContrast, 0.5)[0];
-            logger.debug("check phase top artifact: contact: {}/{} mean: {} total foreground: {} (thld:{})", contact, r.getContour().size(), v, meanSigma, thld);
-            return v <= thld;
+            int cL = contactLeft.getContact(r);
+            int cR = contactRight.getContact(r);
+            if (cL==0 && cR ==0) return true;
+            int c = Math.max(cL, cR);
+            double thickX = GeometricalMeasurements.meanThicknessX(r);
+            if (thickX>thicknessLimit) return true;
+            double thickY = GeometricalMeasurements.meanThicknessY(r);
+            if (verbose) logger.debug("filter after seg: thickX: {} contact: {}/{}", thickX, c, thickY*0.75);
+            if (c < thickY*0.75) return true;
+            if (thickY>thickYLimit && thickX<thicknessLimit2) return false; // long and thin objects are always border artifacts
+            return BasicMeasurements.getQuantileValue(r, intensity, 0.5)[0]>globThld; // avoid removing foreground
         });
+        ContactBorderMask contactUp = new ContactBorderMask(1, parent.getMask(), Border.YUp);
+        ContactBorderMask contactUpLR = new ContactBorderMask(1, parent.getMask(), Border.XYup);
+        // remove the artefact at the top of the channel
+        pop.filter(r->{
+            int cUp = contactUp.getContact(r); // consider only objects in contact with the top of the parent mask
+            if (cUp<=2) return true;
+            cUp = contactUpLR.getContact(r);
+            if (cUp<r.getVoxels().size()/5) return true;
+            double thickness = GeometricalMeasurements.localThickness(r);
+            if (verbose) logger.debug("upper artefact: contact: {}/{} thickness: {}", cUp, r.getVoxels().size(), thickness);
+            return thickness>thicknessLimit;
+        });
+        
         return pop;
     }
     
@@ -149,5 +203,21 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         if (splitVerbose) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after localThreshold"));
         pop.smoothRegions(2, true, mask);
         return pop;
+    }
+    
+    
+    // apply to segmenter from whole track information (will be set prior to all other methods=
+    
+    boolean isVoid = false;
+    double globalThreshold = Double.NaN;
+    @Override
+    public ApplyToSegmenter<BacteriaIntensityPhase> run(int structureIdx, List<StructureObject> parentTrack) {
+        Set<StructureObject> voidMC = new HashSet<>();
+        double[] minAndGlobalThld = TrackParametrizable.getVoidMicrochannels(structureIdx, parentTrack, 0.4, voidMC);
+        return (p, s) -> {
+            if (voidMC.contains(p)) s.isVoid=true; 
+            s.minThld=minAndGlobalThld[0];
+            s.globalThreshold = minAndGlobalThld[1];
+        };
     }
 }

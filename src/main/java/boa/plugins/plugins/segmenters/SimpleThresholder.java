@@ -19,7 +19,6 @@ package boa.plugins.plugins.segmenters;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
-import boa.data_structure.BlankStructureObject;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObjectProcessing;
@@ -75,16 +74,12 @@ public class SimpleThresholder implements Segmenter {
         return run(input, thresh, structureObject.getMask()); 
     }
     
-    public static RegionPopulation run(Image input, ImageMask mask, Thresholder thresholder) {
-        double thresh = thresholder.runThresholder(input, new BlankStructureObject(mask));
-        return run(input, thresh, mask); 
-    }
     
     public static RegionPopulation run(Image input, double threhsold, ImageMask mask) {
         ImageInteger maskR = ImageOperations.threshold(input, threhsold, true, false, false, null);
         if (mask!=null) ImageOperations.and(maskR, mask, maskR);
         Region[] objects = ImageLabeller.labelImage(maskR);
-        return new RegionPopulation(new ArrayList<Region>(Arrays.asList(objects)), input);
+        return new RegionPopulation(new ArrayList<>(Arrays.asList(objects)), input);
     }
     public static RegionPopulation runUnder(Image input, double threhsold, ImageMask mask) {
         ImageInteger maskR = ImageOperations.threshold(input, threhsold, false, false, false, null);

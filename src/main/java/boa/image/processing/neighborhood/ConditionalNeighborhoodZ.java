@@ -34,7 +34,7 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
     
     public ConditionalNeighborhoodZ(Neighborhood  defaultNeighborhood) {
         this.defaultNeighborhood=defaultNeighborhood;
-        neighborhoodZ=new HashMap<Integer, Neighborhood>();
+        neighborhoodZ=new HashMap<>();
     }
     public ConditionalNeighborhoodZ setNeighborhood(int z, Neighborhood n) {
         neighborhoodZ.put(z, n);
@@ -47,7 +47,7 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
         else return res;
     }
     
-    public void setPixels(int x, int y, int z, Image image, ImageMask mask) {
+    @Override public void setPixels(int x, int y, int z, Image image, ImageMask mask) {
         currentNeighborhood = getNeighborhood(z);
         currentNeighborhood.setPixels(x, y, z, image, mask);
     }
@@ -61,44 +61,44 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
         return res;
     }
 
-    public void setPixels(Voxel v, Image image, ImageMask mask) {
+    @Override public void setPixels(Voxel v, Image image, ImageMask mask) {
         setPixels(v.x, v.y, v.z, image, mask);
     }
 
-    public int getSize() {
+    @Override public int getSize() {
         return currentNeighborhood.getSize();
     }
 
-    public float[] getPixelValues() {
+    @Override public float[] getPixelValues() {
         return currentNeighborhood.getPixelValues();
     }
 
-    public float[] getDistancesToCenter() {
+    @Override public float[] getDistancesToCenter() {
         return currentNeighborhood.getDistancesToCenter();
     }
 
-    public int getValueCount() {
+    @Override public int getValueCount() {
         return currentNeighborhood.getValueCount();
     }
 
-    public boolean is3D() {
+    @Override public boolean is3D() {
         return currentNeighborhood.is3D();
     }
 
-    public float getMin(int x, int y, int z, Image image, float... outOfBoundValue) {
+    @Override public float getMin(int x, int y, int z, Image image, float... outOfBoundValue) {
         return currentNeighborhood.getMin(x, y, z, image, outOfBoundValue);
     }
 
-    public float getMax(int x, int y, int z, Image image) {
+    @Override public float getMax(int x, int y, int z, Image image) {
         return currentNeighborhood.getMax(x, y, z, image);
     }
 
-    public boolean hasNonNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNonNull) {
-        return currentNeighborhood.hasNonNullValue(x, y, z, image, outOfBoundIsNonNull);
+    @Override public boolean hasNonNullValue(int x, int y, int z, ImageMask mask, boolean outOfBoundIsNonNull) {
+        return currentNeighborhood.hasNonNullValue(x, y, z, mask, outOfBoundIsNonNull);
     }
 
-    public boolean hasNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNull) {
-        return currentNeighborhood.hasNullValue(x, y, z, image, outOfBoundIsNull);
+    @Override public boolean hasNullValue(int x, int y, int z, ImageMask mask, boolean outOfBoundIsNull) {
+        return currentNeighborhood.hasNullValue(x, y, z, mask, outOfBoundIsNull);
     }
    
 }

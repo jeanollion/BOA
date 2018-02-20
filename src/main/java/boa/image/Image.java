@@ -14,7 +14,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 
-public abstract class Image<I extends Image<I>> implements ImageProperties<I> {
+public abstract class Image<I extends Image<I>> implements ImageProperties<I>, ImageMask<I> {
     public final static Logger logger = LoggerFactory.getLogger(Image.class);
 
     protected String name;

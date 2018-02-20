@@ -167,7 +167,7 @@ public class EllipsoidalNeighborhoodCompartment extends EllipsoidalNeighborhood 
         if (max==Float.MIN_VALUE) max = Float.NaN;
         return max;
     }
-    @Override public boolean hasNonNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNonNull) {
+    @Override public boolean hasNonNullValue(int x, int y, int z, ImageMask image, boolean outOfBoundIsNonNull) {
         int xx, yy;
         int label = compartimentMap.getPixelInt(x, y, z);
         if (is3D) { 
@@ -177,7 +177,7 @@ public class EllipsoidalNeighborhoodCompartment extends EllipsoidalNeighborhood 
                 yy=y+dy[i];
                 zz=z+dz[i];
                 if (image.contains(xx, yy, zz) && compartimentMap.getPixelInt(xx, yy, zz)==label) {
-                    if (image.getPixel(xx, yy, zz)!=0) return true;
+                    if (image.insideMask(xx, yy, zz)) return true;
                 } else if (outOfBoundIsNonNull) return true;
             }
         } else {
@@ -185,13 +185,13 @@ public class EllipsoidalNeighborhoodCompartment extends EllipsoidalNeighborhood 
                 xx=x+dx[i];
                 yy=y+dy[i];
                 if (image.contains(xx, yy, z) && compartimentMap.getPixelInt(xx, yy, z)==label) {
-                    if (image.getPixel(xx, yy, z)!=0) return true;
+                    if (image.insideMask(xx, yy, z)) return true;
                 } else if (outOfBoundIsNonNull) return true;
             }
         }
         return false;
     }
-    @Override public boolean hasNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNull) {
+    @Override public boolean hasNullValue(int x, int y, int z, ImageMask image, boolean outOfBoundIsNull) {
         int xx, yy;
         int label = compartimentMap.getPixelInt(x, y, z);
         if (is3D) { 
@@ -201,7 +201,7 @@ public class EllipsoidalNeighborhoodCompartment extends EllipsoidalNeighborhood 
                 yy=y+dy[i];
                 zz=z+dz[i];
                 if (image.contains(xx, yy, zz) && compartimentMap.getPixelInt(xx, yy, zz)==label) {
-                    if (image.getPixel(xx, yy, zz)==0) return true;
+                    if (!image.insideMask(xx, yy, zz)) return true;
                 } else if (outOfBoundIsNull) return true;
             }
         } else {
@@ -209,7 +209,7 @@ public class EllipsoidalNeighborhoodCompartment extends EllipsoidalNeighborhood 
                 xx=x+dx[i];
                 yy=y+dy[i];
                 if (image.contains(xx, yy, z) && compartimentMap.getPixelInt(xx, yy, z)==label) {
-                    if (image.getPixel(xx, yy, z)==0) return true;
+                    if (!image.insideMask(xx, yy, z)) return true;
                 } else if (outOfBoundIsNull) return true;
             }
         }

@@ -69,13 +69,13 @@ public class TestProcessBacteriaPhase {
         
         //String dbName = "MF1_170523";
         //String dbName = "MutD5_141209";
-        //String dbName = "MutH_150324";
-        String dbName = "Aya2";
+        String dbName = "MutH_150324";
+        //String dbName = "Aya2";
         //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =5;
-        int[] time =new int[]{20, 26}; //22
+        int microChannel =2;
+        int[] time =new int[]{34, 34}; //22
         //setMask=true;
         //thld = 776;
         
@@ -92,12 +92,12 @@ public class TestProcessBacteriaPhase {
         List<StructureObject> parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(rootTrack, 0), o->o.getIdx()==microChannel);
         
         ProcessingScheme psc = mDAO.getExperiment().getStructure(1).getProcessingScheme();
-        psc.getTrackPreFilters(true).filter(0, parentTrack, null);
-        ApplyToSegmenter apply = TrackParametrizable.getApplyToSegmenter(0, parentTrack, psc.getSegmenter(), null);
+        psc.getTrackPreFilters(true).filter(1, parentTrack, null);
+        ApplyToSegmenter apply = TrackParametrizable.getApplyToSegmenter(1, parentTrack, psc.getSegmenter(), null);
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {
-            Image input = mc.getPreFilteredImage(0);
+            Image input = mc.getPreFilteredImage(1);
             if (input==null) throw new RuntimeException("no preFIltered image!!");
             Segmenter seg = psc.getSegmenter();
             if (apply!=null) apply.apply(mc, seg);
@@ -106,7 +106,7 @@ public class TestProcessBacteriaPhase {
                 if (seg instanceof BacteriaShape) ((BacteriaShape)seg).testMode=true;
             }
             mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
-            //mc.setRawImage(0, input);
+           
             logger.debug("seg: tp {}, #objects: {}", mc.getFrame(), mc.getChildren(1).size());
         }
         //if (true) return;
@@ -114,6 +114,9 @@ public class TestProcessBacteriaPhase {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, 1);
         Image im = i.generateRawImage(1, true);
+        iwm.addImage(im, i, 1, true);
+        for (StructureObject mc : parentTrack)  mc.setRawImage(1, mc.getPreFilteredImage(1));
+        im = i.generateRawImage(1, true);
         iwm.addImage(im, i, 1, true);
         iwm.setInteractiveStructure(1);
         iwm.displayAllObjects(im);

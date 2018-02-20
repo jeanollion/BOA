@@ -52,7 +52,7 @@ public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        int time =326;
+        int time =0;
         int field = 0;
         //String dbName = "TestThomasRawStacks";
         String dbName = "Aya2";
