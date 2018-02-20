@@ -83,7 +83,8 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     private final String toolTip = "<html>Intensity-based 2D segmentation <br />"
             + "1) Foreground is detected using the plugin EdgeDetector using Median 3 + Sigma 3 as watershed map & the method secondary map using hessian max as secondary map <br />"
             + "2) Forground region is split by applying a watershed transform on the maximal hessian eigen value, regions are then merged, using a criterion described in \"Split Threshold\" parameter<br />"
-            + "3) A local threshold is applied to each region. Mostly because inter-forground regions may be segmented in step 1). Threshold is set as described in \"Local Threshold Factor\" parameter. Propagating from contour voxels, all voxels with value on the smoothed image (\"Smooth scale\" parameter) under the local threshold is removed </html>";
+            + "3) A local threshold is applied to each region. Mostly because inter-forground regions may be segmented in step 1). Threshold is set as described in \"Local Threshold Factor\" parameter. <br /> "
+            + "Propagating from contour voxels, all voxels with value on the smoothed image (\"Smooth scale\" parameter) under the local threshold is removed </html>";
     
     @Override
     public String getToolTipText() {return toolTip;}
@@ -124,19 +125,19 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         res.setTestMode(testMode);
         return res;
     }
-    
+    /**
+     * Initialize the EdgeDetector that will create a parittion of the image and filter the region
+     * @param parent
+     * @param structureIdx
+     * @return 
+     */
     protected EdgeDetector initEdgeDetector(StructureObjectProcessing parent, int structureIdx) {
         EdgeDetector seg = new EdgeDetector().setIsDarkBackground(true); // keep defaults parameters ? 
         seg.setTestMode(testMode);
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2)); // min = 1.5
         seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)); // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2)
-        //seg.setPreFilters(new Sigma(3).setMedianRadius(3));
-        //seg.setSecondaryThresholdMap(splitAndMerge.getHessian()); // not efficient when hyperfluo cells but not saturated..
         if (Double.isNaN(threshold)) seg.setThrehsoldingMethod(1).setThresholder(Double.isNaN(minThld) ? threhsolder.instanciatePlugin(): new CompareThresholds(threhsolder.instanciatePlugin(), new ConstantValue(minThld), true)); // honors min value
         else seg.setThrehsoldingMethod(1).setThresholder(new ConstantValue(Math.max(threshold, minThld)));
-        
-        //seg.setThrehsoldingMethod(0).setThresholder(new BackgroundThresholder(3, 3, 2).setStartingValue(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu))); // useless if secondary map
-        //seg.setWsPriorityMap(getSmoothed(input));
         return seg;
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
@@ -174,10 +175,11 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
         res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         return res;
     }
-    
+    // for extension purpose
     protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
         return pop;
     }
+    // for extension purpose
     protected RegionPopulation filterRegionAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
         return pop;
     }
@@ -272,6 +274,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
      */
     @Override public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
         Image input = parent.getPreFilteredImage(structureIdx);
+        if (input==null) throw new IllegalArgumentException("No prefiltered image set");
         ImageInteger mask = object.isAbsoluteLandMark() ? object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox()) :object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox().translateToOrigin()); // extend mask to get the same size as the image
         if (splitAndMerge==null || !parent.equals(currentParent)) {
             currentParent = parent;

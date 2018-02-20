@@ -30,9 +30,6 @@ import boa.image.ImageMask;
 import boa.image.TypeConverter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
-import boa.image.processing.ImageOperations;
-import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
-import boa.image.processing.neighborhood.Neighborhood;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.measurement.BasicMeasurements;
 import boa.measurement.GeometricalMeasurements;
@@ -65,19 +62,23 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         RegionPopulation pop = super.runSegmenter(input, structureIdx, parent);
         return filterBorderArtefacts(parent, structureIdx, pop);
     }
-    final private String toolTip = "<html>Bacteria segmentation within microchannels, for phase images normalized and inverted (foreground is bright)</ br>"
-            + "Same algorithm as BacteriaIntensity with minor changes:<br />"
-            + "Split/Merge criterion is value of hessian at interface between to regions normalized by the std value of hessian within all segmented regions<br />"
-            + "local threshold step is performed on the raw images</html>";
+    final private String toolTip = "<html>Bacteria segmentation within microchannels <br />"
+            + "Same algorithm as BacteriaIntensity with several changes:<br />"
+            + "This algorithm is designed to work on inverted (foreground is bright) and normalized phase-contrast images, filtered with the Track-pre-filter: \"SubtractBackgroundMicrochannels\" <br />"
+            + "0) Void microchannels are detected prior to segmentation step using information on the whole microchannel track. <br />"
+            + "Otsu's threshold is applied on each frame (named tf) and and otsu's algorithm is applied on the distribution of thresholds (further named T). <br />"
+            + "To assess if the distribution is biomoal (ie some microchannels contain cells, other don't): mean value of tf over (Mo) and under (Mo) T are computed. If (Mo-Mu)/T > 0.4 the distribution is considered bimodal.<br />"
+            + "If T<0.4 all microchannels are considered as void.<br />"
+            + "1) Split/Merge criterion is value of hessian at interface between to regions normalized by the mean value of the pre-filtered image within all segmented regions<br />"
+            + "2) local threshold step is performed on the raw images with a different value described in the \"local threshold factor parameter\"<br />"
+            + "3) High-intensity background objects resulting from border-effects & phase contrast imaging are removed based on thickness criterion & contact with border of microchannel</html>";
     
     @Override public String getToolTipText() {return toolTip;}
-    //boolean localNormalization = false; // testing
+    
     @Override public SplitAndMergeHessian initializeSplitAndMerge(Image input, ImageMask foregroundMask) {
         SplitAndMergeHessian sam = super.initializeSplitAndMerge(input, foregroundMask);
         //double sd1 = localNormalization?0:1.5*ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask)[1];
         //double sd = localNormalization?0:ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask, v->v<sd1 && v>-sd1)[1];
-        //double sd= localNormalization?0:ImageOperations.getMeanAndSigma(sam.getHessian(), foregroundMask)[1];
-        //if (testMode) logger.debug("Hessian normalization first round sd: {} second round sd: {}", sd1/1.5d, sd);
         sam.setInterfaceValue(i-> {
             Collection<Voxel> voxels = i.getVoxels();
             if (voxels.isEmpty()) return Double.NaN;
@@ -89,24 +90,6 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
                 // normalize using mean value (compare with max of mean or max of median
                 double mean = Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->(double)input.getPixel(v.x, v.y, v.z)).average().getAsDouble();
                 val/=mean;
-                //val /= Math.max(m1, m2);
-                /*if (localNormalization) {
-                    if (true) {
-                        DoubleStatistics stats1= DoubleStatistics.getStats(i.getE1().getVoxels().stream().mapToDouble(v->(double)hessian.getPixel(v.x, v.y, v.z))); 
-                        double sdLoc1 = Math.sqrt(stats1.getSumOfSquare()/stats1.getCount()); // mean is supposed to be zero
-                        DoubleStatistics stats2= DoubleStatistics.getStats(i.getE2().getVoxels().stream().mapToDouble(v->(double)hessian.getPixel(v.x, v.y, v.z))); 
-                        double sdLoc2 = Math.sqrt(stats2.getSumOfSquare()/stats2.getCount()); // mean is supposed to be zero
-                        //double sdLoc = stats.getStandardDeviation();
-                        return val/Math.max(sdLoc1, sdLoc2);
-                    } else {
-                        DoubleStatistics stats = DoubleStatistics.getStats(Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->(double)hessian.getPixel(v.x, v.y, v.z))); // join view
-                        double sdLoc = Math.sqrt(stats.getSumOfSquare()/stats.getCount()); // mean is supposed to be zero
-                        //double sdLoc = stats.getStandardDeviation();
-                        return val/sdLoc;
-                    }
-                } else {
-                    return val/sd; // normalize by global hessian STD 
-                }*/
                 return val;
             }
         });
@@ -119,25 +102,6 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         EdgeDetector seg = super.initEdgeDetector(parent, structureIdx);
         seg.seedRadius.setValue(1.5);
         return seg;
-        /*ImageInteger seeds = seg.getSeedMap(parent.getPreFilteredImage(structureIdx), parent.getMask());
-        // add seeds at border of mask and remove seeds in contact
-        EllipsoidalNeighborhood n = new EllipsoidalNeighborhood(1.5, true);
-        ImageMask mask = parent.getMask();
-        ImageMask.loop(mask, (x, y, z)-> {
-            if (n.hasNullValue(x, y, z, mask, true)) { // located at the border
-                for (int i = 0; i<n.getSize(); ++i) { // remove seeds located directly at next to border
-                    int xx = x+n.dx[i];
-                    int yy = y+n.dy[i];
-                    if (mask.contains(xx, yy, z) && mask.insideMask(xx, yy, z) && seeds.insideMask(xx, yy, z)) {
-                        seeds.setPixel(xx, yy, z, 0);
-                    }
-                }
-            }
-        });
-        ImageMask.loop(mask, (x, y, z)-> { // set all borders as seeds
-            if (n.hasNullValue(x, y, z, mask, true)) seeds.setPixel(x, y, z, 1);
-        });
-        return seg;*/
     }
     @Override 
     protected RegionPopulation filterRegionAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
@@ -145,14 +109,16 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     }
     @Override
     protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        /*if (setBorderSeeds) {
-            ContactBorderMask contact = new ContactBorderMask(1, parent.getMask(), Border.XY);
-            pop.filter(r->contact.getContact(r)<1);
-        }*/
         return filterBorderArtefacts(parent, structureIdx, pop);
     }
+    /**
+     * Filter Border Artefacts using: 1) a criterion on contact on sides and low X-thickness for side artefacts, a criterion on contact with closed-end of microchannel and local-thickness
+     * @param parent
+     * @param structureIdx
+     * @param pop
+     * @return 
+     */
     protected RegionPopulation filterBorderArtefacts(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        //if (setBorderSeeds) return pop;
         boolean verbose = testMode;
         double globThld = this.globalThreshold;
         Image intensity = parent.getPreFilteredImage(structureIdx);

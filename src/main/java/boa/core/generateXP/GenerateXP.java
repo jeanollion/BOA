@@ -453,7 +453,7 @@ public class GenerateXP {
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE));
         //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
         //ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-        CropMicroChannels cropper = new CropMicroChannelFluo2D(410, 0, 45, 200, 0.5, 10);
+        CropMicroChannels cropper = new CropMicroChannelFluo2D(410, 45, 200, 0.5, 10);
         ps.addTransformation(0, null, cropper).setActivated(true);
         //ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, 0).setCropper(cropper)).setActivated(false); // additional translation to correct chromatic shift
     }

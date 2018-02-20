@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import boa.plugins.MultiThreaded;
 import boa.plugins.Segmenter;
 import boa.plugins.Thresholder;
+import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.TrackerSegmenter;
@@ -73,16 +74,18 @@ import java.util.TreeMap;
  *
  * @author jollion
  */
-public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
+public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, ToolTip {
     protected PluginParameter<MicrochannelSegmenter> segmenter = new PluginParameter<>("Segmentation algorithm", MicrochannelSegmenter.class, new MicrochannelPhase2D(), false);
     NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
     NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x [mean channel width])", 1, 1, 0, null);
     NumberParameter yShiftQuantile = new BoundedNumberParameter("Y-shift Quantile", 2, 0.5, 0, 1);
-    //NumberParameter minTrackLength = new BoundedNumberParameter("Minimum Track Length", 0, 100, 10, null);
     
     Parameter[] parameters = new Parameter[]{segmenter, maxShift, maxDistanceWidthFactor, yShiftQuantile};
     private static double widthQuantile = 0.9;
     public static boolean debug = false;
+    
+    String toolTip = "<html>"
+            + "</html>";
     
     public MicrochannelTracker setSegmenter(MicrochannelSegmenter s) {
         this.segmenter.setPlugin(s);
@@ -97,7 +100,11 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         this.maxDistanceWidthFactor.setValue(maxDistanceWidthFactor);
         return this;
     }
-    
+    /**
+     * Tracking of microchannels using <a href="https://imagej.net/TrackMate" target="_top">TrackMate</a>   
+     * @param structureIdx index of the microchannel structure
+     * @param parentTrack parent track containing segmented microchannels at index {@param structureIdx}
+     */
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
@@ -137,10 +144,6 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             else parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(parent.getPreFilteredImage(structureIdx), false), structureIdx); // no Y - shift here because the mean shift is added afterwards
             parent.setPreFilteredImage(null, structureIdx); // save memory
         };
-        /*MicrochannelPhase2D.debug=true;
-        ta.run(parentTrack.get(0), structureIdx);
-        MicrochannelPhase2D.debug=false;
-        */
         
         ThreadRunner.execute(parentTrack, false, ta, executor, null);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
@@ -418,6 +421,11 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
     @Override
     public void setExecutor(ExecutorService executor) {
         this.executor=executor;
+    }
+    // tool tip interface
+    @Override
+    public String getToolTipText() {
+        return toolTip;
     }
     
     

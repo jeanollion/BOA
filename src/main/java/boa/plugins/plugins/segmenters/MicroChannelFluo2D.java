@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.Filters;
 import boa.plugins.Plugin;
+import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.utils.Utils;
@@ -53,19 +54,21 @@ import java.util.TreeMap;
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametrizable<MicroChannelFluo2D> {
+public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametrizable<MicroChannelFluo2D>, ToolTip {
 
-    NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 430, 5, null).setToolTipText("Height of microchannel in pixels");
-    NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
+    NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height", 0, 430, 5, null).setToolTipText("Height of microchannel in pixels");
+    NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width", 0, 40, 5, null);
     NumberParameter yShift = new BoundedNumberParameter("y-shift (start of microchannel)", 0, 20, 0, null).setToolTipText("Translation of the microchannel in upper direction");
     PluginParameter<boa.plugins.SimpleThresholder> threshold= new PluginParameter<>("Threshold", boa.plugins.SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new BackgroundThresholder(3, 6, 3) when background is removed and images saved in 16b, half of background is trimmed -> higher values
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.3, 0.05, 1).setToolTipText("Fill proportion = y-length of bacteria / height of microchannel. If proportion is under this value, the object won't be segmented. Allows to avoid segmenting islated bacteria in central channel");
     NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 200, 1, null).setToolTipText("To detect microchannel a rough semgentation of bacteria is performed by simple threshold. Object undier this size in pixels are removed, to avoid taking into account objects that are not bacteria");
     Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yShift, threshold, fillingProportion, minObjectSize};
     public static boolean debug = false;
-
-    public MicroChannelFluo2D() {
-    }
+    public String toolTip = "<html>Detection of microchannel using bacteria fluorescence"
+    + "1) Rough segmentation of cells on {@param image} with using \"Threshold\" computed the whole track prior to segmentation step"
+    + "2) Selection of filled channels: lengh in X direction should be over \"Microchannel Height\" x \"Microchannel filling proportion\""
+    + "3) Computation of Y start: min value of the min y coordinate of the selected objects at step 2</html>";
+    public MicroChannelFluo2D() {}
 
     public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
         this.channelHeight.setValue(channelHeight);
@@ -79,7 +82,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runThresholder(input, parent) : thresholdValue;
         logger.debug("thresholder: {} : {}", threshold.getPluginName(), threshold.getParameters());
-        Result r = segmentMicroChannels(input, null, 0, yShift.getValue().intValue(), channelWidth.getValue().intValue(), channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), thld, minObjectSize.getValue().intValue(), debug);
+        Result r = segmentMicroChannels(input, null, yShift.getValue().intValue(), channelWidth.getValue().intValue(), channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), thld, minObjectSize.getValue().intValue(), debug);
         if (r==null) return null;
         else return r.getObjectPopulation(input, true);
     }
@@ -87,7 +90,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
     @Override
     public Result segment(Image input) {
         double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runSimpleThresholder(input, null) : thresholdValue;
-        Result r = segmentMicroChannels(input, null, 0, yShift.getValue().intValue(), channelWidth.getValue().intValue(), channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), thld, minObjectSize.getValue().intValue(), debug);
+        Result r = segmentMicroChannels(input, null, yShift.getValue().intValue(), channelWidth.getValue().intValue(), channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), thld, minObjectSize.getValue().intValue(), debug);
         return r;
     }
     
@@ -106,35 +109,37 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
         return (p, s)->s.thresholdValue=thld;
     }
     /**
-     * 1) rough segmentation of cells with threshold
-        2) selection of filled channels using X-projection & threshold on length
-        3) computation of Y start using the minimal Y of objects within the selected channels from step 2 (median value of yMins)
+     *  Detection of microchannel using bacteria fluorescence
+     *  1) Rough segmentation of cells on {@param image} with using {@param thld} if {@param thld} is NaN threshold is computed using {@link boa.plugins.plugins.thresholders.BackgroundThresholder#runThresholder(boa.image.Image, boa.image.ImageMask, double, double, int, double, double[]) background thresholder} {@param thresholdedImage} is used instead if not null
+        2) Selection of filled channels lengh in X direction should be over {@param channelHeight} x {@param fillingProportion} 
+        3) Computation of Y start: min value of the min y coordinate of the selected objects at step 2
      * @param image
-     * @param thresholdedImage
-     * @param Xmargin
-     * @param yShift
-     * @param channelWidth
-     * @param channelHeight
-     * @param channelHeight
-     * @param fillingProportion
-     * @param minObjectSize
-     * @param thld
+     * @param thresholdedImage optional (if null {@param image} will be semgmented using {@param thld}) binary image with bacteria roughly segmented
+     * @param yShift y start of microchannels will be shifted of this value towards the top of the image
+     * @param channelWidth microchannel width. if value <0, the average value of segmented object width is used
+     * @param channelHeight used to determined if channels are filled enough
+     * @param fillingProportion used to determined if channels are filled enough
+     * @param minObjectSize used to filter small objects
+     * @param thld optiona lused for image binarization, can be NaN
      * @param testMode
      * @return 
      */
-    public static Result segmentMicroChannels(Image image, ImageInteger thresholdedImage, int Xmargin, int yShift, int channelWidth, int channelHeight, double fillingProportion, double thld, int minObjectSize, boolean testMode) {
-        double thldX = channelHeight * fillingProportion; // only take into account roughly filled channels
-        thldX /= (double) (image.getSizeY() * image.getSizeZ()); // mean X projection
+    public static Result segmentMicroChannels(Image image, ImageInteger thresholdedImage, int yShift, int channelWidth, int channelHeight, double fillingProportion, double thld, int minObjectSize, boolean testMode) {
+        
+        // get thresholded image
         if (Double.isNaN(thld) && thresholdedImage == null) {
             thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3, Double.MAX_VALUE, null); //IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN
         }
         if (testMode)  Plugin.logger.debug("crop micochannels threshold : {}", thld);
-        
         ImageInteger mask = thresholdedImage == null ? ImageOperations.threshold(image, thld, true, true) : thresholdedImage;
+        // remove small objects
         Filters.binaryClose(mask, mask, Filters.getNeighborhood(1, 0, image)); // case of low intensity signal -> noisy. // remove small objects?
         List<Region> bacteria = ImageOperations.filterObjects(mask, mask, (Region o) -> o.getSize() < minObjectSize);
+        // selected filled microchannels
         float[] xProj = ImageOperations.meanProjection(mask, ImageOperations.Axis.X, null);
         ImageFloat imProjX = new ImageFloat("proj(X)", mask.getSizeX(), new float[][]{xProj});
+        double thldX = channelHeight * fillingProportion; // only take into account roughly filled channels
+        thldX /= (double) (image.getSizeY() * image.getSizeZ()); // mean X projection
         ImageByte projXThlded = ImageOperations.threshold(imProjX, thldX, true, false).setName("proj(X) thlded: " + thldX);
         if (testMode) {
             ImageWindowManagerFactory.showImage(mask);
@@ -148,15 +153,12 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
         if (channelWidth <= 1) {
             channelWidth = (int) xObjectList.stream().mapToInt((Region o) -> o.getBounds().getSizeX()).average().getAsDouble();
         }
-        Xmargin = Math.max(Xmargin, channelWidth / 2 + 1);
-        if (testMode) {
-            Plugin.logger.debug("channelWidth: {}, marging: {}", channelWidth, Xmargin);
-        }
+        int leftLimit = channelWidth / 2 + 1;
+        int rightLimit = image.getSizeX() - leftLimit;
         Iterator<Region> it = xObjectList.iterator();
-        int rightLimit = image.getSizeX() - Xmargin;
         while (it.hasNext()) {
             BoundingBox b = it.next().getBounds();
-            if (b.getXMean() < Xmargin || b.getXMean() > rightLimit) {
+            if (b.getXMean() < leftLimit || b.getXMean() > rightLimit) {
                 it.remove(); //if (b.getxMin()<Xmargin || b.getxMax()>rightLimit) it.remove(); //
             }
         }
@@ -204,7 +206,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
                 }
             }
         }
-        // get median value of yMins
+        // get median yMin
         List<Integer> yMinsList = new ArrayList<>(yMins.length);
         for (int yMin : yMins) {
             if (yMin != Integer.MAX_VALUE) {
@@ -232,7 +234,11 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
         }
         Collections.sort(sortedMinMaxYShiftList, (int[] i1, int[] i2) -> Integer.compare(i1[0], i2[0]));
         return new Result(sortedMinMaxYShiftList, Math.max(0, yMin - yShift), yMin + channelHeight - yShift);
-        //return new Result(xObjects, yMin, yMin+channelHeight);
+    }
+
+    @Override
+    public String getToolTipText() {
+        return toolTip;
     }
 
 }

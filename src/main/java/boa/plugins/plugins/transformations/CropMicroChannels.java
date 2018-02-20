@@ -46,9 +46,9 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
     protected NumberParameter xStop = new BoundedNumberParameter("X stop (0 for image width)", 0, 0, 0, null);
     protected NumberParameter yStart = new BoundedNumberParameter("Y start", 0, 0, 0, null);
     protected NumberParameter yStop = new BoundedNumberParameter("Y stop (0 for image heigth)", 0, 0, 0, null);
-    protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 0, 0, null).setToolTipText("Microchannels closer to X-border (left or right) than this value will be removed");
+    //protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 0, 0, null).setToolTipText("Microchannels closer to X-border (left or right) than this value will be removed");
     protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 410, 0, null);
-    protected NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null).setToolTipText("The y-start point will be shifted of this value towards upper direction");
+    protected NumberParameter cropMarginY = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null).setToolTipText("The y-start point will be shifted of this value towards upper direction");
     NumberParameter number = new BoundedNumberParameter("Number of Frames", 0, 20, 1, null).setToolTipText("Crop bounds are detected on several frames (with most signal) and then merged");
     
     public CropMicroChannels setNumberOfFrames(int nb) {

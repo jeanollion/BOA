@@ -72,12 +72,11 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.5, 0.05, 1);
     PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new BackgroundThresholder(3, 6, 3), false);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number};
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number};
     
-    public CropMicroChannelFluo2D(int channelHeight, int Xmargin, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
+    public CropMicroChannelFluo2D(int channelHeight, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
         this.channelHeight.setValue(channelHeight);
-        this.margin.setValue(Xmargin);
-        this.cropMargin.setValue(cropMargin);
+        this.cropMarginY.setValue(cropMargin);
         this.minObjectSize.setValue(minObjectSize);
         this.fillingProportion.setValue(fillingProportion);
         this.number.setValue(timePointNumber);
@@ -111,9 +110,9 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     
     public BoundingBox getBoundingBox(Image image, ImageInteger thresholdedImage, double threshold) {
         if (debug) testMode = true;
-        Result r = MicroChannelFluo2D.segmentMicroChannels(image, thresholdedImage, margin.getValue().intValue(), 0, 0, this.channelHeight.getValue().intValue(), this.fillingProportion.getValue().doubleValue(), threshold, this.minObjectSize.getValue().intValue(), testMode);
+        Result r = MicroChannelFluo2D.segmentMicroChannels(image, thresholdedImage, 0, 0, this.channelHeight.getValue().intValue(), this.fillingProportion.getValue().doubleValue(), threshold, this.minObjectSize.getValue().intValue(), testMode);
         if (r == null) return null;
-        int cropMargin = this.cropMargin.getValue().intValue();
+        int cropMargin = this.cropMarginY.getValue().intValue();
         int xStart = this.xStart.getValue().intValue();
         int xStop = this.xStop.getValue().intValue();
         int yStart = this.yStart.getValue().intValue();

@@ -57,11 +57,10 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     NumberParameter microChannelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
     NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 30, 0, null);
     NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 3, 10, 0, null).setToolTipText("Threshold for Microchannel border detection (peaks of 1st derivative in X-axis)");;
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, microChannelWidth, microChannelWidthMin, microChannelWidthMax, localDerExtremaThld, yEndMargin, xStart, xStop, yStart, yStop, number};
-    public final static double betterPeakRelativeThreshold = 0.6;
-    public CropMicroChannelBF2D(int margin, int cropMargin, int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax, int timePointNumber) {
-        this.margin.setValue(margin);
-        this.cropMargin.setValue(cropMargin);
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, microChannelWidth, microChannelWidthMin, microChannelWidthMax, localDerExtremaThld, yEndMargin, xStart, xStop, yStart, yStop, number};
+    
+    public CropMicroChannelBF2D(int cropMarginY, int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax, int timePointNumber) {
+        this.cropMarginY.setValue(cropMarginY);
         this.microChannelWidth.setValue(microChannelWidth);
         this.microChannelWidthMin.setValue(microChannelWidthMin);
         this.microChannelWidthMax.setValue(microChannelWidthMax);
@@ -87,12 +86,12 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         return this;
     }
     @Override public BoundingBox getBoundingBox(Image image) {
-        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(),xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), 0, yEndMargin.getValue().intValue());
+        return getBoundingBox(image, cropMarginY.getValue().intValue(), channelHeight.getValue().intValue(),xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), 0, yEndMargin.getValue().intValue());
     }
     
-    public BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight,  int xStart, int xStop, int yStart, int yStop, int yStartAdjustWindow, int yMarginEndChannel) {
+    public BoundingBox getBoundingBox(Image image, int cropMargin, int channelHeight,  int xStart, int xStop, int yStart, int yStop, int yStartAdjustWindow, int yMarginEndChannel) {
         if (debug) testMode = true;
-        Result r = segmentMicroChannels(image, true, margin, yStartAdjustWindow, yMarginEndChannel, microChannelWidth.getValue().intValue(), microChannelWidthMin.getValue().intValue(), microChannelWidthMax.getValue().intValue(), localDerExtremaThld.getValue().doubleValue(), debug);
+        Result r = segmentMicroChannels(image, true, yStartAdjustWindow, yMarginEndChannel, microChannelWidth.getValue().intValue(), microChannelWidthMin.getValue().intValue(), microChannelWidthMax.getValue().intValue(), localDerExtremaThld.getValue().doubleValue(), debug);
         if (r==null || r.xMax.length==0) return null;
         int yMin = r.getYMin();
         int yMax = r.getYMax();

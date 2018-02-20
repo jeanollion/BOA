@@ -130,7 +130,7 @@ public class MeasurementExtractor {
             output.delete();
             fstream = new FileWriter(output);
             out = new BufferedWriter(fstream);
-            TreeMap<Integer, String[]> allMeasurementsSort = new TreeMap<Integer, String[]>(allMeasurements); // sort by structureIndex value
+            TreeMap<Integer, String[]> allMeasurementsSort = new TreeMap<>(allMeasurements); // sort by structureIndex value
             out.write(getHeader(getAllMeasurements(allMeasurements))); 
             
             int currentStructureIdx = allMeasurementsSort.lastKey();

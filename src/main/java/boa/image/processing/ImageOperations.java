@@ -76,8 +76,7 @@ public class ImageOperations {
         for (Region o : l) if (removeObject.apply(o)) toRemove.add(o);
         l.removeAll(toRemove);
         //logger.debug("count before: {}/ after :{}", tot, stay);
-        if (output==null) output= ImageInteger.createEmptyLabelImage("", l.size(), image);
-        for (Region o : toRemove) o.draw(output, 0);
+        if (output!=null) for (Region o : toRemove) o.draw(output, 0);
         return l;
     }
     public static Image applyPlaneByPlane(Image image, Function<Image, Image> function) {
