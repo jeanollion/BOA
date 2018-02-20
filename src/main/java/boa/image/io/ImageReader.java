@@ -41,9 +41,12 @@ import loci.plugins.util.ImageProcessorReader;
 import loci.plugins.util.LociPrefs;
 import ome.units.quantity.Length;
 import static boa.image.Image.logger;
+import boa.utils.Pair;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import loci.formats.IFormatReader;
 import org.joda.time.DateTimeZone;
 
@@ -332,7 +335,25 @@ public class ImageReader {
         reader.closeReader();
         return im;
     }
-    
+    public static Pair<int[][], double[]> getTIFInfo(String filePath) {
+        File file = new File(filePath);
+        TiffDecoder td = new TiffDecoder(file.getParent(), file.getName());
+        try {
+            FileInfo[] info = td.getTiffInfo();
+            int[][] stcxyz = new int[1][5];
+            stcxyz[0][4] = info.length;
+            stcxyz[0][2] = info[0].width;
+            stcxyz[0][3] = info[0].height;
+            stcxyz[0][1] = 1;
+            stcxyz[0][0] = 1;
+            double[] scale = new double[2];
+            scale[0] = info[0].pixelWidth;
+            scale[1] = info[0].pixelDepth;
+            return new Pair(stcxyz, scale);
+        } catch (IOException ex) {
+            return null;
+        }
+    }
     public static Image openIJTif(String filePath) { // TODO : 3D files open only some planes
         File file = new File(filePath);
         TiffDecoder td = new TiffDecoder(file.getParent(), file.getName());

@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import boa.utils.FileIO;
+import boa.utils.Pair;
 import boa.utils.Utils;
 
 /**
@@ -104,10 +105,18 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getPreProcessedImagePath(0, 0, microscopyFieldName);
         File f = new File(path);
         if (f.exists()) {
-            ImageReader reader = new ImageReader(path);
-            int[][] STCXYZ = reader.getSTCXYZNumbers();
-            double[] scale = reader.getScaleXYZ(1);
-            reader.closeReader();
+            int[][] STCXYZ;
+            double[] scale;
+            if (f.getName().endsWith(".tif")) {
+                Pair<int[][], double[]> info = ImageReader.getTIFInfo(path);
+                STCXYZ = info.key;
+                scale = info.value;
+            } else {
+                ImageReader reader = new ImageReader(path);
+                STCXYZ = reader.getSTCXYZNumbers();
+                scale = reader.getScaleXYZ(1);
+                reader.closeReader();
+            }
             return new BlankMask( STCXYZ[0][2], STCXYZ[0][3], STCXYZ[0][4], 0, 0, 0, (float)scale[0], (float)scale[1]);
         } else {
             logger.error("getPreProcessedImageProperties: pre-processed image {} not found", path);
