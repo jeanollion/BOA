@@ -62,16 +62,16 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         RegionPopulation pop = super.runSegmenter(input, structureIdx, parent);
         return filterBorderArtefacts(parent, structureIdx, pop);
     }
-    final private String toolTip = "<html>Bacteria segmentation within microchannels <br />"
+    final private String toolTip = "<b>Bacteria segmentation within microchannels</b><br />"
             + "Same algorithm as BacteriaIntensity with several changes:<br />"
-            + "This algorithm is designed to work on inverted (foreground is bright) and normalized phase-contrast images, filtered with the Track-pre-filter: \"SubtractBackgroundMicrochannels\" <br />"
-            + "0) Void microchannels are detected prior to segmentation step using information on the whole microchannel track. <br />"
-            + "Otsu's threshold is applied on each frame (named tf) and and otsu's algorithm is applied on the distribution of thresholds (further named T). <br />"
-            + "To assess if the distribution is biomoal (ie some microchannels contain cells, other don't): mean value of tf over (Mo) and under (Mo) T are computed. If (Mo-Mu)/T > 0.4 the distribution is considered bimodal.<br />"
-            + "If T<0.4 all microchannels are considered as void.<br />"
-            + "1) Split/Merge criterion is value of hessian at interface between to regions normalized by the mean value of the pre-filtered image within all segmented regions<br />"
-            + "2) local threshold step is performed on the raw images with a different value described in the \"local threshold factor parameter\"<br />"
-            + "3) High-intensity background objects resulting from border-effects & phase contrast imaging are removed based on thickness criterion & contact with border of microchannel</html>";
+            + "This algorithm is designed to work on inverted (foreground is bright) and normalized phase-contrast images, filtered with the Track-pre-filter: \"SubtractBackgroundMicrochannels\"<br />"
+            + "<ol><li>Void microchannels are detected prior to segmentation step using information on the whole microchannel track."
+            + "Otsu's threshold is applied on each frame (named tf) and and otsu's algorithm is applied on the distribution of thresholds (further named T)."
+            + "To assess if the distribution is biomodal (ie some microchannels contain cells, other don't): mean value of tf over (Mo) and under (Mo) T are computed. <br />If (Mo-Mu)/T > 0.4 the distribution is considered bimodal."
+            + "If T<0.4 all microchannels are considered as void.</li>"
+            + "<li>Split/Merge criterion is value of hessian at interface between to regions normalized by the mean value of the pre-filtered image within all segmented regions</li>"
+            + "<li>Local threshold step is performed on the raw images with a different value described in the \"local threshold factor parameter\"</li>"
+            + "<li>High-intensity background objects resulting from border-effects & phase contrast imaging are removed based on thickness criterion & contact with border of microchannel</li></ol>";
     
     @Override public String getToolTipText() {return toolTip;}
     

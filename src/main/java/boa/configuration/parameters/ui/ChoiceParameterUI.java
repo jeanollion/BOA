@@ -26,6 +26,7 @@ import boa.gui.configuration.ConfigurationTreeModel;
 import boa.plugins.Plugin;
 import boa.plugins.PluginFactory;
 import boa.plugins.ToolTip;
+import static boa.plugins.ToolTip.formatToolTip;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -93,7 +94,7 @@ public class ChoiceParameterUI implements ArmableUI {
                 Class plugClass = PluginFactory.getPluginClass(((PluginParameter)choice_).getPluginType(), choices[i]);
                 if (plugClass!=null && ToolTip.class.isAssignableFrom(plugClass)) {
                     Plugin p = PluginFactory.getPlugin(((PluginParameter)choice_).getPluginType(), choices[i]);
-                    if (p!=null) actionChoice[i].setToolTipText(((ToolTip)p).getToolTipText());
+                    if (p!=null) actionChoice[i].setToolTipText(formatToolTip(((ToolTip)p).getToolTipText()));
                 }
                 
                 

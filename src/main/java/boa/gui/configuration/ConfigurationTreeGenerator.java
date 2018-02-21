@@ -28,6 +28,7 @@ import boa.configuration.experiment.PreProcessingChain.PreProcessingChainUI;
 import boa.configuration.parameters.PluginParameter;
 import boa.plugins.Plugin;
 import boa.plugins.ToolTip;
+import static boa.plugins.ToolTip.formatToolTip;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Rectangle;
@@ -92,18 +93,18 @@ public class ConfigurationTreeGenerator {
                         if (p instanceof ToolTip) {
                             String t2 = ((ToolTip)p).getToolTipText();
                             if (t2!=null) {
-                                if (t==null) return t2;
+                                if (t==null) return formatToolTip(t2);
                                 else {
                                     if (t2.startsWith("<html>")) t2.replace("<html>", "");
                                     if (!t2.endsWith("</html>")) t2=t2+"</html>";
                                     if (t.endsWith("</html>")) t.replace("</html>", "");
                                     if (!t2.startsWith("</html>")) t="</html>"+t;
-                                    return t+"<br />Current Plugin:<br />"+t2;
+                                    return formatToolTip(t+"<br />Current Plugin:<br />"+t2);
                                 }
                             }
                         }
                     }
-                    if (t!=null) return t;
+                    if (t!=null) return formatToolTip(t);
                 }
                 return null;
             }

@@ -140,6 +140,7 @@ import boa.utils.TestThreadExecutorFrameWork;
 import boa.utils.Utils;
 import static boa.utils.Utils.addHorizontalScrollBar;
 import javax.swing.ToolTipManager;
+import javax.swing.UIManager;
 
 
 /**

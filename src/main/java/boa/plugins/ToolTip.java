@@ -25,4 +25,10 @@ import boa.configuration.parameters.Parameter;
  */
 public interface ToolTip{
     public String getToolTipText();
+    public static int tooltipWidth = 750;
+    public static String formatToolTip(String toolTip) {
+        if (toolTip.startsWith("<html>")) toolTip = toolTip.replace("<html>", "");
+        if (toolTip.endsWith("</html>")) toolTip = toolTip.replace("</html>", "");
+        return "<html><div style=\"width:"+tooltipWidth+"px\">" + toolTip + "</div></html>";
+    }
 }
