@@ -335,6 +335,28 @@ public class ImageReader {
         reader.closeReader();
         return im;
     }
+    public static Pair<int[][], double[]> getImageInfo(String filePath) {
+        if (filePath.endsWith(".tif")) {
+            Pair<int[][], double[]> res = getTIFInfo(filePath);
+            if (res!=null) return res;
+        }
+        ImageReader reader = new ImageReader(filePath);
+        int[][] stcxyz = reader.getSTCXYZNumbers();
+        double[] sXYZ = reader.getScaleXYZ(1);
+        reader.closeReader();
+        return new Pair(stcxyz, sXYZ);
+    }
+
+    public static double getTIFTimeFrameInterval(String filePath) {
+        File file = new File(filePath);
+        TiffDecoder td = new TiffDecoder(file.getParent(), file.getName());
+        try {
+            FileInfo[] info = td.getTiffInfo();
+            return info[0].frameInterval;
+        } catch (IOException ex) {
+            return Double.NaN;
+        }
+    }
     public static Pair<int[][], double[]> getTIFInfo(String filePath) {
         File file = new File(filePath);
         TiffDecoder td = new TiffDecoder(file.getParent(), file.getName());
@@ -346,9 +368,10 @@ public class ImageReader {
             stcxyz[0][3] = info[0].height;
             stcxyz[0][1] = 1;
             stcxyz[0][0] = 1;
-            double[] scale = new double[2];
+            double[] scale = new double[3];
             scale[0] = info[0].pixelWidth;
-            scale[1] = info[0].pixelDepth;
+            scale[1] = info[0].pixelHeight;
+            scale[2] = info[0].pixelDepth;
             return new Pair(stcxyz, scale);
         } catch (IOException ex) {
             return null;

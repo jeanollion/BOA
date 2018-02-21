@@ -39,6 +39,7 @@ import org.json.simple.JSONObject;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import boa.utils.JSONUtils;
+import boa.utils.Pair;
 
 /**
  *
@@ -119,16 +120,14 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
             int maxZ = -1;
             this.sizeZC = new int[channelKeywords.length]; 
             for (int channelNumber=0; channelNumber<this.sizeZC.length; ++channelNumber) {
-                ImageReader reader = new ImageReader(fileCT.get(channelNumber).get(0));
-                this.sizeZC[channelNumber] = reader.getSTCXYZNumbers()[0][4];
+                Pair<int[][], double[]> info = ImageReader.getImageInfo(fileCT.get(channelNumber).get(0));
+                this.sizeZC[channelNumber] = info.key[0][4];
                 if (scaleXY<=0 && this.sizeZC[channelNumber]>maxZ) {
                     maxZ =  this.sizeZC[channelNumber];
-                    double[] sXYZ = reader.getScaleXYZ(1);
-                    this.scaleXY = sXYZ[0];
-                    this.scaleZ = sXYZ[2];
-                    logger.debug("pos: {}, scale: {}", this.positionKey, sXYZ);
-                } 
-                reader.closeReader();
+                    this.scaleXY = info.value[0];
+                    this.scaleZ = info.value[2];
+                    logger.debug("pos: {}, scale: xy:{}; z:{}", this.positionKey, this.scaleXY,this.scaleZ );
+                }
             }
         } else this.sizeZC=sizeZC;
         logger.debug("sizeZC: {}", this.sizeZC);
@@ -138,6 +137,9 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
             this.scaleXY = sXYZ[0];
             this.scaleZ = sXYZ[2];
             reader.closeReader();
+            Pair<int[][], double[]> info = ImageReader.getImageInfo(fileCT.get(ArrayUtil.max(this.sizeZC)).get(0));
+            this.scaleXY = info.value[0];
+            this.scaleZ = info.value[2];
         }
         initTimePointMap();
         
@@ -170,19 +172,36 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         synchronized(this) {
             for (int c = 0; c<this.channelKeywords.length; ++c) {
                 for (int f = 0; f<fileCT.get(c).size(); ++f) {
-                    ImageReader r = new ImageReader(fileCT.get(c).get(f));
-                    if (r==null) continue;
-                    for (int z = 0; z<sizeZC[c]; ++z) {
-                        double res= r.getTimePoint(0, 0, z);
-                        if (!Double.isNaN(res)) timePointCZT.put(getKey(c, z, f), res);
-                        else {
-                            timePointCZT.clear();
-                            logger.error("time point information not found in file: {}", f);
-                            r.closeReader();
-                            return;
+                    try {
+                        ImageReader r = new ImageReader(fileCT.get(c).get(f));
+                        if (r==null) return;
+                        for (int z = 0; z<sizeZC[c]; ++z) {
+                            double res= r.getTimePoint(0, 0, z);
+                            if (!Double.isNaN(res)) timePointCZT.put(getKey(c, z, f), res);
+                            else {
+                                timePointCZT.clear();
+                                logger.error("time point information not found in file: {}", f);
+                                r.closeReader();
+                                return;
+                            }
                         }
+                        r.closeReader();
+                    } catch(Exception|Error e) {
+                        /*if (fileCT.get(c).get(f).endsWith(".tif")) { // use frame interval
+                            timePointCZT.clear();
+                            double frameInterval = ImageReader.getTIFTimeFrameInterval(fileCT.get(0).get(0));
+                            if (!Double.isNaN(frameInterval)) {
+                                for (int cc = 0; cc<this.channelKeywords.length; ++cc) {
+                                    double time=0;
+                                    for (int ff = 0; ff<fileCT.get(cc).size(); ++ff) {
+                                        for (int z = 0; z<sizeZC[c]; ++z) timePointCZT.put(getKey(c, z, f), time);
+                                        time+=frameInterval;
+                                    }
+                                }
+                            }
+                        }*/
+                        return;
                     }
-                    r.closeReader();
                 }
             }
         }

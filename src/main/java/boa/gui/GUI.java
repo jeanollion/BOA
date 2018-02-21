@@ -136,11 +136,9 @@ import boa.utils.FileIO.ZipWriter;
 import boa.utils.ImportExportJSON;
 import boa.utils.JSONUtils;
 import boa.utils.Pair;
-import boa.utils.TestThreadExecutorFrameWork;
 import boa.utils.Utils;
 import static boa.utils.Utils.addHorizontalScrollBar;
 import javax.swing.ToolTipManager;
-import javax.swing.UIManager;
 
 
 /**
