@@ -17,6 +17,7 @@
  */
 package boa.plugins.plugins.segmenters;
 
+import boa.plugins.MicrochannelSegmenter;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
@@ -64,10 +65,10 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
     NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 200, 1, null).setToolTipText("To detect microchannel a rough semgentation of bacteria is performed by simple threshold. Object undier this size in pixels are removed, to avoid taking into account objects that are not bacteria");
     Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yShift, threshold, fillingProportion, minObjectSize};
     public static boolean debug = false;
-    public String toolTip = "<html>Detection of microchannel using bacteria fluorescence"
-    + "1) Rough segmentation of cells on {@param image} with using \"Threshold\" computed the whole track prior to segmentation step"
-    + "2) Selection of filled channels: lengh in X direction should be over \"Microchannel Height\" x \"Microchannel filling proportion\""
-    + "3) Computation of Y start: min value of the min y coordinate of the selected objects at step 2</html>";
+    public String toolTip = "<html><b>Detection of microchannel using bacteria fluorescence:</b>"
+    + "<ol><li>Rough segmentation of cells using \"Threshold\" computed the whole track prior to segmentation step</li>"
+    + "<li>Selection of filled channels: lengh in X direction should be over \"Microchannel Height\" x \"Microchannel filling proportion\"</li>"
+    + "<li>Computation of Y start: min value of the min y coordinate of the selected objects at step 2</li></ol></html>";
     public MicroChannelFluo2D() {}
 
     public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
@@ -110,7 +111,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
     }
     /**
      *  Detection of microchannel using bacteria fluorescence
-     *  1) Rough segmentation of cells on {@param image} with using {@param thld} if {@param thld} is NaN threshold is computed using {@link boa.plugins.plugins.thresholders.BackgroundThresholder#runThresholder(boa.image.Image, boa.image.ImageMask, double, double, int, double, double[]) background thresholder} {@param thresholdedImage} is used instead if not null
+     *  1) Rough segmentation of cells on {@param image} using {@param thld} if {@param thld} is NaN threshold is computed using {@link boa.plugins.plugins.thresholders.BackgroundThresholder#runThresholder(boa.image.Image, boa.image.ImageMask, double, double, int, double, double[]) background thresholder} {@param thresholdedImage} is used instead if not null
         2) Selection of filled channels lengh in X direction should be over {@param channelHeight} x {@param fillingProportion} 
         3) Computation of Y start: min value of the min y coordinate of the selected objects at step 2
      * @param image

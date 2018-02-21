@@ -41,7 +41,7 @@ import java.util.function.Predicate;
 import org.apache.commons.lang.ArrayUtils;
 import boa.image.processing.ImageFeatures;
 import static boa.plugins.plugins.segmenters.MicrochannelPhase2D.segmentMicroChannels;
-import boa.plugins.plugins.segmenters.MicrochannelSegmenter.Result;
+import boa.plugins.MicrochannelSegmenter.Result;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import static boa.utils.Utils.plotProfile;

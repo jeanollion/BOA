@@ -17,6 +17,7 @@
  */
 package boa.plugins.plugins.trackers;
 
+import boa.configuration.parameters.BooleanParameter;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
@@ -55,8 +56,8 @@ import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
-import boa.plugins.plugins.segmenters.MicrochannelSegmenter;
-import boa.plugins.plugins.segmenters.MicrochannelSegmenter.Result;
+import boa.plugins.MicrochannelSegmenter;
+import boa.plugins.MicrochannelSegmenter.Result;
 import static boa.plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface;
 import boa.utils.ArrayUtil;
@@ -76,15 +77,27 @@ import java.util.TreeMap;
  */
 public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, ToolTip {
     protected PluginParameter<MicrochannelSegmenter> segmenter = new PluginParameter<>("Segmentation algorithm", MicrochannelSegmenter.class, new MicrochannelPhase2D(), false);
-    NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
-    NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x [mean channel width])", 1, 1, 0, null);
-    NumberParameter yShiftQuantile = new BoundedNumberParameter("Y-shift Quantile", 2, 0.5, 0, 1);
+    NumberParameter maxShiftGC = new BoundedNumberParameter("Maximal Distance for Gap-Closing procedure", 0, 100, 1, null).setToolTipText("<html>Maximal Distance (in pixels) used for for the gap-closing step<br /> Increase the value to take into acound XY shift between two successive frames due to stabilization issues, but not too much to avoid connecting distinct microchannels</html>");
+    NumberParameter maxDistanceFTFWidthFactor = new BoundedNumberParameter("Maximal Distance Factor for Frame-to-Frame Tracking", 1, 1, 0, null).setToolTipText("<html>The distance threshold for Frame-to-Frame tracking procedure will be this value multiplied by the mean width of microchannels.<br />If two microchannels between two successive frames are separated by a distance superior to this threshold they can't be linked. <br />Increase the value to take into acound XY shift between two successive frames due to stabilization issues, but not too much to avoid connecting distinct microchannels</html>");
+    NumberParameter yShiftQuantile = new BoundedNumberParameter("Y-shift Quantile", 2, 0.5, 0, 1).setToolTipText("After Tracking, microchannel region relative y-shift (compared to the base line) are unifomized per-track, for each track: the y-shift is replaced by the quantile of all y-shift");
+    NumberParameter widthQuantile = new BoundedNumberParameter("With Quantile", 2, 0.9, 0, 1).setToolTipText("After Tracking, microchannel width  are uniformized per-track, for each track: the with of every object is replaced by the quantile of all width");;
+    BooleanParameter allowGaps = new BooleanParameter("Allow Gaps", true).setToolTipText("If a frame contains no microchannels (tipically when focus is lost), allow to connect microchannels track prior to the gap with thoses after the gap. This will result in microchannel tracks containing gaps. If false tracks will be disconnected");
     
-    Parameter[] parameters = new Parameter[]{segmenter, maxShift, maxDistanceWidthFactor, yShiftQuantile};
-    private static double widthQuantile = 0.9;
+    Parameter[] parameters = new Parameter[]{segmenter, maxShiftGC, maxDistanceFTFWidthFactor, yShiftQuantile, widthQuantile, allowGaps};
     public static boolean debug = false;
     
-    String toolTip = "<html>"
+    String toolTip = "<html><b>Microchannel tracker</b>"
+            + "<p><em>Tracking procedure:</em> using TrackMate (https://imagej.net/TrackMate) in 4 steps:"
+            + "<ol><li>Frame to Frame linking using \"Maximal Distance Factor for Frame-to-Frame Tracking\" parameter</li>"
+            + "<li>Gap-closing linking using \"Maximal Distance for Gap-Closing procedure\" parameter</li>"
+            + "<li>Removal of crossing links: if some micro-channels are missing, the gap-closing procedure can produce links that cross, as microchannels are not moving relatively.<br />Those links should be removed in order to be able to apply the gap-filling procdure (see below)</li>"
+            + "<li>Gap-closing tracking for the links removed in step 3</li></ol></p>"
+            + "<p><em>Gap-filling procedure:</em>"
+            + "<ul><li>If a track contains a gap, tries to fill it by creating microchannels with the same dimensions as microchannels before and after the gap, and the same relative position to another reference track that exists throughout the gap</li>"
+            + "<li>If no reference exist throughout the gap, ie when there are frames that contain no microchannel (tipically occurs when focus is lost), gap cannot be filled, in this case if \"Allow Gaps\" is set to false, tracks will be disconnected</li></ul></p>"
+            + "<p><em>Track-wise unifomization of microchannel regions:</em>"
+            + "<ul><li>Uniformization of Y-shift (relative to base line). See \"Y-shift Quantile\" parameter</li>"
+            + "<li>Uniformization of width. See\"With Quantile\" parameter </li></ul></p>"
             + "</html>";
     
     public MicrochannelTracker setSegmenter(MicrochannelSegmenter s) {
@@ -96,12 +109,16 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         return this;
     }
     public MicrochannelTracker setTrackingParameters(int maxShift, double maxDistanceWidthFactor) {
-        this.maxShift.setValue(maxShift);
-        this.maxDistanceWidthFactor.setValue(maxDistanceWidthFactor);
+        this.maxShiftGC.setValue(maxShift);
+        this.maxDistanceFTFWidthFactor.setValue(maxDistanceWidthFactor);
         return this;
     }
     /**
-     * Tracking of microchannels using <a href="https://imagej.net/TrackMate" target="_top">TrackMate</a>   
+     * Tracking of microchannels using <a href="https://imagej.net/TrackMate" target="_top">TrackMate</a> in 4 steps
+     * 1) Frame to Frame tracking using "Maximal Distance Factor for Frame-to-Frame Tracking" parameter
+     * 2) Gap-closing tracking using "Maximal Distance for Gap-Closing procedure" parameter
+     * 3) Removal of crossing links: if some micro-channels are missing, the gap-closing procedure can produce links that cross, as microchannels are not moving relatively, those links should be removed in order to be able to apply the {@link #fillGaps(int, java.util.List, boolean) gap-filling procdure}
+     * 4) Gap-closing tracking for the links removed in step 3
      * @param structureIdx index of the microchannel structure
      * @param parentTrack parent track containing segmented microchannels at index {@param structureIdx}
      */
@@ -118,8 +135,8 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         }
         double meanWidth = Utils.flattenMap(map).stream().mapToDouble(o->o.getBounds().getSizeX()).average().getAsDouble()*parentTrack.get(0).getScaleXY();
         if (debug) logger.debug("mean width {}", meanWidth );
-        double maxDistance = maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
-        double ftfDistance = maxDistanceWidthFactor.getValue().doubleValue() *meanWidth;
+        double maxDistance = maxShiftGC.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
+        double ftfDistance = maxDistanceFTFWidthFactor.getValue().doubleValue() *meanWidth;
         logger.debug("ftfDistance: {}", ftfDistance);
         boolean ok = tmi.processFTF(ftfDistance);
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false);
@@ -127,7 +144,16 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false); // second GC for crossing links!
         tmi.setTrackLinks(map);
     }
-    
+    /**
+     * 1) Segmentation of microchannels depending on the chosen {@link boa.plugins.MicrochannelSegmenter segmenter} 
+     * 2) {@link #track(int, java.util.List) tracking of microchannels}
+     * 3) {@link #fillGaps(int, java.util.List, boolean) gap-filling procedure}
+     * 4) Track-Wise Normalization of microchannels width and relative y position 
+     * @param structureIdx microchannel structure index
+     * @param parentTrack microchannel parent track
+     * @param trackPreFilters optional track pre-filters to be applied prio to segmentation step
+     * @param postFilters  optinal post filters to be applied after segmentation and before tracking
+     */
     @Override
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, TrackPreFilterSequence trackPreFilters, PostFilterSequence postFilters) {
         if (parentTrack.isEmpty()) return;
@@ -154,7 +180,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         // tracking
         if (debug) logger.debug("mc2: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         track(structureIdx, parentTrack);
-        fillGaps(structureIdx, parentTrack, true);
+        fillGaps(structureIdx, parentTrack, allowGaps.getSelected());
         if (debug) logger.debug("mc3: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         // compute mean of Y-shifts & width for each microchannel and modify objects
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
@@ -187,7 +213,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
             int shift = (int)Math.round(ArrayUtil.quantileInt(shifts, yShiftQuantile.getValue().doubleValue()));
             double meanWidth = 0, c=0; for (Double d : widths) if (d!=null) {meanWidth+=d; ++c;} // global mean value
             meanWidth/=c;
-            int width = (int)Math.round(ArrayUtil.quantile(widths, widthQuantile));
+            int width = (int)Math.round(ArrayUtil.quantile(widths, widthQuantile.getValue().doubleValue()));
             
             if (debug) {
                 logger.debug("track: {} ymin-shift: {}, width: {} (max: {}, mean: {})", track.get(0), shift, width, widths.get(widths.size()-1), meanWidth);
@@ -266,6 +292,14 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         if (debug) logger.debug("mc end: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
     }
 
+    /**
+     * Gap-filling procedure 
+     * If a track contains a gap, tries to fill it by creating microchannels with the same dimensions as microchannels before and after the gap, and the same relative position to another reference track that exists throughout the gap
+     * If no reference exist throughout the gap, ie when there are frames that contain no microchannel, gap cannot be filled, in this case if {@param allowUnfilledGaps} is set to false, tracks will be disconnected
+     * @param structureIdx  microchannel structure index
+     * @param parentTrack microchannel parent track containing segmented and tracked microchannels
+     * @param allowUnfilledGaps If a frame contains no microchannels (tipically when focus is lost), allow to connect microchannels track prior to the gap with thoses after the gap. This will result in microchannel tracks containing gaps. If false tracks will be disconnected
+     */
     private static void fillGaps(int structureIdx, List<StructureObject> parentTrack, boolean allowUnfilledGaps) {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         Map<Integer, StructureObject> reference = null; //getOneElementOfSize(allTracks, parentTrack.size()); // local reference with minimal MSD

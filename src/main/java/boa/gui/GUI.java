@@ -139,6 +139,7 @@ import boa.utils.Pair;
 import boa.utils.TestThreadExecutorFrameWork;
 import boa.utils.Utils;
 import static boa.utils.Utils.addHorizontalScrollBar;
+import javax.swing.ToolTipManager;
 
 
 /**
@@ -189,7 +190,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
      */
     public GUI() {
         //logger.info("DBMaker: {}", checkClass("org.mapdb.DBMaker"));
-        
+        ToolTipManager.sharedInstance().setInitialDelay(100);
         logger.info("Creating GUI instance...");
         this.instance=this;
         initComponents();

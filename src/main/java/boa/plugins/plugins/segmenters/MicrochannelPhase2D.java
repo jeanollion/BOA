@@ -17,6 +17,7 @@
  */
 package boa.plugins.plugins.segmenters;
 
+import boa.plugins.MicrochannelSegmenter;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
@@ -66,12 +67,12 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
     Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, localDerExtremaThld}; //sigmaThreshold
     public final static double PEAK_RELATIVE_THLD = 0.6;
     public static boolean debug = false;
-    protected String toolTip = "<html>"
-            + "1) Search for optical aberration  y coordinate -> yAberration <br />"
-            + "2) Search for global closed-end y-coordinate of Microchannels: global max of the Y-proj of d/dy -> yEnd"
-            + "3) Search of x-positions of microchannels using X-projection (y in [ yEnd; yAberration]) of d/dx image & peak detection: <br />"
-            + "(detection of positive peask & negative peaks over \"X-derivative Threshold\" separated by a distance closest to channelWidth and in the range [widthMin; widthMax]"
-            + "4) Adjust yStart for each channel: first local max of d/dy image in the range [yEnd-  AdjustWindow ; yEnd+ AdjustWindow]</html>";
+    protected String toolTip = "<html><b>Microchannel Segmentation in phase-contrast images:</b>"
+            + "<ol><li>Search for optical aberration  y coordinate -> yAberration</li>"
+            + "<li>Search for global closed-end y-coordinate of Microchannels: global max of the Y-proj of d/dy -> yEnd</li>"
+            + "<li>Search of x-positions of microchannels using X-projection (y in [ yEnd; yAberration]) of d/dx image & peak detection: <br />"
+            + "(detection of positive peask & negative peaks over \"X-derivative Threshold\" separated by a distance closest to channelWidth and in the range [widthMin; widthMax]</li>"
+            + "<li>Adjust yStart for each channel: first local max of d/dy image in the range [yEnd-  AdjustWindow ; yEnd+ AdjustWindow]</li></ol></html>";
 
     public MicrochannelPhase2D() {}
 

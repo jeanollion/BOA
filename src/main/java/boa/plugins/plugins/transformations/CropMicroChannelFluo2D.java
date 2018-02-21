@@ -61,7 +61,7 @@ import boa.utils.Utils;
 import static boa.utils.Utils.plotProfile;
 import boa.plugins.OverridableThresholdMap;
 import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
-import boa.plugins.plugins.segmenters.MicrochannelSegmenter.Result;
+import boa.plugins.MicrochannelSegmenter.Result;
 
 /**
  *
