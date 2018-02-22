@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>ljp</groupId>
-    <artifactId>functional-bioimage_core</artifactId>
+    <artifactId>functional-bioimage-core</artifactId>
     <version>1.5-SNAPSHOT</version>
 
     <name>functional-bioimage-core</name>
