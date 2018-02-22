@@ -177,7 +177,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     boolean isVoid = false;
     double globalThreshold = Double.NaN;
     @Override
-    public ApplyToSegmenter<BacteriaIntensityPhase> run(int structureIdx, List<StructureObject> parentTrack) {
+    public TrackParametrizer<BacteriaIntensityPhase> run(int structureIdx, List<StructureObject> parentTrack) {
         Set<StructureObject> voidMC = new HashSet<>();
         double[] minAndGlobalThld = TrackParametrizable.getVoidMicrochannels(structureIdx, parentTrack, 0.4, voidMC);
         return (p, s) -> {

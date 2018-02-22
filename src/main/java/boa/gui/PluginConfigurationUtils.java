@@ -42,7 +42,6 @@ import boa.plugins.ProcessingScheme;
 import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.Transformation;
@@ -66,6 +65,7 @@ import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import boa.plugins.TrackParametrizable.TrackParametrizer;
 
 /**
  *
@@ -105,10 +105,10 @@ public class PluginConfigurationUtils {
                             Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut( parentTrack, true);  // don't modify object directly. 
                             parent = dupMap.get(parent.getId()); 
                             parentTrack = parentTrack.stream().map(p->dupMap.get(p.getId())).collect(Collectors.toList());
-                            psc.getTrackPreFilters(true).filter(parentStrutureIdx, parentTrack, null);
+                            psc.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
                             
                             if (ps instanceof Segmenter) { // case segmenter -> segment only & call to test method
-                                ApplyToSegmenter  applyToSeg = TrackParametrizable.getApplyToSegmenter(structureIdx, parentTrack, (Segmenter)ps, null);
+                                TrackParametrizer  applyToSeg = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, (Segmenter)ps, null);
                                 SegmentOnly so; 
                                 if (psc instanceof SegmentOnly) {
                                     so = (SegmentOnly)psc;
@@ -123,7 +123,7 @@ public class PluginConfigurationUtils {
                                 }
                                 sel = new ArrayList<>();
                                 sel.add(parent);
-                                ApplyToSegmenter  apply = (p, s)->{
+                                TrackParametrizer  apply = (p, s)->{
                                     applyToSeg.apply(p, s); 
                                     ((ParameterSetup)s).setTestParameter(parameters[idx].getName());
                                 };

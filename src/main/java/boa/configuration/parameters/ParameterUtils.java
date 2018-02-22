@@ -49,24 +49,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javax.swing.AbstractAction;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
-import boa.plugins.ParameterSetup;
-import boa.plugins.ParameterSetupTracker;
-import boa.plugins.ProcessingScheme;
-import boa.plugins.Segmenter;
-import boa.plugins.Tracker;
-import boa.plugins.TrackerSegmenter;
-import boa.plugins.Transformation;
-import static boa.plugins.Transformation.SelectionMode.ALL;
-import static boa.plugins.Transformation.SelectionMode.SAME;
-import boa.plugins.UseMaps;
-import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
-import boa.plugins.plugins.processing_scheme.SegmentOnly;
-import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
-import boa.utils.ArrayUtil;
-import boa.utils.Pair;
 import boa.utils.Utils;
 
 /**

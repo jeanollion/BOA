@@ -62,8 +62,6 @@ import boa.measurement.GeometricalMeasurements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.plugins.MultiThreaded;
-import boa.plugins.OverridableThreshold;
-import boa.plugins.Segmenter;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
@@ -71,7 +69,6 @@ import boa.plugins.ParameterSetup;
 import boa.plugins.ParameterSetupTracker;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
@@ -79,6 +76,7 @@ import boa.utils.Pair;
 import boa.utils.Utils;
 import java.util.Collection;
 import java.util.stream.Collectors;
+import boa.plugins.TrackParametrizable.TrackParametrizer;
 
 /**
  *
@@ -143,7 +141,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     Map<Region, TrackAttribute> objectAttributeMap;
     private boolean segment, correction;
     Map<Integer, Image> inputImages;
-    ApplyToSegmenter applyToSegmenter;
+    TrackParametrizer applyToSegmenter;
     TreeMap<Integer, StructureObject> parentsByF;
     HashMapGetCreate<Integer, SegmenterSplitAndMerge> segmenters = new HashMapGetCreate(f->{
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
@@ -226,7 +224,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (correction) { // record prefilters & applyToSegmenter
             trackPreFilters.filter(structureIdx, parentTrack, executor);
             inputImages=parentTrack.stream().collect(Collectors.toMap(p->p.getFrame(), p->p.getPreFilteredImage(structureIdx)));
-            applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
+            applyToSegmenter = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
             so.segmentAndTrack(structureIdx, parentTrack, applyToSegmenter, executor);
         } else { // no need to record the preFilters images
             so.setTrackPreFilters(trackPreFilters);

@@ -65,12 +65,14 @@ import boa.measurement.GeometricalMeasurements;
 import boa.plugins.ManualSegmenter;
 import boa.plugins.ObjectSplitter;
 import boa.plugins.Segmenter;
-import boa.plugins.UseMaps;
+import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import boa.plugins.TrackParametrizable.TrackParametrizer;
 
 /**
  *
@@ -406,23 +408,28 @@ public class ManualCorrection {
         
         Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, segmentationParentStructureIdx);
         if (points!=null && !points.isEmpty()) {
-            ensurePreFilteredImages(points.keySet().stream(), structureIdx, db.getExperiment(), db.getDao(points.keySet().iterator().next().getPositionName()));
+            String[] positions = points.keySet().stream().map(p->p.getPositionName()).distinct().toArray(i->new String[i]);
+            if (positions.length>1) throw new IllegalArgumentException("All points should come from same parent");
+            ensurePreFilteredImages(points.keySet().stream(), structureIdx, db.getExperiment(), db.getDao(positions[0]));
+            ManualSegmenter s = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
+            HashMap<StructureObject, TrackParametrizer> parentThMapParam = new HashMap<>();
+            if (s instanceof TrackParametrizable) {
+                points.keySet().stream().map(p->p.getTrackHead()).distinct().forEach(p->parentThMapParam.put(p, TrackParametrizable.getTrackParametrizer(structureIdx, db.getDao(positions[0]).getTrack(p), s, null)));
+                parentThMapParam.entrySet().removeIf(e->e.getValue()==null);
+            }
+            
             logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, segmentationParentStructureIdx);
             List<StructureObject> segmentedObjects = new ArrayList<>();
-            HashMapGetCreate<StructureObject, Image[]> subMaps = segInstance instanceof UseMaps? new HashMapGetCreate<>(parent->((UseMaps)segInstance).computeMaps(parent.getRawImage(structureIdx), parent.getPreFilteredImage(structureIdx))) : null;
             
             for (Map.Entry<StructureObject, List<int[]>> e : points.entrySet()) {
                 ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
+                if (!parentThMapParam.isEmpty()) parentThMapParam.get(e.getKey()).apply(e.getKey(), segmenter);
                 segmenter.setManualSegmentationVerboseMode(test);
                 StructureObject globalParent = e.getKey().getParent(parentStructureIdx);
                 StructureObject subParent = e.getKey();
                 boolean subSegmentation = !subParent.equals(globalParent);
                 boolean ref2D = subParent.is2D() && globalParent.getPreFilteredImage(structureIdx).getSizeZ()>1;
-                if (subMaps!=null) {
-                    Image[] maps = subMaps.getAndCreateIfNecessarySyncOnKey(e.getKey().getParent(parentStructureIdx));
-                    if (subSegmentation) ((UseMaps)segmenter).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(ref2D? subParent.getBounds().duplicate().fitToImageZ(i):subParent.getBounds())));
-                    else ((UseMaps)segmenter).setMaps(maps);
-                }
+                
                 Image input = globalParent.getPreFilteredImage(structureIdx);
                 if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
                 

@@ -46,9 +46,7 @@ import boa.plugins.PreFilter;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.TrackPreFilter;
-import boa.plugins.UseMaps;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.utils.HashMapGetCreate;
 import boa.utils.MultipleException;
@@ -59,6 +57,7 @@ import boa.utils.Utils;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import boa.plugins.TrackParametrizable.TrackParametrizer;
 
 /**
  *
@@ -127,10 +126,10 @@ public class SegmentOnly implements ProcessingScheme {
     }
     @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
         getTrackPreFilters(true).filter(structureIdx, parentTrack, executor); // set preFiltered images to structureObjects
-        ApplyToSegmenter apply=TrackParametrizable.getApplyToSegmenter(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
+        TrackParametrizer apply=TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
         segmentAndTrack(structureIdx, parentTrack, apply, executor);
     }
-    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ApplyToSegmenter applyToSegmenter, ExecutorService executor) {
+    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, TrackParametrizer applyToSegmenter, ExecutorService executor) {
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
             return;
@@ -139,17 +138,13 @@ public class SegmentOnly implements ProcessingScheme {
         int parentStructureIdx = parentTrack.get(0).getStructureIdx();
         int segParentStructureIdx = parentTrack.get(0).getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
         boolean subSegmentation = segParentStructureIdx>parentStructureIdx;
-        boolean useMaps =  subSegmentation && segmenter.instanciatePlugin() instanceof UseMaps;
         boolean singleFrame = parentTrack.get(0).getMicroscopyField().singleFrame(structureIdx); // will semgent only on first frame
         
-        //HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parentTrack.size(), parent->preFilters.filter(parent.getRawImage(structureIdx), parent.getMask()));
-        HashMapGetCreate<StructureObject, Image[]> subMaps = useMaps? new HashMapGetCreate<>(parentTrack.size(), parent->((UseMaps)segmenter.instanciatePlugin()).computeMaps(parent.getRawImage(structureIdx), parent.getPreFilteredImage(structureIdx))) : null; //
         // segment in direct parents
         List<StructureObject> allParents = singleFrame ? StructureObjectUtils.getAllChildren(parentTrack.subList(0, 1), segParentStructureIdx) : StructureObjectUtils.getAllChildren(parentTrack, segParentStructureIdx);
         Collections.shuffle(allParents); // reduce thread blocking
         final boolean ref2D= !allParents.isEmpty() && allParents.get(0).is2D() && parentTrack.get(0).getRawImage(structureIdx).getSizeZ()>1;
         long t0 = System.currentTimeMillis();
-        for (StructureObject p : parentTrack) p.getRawImage(structureIdx);
         long t1 = System.currentTimeMillis();
         //if (useMaps) errors.addAll(ThreadRunner.execute(parentTrack, false, (p, idx) -> subMaps.getAndCreateIfNecessarySyncOnKey(p), executor, null));
         long t2 = System.currentTimeMillis();
@@ -157,11 +152,6 @@ public class SegmentOnly implements ProcessingScheme {
         ThreadRunner.execute(allParents, false, (subParent, idx) -> {
             StructureObject globalParent = subParent.getParent(parentStructureIdx);
             Segmenter seg = segmenter.instanciatePlugin();
-            if (useMaps) {
-                Image[] maps = subMaps.getAndCreateIfNecessarySyncOnKey(globalParent);
-                if (subSegmentation) ((UseMaps)seg).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(ref2D? subParent.getBounds().duplicate().fitToImageZ(i):subParent.getBounds())));
-                else ((UseMaps)seg).setMaps(maps);
-            }
             if (applyToSegmenter!=null) applyToSegmenter.apply(globalParent, seg);
             Image input = globalParent.getPreFilteredImage(structureIdx);
             if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
@@ -170,7 +160,6 @@ public class SegmentOnly implements ProcessingScheme {
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);
             pops[idx] = pop;
         }, executor, null);
-        if (useMaps) subMaps.clear();
         long t3 = System.currentTimeMillis();
         if (subSegmentation) { // collect if necessary and set to parent
             HashMapGetCreate<StructureObject, List<Region>> parentObjectMap = new HashMapGetCreate<>(parentTrack.size(), new HashMapGetCreate.ListFactory());

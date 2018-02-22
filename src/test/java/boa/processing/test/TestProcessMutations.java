@@ -40,7 +40,6 @@ import java.util.HashSet;
 import boa.plugins.ObjectFeature;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
-import boa.plugins.UseMaps;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
 import boa.utils.Utils;
 
@@ -79,15 +78,8 @@ public class TestProcessMutations {
         //else MutationSegmenter.debug=false;
         //LocalSNR.debug=true;
         Segmenter seg = parent.getExperiment().getStructure(2).getProcessingScheme().getSegmenter();
-        //MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(1.25).setThresholdSeeds(1).setThresholdPropagation(1.5).setScale(2);
-        //seg.getPostFilters().removeAllElements();
-        if (seg instanceof UseMaps) {
-            UseMaps s = (UseMaps)seg;
-            Image[] maps = s.computeMaps(input, input);
-            if (!input.sameDimensions(parentBounds.getImageProperties())) maps = Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(parentBounds));
-            s.setMaps(maps);
-            
-        }
+        
+        //TODO apply to segmenter & preFIlteredImages
         ((MutationSegmenter)seg).intermediateImages=intermediateImages;
         
         RegionPopulation pop = seg.runSegmenter(localInput, 2, parent);

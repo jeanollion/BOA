@@ -53,7 +53,6 @@ import boa.plugins.Segmenter;
 import boa.plugins.Thresholder;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
 import boa.plugins.MicrochannelSegmenter;
@@ -70,6 +69,7 @@ import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
 import java.util.TreeMap;
+import boa.plugins.TrackParametrizable.TrackParametrizer;
 
 /**
  *
@@ -160,7 +160,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         // segmentation
         final Result[] boundingBoxes = new Result[parentTrack.size()];
         trackPreFilters.filter(structureIdx, parentTrack, executor);
-        ApplyToSegmenter<? super MicrochannelSegmenter> applyToSegmenter = TrackParametrizable.getApplyToSegmenter(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
+        TrackParametrizer<? super MicrochannelSegmenter> applyToSegmenter = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
         ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
             MicrochannelSegmenter s = segmenter.instanciatePlugin();
             if (applyToSegmenter !=null) applyToSegmenter.apply(parent, s);

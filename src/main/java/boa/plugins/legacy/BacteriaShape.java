@@ -51,7 +51,6 @@ import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.measurement.BasicMeasurements;
 import boa.measurement.GeometricalMeasurements;
 import boa.plugins.ObjectSplitter;
-import boa.plugins.OverridableThreshold;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.plugins.thresholders.ConstantValue;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
@@ -63,7 +62,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import boa.plugins.OverridableThresholdMap;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
 import boa.plugins.plugins.segmenters.EdgeDetector;
@@ -75,7 +73,7 @@ import java.util.Set;
  *
  * @author jollion
  */
-public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, OverridableThreshold {
+public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter {
     public boolean testMode = false;
     PluginParameter<SimpleThresholder> thresholder = new PluginParameter<>("Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu) , false).setToolTipText("Main Intensity threshold. Threshold is computed on the partitionned image filled with median value at ecah region"); 
     protected NumberParameter medianRadius = new BoundedNumberParameter("Median Radius", 1, 3, 1, null).setToolTipText("Radius for median filtering in pixels: edge-preserving high-frequency noise removal");
@@ -325,12 +323,12 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter, Ov
     }
     // OVerridable Threshold interface
     double threshold = Double.NaN;
-    @Override
+
     public void setThresholdValue(double threshold) {
         this.threshold = threshold;
     }
 
-    @Override
+
     public Image getImageForThresholdComputation(Image input, int structureIdx, StructureObjectProcessing parent) {
         return input; // should partition image and return the median value map?
     }

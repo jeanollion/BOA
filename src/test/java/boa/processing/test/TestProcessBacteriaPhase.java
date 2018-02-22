@@ -47,13 +47,13 @@ import boa.plugins.PluginFactory;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.TrackParametrizable.ApplyToSegmenter;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
 import boa.plugins.legacy.BacteriaShape;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.utils.Utils;
 import java.util.Map;
 import java.util.TreeMap;
+import boa.plugins.TrackParametrizable.TrackParametrizer;
 
 /**
  *
@@ -93,7 +93,7 @@ public class TestProcessBacteriaPhase {
         
         ProcessingScheme psc = mDAO.getExperiment().getStructure(1).getProcessingScheme();
         psc.getTrackPreFilters(true).filter(1, parentTrack, null);
-        ApplyToSegmenter apply = TrackParametrizable.getApplyToSegmenter(1, parentTrack, psc.getSegmenter(), null);
+        TrackParametrizer apply = TrackParametrizable.getTrackParametrizer(1, parentTrack, psc.getSegmenter(), null);
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {

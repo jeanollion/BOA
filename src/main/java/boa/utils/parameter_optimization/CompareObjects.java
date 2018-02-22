@@ -23,6 +23,7 @@ import boa.configuration.parameters.PreFilterSequence;
 import boa.core.Processor;
 import boa.core.Task;
 import boa.configuration.experiment.Experiment;
+import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.MasterDAOFactory;
 import boa.data_structure.Region;
@@ -48,6 +49,8 @@ import boa.measurement.GeometricalMeasurements;
 import org.slf4j.LoggerFactory;
 import boa.plugins.PluginFactory;
 import boa.plugins.ProcessingScheme;
+import boa.plugins.TrackParametrizable;
+import boa.plugins.TrackParametrizable.TrackParametrizer;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
 import boa.utils.ArrayUtil;
 import boa.utils.FileIO;
@@ -58,6 +61,8 @@ import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 /**
  *
@@ -273,23 +278,24 @@ public class CompareObjects {
     protected void setQuality(String positionName) { // specific for mutation segmenter !! get config from current db
         Map<StructureObject, List<StructureObject>> parentTrackRef = StructureObjectUtils.getAllTracks(dbRef.getDao(positionName).getRoots(), parentStructureIdx);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        PreFilterSequence pf = ps.getPreFilters();
+        TrackPreFilterSequence tpf = ps.getTrackPreFilters(true);
         MutationSegmenter seg = (MutationSegmenter)ps.getSegmenter();
-        
+        Map<StructureObject, TrackParametrizer> pthMapParametrizer = new HashMap<>();
+        for (Entry<StructureObject, List<StructureObject>> e : parentTrackRef.entrySet()) {
+            tpf.filter(structureIdx, e.getValue(), null);
+            pthMapParametrizer.put(e.getKey(), TrackParametrizable.getTrackParametrizer(structureIdx, e.getValue(), ps.getSegmenter(), null));
+        }
+        pthMapParametrizer.entrySet().removeIf(e->e.getValue()==null);
         for (StructureObject parent : Utils.flattenMap(parentTrackRef)) {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             if (pop.getRegions().isEmpty()) continue;
             //logger.debug("quality was : {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()));
-            Image raw = parent.getRawImage(structureIdx);
-            Image pprocessed = pf.filter(raw, parent.getMask());
-            Image[] maps = seg.computeMaps(raw, pprocessed);
             for (StructureObject parentB : parent.getChildObjects(1)) {
                 List<Region> objects = parentB.getObject().getIncludedObjects(pop.getRegions());
                 if (objects.isEmpty()) continue;
-                Image[] subMaps = Utils.transform(maps, new Image[maps.length], i->i.crop(parentB.getRelativeBoundingBox(parent)));
                 MutationSegmenter currentSeg = (MutationSegmenter)ps.getSegmenter();
-                currentSeg.setMaps(subMaps);
-                currentSeg.setQuality(objects, parentB.getBounds(), pprocessed.crop(parentB.getRelativeBoundingBox(parent)), parent.getMask());
+                if (!pthMapParametrizer.isEmpty()) pthMapParametrizer.get(parent.getTrackHead()).apply(parent, currentSeg);
+                currentSeg.setQuality(objects, parentB.getBounds(), parent.getPreFilteredImage(structureIdx).cropWithOffset(parentB.getBounds()), parent.getMask());
             }
             // transfer quality to structureObject & store
             for (StructureObject o : parent.getChildren(structureIdx)) o.setAttribute("Quality", o.getObject().getQuality());

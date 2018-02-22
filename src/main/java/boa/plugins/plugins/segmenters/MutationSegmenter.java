@@ -54,7 +54,6 @@ import boa.plugins.ObjectSplitter;
 import boa.plugins.ParameterSetup;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.Segmenter;
-import boa.plugins.UseMaps;
 import boa.plugins.plugins.manual_segmentation.WatershedObjectSplitter;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.image.processing.Filters.LocalMax;
@@ -67,13 +66,15 @@ import static boa.image.processing.WatershedTransform.watershed;
 import boa.image.processing.neighborhood.CylindricalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.plugins.ToolTip;
+import boa.plugins.TrackParametrizable;
+import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, ObjectSplitter, ParameterSetup, ToolTip {
+public class MutationSegmenter implements Segmenter, TrackParametrizable<MutationSegmenter>, ManualSegmenter, ObjectSplitter, ParameterSetup, ToolTip {
     public List<Image> intermediateImages;
     public static boolean debug = false;
     public static boolean displayImages = false;
@@ -150,6 +151,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         return run(input, parent, getScale(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
     }
+
+    
 
     /*public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
@@ -236,7 +239,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         Arrays.sort(scale);
         ImageMask parentMask = parent.getMask().getSizeZ()!=input.getSizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
-        if (pv.smooth==null || pv.lap==null) setMaps(computeMaps(input, input));
+        if (pv.smooth==null || pv.lap==null) throw new RuntimeException("Mutation Segmenter not parametrized");//setMaps(computeMaps(input, input));
         
         Image smooth = pv.getSmoothedMap();
         Image[] lapSPZ = ((List<Image>)Image.mergeImagesInZ(Arrays.asList(pv.getLaplacianMap()))).toArray(new Image[0]); // in case there are several z
@@ -395,30 +398,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             //logger.debug("object: {} smooth: {} lap: {} q: {}", o.getCenter(), smooth, Collections.max(lapValues), o.getQuality());
         }
     }
-    @Override
-    public Image[] computeMaps(Image rawSource, Image filteredSource) {
-        double[] scale = getScale();
-        double smoothScale = this.smoothScale.getValue().doubleValue();
-        Image[] maps = new Image[scale.length+1];
-        Function<Image, Image> gaussF = f->ImageFeatures.gaussianSmooth(f, smoothScale, false).setName("gaussian: "+smoothScale);
-        maps[0] = planeByPlane ? ImageOperations.applyPlaneByPlane(filteredSource, gaussF) : gaussF.apply(filteredSource); //
-        for (int i = 0; i<scale.length; ++i) {
-            final int ii = i;
-            Function<Image, Image> lapF = f->ImageFeatures.getLaplacian(f, scale[ii], true, false).setName("laplacian: "+scale[ii]);
-            maps[i+1] = ImageOperations.applyPlaneByPlane(filteredSource, lapF); //  : lapF.apply(filteredSource); if too few images laplacian is not relevent in 3D. TODO: put a condition on slice number, and check laplacian values
-        }
-        return maps;
-    }
     
-    @Override
-    public void setMaps(Image[] maps) {
-        if (maps==null) return;
-        double[] scale = getScale();
-        if (maps.length!=scale.length+1) throw new IllegalArgumentException("Maps should be of length "+scale.length+1+" and contain smooth & laplacian of gaussian for each scale");
-        this.pv.smooth=maps[0];
-        this.pv.lap=new Image[scale.length];
-        for (int i = 0; i<scale.length; ++i) pv.lap[i] = maps[i+1];
-    }
+    
     
 
     protected boolean verboseManualSeg;
@@ -461,8 +442,46 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     public void setSplitVerboseMode(boolean verbose) {
         manualSplitVerbose=verbose;
     }
+    // tool tip interface
     @Override
     public String getToolTipText() {
        return toolTip;
+    }
+    // track parametrizable
+    /**
+     * Compute Maps on parent image 
+     * {@link #runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) } is supposed to be called from bacteria, thus to avoid border effect gaussian smooth and laplacian transform should be computed on microchannel images
+     * @param structureIdx
+     * @param parentTrack
+     * @return 
+     */
+    @Override
+    public TrackParametrizer<MutationSegmenter> run(int structureIdx, List<StructureObject> parentTrack) {
+        HashMapGetCreate<StructureObject, Image[]> parentMapImages = new HashMapGetCreate<>(parentTrack.size(), p->computeMaps(p.getRawImage(structureIdx), p.getPreFilteredImage(structureIdx)));
+        return (p, s) -> s.setMaps(parentMapImages.getAndCreateIfNecessarySyncOnKey(p));
+    }
+    
+    protected Image[] computeMaps(Image rawSource, Image filteredSource) {
+        double[] scale = getScale();
+        double smoothScale = this.smoothScale.getValue().doubleValue();
+        Image[] maps = new Image[scale.length+1];
+        Function<Image, Image> gaussF = f->ImageFeatures.gaussianSmooth(f, smoothScale, false).setName("gaussian: "+smoothScale);
+        maps[0] = planeByPlane ? ImageOperations.applyPlaneByPlane(filteredSource, gaussF) : gaussF.apply(filteredSource); //
+        for (int i = 0; i<scale.length; ++i) {
+            final int ii = i;
+            Function<Image, Image> lapF = f->ImageFeatures.getLaplacian(f, scale[ii], true, false).setName("laplacian: "+scale[ii]);
+            maps[i+1] = ImageOperations.applyPlaneByPlane(filteredSource, lapF); //  : lapF.apply(filteredSource); if too few images laplacian is not relevent in 3D. TODO: put a condition on slice number, and check laplacian values
+        }
+        return maps;
+    }
+    
+    
+    protected void setMaps(Image[] maps) {
+        if (maps==null) return;
+        double[] scale = getScale();
+        if (maps.length!=scale.length+1) throw new IllegalArgumentException("Maps should be of length "+scale.length+1+" and contain smooth & laplacian of gaussian for each scale");
+        this.pv.smooth=maps[0];
+        this.pv.lap=new Image[scale.length];
+        for (int i = 0; i<scale.length; ++i) pv.lap[i] = maps[i+1];
     }
 }

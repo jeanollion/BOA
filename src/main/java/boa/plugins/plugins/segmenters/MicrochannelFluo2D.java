@@ -105,7 +105,7 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
 
 
     @Override
-    public ApplyToSegmenter<MicrochannelFluo2D> run(int structureIdx, List<StructureObject> parentTrack) {
+    public TrackParametrizer<MicrochannelFluo2D> run(int structureIdx, List<StructureObject> parentTrack) {
         double thld = TrackParametrizable.getGlobalThreshold(structureIdx, parentTrack, this.threshold.instanciatePlugin());
         return (p, s)->s.thresholdValue=thld;
     }

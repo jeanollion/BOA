@@ -53,7 +53,6 @@ import boa.image.processing.ImageFeatures;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.utils.Utils;
 import boa.image.processing.clustering.RegionCluster;
-import boa.plugins.OverridableThreshold;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
 import boa.plugins.ToolTip;
@@ -66,7 +65,7 @@ import boa.plugins.plugins.trackers.ObjectIdxTracker;
  *
  * @author jollion
  */
-public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThreshold, ManualSegmenter, ObjectSplitter, ParameterSetup, ToolTip {
+public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup, ToolTip {
     public static boolean verbose = false;
     public boolean testMode = false;
     protected double threshold=Double.NaN;
@@ -329,16 +328,6 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, OverridableThr
     String testParameter;
     @Override public void setTestParameter(String p) {
         this.testParameter=p;
-    }
-
-    @Override
-    public void setThresholdValue(double threshold) {
-        this.threshold=threshold;
-    }
-
-    @Override
-    public Image getImageForThresholdComputation(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return input;
     }
 
 }
