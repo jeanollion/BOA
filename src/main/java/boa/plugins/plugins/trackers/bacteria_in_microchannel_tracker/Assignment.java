@@ -33,7 +33,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- *
+ * Class holding objects at a given frame linked to objects at the next frame
+ * When there are no segmentation error, an assignment has one object at previous frame and either one object at the next frame, or two in case of a division
+ * In the presence of errors (ie over- or under-segmentation) previous and next object number in an assignment will vary
  * @author jollion
  */
 public class Assignment {
@@ -45,7 +47,6 @@ public class Assignment {
         double previousSizeIncrement = Double.NaN;
         double[] currentScore;
         TrackAssigner ta;
-        private Boolean prevFromSameLine;
         public Assignment(TrackAssigner ta, int idxPrev, int idxNext) {
             prevObjects = new ArrayList();
             nextObjects = new ArrayList();
@@ -59,7 +60,6 @@ public class Assignment {
         }
         public Assignment duplicate(TrackAssigner ta) {
             Assignment a = new Assignment(new ArrayList(prevObjects), new ArrayList(nextObjects), sizePrev, sizeNext, idxPrev, idxNext).setTrackAssigner(ta);
-            a.prevFromSameLine=this.prevFromSameLine;
             return a;
         }
         public void transferData(Assignment other) {
@@ -71,7 +71,6 @@ public class Assignment {
             this.sizeNext=other.sizeNext;
             this.previousSizeIncrement=other.previousSizeIncrement;
             this.currentScore=other.currentScore;
-            this.prevFromSameLine=other.prevFromSameLine;
         }
         public Assignment(List<Region> prev, List<Region> next, double sizePrev, double sizeNext, int idxPrev, int idxNext) {
             this.sizeNext=sizeNext;
@@ -93,17 +92,25 @@ public class Assignment {
         public int idxNextEnd() {
             return idxNext + nextObjects.size();
         }
-        public boolean prevFromSameLine() {
-            if (this.prevFromSameLine==null) {
-                if (prevObjects.size()<=1) prevFromSameLine=true;
-                else {
-                    Iterator<Region> it = prevObjects.iterator();
-                    Region first = it.next();
-                    prevFromSameLine=true;
-                    while(it.hasNext() && prevFromSameLine) prevFromSameLine = ta.areFromSameLine.apply(first, it.next());
-                }
+        public boolean prevFromPrevObject() {
+            if (prevObjects.size()<=1) return true;
+            else {
+                Iterator<Region> it = prevObjects.iterator();
+                Region first = it.next();
+                boolean prevFromPrev=true;
+                while(it.hasNext() && prevFromPrev) prevFromPrev = ta.haveSamePreviousObjects.apply(first, it.next());
+                return prevFromPrev;
             }
-            return prevFromSameLine;
+        }
+        public boolean prevFromSameLine() {
+            if (prevObjects.size()<=1) return true;
+            else {
+                Iterator<Region> it = prevObjects.iterator();
+                Region first = it.next();
+                boolean prevFromPrev=true;
+                while(it.hasNext() && prevFromPrev) prevFromPrev = ta.areFromSameLine.apply(first, it.next());
+                return prevFromPrev;
+            }
         }
         public Collection<List<Region>> splitPrevObjectsByLine() {
             List<List<Region>> res = new ArrayList<>();
@@ -137,7 +144,6 @@ public class Assignment {
             if (idxPrevEnd()<ta.idxPrevLim) {
                 Region o = ta.prev.get(idxPrevEnd());
                 prevObjects.add(o);
-                if (prevFromSameLine==null || prevFromSameLine) prevFromSameLine = ta.areFromSameLine.apply(prevObjects.get(0), o);
                 sizePrev+=ta.sizeFunction.apply(o);
                 previousSizeIncrement = Double.NaN;
                 currentScore=null;
@@ -160,7 +166,6 @@ public class Assignment {
                     if (removeFirst) idxPrev++;
                     previousSizeIncrement = Double.NaN;
                     currentScore=null;
-                    if (prevFromSameLine!=null && !prevFromSameLine) prevFromSameLine=null; // reset prevFromSame line only if false -> could turn true
                     return true;
                 } else return false;
             } else {
@@ -177,7 +182,6 @@ public class Assignment {
             currentScore=null;
             if (prev) {
                 previousSizeIncrement = Double.NaN;
-                if (prevFromSameLine!=null && !prevFromSameLine) prevFromSameLine=null; // reset prevFromSame line only if false -> could turn true
             }
             
             if (removeFirst) {
@@ -233,7 +237,7 @@ public class Assignment {
         public double getPreviousSizeIncrement() {
             if (Double.isNaN(previousSizeIncrement) && !prevObjects.isEmpty()) {
                 previousSizeIncrement = ta.sizeIncrements.getAndCreateIfNecessary(prevObjects.get(0));
-                if (prevObjects.size()>1 && !prevFromSameLine()) {  // compute size-weighted barycenter of size increment from lineage
+                if (!prevFromPrevObject()) {  // compute size-weighted barycenter of size increment from lineage
                     double totalSize= ta.sizeFunction.apply(prevObjects.get(0));
                     previousSizeIncrement *= totalSize;
                     for (int i = 1; i<prevObjects.size(); ++i) { 
@@ -263,6 +267,10 @@ public class Assignment {
         public boolean canBeCorrected() {
             return needCorrection();// && (idxEnd-idx==1) ;
         }
+        /**
+         * 
+         * @return a length 2 array holing the error count (see {@link #getErrorCount() } and the difference between size increment and expected size increment from previous frames when available, NaN when not available
+         */
         protected double[] getScore() {
             if (this.nextObjects.isEmpty() && idxNextEnd()<ta.idxNextLim) return new double[]{getErrorCount(), 0}; // cell death scenario
             double prevSizeIncrement = ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE ? getPreviousSizeIncrement() : Double.NaN;
@@ -270,7 +278,11 @@ public class Assignment {
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignement score: prevSI: {}, SI: {}", ta.verboseLevel, prevSizeIncrement, sizeNext/sizePrev);
             return new double[]{getErrorCount(), Math.abs(prevSizeIncrement - sizeNext/sizePrev)};
         }
-        
+        /**
+         * Error number is the sum of (1) the number of sur-numerous objects in assignment: more than 2 objects at next frame or more than one object at previous frame, and the number of errors due to size increment (See {@link #getSizeIncrementErrors() }
+         * No errors is counted is the assignment involve object at the opened-end of the microchannel to take into account missing bacteria
+         * @return number of errors in this assignment
+         */
         public double getErrorCount() {
             int res = Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1); // max erro @ prev OU @ next
             //int res =  Math.max(0, nextObjects.size()-2) + prevObjects.size()-1; // division in more than 2 + merging
@@ -278,7 +290,7 @@ public class Assignment {
             if (!truncatedEndOfChannel()) {
                 if (!verifyInequality()) res+=1;
                 else {
-                    double sig = significantSizeIncrementError();
+                    double sig = getSizeIncrementErrors();
                     res+=sig*SIErrorValue;
                 }
             }
@@ -286,8 +298,12 @@ public class Assignment {
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, getError count: {}, errors: {}, truncated: {}", ta.verboseLevel, this, res, truncatedEndOfChannel());
             return res;        
         }
-        
-        public double significantSizeIncrementError() {
+        /**
+         * Converts a the difference between size increment and expected size increment from previous lines (when available) into error number
+         * If the difference is close enough to 0 no errors are returned
+         * @return number of errors due to size increment
+         */
+        public double getSizeIncrementErrors() {
             if (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE) {
             double prevSizeIncrement = getPreviousSizeIncrement();
             if (Double.isNaN(prevSizeIncrement)) {

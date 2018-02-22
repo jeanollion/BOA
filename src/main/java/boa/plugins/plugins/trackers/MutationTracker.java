@@ -51,6 +51,7 @@ import boa.plugins.MultiThreaded;
 import boa.plugins.ParameterSetupTracker;
 import boa.plugins.Segmenter;
 import boa.plugins.SegmenterSplitAndMerge;
+import boa.plugins.ToolTip;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
@@ -76,58 +77,51 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSetupTracker {
+public class MutationTracker implements TrackerSegmenter, MultiThreaded, ParameterSetupTracker, ToolTip {
     public static boolean registerTMI=false;
     public static TrackMateInterface<SpotWithinCompartment> debugTMI;
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new MutationSegmenter(), false);
-    StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", 1, false, false);
-    NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5);
-    //NumberParameter spotQualityThreshold = new BoundedNumberParameter("Spot Quality Threshold", 3, 4, 0, null);
-    NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null);
-    NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
-    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
-    NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null);
-    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance (>maxLinkingDistance)", 2, 0.8, 0, null);
-    //NumberParameter minimalDistanceForTrackSplittingPenalty = new BoundedNumberParameter("Minimal Distance For Track Splitting Penalty", 2, 0.2, 0, null);
-    //NumberParameter maximalTrackSplittingPenalty = new BoundedNumberParameter("Maximal Track Splitting Penalty", 5, 0.00001, 0.01, 1);
-    NumberParameter minimalTrackFrameNumber = new BoundedNumberParameter("Minimal Track Frame Number", 0, 6, 0, null);
-    NumberParameter maximalTrackFrameNumber = new BoundedNumberParameter("Maximal Track Frame Number", 0, 15, 0, null);
-    GroupParameter trackSplittingParameters = new GroupParameter("Track Post-Processing", minimalTrackFrameNumber, maximalTrackFrameNumber);
-    Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold, trackSplittingParameters};
-    
+    StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", 1, false, false).setToolTipText("Structure of bacteria objects.");
+    NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5).setToolTipText("Spot with quality parameter over this threshold are considered as high quality spots, others as low quality spots");
+    NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null).setToolTipText("Maximum frame gap for spot linking: if two spots are separated by more frame than this value they cannot be linked together directly");
+    NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together");
+    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Maximum Linking Distance", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for theglobal linking step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together. An additional cost proportional to the gap is added to the distance between spots (see <em>gap penalty</em>");
+    NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null).setToolTipText("When two spots are separated by a gap, an additional distance is added to their distance: this value x number of frame of the gap");
+    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance)", 2, 0.8, 0, null).setToolTipText("The algorithm performs a global optimization minimizing the global cost. Cost are the distance between spots. Alternative distance represent the cost of being linked with no other spot. If this value is too low, the algorithm won't link any spot, it should be superior to the linking distance threshold");
+    Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
+    String toolTip = "<b>Mutation tracking within bacteria</b> using <em>TrackMate (https://imagej.net/TrackMate)</em> <br />"
+            + "<ul><li>Distance between spots is relative to the nearest bacteria pole (or division point for dividing bacteria) in order to take into acount bacteria growth</li>"
+            + "<li>Bacteria lineage is honoured: two spots can only be linked if they are contained in bacteria from the same line</li>"
+            + "<li>If segmentation and tracking is run at the same time, a first step of removal of low-quality (LQ) spots (spot that can be either false-negative or true-positive) will be applied: only LQ spots that can be linked (directly or indirectly) to high-quality (HQ) spots (ie spots that are true-positive for sure) are kept, allowing a better selection of true-positives spots of low intensity. HQ/LQ definition depends on the parameter <em>Spot Quality Threshold</em> and depends on the quality defined by the segmenter</li>"
+            + "<li>A global linking procedure - allowing gaps (if <em>Maximum frame gap</em> is >0) - is applied among remaining spots</li></ul>";
     ExecutorService executor;
     @Override
     public void setExecutor(ExecutorService executor) {
         this.executor=executor;
     }
     
-    public LAPTracker setCompartimentStructure(int compartimentStructureIdx) {
+    public MutationTracker setCompartimentStructure(int compartimentStructureIdx) {
         this.compartirmentStructure.setSelectedStructureIdx(compartimentStructureIdx);
         return this;
     }
-    public LAPTracker setLinkingMaxDistance(double maxDist, double alternativeLinking) {
+    public MutationTracker setLinkingMaxDistance(double maxDist, double alternativeLinking) {
         maxLinkingDistance.setValue(maxDist);
         alternativeDistance.setValue(alternativeLinking);
         return this;
     }
-    public LAPTracker setGapParameters(double maxDistGapClosing, double gapPenalty, int maxFrameGap) {
+    public MutationTracker setGapParameters(double maxDistGapClosing, double gapPenalty, int maxFrameGap) {
         this.maxLinkingDistanceGC.setValue(maxDistGapClosing);
         this.gapPenalty.setValue(gapPenalty);
         this.maxGap.setValue(maxFrameGap);
         return this;
     }
-    public LAPTracker setSpotQualityThreshold(double threshold) {
+    public MutationTracker setSpotQualityThreshold(double threshold) {
         this.spotQualityThreshold.setValue(threshold);
         return this;
     }
-    public LAPTracker setSegmenter(Segmenter s) {
+    public MutationTracker setSegmenter(Segmenter s) {
         
         segmenter.setPlugin(s);
-        return this;
-    }
-    public LAPTracker setTrackLength(double min, double max) {
-        this.minimalTrackFrameNumber.setValue(min);
-        this.maximalTrackFrameNumber.setValue(max);
         return this;
     }
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, TrackPreFilterSequence trackPreFilters, PostFilterSequence postFilters) {
@@ -144,7 +138,15 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         track(structureIdx, parentTrack, false);
     }
-    
+    /**
+     * Mutation tracking within bacteria using <a href="https://imagej.net/TrackMate" target="_top">TrackMate</a>
+     * Distance between spots is relative to the nearest bacteria pole (or division point for dividing bacteria)
+     * If {@param LQSpots} is true, a first step of removal of low-quality (LQ) spots will be applied: only LQ spots that can be linked (directly or indirectly) to high-quality (HQ) spots are kept, allowing a better selection of true-positives spots of low intensity
+     * A global linking with remaining LQ and HQ spots is applied allowing gaps
+     * @param structureIdx mutation structure index
+     * @param parentTrack parent track containing objects to link at structure {@param structureIdx}
+     * @param LQSpots whether objects of structure: {@param structureIdx} contain high- and low-quality spots (unlinkable low quality spots will be removed)
+     */
     public void track(int structureIdx, List<StructureObject> parentTrack, boolean LQSpots) {
         //if (true) return;
         int compartimentStructure=this.compartirmentStructure.getSelectedIndex();
@@ -156,9 +158,6 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
         double alternativeDistance = this.alternativeDistance.getValue().doubleValue();
         DistanceComputationParameters distParams = new DistanceComputationParameters().setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty).setAlternativeDistance(alternativeDistance).setAllowGCBetweenLQ(true);
         
-        //SpotWithinCompartment s1 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(1, false).next();
-        //SpotWithinCompartment s2 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(2, false).next();
-        //if (s1!=null &&  s2!=null) logger.debug("distance 1-2: {}, scale 1: {}, 1 isAbsolute: {}, cent1: {}, cent2: {}", s1.squareDistanceTo(s2), s1.getObject().getScaleXY(), s1.getObject().isAbsoluteLandMark(), s1.getObject().getCenter(true), s2.getObject().getCenter(true));
         logger.debug("distanceFTF: {}, distance GC: {}, gapP: {}, atl: {}", maxLinkingDistance, maxLinkingDistanceGC, gapPenalty, alternativeDistance);
         
         final Map<Integer, StructureObject> parentsByF = StructureObjectUtils.splitByFrame(parentTrack);
@@ -189,7 +188,6 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
         });
         if (registerTMI) debugTMI=tmi;
         Map<Integer, List<StructureObject>> objectsF = StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx);
-        logger.debug("is2D: {}", Utils.toStringList(Utils.flattenMap(objectsF), o->o.getObject().is2D()+" size: "+o.getObject().getSize()));
         long t0 = System.currentTimeMillis();
         tmi.addObjects(objectsF);
         long t1 = System.currentTimeMillis();
@@ -219,11 +217,11 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
         boolean ok = true; 
         if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
         if (ok) {
-            switchCrossingLinksWithLQBranches(tmi, maxLinkingDistanceGC/Math.sqrt(2), maxLinkingDistanceGC, maxGap);
+            //switchCrossingLinksWithLQBranches(tmi, maxLinkingDistanceGC/Math.sqrt(2), maxLinkingDistanceGC, maxGap); // remove crossing links
             tmi.setTrackLinks(objectsF);
             MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getObject(), o.getFrame())); // TODO : do directly in graph
-            postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
-            trimLQExtremityWithGaps(tmi, 2, true, true);
+            //postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC); //
+            trimLQExtremityWithGaps(tmi, 2, true, true); // a track cannot start with a LQ spot separated by a gap
         }
         if (ok) {
             objectsF = StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx);
@@ -236,19 +234,6 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
         }
         
         long t3 = System.currentTimeMillis();
-        // post-processing
-        //MutationTrackPostProcessing.RemoveObjectCallBact cb= o->tmi.removeObject(o.getObject(), o.getFrame()); // if tmi needs to be reused afterwards
-        
-        long t4 = System.currentTimeMillis();
-        //postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
-        
-        // ETUDE DES DEPLACEMENTS EN Y
-        /*
-        // get distance distribution
-        float[] dHQ= core.extractDistanceDistribution(true);
-        float[] dHQLQ = core.extractDistanceDistribution(false);
-        new ArrayFileWriter().addArray("HQ", dHQ).addArray("HQLQ", dHQLQ).writeToFile("/home/jollion/Documents/LJP/Analyse/SpotDistanceDistribution/SpotDistanceDistribution.csv");
-        */
         
         // relabel
         for (StructureObject p: parentTrack) {
@@ -256,7 +241,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
             p.relabelChildren(structureIdx);
         }
 
-        logger.debug("LAP Tracker: {}, total processing time: {}, create spots: {}, remove LQ: {}, link: {}", parentTrack.get(0), t4-t0, t1-t0, t2-t1, t3-t2, t4-t3);
+        logger.debug("Mutation Tracker: {}, total processing time: {}, create spots: {}, remove LQ: {}, link: {}", parentTrack.get(0), t3-t0, t1-t0, t2-t1, t3-t2);
     }
     
     private static void setSizeIncrementForTruncatedCells(Map<StructureObject, SpotCompartiment> compartimentMap , List<StructureObject> parentTrack, int compartimentStructure) {
@@ -476,6 +461,11 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded, ParameterSet
     public void setTestParameter(String p) {
         testParam = p;
         logger.debug("test parameter: {}", p);
+    }
+
+    @Override
+    public String getToolTipText() {
+        return toolTip;
     }
 
     

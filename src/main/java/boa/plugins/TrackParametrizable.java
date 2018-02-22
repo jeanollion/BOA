@@ -50,8 +50,23 @@ import java.util.stream.Collectors;
  * @param <S> segmenter type
  */
 public interface TrackParametrizable<S extends Segmenter> {
-    @FunctionalInterface public static interface ApplyToSegmenter<S> { public void apply(StructureObject parent, S segmenter);}
+    @FunctionalInterface public static interface ApplyToSegmenter<S> { 
+        /**
+         * Parametrizes the {@param segmenter}
+         * This method may be called asynchronously with different pairs of {@param parent}/{@param segmenter}
+         * @param parent parent object from the parent track used to create the {@link boa.plugins.TrackParametrizable.ApplyToSegmenter apply to segmenter object} See: {@link #getApplyToSegmenter(int, java.util.List, boa.plugins.Segmenter, java.util.concurrent.ExecutorService) }. This is not necessary the segmentation parent that will be used as argument in {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
+         * @param segmenter Segmenter instance that will be parametrized, prior to call the method {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
+         */
+        public void apply(StructureObject parent, S segmenter);
+    }
+    /**
+     * 
+     * @param structureIdx index of the structure to be segmented via call to {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
+     * @param parentTrack parent track (elements are parent of structure {@param structureIdx}
+     * @return ApplyToSegmenter object that will parametrize Segmenter instances before call to {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
+     */
     public ApplyToSegmenter run(int structureIdx, List<StructureObject> parentTrack);
+    
     // + static helpers methods
     public static <S extends Segmenter> ApplyToSegmenter<S> getApplyToSegmenter(int structureIdx, List<StructureObject> parentTrack, S segmenter, ExecutorService executor) {
         if (segmenter instanceof TrackParametrizable) {

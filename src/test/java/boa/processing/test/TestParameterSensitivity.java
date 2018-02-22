@@ -30,7 +30,7 @@ import boa.plugins.plugins.post_filters.FeatureFilter;
 import boa.plugins.plugins.pre_filters.BandPass;
 import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
-import boa.plugins.plugins.trackers.LAPTracker;
+import boa.plugins.plugins.trackers.MutationTracker;
 import boa.utils.Utils;
 
 /**
@@ -86,10 +86,10 @@ public class TestParameterSensitivity {
         
         Structure mutation = t.getDB().getExperiment().getStructure(2);
         mutation.setProcessingScheme(new SegmentAndTrack(
-                    new LAPTracker().setCompartimentStructure(1).setSegmenter(
+                    new MutationTracker().setCompartimentStructure(1).setSegmenter(
                         new MutationSegmenter(0.9, 0.75, 0.9).setScale(2)
                 ).setSpotQualityThreshold(params[1])
-                            .setLinkingMaxDistance(0.8, 0.82).setGapParameters(0.8, 0.15, 3).setTrackLength(8, 14)
+                            .setLinkingMaxDistance(0.8, 0.82).setGapParameters(0.8, 0.15, 3)
             ).addPreFilters(new BandPass(0, 8, 0, 5) 
             ).addPostFilters(new FeatureFilter(new Quality(), params[0], true, true)));
         t.getDB().updateExperiment();

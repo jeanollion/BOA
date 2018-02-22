@@ -49,7 +49,7 @@ import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.plugins.track_post_filter.AverageMask;
 import boa.plugins.plugins.track_post_filter.TrackLengthFilter;
-import boa.plugins.plugins.trackers.LAPTracker;
+import boa.plugins.plugins.trackers.MutationTracker;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
 import boa.plugins.plugins.trackers.trackmate.SpotWithinCompartmentRoiModifier;
@@ -89,7 +89,7 @@ public class TestTracker {
         AverageMask.debug=true;
         AverageMask.debugIdx = 5;
         MicrochannelTracker.debug=true;
-        LAPTracker.registerTMI=true;
+        MutationTracker.registerTMI=true;
         CropMicroChannelFluo2D.debug=false;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debug=false;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
@@ -137,7 +137,7 @@ public class TestTracker {
         logger.debug("track: {} ({}) children of {} = ({})", StructureObjectUtils.getAllTracks(parentTrack, structureIdx).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, structureIdx).values(), o->o.size()), parentTrack.get(0), parentTrack.get(0).getChildren(structureIdx));
 
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        if (structureIdx==2 && LAPTracker.debugTMI!=null) iwm.setRoiModifier(new SpotWithinCompartmentRoiModifier(LAPTracker.debugTMI, 2));
+        if (structureIdx==2 && MutationTracker.debugTMI!=null) iwm.setRoiModifier(new SpotWithinCompartmentRoiModifier(MutationTracker.debugTMI, 2));
         logger.debug("generating TOI");
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
         // display preFilteredImages

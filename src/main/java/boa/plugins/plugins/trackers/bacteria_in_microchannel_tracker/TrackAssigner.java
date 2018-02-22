@@ -45,7 +45,7 @@ public class TrackAssigner {
     AssignerMode mode = AssignerMode.ADAPTATIVE;
     final Function<Region, Double> sizeFunction;
     private Function<Region, Double> sizeIncrementFunction;
-    final BiFunction<Region, Region, Boolean> areFromSameLine;
+    final BiFunction<Region, Region, Boolean> areFromSameLine, haveSamePreviousObjects;
     final List<Region> prev, next;
     final int idxPrevLim, idxNextLim;
     final protected List<Assignment> assignments = new ArrayList();
@@ -54,7 +54,7 @@ public class TrackAssigner {
     protected boolean truncatedChannel;
     int nextIncrementCheckRecursiveLevel = -1; 
     HashMapGetCreate<Region, Double> sizeIncrements = new HashMapGetCreate<>(o -> sizeIncrementFunction.apply(o));
-    protected TrackAssigner(List<Region> prev, List<Region> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Region, Double> sizeFunction, Function<Region, Double> sizeIncrementFunction, BiFunction<Region, Region, Boolean> areFromSameLine) {
+    protected TrackAssigner(List<Region> prev, List<Region> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Region, Double> sizeFunction, Function<Region, Double> sizeIncrementFunction, BiFunction<Region, Region, Boolean> areFromSameLine, BiFunction<Region, Region, Boolean> haveSamePreviousObjects) {
         this.prev= prev!=null ? prev : Collections.EMPTY_LIST;
         this.next= next!=null ? next : Collections.EMPTY_LIST;
         idxPrevLim = this.prev.size();
@@ -63,6 +63,7 @@ public class TrackAssigner {
         this.sizeIncrementFunction=sizeIncrementFunction;
         if (sizeIncrementFunction==null) mode = AssignerMode.RANGE;
         this.areFromSameLine=areFromSameLine;
+        this.haveSamePreviousObjects=haveSamePreviousObjects;
         this.baseSizeIncrement=baseGrowthRate;
         this.truncatedChannel=truncatedChannel;
     }
@@ -91,7 +92,7 @@ public class TrackAssigner {
     }
     
     protected TrackAssigner duplicate(boolean duplicateCurrentAssignment) {
-        TrackAssigner res = new TrackAssigner(prev, next, baseSizeIncrement, truncatedChannel, sizeFunction, sizeIncrementFunction, areFromSameLine);
+        TrackAssigner res = new TrackAssigner(prev, next, baseSizeIncrement, truncatedChannel, sizeFunction, sizeIncrementFunction, areFromSameLine, haveSamePreviousObjects);
         res.sizeIncrements=sizeIncrements;
         res.assignments.addAll(assignments);
         if (duplicateCurrentAssignment && currentAssignment!=null) {
@@ -185,8 +186,8 @@ public class TrackAssigner {
         //if (debug && verboseLevel<verboseLevelLimit) logger.debug("current: {}, next: {}", this, nextSolution);
         // compare the current & new solution
         double[] newScore = nextSolution.getCurrentScore();
-        double curSIIncreaseThld = SIIncreaseThld; // increment only if significative improvement OR objects come from a division at previous timePoint & improvement
-        if (nextSolution.currentAssignment.prevFromSameLine()) curSIIncreaseThld=0;
+        double curSIIncreaseThld = SIIncreaseThld; // increment only if significative improvement
+        if (nextSolution.currentAssignment.prevFromSameLine()) curSIIncreaseThld=0;  // if all prev object the same line, no penalty, only absolute improvement is requiered
         newScore[1]+=curSIIncreaseThld; 
         if (compareScores(getCurrentScore(), newScore, mode!=AssignerMode.RANGE)<=0) return false;
         newScore[1]-=curSIIncreaseThld;

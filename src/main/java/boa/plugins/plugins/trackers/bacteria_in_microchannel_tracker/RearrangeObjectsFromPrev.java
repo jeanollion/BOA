@@ -102,7 +102,14 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
                         if (ra2==null) return false;
                         return tracker.areFromSameLine.apply(ra1.prevObject, ra2.prevObject);
                     };
-                    ta = new TrackAssigner(getObjects(frame), tracker.getObjects(frame+1).subList(ass1.idxNext, ta.currentAssignment.idxNextEnd()), tracker.baseGrowthRate, assignment.truncatedEndOfChannel(), tracker.sizeFunction, sizeIncrementFunction, areFromSameLine).setVerboseLevel(ta.verboseLevel);
+                    BiFunction<Region, Region, Boolean> haveSamePreviousObject = (o1, o2) -> {
+                        RearrangeAssignment ra1 = getAssignement(o1, false, false);
+                        if (ra1==null) return false;
+                        RearrangeAssignment ra2 = getAssignement(o2, false, false);
+                        if (ra2==null) return false;
+                        return tracker.haveSamePreviousObject.apply(ra1.prevObject, ra2.prevObject);
+                    };
+                    ta = new TrackAssigner(getObjects(frame), tracker.getObjects(frame+1).subList(ass1.idxNext, ta.currentAssignment.idxNextEnd()), tracker.baseGrowthRate, assignment.truncatedEndOfChannel(), tracker.sizeFunction, sizeIncrementFunction, areFromSameLine, haveSamePreviousObject).setVerboseLevel(ta.verboseLevel);
                     ta.assignAll();
                     for (RearrangeAssignment ass : assignements) ass.mergeUsingNext(ta);
                 }

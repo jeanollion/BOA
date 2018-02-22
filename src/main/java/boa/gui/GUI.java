@@ -190,6 +190,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     public GUI() {
         //logger.info("DBMaker: {}", checkClass("org.mapdb.DBMaker"));
         ToolTipManager.sharedInstance().setInitialDelay(100);
+        ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
         logger.info("Creating GUI instance...");
         this.instance=this;
         initComponents();

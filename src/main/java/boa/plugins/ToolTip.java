@@ -24,11 +24,15 @@ import boa.configuration.parameters.Parameter;
  * @author jollion
  */
 public interface ToolTip{
+    /**
+     * The returned tooltip string will be formatted as html in a box with a fixed with, so the \"<html>\" tag is not needed, and line skipping will be automatically managed
+     * @return the string that will be displayed as a tool tip when scrolling over the name of the plugin
+     */
     public String getToolTipText();
-    public static int tooltipWidth = 750;
+    public static int TOOL_TIP_BOX_WIDTH = 750;
     public static String formatToolTip(String toolTip) {
         if (toolTip.startsWith("<html>")) toolTip = toolTip.replace("<html>", "");
         if (toolTip.endsWith("</html>")) toolTip = toolTip.replace("</html>", "");
-        return "<html><div style=\"width:"+tooltipWidth+"px\">" + toolTip + "</div></html>";
+        return "<html><div style=\"width:"+TOOL_TIP_BOX_WIDTH+"px\">" + toolTip + "</div></html>";
     }
 }

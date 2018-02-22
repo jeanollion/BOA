@@ -23,13 +23,8 @@ import boa.configuration.parameters.ArrayNumberParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.ParameterUtils;
-import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
-import boa.data_structure.RegionPopulation.MeanIntensity;
-import boa.data_structure.RegionPopulation.Or;
-import boa.data_structure.RegionPopulation.Overlap;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
@@ -71,25 +66,33 @@ import boa.image.processing.WatershedTransform.ThresholdPropagationOnWatershedMa
 import static boa.image.processing.WatershedTransform.watershed;
 import boa.image.processing.neighborhood.CylindricalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.plugins.ToolTip;
 import boa.utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, ObjectSplitter, ParameterSetup {
+public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, ObjectSplitter, ParameterSetup, ToolTip {
     public List<Image> intermediateImages;
     public static boolean debug = false;
     public static boolean displayImages = false;
     ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true);
-    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 5);
-    NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 2.25);
-    NumberParameter thresholdLow = new NumberParameter("Threshold for propagation", 2, 1.63);
-    NumberParameter intensityThreshold = new NumberParameter("Intensity Threshold for Seeds", 2, 1.8); // 
+    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 5).setToolTipText("Scale (in pixels) for gaussian smooth");
+    NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null).setToolTipText("In pixels: spots under this size will be removed");
+    NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 2.25).setToolTipText("Higher value will increase false negative and decrease false positives.<br /> Laplacian Threshold for seed selection");
+    NumberParameter thresholdLow = new NumberParameter("Threshold for propagation", 2, 1.63).setToolTipText("Lower value will yield in larger spots.<br /> Laplacian Threshold for watershed propagation: propagation stops at this value.");
+    NumberParameter intensityThreshold = new NumberParameter("Intensity Threshold for Seeds", 2, 1.8).setToolTipText("Higher value will increase false negative and decrease false positives.<br /> Laplacian Threshold for seed selection"); 
     boolean planeByPlane = false;
     Parameter[] parameters = new Parameter[]{scale, smoothScale, minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold};
     ProcessingVariables pv = new ProcessingVariables();
+    protected String toolTip = "<b>Spot Detection</b>. <br /> "
+            + "<ul><li>Input image is scaled by removing the mean value and dividing by the standard-deviation value of the background signal within the segmentation parent</li>"
+            + "<li>Spots are detected using a seeded watershed algorithm in the laplacian transform.</li> "
+            + "<li>Seeds are set on regional maxima of the laplacian transform, within the mask of the segmentation parent, with laplacian value superior to <em>Threshold for Seeds</em> and gaussian value superior to <em>Intensity Threshold for Seeds</em></li>"
+            + "<li>If several scales are provided, the laplacian scale space will be computed (3D for 2D input, and 4D for 3D input) and the seeds will be 3D/4D local extrema in the scale space in order to determine at the same time their scale and spatial localization</li>"
+            + "<li>Watershed propagation is done within the segmentation parent mask until laplacian values reach <em>Threshold for propagation</em></li>"
+            + "<li>A quality parameter in computed as √(laplacian x gaussian) at the center of the spot</li><ul>";
     
     public MutationSegmenter() {}
     
@@ -136,12 +139,18 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     public void setTestParameter(String p) {
         testParam = p;
     }
-    
+    /**
+     * See {@link #run(boa.image.Image, boa.data_structure.StructureObjectProcessing, double[], int, double, double, double, java.util.List) }
+     * @param input
+     * @param structureIdx
+     * @param parent
+     * @return 
+     */
     @Override
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         return run(input, parent, getScale(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
     }
-    
+
     /*public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             // tester sur average, max, ou plan par plan
@@ -187,6 +196,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         protected Image getSmoothedMap() {
             if (smooth==null) throw new RuntimeException("Smooth map not initialized");
             if (!smoothScaled) {
+                if (!smooth.sameDimensions(input)) smooth = smooth.cropWithOffset(input.getBoundingBox()); // map was computed on parent that differs from segmentation parent
                 ImageOperations.affineOperation2WithOffset(smooth, smooth, smoothScale/ms[1], -ms[0]);
                 smoothScaled=true;
             }
@@ -196,18 +206,37 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         protected Image[] getLaplacianMap() {
             if (lap==null) throw new RuntimeException("Laplacian map not initialized");
             if (!lapScaled) {
-                for (int i = 0; i<lap.length; ++i) ImageOperations.affineOperation2WithOffset(lap[i], lap[i], 1/ms[1], 0); // no additive coefficient
+                for (int i = 0; i<lap.length; ++i) {
+                    if (!lap[i].sameDimensions(input)) lap[i] = lap[i].cropWithOffset(input.getBoundingBox()); // map was computed on parent that differs from segmentation parent
+                    ImageOperations.affineOperation2WithOffset(lap[i], lap[i], 1/ms[1], 0);
+                } // no additive coefficient
                 lapScaled=true;
             }
             return lap;
         }
     }
+    /**
+     * Spots are detected using a seeded watershed algorithm in the laplacian transform
+     * Input image is scaled by removing the mean value and dividing by the standard-deviation value of the background within the segmentation parent
+     * Seeds are set on regional maxima of the laplacian transform, within the mask of {@param parent}, with laplacian value superior to {@param thresholdSeeds} and gaussian value superior to {@param intensityThreshold}
+     * If several scales are provided, the laplacian scale space will be computed (3D for 2D input, and 4D for 3D input) and the seeds will be 3D/4D local extrema in the scale space in order to determine at the same time their scale and spatial localization
+     * Watershed propagation is done within the mask of {@param parent} until laplacian values reach {@param thresholdPropagation}
+     * A quality parameter in computed as √(laplacian x gaussian) at the center of the spot
+     * @param input pre-diltered image from wich spots will be detected
+     * @param parent segmentation parent
+     * @param scale scale for laplacian filtering, corresponds to size of the objects to be detected, if several, objects will be detected in the scale space
+     * @param minSpotSize under this size spots will be erased
+     * @param thresholdSeeds minimal laplacian value to segment a spot
+     * @param thresholdPropagation laplacian value at the border of spots
+     * @param intensityThreshold minimal gaussian value to semgent a spot
+     * @param intermediateImages for testing purpose
+     * @return segmented spots
+     */
     public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
         Arrays.sort(scale);
         ImageMask parentMask = parent.getMask().getSizeZ()!=input.getSizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
         if (pv.smooth==null || pv.lap==null) setMaps(computeMaps(input, input));
-        // TODO: test is Use Scale is taken into acount.
         
         Image smooth = pv.getSmoothedMap();
         Image[] lapSPZ = ((List<Image>)Image.mergeImagesInZ(Arrays.asList(pv.getLaplacianMap()))).toArray(new Image[0]); // in case there are several z
@@ -294,6 +323,7 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         }
         return pop;
     }
+    
     private static void setCenterAndQuality(Image map, Image map2, RegionPopulation pop, int z) {
         SubPixelLocalizator.setSubPixelCenter(map, pop.getRegions(), true); // lap -> better in case of close objects
         for (Region o : pop.getRegions()) { // quality criterion : sqrt (smooth * lap)
@@ -430,5 +460,9 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
     @Override
     public void setSplitVerboseMode(boolean verbose) {
         manualSplitVerbose=verbose;
+    }
+    @Override
+    public String getToolTipText() {
+       return toolTip;
     }
 }
