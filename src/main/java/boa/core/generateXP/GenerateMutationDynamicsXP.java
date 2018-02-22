@@ -60,7 +60,7 @@ import boa.plugins.plugins.pre_filters.Median;
 import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
-import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
+import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
 import boa.plugins.plugins.trackers.MutationTracker;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
@@ -172,7 +172,7 @@ public class GenerateMutationDynamicsXP {
         Structure mutation = new Structure("Mutation", 0, mutChan); // parent structure 1 segParentStructure 0
         xp.getStructures().insert(mc, bacteria, mutation);
         
-        mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicroChannelFluo2D())));
+        mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelFluo2D())));
         //bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
         bacteria.setProcessingScheme(new SegmentThenTrack(new BacteriaIntensity(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
         mutation.setProcessingScheme(new SegmentAndTrack(

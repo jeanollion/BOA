@@ -55,7 +55,7 @@ import java.util.TreeMap;
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametrizable<MicroChannelFluo2D>, ToolTip {
+public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametrizable<MicrochannelFluo2D>, ToolTip {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height", 0, 430, 5, null).setToolTipText("Height of microchannel in pixels");
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width", 0, 40, 5, null);
@@ -69,9 +69,9 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
     + "<ol><li>Rough segmentation of cells using \"Threshold\" computed the whole track prior to segmentation step</li>"
     + "<li>Selection of filled channels: lengh in X direction should be over \"Microchannel Height\" x \"Microchannel filling proportion\"</li>"
     + "<li>Computation of Y start: min value of the min y coordinate of the selected objects at step 2</li></ol></html>";
-    public MicroChannelFluo2D() {}
+    public MicrochannelFluo2D() {}
 
-    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
+    public MicrochannelFluo2D(int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
         this.channelHeight.setValue(channelHeight);
         this.channelWidth.setValue(channelWidth);
         this.yShift.setValue(yMargin);
@@ -105,7 +105,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, TrackParametri
 
 
     @Override
-    public ApplyToSegmenter<MicroChannelFluo2D> run(int structureIdx, List<StructureObject> parentTrack) {
+    public ApplyToSegmenter<MicrochannelFluo2D> run(int structureIdx, List<StructureObject> parentTrack) {
         double thld = TrackParametrizable.getGlobalThreshold(structureIdx, parentTrack, this.threshold.instanciatePlugin());
         return (p, s)->s.thresholdValue=thld;
     }

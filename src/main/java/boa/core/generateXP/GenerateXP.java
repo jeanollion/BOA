@@ -66,7 +66,7 @@ import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
-import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
+import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
@@ -479,8 +479,7 @@ public class GenerateXP {
         mutation.setSegmentationParentStructure(1);
         if (processing) {
             mc.setProcessingScheme(new SegmentAndTrack(
-                    new MicrochannelTracker().setSegmenter(
-                            new MicroChannelFluo2D()
+                    new MicrochannelTracker().setSegmenter(new MicrochannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
                     ).addTrackPostFilters(new RemoveMicrochannelsTouchingBackgroundOnSides(2),
                             new RemoveMicrochannelsWithOverexpression(99, 5).setTrim(true),

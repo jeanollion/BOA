@@ -38,7 +38,7 @@ import java.util.List;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
-import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
+import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
 import boa.plugins.OverridableThresholdMap;
 
@@ -64,7 +64,7 @@ public class TestProcessMicrochannels {
         StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
         logger.debug("field name: {}, root==null? {} frame: {}", f.getName(), root==null, root.getFrame());
         Image input = root.getRawImage(0);
-        MicroChannelFluo2D.debug=true;
+        MicrochannelFluo2D.debug=true;
         CropMicroChannelFluo2D.debug=true;
         //ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 50, 0.6d, 100);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);

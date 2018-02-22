@@ -60,7 +60,7 @@ import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 import static boa.utils.Utils.plotProfile;
 import boa.plugins.OverridableThresholdMap;
-import boa.plugins.plugins.segmenters.MicroChannelFluo2D;
+import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.MicrochannelSegmenter.Result;
 
 /**
@@ -110,7 +110,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     
     public BoundingBox getBoundingBox(Image image, ImageInteger thresholdedImage, double threshold) {
         if (debug) testMode = true;
-        Result r = MicroChannelFluo2D.segmentMicroChannels(image, thresholdedImage, 0, 0, this.channelHeight.getValue().intValue(), this.fillingProportion.getValue().doubleValue(), threshold, this.minObjectSize.getValue().intValue(), testMode);
+        Result r = MicrochannelFluo2D.segmentMicroChannels(image, thresholdedImage, 0, 0, this.channelHeight.getValue().intValue(), this.fillingProportion.getValue().doubleValue(), threshold, this.minObjectSize.getValue().intValue(), testMode);
         if (r == null) return null;
         int cropMargin = this.cropMarginY.getValue().intValue();
         int xStart = this.xStart.getValue().intValue();

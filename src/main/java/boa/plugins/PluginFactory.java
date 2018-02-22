@@ -46,7 +46,7 @@ public class PluginFactory {
 
     private final static TreeMap<String, Class> plugins = new TreeMap<>();
     private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
-    private final static Map<String, String> refactoredNamesOldMapNew = new HashMap<String, String>(){{put("BacteriaFluo", "BacteriaIntensity");}};
+    private final static Map<String, String> refactoredNamesOldMapNew = new HashMap<String, String>(){{put("BacteriaFluo", "BacteriaIntensity");put("MicroChannelFluo2D", "MicrochannelFluo2D");put("LAPTracker", "MutationTracker");put("MutationSegmenter", "MutationSegmenter");}};
     
     public static void findPlugins(String packageName) {
         logger.info("looking for plugin in package: {}", packageName);
