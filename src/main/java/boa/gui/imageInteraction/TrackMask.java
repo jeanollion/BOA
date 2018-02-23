@@ -30,8 +30,7 @@ import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageInteger;
-import boa.image.processing.ImageOperations;
-import static boa.image.processing.ImageOperations.pasteImage;
+import boa.image.Offset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -117,7 +116,7 @@ public abstract class TrackMask extends ImageObjectInterface {
     
     @Override public Image generateRawImage(final int structureIdx, boolean executeInBackground) {
         // use track image only if parent is first element of track image
-        if (trackObjects[0].parent.getOffsetInTrackImage()!=null && trackObjects[0].parent.getOffsetInTrackImage().getxMin()==0 && trackObjects[0].parent.getTrackImage(structureIdx)!=null) return trackObjects[0].parent.getTrackImage(structureIdx);
+        if (trackObjects[0].parent.getOffsetInTrackImage()!=null && trackObjects[0].parent.getOffsetInTrackImage().xMin()==0 && trackObjects[0].parent.getTrackImage(structureIdx)!=null) return trackObjects[0].parent.getTrackImage(structureIdx);
         /*long t00 = System.currentTimeMillis();
         for (int i =0; i<trackObjects.length; ++i) {
             trackObjects[i].generateRawImage(structureIdx);
@@ -130,7 +129,7 @@ public abstract class TrackMask extends ImageObjectInterface {
         if (getParent().getExperiment()!=null) structureName = getParent().getExperiment().getStructure(structureIdx).getName(); 
         else structureName= structureIdx+"";
         final Image displayImage =  generateEmptyImage("Track: Parent:"+parents.get(0)+" Raw Image of"+structureName, image0);
-        pasteImage(image0, displayImage, trackOffset[0]);
+        Image.pasteImage(image0, displayImage, trackOffset[0]);
         //final double[] minAndMax = image0.getMinAndMax(null);
         //long[] totalTime = new long[1];
         // draw image in another thread..
@@ -141,7 +140,7 @@ public abstract class TrackMask extends ImageObjectInterface {
             public String run(int i) {
                 //long t0 = System.currentTimeMillis();
                 Image image = trackObjects[i].generateRawImage(structureIdx, false);
-                pasteImage(image, displayImage, trackOffset[i]);
+                Image.pasteImage(image, displayImage, trackOffset[i]);
                 if (count>=updateImageFrequency || i==trackObjects.length-1) {
                     ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage); //, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1])
                     //t4 = System.currentTimeMillis();

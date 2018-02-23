@@ -40,6 +40,7 @@ import java.util.function.Predicate;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.Transformation;
 import boa.utils.ThreadRunner;
+import java.util.function.DoublePredicate;
 
 /**
  *
@@ -122,7 +123,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
             exclusionMaskMask=exclusionMask;
         }
         else exclusionMaskMask = new BlankMask(image);
-        Predicate<Double> func = excludeZero ? v -> v!=0: null;
+        DoublePredicate func = excludeZero ? v -> v!=0: null;
         double[] res=  ImageOperations.getMeanAndSigma(image, exclusionMaskMask, func);
         long t1 = System.currentTimeMillis();
         //logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}, processing time: {}", timePoint, res, exclusionSignal!=null, t1-t0);
@@ -130,11 +131,11 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     }
     
     protected static void homogenizeVerticalLines(ImageInteger mask) {
-        for (int z = 0; z<mask.getSizeZ(); ++z) {
-            for (int x = 0; x<mask.getSizeX(); ++x) {
-                for (int y = 0; y<mask.getSizeY(); ++y) {
+        for (int z = 0; z<mask.sizeZ(); ++z) {
+            for (int x = 0; x<mask.sizeX(); ++x) {
+                for (int y = 0; y<mask.sizeY(); ++y) {
                     if (!mask.insideMask(x, y, z)) {
-                        for (y = 0; y<mask.getSizeY(); ++y) {mask.setPixel(x, y, z, 0);}
+                        for (y = 0; y<mask.sizeY(); ++y) {mask.setPixel(x, y, z, 0);}
                     }
                 }
             }
@@ -150,8 +151,8 @@ public class ScaleHistogramSignalExclusion implements Transformation {
             ImageFloat output;
             if (image instanceof ImageFloat) output = (ImageFloat) image;
             else output= new ImageFloat("", image);
-            int sizeZ= output.getSizeZ();
-            int sizeXY = output.getSizeXY();
+            int sizeZ= output.sizeZ();
+            int sizeXY = output.sizeXY();
             double m = 1d/alpha;
             double add = -beta/alpha;
             double value;

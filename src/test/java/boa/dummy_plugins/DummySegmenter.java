@@ -53,16 +53,16 @@ public class DummySegmenter implements Segmenter {
         //System.out.println("dummy segmenter: nb of objects: "+nb+ " segDir: "+segDir.getSelectedItem());
         BlankMask[] masks = new BlankMask[nb];
         if (segDir.getSelected()) {
-            double w = Math.max((mask.getSizeX()+0.0d) / (2*nb+1.0), 1);
-            int h = (int)(mask.getSizeY()*0.8d);
-            for (int i = 0; i<nb; ++i) masks[i] = new BlankMask( (int)w, h, mask.getSizeZ(), (int)((2*i+1)*w) ,(int)(0.1*mask.getSizeY()), 0, mask.getScaleXY(), mask.getScaleZ());
+            double w = Math.max((mask.sizeX()+0.0d) / (2*nb+1.0), 1);
+            int h = (int)(mask.sizeY()*0.8d);
+            for (int i = 0; i<nb; ++i) masks[i] = new BlankMask( (int)w, h, mask.sizeZ(), (int)((2*i+1)*w) ,(int)(0.1*mask.sizeY()), 0, mask.getScaleXY(), mask.getScaleZ());
         } else {
-            double h = Math.max((mask.getSizeY()+0.0d) / (2*nb+1.0), 1);
-            int w = (int)(mask.getSizeX()*0.8d);
-            for (int i = 0; i<nb; ++i) masks[i] = new BlankMask( w, (int)h, mask.getSizeZ(), (int)(0.1*mask.getSizeX()) ,(int)((2*i+1)*h), 0, mask.getScaleXY(), mask.getScaleZ());
+            double h = Math.max((mask.sizeY()+0.0d) / (2*nb+1.0), 1);
+            int w = (int)(mask.sizeX()*0.8d);
+            for (int i = 0; i<nb; ++i) masks[i] = new BlankMask( w, (int)h, mask.sizeZ(), (int)(0.1*mask.sizeX()) ,(int)((2*i+1)*h), 0, mask.getScaleXY(), mask.getScaleZ());
         }
         ArrayList<Region> objects = new ArrayList<>(nb); int idx=1;
-        for (BlankMask m :masks) objects.add(new Region(m, idx++, mask.getSizeZ()==1));
+        for (BlankMask m :masks) objects.add(new Region(m, idx++, mask.sizeZ()==1));
         return new RegionPopulation(objects, input);
     }
 

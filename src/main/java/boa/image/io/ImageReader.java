@@ -18,6 +18,7 @@
 package boa.image.io;
 
 import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.IJImageWrapper;
 import boa.image.Image;
 import static boa.image.io.ImportImageUtils.paseDVLogFile;
@@ -179,12 +180,12 @@ public class ImageReader {
         
         int zMin, zMax;
         if (coords.getBounds()!=null) {
-            zMin=Math.max(coords.getBounds().getzMin(), 0);
-            zMax=Math.min(coords.getBounds().getzMax(), sizeZ-1);
+            zMin=Math.max(coords.getBounds().zMin(), 0);
+            zMax=Math.min(coords.getBounds().zMax(), sizeZ-1);
             if (zMin>zMax) {zMin=0; zMax=sizeZ-1;}
             if (this.supportView) {
-                sizeX = coords.getBounds().getSizeX();
-                sizeY = coords.getBounds().getSizeY();
+                sizeX = coords.getBounds().sizeX();
+                sizeY = coords.getBounds().sizeY();
             }
         } else {
             zMin=0; zMax=sizeZ-1;
@@ -198,17 +199,17 @@ public class ImageReader {
                 if (coords.getBounds()==null || !supportView) {
                     ip = reader.openProcessors(idx)[0];
                 } else {
-                    ip = reader.openProcessors(idx, coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getSizeX(), coords.getBounds().getSizeY())[0];
+                    ip = reader.openProcessors(idx, coords.getBounds().xMin(), coords.getBounds().yMin(), coords.getBounds().sizeX(), coords.getBounds().sizeY())[0];
                 }
                 stack.addSlice("" + (z + 1), ip);
                 res = IJImageWrapper.wrap(new ImagePlus("", stack));
                 if (!supportView && coords.getBounds()!=null) { // crop
-                    BoundingBox bounds = coords.getBounds().duplicate();
+                    MutableBoundingBox bounds = new MutableBoundingBox(coords.getBounds());
                     bounds.setzMin(0);
-                    bounds.setzMax(res.getSizeZ()-1);
+                    bounds.setzMax(res.sizeZ()-1);
                     res=res.crop(bounds);
                 }
-                if (coords.getBounds()!=null) res.resetOffset().addOffset(coords.getBounds());
+                if (coords.getBounds()!=null) res.resetOffset().translate(coords.getBounds());
                 double[] scaleXYZ = getScaleXYZ(1);
                 if (scaleXYZ[0]!=1) res.setCalibration((float)scaleXYZ[0], (float)scaleXYZ[2]);
             } catch (FormatException | IOException ex) {

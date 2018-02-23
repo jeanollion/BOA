@@ -47,11 +47,14 @@ import ij.process.FloatPolygon;
 import ij.process.ImageProcessor;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.IJImageWrapper;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
+import boa.image.Offset;
+import boa.image.SimpleBoundingBox;
 import boa.image.TypeConverter;
 import java.awt.Canvas;
 import java.awt.Color;
@@ -183,8 +186,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         fromSelection=true;
                         Rectangle rect = removeAfterwards ? r.getPolygon().getBounds() : r.getBounds();
                         if (rect.height==0 || rect.width==0) removeAfterwards=false;
-                        BoundingBox selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
-                        if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
+                        MutableBoundingBox selection = new MutableBoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
+                        if (selection.sizeX()==0 && selection.sizeY()==0) selection=null;
                         i.addClickedObjects(selection, selectedObjects);
                         //logger.debug("before remove, contained: {}, rect: {}, selection: {}", selectedObjects.size(), rect, selection);
                         if (removeAfterwards) {
@@ -193,7 +196,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                                 while (it.hasNext()) {
                                     Pair<StructureObject, BoundingBox> p= it.next();
                                     //logger.debug("poly {}, nPoints: {}, x:{}, y:{}", poly, poly.npoints, poly.xpoints, poly.ypoints);
-                                    Rectangle oRect = new Rectangle(p.value.getxMin(), p.value.getyMin(), p.key.getBounds().getSizeX(), p.key.getBounds().getSizeY());
+                                    Rectangle oRect = new Rectangle(p.value.xMin(), p.value.yMin(), p.key.getBounds().sizeX(), p.key.getBounds().sizeY());
                                     if ((poly.npoints>1 && !poly.intersects(oRect)) || !insideMask(p.key.getMask(), p.value, poly)) it.remove();
                                 }
                                 //logger.debug("interactive selection after remove, contained: {}", selectedObjects.size());
@@ -224,7 +227,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         listener.fireObjectSelected(Pair.unpairKeys(selectedObjects), true);
                     }
                 } else if (!strechObjects) {
-                    List<StructureObject> trackHeads = new ArrayList<StructureObject>();
+                    List<StructureObject> trackHeads = new ArrayList<>();
                     for (Pair<StructureObject, BoundingBox> p : selectedObjects) trackHeads.add(p.key.getTrackHead());
                     Utils.removeDuplicates(trackHeads, false);
                     for (StructureObject th : trackHeads) {
@@ -276,11 +279,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             if (!imageObjectInterfaceMap.keySet().contains(im)) ip.close();
         }
     }
-    private boolean insideMask(ImageMask mask, BoundingBox offsetMask, Polygon selection) {
+    private boolean insideMask(ImageMask mask, Offset offsetMask, Polygon selection) {
         for (int i = 0; i<selection.npoints; ++i) {
-            int x= selection.xpoints[i] - offsetMask.getxMin();
-            int y = selection.ypoints[i] - offsetMask.getyMin();
-            int z = offsetMask.getzMin();
+            int x= selection.xpoints[i] - offsetMask.xMin();
+            int y = selection.ypoints[i] - offsetMask.yMin();
+            int z = offsetMask.zMin();
             if (mask.contains(x, y, z) && mask.insideMask(x, y, z)) return true;
         }
         return false;
@@ -339,7 +342,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
 
     @Override
     public Roi3D generateObjectRoi(Pair<StructureObject, BoundingBox> object, Color color) {
-        if (object.key.getMask().getSizeZ()<=0 || object.key.getMask().getSizeXY()<=0) logger.error("wrong object dim: o:{} {}", object.key, object.key.getBounds());
+        if (object.key.getMask().sizeZ()<=0 || object.key.getMask().sizeXY()<=0) logger.error("wrong object dim: o:{} {}", object.key, object.key.getBounds());
         Roi3D r =  createRoi(object.key.getMask(), object.value, !object.key.is2D());
         setObjectColor(r, color);
         return r;
@@ -360,19 +363,18 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
      * @param is3D
      * @return mapping of Roi to Z-slice (taking into account the provided offset)
      */
-    public static Roi3D createRoi(ImageMask mask, BoundingBox offset, boolean is3D) { 
+    public static Roi3D createRoi(ImageMask mask, Offset offset, boolean is3D) { 
         if (offset==null) {
             logger.error("ROI creation : offset null for mask: {}", mask.getName());
             return null;
         }
-        Roi3D res = new Roi3D(mask.getSizeZ());
+        Roi3D res = new Roi3D(mask.sizeZ());
         if (mask instanceof BlankMask) {
-            BoundingBox bds = mask.getBoundingBox();
-            for (int z = 0; z<mask.getSizeZ(); ++z) {
-                Roi rect = new Roi(0, 0, bds.getSizeX(), bds.getSizeY());
-                rect.setLocation(offset.getxMin(), offset.getyMin());
-                if (is3D) rect.setPosition(z+1+offset.getzMin());
-                res.put(z+mask.getOffsetZ(), rect);
+            for (int z = 0; z<mask.sizeZ(); ++z) {
+                Roi rect = new Roi(0, 0, mask.sizeX(), mask.sizeY());
+                rect.setLocation(offset.xMin(), offset.yMin());
+                if (is3D) rect.setPosition(z+1+offset.zMin());
+                res.put(z+mask.zMin(), rect);
             }
             return res;
         }
@@ -381,7 +383,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         ImagePlus maskPlus = IJImageWrapper.getImagePlus(maskIm);
         tts.setup("", maskPlus);
         int maxLevel = ImageInteger.getMaxValue(maskIm, true); // TODO necessary ??
-        for (int z = 0; z<mask.getSizeZ(); ++z) {
+        for (int z = 0; z<mask.sizeZ(); ++z) {
             ImageProcessor ip = maskPlus.getStack().getProcessor(z+1);
             ip.setThreshold(1, maxLevel, ImageProcessor.NO_LUT_UPDATE);
             tts.run(ip);
@@ -391,9 +393,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 Rectangle bds = roi.getBounds();
                 if (bds==null) logger.error("ROI creation : bounds null for mask: {}", mask.getName());
                 if (bds==null) continue;
-                roi.setLocation(bds.x+offset.getxMin(), bds.y+offset.getyMin());
-                if (is3D) roi.setPosition(z+1+offset.getzMin());
-                res.put(z+offset.getzMin(), roi);
+                roi.setLocation(bds.x+offset.xMin(), bds.y+offset.yMin());
+                if (is3D) roi.setPosition(z+1+offset.zMin());
+                res.put(z+offset.zMin(), roi);
             }
         }
         return res;
@@ -448,7 +450,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         for (int idx = idxMin; idx<track.size(); ++idx) {
             o2 = track.get(idx);
             if (o1==null || o2==null) continue;
-            Arrow arrow = new Arrow(o1.value.getXMean(), o1.value.getYMean(), o2.value.getXMean()-1, o2.value.getYMean());
+            Arrow arrow = new Arrow(o1.value.xMean(), o1.value.yMean(), o2.value.xMean(), o2.value.yMean());
             boolean error = o2.key.hasTrackLinkError(true, false) || (o1.key.hasTrackLinkError(false, true));
             boolean correction = o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead());
             //arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);
@@ -464,8 +466,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 trackRoi.add(getErrorArrow(arrow.x1, arrow.y1, arrow.x2, arrow.y2, c, color));
             } 
             if (!trackRoi.is2D) { // in 3D -> display on all slices between slice min & slice max
-                int zMin = Math.max(o1.value.getzMin(), o2.value.getzMin());
-                int zMax = Math.min(o1.value.getzMax(), o2.value.getzMax());
+                int zMin = Math.max(o1.value.zMin(), o2.value.zMin());
+                int zMax = Math.min(o1.value.zMax(), o2.value.zMax());
                 if (zMin==zMax) {
                     arrow.setPosition(zMin+1);
                     trackRoi.add(arrow);

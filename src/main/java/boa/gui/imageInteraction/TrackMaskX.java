@@ -24,10 +24,13 @@ import boa.data_structure.StructureObjectUtils;
 import ij.plugin.filter.MaximumFinder;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
+import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageInteger;
-import boa.image.processing.ImageOperations;
-import static boa.image.processing.ImageOperations.pasteImage;
+import boa.image.Offset;
+import boa.image.SimpleBoundingBox;
+import boa.image.SimpleImageProperties;
+import boa.image.SimpleOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,19 +55,19 @@ public class TrackMaskX extends TrackMask {
         super(parentTrack, childStructureIdx);
         int maxY=0, maxZ=0;
         for (int i = 0; i<parentTrack.size(); ++i) { // compute global Y and Z max to center parent masks
-            if (maxY<parentTrack.get(i).getObject().getBounds().getSizeY()) maxY=parentTrack.get(i).getObject().getBounds().getSizeY();
-            if (maxZ<parentTrack.get(i).getObject().getBounds().getSizeZ()) maxZ=parentTrack.get(i).getObject().getBounds().getSizeZ();
+            if (maxY<parentTrack.get(i).getObject().getBounds().sizeY()) maxY=parentTrack.get(i).getObject().getBounds().sizeY();
+            if (maxZ<parentTrack.get(i).getObject().getBounds().sizeZ()) maxZ=parentTrack.get(i).getObject().getBounds().sizeZ();
         }
         maxParentY=maxY;
         maxParentZ=maxZ;
         logger.trace("track mask image object: max parent Y-size: {} z-size: {}", maxParentY, maxParentZ);
         int currentOffsetX=0;
         for (int i = 0; i<parentTrack.size(); ++i) {
-            trackOffset[i] = parentTrack.get(i).getBounds().duplicate().translateToOrigin(); 
+            trackOffset[i] = new SimpleBoundingBox(parentTrack.get(i).getBounds()).resetOffset(); 
             //trackOffset[i].translate(currentOffsetX, (int)(maxParentY/2.0-trackOffset[i].getSizeY()/2.0), (int)(maxParentZ/2.0-trackOffset[i].getSizeZ()/2.0)); // Y & Z middle of parent track
-            trackOffset[i].translate(currentOffsetX, 0, 0); // Y & Z up of parent track
+            trackOffset[i].translate(new SimpleOffset(currentOffsetX, 0, 0)); // Y & Z up of parent track
             trackObjects[i] = new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i]);
-            currentOffsetX+=interval+trackOffset[i].getSizeX();
+            currentOffsetX+=interval+trackOffset[i].sizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
         for (StructureObjectMask m : trackObjects) m.getObjects();
@@ -74,7 +77,7 @@ public class TrackMaskX extends TrackMask {
     public Pair<StructureObject, BoundingBox> getClickedObject(int x, int y, int z) {
         if (is2D()) z=0; //do not take in account z in 2D case.
         // recherche du parent: 
-        int i = Arrays.binarySearch(trackOffset, new BoundingBox(x, x, 0, 0, 0, 0), new bbComparatorX());
+        int i = Arrays.binarySearch(trackOffset, new SimpleOffset(x, 0, 0), new OffsetComparatorX());
         if (i<0) i=-i-2; // element inférieur à x puisqu'on compare les xmin des bounding box
         //logger.debug("getClicked object: index: {}, parent: {}, #children: {}", i, i>=0?trackObjects[i]:"", i>=0? trackObjects[i].getObjects().size():"");
         if (i>=0 && trackOffset[i].containsWithOffset(x, y, z)) return trackObjects[i].getClickedObject(x, y, z);
@@ -83,10 +86,10 @@ public class TrackMaskX extends TrackMask {
     
     @Override
     public void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list) {
-        if (is2D() && selection.getSizeZ()>0) selection=new BoundingBox(selection.getxMin(), selection.getxMax(), selection.getyMin(), selection.getyMax(), 0, 0);
-        int iMin = Arrays.binarySearch(trackOffset, new BoundingBox(selection.getxMin(), selection.getxMin(), 0, 0, 0, 0), new bbComparatorX());
+        if (is2D() && selection.sizeZ()>0) selection=new SimpleBoundingBox(selection.xMin(), selection.xMax(), selection.yMin(), selection.yMax(), 0, 0);
+        int iMin = Arrays.binarySearch(trackOffset, new SimpleOffset(selection.xMin(), 0, 0), new OffsetComparatorX());
         if (iMin<0) iMin=-iMin-2; // element inférieur à x puisqu'on compare les xmin des bounding box
-        int iMax = Arrays.binarySearch(trackOffset, new BoundingBox(selection.getxMax(), selection.getxMax(), 0, 0, 0, 0), new bbComparatorX());
+        int iMax = Arrays.binarySearch(trackOffset, new SimpleOffset(selection.xMax(), 0, 0), new OffsetComparatorX());
         if (iMax<0) iMax=-iMax-2; // element inférieur à x puisqu'on compare les xmin des bounding box
         //logger.debug("looking for objects from time: {} to time: {}", iMin, iMax);
         for (int i = iMin; i<=iMax; ++i) trackObjects[i].addClickedObjects(selection, list);
@@ -94,7 +97,7 @@ public class TrackMaskX extends TrackMask {
     
     @Override
     public int getClosestFrame(int x, int y) {
-        int i = Arrays.binarySearch(trackOffset, new BoundingBox(x, x, 0, 0, 0, 0), new bbComparatorX());
+        int i = Arrays.binarySearch(trackOffset, new SimpleOffset(x, 0, 0), new OffsetComparatorX());
         if (i<0) i=-i-2; // element inférieur à x puisqu'on compare les xmin des bounding box
         if (i<0) logger.error("get closest frame: x:{}, trackOffset:[{}, {}]",x, trackOffset[0], trackOffset[trackOffset.length-1]);
         return trackObjects[i].parent.getFrame();
@@ -110,19 +113,19 @@ public class TrackMaskX extends TrackMask {
         String structureName;
         if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(childStructureIdx).getName(); 
         else structureName= childStructureIdx+"";
-        final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Track: Parent:"+parents+" Segmented Image of: "+structureName, maxLabel, new BlankMask( trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
+        final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Track: Parent:"+parents+" Segmented Image of: "+structureName, maxLabel, new SimpleImageProperties( trackOffset[trackOffset.length-1].xMax()+1, this.maxParentY, this.maxParentZ,parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
         drawObjects(displayImage);
         return displayImage;
     }
     @Override 
     public Image generateEmptyImage(String name, Image type) {
-        return  Image.createEmptyImage(name, type, new BlankMask(trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, Math.max(type.getSizeZ(), this.maxParentZ)).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
+        return  Image.createEmptyImage(name, type, new SimpleImageProperties(trackOffset[trackOffset.length-1].xMax()+1, this.maxParentY, Math.max(type.sizeZ(), this.maxParentZ),parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
     }
     
-    class bbComparatorX implements Comparator<BoundingBox>{
+    class OffsetComparatorX implements Comparator<Offset>{
         @Override
-        public int compare(BoundingBox arg0, BoundingBox arg1) {
-            return Integer.compare(arg0.getxMin(), arg1.getxMin());
+        public int compare(Offset arg0, Offset arg1) {
+            return Integer.compare(arg0.xMin(), arg1.xMin());
         }
         
     }

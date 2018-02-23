@@ -22,7 +22,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.plugins.ObjectFeature;
 
 /**
@@ -47,7 +47,7 @@ public class Size implements ObjectFeature {
 
     @Override
     public double performMeasurement(Region object) {
-        double size = object.getSize();
+        double size = object.size();
         if (scaled.getSelectedIndex()==1) {
             size*=Math.pow(object.getScaleXY(), 2);
             if (!object.is2D()) size*=object.getScaleZ();

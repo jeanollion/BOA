@@ -24,8 +24,10 @@ import com.google.common.collect.HashBiMap;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageInteger;
+import boa.image.Offset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,7 +50,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     public StructureObjectMask(StructureObject parent, int childStructureIdx) {
         super(new ArrayList<StructureObject>(1){{add(parent);}}, childStructureIdx);
         this.parent= parent;
-        this.additionalOffset = new BoundingBox(0, 0, 0);
+        this.additionalOffset = new MutableBoundingBox(0, 0, 0);
     }
 
     public StructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox additionalOffset) {
@@ -89,7 +91,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         if (objects == null) reloadObjects();
         if (objects==null) return Collections.EMPTY_LIST;
         getOffsets();
-        ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>(objects.size());
+        ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<>(objects.size());
         for (int i = 0; i < offsets.length; ++i) {
             res.add(new Pair(objects.get(i), offsets[i]));
         }
@@ -105,7 +107,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         getOffsets();
         for (int i = 0; i < offsets.length; ++i) {
             if (offsets[i].containsWithOffset(x, y, z)) {
-                if (objects.get(i).getMask().insideMask(x - offsets[i].getxMin(), y - offsets[i].getyMin(), z - offsets[i].getzMin())) {
+                if (objects.get(i).getMask().insideMask(x - offsets[i].xMin(), y - offsets[i].yMin(), z - offsets[i].zMin())) {
                     return new Pair(objects.get(i), offsets[i]);
                 }
             }
@@ -117,9 +119,9 @@ public class StructureObjectMask extends ImageObjectInterface {
     public void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list) {
         getObjects();
         if (is2D()) {
-            for (int i = 0; i < offsets.length; ++i) if (offsets[i].intersect2D(selection)) list.add(new Pair(objects.get(i), offsets[i]));
+            for (int i = 0; i < offsets.length; ++i) if (BoundingBox.intersect2D(offsets[i], selection)) list.add(new Pair(objects.get(i), offsets[i]));
         } else {
-            for (int i = 0; i < offsets.length; ++i) if (offsets[i].intersect(selection)) list.add(new Pair(objects.get(i), offsets[i]));
+            for (int i = 0; i < offsets.length; ++i) if (BoundingBox.intersect(offsets[i], selection)) list.add(new Pair(objects.get(i), offsets[i]));
         }
         
         

@@ -33,7 +33,7 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import ij.ImageJ;
 import ij.process.AutoThresholder;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;

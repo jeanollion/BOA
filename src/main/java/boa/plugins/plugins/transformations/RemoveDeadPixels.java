@@ -24,6 +24,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.Voxel;
 import boa.image.BlankMask;
+import static boa.image.BoundingBox.loop;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import java.util.ArrayList;
@@ -89,15 +90,15 @@ public class RemoveDeadPixels implements Transformation {
                     accumulator.value=addElement;
                 } else {
                     if (removeElement!=null && addElement!=null) {
-                        accumulator.value.getBoundingBox().translateToOrigin().loop((x, y, z)->{
+                        loop(accumulator.value.getBoundingBox().resetOffset(), (x, y, z)->{
                             accumulator.value.setPixel(x, y, z, accumulator.value.getPixel(x, y, z)+(addElement.getPixel(x, y, z)-removeElement.getPixel(x, y, z))/fRd);
                         });
                     }else if (addElement!=null) {
-                        accumulator.value.getBoundingBox().translateToOrigin().loop((x, y, z)->{
+                        loop(accumulator.value.getBoundingBox().resetOffset(), (x, y, z)->{
                             accumulator.value.setPixel(x, y, z, accumulator.value.getPixel(x, y, z)+addElement.getPixel(x, y, z)/fRd);
                         });
                     } else if (removeElement!=null) {
-                        accumulator.value.getBoundingBox().translateToOrigin().loop((x, y, z)->{
+                        loop(accumulator.value.getBoundingBox().resetOffset(), (x, y, z)->{
                             accumulator.value.setPixel(x, y, z, accumulator.value.getPixel(x, y, z)-removeElement.getPixel(x, y, z)/fRd);
                         });
                     }
@@ -111,7 +112,7 @@ public class RemoveDeadPixels implements Transformation {
                     testMeanTC[accumulator.key][0] = accumulator.value.duplicate();
                     testMedianTC[accumulator.key][0] = median.duplicate();
                 }
-                median.getBoundingBox().translateToOrigin().loop((x, y, z)->{
+                loop(median.getBoundingBox().resetOffset(), (x, y, z)->{
                     float med = median.getPixel(x, y, z);
                     if (accumulator.value.getPixel(x, y, z)-med>= thld) {
                         Voxel v =new Voxel(x, y, z, med);
@@ -159,7 +160,7 @@ public class RemoveDeadPixels implements Transformation {
             Set<Voxel> dv= map.get(timePoint);
             if (!dv.isEmpty()) {
                 Median m = new Median();
-                m.setUp(image, image.getSizeZ()>1 ? new EllipsoidalNeighborhood(1.5, 1, true) : new EllipsoidalNeighborhood(1.5, true)); // excludes center pixel);
+                m.setUp(image, image.sizeZ()>1 ? new EllipsoidalNeighborhood(1.5, 1, true) : new EllipsoidalNeighborhood(1.5, true)); // excludes center pixel);
                 for (Voxel v : dv) image.setPixel(v.x, v.y, v.z, m.applyFilter(v.x, v.y, v.z)); //
             }
         }

@@ -25,7 +25,7 @@ import boa.configuration.parameters.StructureParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.ImageMask;
 import java.util.ArrayList;
 import java.util.List;

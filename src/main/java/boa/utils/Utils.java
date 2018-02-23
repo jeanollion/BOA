@@ -489,15 +489,15 @@ public class Utils {
         double[] x;
         double[] y;
         if (alongX) {
-            x=new double[image.getSizeX()];
-            y=new double[image.getSizeX()];
+            x=new double[image.sizeX()];
+            y=new double[image.sizeX()];
             for (int i = 0; i<x.length; ++i) {
                 x[i]=i;
                 y[i]=image.getPixel(i, coord, z);
             }
         } else {
-            x=new double[image.getSizeY()];
-            y=new double[image.getSizeY()];
+            x=new double[image.sizeY()];
+            y=new double[image.sizeY()];
             for (int i = 0; i<x.length; ++i) {
                 x[i]=i;
                 y[i]=image.getPixel(coord, i, z);

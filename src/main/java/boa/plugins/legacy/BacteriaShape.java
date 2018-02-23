@@ -152,8 +152,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter {
         
         if (sideBackground) {
             // erase objects on side (forced during partitioning -> context of microchannels)
-            pop.filter(new ContactBorder(input.getSizeY()/2, input, Border.Xl)); 
-            pop.filter(new ContactBorder(input.getSizeY()/2, input, Border.Xr)); 
+            pop.filter(new ContactBorder(input.sizeY()/2, input, Border.Xl)); 
+            pop.filter(new ContactBorder(input.sizeY()/2, input, Border.Xr)); 
         }
         pop.filter(removeBackgroundRegions);
         
@@ -203,8 +203,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter {
         int minSizePropagation = 5;
         ImageInteger seeds = Filters.localExtrema(wsMap, null, false, mask, Filters.getNeighborhood(sideBackground?1.5:1, wsMap)); 
         if (sideBackground) {// add  seeds on sides to partition image properly // todo necessary ? parameter?
-            int[] xs = new int[]{0, wsMap.getSizeX()-1};
-            for (int y = 0; y<wsMap.getSizeY(); ++y) {
+            int[] xs = new int[]{0, wsMap.sizeX()-1};
+            for (int y = 0; y<wsMap.sizeY(); ++y) {
                 for (int x : xs) {
                     if (mask.insideMask(x, y, 0)) seeds.setPixel(x, y, 0, 1);
                 }
@@ -220,7 +220,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter {
     public static List<Region> getSideBackgroundRegions(RegionPopulation pop) {
         ContactBorder left =  new ContactBorder(0, pop.getImageProperties(), Border.Xl);
         ContactBorder right =  new ContactBorder(0, pop.getImageProperties(), Border.Xr);
-        double thld = pop.getImageProperties().getSizeY()/2d;
+        double thld = pop.getImageProperties().sizeY()/2d;
         return pop.getRegions().stream().filter(r-> left.getContact(r)>thld||right.getContact(r)>thld).collect(Collectors.toList());
     }
 
@@ -237,8 +237,8 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter {
             this.contactYProportion=contactYProportion;
             left =  new ContactBorder(0, image, Border.Xl);
             right =  new ContactBorder(0, image, Border.Xr);
-            sizeX = image.getSizeX();
-            sizeY=image.getSizeY();
+            sizeX = image.sizeX();
+            sizeY=image.sizeY();
         }
         @Override
         public boolean keepObject(Region object) {

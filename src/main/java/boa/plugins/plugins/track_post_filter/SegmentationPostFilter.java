@@ -25,6 +25,7 @@ import boa.configuration.parameters.PostFilterSequence;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
+import boa.image.SimpleBoundingBox;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -65,7 +66,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
         ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             //logger.debug("seg post-filter: {}", parent);
-            pop.translate(parent.getBounds().duplicate().reverseOffset(), false); // go back to relative landmark
+            pop.translate(new SimpleBoundingBox(parent.getBounds()).reverseOffset(), false); // go back to relative landmark
             pop=postFilters.filter(pop, structureIdx, parent);
             List<StructureObject> toRemove=null;
             if (parent.getChildren(structureIdx)!=null) {

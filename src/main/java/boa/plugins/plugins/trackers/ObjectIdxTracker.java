@@ -27,6 +27,7 @@ import boa.data_structure.StructureObjectTracker;
 import static boa.data_structure.StructureObjectUtils.setTrackLinks;
 import boa.data_structure.Track;
 import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.ImageMask;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -94,7 +95,7 @@ public class ObjectIdxTracker implements Tracker {
     }
     
     private static double[] getCenterArray(BoundingBox b) {
-        return new double[]{b.getXMean(), b.getYMean(), b.getZMean()};
+        return new double[]{b.xMean(), b.yMean(), b.zMean()};
     }
     
     public static int compareCenters(double[] o1, double[] o2, IndexingOrder order) {

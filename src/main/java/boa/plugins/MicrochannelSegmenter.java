@@ -20,9 +20,10 @@ package boa.plugins;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageProperties;
+import boa.image.SimpleImageProperties;
 import boa.plugins.Segmenter;
 import boa.utils.ArrayUtil;
 import java.util.ArrayList;
@@ -82,17 +83,17 @@ public interface MicrochannelSegmenter extends Segmenter {
         public int size() {
             return xMin.length;
         }
-        public BoundingBox getBounds(int idx, boolean includeYMinShift) {
-            return new BoundingBox(xMin[idx], xMax[idx], yMin+(includeYMinShift?yMinShift[idx]:0), yMax, 0, 0);
+        public MutableBoundingBox getBounds(int idx, boolean includeYMinShift) {
+            return new MutableBoundingBox(xMin[idx], xMax[idx], yMin+(includeYMinShift?yMinShift[idx]:0), yMax, 0, 0);
         }
-        public Region getRegion(int idx, float scaleXY, float scaleZ, boolean includeYMinShift, int zMax) {
-            BoundingBox bds = getBounds(idx, includeYMinShift);
+        public Region getRegion(int idx, double scaleXY, double scaleZ, boolean includeYMinShift, int zMax) {
+            MutableBoundingBox bds = getBounds(idx, includeYMinShift);
             if (zMax>1) bds.expandZ(zMax);
-            return new Region(new BlankMask( bds.getImageProperties(scaleXY, scaleZ)), idx+1, bds.getSizeZ()==1);
+            return new Region(new BlankMask( bds, scaleXY, scaleZ), idx+1, bds.sizeZ()==1);
         }
         public RegionPopulation getObjectPopulation(ImageProperties im, boolean includeYMinShift) {
             List<Region> l = new ArrayList<>(xMin.length);
-            for (int i = 0; i<xMin.length; ++i) l.add(getRegion(i, im.getScaleXY(), im.getScaleZ(), includeYMinShift, im.getSizeZ()));
+            for (int i = 0; i<xMin.length; ++i) l.add(getRegion(i, im.getScaleXY(), im.getScaleZ(), includeYMinShift, im.sizeZ()));
             return new RegionPopulation(l, im);
         }
     }

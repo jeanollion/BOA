@@ -66,7 +66,7 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
                 double val= ArrayUtil.quantile(values, 0.5);
                 if (normalizeEdgeValues) {// normalize by intensity (mean better than median, better than mean @ edge)
                     double sum = BasicMeasurements.getSum(i.getE1(), intensityMap)+BasicMeasurements.getSum(i.getE2(), intensityMap);
-                    val= val/(sum/(double)(i.getE1().getSize()+i.getE2().getSize()));
+                    val= val/(sum/(double)(i.getE1().size()+i.getE2().size()));
                 }
                 return val;
             }

@@ -18,7 +18,7 @@
 package boa.gui.imageInteraction;
 
 import boa.data_structure.StructureObject;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import java.util.List;
 import boa.utils.Pair;
 

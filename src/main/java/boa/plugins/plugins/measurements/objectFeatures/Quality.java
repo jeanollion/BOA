@@ -21,7 +21,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.plugins.ObjectFeature;
 
 /**

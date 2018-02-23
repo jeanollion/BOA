@@ -28,8 +28,8 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
 import boa.image.Image;
+import boa.image.MutableBoundingBox;
 import boa.plugins.MultiThreaded;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -143,7 +143,7 @@ public class SegmentOnly implements ProcessingScheme {
         // segment in direct parents
         List<StructureObject> allParents = singleFrame ? StructureObjectUtils.getAllChildren(parentTrack.subList(0, 1), segParentStructureIdx) : StructureObjectUtils.getAllChildren(parentTrack, segParentStructureIdx);
         Collections.shuffle(allParents); // reduce thread blocking
-        final boolean ref2D= !allParents.isEmpty() && allParents.get(0).is2D() && parentTrack.get(0).getRawImage(structureIdx).getSizeZ()>1;
+        final boolean ref2D= !allParents.isEmpty() && allParents.get(0).is2D() && parentTrack.get(0).getRawImage(structureIdx).sizeZ()>1;
         long t0 = System.currentTimeMillis();
         long t1 = System.currentTimeMillis();
         //if (useMaps) errors.addAll(ThreadRunner.execute(parentTrack, false, (p, idx) -> subMaps.getAndCreateIfNecessarySyncOnKey(p), executor, null));
@@ -154,7 +154,7 @@ public class SegmentOnly implements ProcessingScheme {
             Segmenter seg = segmenter.instanciatePlugin();
             if (applyToSegmenter!=null) applyToSegmenter.apply(globalParent, seg);
             Image input = globalParent.getPreFilteredImage(structureIdx);
-            if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
+            if (subSegmentation) input = input.cropWithOffset(ref2D?new MutableBoundingBox(subParent.getBounds()).copyZ(input):subParent.getBounds());
             RegionPopulation pop = seg.runSegmenter(input, structureIdx, subParent);
             pop = postFilters.filter(pop, structureIdx, subParent);
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);

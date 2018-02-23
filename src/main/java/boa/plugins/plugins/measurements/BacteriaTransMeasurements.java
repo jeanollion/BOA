@@ -78,8 +78,8 @@ public class BacteriaTransMeasurements implements Measurement {
         Region bactObject = object.getObject();
         BoundingBox parentOffset = object.getParent().getBounds();
         double[] center=bactObject.getGeomCenter(true);
-        center[0]-=parentOffset.getxMin()*object.getScaleXY();
-        center[1]-=parentOffset.getyMin()*object.getScaleXY();
+        center[0]-=parentOffset.xMin()*object.getScaleXY();
+        center[1]-=parentOffset.yMin()*object.getScaleXY();
         //if (object.getTimePoint()==0) logger.debug("object: {} center: {}, parentOffset: {}, objectoffset: {} bactImageOffset: {}, mutImageOffset: {}", object, center, parentOffset, object.getBounds(), bactImage.getBoundingBox(), mutImage.getBoundingBox());
         Measurements m = object.getMeasurements();
         m.setValue("BacteriaCenterX", center[0]);

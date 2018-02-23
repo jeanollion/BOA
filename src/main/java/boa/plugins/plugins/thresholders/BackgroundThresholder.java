@@ -90,8 +90,8 @@ public class BackgroundThresholder implements SimpleThresholder {
             mean=0;
             mean2=0;
             sigma=0;
-            for (int z = 0; z<input.getSizeZ(); z++) {
-                for (int xy = 0; xy<input.getSizeXY(); xy++) {
+            for (int z = 0; z<input.sizeZ(); z++) {
+                for (int xy = 0; xy<input.sizeXY(); xy++) {
                     if (mask.insideMask(xy, z)) {
                         double val = input.getPixel(xy, z);
                         if (val<lastThreshold) {

@@ -59,15 +59,15 @@ public class ImageLabeller {
         this.mask=mask;
         ImageInt imLabels = new ImageInt("labels", mask);
         labels = imLabels.getPixelArray();
-        sizeX = mask.getSizeX();
+        sizeX = mask.sizeX();
         spots = new HashMap<Integer, Spot>();
     }
     
     public static Region[] labelImage(ImageMask mask) {
-        if (mask instanceof BlankMask) return new Region[]{new Region((BlankMask)mask, 1, mask.getSizeZ()==1)};
+        if (mask instanceof BlankMask) return new Region[]{new Region((BlankMask)mask, 1, mask.sizeZ()==1)};
         else {
             ImageLabeller il = new ImageLabeller(mask);
-            if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3DHalf;
+            if (mask.sizeZ()>1) il.neigh=ImageLabeller.neigh3DHalf;
             else il.neigh=ImageLabeller.neigh2D8Half;
             il.labelSpots();
             return il.getObjects();
@@ -75,10 +75,10 @@ public class ImageLabeller {
     }
     
     public static Region[] labelImageLowConnectivity(ImageMask mask) {
-        if (mask instanceof BlankMask) return new Region[]{new Region((BlankMask)mask, 1, mask.getSizeZ()==1)};
+        if (mask instanceof BlankMask) return new Region[]{new Region((BlankMask)mask, 1, mask.sizeZ()==1)};
         else {
             ImageLabeller il = new ImageLabeller(mask);
-            if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3DLowHalf;
+            if (mask.sizeZ()>1) il.neigh=ImageLabeller.neigh3DLowHalf;
             else il.neigh=ImageLabeller.neigh2D4Half;
             il.labelSpots();
             return il.getObjects();
@@ -120,13 +120,13 @@ public class ImageLabeller {
                 return mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(v2.x, v2.y, v2.z) && mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(currentVoxel.x, currentVoxel.y, currentVoxel.z);
             }
         };
-        RegionPopulation pop = WatershedTransform.watershed(mask, null, WatershedTransform.createSeeds(seeds, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()), false, prop, fus, lowConnectivity);
+        RegionPopulation pop = WatershedTransform.watershed(mask, null, WatershedTransform.createSeeds(seeds, mask.sizeZ()==1, mask.getScaleXY(), mask.getScaleZ()), false, prop, fus, lowConnectivity);
         return pop;
     }
     protected Region[] getObjects() {
         Region[] res = new Region[spots.size()];
         int label = 0;
-        for (Spot s : spots.values()) res[label++]= new Region(s.voxels, label, mask.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ());
+        for (Spot s : spots.values()) res[label++]= new Region(s.voxels, label, mask.sizeZ()==1, mask.getScaleXY(), mask.getScaleZ());
         return res;
     }
     
@@ -136,8 +136,8 @@ public class ImageLabeller {
         Voxel v;
         int nextLabel;
         int xy;
-        for (int z = 0; z < mask.getSizeZ(); ++z) {
-            for (int y = 0; y < mask.getSizeY(); ++y) {
+        for (int z = 0; z < mask.sizeZ(); ++z) {
+            for (int y = 0; y < mask.sizeY(); ++y) {
                 for (int x = 0; x < sizeX; ++x) {
                     xy = x + y * sizeX;
                     if (mask.insideMask(xy, z)) {

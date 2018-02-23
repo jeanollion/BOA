@@ -31,6 +31,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import ij.process.AutoThresholder;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
+import static boa.image.BoundingBox.getIntersection;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
@@ -135,12 +136,12 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
         ImageInteger mask = thresholdedImage == null ? ImageOperations.threshold(image, thld, true, true) : thresholdedImage;
         // remove small objects
         Filters.binaryClose(mask, mask, Filters.getNeighborhood(1, 0, image)); // case of low intensity signal -> noisy. // remove small objects?
-        List<Region> bacteria = ImageOperations.filterObjects(mask, mask, (Region o) -> o.getSize() < minObjectSize);
+        List<Region> bacteria = ImageOperations.filterObjects(mask, mask, (Region o) -> o.size() < minObjectSize);
         // selected filled microchannels
         float[] xProj = ImageOperations.meanProjection(mask, ImageOperations.Axis.X, null);
-        ImageFloat imProjX = new ImageFloat("proj(X)", mask.getSizeX(), new float[][]{xProj});
+        ImageFloat imProjX = new ImageFloat("proj(X)", mask.sizeX(), new float[][]{xProj});
         double thldX = channelHeight * fillingProportion; // only take into account roughly filled channels
-        thldX /= (double) (image.getSizeY() * image.getSizeZ()); // mean X projection
+        thldX /= (double) (image.sizeY() * image.sizeZ()); // mean X projection
         ImageByte projXThlded = ImageOperations.threshold(imProjX, thldX, true, false).setName("proj(X) thlded: " + thldX);
         if (testMode) {
             ImageWindowManagerFactory.showImage(mask);
@@ -152,14 +153,14 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
             return null;
         }
         if (channelWidth <= 1) {
-            channelWidth = (int) xObjectList.stream().mapToInt((Region o) -> o.getBounds().getSizeX()).average().getAsDouble();
+            channelWidth = (int) xObjectList.stream().mapToInt((Region o) -> o.getBounds().sizeX()).average().getAsDouble();
         }
         int leftLimit = channelWidth / 2 + 1;
-        int rightLimit = image.getSizeX() - leftLimit;
+        int rightLimit = image.sizeX() - leftLimit;
         Iterator<Region> it = xObjectList.iterator();
         while (it.hasNext()) {
             BoundingBox b = it.next().getBounds();
-            if (b.getXMean() < leftLimit || b.getXMean() > rightLimit) {
+            if (b.xMean() < leftLimit || b.xMean() > rightLimit) {
                 it.remove(); //if (b.getxMin()<Xmargin || b.getxMax()>rightLimit) it.remove(); //
             }
         }
@@ -171,7 +172,7 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
         Region prev = it.next();
         while (it.hasNext()) {
             Region next = it.next();
-            if (prev.getBounds().getxMax() + 1 > next.getBounds().getxMin()) {
+            if (prev.getBounds().xMax() + 1 > next.getBounds().xMin()) {
                 prev.addVoxels(next.getVoxels());
                 it.remove();
             } else {
@@ -198,10 +199,10 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
             //if (debug) logger.debug("object: {}");
             X_SEARCH:
             for (int i = 0; i < xObjects.length; ++i) {
-                BoundingBox inter = b.getIntersection(xObjects[i].getBounds());
-                if (inter.getSizeX() >= 2) {
-                    if (b.getyMin() < yMins[i]) {
-                        yMins[i] = b.getyMin();
+                BoundingBox inter = getIntersection(b, xObjects[i].getBounds());
+                if (inter.sizeX() >= 2) {
+                    if (b.yMin() < yMins[i]) {
+                        yMins[i] = b.yMin();
                     }
                     break X_SEARCH;
                 }
@@ -225,9 +226,9 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
             if (yMins[i] == Integer.MAX_VALUE) {
                 continue;
             }
-            int xMin = (int) (xObjects[i].getBounds().getXMean() - channelWidth / 2.0);
-            int xMax = (int) (xObjects[i].getBounds().getXMean() + channelWidth / 2.0); // mc remains centered
-            if (xMin < 0 || xMax >= image.getSizeX()) {
+            int xMin = (int) (xObjects[i].getBounds().xMean() - channelWidth / 2.0);
+            int xMax = (int) (xObjects[i].getBounds().xMean() + channelWidth / 2.0); // mc remains centered
+            if (xMin < 0 || xMax >= image.sizeX()) {
                 continue; // exclude outofbounds objects
             }
             int[] minMaxYShift = new int[]{xMin, xMax, yMins[i] - yMin < yShift ? 0 : yMins[i] - yMin};

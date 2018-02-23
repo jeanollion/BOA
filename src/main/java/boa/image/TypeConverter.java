@@ -35,11 +35,11 @@ public class TypeConverter {
      */
     public static ImageFloat toFloat(Image image, ImageFloat output) {
         if (output==null || !output.sameDimensions(image)) output = new ImageFloat(image.getName(), image);
-        if (image instanceof ImageFloat) ImageOperations.pasteImage(image, output, null);
+        if (image instanceof ImageFloat) Image.pasteImage(image, output, null);
         else {
             float[][] newPixels = output.getPixelArray();
-            for (int z = 0; z<image.getSizeZ(); ++z) {
-                for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+            for (int z = 0; z<image.sizeZ(); ++z) {
+                for (int xy = 0; xy<image.sizeXY(); ++xy) {
                     newPixels[z][xy]=image.getPixel(xy, z);
                 }
             }
@@ -55,10 +55,10 @@ public class TypeConverter {
      */
     public static ImageShort toShort(Image image, ImageShort output) {
         if (output==null || !output.sameDimensions(image)) output = new ImageShort(image.getName(), image);
-        if (image instanceof ImageShort) ImageOperations.pasteImage(image, output, null);
+        if (image instanceof ImageShort) Image.pasteImage(image, output, null);
         else {
-            for (int z = 0; z<image.getSizeZ(); ++z) {
-                for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+            for (int z = 0; z<image.sizeZ(); ++z) {
+                for (int xy = 0; xy<image.sizeXY(); ++xy) {
                     output.setPixel(xy, z, image.getPixel(xy, z)+0.5);
                 }
             }
@@ -74,10 +74,10 @@ public class TypeConverter {
      */
     public static ImageByte toByte(Image image, ImageByte output) {
         if (output==null || !output.sameDimensions(image)) output = new ImageByte(image.getName(), image);
-        if (image instanceof ImageByte) ImageOperations.pasteImage(image, output, null);
+        if (image instanceof ImageByte) Image.pasteImage(image, output, null);
         else {
-            for (int z = 0; z<image.getSizeZ(); ++z) {
-                for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+            for (int z = 0; z<image.sizeZ(); ++z) {
+                for (int xy = 0; xy<image.sizeXY(); ++xy) {
                     output.setPixel(xy, z, image.getPixel(xy, z)+0.5);
                 }
             }
@@ -103,10 +103,10 @@ public class TypeConverter {
         byte  v = (byte)value;
         byte[][] newPixels = output.getPixelArray();
         if (image instanceof BlankMask) {
-            for (int z = 0; z<image.getSizeZ(); ++z) Arrays.fill(newPixels[z], (byte)value);
+            for (int z = 0; z<image.sizeZ(); ++z) Arrays.fill(newPixels[z], (byte)value);
         } else {
-            for (int z = 0; z<image.getSizeZ(); ++z) {
-                for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+            for (int z = 0; z<image.sizeZ(); ++z) {
+                for (int xy = 0; xy<image.sizeXY(); ++xy) {
                     if (image.insideMask(xy, z)) newPixels[z][xy] = v;
                 }
             }

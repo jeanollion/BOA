@@ -39,6 +39,7 @@ import boa.image.BoundingBox;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
 import boa.image.ImageShort;
+import boa.image.SimpleBoundingBox;
 import boa.image.TypeConverter;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -247,7 +248,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         if (ip!=null) {
             Rectangle r = ip.getCanvas().getSrcRect();
             int z = ip.getCurrentSlice()-1;
-            return new BoundingBox(r.x, r.x+r.width-1, r.y, r.y+r.height-1, z, z);
+            return new SimpleBoundingBox(r.x, r.x+r.width-1, r.y, r.y+r.height-1, z, z);
         } else return null;
     }
     
@@ -256,11 +257,11 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ImagePlus ip = this.getImage(image);
         if (ip!=null) {
             Rectangle r = ip.getCanvas().getSrcRect();
-            r.x=bounds.getxMin();
-            r.y=bounds.getyMin();
-            r.width=bounds.getSizeX();
-            r.height=bounds.getSizeY();
-            ip.setSlice(bounds.getzMin()+1);
+            r.x=bounds.xMin();
+            r.y=bounds.yMin();
+            r.width=bounds.sizeX();
+            r.height=bounds.sizeY();
+            ip.setSlice(bounds.zMin()+1);
             ip.draw();
             //ip.updateAndDraw();
             //ip.updateAndRepaintWindow();

@@ -23,7 +23,7 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import fiji.plugin.trackmate.Spot;
 import fiji.plugin.trackmate.SpotCollection;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageProperties;
 import java.util.ArrayList;

@@ -31,6 +31,7 @@ import boa.data_structure.StructureObjectUtils;
 import ij.ImageJ;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.processing.ImageOperations;
@@ -94,7 +95,7 @@ public class GenerateFilms {
         int[] fields = new int[]{1};
         int tStart = 100;
         int tEnd = 300;
-        BoundingBox cropBB = new BoundingBox(240, 950, 20, 400, 0, 0);
+        MutableBoundingBox cropBB = new MutableBoundingBox(240, 950, 20, 400, 0, 0);
         double saturateChannel[]= new double[]{50, 100};
         
         
@@ -116,7 +117,7 @@ public class GenerateFilms {
     
     
     
-    private static void arrangeFilm(Image[][] imageTC, BoundingBox cropBB, double[] saturateChannel) {
+    private static void arrangeFilm(Image<? extends Image<?>>[][] imageTC, BoundingBox cropBB, double[] saturateChannel) {
         
         // normalize intensities 
         for (int c = 0; c<imageTC[0].length; ++c) {
@@ -143,14 +144,14 @@ public class GenerateFilms {
             }
         }
         // paste images in Y
-        Image res = Image.createEmptyImage("", imageTC[0][0], new BlankMask( imageTC[0][0].getSizeX(), imageTC[0][0].getSizeY()*imageTC[0].length, imageTC.length));
+        Image res = Image.createEmptyImage("", imageTC[0][0], new BlankMask( imageTC[0][0].sizeX(), imageTC[0][0].sizeY()*imageTC[0].length, imageTC.length));
         int yOff= 0;
         for (int c = 0; c<imageTC[0].length; ++c) {
             for (int t = 0; t<imageTC.length; ++t) {
                 
-                ImageOperations.pasteImage(imageTC[t][c], res, new BoundingBox(0, yOff, t), null);
+                Image.pasteImage(imageTC[t][c], res, new MutableBoundingBox(0, yOff, t), null);
             }
-            yOff += imageTC[0][0].getSizeY();
+            yOff += imageTC[0][0].sizeY();
         }
         ImageWindowManagerFactory.showImage(res);
     }
@@ -190,7 +191,7 @@ public class GenerateFilms {
         return resTF;
     }
     
-    public static Image[][] generateMicrochannelFilm(String dbName, int positionIdx, int mcIdx, BoundingBox bb) {
+    public static Image[][] generateMicrochannelFilm(String dbName, int positionIdx, int mcIdx, MutableBoundingBox bb) {
         MasterDAO db = new Task(dbName).getDB();
         ObjectDAO dao = MasterDAO.getDao(db, positionIdx);
         List<StructureObject> roots = dao.getRoots();
@@ -211,11 +212,11 @@ public class GenerateFilms {
         return null;
     }
     public static void homogenizeBB(Image[][] image) {
-        BoundingBox bb = image[0][0].getBoundingBox().translateToOrigin();
+        MutableBoundingBox bb = image[0][0].getBoundingBox().resetOffset();
         for (int i = 0; i<image.length; ++i) {
             for (int j = 0; j<image[0].length; ++j) {
-                BoundingBox otherBB = image[i][j].getBoundingBox();
-                bb = bb.expand(otherBB.getSizeX(), otherBB.getSizeY(), otherBB.getSizeZ());
+                MutableBoundingBox otherBB = image[i][j].getBoundingBox();
+                bb = bb.expand(otherBB.sizeX(), otherBB.sizeY(), otherBB.sizeZ());
             }
         }
         for (int i = 0; i<image.length; ++i) {

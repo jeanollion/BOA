@@ -54,12 +54,12 @@ public class XZSlope implements Measurement {
     public void performMeasurement(StructureObject object) {
         List<StructureObject> mcs = object.getChildren(0);
         if (mcs.size()<2) return;
-        Collections.sort(mcs, (o1, o2)->Integer.compare(o1.getBounds().getxMin(), o2.getBounds().getxMin()));
+        Collections.sort(mcs, (o1, o2)->Integer.compare(o1.getBounds().xMin(), o2.getBounds().xMin()));
         StructureObject oLeft = mcs.get(0);
         StructureObject oRight = mcs.get(mcs.size()-1);
         int left = SelectBestFocusPlane.getBestFocusPlane(oLeft.getRawImage(oLeft.getStructureIdx()).splitZPlanes(), 3, null, null);
         int right = SelectBestFocusPlane.getBestFocusPlane(oRight.getRawImage(oLeft.getStructureIdx()).splitZPlanes(), 3, null, null);
-        double value = (right-left) * object.getScaleZ() / ((oRight.getBounds().getXMean()-oLeft.getBounds().getXMean()) * object.getScaleXY());
+        double value = (right-left) * object.getScaleZ() / ((oRight.getBounds().xMean()-oLeft.getBounds().xMean()) * object.getScaleXY());
         logger.debug("focus plane left: {} right: {} value: {} (scale XY: {}, Z: {})", left, right, value, object.getScaleXY(), object.getScaleZ());
         oLeft.getMeasurements().setValue("XZSlope", value);
         oRight.getMeasurements().setValue("XZSlope", value);

@@ -68,7 +68,7 @@ public class WatershedTransform {
         for (Region o : seeds) res.add(new Region(new HashSet<>(o.getVoxels()), o.getLabel(), o.is2D(), o.getScaleXY(), o.getScaleZ()));
         return res;
     }
-    public static List<Region> createSeeds(List<Voxel> seeds, boolean is2D, float scaleXY, float scaleZ) {
+    public static List<Region> createSeeds(List<Voxel> seeds, boolean is2D, double scaleXY, double scaleZ) {
         List<Region> res = new ArrayList<>(seeds.size());
         int label = 1;
         for (Voxel v : seeds) res.add(new Region(new HashSet<Voxel>(){{add(v);}}, label++, is2D, scaleXY, scaleZ));
@@ -122,7 +122,7 @@ public class WatershedTransform {
         segmentedMap = ImageInteger.createEmptyLabelImage("segmentationMap", spots.length, watershedMap);
         for (int i = 0; i<regionalExtrema.size(); ++i) spots[i+1] = new Spot(i+1, regionalExtrema.get(i).getVoxels()); // do modify seed objects
         logger.trace("watershed transform: number of seeds: {} segmented map type: {}", regionalExtrema.size(), segmentedMap.getClass().getSimpleName());
-        is3D=watershedMap.getSizeZ()>1;   
+        is3D=watershedMap.sizeZ()>1;   
         if (propagationCriterion==null) setPropagationCriterion(new DefaultPropagationCriterion());
         else setPropagationCriterion(propagationCriterion);
         if (fusionCriterion==null) setFusionCriterion(new DefaultFusionCriterion());
@@ -152,7 +152,7 @@ public class WatershedTransform {
     
     public void run() {
         double rad = lowConnectivity ? 1 : 1.5;
-        EllipsoidalNeighborhood neigh = watershedMap.getSizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
+        EllipsoidalNeighborhood neigh = watershedMap.sizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
         
         for (Spot s : spots) {
             if (s!=null) {
@@ -219,7 +219,7 @@ public class WatershedTransform {
         
         for (Spot s : spots) if (s!=null) heap.addAll(s.voxels);
         double rad = lowConnectivity ? 1 : 1.5;
-        EllipsoidalNeighborhood neigh = watershedMap.getSizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
+        EllipsoidalNeighborhood neigh = watershedMap.sizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
         while (!heap.isEmpty()) {
             //Voxel v = heap.poll();
             Voxel v = heap.pollFirst();
@@ -472,7 +472,7 @@ public class WatershedTransform {
         }
         
         public Region toRegion(int label) {
-            return new Region(voxels, label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
+            return new Region(voxels, label, segmentedMap.sizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
         }
         
         public double getQuality() {

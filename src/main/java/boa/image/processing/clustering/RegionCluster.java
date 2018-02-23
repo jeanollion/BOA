@@ -22,6 +22,8 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import static boa.image.BoundingBox.isIncluded;
+import static boa.image.BoundingBox.isIncluded2D;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
@@ -61,11 +63,11 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     protected void setInterfaces(boolean background, boolean lowConnectivity) {
         Map<Integer, Region> objects = new HashMap<>();
         for (Region o : population.getRegions()) objects.put(o.getLabel(), o);
-        if (background) objects.put(0, new Region(new HashSet<>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getSizeZ()==1, population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
+        if (background) objects.put(0, new Region(new HashSet<>(), 0, population.getImageProperties(), population.getImageProperties().sizeZ()==1, population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
         ImageInteger inputLabels = population.getLabelMap();
         Voxel n;
         int otherLabel;
-        int[][] neigh = inputLabels.getSizeZ()>1 ? (lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf) : (lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half);
+        int[][] neigh = inputLabels.sizeZ()>1 ? (lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf) : (lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half);
         for (Region o : population.getRegions()) {
             for (Voxel vox : o.getVoxels()) {
                 vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region, because voxel can overlap & voxel can be used to store values interface-wise
@@ -104,7 +106,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     }
     
     public static <I extends InterfaceRegion<I>> I getInteface(Region o1, Region o2, ImageInteger labelImage, InterfaceFactory<Region, I> interfaceFactory) {
-        EllipsoidalNeighborhood neigh = labelImage.getSizeZ()>1 ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
+        EllipsoidalNeighborhood neigh = labelImage.sizeZ()>1 ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
         Region min;
         int otherLabel;
         I inter =  interfaceFactory.create(o1, o2);
@@ -148,12 +150,12 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     }
     private static Region containsPoint(Region o, List<Region> points) {
         if (o.is2D()) {
-            for (Region p : points) if (p.getBounds().isIncluded2D(o.getBounds())) return p;
+            for (Region p : points) if (isIncluded2D(p.getBounds(), o.getBounds())) return p;
         } else {
             for (Region p : points) {
                 if (o.is2D()) {
-                    if (p.getBounds().isIncluded2D(o.getBounds())) return p;
-                } else if (p.getBounds().isIncluded(o.getBounds())) return p;
+                    if (isIncluded2D(p.getBounds(), o.getBounds())) return p;
+                } else if (isIncluded(p.getBounds(), o.getBounds())) return p;
             }
         }
         return null;
@@ -168,11 +170,11 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     public void mergeSmallObjects(double sizeLimit, int numberOfObjecsToKeep, BiFunction<Region, Set<Region>, Region> noInterfaceCase) {
         if (numberOfObjecsToKeep<0) numberOfObjecsToKeep=0;
         for (I i : interfaces) i.updateInterface();
-        TreeSet<Region> queue = new TreeSet<>((e1, e2) -> Integer.compare(e1.getSize(), e2.getSize()));
+        TreeSet<Region> queue = new TreeSet<>((e1, e2) -> Integer.compare(e1.size(), e2.size()));
         queue.addAll(allElements);
         while(queue.size()>numberOfObjecsToKeep) {
             Region s = queue.pollFirst();
-            if (s.getSize()<sizeLimit) {
+            if (s.size()<sizeLimit) {
                 TreeSet<I> inter = new TreeSet(getInterfaces(s));
                 I strongestInterface = null;
                 if (!inter.isEmpty()) strongestInterface = inter.first();
@@ -181,7 +183,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
                     if (other!=null) strongestInterface = interfaceFactory.create(s, other);
                 }
                 if (strongestInterface!=null) {
-                    if (verbose) logger.debug("mergeSmallObjects: {}, size: {}, interface: {}, all: {}", s.getLabel(), s.getSize(), strongestInterface, inter);
+                    if (verbose) logger.debug("mergeSmallObjects: {}, size: {}, interface: {}, all: {}", s.getLabel(), s.size(), strongestInterface, inter);
                     strongestInterface.performFusion();
                     updateInterfacesAfterFusion(strongestInterface, interfaces);
                     allElements.remove(strongestInterface.getE2());

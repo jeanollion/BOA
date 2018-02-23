@@ -58,7 +58,7 @@ public class SubPixelLocalizator {
                     maxV = v;
                 }
             }
-            if (img.getSizeZ()>1) peaks.add(new Point(maxV.x, maxV.y, maxV.z));
+            if (img.sizeZ()>1) peaks.add(new Point(maxV.x, maxV.y, maxV.z));
             else peaks.add(new Point(maxV.x, maxV.y));
         }
         return peaks;
@@ -87,10 +87,10 @@ public class SubPixelLocalizator {
         }
         for (RefinedPeak< Point > r : refined) {
             Region o = objects.get(peaks.indexOf(r.getOriginalPeak()));
-            double[] position= new double[img.getSizeZ()>1?3 : 2];
+            double[] position= new double[img.sizeZ()>1?3 : 2];
             position[0] = r.getDoublePosition(0);
             position[1] = r.getDoublePosition(1);
-            if (img.getSizeZ()>1) position[2] = r.getDoublePosition(2);
+            if (img.sizeZ()>1) position[2] = r.getDoublePosition(2);
             o.setCenter(position);
             if (setQuality) o.setQuality(r.getValue());
         }

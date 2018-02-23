@@ -21,7 +21,7 @@ import boa.data_structure.Region;
 import static boa.data_structure.Region.logger;
 import boa.data_structure.StructureObject;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 

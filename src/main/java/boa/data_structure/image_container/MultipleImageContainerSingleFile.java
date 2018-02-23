@@ -17,7 +17,7 @@
  */
 package boa.data_structure.image_container;
 
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import static boa.image.Image.logger;
 import boa.image.io.ImageIOCoordinates;
@@ -40,7 +40,7 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     int timePointNumber, channelNumber;
     int seriesIdx;
     int sizeZ;
-    BoundingBox bounds;
+    MutableBoundingBox bounds;
     private ImageReader reader;
     private Map<String, Double> timePointCZT;
     @Override
@@ -89,7 +89,7 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
         seriesIdx = ((Number)jsonO.get("seriesIdx")).intValue();
         sizeZ = ((Number)jsonO.get("sizeZ")).intValue();
         if (jsonO.containsKey("bounds")) {
-            bounds = new BoundingBox();
+            bounds = new MutableBoundingBox();
             bounds.initFromJSONEntry(jsonO.get(("bounds")));
         }
         if (jsonO.containsKey("timePointCZT")) {
@@ -192,7 +192,7 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     }
     
     @Override
-    public synchronized Image getImage(int timePoint, int channel, BoundingBox bounds) {
+    public synchronized Image getImage(int timePoint, int channel, MutableBoundingBox bounds) {
         if (this.timePointNumber==1) timePoint=0;
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint, channel);
         ImageIOCoordinates ioCoords = ioCoordinates.duplicate();

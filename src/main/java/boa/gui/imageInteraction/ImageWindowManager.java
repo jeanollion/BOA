@@ -25,10 +25,13 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import static boa.data_structure.StructureObjectUtils.frameComparator;
 import static boa.data_structure.StructureObjectUtils.setAllChildren;
-import ij.ImagePlus;
 import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
+import ij.ImagePlus;
 import boa.image.Image;
 import boa.image.ImageInteger;
+import boa.image.Offset;
+import boa.image.SimpleBoundingBox;
 import boa.image.processing.ImageOperations;
 import java.awt.Color;
 import java.awt.Component;
@@ -105,20 +108,20 @@ public abstract class ImageWindowManager<T, U, V> {
     int displayedImageNumber = 20;
     ZoomPane localZoom;
     // displayed objects 
-    protected final Map<Pair<StructureObject, BoundingBox>, U> objectRoiMap = new HashMap<Pair<StructureObject, BoundingBox>, U>();
-    protected final Map<Pair<StructureObject, StructureObject>, V> parentTrackHeadTrackRoiMap=new HashMap<Pair<StructureObject, StructureObject>, V>();
-    protected final Map<Pair<StructureObject, BoundingBox>, U> labileObjectRoiMap = new HashMap<Pair<StructureObject, BoundingBox>, U>();
-    protected final Map<Pair<StructureObject, StructureObject>, V> labileParentTrackHeadTrackRoiMap=new HashMap<Pair<StructureObject, StructureObject>, V>();
-    protected final HashMapGetCreate<Image, Set<U>> displayedLabileObjectRois = new HashMapGetCreate<Image, Set<U>>(new SetFactory<Image, U>());
-    protected final HashMapGetCreate<Image, Set<V>> displayedLabileTrackRois = new HashMapGetCreate<Image, Set<V>>(new SetFactory<Image, V>());
+    protected final Map<Pair<StructureObject, BoundingBox>, U> objectRoiMap = new HashMap<>();
+    protected final Map<Pair<StructureObject, StructureObject>, V> parentTrackHeadTrackRoiMap=new HashMap<>();
+    protected final Map<Pair<StructureObject, BoundingBox>, U> labileObjectRoiMap = new HashMap<>();
+    protected final Map<Pair<StructureObject, StructureObject>, V> labileParentTrackHeadTrackRoiMap=new HashMap<>();
+    protected final HashMapGetCreate<Image, Set<U>> displayedLabileObjectRois = new HashMapGetCreate<>(new SetFactory<>());
+    protected final HashMapGetCreate<Image, Set<V>> displayedLabileTrackRois = new HashMapGetCreate<>(new SetFactory<>());
     
     protected final Map<Image, DefaultWorker> runningWorkers = new HashMap<>();
     
     public ImageWindowManager(ImageObjectListener listener, ImageDisplayer displayer) {
         this.listener=null;
         this.displayer=displayer;
-        imageObjectInterfaceMap = new HashMap<Image, ImageObjectInterfaceKey>();
-        imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
+        imageObjectInterfaceMap = new HashMap<>();
+        imageObjectInterfaces = new HashMap<>();
         trackHeadTrackMap = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());
     }
     public void setDisplayImageLimit(int limit) {
@@ -334,7 +337,7 @@ public abstract class ImageWindowManager<T, U, V> {
     public TrackMask generateTrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
         //setAllChildren(parentTrack, childStructureIdx); // if set -> tracking test cannot work ? 
         BoundingBox bb = parentTrack.get(0).getBounds();
-        return bb.getSizeY()>=bb.getSizeX() ? new TrackMaskX(parentTrack, childStructureIdx) : new TrackMaskY(parentTrack, childStructureIdx);
+        return bb.sizeY()>=bb.sizeX() ? new TrackMaskX(parentTrack, childStructureIdx) : new TrackMaskY(parentTrack, childStructureIdx);
     }
     public ImageObjectInterface getImageTrackObjectInterface(List<StructureObject> parentTrack, int childStructureIdx) {
         
@@ -525,9 +528,9 @@ public abstract class ImageWindowManager<T, U, V> {
         for (int[] c : rawCoordinates) {
             Pair<StructureObject, BoundingBox> parent = i.getClickedObject(c[0], c[1], c[2]);
             if (parent!=null) {
-                c[0]-=parent.value.getxMin();
-                c[1]-=parent.value.getyMin();
-                c[2]-=parent.value.getzMin();
+                c[0]-=parent.value.xMin();
+                c[1]-=parent.value.yMin();
+                c[2]-=parent.value.zMin();
                 List<int[]> children = map.getAndCreateIfNecessary(parent.key);
                 children.add(c);
                 logger.debug("adding point: {} to parent: {} located: {}", c, parent.key, parent.value);
@@ -916,8 +919,8 @@ public abstract class ImageWindowManager<T, U, V> {
         if (trackHeads==null || trackHeads.isEmpty()) return;
         Collections.sort(trackHeads);
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
-        int minTimePoint = tm.getClosestFrame(currentDisplayRange.getxMin(), currentDisplayRange.getyMin());
-        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.getxMax(), currentDisplayRange.getyMax());
+        int minTimePoint = tm.getClosestFrame(currentDisplayRange.xMin(), currentDisplayRange.yMin());
+        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.xMax(), currentDisplayRange.yMax());
         if (next) {
             if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
             else maxTimePoint--;
@@ -930,22 +933,22 @@ public abstract class ImageWindowManager<T, U, V> {
         if (nextError==null) logger.info("No errors detected {} timepoint: {}", next? "after": "before", maxTimePoint);
         else {
             BoundingBox off = tm.getObjectOffset(nextError);
-            if (off==null) trackHeads = new ArrayList<StructureObject> (trackHeads);
+            if (off==null) trackHeads = new ArrayList<> (trackHeads);
             while(off==null) {
                 trackHeads.remove(nextError);
                 nextError = getNextObject(nextError.getFrame(), trackHeads, next);
                 if (nextError==null) return;
                 off = tm.getObjectOffset(nextError);
             }
-            int midX = (int)off.getXMean();
-            if (midX+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) midX = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
-            if (midX-currentDisplayRange.getSizeX()/2<0) midX = currentDisplayRange.getSizeX()/2;
+            int midX = (off.xMin()+off.xMax())/2;
+            if (midX+currentDisplayRange.sizeX()/2>=trackImage.sizeX()) midX = trackImage.sizeX()-currentDisplayRange.sizeX()/2;
+            if (midX-currentDisplayRange.sizeX()/2<0) midX = currentDisplayRange.sizeX()/2;
             
-            int midY = (int)off.getYMean();
-            if (midY+currentDisplayRange.getSizeY()/2>=trackImage.getSizeY()) midY = trackImage.getSizeY()-currentDisplayRange.getSizeY()/2;
-            if (midY-currentDisplayRange.getSizeY()/2<0) midY = currentDisplayRange.getSizeY()/2;
+            int midY = (off.yMin()+off.yMax())/2;
+            if (midY+currentDisplayRange.sizeY()/2>=trackImage.sizeY()) midY = trackImage.sizeY()-currentDisplayRange.sizeY()/2;
+            if (midY-currentDisplayRange.sizeY()/2<0) midY = currentDisplayRange.sizeY()/2;
             
-            BoundingBox nextDisplayRange = new BoundingBox(midX-currentDisplayRange.getSizeX()/2, midX+currentDisplayRange.getSizeX()/2, midY-currentDisplayRange.getSizeY()/2, midY+currentDisplayRange.getSizeY()/2, currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
+            SimpleBoundingBox nextDisplayRange = new SimpleBoundingBox(midX-currentDisplayRange.sizeX()/2, midX+currentDisplayRange.sizeX()/2, midY-currentDisplayRange.sizeY()/2, midY+currentDisplayRange.sizeY()/2, currentDisplayRange.zMin(), currentDisplayRange.zMax());
             logger.info("Error detected @ timepoint: {}, xMid: {}, update display range: {}", nextError.getFrame(), midX,  nextDisplayRange);
             displayer.setDisplayRange(nextDisplayRange, trackImage);
         }
@@ -973,8 +976,8 @@ public abstract class ImageWindowManager<T, U, V> {
         if (objects==null || objects.isEmpty()) objects = Pair.unpairKeys(i.getObjects());
         if (objects==null || objects.isEmpty()) return false;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
-        int minTimePoint = tm.getClosestFrame(currentDisplayRange.getxMin(), currentDisplayRange.getyMin());
-        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.getxMax(), currentDisplayRange.getyMax());
+        int minTimePoint = tm.getClosestFrame(currentDisplayRange.xMin(), currentDisplayRange.yMin());
+        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.xMax(), currentDisplayRange.yMax());
         if (next) {
             if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
             else maxTimePoint--;
@@ -991,9 +994,9 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         else {
             BoundingBox off = tm.getObjectOffset(nextObject);
-            if (off==null) objects = new ArrayList<StructureObject>(objects);
+            if (off==null) objects = new ArrayList<>(objects);
             while(off==null) {
-                objects = new ArrayList<StructureObject>(objects);
+                objects = new ArrayList<>(objects);
                 objects.remove(nextObject);
                 nextObject = getNextObject(nextObject.getFrame(), objects, next);
                 if (nextObject==null) {
@@ -1002,15 +1005,15 @@ public abstract class ImageWindowManager<T, U, V> {
                 }
                 off = tm.getObjectOffset(nextObject);
             }
-            int midX = (int)off.getXMean();
-            if (midX+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) midX = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
-            if (midX-currentDisplayRange.getSizeX()/2<0) midX = currentDisplayRange.getSizeX()/2;
+            int midX = (off.xMin()+off.xMax())/2;
+            if (midX+currentDisplayRange.sizeX()/2>=trackImage.sizeX()) midX = trackImage.sizeX()-currentDisplayRange.sizeX()/2;
+            if (midX-currentDisplayRange.sizeX()/2<0) midX = currentDisplayRange.sizeX()/2;
             
-            int midY = (int)off.getYMean();
-            if (midY+currentDisplayRange.getSizeY()/2>=trackImage.getSizeY()) midY = trackImage.getSizeY()-currentDisplayRange.getSizeY()/2;
-            if (midY-currentDisplayRange.getSizeY()/2<0) midY = currentDisplayRange.getSizeY()/2;
+            int midY = (off.yMin()+off.yMax())/2;
+            if (midY+currentDisplayRange.sizeY()/2>=trackImage.sizeY()) midY = trackImage.sizeY()-currentDisplayRange.sizeY()/2;
+            if (midY-currentDisplayRange.sizeY()/2<0) midY = currentDisplayRange.sizeY()/2;
             
-            BoundingBox nextDisplayRange = new BoundingBox(midX-currentDisplayRange.getSizeX()/2, midX+currentDisplayRange.getSizeX()/2, midY-currentDisplayRange.getSizeY()/2, midY+currentDisplayRange.getSizeY()/2, currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
+            MutableBoundingBox nextDisplayRange = new MutableBoundingBox(midX-currentDisplayRange.sizeX()/2, midX+currentDisplayRange.sizeX()/2, midY-currentDisplayRange.sizeY()/2, midY+currentDisplayRange.sizeY()/2, currentDisplayRange.zMin(), currentDisplayRange.zMax());
             if (!nextDisplayRange.equals(currentDisplayRange)) {
                 logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getFrame(), midX,  nextDisplayRange);
                 displayer.setDisplayRange(nextDisplayRange, trackImage);

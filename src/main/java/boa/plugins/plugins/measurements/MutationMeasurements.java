@@ -24,7 +24,7 @@ import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import java.util.ArrayList;
 import java.util.List;

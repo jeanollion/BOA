@@ -23,7 +23,7 @@ import boa.data_structure.StructureObjectProcessing;
 import ij.process.AutoThresholder;
 import ij.process.AutoThresholder.Method;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Histogram;
 import boa.image.Image;
 import boa.image.ImageByte;
@@ -65,10 +65,10 @@ public class IJAutoThresholder implements SimpleThresholder, ThresholderHisto {
         return runThresholder(Method.valueOf(method.getSelectedItem()), histogram);
     }
     
-    public static double runThresholder(Image input, ImageMask mask, BoundingBox limits, Method method, double percentageSuplementalBackground) {
+    public static double runThresholder(Image input, ImageMask mask, MutableBoundingBox limits, Method method, double percentageSuplementalBackground) {
         if (mask==null) mask=new BlankMask( input);
         Histogram histo = input.getHisto256(mask, limits);
-        histo.data[0]+=(int)(percentageSuplementalBackground * input.getSizeXYZ()+0.5);
+        histo.data[0]+=(int)(percentageSuplementalBackground * input.sizeXYZ()+0.5);
         histo.removeSaturatingValue(4, true);
         AutoThresholder at = new AutoThresholder();
         double thld = at.getThreshold(method, histo.data);

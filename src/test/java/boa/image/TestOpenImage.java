@@ -46,7 +46,7 @@ public class TestOpenImage {
         
         Image im = r.openImage(new ImageIOCoordinates(0, 0, 2));
         long t4 = System.currentTimeMillis();
-        logger.info("X: "+im.getSizeX()+ " Y: "+im.getSizeY()+ " Z: time: {}ms"+im.getSizeZ(), t4-t3);
+        logger.info("X: "+im.sizeX()+ " Y: "+im.sizeY()+ " Z: time: {}ms"+im.sizeZ(), t4-t3);
         //>5min .. 60 series 985 timePoints 1 channel
     }
 }

@@ -57,9 +57,9 @@ public interface ImageDisplayer<T> {
     //public Image[][] reslice(Image image, int[] FCZCount);
     
     static Image[][] reslice(Image image, int[] FCZCount, Function<int[], Integer> getStackIndex) {
-        if (image.getSizeZ()!=FCZCount[0]*FCZCount[1]*FCZCount[2]) {
-            ImageWindowManagerFactory.showImage(image.setName("slices: "+image.getSizeZ()));
-            throw new IllegalArgumentException("Wrong number of images ("+image.getSizeZ()+" instead of "+FCZCount[0]*FCZCount[1]*FCZCount[2]);
+        if (image.sizeZ()!=FCZCount[0]*FCZCount[1]*FCZCount[2]) {
+            ImageWindowManagerFactory.showImage(image.setName("slices: "+image.sizeZ()));
+            throw new IllegalArgumentException("Wrong number of images ("+image.sizeZ()+" instead of "+FCZCount[0]*FCZCount[1]*FCZCount[2]);
         }
         logger.debug("reslice: FCZ:{}", FCZCount);
         Image[][] resTC = new Image[FCZCount[1]][FCZCount[0]];

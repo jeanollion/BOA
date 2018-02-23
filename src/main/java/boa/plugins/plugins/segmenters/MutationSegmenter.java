@@ -28,7 +28,8 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import static boa.image.BoundingBox.loop;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
@@ -38,6 +39,8 @@ import boa.image.ImageMask;
 import boa.image.ImageMask2D;
 import boa.image.processing.ImageOperations;
 import boa.image.ImageShort;
+import boa.image.Offset;
+import boa.image.SimpleOffset;
 import boa.image.processing.RegionFactory;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
@@ -237,7 +240,7 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
      */
     public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
         Arrays.sort(scale);
-        ImageMask parentMask = parent.getMask().getSizeZ()!=input.getSizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
+        ImageMask parentMask = parent.getMask().sizeZ()!=input.sizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
         if (pv.smooth==null || pv.lap==null) throw new RuntimeException("Mutation Segmenter not parametrized");//setMaps(computeMaps(input, input));
         
@@ -253,13 +256,13 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         ImageByte[] seedsSPZ = new ImageByte[lapSPZ.length];
         LocalMax[] lmZ = new LocalMax[lapSPZ.length];
         for (int z = 0; z<lapSPZ.length; ++z) {
-            lmZ[z] = new LocalMax(new ImageMask2D(parent.getMask(), parent.getMask().getSizeZ()!=input.getSizeZ()?0:z));
+            lmZ[z] = new LocalMax(new ImageMask2D(parent.getMask(), parent.getMask().sizeZ()!=input.sizeZ()?0:z));
             lmZ[z].setUp(lapSPZ[z], n);
             seedsSPZ[z] = new ImageByte("", lapSPZ[z]);
         }
         for (int zz = 0; zz<lapSPZ.length; ++zz) {
             final int z = zz;
-            lapSPZ[z].getBoundingBox().translateToOrigin().loop((x, y, sp)->{
+            loop(lapSPZ[z].getBoundingBox().resetOffset(), (x, y, sp)->{
                 float currentValue = lapSPZ[z].getPixel(x, y, sp);
                 if (parentMask.insideMask(x, y, z) && smooth.getPixel(x, y, z)>=intensityThreshold && currentValue>=thresholdSeeds) { // check pixel is over thresholds
                     if ( (z==0 || (z>0 && seedsSPZ[z-1].getPixel(x, y, sp)==0)) && lmZ[z].hasNoValueOver(currentValue, x, y, sp)) { // check if 1) was not already checked at previous plane [make it not parallelizable] && if is local max on this z plane
@@ -284,7 +287,7 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
             for (Region o : pops[i].getRegions()) {
                 if (planeByPlane && lapSPZ.length>1) { // keep track of z coordinate
                     o.setCenter(new double[]{o.getCenter()[0], o.getCenter()[1], 0}); // adding z dimention
-                    o.translate(0, 0, z);
+                    o.translate(new SimpleOffset(0, 0, z));
                 }  
             }
         }
@@ -332,22 +335,22 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         for (Region o : pop.getRegions()) { // quality criterion : sqrt (smooth * lap)
             if (o.getQuality()==0) { // localizator didnt work
                 double[] center = o.getMassCenter(map, false);
-                if (center[0]>map.getSizeX()-1) center[0] = map.getSizeX()-1;
-                if (center[1]>map.getSizeY()-1) center[1] = map.getSizeY()-1;
-                if (center.length>=2 && center[2]>map.getSizeZ()-1) center[2] = map.getSizeZ()-1;
+                if (center[0]>map.sizeX()-1) center[0] = map.sizeX()-1;
+                if (center[1]>map.sizeY()-1) center[1] = map.sizeY()-1;
+                if (center.length>=2 && center[2]>map.sizeZ()-1) center[2] = map.sizeZ()-1;
                 o.setCenter(center);
             }
             double zz = o.getCenter().length>2?o.getCenter()[2]:z;
             //logger.debug("size : {} set quality: center: {} : z : {}, bounds: {}, is2D: {}", o.getSize(), o.getCenter(), z, wsMap[i].getBoundingBox().translateToOrigin(), o.is2D());
-            if (zz>map.getSizeZ()-1) zz=map.getSizeZ()-1;
+            if (zz>map.sizeZ()-1) zz=map.sizeZ()-1;
             o.setQuality(Math.sqrt(map.getPixel(o.getCenter()[0], o.getCenter()[1], zz) * map2.getPixel(o.getCenter()[0], o.getCenter()[1], zz)));
         }
     }
     private static <T extends Image<T>> List<T> arrangeSpAndZPlanes(T[] spZ, boolean ZbyZ) {
         if (ZbyZ) {
-            List<T> res = new ArrayList<>(spZ.length * spZ[0].getSizeZ());
+            List<T> res = new ArrayList<>(spZ.length * spZ[0].sizeZ());
             for (int z = 0; z<spZ.length; ++z) {
-                for (int sp = 0; sp<spZ[z].getSizeZ(); ++sp) {
+                for (int sp = 0; sp<spZ[z].sizeZ(); ++sp) {
                     res.add(spZ[z].getZPlane(sp));
                 }
             }
@@ -355,8 +358,8 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         } else return Image.mergeImagesInZ(Arrays.asList(spZ));
     }
     
-    public void printSubLoc(String name, Image locMap, Image smooth, Image lap, RegionPopulation pop, BoundingBox globBound) {
-        BoundingBox b = locMap.getBoundingBox().translate(globBound.reverseOffset());
+    public void printSubLoc(String name, Image locMap, Image smooth, Image lap, RegionPopulation pop, MutableBoundingBox globBound) {
+        MutableBoundingBox b = locMap.getBoundingBox().translate(globBound.reverseOffset());
         List<Region> objects = pop.getRegions();
         
         for(Region o : objects) o.setCenter(o.getMassCenter(locMap, false));
@@ -384,16 +387,16 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
     public Parameter[] getParameters() {
         return parameters;
     }
-    public void setQuality(List<Region> objects, BoundingBox offset, Image input, ImageMask parentMask) {
+    public void setQuality(List<Region> objects, Offset offset, Image input, ImageMask parentMask) {
         if (objects.isEmpty()) return;
-        if (offset==null) offset = new BoundingBox();
+        if (offset==null) offset = new MutableBoundingBox();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
         for (Region o : objects) {
             double[] center = o.getCenter();
             if (center==null) throw new IllegalArgumentException("No center for object: "+o);
-            double smooth = pv.getSmoothedMap().getPixel(center[0]-offset.getxMin(), center[1]-offset.getyMin(), center.length>2?center[2]-offset.getzMin():0);
+            double smooth = pv.getSmoothedMap().getPixel(center[0]-offset.xMin(), center[1]-offset.yMin(), center.length>2?center[2]-offset.zMin():0);
             List<Double> lapValues = new ArrayList<>(pv.getLaplacianMap().length);
-            for (Image lap : pv.getLaplacianMap()) lapValues.add((double)lap.getPixel(center[0]-offset.getxMin(), center[1]-offset.getyMin(), center.length>2?center[2]-offset.getzMin():0));
+            for (Image lap : pv.getLaplacianMap()) lapValues.add((double)lap.getPixel(center[0]-offset.xMin(), center[1]-offset.yMin(), center.length>2?center[2]-offset.zMin():0));
             o.setQuality(Math.sqrt(smooth * Collections.max(lapValues)));
             //logger.debug("object: {} smooth: {} lap: {} q: {}", o.getCenter(), smooth, Collections.max(lapValues), o.getQuality());
         }
@@ -409,11 +412,11 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
     
     @Override
     public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
-        ImageMask parentMask = parent.getMask().getSizeZ()!=input.getSizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
+        ImageMask parentMask = parent.getMask().sizeZ()!=input.sizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
         if (pv.smooth==null || pv.lap==null) setMaps(computeMaps(input, input));
         else logger.debug("manual seg: maps already set!");
-        List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
+        List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.sizeZ()==1, input.getScaleXY(), input.getScaleZ());
         Image lap = pv.getLaplacianMap()[0]; // todo max in scale space for each seed? 
         Image smooth = pv.getSmoothedMap();
         RegionPopulation pop =  watershed(lap, parentMask, seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);

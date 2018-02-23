@@ -105,7 +105,7 @@ public class RelativePosition implements Measurement {
             objectCenter[1]*=object.getObject().getScaleXY();
             if (objectCenter.length>2) objectCenter[2]*=object.getObject().getScaleZ();
         } else if (ctype==3) { // corner
-            objectCenter = new double[]{object.getObject().getBounds().getxMin(), object.getObject().getBounds().getyMin(), object.getObject().getBounds().getzMin()};
+            objectCenter = new double[]{object.getObject().getBounds().xMin(), object.getObject().getBounds().yMin(), object.getObject().getBounds().zMin()};
         }
         if (objectCenter==null) return;
         double[] refPoint;
@@ -114,9 +114,9 @@ public class RelativePosition implements Measurement {
             else if (this.refPoint.getSelectedIndex()==1) refPoint = refObject.getObject().getGeomCenter(true);
             else { // corner
                 refPoint = new double[objectCenter.length];
-                refPoint[0] = refObject.getBounds().getxMin() * refObject.getScaleXY();
-                refPoint[1] = refObject.getBounds().getyMin() * refObject.getScaleXY();
-                if (objectCenter.length>2) refPoint[2] = refObject.getBounds().getzMin() * refObject.getScaleZ();
+                refPoint[0] = refObject.getBounds().xMin() * refObject.getScaleXY();
+                refPoint[1] = refObject.getBounds().yMin() * refObject.getScaleXY();
+                if (objectCenter.length>2) refPoint[2] = refObject.getBounds().zMin() * refObject.getScaleZ();
             }
         } else refPoint = new double[3]; // absolute
         object.getMeasurements().setValue(getKey("X"), (objectCenter[0]-refPoint[0]));

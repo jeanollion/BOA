@@ -26,7 +26,7 @@ import boa.configuration.parameters.TextParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import static boa.data_structure.StructureObjectUtils.getDaugtherObjectsAtNextFrame;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -73,7 +73,7 @@ public class BacteriaLineageMeasurements implements Measurement {
     }
     private static List<StructureObject> getAllNextSortedY(StructureObject o, List<StructureObject> bucket) {
         bucket = getDaugtherObjectsAtNextFrame(o, bucket);
-        Collections.sort(bucket, (o1, o2)->Double.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
+        Collections.sort(bucket, (o1, o2)->Double.compare(o1.getBounds().yMin(), o2.getBounds().yMin()));
         return bucket;
     }
     @Override

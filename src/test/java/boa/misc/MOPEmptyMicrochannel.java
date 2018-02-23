@@ -31,7 +31,7 @@ import ij.ImageJ;
 import ij.gui.Plot;
 import ij.process.AutoThresholder;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.io.ImageFormat;
 import boa.image.ImageMask;
@@ -92,7 +92,7 @@ public class MOPEmptyMicrochannel {
             return normedLaplacian;
         }
         public Image cropped() {
-            if (cropped==null) cropped = image.crop(new BoundingBox(margin, image.getSizeX()-margin-1, margin, image.getSizeY()-margin-1, 0, image.getSizeZ()-1)).setName(image.getName()+"cropped");
+            if (cropped==null) cropped = image.crop(new MutableBoundingBox(margin, image.sizeX()-margin-1, margin, image.sizeY()-margin-1, 0, image.sizeZ()-1)).setName(image.getName()+"cropped");
             return cropped;
         }
         public Image normed() {
@@ -193,7 +193,7 @@ public class MOPEmptyMicrochannel {
             ImageFeats ifea = imageFeatures.getAndCreateIfNecessary(i);
             double thld = IJAutoThresholder.runThresholder(ifea.cropped(), null, AutoThresholder.Method.Otsu);
             //logger.debug("{} ostu: {}, prop: {}", i.getName(), thld, ImageOperations.getMeanAndSigma(ifea.cropped(), null, v->v>thld)[2]/ifea.cropped().getSizeXYZ());
-            return ImageOperations.getMeanAndSigma(ifea.cropped(), null, v->v>thld)[2]/ifea.cropped().getSizeXYZ(); 
+            return ImageOperations.getMeanAndSigma(ifea.cropped(), null, v->v>thld)[2]/ifea.cropped().sizeXYZ(); 
         }
         @Override public String name() {return "OtsuProportion";}
     };
@@ -203,7 +203,7 @@ public class MOPEmptyMicrochannel {
             ImageFeats ifea = imageFeatures.getAndCreateIfNecessary(i);
             double thld = IJAutoThresholder.runThresholder(ifea.laplacian(), null, AutoThresholder.Method.MaxEntropy);
             //logger.debug("{} ostu LC: {} prop: {}", i.getName(), thld, ImageOperations.getMeanAndSigma(ifea.laplacian(), null, v->v>thld)[2]/ifea.cropped().getSizeXYZ());
-            return ImageOperations.getMeanAndSigma(ifea.laplacian(), null, v->v>thld)[2]/ifea.cropped().getSizeXYZ(); 
+            return ImageOperations.getMeanAndSigma(ifea.laplacian(), null, v->v>thld)[2]/ifea.cropped().sizeXYZ(); 
         }
         @Override public String name() {return "LCProportion";}
     };

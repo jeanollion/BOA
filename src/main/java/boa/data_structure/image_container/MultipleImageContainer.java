@@ -17,7 +17,7 @@
  */
 package boa.data_structure.image_container;
 
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import org.json.simple.JSONObject;
 import boa.utils.JSONSerializable;
@@ -33,7 +33,7 @@ public abstract class MultipleImageContainer implements JSONSerializable{
     public abstract int getChannelNumber();
     public abstract int getSizeZ(int channel);
     public abstract Image getImage(int timePoint, int channel);
-    public abstract Image getImage(int timePoint, int channel, BoundingBox bounds);
+    public abstract Image getImage(int timePoint, int channel, MutableBoundingBox bounds);
     public abstract void close();
     public abstract String getName();
     public float getScaleXY() {return (float)scaleXY;}

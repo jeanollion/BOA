@@ -85,7 +85,7 @@ public class Histogram {
         return res;
     }
 
-    public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, BoundingBox limits) {
+    public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, MutableBoundingBox limits) {
         if (mask == null) {
             mask = new BlankMask(input);
         }

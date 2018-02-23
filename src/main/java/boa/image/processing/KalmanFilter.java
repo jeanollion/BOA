@@ -81,8 +81,8 @@ public class KalmanFilter implements Transformation {
 
     public static List<Image> filter(List<Image> images, double percentvar, double gain) {
         Image image = images.get(0);
-        int width = image.getSizeX();
-        int height = image.getSizeY();
+        int width = image.sizeX();
+        int height = image.sizeY();
         int dimension = width*height;
         int stacksize = images.size();
         int bitDepth = image.getBitDepth();

@@ -21,7 +21,7 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.StructureObjectPreProcessing;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import java.util.ArrayList;
 import boa.plugins.Cropper;
@@ -39,7 +39,7 @@ public class SimpleCrop implements Transformation {
     NumberParameter yLength = new NumberParameter("Y-Length", 0, 0);
     NumberParameter zLength = new NumberParameter("Z-Length", 0, 0);
     Parameter[] parameters = new Parameter[]{xMin, xLength, yMin, yLength, zMin, zLength};
-    BoundingBox bounds;
+    MutableBoundingBox bounds;
     int[] configurationData;
     public SimpleCrop(){}
     public SimpleCrop(int x, int xL, int y, int yL, int z, int zL){
@@ -60,24 +60,24 @@ public class SimpleCrop implements Transformation {
     }
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         Image input = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
-        if (xLength.getValue().intValue()==0) xLength.setValue(input.getSizeX()-xMin.getValue().intValue());
-        if (yLength.getValue().intValue()==0) yLength.setValue(input.getSizeY()-yMin.getValue().intValue());
-        if (zLength.getValue().intValue()==0) zLength.setValue(input.getSizeZ()-zMin.getValue().intValue());
-        bounds = new BoundingBox(xMin.getValue().intValue(), xMin.getValue().intValue()+xLength.getValue().intValue()-1, 
+        if (xLength.getValue().intValue()==0) xLength.setValue(input.sizeX()-xMin.getValue().intValue());
+        if (yLength.getValue().intValue()==0) yLength.setValue(input.sizeY()-yMin.getValue().intValue());
+        if (zLength.getValue().intValue()==0) zLength.setValue(input.sizeZ()-zMin.getValue().intValue());
+        bounds = new MutableBoundingBox(xMin.getValue().intValue(), xMin.getValue().intValue()+xLength.getValue().intValue()-1, 
         yMin.getValue().intValue(), yMin.getValue().intValue()+yLength.getValue().intValue()-1, 
         zMin.getValue().intValue(), zMin.getValue().intValue()+zLength.getValue().intValue()-1);
         bounds.trim(input.getBoundingBox());
         configurationData = new int[6];
-        configurationData[0]=bounds.getxMin();
-        configurationData[1]=bounds.getxMax();
-        configurationData[2]=bounds.getyMin();
-        configurationData[3]=bounds.getyMax();
-        configurationData[4]=bounds.getzMin();
-        configurationData[5]=bounds.getzMax();
+        configurationData[0]=bounds.xMin();
+        configurationData[1]=bounds.xMax();
+        configurationData[2]=bounds.yMin();
+        configurationData[3]=bounds.yMax();
+        configurationData[4]=bounds.zMin();
+        configurationData[5]=bounds.zMax();
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (bounds==null) bounds= new BoundingBox(configurationData[0], configurationData[1], configurationData[2], configurationData[3], configurationData[4], configurationData[5]);
+        if (bounds==null) bounds= new MutableBoundingBox(configurationData[0], configurationData[1], configurationData[2], configurationData[3], configurationData[4], configurationData[5]);
         return image.crop(bounds);
     }
 

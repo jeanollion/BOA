@@ -23,10 +23,14 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
 import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
+import boa.image.Offset;
+import boa.image.SimpleImageProperties;
+import boa.image.SimpleOffset;
 import boa.image.processing.ImageOperations;
 import boa.image.processing.RegionFactory;
 import java.util.ArrayList;
@@ -52,9 +56,9 @@ public class ManualObjectStrecher {
             List<StructureObject> children = p.key.getChildren(structureIdx);
             if (children.isEmpty()) continue;
             // get uppermost children : 
-            StructureObject child = children.stream().min((s1, s2)->Integer.compare(s1.getBounds().getyMin(), s2.getBounds().getyMin())).orElse(children.get(0));
+            StructureObject child = children.stream().min((s1, s2)->Integer.compare(s1.getBounds().yMin(), s2.getBounds().yMin())).orElse(children.get(0));
             Region childObject = child.getObject().duplicate();
-            BoundingBox offset = p.key.getBounds().duplicate().reverseOffset().translate(p.value);
+            Offset offset = new SimpleOffset(p.key.getBounds()).reverseOffset().translate(p.value);
             childObject.translate(offset); // translate object in ROI referencial
             Set<Voxel> contour = childObject.getContour();
             if (contour.isEmpty()) continue;
@@ -65,7 +69,7 @@ public class ManualObjectStrecher {
                 if (v.x>right.x) right=v;
                 else if (v.x==right.x && v.y<right.y) right = v;
             }
-            ImageByte strechMap = new ImageByte("strech map", p.value.getImageProperties());
+            ImageByte strechMap = new ImageByte("strech map", new SimpleImageProperties(p.value, 1, 1));
             logger.debug("strechMap Bounds: {}", strechMap.getBoundingBox());
             Voxel leftUp=null, rightUp = null;
             for (int i = 0; i<xPoints.length; ++i) { // draw upper part && look
@@ -103,7 +107,7 @@ public class ManualObjectStrecher {
             // Adjust filled object according to contours of existing object
             double meanIntensityContour=0;
             Image intensityMap = p.key.getRawImage(structureIdx);
-            intensityMap.addOffset(offset);
+            intensityMap.translate(offset);
             for (Voxel v : contour) meanIntensityContour += intensityMap.getPixelWithOffset(v.x, v.y, v.z);
             meanIntensityContour/=contour.size();
             
@@ -119,7 +123,7 @@ public class ManualObjectStrecher {
             ImageOperations.and(thlded, strechMap, thlded);
             //ImageWindowManagerFactory.showImage(thlded.duplicate("and with thld"));
             //check that after thesholding, object reaches line -> if not , do not apply thresholding
-            int yMin = RegionFactory.getObjectsImage(strechMap, false)[0].getBounds().getyMin()+p.value.getyMin();
+            int yMin = RegionFactory.getObjectsImage(strechMap, false)[0].getBounds().yMin()+p.value.yMin();
             logger.debug("y Min: {}, line y to reach: {}", yMin, Math.max(leftUp.y, rightUp.y)+1);
             if (yMin<=Math.max(leftUp.y, rightUp.y)+1) {
                 strechMap = thlded;
@@ -129,14 +133,15 @@ public class ManualObjectStrecher {
                 //ImageWindowManagerFactory.showImage(strechMap.duplicate("after close"));
             }
             offset.reverseOffset();
-            strechMap.addOffset(offset);
+            strechMap.translate(offset);
             Region[] allO = RegionFactory.getObjectsImage(strechMap, false);
             if (allO.length>0) {
                 Region newObject = allO[0].translate(strechMap.getBoundingBox());
                 objectsToUpdate.add(new Pair(child, newObject));
                 logger.debug("resulting object bounds: {} (old: {})", newObject, child.getObject().getBounds(), newObject);
             }
-            intensityMap.addOffset(offset);
+            intensityMap.translate(offset);
+            childObject.translate(offset);
         }
         logger.debug("objects to update: {}", Utils.toStringList(objectsToUpdate, p->p.key.getObject().getVoxels().size()+">"+p.value.getVoxels().size()));
         ManualCorrection.updateObjects(objectsToUpdate, true);

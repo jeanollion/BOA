@@ -40,6 +40,7 @@ import ij.process.AutoThresholder;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageMask;
+import boa.image.SimpleOffset;
 import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -145,7 +146,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     TreeMap<Integer, StructureObject> parentsByF;
     HashMapGetCreate<Integer, SegmenterSplitAndMerge> segmenters = new HashMapGetCreate(f->{
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
-        applyToSegmenter.apply(parentsByF.get(f), s);
+        if (applyToSegmenter!=null) applyToSegmenter.apply(parentsByF.get(f), s);
         return s;
     });
     int minT, maxT;
@@ -509,6 +510,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         sizeIncrementFunction = o -> objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getLineageSizeIncrement() : Double.NaN;
         haveSamePreviousObject = (o1, o2) -> {
             if (!objectAttributeMap.containsKey(o1) || !objectAttributeMap.containsKey(o2)) return false;
+            if (objectAttributeMap.get(o1).prev==null) return true;
             return objectAttributeMap.get(o1).prev.equals(objectAttributeMap.get(o2).prev);
         };
         areFromSameLine = (o1, o2) -> {
@@ -549,7 +551,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             StructureObject parent = this.parentsByF.get(timePoint);
             List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
             if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
-                if (segment || correction) o.getObject().translate(parent.getBounds().duplicate().reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
+                if (segment || correction) o.getObject().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
                 return o.getObject();
             }));
             else populations.put(timePoint, Collections.EMPTY_LIST); 
@@ -642,8 +644,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             this.o=o;
             this.idx=idx;
             this.timePoint=timePoint;
-            int lim = parentsByF.get(timePoint).getBounds().getSizeY()-1;
-            if (o.getBounds().getyMax()==lim) {
+            int lim = parentsByF.get(timePoint).getBounds().sizeY()-1;
+            if (o.getBounds().yMax()==lim) {
                 double count = 0;
                 for (Voxel v : o.getVoxels()) if (v.y==lim) ++count;
                 endOfChannelContact = count/getWidth();

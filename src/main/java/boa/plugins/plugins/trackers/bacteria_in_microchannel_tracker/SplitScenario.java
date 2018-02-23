@@ -89,7 +89,7 @@ public class SplitScenario extends CorrectionScenario {
                 tracker.setAssignmentToTrackAttributes(frameMin+1, false);
             }
             if (ta.next!=null) {
-                if (ta.division || (ta.next.idx==tracker.getObjects(frameMin+1).size()-1 && o.getSize() * tracker.minGR > ta.next.getSize())) return null;
+                if (ta.division || (ta.next.idx==tracker.getObjects(frameMin+1).size()-1 && o.size() * tracker.minGR > ta.next.getSize())) return null;
                 else return new SplitScenario(tracker, ta.next.o, frameMin+1);
             }
             else return null;

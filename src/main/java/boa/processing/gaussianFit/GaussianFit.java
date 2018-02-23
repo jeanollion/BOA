@@ -25,8 +25,9 @@ import ij.ImagePlus;
 import ij.gui.EllipseRoi;
 import ij.gui.Overlay;
 import ij.gui.Roi;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
+import boa.image.Offset;
 import boa.image.wrappers.ImgLib2ImageWrapper;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
@@ -58,10 +59,10 @@ public class GaussianFit {
     }
     
     public static Map<Region, double[]> run(Image image, List<Region> peaks, double typicalSigma, double sigmaLow, double sigmaUp, double precision, int maxIter, double lambda, double termEpsilon ) {
-        double[] sigmas = new double[image.getSizeZ()>1 ? 3 :2];
-        double[] sigmasLow = new double[image.getSizeZ()>1 ? 3 :2];
-        double[] sigmasUp = new double[image.getSizeZ()>1 ? 3 :2];
-        double[] precisions = new double[image.getSizeZ()>1 ? 3 :2];
+        double[] sigmas = new double[image.sizeZ()>1 ? 3 :2];
+        double[] sigmasLow = new double[image.sizeZ()>1 ? 3 :2];
+        double[] sigmasUp = new double[image.sizeZ()>1 ? 3 :2];
+        double[] precisions = new double[image.sizeZ()>1 ? 3 :2];
         for (int i = 0; i<sigmas.length; ++i) {
             sigmas[i]=typicalSigma;
             sigmasUp[i] = sigmaUp;
@@ -81,7 +82,7 @@ public class GaussianFit {
      * @return for each peak array of fitted parameters: coordinates, intensity@peak, 1/sigma2 in each dimension, error
      */
     public static Map<Region, double[]> run(Image image, List<Region> peaks, double[][] typicalSigmas, int maxIter, double lambda, double termEpsilon ) {
-        boolean is3D = image.getSizeZ()>1;
+        boolean is3D = image.sizeZ()>1;
         Img img = ImgLib2ImageWrapper.getImage(image);
         //MLEllipticGaussianSimpleEstimator estimator = new MLEllipticGaussianSimpleEstimator(typicalSigmas[0], typicalSigmas[1], typicalSigmas[2]);
         //EllipticGaussianOrtho fitFunction = new EllipticGaussianOrtho();
@@ -96,9 +97,9 @@ public class GaussianFit {
         for (Region o : peaks) {
             double[] center = o.getGeomCenter(false);
             if (o.isAbsoluteLandMark()) {
-                center[0]-=image.getBoundingBox().getxMin();
-                center[1]-=image.getBoundingBox().getyMin();
-                center[2]-=image.getBoundingBox().getzMin();
+                center[0]-=image.getBoundingBox().xMin();
+                center[1]-=image.getBoundingBox().yMin();
+                center[2]-=image.getBoundingBox().zMin();
             }
             Localizable l = getLocalizable(center, is3D);
             peaksLoc.add(l);
@@ -157,7 +158,7 @@ public class GaussianFit {
         paramsSort.putAll(params);
         for (Entry<Region, double[]> e : paramsSort.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue(), null));
     }
-    public static void appendRois(Overlay overlay, BoundingBox offset, Map<Region, double[]> params) {
+    public static void appendRois(Overlay overlay, Offset offset, Map<Region, double[]> params) {
         TreeMap<Region, double[]> paramsSort = new TreeMap<Region, double[]>(new Comparator<Region>() {
 
             public int compare(Region arg0, Region arg1) {
@@ -168,7 +169,7 @@ public class GaussianFit {
         for (Entry<Region, double[]> e : paramsSort.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue(), offset));
     }
     
-    public static Roi get2DEllipse(Region o, double[] p, BoundingBox offset) {
+    public static Roi get2DEllipse(Region o, double[] p, Offset offset) {
         double Ar = p[2];
         double x = p[0];
         double y = p[1];
@@ -177,8 +178,8 @@ public class GaussianFit {
         double C = p[4];
         double error = p[p.length-1];
         if (offset!=null) {
-            x+=offset.getxMin();
-            y+=offset.getyMin();
+            x+=offset.xMin();
+            y+=offset.yMin();
         }
         //double sy = p[4];
         //double sx = 1/Math.sqrt(p[3]);

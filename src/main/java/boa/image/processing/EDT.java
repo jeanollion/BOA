@@ -61,7 +61,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
 public class EDT {
-    public static ImageFloat transform(ImageMask mask, boolean insideMask, float scaleXY, float scaleZ, int nbCPUs) {
+    public static ImageFloat transform(ImageMask mask, boolean insideMask, double scaleXY, double scaleZ, int nbCPUs) {
         try {
             return new EDT().run(mask, insideMask, scaleXY, scaleZ, nbCPUs);
         } catch (Exception ex) {
@@ -70,11 +70,11 @@ public class EDT {
         return null;
     }
     
-    protected ImageFloat run(ImageMask mask, boolean insideMask, float scaleXY, float scaleZ , int nbCPUs) throws Exception {
-        int w = mask.getSizeX();
-        int h = mask.getSizeY();
-        int d = mask.getSizeZ();
-        float scale=mask.getSizeZ()>1?scaleZ/scaleXY:1;
+    protected ImageFloat run(ImageMask mask, boolean insideMask, double scaleXY, double scaleZ , int nbCPUs) throws Exception {
+        int w = mask.sizeX();
+        int h = mask.sizeY();
+        int d = mask.sizeZ();
+        double scale=mask.sizeZ()>1?scaleZ/scaleXY:1;
         int nThreads = nbCPUs;
         ImageFloat res = new ImageFloat("EDT of: "+mask.getName(), mask);
         float[][] s = res.getPixelArray();
@@ -105,11 +105,11 @@ public class EDT {
         } catch (InterruptedException ie) {
             IJ.error("A thread was interrupted in step 2 .");
         }
-        if (mask.getSizeZ()>1) { //3D case
+        if (mask.sizeZ()>1) { //3D case
             //Transformation 3. h (in s) -> s
             Step3Thread[] s3t = new Step3Thread[nThreads];
             for (int thread = 0; thread < nThreads; thread++) {
-                s3t[thread] = new Step3Thread(thread, nThreads, w, h, d, s, mask, insideMask, scale);
+                s3t[thread] = new Step3Thread(thread, nThreads, w, h, d, s, mask, insideMask, (float)scale);
                 s3t[thread].start();
             }
             try {
@@ -131,7 +131,7 @@ public class EDT {
                 if (mask.insideMask(ind, k)!=insideMask) { //xor
                     sk[ind] = 0;
                 } else {
-                    dist = (float) Math.sqrt(sk[ind]) * scaleXY;
+                    dist = (float) (Math.sqrt(sk[ind]) * scaleXY);
                     sk[ind] = dist;
                     distMax = (dist > distMax) ? dist : distMax;
                 }

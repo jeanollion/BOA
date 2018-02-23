@@ -26,7 +26,7 @@ import ij.VirtualStack;
 import ij.measure.Calibration;
 import ij.process.ImageProcessor;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.IJImageWrapper;
 import boa.image.Image;
 import static boa.image.Image.logger;
@@ -62,8 +62,8 @@ public class IJVirtualStack extends VirtualStack {
         if (imageCT[fcz[1]][fcz[0]]==null) {
             imageCT[fcz[1]][fcz[0]] = imageOpenerCT.apply(fcz[1], fcz[0]);
         }
-        if (fcz[2]>=imageCT[fcz[1]][fcz[0]].getSizeZ()) {
-            if (imageCT[fcz[1]][fcz[0]].getSizeZ()==1) fcz[2]=0; // case of reference images 
+        if (fcz[2]>=imageCT[fcz[1]][fcz[0]].sizeZ()) {
+            if (imageCT[fcz[1]][fcz[0]].sizeZ()==1) fcz[2]=0; // case of reference images 
             else throw new IllegalArgumentException("Wrong Z size for channel: "+fcz[1]);
         }
         return IJImageWrapper.getImagePlus(imageCT[fcz[1]][fcz[0]].getZPlane(fcz[2])).getProcessor();
@@ -80,10 +80,10 @@ public class IJVirtualStack extends VirtualStack {
         }
         logger.debug("scale: {}", bdsC[0].getScaleXY());
         // case of reference image with only one Z -> duplicate
-        int maxZ = Collections.max(Arrays.asList(bdsC), (b1, b2)->Integer.compare(b1.getSizeZ(), b2.getSizeZ())).getSizeZ();
+        int maxZ = Collections.max(Arrays.asList(bdsC), (b1, b2)->Integer.compare(b1.sizeZ(), b2.sizeZ())).sizeZ();
         int[] fcz = new int[]{frames, channels, maxZ};
         BiFunction<Integer, Integer, Image> imageOpenerCT  = output ? (c, t) -> xp.getImageDAO().openPreProcessedImage(c, t, position) : (c, t) -> f.getInputImages().getImage(c, t);
-        IJVirtualStack s = new IJVirtualStack(bdsC[0].getSizeX(), bdsC[0].getSizeY(), fcz, IJImageWrapper.getStackIndexFunctionRev(fcz), imageOpenerCT);
+        IJVirtualStack s = new IJVirtualStack(bdsC[0].sizeX(), bdsC[0].sizeY(), fcz, IJImageWrapper.getStackIndexFunctionRev(fcz), imageOpenerCT);
         ImagePlus ip = new ImagePlus();
         ip.setTitle((output ? "PreProcessed Images of position: " : "Input Images of position: ")+position);
         ip.setStack(s, channels,maxZ, frames);

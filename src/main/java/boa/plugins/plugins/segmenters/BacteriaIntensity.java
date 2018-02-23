@@ -30,7 +30,7 @@ import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
 import ij.process.AutoThresholder;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
@@ -274,7 +274,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
     @Override public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
         Image input = parent.getPreFilteredImage(structureIdx);
         if (input==null) throw new IllegalArgumentException("No prefiltered image set");
-        ImageInteger mask = object.isAbsoluteLandMark() ? object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox()) :object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox().translateToOrigin()); // extend mask to get the same size as the image
+        ImageInteger mask = object.isAbsoluteLandMark() ? object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox()) :object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox().resetOffset()); // extend mask to get the same size as the image
         if (splitAndMerge==null || !parent.equals(currentParent)) {
             currentParent = parent;
             splitAndMerge = initializeSplitAndMerge(input,parent.getMask());
@@ -296,7 +296,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
 
     @Override public RegionPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         
-        List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getSizeZ()==1, input.getScaleXY(), input.getScaleZ());
+        List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.sizeZ()==1, input.getScaleXY(), input.getScaleZ());
         EdgeDetector seg = initEdgeDetector(parent, structureIdx);
         RegionPopulation pop = seg.run(input, segmentationMask);
         SplitAndMergeHessian splitAndMerge=initializeSplitAndMerge(input, pop.getLabelMap());

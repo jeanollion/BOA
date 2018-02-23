@@ -18,6 +18,7 @@
 package boa.image.io;
 
 import boa.image.BoundingBox;
+import boa.image.SimpleBoundingBox;
 
 
 
@@ -69,7 +70,7 @@ public class ImageIOCoordinates {
     }
     
     public ImageIOCoordinates duplicate() {
-        return new ImageIOCoordinates(serie, channel, timePoint, (bounds!=null)?bounds.duplicate():null);
+        return new ImageIOCoordinates(serie, channel, timePoint, (bounds!=null)?new SimpleBoundingBox(bounds):null);
     }
     
 }

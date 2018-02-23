@@ -29,8 +29,9 @@ import ij.io.RoiDecoder;
 import ij.io.RoiEncoder;
 import ij.plugin.filter.Filler;
 import ij.process.ImageProcessor;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.IJImageWrapper;
+import boa.image.Image;
 import static boa.image.Image.logger;
 import boa.image.ImageByte;
 import boa.image.processing.ImageOperations;
@@ -66,24 +67,24 @@ public class ObjectContainerIjRoi extends ObjectContainer {
 
     private void createRoi(Region object) {
         Map<Integer, Roi> roiZTemp = IJImageWindowManager.createRoi(object.getMask(), object.getBounds(), object.is2D());
-        roiZ = new ArrayList<byte[]>(roiZTemp.size());
-        roiZTemp = new TreeMap<Integer, Roi>(roiZTemp);
+        roiZ = new ArrayList<>(roiZTemp.size());
+        roiZTemp = new TreeMap<>(roiZTemp);
         for (Entry<Integer, Roi> e : roiZTemp.entrySet()) roiZ.add(RoiEncoder.saveAsByteArray(e.getValue()));
     }
     
     private ImageByte getMask() {
-        ImageStack stack = new ImageStack(bounds.getSizeX(), bounds.getSizeY(), bounds.getSizeZ());
+        ImageStack stack = new ImageStack(bounds.sizeX(), bounds.sizeY(), bounds.sizeZ());
         int z= 1;
         for (byte[] b : roiZ) {
             Roi r = RoiDecoder.openFromByteArray(b);
             r.setPosition(z);
             Rectangle bds = r.getBounds();
-            r.setLocation(bds.x-bounds.getxMin(), bds.y-bounds.getyMin());
+            r.setLocation(bds.x-bounds.xMin(), bds.y-bounds.yMin());
             ImageProcessor mask = r.getMask();
             if (mask.getWidth()!=stack.getWidth() || mask.getHeight()!=stack.getHeight()) { // need to paste image
                 ImageByte i = (ImageByte)IJImageWrapper.wrap(new ImagePlus("", mask));
-                ImageByte iOut = new ImageByte("", bounds.getSizeX(), bounds.getSizeY(), 1);
-                ImageOperations.pasteImage(i, iOut, new BoundingBox(bds.x-bounds.getxMin(), bds.y-bounds.getyMin(), 0));
+                ImageByte iOut = new ImageByte("", bounds.sizeX(), bounds.sizeY(), 1);
+                Image.pasteImage(i, iOut, new MutableBoundingBox(bds.x-bounds.xMin(), bds.y-bounds.yMin(), 0));
                 mask = IJImageWrapper.getImagePlus(iOut).getProcessor();
             }
             stack.setProcessor(mask, z);
@@ -92,7 +93,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
         }
         ImageByte res = (ImageByte) IJImageWrapper.wrap(new ImagePlus("MASK", stack));
         //logger.debug("creating object for: {}, scale: {}", structureObject, structureObject.getScaleXY());
-        res.setCalibration(bounds.getImageProperties(structureObject.getScaleXY(), structureObject.getScaleZ())).addOffset(bounds);
+        res.setCalibration(bounds.getImageProperties(structureObject.getScaleXY(), structureObject.getScaleZ())).translate(bounds);
         return res;
     }
 

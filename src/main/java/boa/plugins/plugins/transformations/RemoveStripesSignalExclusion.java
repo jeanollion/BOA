@@ -133,12 +133,12 @@ public class RemoveStripesSignalExclusion implements Transformation {
                             if (chExcl>=0) {
                                 Image se1 = inputImages.getImage(chExcl, frame);
                                 double thld1 = signalExclusionThreshold.instanciatePlugin().runSimpleThresholder(se1, null);
-                                ThresholdMask mask = currentImage.getSizeZ()>1 && se1.getSizeZ()==1 ? new ThresholdMask(se1, thld1, true, true, 0):new ThresholdMask(se1, thld1, true, true);
+                                ThresholdMask mask = currentImage.sizeZ()>1 && se1.sizeZ()==1 ? new ThresholdMask(se1, thld1, true, true, 0):new ThresholdMask(se1, thld1, true, true);
                                 if (testMode) testMasks.put(frame, TypeConverter.toByteMask(mask, null, 1));
                                 if (chExcl2>=0) {
                                     Image se2 = inputImages.getImage(chExcl2, frame);
                                     double thld2 = signalExclusionThreshold2.instanciatePlugin().runSimpleThresholder(se2, null);
-                                    ThresholdMask mask2 = currentImage.getSizeZ()>1 && se2.getSizeZ()==1 ? new ThresholdMask(se2, thld2, true, true, 0):new ThresholdMask(se2, thld2, true, true);
+                                    ThresholdMask mask2 = currentImage.sizeZ()>1 && se2.sizeZ()==1 ? new ThresholdMask(se2, thld2, true, true, 0):new ThresholdMask(se2, thld2, true, true);
                                     if (testMode) testMasks2.put(frame, TypeConverter.toByteMask(mask2, null, 1));
                                     mask = ThresholdMask.or(mask, mask2);
                                 }
@@ -157,9 +157,9 @@ public class RemoveStripesSignalExclusion implements Transformation {
             Image[][] stripesTC = new Image[meanFZY.length][1];
             for (int f = 0; f<meanFZY.length; ++f) {
                 stripesTC[f][0] = new ImageFloat("removeStripes", inputImages.getImage(channelIdx, f));
-                for (int z = 0; z<stripesTC[f][0].getSizeZ(); ++z) {
-                    for (int y = 0; y<stripesTC[f][0].getSizeY(); ++y) {
-                        for (int x = 0; x<stripesTC[f][0].getSizeX(); ++x) {
+                for (int z = 0; z<stripesTC[f][0].sizeZ(); ++z) {
+                    for (int y = 0; y<stripesTC[f][0].sizeY(); ++y) {
+                        for (int x = 0; x<stripesTC[f][0].sizeX(); ++x) {
                             stripesTC[f][0].setPixel(x, y, z, meanFZY[f][z][y]);
                         }
                     }
@@ -184,14 +184,14 @@ public class RemoveStripesSignalExclusion implements Transformation {
     }
     
     public static float[][] computeMeanX(Image image, ImageMask mask, boolean addGlobalMean) {
-        float[][] res = new float[image.getSizeZ()][image.getSizeY()];
+        float[][] res = new float[image.sizeZ()][image.sizeY()];
         double globalSum=0;
         double globalCount=0;
-        for (int z=0; z<image.getSizeZ(); ++z) {
-            for (int y = 0; y<image.getSizeY(); ++y) {
+        for (int z=0; z<image.sizeZ(); ++z) {
+            for (int y = 0; y<image.sizeY(); ++y) {
                 double sum = 0;
                 double count = 0;
-                for (int x = 0; x<image.getSizeX(); ++x) {
+                for (int x = 0; x<image.sizeX(); ++x) {
                     if (!mask.insideMask(x, y, z)) {
                         ++count;
                         sum+=image.getPixel(x, y, z);
@@ -204,8 +204,8 @@ public class RemoveStripesSignalExclusion implements Transformation {
         }
         if (addGlobalMean) {
             double globalMean = globalCount>0?globalSum/globalCount : 0;
-            for (int z=0; z<image.getSizeZ(); ++z) {
-                for (int y = 0; y<image.getSizeY(); ++y) {
+            for (int z=0; z<image.sizeZ(); ++z) {
+                for (int y = 0; y<image.sizeY(); ++y) {
                     res[z][y]-=globalMean;
                 }
             }
@@ -216,9 +216,9 @@ public class RemoveStripesSignalExclusion implements Transformation {
         if (output==null || !output.sameDimensions(source)) {
             output = new ImageFloat("", source);
         }
-        for (int z = 0; z<output.getSizeZ(); ++z) {
-            for (int y = 0; y<output.getSizeY(); ++y) {
-                for (int x = 0; x<output.getSizeX(); ++x) {
+        for (int z = 0; z<output.sizeZ(); ++z) {
+            for (int y = 0; y<output.sizeY(); ++y) {
+                for (int x = 0; x<output.sizeX(); ++x) {
                     output.setPixel(x, y, z, source.getPixel(x, y, z)-muZY[z][y]);
                 }
             }

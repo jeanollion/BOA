@@ -44,7 +44,8 @@ import org.junit.Test;
  */
 public class ObjectManipulationTest {
     ImageByte im, imRelabel;
-    BoundingBox bound1, bound3;
+    BoundingBox bound1;
+    BoundingBox bound3;
     Region o1;
     Region o3;
     
@@ -61,8 +62,8 @@ public class ObjectManipulationTest {
         imRelabel.setPixel(2, 1, 1, 2);
         imRelabel.setPixel(3, 1, 1, 2);
         
-        bound1=new BoundingBox(0, 1, 0, 0,0,0);
-        bound3 = new BoundingBox(2, 3, 1,1,1,1);
+        bound1=new SimpleBoundingBox(0, 1, 0, 0,0,0);
+        bound3 = new SimpleBoundingBox(2, 3, 1,1,1,1);
         o1 = new Region(im.cropLabel(1, bound1), 1, false);
         o3 = new Region(im.cropLabel(3, bound3), 3, false);
         

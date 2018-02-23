@@ -140,10 +140,10 @@ public class MutationTrackMeasurements implements Measurement {
         BoundingBox bds = container.getBounds();
         double yLimPrev = (int) yCoordinate;
         double yLimNext = yLimPrev+1;
-        for (int y = bds.getyMin(); y<=bds.getyMax(); ++y) {
+        for (int y = bds.yMin(); y<=bds.yMax(); ++y) {
             countPrev = countNext;
-            for (int z = bds.getzMin(); z<=bds.getzMax(); ++z) {
-                for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
+            for (int z = bds.zMin(); z<=bds.zMax(); ++z) {
+                for (int x = bds.xMin(); x<=bds.xMax(); ++x) {
                     if (mask.insideMaskWithOffset(x, y, z)) ++count;
                 }
             }

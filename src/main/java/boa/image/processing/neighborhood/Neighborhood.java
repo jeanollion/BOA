@@ -18,7 +18,7 @@
 package boa.image.processing.neighborhood;
 
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageMask;
 
@@ -41,7 +41,7 @@ public interface Neighborhood {
      * 
      * @return bb centered @ 0 ie xMin, yMin, zMin <0
      */
-    public BoundingBox getBoundingBox();
+    public MutableBoundingBox getBoundingBox();
     public float[] getPixelValues();
     public float getMin(int x, int y, int z, Image image, float... outOfBoundValue);
     public float getMax(int x, int y, int z, Image image);

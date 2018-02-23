@@ -39,7 +39,7 @@ public class IJFFTBandPass {
         
         ImageProcessor imp=fftBandPassFilter.run(ip.getProcessor());
         Image res = IJImageWrapper.wrap(new ImagePlus("FFT of "+input.getName(), imp));
-        res.setCalibration(input).resetOffset().addOffset(input);
+        res.setCalibration(input).resetOffset().translate(input);
         return res;
     }
     public static Image suppressHorizontalStripes(Image input) {
@@ -48,7 +48,7 @@ public class IJFFTBandPass {
         
         ImageProcessor imp=fftBandPassFilter.run(ip.getProcessor());
         Image res= IJImageWrapper.wrap(new ImagePlus("FFT of "+input.getName(), imp));
-        res.setCalibration(input).resetOffset().addOffset(input);
+        res.setCalibration(input).resetOffset().translate(input);
         return res;
     }
 }

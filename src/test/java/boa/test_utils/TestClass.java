@@ -51,15 +51,7 @@ import static boa.utils.Utils.removeFromMap;
  */
 public class TestClass {
     public static void main(String[] args) {
-        new ImageJ();
-        //ConicalNeighborhood n = new ConicalNeighborhood(2, new double[]{1, 1.5}, new double[]{2, 2.5}, true);
-        //ImageWindowManagerFactory.showImage(n.drawNeighborhood(null));
-        double[] scales = new double[]{1, 1.5, 2.5, 3, 3.5, 4};
-        ConditionalNeighborhoodZ c = ConicalNeighborhood.generateScaleSpaceNeighborhood(new double[]{1, 1.5, 2.5, 3, 3.5, 4}, 6, 6, false);
-        for (int z = 0; z<scales.length; ++z) {
-            ConicalNeighborhood n  = (ConicalNeighborhood)c.getNeighborhood(z);
-            ImageWindowManagerFactory.showImage(n.drawNeighborhood(null));
-        }
+        logger.debug("1+NaN: {}", (float)0d/0d);
     }
     //@Test
     public void testSymetricalPair() {

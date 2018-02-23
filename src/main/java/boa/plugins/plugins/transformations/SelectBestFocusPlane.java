@@ -65,8 +65,8 @@ public class SelectBestFocusPlane implements Transformation, Autofocus {
                         public void run() { 
                             for (int t = tr.ai.getAndIncrement(); t<tr.end; t = tr.ai.getAndIncrement()) {
                                 Image image = inputImages.getImage(channelIdx, t);
-                                if (image.getSizeZ()>1) {
-                                    ArrayList<Image> planes = image.splitZPlanes();
+                                if (image.sizeZ()>1) {
+                                    List<Image> planes = image.splitZPlanes();
                                     SimpleThresholder thlder = signalExclusionThreshold.instanciatePlugin();
                                     conf[t] = getBestFocusPlane(planes, scale, thlder, null);
                                     logger.debug("select best focus plane: time:{}, plane: {}", t, conf[t]);
@@ -85,7 +85,7 @@ public class SelectBestFocusPlane implements Transformation, Autofocus {
     
     @Override
     public int getBestFocusPlane(Image image, ImageMask mask) {
-        if (image.getSizeZ()<=1) return 0;
+        if (image.sizeZ()<=1) return 0;
         return getBestFocusPlane(image.splitZPlanes(), this.gradientScale.getValue().doubleValue(), this.signalExclusionThreshold.instanciatePlugin(), mask);
     }
     
@@ -121,7 +121,7 @@ public class SelectBestFocusPlane implements Transformation, Autofocus {
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (bestFocusPlaneIdxT==null || timePoint>=bestFocusPlaneIdxT.size()) throw new RuntimeException("SelectBestFocusPlane transformation is not configured");
-        if (image.getSizeZ()>1) return image.getZPlane(bestFocusPlaneIdxT.get(timePoint));
+        if (image.sizeZ()>1) return image.getZPlane(bestFocusPlaneIdxT.get(timePoint));
         else return image;
     }
 

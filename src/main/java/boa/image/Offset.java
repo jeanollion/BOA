@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2018 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,26 +15,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.image.wrappers;
-
-import boa.image.IJImageWrapper;
-import boa.image.Image;
-import ij.ImagePlus;
-
-
+package boa.image;
 
 /**
  *
  * @author jollion
  */
-public class ImagescienceWrapper {
-    public static imagescience.image.Image getImagescience(Image image) {
-        ImagePlus ip = IJImageWrapper.getImagePlus(image);
-        return imagescience.image.Image.wrap(ip);
+public interface Offset<T> {
+    public int xMin();
+    public int yMin();
+    public int zMin();
+    public T resetOffset();
+    public T reverseOffset();
+    public T translate(Offset other);
+    public static boolean offsetNull(Offset offset) {
+        return offset.xMin()==0 && offset.yMin() == 0 && offset.zMin()==0;
     }
-    
-    public static  <T extends Image<T>> Image<T> wrap(imagescience.image.Image image) {
-        return IJImageWrapper.wrap(image.imageplus());
-    }
-    
 }

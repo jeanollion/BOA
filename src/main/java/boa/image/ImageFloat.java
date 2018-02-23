@@ -1,9 +1,6 @@
 package boa.image;
 
-import boa.image.processing.neighborhood.Neighborhood;
 import boa.utils.ArrayUtil;
-import boa.utils.StreamConcatenation;
-import boa.utils.Utils;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
@@ -42,7 +39,7 @@ public class ImageFloat extends Image<ImageFloat> {
         else {
             ImageFloat res = new ImageFloat(name, sizeX, pixels[idxZ]);
             res.setCalibration(this);
-            res.addOffset(offsetX, offsetY, offsetZ+idxZ);
+            res.translate(xMin, yMin, zMin+idxZ);
             return res;
         }
     }
@@ -51,36 +48,36 @@ public class ImageFloat extends Image<ImageFloat> {
     }
     @Override public DoubleStream streamPlane(int z, ImageMask mask, boolean maskHasAbsoluteOffset) {
         if (maskHasAbsoluteOffset) {
-            if (z<0 || z>=sizeZ || z+offsetZ-mask.getOffsetZ()<0 || z+offsetZ-mask.getOffsetZ()>=mask.getSizeZ()) return DoubleStream.empty();
-            BoundingBox inter = getBoundingBox().getIntersection2D(mask.getBoundingBox());
-            if (inter.getSizeXY()==0) return DoubleStream.empty();
-            if (inter.equals(this) && inter.equals(mask)) {
+            if (z<0 || z>=sizeZ || z+zMin-mask.zMin()<0 || z+zMin-mask.zMin()>=mask.sizeZ()) return DoubleStream.empty();
+            SimpleBoundingBox inter = BoundingBox.getIntersection2D(this, mask);
+            if (inter.isEmpty()) return DoubleStream.empty();
+            if (inter.sameBounds(this) && inter.sameBounds(mask)) {
                 if (mask instanceof BlankMask) return this.streamPlane(z);
                 else return IntStream.range(0,sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
             }
             else { // loop within intersection
-                int sX = inter.getSizeX();
-                int offX = inter.getxMin();
-                int offY = inter.getyMin();
+                int sX = inter.sizeX();
+                int offX = inter.xMin();
+                int offY = inter.yMin();
                 return IntStream.range(0,inter.getSizeXY()).mapToDouble(i->{
                         int x = i%sX+offX;
                         int y = i/sX+offY;
-                        return mask.insideMaskWithOffset(x, y, z+offsetZ)?pixels[z][x+y*sizeX-offsetXY]:Double.NaN;}
+                        return mask.insideMaskWithOffset(x, y, z+zMin)?pixels[z][x+y*sizeX-offsetXY]:Double.NaN;}
                 ).filter(v->!Double.isNaN(v));
             }
         }
         else { // masks is relative to image
-            if (z<0 || z>=sizeZ || z-mask.getOffsetZ()<0 || z-mask.getOffsetZ()>mask.getSizeZ()) return DoubleStream.empty();
-            BoundingBox inter = getBoundingBox().translateToOrigin().getIntersection2D(mask.getBoundingBox());
-            if (inter.getSizeXY()==0) return DoubleStream.empty();
-            if (inter.equals(mask) && inter.sameDimensions(this)) {
+            if (z<0 || z>=sizeZ || z-mask.zMin()<0 || z-mask.zMin()>mask.sizeZ()) return DoubleStream.empty();
+            SimpleBoundingBox inter = BoundingBox.getIntersection2D(new SimpleBoundingBox(this).resetOffset(), mask);
+            if (inter.isEmpty()) return DoubleStream.empty();
+            if (inter.sameDimensions(mask) && inter.sameDimensions(this)) {
                 if (mask instanceof BlankMask) return this.streamPlane(z);
                 else return IntStream.range(0, sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
             }
             else {
-                int sX = inter.getSizeX();
-                int offX = inter.getxMin();
-                int offY = inter.getyMin();
+                int sX = inter.sizeX();
+                int offX = inter.xMin();
+                int offY = inter.yMin();
                 return IntStream.range(0,inter.getSizeXY()).mapToDouble(i->{
                         int x = i%sX+offX;
                         int y = i/sX+offY;
@@ -121,12 +118,12 @@ public class ImageFloat extends Image<ImageFloat> {
     }
     
     public void setPixelWithOffset(int x, int y, int z, float value) {
-        pixels[z-offsetZ][x-offsetXY + y * sizeX] = value;
+        pixels[z-zMin][x-offsetXY + y * sizeX] = value;
     }
     
     @Override
     public void setPixelWithOffset(int x, int y, int z, double value) {
-        pixels[z-offsetZ][x-offsetXY + y * sizeX] = (float)value;
+        pixels[z-zMin][x-offsetXY + y * sizeX] = (float)value;
     }
 
     public void setPixel(int xy, int z, float value) {
@@ -135,24 +132,24 @@ public class ImageFloat extends Image<ImageFloat> {
     
     @Override
     public float getPixelWithOffset(int x, int y, int z) {
-        return pixels[z-offsetZ][x-offsetXY + y * sizeX];
+        return pixels[z-zMin][x-offsetXY + y * sizeX];
     }
 
     @Override
     public float getPixelWithOffset(int xy, int z) {
-        return pixels[z-offsetZ][xy - offsetXY ];
+        return pixels[z-zMin][xy - offsetXY ];
     }
 
     @Override
     public void setPixelWithOffset(int xy, int z, double value) {
-        pixels[z-offsetZ][xy - offsetXY] = (float)value;
+        pixels[z-zMin][xy - offsetXY] = (float)value;
     }
 
     @Override
     public ImageFloat duplicate(String name) {
         float[][] newPixels = new float[sizeZ][sizeXY];
         for (int z = 0; z< sizeZ; ++z) System.arraycopy(pixels[z], 0, newPixels[z], 0, sizeXY);
-        return (ImageFloat)new ImageFloat(name, sizeX, newPixels).setCalibration(this).addOffset(this);
+        return (ImageFloat)new ImageFloat(name, sizeX, newPixels).setCalibration(this).translate(this);
     }
     
     @Override
@@ -163,16 +160,6 @@ public class ImageFloat extends Image<ImageFloat> {
     @Override
     public ImageFloat newImage(String name, ImageProperties properties) {
         return new ImageFloat(name, properties);
-    }
-
-    @Override
-    public ImageFloat crop(BoundingBox bounds) {
-        return (ImageFloat) cropI(bounds);
-    }
-    
-    @Override
-    public ImageFloat cropWithOffset(BoundingBox bounds) {
-        return (ImageFloat) cropIWithOffset(bounds);
     }
     
     @Override
@@ -193,21 +180,17 @@ public class ImageFloat extends Image<ImageFloat> {
         return getHisto256(minAndMax[0], minAndMax[1], mask, limit);
     }
     @Override public Histogram getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {
-        if (mask == null) mask = new BlankMask(this);
-        if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
+        ImageMask m = mask==null ?  new BlankMask(this) : mask;
+        if (limits==null) limits = new SimpleBoundingBox(this).resetOffset();
         double coeff = 256d / (max - min);
-        int idx;
         int[] histo = new int[256];
-        for (int z = limits.zMin; z <= limits.zMax; z++) {
-            for (int y = limits.yMin; y<=limits.yMax; ++y) {
-                for (int x = limits.xMin; x <= limits.xMax; ++x) {
-                    if (mask.insideMask(x, y, z)) {
-                        idx = (int) ((getPixel(x, y, z) - min) * coeff);
-                        histo[idx>=256?255:idx]++;
-                    }
-                }
+        LoopFunction function = (x, y, z) -> {
+            if (m.insideMask(x, y, z)) {
+                int idx = (int) ((pixels[z][x+y*sizeX] - min) * coeff);
+                histo[idx>=256?255:idx]++;
             }
-        }
+        };
+        BoundingBox.loop(limits, function);
         return new Histogram(histo, false, new double[]{min, max});
     }
     @Override public int getBitDepth() {return 32;}
@@ -226,12 +209,12 @@ public class ImageFloat extends Image<ImageFloat> {
     
     @Override
     public boolean insideMaskWithOffset(int x, int y, int z) {
-        return pixels[z-offsetZ][x-offsetXY + y * sizeX]!=0;
+        return pixels[z-zMin][x-offsetXY + y * sizeX]!=0;
     }
 
     @Override
     public boolean insideMaskWithOffset(int xy, int z) {
-        return pixels[z-offsetZ][xy - offsetXY ]!=0;
+        return pixels[z-zMin][xy - offsetXY ]!=0;
     }
 
     @Override

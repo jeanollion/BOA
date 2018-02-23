@@ -18,17 +18,22 @@
 package boa.image;
 
 /**
- *
  * @author jollion
  */
-public class ImageMask2D implements ImageMask {
+public class ImageMask2D extends SimpleImageProperties<ImageMask2D> implements ImageMask<ImageMask2D> {
     final ImageMask mask;
     final int z;
+    
     public ImageMask2D(ImageMask mask) {
-        this.mask = mask;
-        this.z=0;
+        this(mask, 0);
     }
+    /**
+     * Creates a 2D mask from {@param mask}, at z = {@param z}
+     * @param mask 
+     * @param z 
+     */
     public ImageMask2D(ImageMask mask, int z) {
+        super(mask);
         this.mask = mask;
         this.z=z;
     }
@@ -55,121 +60,16 @@ public class ImageMask2D implements ImageMask {
 
     @Override
     public int count() {
-        return mask.count();
-    }
-
-    @Override
-    public String getName() {
-        return mask.getName();
-    }
-
-    @Override
-    public int getSizeX() {
-        return mask.getSizeX();
-    }
-
-    @Override
-    public int getSizeY() {
-        return mask.getSizeY();
-    }
-
-    @Override
-    public int getSizeZ() {
-        return mask.getSizeZ();
-    }
-
-    @Override
-    public int getSizeXY() {
-        return mask.getSizeXY();
-    }
-
-    @Override
-    public int getSizeXYZ() {
-        return mask.getSizeXYZ();
-    }
-
-    @Override
-    public int getOffsetX() {
-        return mask.getOffsetX();
-    }
-
-    @Override
-    public int getOffsetXY() {
-        return mask.getOffsetXY();
-    }
-
-    @Override
-    public int getOffsetY() {
-        return mask.getOffsetY();
-    }
-
-    @Override
-    public int getOffsetZ() {
-        return mask.getOffsetZ();
-    }
-
-    @Override
-    public float getScaleXY() {
-        return mask.getScaleXY();
-    }
-
-    @Override
-    public float getScaleZ() {
-        return mask.getScaleZ();
-    }
-
-    @Override
-    public boolean contains(int x, int y, int z) {
-        return z>=0 && mask.contains(x, y, this.z);
-    }
-
-    @Override
-    public boolean containsWithOffset(int x, int y, int z) {
-        return z>=mask.getOffsetZ() && mask.containsWithOffset(x, y, this.z);
-    }
-    
-    @Override
-    public BoundingBox getBoundingBox() {
-        return mask.getBoundingBox();
-    }
-
-    @Override
-    public boolean sameDimensions(ImageProperties image) {
-        return mask.sameDimensions(image);
-    }
-
-    @Override
-    public ImageProperties getProperties() {
-        return mask.getProperties();
+        int count = 0;
+        for (int xy=0; xy<sizeXY(); ++xy) {
+            if (insideMask(xy, z)) ++count;
+        }
+        return count;
     }
 
     @Override
     public ImageMask2D duplicateMask() {
         return new ImageMask2D(mask.duplicateMask(), z);
-    }
-
-    @Override
-    public ImageMask2D addOffset(BoundingBox bounds) {
-        mask.addOffset(bounds); // TODO will modify mask -> should it be duplicated ? 
-        return this;
-    }
-
-    @Override
-    public ImageMask2D setCalibration(ImageProperties properties) {
-        this.mask.setCalibration(properties);
-        return this;
-    }
-
-    @Override
-    public ImageMask2D setCalibration(float scaleXY, float scaleZ) {
-        mask.setCalibration(scaleXY, scaleZ);
-        return this;
-    }
-
-    @Override
-    public ImageMask2D addOffset(ImageProperties bounds) {
-        mask.addOffset(bounds);
-        return this;
     }
     
 }

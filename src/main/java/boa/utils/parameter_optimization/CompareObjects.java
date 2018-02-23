@@ -31,7 +31,7 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.Selection;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import java.io.File;
 import java.io.FileNotFoundException;

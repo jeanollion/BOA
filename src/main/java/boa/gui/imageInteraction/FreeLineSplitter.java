@@ -23,11 +23,13 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.RegionPopulation.Filter;
 import boa.data_structure.StructureObject;
 import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
 import boa.image.ImageMask;
+import boa.image.Offset;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,13 +66,13 @@ public class FreeLineSplitter implements ObjectSplitter {
         Image input = parent.getPreFilteredImage(structureIdx);
         ImageMask mask = object.getMask();
         ImageInteger splitMask = mask instanceof ImageInteger ? ((ImageInteger)mask).duplicate("splitMask") : TypeConverter.toImageInteger(mask, null);
-        BoundingBox off=offsetMap.get(object);
+        Offset off=offsetMap.get(object);
         if (off==null) {
             logger.debug("no offset found");
             return null;
         }
-        int offX = off.getxMin();
-        int offY = off.getyMin();
+        int offX = off.xMin();
+        int offY = off.yMin();
         for (int i = 0; i<xPoints.length; ++i) {
             int x = xPoints[i] - offX;
             int y = yPoints[i] - offY;
@@ -78,10 +80,10 @@ public class FreeLineSplitter implements ObjectSplitter {
         }
         List<Region> objects = ImageLabeller.labelImageListLowConnectivity(splitMask);
         RegionPopulation res = new RegionPopulation(objects, input);
-        res.filterAndMergeWithConnected(o->o.getSize()>1); // connect 1-pixels objects, artifacts of low connectivity labelling
+        res.filterAndMergeWithConnected(o->o.size()>1); // connect 1-pixels objects, artifacts of low connectivity labelling
         if (objects.size()>2) { // merge smaller & connected
             // islate bigger object and try to merge others
-            Region biggest = Collections.max(objects, (o1, o2)->Integer.compare(o1.getSize(), o2.getSize()));
+            Region biggest = Collections.max(objects, (o1, o2)->Integer.compare(o1.size(), o2.size()));
             List<Region> toMerge = new ArrayList<>(objects);
             toMerge.remove(biggest);
             RegionPopulation mergedPop =  new RegionPopulation(toMerge, input);

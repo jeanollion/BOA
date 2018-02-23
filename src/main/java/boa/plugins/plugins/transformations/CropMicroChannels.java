@@ -24,7 +24,7 @@ import static boa.data_structure.input_image.InputImages.getAverageFrame;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageProperties;
 import java.util.ArrayList;
@@ -60,32 +60,32 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
         if (channelIdx<0) throw new IllegalArgumentException("Channel no configured");
         Image<? extends Image> image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
         // check configuration validity
-        if (xStop.getValue().intValue()==0 || xStop.getValue().intValue()>=image.getSizeX()) xStop.setValue(image.getSizeX()-1);
+        if (xStop.getValue().intValue()==0 || xStop.getValue().intValue()>=image.sizeX()) xStop.setValue(image.sizeX()-1);
         if (xStart.getValue().intValue()>=xStop.getValue().intValue()) {
             logger.warn("CropMicroChannels2D: illegal configuration: xStart>=xStop, set to default values");
             xStart.setValue(0);
-            xStop.setValue(image.getSizeX()-1);
+            xStop.setValue(image.sizeX()-1);
         }
-        if (yStop.getValue().intValue()==0 || yStop.getValue().intValue()>=image.getSizeY()) yStop.setValue(image.getSizeY()-1);
+        if (yStop.getValue().intValue()==0 || yStop.getValue().intValue()>=image.sizeY()) yStop.setValue(image.sizeY()-1);
         if (yStart.getValue().intValue()>=yStop.getValue().intValue()) {
             logger.warn("CropMicroChannels2D: illegal configuration: yStart>=yStop, set to default values");
             yStart.setValue(0);
-            yStop.setValue(image.getSizeY()-1);
+            yStop.setValue(image.sizeY()-1);
         }
         
-        if (channelHeight.getValue().intValue()>image.getSizeY()) throw new IllegalArgumentException("channel height > image height");
-        BoundingBox b=null;
+        if (channelHeight.getValue().intValue()>image.sizeY()) throw new IllegalArgumentException("channel height > image height");
+        MutableBoundingBox b=null;
         int numb = Math.min(number.getValue().intValue(), inputImages.getFrameNumber()-2);
         if (numb>1) {
             List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, numb);
             for (int f : frames) {
                 image = inputImages.getImage(channelIdx, f);
-                if (image.getSizeZ()>1) {
+                if (image.sizeZ()>1) {
                     int plane = inputImages.getBestFocusPlane(f);
                     if (plane<0) throw new RuntimeException("CropMicrochannel can only be run on 2D images AND no autofocus algorithm was set");
                     image = image.splitZPlanes().get(plane);
                 }
-                BoundingBox bb = getBoundingBox(image);
+                MutableBoundingBox bb = getBoundingBox(image);
                 if (bb==null) continue;
                 if (b==null) b = bb;
                 else b.expand(bb);
@@ -97,18 +97,18 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
             logger.error("No Microchannels found");
         } else logger.debug("Crop Microchannel: image: {} timepoint: {} boundingBox: {}", image.getName(), inputImages.getDefaultTimePoint(), b);
         configurationData=new ArrayList<Integer>(4);
-        configurationData.add(b.getxMin());
-        configurationData.add(b.getxMax());
-        configurationData.add(b.getyMin());
-        configurationData.add(b.getyMax());
+        configurationData.add(b.xMin());
+        configurationData.add(b.xMax());
+        configurationData.add(b.yMin());
+        configurationData.add(b.yMax());
     }
     
     @Override
-    public BoundingBox getCropBoundginBox(int channelIdx, InputImages inputImages) {
+    public MutableBoundingBox getCropBoundginBox(int channelIdx, InputImages inputImages) {
         if (!isConfigured(inputImages.getChannelNumber(), inputImages.getFrameNumber())) {
             computeConfigurationData(channelIdx, inputImages);
         }
-        return new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, inputImages.getSizeZ(channelIdx)-1);
+        return new MutableBoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, inputImages.getSizeZ(channelIdx)-1);
     }
     
     @Override
@@ -120,11 +120,11 @@ public abstract class CropMicroChannels implements Transformation, Cropper {
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }
-    protected abstract BoundingBox getBoundingBox(Image image);
+    protected abstract MutableBoundingBox getBoundingBox(Image image);
     
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        BoundingBox bounds = new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.getSizeZ()-1);
+        MutableBoundingBox bounds = new MutableBoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.sizeZ()-1);
         return image.crop(bounds);
     }
     

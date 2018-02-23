@@ -20,7 +20,7 @@ package boa.plugins.plugins.measurements.objectFeatures;
 import boa.plugins.objectFeature.IntensityMeasurement;
 import boa.data_structure.Region;
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.measurement.BasicMeasurements;
 

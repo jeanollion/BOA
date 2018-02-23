@@ -27,6 +27,7 @@ import ij.gui.Roi;
 import ij.gui.TextRoi;
 import boa.image.BoundingBox;
 import boa.image.Image;
+import boa.image.SimpleBoundingBox;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -72,7 +73,7 @@ public class SpotWithinCompartment extends Spot {
         //logger.debug("get loc Roi for {}: offset: {}, compartiment offset: {}", this, offset.toStringOffset(), compartiment.object.getParent().getBounds().toStringOffset());
         //offset.duplicate().translate(this.compartiment.object.getBounds().duplicate().reverseOffset());
         
-        return new TextRoi(offset.getxMax(), offset.getyMax(), localization.toString());
+        return new TextRoi(offset.xMax(), offset.yMax(), localization.toString());
     }
     
     public int compareSpots(Spot other) {
@@ -96,7 +97,7 @@ public class SpotWithinCompartment extends Spot {
     
    
     public void setRadius() {
-        double radius = !object.is2D() ? Math.pow(3 * object.getSize() / (4 * Math.PI) , 1d/3d) : Math.sqrt(object.getSize() / (2 * Math.PI)) ;
+        double radius = !object.is2D() ? Math.pow(3 * object.size() / (4 * Math.PI) , 1d/3d) : Math.sqrt(object.size() / (2 * Math.PI)) ;
         getFeatures().put(Spot.RADIUS, radius);
     }
     
@@ -254,19 +255,19 @@ public class SpotWithinCompartment extends Spot {
             int[] c1 = s1.getCenterInVoxels();
             int[] c2 = s2.getCenterInVoxels();
             
-            BoundingBox off1 = offsetS1.duplicate().translate(s1.getObject().getBounds().duplicate().reverseOffset());
-            BoundingBox off2 = offsetS2.duplicate().translate(s2.getObject().getBounds().duplicate().reverseOffset());
+            BoundingBox off1 = new SimpleBoundingBox(offsetS1).translate(new SimpleBoundingBox(s1.getObject().getBounds()).reverseOffset());
+            BoundingBox off2 = new SimpleBoundingBox(offsetS2).translate(new SimpleBoundingBox(s2.getObject().getBounds()).reverseOffset());
             
             int[] cOff1 = new int[]{(int) Math.round(offset1[0] / s1.object.getScaleXY()), (int) Math.round(offset1[1] / s1.object.getScaleXY())};
             int[] cOff2 = new int[]{(int) Math.round(offset2[0] / s1.object.getScaleXY()), (int) Math.round(offset2[1] / s1.object.getScaleXY())};
-            c1[0]+=off1.getxMin()+0.5;
-            c1[1]+=off1.getyMin()+0.5;
-            c2[0]+=off2.getxMin()+0.5;
-            c2[1]+=off2.getyMin()+0.5;
-            cOff1[0]+=off1.getxMin()+0.5;
-            cOff1[1]+=off1.getyMin()+0.5;
-            cOff2[0]+=off2.getxMin()+0.5;
-            cOff2[1]+=off2.getyMin()+0.5;
+            c1[0]+=off1.xMin()+0.5;
+            c1[1]+=off1.yMin()+0.5;
+            c2[0]+=off2.xMin()+0.5;
+            c2[1]+=off2.yMin()+0.5;
+            cOff1[0]+=off1.xMin()+0.5;
+            cOff1[1]+=off1.yMin()+0.5;
+            cOff2[0]+=off2.xMin()+0.5;
+            cOff2[1]+=off2.yMin()+0.5;
             Line l1 = new Line(c1[0], c1[1], cOff1[0], cOff1[1]);
             Line l2 = new Line(c2[0], c2[1], cOff2[0], cOff2[1]);
             Line l12 = new Line((c1[0]+cOff1[0])/2d, (c1[1]+cOff1[1])/2d, (c2[0]+cOff2[0])/2d, (c2[1]+cOff2[1]) /2d );

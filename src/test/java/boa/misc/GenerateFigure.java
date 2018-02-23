@@ -24,7 +24,7 @@ import boa.data_structure.dao.ObjectDAO;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import ij.ImageJ;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import java.util.List;
 import java.util.Map;
@@ -38,10 +38,10 @@ public class GenerateFigure {
     public static void main(String[] args) {
         new ImageJ();
         String db = "fluo170602_uvrD";
-        BoundingBox bounds = new BoundingBox(0, 1000, 0, 300, 0, 0);
+        MutableBoundingBox bounds = new MutableBoundingBox(0, 1000, 0, 300, 0, 0);
         generateImage(db, 0, 1, bounds);
     }
-    private static void generateImage(String dbName, int posIdx, int mcIdx, BoundingBox bounds) {
+    private static void generateImage(String dbName, int posIdx, int mcIdx, MutableBoundingBox bounds) {
         MasterDAO db = new Task(dbName).getDB();
         ObjectDAO dao = db.getDao(db.getExperiment().getPosition(posIdx).getName());
         List<StructureObject> roots = dao.getRoots();

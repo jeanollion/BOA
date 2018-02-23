@@ -372,11 +372,11 @@ public class ImageIOTest {
         else Assert.assertTrue("image type verification", im instanceof ImageFloat);
         
         // test image dimensions
-        Assert.assertEquals("testing image width", imTest.getSizeX(), im.getSizeX());
-        Assert.assertEquals("testing image heigth", imTest.getSizeY(), im.getSizeY());
-        Assert.assertEquals("testing image depth", imTest.getSizeZ(), im.getSizeZ());
+        Assert.assertEquals("testing image width", imTest.sizeX(), im.sizeX());
+        Assert.assertEquals("testing image heigth", imTest.sizeY(), im.sizeY());
+        Assert.assertEquals("testing image depth", imTest.sizeZ(), im.sizeZ());
         
-        if (!extension.equals(ImageFormat.PNG)) Assert.assertArrayEquals("Retrieve Image Resolution", new float[]{0.1f, 0.23f}, new float[]{im.getScaleXY(), im.getScaleZ()}, 0.001f);
+        if (!extension.equals(ImageFormat.PNG)) Assert.assertArrayEquals("Retrieve Image Resolution", new float[]{0.1f, 0.23f}, new float[]{(float)im.getScaleXY(), (float)im.getScaleZ()}, 0.001f);
         
         Assert.assertEquals("Retrieve pixel value", 2f, im.getPixel(1, 0, 2), 0.0001f);
         
@@ -391,13 +391,13 @@ public class ImageIOTest {
         File folder = testFolder.newFolder("TestImages");
         ImageWriter.writeToFile(imShort, folder.getAbsolutePath(), null, ImageFormat.TIF);
         ImageReader reader = new ImageReader(folder.getAbsolutePath(), title, ImageFormat.TIF);
-        BoundingBox bb=new BoundingBox(1, 2, 3, 4, 3, 5);
+        BoundingBox bb=new SimpleBoundingBox(1, 2, 3, 4, 3, 5);
         ImageShort im = (ImageShort)reader.openImage(new ImageIOCoordinates(bb));
         reader.closeReader();
-        BoundingBox retrieveBB = new BoundingBox(im, true);
+        BoundingBox retrieveBB = new SimpleBoundingBox(im);
         //logger.debug("bb: {}, retrieve: {}", bb, retrieveBB);
-        Assert.assertEquals("Retrieve Image View: Dimensions", bb, retrieveBB);
-        Assert.assertEquals("Retrieve pixel value", 3, im.getPixelInt(2-im.getOffsetX(), 3-im.getOffsetY(), 5-im.getOffsetZ()));
+        Assert.assertTrue("Retrieve Image View: Dimensions", bb.sameBounds(retrieveBB));
+        Assert.assertEquals("Retrieve pixel value", 3, im.getPixelInt(2-im.xMin(), 3-im.yMin(), 5-im.zMin()));
     }
     
     @Test
@@ -409,12 +409,12 @@ public class ImageIOTest {
         File folder = testFolder.newFolder("TestImages");
         ImageWriter.writeToFile(imShort, folder.getAbsolutePath(), null, ImageFormat.PNG);
         ImageReader reader = new ImageReader(folder.getAbsolutePath(), title, ImageFormat.PNG);
-        BoundingBox bb=new BoundingBox(1, 2, 3, 4, 3, 5);
+        BoundingBox bb=new SimpleBoundingBox(1, 2, 3, 4, 3, 5);
         ImageShort im = (ImageShort)reader.openImage(new ImageIOCoordinates(bb));
         reader.closeReader();
-        BoundingBox retrieveBB = new BoundingBox(im, true);
-        Assert.assertEquals("Retrieve Image View: Dimensions", bb, retrieveBB);
-        Assert.assertEquals("Retrieve pixel value", 3, im.getPixelInt(2-im.getOffsetX(), 3-im.getOffsetY(), 5-im.getOffsetZ()));
+        BoundingBox retrieveBB = new SimpleBoundingBox(im);
+        Assert.assertTrue("Retrieve Image View: Dimensions", bb.sameDimensions(retrieveBB));
+        Assert.assertEquals("Retrieve pixel value", 3, im.getPixelInt(2-im.xMin(), 3-im.yMin(), 5-im.zMin()));
     }
     
     @Test

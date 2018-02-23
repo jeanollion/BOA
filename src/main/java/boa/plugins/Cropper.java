@@ -18,7 +18,7 @@
 package boa.plugins;
 
 import boa.data_structure.input_image.InputImages;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import java.util.HashMap;
 
 /**
@@ -26,5 +26,5 @@ import java.util.HashMap;
  * @author jollion
  */
 public interface Cropper extends Plugin {
-    public BoundingBox getCropBoundginBox(int channelIdx, InputImages inputImages);
+    public MutableBoundingBox getCropBoundginBox(int channelIdx, InputImages inputImages);
 }

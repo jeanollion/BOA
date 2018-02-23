@@ -50,7 +50,7 @@ public class TestUtils {
         assertImage("", expected, actual, precision);
     }
     public static <T extends Image> void assertImage(String message, T expected, T actual, float precision) {
-        assertEquals(message+" image comparison: sizeZ", expected.getSizeZ(), actual.getSizeZ());
+        assertEquals(message+" image comparison: sizeZ", expected.sizeZ(), actual.sizeZ());
         if (expected instanceof ImageByte) assertImageByte(message, (ImageByte)expected, (ImageByte)actual);
         else if (expected instanceof ImageShort) assertImageShort(message, (ImageShort)expected, (ImageShort)actual);
         else if (expected instanceof ImageFloat) assertImageFloat(message, (ImageFloat)expected, (ImageFloat)actual, precision);
@@ -58,17 +58,17 @@ public class TestUtils {
     }
     
     private static void assertImageByte(String message, ImageByte expected, ImageByte actual) {
-        for (int z = 0; z < expected.getSizeZ(); z++) {
+        for (int z = 0; z < expected.sizeZ(); z++) {
             assertArrayEquals(message+" image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z]);
         }
     }
     private static void assertImageShort(String message, ImageShort expected, ImageShort actual) {
-        for (int z = 0; z < expected.getSizeZ(); z++) {
+        for (int z = 0; z < expected.sizeZ(); z++) {
             assertArrayEquals(message+" image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z]);
         }
     }
     private static void assertImageFloat(String message, ImageFloat expected, ImageFloat actual, float precision) {
-        for (int z = 0; z < expected.getSizeZ(); z++) {
+        for (int z = 0; z < expected.sizeZ(); z++) {
             assertArrayEquals(message+" image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z], precision);
         }
     }

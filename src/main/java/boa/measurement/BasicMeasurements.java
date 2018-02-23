@@ -19,8 +19,6 @@ package boa.measurement;
 
 import boa.data_structure.Region;
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
-import boa.image.BoundingBox.LoopFunction;
 import boa.image.Image;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;

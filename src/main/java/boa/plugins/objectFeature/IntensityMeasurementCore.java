@@ -22,7 +22,7 @@ import static boa.core.Processor.logger;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;

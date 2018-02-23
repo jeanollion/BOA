@@ -83,7 +83,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         //int count =0;
         for (int f = 0; f<tpMax; ++f) {
             Image<? extends Image> image = inputImages.getImage(channelIdx, f);
-            if (image.getSizeZ()>1) {
+            if (image.sizeZ()>1) {
                 int plane = inputImages.getBestFocusPlane(f);
                 if (plane<0) throw new RuntimeException("SaturateHistogramHyperFluoBacteria can only be run on 2D images AND no autofocus algorithm was set");
                 image = image.splitZPlanes().get(plane);
@@ -133,7 +133,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         backThld=ImageOperations.threshold(im, thldBack, true, true, false, backThld);
         ImageMask hyperThld = new ThresholdMask(im, thldHyper, true, true);
         // remove small obejcts (if background is too low isolated pixels)
-        ImageOperations.filterObjects(backThld, backThld, o->o.getSize()<=1);
+        ImageOperations.filterObjects(backThld, backThld, o->o.size()<=1);
         double count = backThld.count();
         if (count<minimumCount) return Double.POSITIVE_INFINITY;
         double countHyper = hyperThld.count();
@@ -147,7 +147,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
             List<Double> maxValues = Utils.transform(objects, o->BasicMeasurements.getMaxValue(o, im));
             maxValues.removeIf(v->v>=thldHyper2);
             double thldHyper3 = maxValues.isEmpty() ? thldHyper2 : Math.min(Collections.max(maxValues)*1.15, thldHyper2);
-            if (testMode) logger.debug("SaturateHisto: {} proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {}), max values of non-saturated objects: {}", idx, proportion, count/im.getSizeXYZ(), thldBack, thldHyper2, thldHyper,thldHyper3);
+            if (testMode) logger.debug("SaturateHisto: {} proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {}), max values of non-saturated objects: {}", idx, proportion, count/im.sizeXYZ(), thldBack, thldHyper2, thldHyper,thldHyper3);
             return thldHyper3;
         }
         else return Double.POSITIVE_INFINITY;

@@ -18,7 +18,7 @@
 package boa.data_structure.image_container;
 
 import static boa.core.Processor.logger;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.io.ImageIOCoordinates;
 import boa.image.io.ImageReader;
@@ -239,7 +239,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     
     
     @Override
-    public Image getImage(int frame, int channel, BoundingBox bounds) {
+    public Image getImage(int frame, int channel, MutableBoundingBox bounds) {
         if (fileCT==null) {
             synchronized(this) {
                 if (fileCT==null) createFileMap();
@@ -266,7 +266,9 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     private void createFileMap() {
         File in = new File(inputDir);
         Pattern positionPattern = Pattern.compile(".*"+positionKey+".*"+extension);
-        List<File> files = Arrays.stream(in.listFiles()).filter(f -> positionPattern.matcher(f.getName()).find()).collect(Collectors.toList());
+        File[] allImages = in.listFiles();
+        if (allImages==null) throw new RuntimeException("No Images found in directory:"+in.getAbsolutePath());
+        List<File> files = Arrays.stream(allImages).filter( f -> positionPattern.matcher(f.getName()).find()).collect(Collectors.toList());
         Pattern timePattern = Pattern.compile(".*"+timeKeyword+"(\\d+).*");
         Map<Integer, List<File>> filesByChannel = files.stream().collect(Collectors.groupingBy(f -> getKeywordIdx(f.getName(), channelKeywords)));
         fileCT = new ArrayList<>(filesByChannel.size());

@@ -18,7 +18,7 @@
 package boa.image.processing;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import static boa.image.Image.logger;
 import boa.image.ImageProperties;
@@ -67,10 +67,10 @@ public class ImageTransformation {
                 double[] deltas = new double[2];
                 double tanAbs = Math.abs(Math.tan(angle * Math.PI/180d));
                 //logger.debug("angle: {}, tan: {}", angle, tanAbs);
-                for (int i = 0; i<5; ++i) computeDeltas(tanAbs, image.getSizeX()/2, image.getSizeY()/2, deltas);
+                for (int i = 0; i<5; ++i) computeDeltas(tanAbs, image.sizeX()/2, image.sizeY()/2, deltas);
                 int dX = (int)Math.ceil(deltas[0]);
                 int dY = (int)Math.ceil(deltas[1]);
-                Image crop =  im.crop(new BoundingBox(dX, im.getSizeX()-dX, dY, im.getSizeY()-dY, 0, image.getSizeZ()-1));
+                Image crop =  im.crop(new MutableBoundingBox(dX, im.sizeX()-dX, dY, im.sizeY()-dY, 0, image.sizeZ()-1));
                 return crop;
             } else return im;
         }
@@ -96,7 +96,7 @@ public class ImageTransformation {
     }
     
     public static Image resize(Image image, ImageProperties newImage, int posX, int posY, int posZ) {
-        Dimensions dim = new Dimensions(newImage.getSizeX(), newImage.getSizeY(), newImage.getSizeZ(), 1, 1);
+        Dimensions dim = new Dimensions(newImage.sizeX(), newImage.sizeY(), newImage.sizeZ(), 1, 1);
         Coordinates pos = new Coordinates(posX, posY, posZ);
         return ImagescienceWrapper.wrap((new Embed()).run(ImagescienceWrapper.getImagescience(image), dim, pos, 0)).setCalibration(image);
     }

@@ -21,7 +21,8 @@ import boa.data_structure.dao.BasicObjectDAO;
 import boa.data_structure.dao.ObjectDAO;
 import boa.data_structure.dao.BasicMasterDAO;
 import static boa.data_structure.StructureObject.logger;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
+import boa.image.Offset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -206,7 +207,7 @@ public class StructureObjectUtils {
         return res;
     }
     
-    public static StructureObject getInclusionParent(Region children, Collection<StructureObject> parents, BoundingBox offset) {
+    public static StructureObject getInclusionParent(Region children, Collection<StructureObject> parents, Offset offset) {
         if (parents.isEmpty() || children==null) return null;
         Map<Region, StructureObject> soOMap = parents.stream().collect(Collectors.toMap(o->o.getObject(), o->o));
         Region parentObject = children.getContainer(soOMap.keySet(), offset, null); 

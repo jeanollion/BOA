@@ -10,10 +10,13 @@ import boa.data_structure.dao.BasicObjectDAO;
 import boa.data_structure.region_container.ObjectContainer;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.ImageProperties;
+import boa.image.SimpleBoundingBox;
+import boa.image.SimpleOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -134,7 +137,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public double getCalibratedTimePoint() {
         if (getExperiment()==null) return Double.NaN;
         MicroscopyField f = getExperiment().getPosition(getPositionName());
-        int z = (int)Math.round(getObject().getBounds().getZMean());
+        int z = (int)Math.round((getObject().getBounds().zMin()+getObject().getBounds().zMax())/2);
         double res  = f.getInputImages()==null || isRoot() ? Double.NaN : f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
         //double res = Double.NaN; // for old xp TODO change
         if (Double.isNaN(res)) res = timePoint * f.getFrameDuration();
@@ -741,7 +744,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     public ImageProperties getMaskProperties() {return getObject().getImageProperties();}
-    public ImageMask getMask() {return getObject().getMask();}
+    @Override public ImageMask getMask() {return getObject().getMask();}
     public BoundingBox getBounds() {return getObject().getBounds();}
     protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
     public void updateObjectContainer(){
@@ -790,10 +793,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                             Image trackImage = getTrackImage(structureIdx);
                             if (trackImage!=null) {
                                 //logger.debug("object: {}, channel: {}, open from trackImage: offset:{}", this, channelIdx, offsetInTrackImage);
-                                BoundingBox bb = getBounds().duplicate().translateToOrigin().translate(offsetInTrackImage);
+                                BoundingBox bb = new SimpleBoundingBox(getBounds()).resetOffset().translate(offsetInTrackImage);
                                 extendBoundsInZIfNecessary(channelIdx, bb);
                                 Image image = trackImage.crop(bb);
-                                image.resetOffset().addOffset(getBounds());
+                                image.resetOffset().translate(getBounds());
                                 rawImagesC.set(image, channelIdx);
                             } else { // open root and crop
                                 Image rootImage = getRoot().getRawImage(structureIdx);
@@ -837,7 +840,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (image!=null) {
             if (!image.sameDimensions(getMask())) throw new IllegalArgumentException("PreFiltered Image should have same dimensions as object");
             image.setCalibration(getMask());
-            image.resetOffset().addOffset(getBounds()); // ensure same offset
+            image.resetOffset().translate(getBounds()); // ensure same offset
         }
         this.preFilteredImagesS.set(image, structureIdx);
     }
@@ -874,11 +877,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     private BoundingBox extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
-        //logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(positionName).getSizeZ(channelIdx));
-        if (bounds.getSizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
+        //logger.debug("extends bounds Z if necessary: is2D: {}, bounds: {}, sizeZ of image to open: {}", is2D(), bounds, getExperiment().getPosition(getPositionName()).getSizeZ(channelIdx));
+        if (bounds.sizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
             int sizeZ = getExperiment().getPosition(getPositionName()).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
             if (sizeZ>1) {
-                bounds.expandZ(sizeZ-1);
+                //logger.debug("extends bounds Z: is2D: {}, bounds: {}, sizeZ of image to open: {}, new bounds: {}", is2D(), bounds, getExperiment().getPosition(getPositionName()).getSizeZ(channelIdx), new MutableBoundingBox(bounds).expandZ(sizeZ-1));
+                if (bounds instanceof MutableBoundingBox) ((MutableBoundingBox)bounds).expandZ(sizeZ-1);
+                else return new MutableBoundingBox(bounds).expandZ(sizeZ-1);
             }
         }
         return bounds;
@@ -890,7 +895,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return getExperiment().getPosition(getPositionName()).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
     }
     
-    public Image openRawImage(int structureIdx, BoundingBox bounds) {
+    public Image openRawImage(int structureIdx, MutableBoundingBox bounds) {
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
         Image res;
         if (rawImagesC.get(channelIdx)==null) {//opens only within bounds
@@ -919,10 +924,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         else return parent.getFirstParentWithOpenedRawImage(structureIdx);
     }
     
-    public BoundingBox getRelativeBoundingBox(StructureObject stop) throws RuntimeException {
-        BoundingBox res = getObject().getBounds().duplicate();
+    public <T extends BoundingBox<T>> BoundingBox<T> getRelativeBoundingBox(StructureObject stop) throws RuntimeException {
+        SimpleBoundingBox res = new SimpleBoundingBox(getObject().getBounds());
         if (stop==null || stop == getRoot()) return res;
-        else return res.translate(stop.getBounds().duplicate().reverseOffset());
+        else return res.translate(new SimpleOffset(stop.getBounds()).reverseOffset());
     }
     public StructureObject getFirstCommonParent(StructureObject other) {
         if (other==null) return null;

@@ -19,7 +19,7 @@ package boa.image;
 
 import boa.image.ImageLabeller;
 import boa.data_structure.Region;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
 import boa.image.ImageInt;
@@ -84,15 +84,15 @@ public class ImageManipulationTest {
         im.setPixel(2, 2, 4, 3);
         im.setPixel(3, 2, 3, 4);
         im.setPixel(2, 2, 3, 5);
-        BoundingBox bounds = new BoundingBox(2, 3, 2, 3, 3, 4 );
+        MutableBoundingBox bounds = new MutableBoundingBox(2, 3, 2, 3, 3, 4 );
         ImageByte imCrop = im.crop(bounds);
-        assertEquals("crop X size", bounds.getSizeX(), imCrop.getSizeX());
-        assertEquals("crop Y size", bounds.getSizeY(), imCrop.getSizeY());
-        assertEquals("crop Z size", bounds.getSizeZ(), imCrop.getSizeZ());
+        assertEquals("crop X size", bounds.sizeX(), imCrop.sizeX());
+        assertEquals("crop Y size", bounds.sizeY(), imCrop.sizeY());
+        assertEquals("crop Z size", bounds.sizeZ(), imCrop.sizeZ());
         assertEquals("voxel value", 1, imCrop.getPixelInt(2-2, 3-2, 4-3));
-        assertEquals("voxel value", 2, imCrop.getPixelInt(3-imCrop.getOffsetX(), 3-imCrop.getOffsetY(), 4-imCrop.getOffsetZ()));
-        assertEquals("voxel value", 3, imCrop.getPixelInt(2-imCrop.getOffsetX(), 2-imCrop.getOffsetY(), 4-imCrop.getOffsetZ()));
-        assertEquals("voxel value", 4, imCrop.getPixelInt(3-imCrop.getOffsetX(), 2-imCrop.getOffsetY(), 3-imCrop.getOffsetZ()));
+        assertEquals("voxel value", 2, imCrop.getPixelInt(3-imCrop.xMin(), 3-imCrop.yMin(), 4-imCrop.zMin()));
+        assertEquals("voxel value", 3, imCrop.getPixelInt(2-imCrop.xMin(), 2-imCrop.yMin(), 4-imCrop.zMin()));
+        assertEquals("voxel value", 4, imCrop.getPixelInt(3-imCrop.xMin(), 2-imCrop.yMin(), 3-imCrop.zMin()));
         assertEquals("voxel value", 5, imCrop.getPixelInt(2-2, 2-2, 3-3));
     }
     
@@ -101,9 +101,9 @@ public class ImageManipulationTest {
     public void testCropImageNegativeValues() {
         ImageByte im = new ImageByte("", 4, 5, 6);
         im.setPixel(2, 3, 4, 1);
-        BoundingBox bounds = new BoundingBox(-1, 3, -2, 5, -3, 4);
+        MutableBoundingBox bounds = new MutableBoundingBox(-1, 3, -2, 5, -3, 4);
         ImageByte imCrop = im.crop(bounds);
-        BoundingBox bounds2 = im.getBoundingBox();
+        MutableBoundingBox bounds2 = im.getBoundingBox();
         bounds2.translate(1, 2, 3);
         ImageByte imCrop2 = imCrop.crop(bounds2);
         assertArrayEquals("voxel values2", im.getPixelArray()[4], imCrop2.getPixelArray()[4]);
@@ -116,27 +116,27 @@ public class ImageManipulationTest {
         im.setPixel(3, 3, 4, 2);
         im.setPixel(2, 4, 4, 1);
         im.setPixel(2, 3, 5, 1);
-        BoundingBox bounds = new BoundingBox(2, 3, 3, 4, 4, 5);
+        MutableBoundingBox bounds = new MutableBoundingBox(2, 3, 3, 4, 4, 5);
         ImageByte imCrop = im.cropLabel(2, bounds);
-        assertEquals("crop X size", bounds.getSizeX(), imCrop.getSizeX());
-        assertEquals("crop Y size", bounds.getSizeY(), imCrop.getSizeY());
-        assertEquals("crop Z size", bounds.getSizeZ(), imCrop.getSizeZ());
+        assertEquals("crop X size", bounds.sizeX(), imCrop.sizeX());
+        assertEquals("crop Y size", bounds.sizeY(), imCrop.sizeY());
+        assertEquals("crop Z size", bounds.sizeZ(), imCrop.sizeZ());
         
         assertEquals("voxel value label2", 1, imCrop.getPixelInt(2-2, 3-3, 4-4));
-        assertEquals("voxel value label2", 1, imCrop.getPixelInt(3-imCrop.getOffsetX(), 3-imCrop.getOffsetY(), 4-imCrop.getOffsetZ()));
-        assertEquals("voxel value label1", 0, imCrop.getPixelInt(2-imCrop.getOffsetX(), 4-imCrop.getOffsetY(), 4-imCrop.getOffsetZ()));
-        assertEquals("voxel value label1", 0, imCrop.getPixelInt(2-imCrop.getOffsetX(), 3-imCrop.getOffsetY(), 5-imCrop.getOffsetZ()));
+        assertEquals("voxel value label2", 1, imCrop.getPixelInt(3-imCrop.xMin(), 3-imCrop.yMin(), 4-imCrop.zMin()));
+        assertEquals("voxel value label1", 0, imCrop.getPixelInt(2-imCrop.xMin(), 4-imCrop.yMin(), 4-imCrop.zMin()));
+        assertEquals("voxel value label1", 0, imCrop.getPixelInt(2-imCrop.xMin(), 3-imCrop.yMin(), 5-imCrop.zMin()));
     }
     
     @Test
     public void testCropLabelImageNegativeValues() {
         ImageByte im = new ImageByte("", 4, 5, 6);
         im.setPixel(2, 3, 4, 1);
-        BoundingBox bounds = new BoundingBox(-1, 3, -2, 5, -3, 4);
+        MutableBoundingBox bounds = new MutableBoundingBox(-1, 3, -2, 5, -3, 4);
         ImageByte imCrop = im.cropLabel(1, bounds);
         assertEquals("value value", 1, imCrop.getPixelInt(2+1, 3+2, 4+3));
         
-        BoundingBox bounds2 = im.getBoundingBox();
+        MutableBoundingBox bounds2 = im.getBoundingBox();
         bounds2.translate(1, 2, 3);
         ImageByte imCrop2 = imCrop.crop(bounds2);
         
@@ -177,7 +177,7 @@ public class ImageManipulationTest {
         
         ImageByte mask2 = new ImageByte("", mask);
         for (Region o : objects) o.draw(mask2, 1);
-        for (int z = 0; z < mask2.getSizeZ(); ++z) assertArrayEquals("Spot voxels slice:"+z, mask.getPixelArray()[z], mask2.getPixelArray()[z]);       
+        for (int z = 0; z < mask2.sizeZ(); ++z) assertArrayEquals("Spot voxels slice:"+z, mask.getPixelArray()[z], mask2.getPixelArray()[z]);       
     }
     
     @Test
@@ -230,7 +230,7 @@ public class ImageManipulationTest {
         
         ImageByte mask2 = new ImageByte("", mask);
         for (Region o : objects) o.draw(mask2, 1);
-        for (int z = 0; z < mask2.getSizeZ(); ++z) assertArrayEquals("Spot voxels slice:"+z, mask.getPixelArray()[z], mask2.getPixelArray()[z]);       
+        for (int z = 0; z < mask2.sizeZ(); ++z) assertArrayEquals("Spot voxels slice:"+z, mask.getPixelArray()[z], mask2.getPixelArray()[z]);       
     }
     
     

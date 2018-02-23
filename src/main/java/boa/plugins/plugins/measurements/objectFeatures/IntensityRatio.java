@@ -18,7 +18,7 @@
 package boa.plugins.plugins.measurements.objectFeatures;
 
 import boa.data_structure.Region;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
 import boa.utils.Utils;
 

@@ -19,7 +19,7 @@ package boa.image.processing.neighborhood;
 
 import static boa.core.Processor.logger;
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageProperties;
@@ -103,9 +103,9 @@ public class CylindricalNeighborhood extends DisplacementNeighborhood {
         
     }
     
-    @Override public BoundingBox getBoundingBox() {
+    @Override public MutableBoundingBox getBoundingBox() {
         int r = (int) radius;
-        return new BoundingBox(-r, r, -r, r, -(int)radiusZDown, (int)radiusZUp);
+        return new MutableBoundingBox(-r, r, -r, r, -(int)radiusZDown, (int)radiusZUp);
     }
     
     public ImageByte drawNeighborhood(ImageByte output) {
@@ -119,8 +119,8 @@ public class CylindricalNeighborhood extends DisplacementNeighborhood {
             if (is3D) output = new ImageByte("3D CylindricalNeighborhood: XY:"+this.radius+" Z (down):"+radZDown+" Z (up):"+radZUp, radXY*2+1, radXY*2+1, (radZUp+radZDown)+1);
             else output = new ImageByte("2D CylindricalNeighborhood: XY:"+this.radius, radXY*2+1, radXY*2+1, 1);
         } else {
-            centerXY = output.getSizeX()/2+1;
-            centerZ = output.getSizeZ()/2+1;
+            centerXY = output.sizeX()/2+1;
+            centerZ = output.sizeZ()/2+1;
         }
         if (is3D) for (int i = 0; i<this.dx.length;++i) {
             //logger.debug("set pix: x: {}/{}, y: {}/{}, z: {}/{}", centerXY+dx[i], output.getSizeX()-1, centerXY+dy[i], output.getSizeY()-1,  centerZ+dz[i], output.getSizeZ()-1);

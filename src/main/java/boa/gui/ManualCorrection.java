@@ -41,7 +41,7 @@ import static boa.data_structure.StructureObject.trackErrorNext;
 import static boa.data_structure.StructureObject.trackErrorPrev;
 import boa.data_structure.StructureObjectUtils;
 import fiji.plugin.trackmate.Spot;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
@@ -428,16 +428,16 @@ public class ManualCorrection {
                 StructureObject globalParent = e.getKey().getParent(parentStructureIdx);
                 StructureObject subParent = e.getKey();
                 boolean subSegmentation = !subParent.equals(globalParent);
-                boolean ref2D = subParent.is2D() && globalParent.getPreFilteredImage(structureIdx).getSizeZ()>1;
+                boolean ref2D = subParent.is2D() && globalParent.getPreFilteredImage(structureIdx).sizeZ()>1;
                 
                 Image input = globalParent.getPreFilteredImage(structureIdx);
-                if (subSegmentation) input = input.cropWithOffset(ref2D?subParent.getBounds().duplicate().fitToImageZ(input):subParent.getBounds());
+                if (subSegmentation) input = input.cropWithOffset(ref2D?new MutableBoundingBox(subParent.getBounds()).copyZ(input):subParent.getBounds());
                 
                 // generate image mask without old objects
                 ImageByte mask = e.getKey().getMask() instanceof ImageInteger ? TypeConverter.cast((ImageInteger)e.getKey().getMask(), new ImageByte("Manual Segmentation Mask", 0, 0, 0)) : TypeConverter.toByteMask(e.getKey().getMask(), null, 1);
                 
                 List<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
-                for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
+                for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new MutableBoundingBox(0, 0, 0));
                 if (test) iwm.getDisplayer().showImage((ImageByte)mask, 0, 1);
                 // remove seeds out of mask
                 ImageMask refMask =  ref2D ? new ImageMask2D(mask) : mask;

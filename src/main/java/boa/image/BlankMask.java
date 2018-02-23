@@ -1,12 +1,9 @@
 package boa.image;
 
 
-public class BlankMask extends BoundingBox implements ImageMask<BlankMask> {
-    float scaleXY, scaleZ;
-    public BlankMask(int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, float scaleXY, float scaleZ) {
-        super(offsetX, offsetX+sizeX-1, offsetY, offsetY+sizeY-1, offsetZ, offsetZ+sizeZ-1);
-        this.scaleXY=scaleXY;
-        this.scaleZ=scaleZ;
+public class BlankMask extends SimpleImageProperties<BlankMask> implements ImageMask<BlankMask> {
+    public BlankMask(int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, double scaleXY, double scaleZ) {
+        super(new SimpleBoundingBox(offsetX, offsetX+sizeX-1, offsetY, offsetY+sizeY-1, offsetZ, offsetZ+sizeZ-1), scaleXY, scaleZ);
     }
 
     public BlankMask(int sizeX, int sizeY, int sizeZ) {
@@ -14,11 +11,11 @@ public class BlankMask extends BoundingBox implements ImageMask<BlankMask> {
     }
     
     public BlankMask(ImageProperties properties) {
-        this(properties.getSizeX(), properties.getSizeY(), properties.getSizeZ(), properties.getOffsetX(), properties.getOffsetY(), properties.getOffsetZ(), properties.getScaleXY(), properties.getScaleZ());
+        super(properties);
     }
     
-    public BlankMask(BoundingBox bounds, float scaleXY, float scaleZ) {
-        this(bounds.getSizeX(), bounds.getSizeY(), bounds.getSizeZ(), bounds.getxMin(), bounds.getyMin(), bounds.getzMin(), scaleXY, scaleZ);
+    public BlankMask(BoundingBox bounds, double scaleXY, double scaleZ) {
+        super(bounds, scaleXY, scaleZ);
     }
     
     @Override
@@ -56,83 +53,4 @@ public class BlankMask extends BoundingBox implements ImageMask<BlankMask> {
         return new BlankMask(this, scaleXY, scaleZ);
     }
 
-    @Override
-    public String getName() {
-        return "mask";
-    }
-
-    @Override
-    public float getScaleXY() {
-        return scaleXY;
-    }
-
-    @Override
-    public float getScaleZ() {
-        return scaleZ;
-    }
-
-    @Override
-    public boolean contains(int x, int y, int z) {
-        return 0<=x && xMax-xMin>=x && 0<=y && yMax-yMin>=y && 0<=z && zMax-zMin>=z;
-    }
-
-    @Override
-    public BoundingBox getBoundingBox() {
-        return super.duplicate();
-    }
-
-
-    @Override
-    public ImageProperties getProperties() {
-        return this.duplicateMask();
-    }
-
-    @Override
-    public BlankMask addOffset(BoundingBox bounds) {
-        translate(bounds);
-        return this;
-    }
-    @Override
-    public BlankMask addOffset(ImageProperties bounds) {
-        translate(bounds.getOffsetX(), bounds.getOffsetY(), bounds.getOffsetZ());
-        return this;
-    }
-
-    @Override
-    public int getOffsetX() {
-        return getxMin();
-    }
-
-    @Override
-    public int getOffsetXY() {
-        return xMin+yMin*getSizeX();
-    }
-
-    @Override
-    public int getOffsetY() {
-        return yMin;
-    }
-
-    @Override
-    public int getOffsetZ() {
-        return zMin;
-    }
-    public BlankMask resetOffset() {
-        this.translateToOrigin();
-        return this;
-    }
-
-    @Override
-    public BlankMask setCalibration(ImageProperties properties) {
-        this.scaleXY = properties.getScaleXY();
-        this.scaleZ = properties.getScaleZ();
-        return this;
-    }
-
-    @Override
-    public BlankMask setCalibration(float scaleXY, float scaleZ) {
-        this.scaleXY = scaleXY;
-        this.scaleZ = scaleZ;
-        return this;
-    }
 }

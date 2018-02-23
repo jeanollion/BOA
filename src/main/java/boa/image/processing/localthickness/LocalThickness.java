@@ -85,7 +85,7 @@ public class LocalThickness {
             ImagePlus localThickness = cult.run(distRidge); // TODO use array of EDM to save memory
             distRidge.flush();
             ImageFloat res = (ImageFloat) IJImageWrapper.wrap(localThickness);
-            res.addOffset(in);
+            res.translate(in);
             res.setCalibration(in);
             return res;
         }

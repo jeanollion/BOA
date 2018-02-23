@@ -17,7 +17,7 @@
  */
 package boa.data_structure.image_container;
 
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.data_structure.input_image.InputImage;
 import boa.data_structure.input_image.InputImagesImpl;
@@ -60,7 +60,7 @@ public class MemoryImageContainer extends MultipleImageContainer {
 
     @Override
     public int getSizeZ(int channel) {
-        return imageCT[0][0].getSizeZ();
+        return imageCT[0][0].sizeZ();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class MemoryImageContainer extends MultipleImageContainer {
     }
 
     @Override
-    public Image getImage(int timePoint, int channel, BoundingBox bounds) {
+    public Image getImage(int timePoint, int channel, MutableBoundingBox bounds) {
         return getImage(timePoint, channel).crop(bounds);
     }
 

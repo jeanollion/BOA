@@ -18,7 +18,7 @@
 package boa.image.processing.neighborhood;
 
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageMask;
 import java.util.HashMap;
@@ -52,8 +52,8 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
         currentNeighborhood.setPixels(x, y, z, image, mask);
     }
     
-    @Override public BoundingBox getBoundingBox() {
-        BoundingBox res=null;
+    @Override public MutableBoundingBox getBoundingBox() {
+        MutableBoundingBox res=null;
         for (Neighborhood n : neighborhoodZ.values()) {
             if (res == null) res = n.getBoundingBox();
             else res.expand(n.getBoundingBox());

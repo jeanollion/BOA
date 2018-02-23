@@ -36,11 +36,11 @@ public class RadonProjection {
         int projIdx = 0;
 
         // Project each pixel in the image
-        int Xcenter = image.getSizeX() / 2;
-        int Ycenter = image.getSizeY() / 2;
+        int Xcenter = image.sizeX() / 2;
+        int Ycenter = image.sizeY() / 2;
         
         //if no. scans is greater than the image minimal dimension, then scale will be <1
-        double scale = Math.min(image.getSizeX(), image.getSizeY()) / (double)proj.length;
+        double scale = Math.min(image.sizeX(), image.sizeY()) / (double)proj.length;
 
         int N = 0;
         val = 0;
@@ -128,7 +128,7 @@ public class RadonProjection {
     
     private static void paste(float[] source, ImageFloat dest, int x) {
         float[] pixDest = dest.getPixelArray()[0];
-        for (int i = 0; i<source.length; ++i) pixDest[x + i*dest.getSizeX()] = source[i];
+        for (int i = 0; i<source.length; ++i) pixDest[x + i*dest.sizeX()] = source[i];
     }
 
     public static float max(float[] array) {

@@ -20,6 +20,7 @@ package boa.configuration.parameters;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.ImageProperties;
+import boa.image.SimpleImageProperties;
 import java.util.Collection;
 import boa.plugins.PostFilter;
 
@@ -41,7 +42,7 @@ public class PostFilterSequence extends PluginParameterList<PostFilter> {
                 if (!configured) ParameterUtils.configureStructureParameters(structureIdx, this);
             }
         }
-        ImageProperties prop = objectPopulation.getImageProperties().getProperties();
+        ImageProperties prop = new SimpleImageProperties(objectPopulation.getImageProperties());
         for (PostFilter p : this.get()) objectPopulation = p.runPostFilter(parent, structureIdx, objectPopulation);
         objectPopulation.setProperties(prop, true);
         return objectPopulation;

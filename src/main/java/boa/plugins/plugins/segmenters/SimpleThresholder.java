@@ -58,8 +58,8 @@ public class SimpleThresholder implements Segmenter {
         Thresholder t =  threshold.instanciatePlugin();
         double thresh = t.runThresholder(input, structureObject);
         byte[][] pixels = mask.getPixelArray();
-        for (int z = 0; z<input.getSizeZ(); ++z) {
-            for (int xy = 0; xy<input.getSizeXY(); ++xy) {
+        for (int z = 0; z<input.sizeZ(); ++z) {
+            for (int xy = 0; xy<input.sizeXY(); ++xy) {
                 if (input.getPixel(xy, z)>=thresh) pixels[z][xy]=1;
             }
         }

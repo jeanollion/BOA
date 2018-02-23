@@ -96,7 +96,7 @@ public class MultiScaleWatershedTransform {
             }
         }
         logger.trace("watershed transform: number of seeds: {} segmented map type: {}", spotNumber, segmentedMap.getClass().getSimpleName());
-        is3D=mask.getSizeZ()>1;   
+        is3D=mask.sizeZ()>1;   
         if (propagationCriterion==null) setPropagationCriterion(new DefaultPropagationCriterion());
         else setPropagationCriterion(propagationCriterion);
         if (fusionCriterion==null) setFusionCriterion(new DefaultFusionCriterion());
@@ -121,7 +121,7 @@ public class MultiScaleWatershedTransform {
     public void run() {
         
         double rad = lowConnectivity ? 1 : 1.5;
-        EllipsoidalNeighborhood neigh = segmentedMap.getSizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
+        EllipsoidalNeighborhood neigh = segmentedMap.sizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
         
         for (Spot s : spots) {
             if (s!=null) {
@@ -315,7 +315,7 @@ public class MultiScaleWatershedTransform {
         }
         
         public Region toRegion(int label) {
-            return new Region(voxels, label, segmentedMap.getSizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
+            return new Region(voxels, label, segmentedMap.sizeZ()==1, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
         }
         
         public double getQuality() {

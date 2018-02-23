@@ -119,7 +119,7 @@ public class ImageWriter {
                     for (int c = 0; c<imageTC[series][0].length; c++) {
                         logger.trace("save image: time: {} channel: {}", t, c);
                         Image curIm = imageTC[series][t][c];
-                        for (int z = 0; z<curIm.getSizeZ(); z++) {
+                        for (int z = 0; z<curIm.sizeZ(); z++) {
                             writer.saveBytes(i++, getBytePlane(curIm, z, littleEndian));
 
                         }
@@ -147,7 +147,7 @@ public class ImageWriter {
             writer.setSeries(0);
             Logger.getLogger(ImageWriter.class.getName()).info("format: "+writer.getFormat());
             int i=0;
-            for (int z = 0; z<image.getSizeZ(); z++) {
+            for (int z = 0; z<image.sizeZ(); z++) {
                 writer.saveBytes(i++, getBytePlane(image, z, littleEndian));
             }
             writer.close();
@@ -176,7 +176,7 @@ public class ImageWriter {
         else if (image instanceof ImageFloat) pixelType=FormatTools.getPixelTypeString(FormatTools.FLOAT); //UINT32?
         else throw new IllegalArgumentException("Image should be of type byte, short or float");
         
-        MetadataTools.populateMetadata(meta, 0, null, false, "XYZCT", pixelType, image.getSizeX(), image.getSizeY(), image.getSizeZ(), channelNumber, timePointNumber, 1);
+        MetadataTools.populateMetadata(meta, 0, null, false, "XYZCT", pixelType, image.sizeX(), image.sizeY(), image.sizeZ(), channelNumber, timePointNumber, 1);
         //System.out.println("NTimes:"+timePointNumber+" NChannel:"+channelNumber);
         meta.setPixelsPhysicalSizeX(new Length(image.getScaleXY(), UNITS.MICROM), 0);
         meta.setPixelsPhysicalSizeY(new Length(image.getScaleXY(), UNITS.MICROM), 0);
@@ -194,7 +194,7 @@ public class ImageWriter {
             else if (imageSTC[series][0][0] instanceof ImageFloat) pixelType=FormatTools.getPixelTypeString(FormatTools.FLOAT); //UINT32?
             else throw new IllegalArgumentException("Image should be of type byte, short or float");
 
-            MetadataTools.populateMetadata(meta, series, null, false, "XYZCT", pixelType, imageSTC[series][0][0].getSizeX(), imageSTC[series][0][0].getSizeY(), imageSTC[series][0][0].getSizeZ(), imageSTC[series][0].length, imageSTC[series].length, 1);
+            MetadataTools.populateMetadata(meta, series, null, false, "XYZCT", pixelType, imageSTC[series][0][0].sizeX(), imageSTC[series][0][0].sizeY(), imageSTC[series][0][0].sizeZ(), imageSTC[series][0].length, imageSTC[series].length, 1);
             //System.out.println("NTimes:"+timePointNumber+" NChannel:"+channelNumber);
             meta.setPixelsPhysicalSizeX(new Length(imageSTC[series][0][0].getScaleXY(), UNITS.MICROM), 0);
             meta.setPixelsPhysicalSizeY(new Length(imageSTC[series][0][0].getScaleXY(), UNITS.MICROM), 0);

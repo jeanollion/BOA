@@ -71,7 +71,7 @@ public class TopHat implements PreFilter, Filter {
         Image smoothed = smooth ? ImageFeatures.gaussianSmooth(input, 1.5, false) : input ;
         Image bck =darkBackground ? open(smoothed, smooth ? smoothed : null, n) : close(smoothed, smooth ? smoothed : null, n);
         ImageOperations.addImage(input, bck, bck, -1); //1-bck
-        bck.resetOffset().addOffset(input);
+        bck.resetOffset().translate(input);
         return bck;
     }
 

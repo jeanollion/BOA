@@ -29,7 +29,7 @@ import boa.data_structure.StructureObjectUtils;
 import static boa.data_structure.StructureObjectUtils.getInclusionParentMap;
 import ij.ImagePlus;
 import ij.process.ImageConverter;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import java.awt.Color;
 import java.util.List;
@@ -72,7 +72,7 @@ public class GenerateImages {
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(mcTrack, 1);
         Image imBact = i.generateRawImage(1, false);
         Image imMut = i.generateRawImage(2, false);
-        BoundingBox crop = new BoundingBox(0, imBact.getSizeX()-1, 0, yMax, 0, 0);
+        MutableBoundingBox crop = new MutableBoundingBox(0, imBact.sizeX()-1, 0, yMax, 0, 0);
         imBact=imBact.crop(crop);
         imMut=imMut.crop(crop);
         iwm.addImage(imMut, i, 2, true);

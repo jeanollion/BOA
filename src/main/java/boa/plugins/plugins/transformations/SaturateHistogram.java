@@ -20,7 +20,7 @@ package boa.plugins.plugins.transformations;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
-import boa.image.BoundingBox.LoopFunction;
+import static boa.image.BoundingBox.loop;
 import boa.image.Image;
 import java.util.ArrayList;
 import boa.plugins.Transformation;
@@ -57,14 +57,12 @@ public class SaturateHistogram implements Transformation {
             final double factor = (thldMax - thld) / (maxObs - thld);
             final double add = thld * (1 - factor);
 
-            image.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
-                public void loop(int x, int y, int z) {
-                    float value = image.getPixel(x, y, z);
-                    if (value>thld) image.setPixel(x, y, z, value * factor + add);
-                }
+            loop(image.getBoundingBox().resetOffset(), (int x, int y, int z) -> {
+                float value = image.getPixel(x, y, z);
+                if (value>thld) image.setPixel(x, y, z, value * factor + add);
             });
         } else {
-            image.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
+            loop(image.getBoundingBox().resetOffset(), (int x, int y, int z) -> {
                 float value = image.getPixel(x, y, z);
                 if (value>thld) image.setPixel(x, y, z, thld);
             });

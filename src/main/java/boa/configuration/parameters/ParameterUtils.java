@@ -36,7 +36,7 @@ import boa.data_structure.image_container.MemoryImageContainer;
 import boa.data_structure.Selection;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;

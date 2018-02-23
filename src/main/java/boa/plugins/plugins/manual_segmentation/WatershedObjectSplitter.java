@@ -26,7 +26,7 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
@@ -81,7 +81,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
                 }
                 Comparator<Region> c = new Comparator<Region>() {
                     public int compare(Region o1, Region o2) {
-                        return Double.compare(o1.getMeanVoxelValue(), o2.getMeanVoxelValue());
+                        return Double.compare(getMeanVoxelValue(o1), getMeanVoxelValue(o2));
                     }
                 };
                 Collections.sort(seeds, c);
@@ -153,6 +153,17 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         }
         return false;
     }
+    
+    public static double getMeanVoxelValue(Region r) {
+        if (r.getVoxels().isEmpty()) return Double.NaN;
+        else if (r.getVoxels().size()==1) return r.getVoxels().iterator().next().value;
+        else {
+            double sum = 0;
+            for (Voxel v : r.getVoxels()) sum+=v.value;
+            return sum/(double)r.getVoxels().size();
+        }
+    }
+    
     
     public Parameter[] getParameters() {
         return parameters;

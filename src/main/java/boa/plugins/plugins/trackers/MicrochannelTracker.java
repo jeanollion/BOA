@@ -34,7 +34,11 @@ import static boa.data_structure.StructureObjectUtils.setTrackLinks;
 import fiji.plugin.trackmate.Spot;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
+import static boa.image.BoundingBox.getIntersection;
+import static boa.image.BoundingBox.isIncluded2D;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
+import boa.image.SimpleBoundingBox;
 import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -133,7 +137,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
             logger.debug("No objects to track");
             return;
         }
-        double meanWidth = Utils.flattenMap(map).stream().mapToDouble(o->o.getBounds().getSizeX()).average().getAsDouble()*parentTrack.get(0).getScaleXY();
+        double meanWidth = Utils.flattenMap(map).stream().mapToDouble(o->o.getBounds().sizeX()).average().getAsDouble()*parentTrack.get(0).getScaleXY();
         if (debug) logger.debug("mean width {}", meanWidth );
         double maxDistance = maxShiftGC.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
         double ftfDistance = maxDistanceFTFWidthFactor.getValue().doubleValue() *meanWidth;
@@ -224,16 +228,16 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                 StructureObject o = track.get(i);
                 BoundingBox b = o.getBounds();
                 BoundingBox parentBounds = o.getParent().getBounds();
-                int offY = b.getyMin() + shift; // shift was not included before
+                int offY = b.yMin() + shift; // shift was not included before
                 int offX; // if width change -> offset X change
                 //int offX = (int)Math.round( b.getXMean()-width/2d ); 
-                double offXd = b.getXMean()-(width-1d)/2d;
+                double offXd = b.xMean()-(width-1d)/2d;
                 double offXdr = offXd-(int)offXd;
                 if (false && offXdr==0) offX=(int)offXd;
                 else { // adjust localy: compare light in both cases
-                    BoundingBox bLeft = new BoundingBox((int)offXd, (int)offXd+width-1, offY, offY+b.getSizeY()-1, b.getzMin(), b.getzMax());
-                    BoundingBox bRight = bLeft.duplicate().translate(1, 0, 0);
-                    BoundingBox bLeft2 = bLeft.duplicate().translate(-1, 0, 0);
+                    MutableBoundingBox bLeft = new MutableBoundingBox((int)offXd, (int)offXd+width-1, offY, offY+b.sizeY()-1, b.zMin(), b.zMax());
+                    MutableBoundingBox bRight = bLeft.duplicate().translate(1, 0, 0);
+                    MutableBoundingBox bLeft2 = bLeft.duplicate().translate(-1, 0, 0);
                     bLeft.contract(parentBounds);
                     bRight.contract(parentBounds);
                     bLeft2.contract(parentBounds);
@@ -249,16 +253,16 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                 
                 
                 
-                if (width+offX>parentBounds.getxMax() || offX<0) {
+                if (width+offX>parentBounds.xMax() || offX<0) {
                     if (debug) logger.debug("remove out of bound track: {}", track.get(0).getTrackHead());
                     toRemove.addAll(track);
                     break;
                     //currentWidth = parentBounds.getxMax()-offX;
                     //if (currentWidth<0) logger.error("negative wigth: object:{} parent: {}, current: {}, prev: {}, next:{}", o, o.getParent().getBounds(), o.getBounds(), o.getPrevious().getBounds(), o.getNext().getBounds());
                 }
-                int height = b.getSizeY();
-                if (height+offY>parentBounds.getyMax()) height = parentBounds.getyMax()-offY;
-                BlankMask m = new BlankMask( width, height, b.getSizeZ(), offX, offY, b.getzMin(), o.getScaleXY(), o.getScaleZ());
+                int height = b.sizeY();
+                if (height+offY>parentBounds.yMax()) height = parentBounds.yMax()-offY;
+                BlankMask m = new BlankMask( width, height, b.sizeZ(), offX, offY, b.zMin(), o.getScaleXY(), o.getScaleZ());
                 o.setObject(new Region(m, o.getIdx()+1, o.is2D()));
             }
         }
@@ -324,12 +328,12 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                     } else {
                         StructureObject refPrev=localReference.get(prev.getFrame());
                         StructureObject refNext=localReference.get(next.getFrame());
-                        int deltaOffX = Math.round((prev.getBounds().getxMin()-refPrev.getBounds().getxMin() + next.getBounds().getxMin()-refNext.getBounds().getxMin() )/2);
-                        int deltaOffY = Math.round((prev.getBounds().getyMin()-refPrev.getBounds().getyMin() + next.getBounds().getyMin()-refNext.getBounds().getyMin() ) /2);
-                        int deltaOffZ = Math.round((prev.getBounds().getzMin()-refPrev.getBounds().getzMin() + next.getBounds().getzMin()-refNext.getBounds().getzMin() ) /2);
-                        int xSize = Math.round((prev.getBounds().getSizeX()+next.getBounds().getSizeX())/2);
-                        int ySize = Math.round((prev.getBounds().getSizeY()+next.getBounds().getSizeY())/2);
-                        int zSize = Math.round((prev.getBounds().getSizeZ()+next.getBounds().getSizeZ())/2);
+                        int deltaOffX = Math.round((prev.getBounds().xMin()-refPrev.getBounds().xMin() + next.getBounds().xMin()-refNext.getBounds().xMin() )/2);
+                        int deltaOffY = Math.round((prev.getBounds().yMin()-refPrev.getBounds().yMin() + next.getBounds().yMin()-refNext.getBounds().yMin() ) /2);
+                        int deltaOffZ = Math.round((prev.getBounds().zMin()-refPrev.getBounds().zMin() + next.getBounds().zMin()-refNext.getBounds().zMin() ) /2);
+                        int xSize = Math.round((prev.getBounds().sizeX()+next.getBounds().sizeX())/2);
+                        int ySize = Math.round((prev.getBounds().sizeY()+next.getBounds().sizeY())/2);
+                        int zSize = Math.round((prev.getBounds().sizeZ()+next.getBounds().sizeZ())/2);
                         int startFrame = prev.getFrame()+1;
                         if (debug) logger.debug("mc close gap between: {}&{}, delta offset: [{};{};{}], size:[{};{};{}], prev:{}, next:{}", prev.getFrame(), next.getFrame(), deltaOffX, deltaOffY, deltaOffZ, xSize, ySize, zSize, prev.getBounds(), next.getBounds());
                         if (debug) logger.debug("references: {}", localReference.size());
@@ -338,16 +342,15 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                             StructureObject parent = parentTrack.get(f-minParentFrame);
                             StructureObject ref=localReference.get(f);
                             if (debug) logger.debug("mc close gap: f:{}, ref: {}, parent: {}", f, ref, parent);
-                            int offX = deltaOffX + ref.getBounds().getxMin();
-                            int offY = deltaOffY + ref.getBounds().getyMin();
-                            int offZ = deltaOffZ + ref.getBounds().getzMin();
+                            int offX = deltaOffX + ref.getBounds().xMin();
+                            int offY = deltaOffY + ref.getBounds().yMin();
+                            int offZ = deltaOffZ + ref.getBounds().zMin();
                             
-                            BlankMask m = new BlankMask( xSize, ySize+offY>=parent.getBounds().getSizeY()?parent.getBounds().getSizeY()-offY:ySize, zSize, offX, offY, offZ, ref.getScaleXY(), ref.getScaleZ());
-                            BoundingBox bds = m.getBoundingBox();
-                            int maxIntersect = parent.getChildren(structureIdx).stream().mapToInt(o->o.getBounds().getIntersection(bds).getSizeXYZ()).max().getAsInt();
-                            if (!bds.isIncluded2D(parent.getBounds()) || maxIntersect>0) {
+                            BlankMask m = new BlankMask( xSize, ySize+offY>=parent.getBounds().sizeY()?parent.getBounds().sizeY()-offY:ySize, zSize, offX, offY, offZ, ref.getScaleXY(), ref.getScaleZ());
+                            int maxIntersect = parent.getChildren(structureIdx).stream().mapToInt(o->getIntersection(o.getBounds(), m).getSizeXYZ()).max().getAsInt();
+                            if (!isIncluded2D(m, parent.getBounds()) || maxIntersect>0) {
                                 if (debug) {
-                                    logger.debug("stop filling gap! parent:{}, gapfilled:{}, maxIntersect: {} erase from: {} to {}", parent.getBounds(), m.getBoundingBox(), maxIntersect, gcPrev, prev);
+                                    logger.debug("stop filling gap! parent:{}, gapfilled:{}, maxIntersect: {} erase from: {} to {}", parent.getBounds(), new SimpleBoundingBox(m), maxIntersect, gcPrev, prev);
                                     logger.debug("ref: {} ({}), prev:{}({})", ref, ref.getBounds(), ref.getPrevious(), ref.getPrevious().getBounds());
                                 }
                                 // stop filling gap 

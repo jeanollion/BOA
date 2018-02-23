@@ -97,14 +97,14 @@ public class SpotCompartiment {
                 return (Boolean)o;
             }
             if (!isEndOfChannel(prev) || !isEndOfChannel(next.get(0))) return false; // only end of channel
-            return (double)next.get(0).getObject().getSize() < prev.getObject().getSize() * sizeProportion;
+            return (double)next.get(0).getObject().size() < prev.getObject().size() * sizeProportion;
         } else return false;
     }
     public static boolean isEndOfChannel(StructureObject o) {
-        return (o==Collections.max(o.getParent().getChildren(o.getStructureIdx()), (o1, o2)->Double.compare(o1.getBounds().getYMean(), o2.getBounds().getYMean())));
+        return (o==Collections.max(o.getParent().getChildren(o.getStructureIdx()), (o1, o2)->Double.compare(o1.getBounds().yMean(), o2.getBounds().yMean())));
     }
     @Override public String toString() {
-        return "{"+object.toString()+"offX:"+object.getBounds().getxMin()*object.getScaleXY()+";Y="+object.getBounds().getyMin()*object.getScaleZ()+"|isUpperDaugther:"+upperDaughterCell+"|Ylim:"+Utils.toStringArray(middleYLimits)+"|up:"+Utils.toStringArray(offsetUp)+"|down:"+Utils.toStringArray(offsetDown)+"|middle:"+Utils.toStringArray(offsetDivisionMiddle);
+        return "{"+object.toString()+"offX:"+object.getBounds().xMin()*object.getScaleXY()+";Y="+object.getBounds().yMin()*object.getScaleZ()+"|isUpperDaugther:"+upperDaughterCell+"|Ylim:"+Utils.toStringArray(middleYLimits)+"|up:"+Utils.toStringArray(offsetUp)+"|down:"+Utils.toStringArray(offsetDown)+"|middle:"+Utils.toStringArray(offsetDivisionMiddle);
     }
     
     public double[] getOffset(Localization localization) {
@@ -118,14 +118,14 @@ public class SpotCompartiment {
         double xMean = 0, zMean = 0, count=0;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
-        int yMin = marginYUp>=0 ? o.getBounds().getyMin()+marginYUp : o.getBounds().getyMin();
-        int yMax = o.getBounds().getyMin()+marginYDown;
-        if (yMax>o.getBounds().getyMax()) yMax = o.getBounds().getyMax();
+        int yMin = marginYUp>=0 ? o.getBounds().yMin()+marginYUp : o.getBounds().yMin();
+        int yMax = o.getBounds().yMin()+marginYDown;
+        if (yMax>o.getBounds().yMax()) yMax = o.getBounds().yMax();
         if (yMax-yMin<7) yMin = yMax-7;
-        if (yMin<o.getBounds().getyMin()) yMin = o.getBounds().getyMin();
+        if (yMin<o.getBounds().yMin()) yMin = o.getBounds().yMin();
         for (int y = yMin; y<=yMax; ++y) {
-            for (int z = bds.getzMin(); z<=bds.getzMax(); ++z) {
-                for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
+            for (int z = bds.zMin(); z<=bds.zMax(); ++z) {
+                for (int x = bds.xMin(); x<=bds.xMax(); ++x) {
                     if (mask.insideMaskWithOffset(x, y, z)) {
                         xMean+=x;
                         zMean+=z;
@@ -137,24 +137,24 @@ public class SpotCompartiment {
         if (count==0) {
             double[] center = o.getGeomCenter(false); // more stable using cell's center for x & z
             xMean = center[0];
-            zMean = (center.length>2?center[2]:o.getBounds().getZMean());
+            zMean = (center.length>2?center[2]:o.getBounds().zMean());
         } else {
             xMean/=count;
             zMean/=count;
         }
         
-        return new double[]{ xMean * o.getScaleXY(), (o.getBounds().getyMin()+margin)* o.getScaleXY(), zMean * o.getScaleZ()};
+        return new double[]{ xMean * o.getScaleXY(), (o.getBounds().yMin()+margin)* o.getScaleXY(), zMean * o.getScaleZ()};
     }
     
     private static double[][] getPoles(Region o, double proportionOfWidth, double yLenghtForXMean) {
-        int[] ySize = new int[o.getBounds().getSizeY()];
+        int[] ySize = new int[o.getBounds().sizeY()];
         double meanYSize = 0;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
-        int yMin = bds.getyMin();
-        for (int y = yMin; y<=bds.getyMax(); ++y) {
-            for (int z = bds.getzMin(); z<=bds.getzMax(); ++z) {
-                for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
+        int yMin = bds.yMin();
+        for (int y = yMin; y<=bds.yMax(); ++y) {
+            for (int z = bds.zMin(); z<=bds.zMax(); ++z) {
+                for (int x = bds.xMin(); x<=bds.xMax(); ++x) {
                     if (mask.insideMaskWithOffset(x, y, z)) {
                         ySize[y-yMin]++;
                     }
@@ -166,11 +166,11 @@ public class SpotCompartiment {
         double minYSize = proportionOfWidth * meanYSize;
         int yUp = 0;
         while(ySize[yUp]<minYSize) yUp++;
-        int yL = (int)Math.round(yLenghtForXMean*bds.getSizeY());
+        int yL = (int)Math.round(yLenghtForXMean*bds.sizeY());
         double[] poleUp = getPole(o, yUp, 0, yL);
         int yDown = ySize.length-1;
         while(ySize[yDown]<minYSize) yDown--;
-        double[] poleDown = getPole(o, yDown, o.getBounds().getSizeY()-yL-1, o.getBounds().getSizeY()-1);
+        double[] poleDown = getPole(o, yDown, o.getBounds().sizeY()-yL-1, o.getBounds().sizeY()-1);
         return new double[][]{poleUp, poleDown};
     }
     
@@ -178,10 +178,10 @@ public class SpotCompartiment {
         int count=0, countPrev, countCur=-1;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
-        for (int y = bds.getyMin(); y<=bds.getyMax(); ++y) {
+        for (int y = bds.yMin(); y<=bds.yMax(); ++y) {
             countPrev = count;
-            for (int z = bds.getzMin(); z<=bds.getzMax(); ++z) {
-                for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
+            for (int z = bds.zMin(); z<=bds.zMax(); ++z) {
+                for (int x = bds.xMin(); x<=bds.xMax(); ++x) {
                     if (mask.insideMaskWithOffset(x, y, z)) {
                         count++;
                         if (count == limit) countCur = count;
@@ -190,7 +190,7 @@ public class SpotCompartiment {
             }
             if (countCur>0) {
                 double p = (countCur-countPrev) / (count - countPrev);
-                double yApprox = y * p + (y+1) * (1-p) - bds.getyMin();
+                double yApprox = y * p + (y+1) * (1-p) - bds.yMin();
                 return getPole(o, yApprox, (int)Math.round(yApprox+marginYUp), (int)Math.round(yApprox+marginYDown));
             }
         }
@@ -203,9 +203,9 @@ public class SpotCompartiment {
         BoundingBox bds = o.getBounds();
         int currentLimit = 0;
         double[] res = new double[limit.length];
-        for (int y = bds.getyMin(); y<=bds.getyMax(); ++y) {
-            for (int z = bds.getzMin(); z<=bds.getzMax(); ++z) {
-                for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
+        for (int y = bds.yMin(); y<=bds.yMax(); ++y) {
+            for (int z = bds.zMin(); z<=bds.zMax(); ++z) {
+                for (int x = bds.xMin(); x<=bds.xMax(); ++x) {
                     if (mask.insideMaskWithOffset(x, y, z)) {
                         count++;
                         if (count == limit[currentLimit]) {
@@ -237,7 +237,7 @@ public class SpotCompartiment {
     private void computeIsUpperDaughterCell() {
         // suppose div @ trackHead
         List<StructureObject> siblings = object.getTrackHead().getDivisionSiblings(true);
-        Collections.sort(siblings, (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
+        Collections.sort(siblings, (o1, o2)->Integer.compare(o1.getBounds().yMin(), o2.getBounds().yMin()));
         upperDaughterCell = siblings.get(0).getTrackHead().equals(object.getTrackHead());
         //logger.debug("object: {}, prev siblings: {}, upper?: {}", object, siblings, upperDaughterCell);
         //object.setAttribute("upper daughter cell", upperDaughterCell);
@@ -248,7 +248,7 @@ public class SpotCompartiment {
         List<StructureObject> candidates = previous.getParent().getNext().getChildren(previous.getStructureIdx());
         List<StructureObject> res= new ArrayList<>(2);
         for (StructureObject o : candidates) if (previous.equals(o.getPrevious())) res.add(o);
-        Collections.sort(res, (o1, o2) -> Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
+        Collections.sort(res, (o1, o2) -> Integer.compare(o1.getBounds().yMin(), o2.getBounds().yMin()));
         return res;
     }
     
@@ -259,7 +259,7 @@ public class SpotCompartiment {
             StructureObject beforeDiv = this.object.getInTrack(nextDivisionTimePoint-1);
             if (beforeDiv==null) logger.debug("no object found before div at frame: {}, for track: {}, object: {}", nextDivisionTimePoint-1, object.getTrackHead(), object);
             else {
-                int halfyL = (int)Math.round(object.getObject().getBounds().getSizeY()*yLengthForXMean/2d);
+                int halfyL = (int)Math.round(object.getObject().getBounds().sizeY()*yLengthForXMean/2d);
                 List<StructureObject> siblings = getDivisionSiblings(beforeDiv);
                 if (siblings.size()==2) { // cut the object whith the same proportion
                     double c1 = (double) siblings.get(0).getMask().count();

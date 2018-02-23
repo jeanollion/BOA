@@ -7,8 +7,8 @@ import java.util.stream.IntStream;
 
 public abstract class ImageInteger<I extends ImageInteger<I>> extends Image<I> implements ImageMask<I> {
 
-    protected ImageInteger(String name, int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, float scaleXY, float scaleZ) {
-        super(name, sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ, scaleXY, scaleZ);
+    protected ImageInteger(String name, int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int zMin, float scaleXY, float scaleZ) {
+        super(name, sizeX, sizeY, sizeZ, offsetX, offsetY, zMin, scaleXY, scaleZ);
     }
     
     protected ImageInteger(String name, int sizeX, int sizeY, int sizeZ) {
@@ -44,8 +44,8 @@ public abstract class ImageInteger<I extends ImageInteger<I>> extends Image<I> i
     public abstract void setPixel(int xy, int z, int value);
     public abstract void setPixelWithOffset(int xy, int z, int value);
     public IntStream streamInt(ImageMask mask, boolean useOffset) {
-        int minZ = useOffset? Math.max(offsetZ, mask.getOffsetZ()) : 0;
-        int maxZ = useOffset ? Math.min(offsetZ+sizeZ, mask.getOffsetZ()+mask.getSizeZ()) :  Math.min(sizeZ, mask.getSizeZ());
+        int minZ = useOffset? Math.max(zMin, mask.zMin()) : 0;
+        int maxZ = useOffset ? Math.min(zMin+sizeZ, mask.zMin()+mask.sizeZ()) :  Math.min(sizeZ, mask.sizeZ());
         if (minZ>=maxZ) return IntStream.empty();
         if (minZ==maxZ-1) return streamIntPlane(minZ, mask, useOffset);
         return StreamConcatenation.concat((IntStream[])IntStream.range(minZ, maxZ).mapToObj(z->streamIntPlane(z, mask, useOffset)).filter(s->s!=IntStream.empty()).toArray(s->new IntStream[s]));
@@ -60,23 +60,22 @@ public abstract class ImageInteger<I extends ImageInteger<I>> extends Image<I> i
      * 
      * @param addBorder
      * @return TreeMap with Key (Integer) = label of the object / Value Bounding Box of the object
-     * @see BoundingBox
+     * @see MutableBoundingBox
      */
-    public TreeMap<Integer, BoundingBox> getBounds(boolean addBorder) {
-        TreeMap<Integer, BoundingBox> bounds = new TreeMap<Integer, BoundingBox>();
+    public TreeMap<Integer, MutableBoundingBox> getBounds(boolean addBorder) {
+        TreeMap<Integer, MutableBoundingBox> bounds = new TreeMap<>();
         for (int z = 0; z < sizeZ; ++z) {
             for (int y = 0; y < sizeY; ++y) {
                 for (int x = 0; x < sizeX; ++x) {
                     int value = getPixelInt(x + y * sizeX, z);
                     if (value != 0) {
-                        BoundingBox bds = bounds.get(value);
+                        MutableBoundingBox bds = bounds.get(value);
                         if (bds != null) {
                             bds.expandX(x);
                             bds.expandY(y);
                             bds.expandZ(z);
-                            bds.addToCounter();
                         } else {
-                            bds= new BoundingBox(x, y, z);
+                            bds= new MutableBoundingBox(x, y, z);
                             bounds.put(value, bds);
                         }
                     }
@@ -84,7 +83,7 @@ public abstract class ImageInteger<I extends ImageInteger<I>> extends Image<I> i
             }
         }
         if (addBorder) {
-            for (BoundingBox bds : bounds.values()) {
+            for (MutableBoundingBox bds : bounds.values()) {
                 bds.addBorder();
                 //bds.trimToImage(this);
             }
@@ -94,17 +93,16 @@ public abstract class ImageInteger<I extends ImageInteger<I>> extends Image<I> i
 
     public ImageByte cropLabel(int label, BoundingBox bounds) {
         //bounds.trimToImage(this);
-        ImageByte res = new ImageByte(name, bounds.getImageProperties("", scaleXY, scaleZ));
+        ImageByte res = new ImageByte(name, new SimpleImageProperties(bounds, scaleXY, scaleZ));
         byte[][] pixels = res.getPixelArray();
-        res.setCalibration(this);
-        int x_min = bounds.getxMin();
-        int y_min = bounds.getyMin();
-        int z_min = bounds.getzMin();
-        int x_max = bounds.getxMax();
-        int y_max = bounds.getyMax();
-        int z_max = bounds.getzMax();
-        res.resetOffset().addOffset(bounds);
-        int sX = res.getSizeX();
+        int x_min = bounds.xMin();
+        int y_min = bounds.yMin();
+        int z_min = bounds.zMin();
+        int x_max = bounds.xMax();
+        int y_max = bounds.yMax();
+        int z_max = bounds.zMax();
+        res.resetOffset().translate(bounds);
+        int sX = res.sizeX();
         int oZ = -z_min;
         int oY_i = 0;
         int oX = 0;

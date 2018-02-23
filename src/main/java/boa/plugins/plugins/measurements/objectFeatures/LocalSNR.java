@@ -28,9 +28,11 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.ImageByte;
 import boa.image.ImageMask;
+import boa.image.Offset;
+import boa.image.SimpleOffset;
 import boa.image.processing.ImageOperations;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
@@ -60,7 +62,7 @@ public class LocalSNR extends SNR {
     }
     @Override public double performMeasurement(final Region object) {
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
-        BoundingBox offset = object.isAbsoluteLandMark() ? new BoundingBox(0, 0, 0) : super.parent.getBounds();
+        Offset offset = object.isAbsoluteLandMark() ? new SimpleOffset(0, 0, 0) : super.parent.getBounds();
         final Region backgroundObject; 
         if (foregroundMapBackground==null) backgroundObject = super.parent.getObject();
         else backgroundObject=this.foregroundMapBackground.get(object);
@@ -68,7 +70,7 @@ public class LocalSNR extends SNR {
         
         // create mask
         ImageByte localBackgroundMask  = TypeConverter.toByteMask(object.getMask(), null, 1).setName("mask:");
-        localBackgroundMask.addOffset(offset); // so that local background mask is in absolute landmark
+        localBackgroundMask.translate(offset); // so that local background mask is in absolute landmark
         localBackgroundMask = Filters.binaryMax(localBackgroundMask, null, Filters.getNeighborhood(localBackgroundRadius.getValue().doubleValue(), localBackgroundMask), false, true);
         ImageOperations.andWithOffset(localBackgroundMask, backgroundObject.getMask(), localBackgroundMask); // do not dilate outside backgorund mask
         double[] meanSdBck = ImageOperations.getMeanAndSigmaWithOffset(intensityMap, localBackgroundMask, null);

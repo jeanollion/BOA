@@ -19,19 +19,20 @@ package boa.image.processing;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.data_structure.Voxel;
+import boa.image.BoundingBox.LoopFunction;
+import static boa.image.BoundingBox.loop;
 import ij.ImagePlus;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.process.FloatPolygon;
 import ij.process.ImageProcessor;
-import boa.image.BoundingBox;
-import boa.image.BoundingBox.LoopFunction;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.ImageProperties;
+import boa.image.SimpleOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.TreeSet;
@@ -52,7 +53,7 @@ import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 public class Curvature {
     public static final Logger logger = LoggerFactory.getLogger(Curvature.class);
     public static KDTree<Double> computeCurvature(ImageInteger mask, int scale) {
-        Roi r = IJImageWindowManager.createRoi(mask, new BoundingBox(0, 0, 0), false).get(0);
+        Roi r = IJImageWindowManager.createRoi(mask, new SimpleOffset(0, 0, 0), false).get(0);
         Fourier fourier = new Fourier();
         fourier.Init(r, mask.getScaleXY());
         //logger.debug("Curvature: length: {}, closed?: {}", fourier.NPT, fourier.closed());
@@ -60,7 +61,7 @@ public class Curvature {
         final ArrayList<RealPoint> points = new ArrayList<>(fourier.points.length);
         final ArrayList<Double> values = new ArrayList<>(fourier.points.length);
         for ( int i = 0; i <fourier.points.length ; ++i ) {
-            points.add( new RealPoint( new double[]{ mask.getOffsetX()+fourier.points[i].x / reso, mask.getOffsetY() + fourier.points[i].y / reso}  ));
+            points.add( new RealPoint( new double[]{ mask.xMin()+fourier.points[i].x / reso, mask.yMin() + fourier.points[i].y / reso}  ));
             try {
                 double v = fourier.curvature(i, scale, false);
                 if (Double.isNaN(v)) v = 0; // straight line
@@ -83,13 +84,13 @@ public class Curvature {
         return res;
     }
     public static void drawOnCurvatureMask(ImageFloat curvatureMask , KDTree<Double> points) {
-        int xLim = curvatureMask.getSizeX();
-        int yLim = curvatureMask.getSizeY();
+        int xLim = curvatureMask.sizeX();
+        int yLim = curvatureMask.sizeY();
         KDTreeCursor cur = points.localizingCursor();
         while (cur.hasNext()) {
             Double d = (Double) cur.next();
-            int x = (int) Math.round(cur.getDoublePosition(0)) - curvatureMask.getOffsetX();
-            int y = (int) Math.round(cur.getDoublePosition(1)) - curvatureMask.getOffsetY();
+            int x = (int) Math.round(cur.getDoublePosition(0)) - curvatureMask.xMin();
+            int y = (int) Math.round(cur.getDoublePosition(1)) - curvatureMask.yMin();
             if (x>=xLim) --x;
             if (y>=yLim) --y;
             //double oldV = curvatureMask.getPixel(x, y, 0);
@@ -103,11 +104,10 @@ public class Curvature {
         final TreeSet<Voxel> heap = new TreeSet<Voxel>();
         final EllipsoidalNeighborhood neigh = new EllipsoidalNeighborhood(1.5, true);
         // initialize with the border of objects
-        mask.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
-            public void loop(int x, int y, int z) {
+        loop(mask.getBoundingBox().resetOffset(), (int x, int y, int z) -> {
                 if (mask.insideMask(x, y, z) && neigh.hasNullValue(x, y, z, mask, true)) {
                     double edmValue = edm.getPixel(x, y, z);
-                    search.search(new Point(x+mask.getOffsetX(), y+mask.getOffsetY()));
+                    search.search(new Point(x+mask.xMin(), y+mask.yMin()));
                     res.setPixel(x, y, z, search.getSampler().get());
                     Voxel next;
                     for (int i = 0; i<neigh.getSize(); ++i) {
@@ -118,7 +118,7 @@ public class Curvature {
                     }
                 }
             }
-        });
+        );
 
         Voxel next;
         while(!heap.isEmpty()) {

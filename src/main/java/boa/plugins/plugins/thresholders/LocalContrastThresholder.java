@@ -21,6 +21,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObjectProcessing;
+import static boa.image.BoundingBox.loop;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.processing.ImageOperations;
@@ -62,7 +63,7 @@ public class LocalContrastThresholder implements Thresholder {
     public static double getThreshold(Image input, double min, double scale) {
         final Image localContrast= getLocalContrast(input, scale);
         double[] meanCount = new double[2];
-        input.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
+        loop(input.getBoundingBox().resetOffset(), (int x, int y, int z) -> {
             double v = localContrast.getPixel(x, y, z);
             if (v>=min) {
                 v = input.getPixel(x, y, z);

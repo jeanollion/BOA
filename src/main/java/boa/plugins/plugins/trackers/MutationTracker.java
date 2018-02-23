@@ -256,7 +256,7 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
             List<Double> SIList=new ArrayList<>();
             int startMother = 0;
             while(startMother<parentTrack.size() && parentTrack.get(startMother).getChildren(compartimentStructure).isEmpty()) ++startMother;
-            Comparator<StructureObject> c = (o1, o2)-> Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin());
+            Comparator<StructureObject> c = (o1, o2)-> Integer.compare(o1.getBounds().yMin(), o2.getBounds().yMin());
             if (startMother<parentTrack.size()) {
                 List<StructureObject> nexts = new ArrayList<>(5);
                 StructureObject mother = Collections.min(parentTrack.get(startMother).getChildren(compartimentStructure),  c);
@@ -265,17 +265,17 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
                     for (int i = 1; i<currentTrack.size(); ++i) {
                         compartimentList.add(currentTrack.get(i));
                         if (isTruncated(currentTrack.get(i)) || isTruncated(currentTrack.get(i-1))) SIList.add(Double.NaN);
-                        else SIList.add((double)currentTrack.get(i).getObject().getSize() / (double)currentTrack.get(i-1).getObject().getSize());
+                        else SIList.add((double)currentTrack.get(i).getObject().size() / (double)currentTrack.get(i-1).getObject().size());
                     }
                     putNext(currentTrack.get(currentTrack.size()-1), nexts);
                     //logger.debug("nexts: {}", nexts);
                     if (nexts.isEmpty()) break;
                     else {
                         Collections.sort(nexts, c);
-                        double sizeNext = 0; for (StructureObject n : nexts) sizeNext+=n.getObject().getSize();
+                        double sizeNext = 0; for (StructureObject n : nexts) sizeNext+=n.getObject().size();
                         compartimentList.add(nexts.get(0));
                         if (isTruncated(currentTrack.get(currentTrack.size()-1)) || isTruncated(nexts.get(nexts.size()-1))) SIList.add(Double.NaN);
-                        else SIList.add(sizeNext / currentTrack.get(currentTrack.size()-1).getObject().getSize());
+                        else SIList.add(sizeNext / currentTrack.get(currentTrack.size()-1).getObject().size());
                         currentTrack = compartimentTracks.get(nexts.get(0));
                     }
                 }

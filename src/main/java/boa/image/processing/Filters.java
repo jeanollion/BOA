@@ -21,7 +21,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.data_structure.Voxel;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import static boa.image.Image.logger;
 import boa.image.ImageByte;
@@ -30,6 +30,7 @@ import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.image.ImageProperties;
+import boa.image.SimpleBoundingBox;
 import java.util.Arrays;
 import java.util.Comparator;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
@@ -41,8 +42,8 @@ import boa.utils.ArrayUtil;
  * @author jollion
  */
 public class Filters {
-    public static Neighborhood getNeighborhood(double radiusXY, ImageProperties image) {return image.getSizeZ()>1 ?getNeighborhood(radiusXY, image.getScaleXY()/image.getScaleZ(), image) : getNeighborhood(radiusXY, 1, image);}
-    public static Neighborhood getNeighborhood(double radiusXY, double radiusZ, ImageProperties image) {return image.getSizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
+    public static Neighborhood getNeighborhood(double radiusXY, ImageProperties image) {return image.sizeZ()>1 ?getNeighborhood(radiusXY, image.getScaleXY()/image.getScaleZ(), image) : getNeighborhood(radiusXY, 1, image);}
+    public static Neighborhood getNeighborhood(double radiusXY, double radiusZ, ImageProperties image) {return image.sizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
       
     public static <T extends Image<T>> T mean(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Mean(), neighborhood);
@@ -95,11 +96,11 @@ public class Filters {
     }
 
     public static <T extends ImageInteger<T>> T binaryCloseExtend(ImageInteger<T> image, Neighborhood neighborhood) {
-        BoundingBox extent = neighborhood.getBoundingBox();
+        MutableBoundingBox extent = neighborhood.getBoundingBox();
         T resized =  image.extend(extent);
         ImageByte max = applyFilter(resized, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
         T min = applyFilter(max, resized, new BinaryMin(false), neighborhood);
-        return min.crop(image.getBoundingBox().translateToOrigin().translate(extent.duplicate().reverseOffset()));
+        return min.crop(image.getBoundingBox().resetOffset().translate(extent.duplicate().reverseOffset()));
     }
     public static <T extends ImageInteger<T>> T binaryClose(ImageInteger image, T output, Neighborhood neighborhood) {
         ImageByte max = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
@@ -115,21 +116,21 @@ public class Filters {
     public static <T extends Image<T>> T tophat(Image image, Image imageForBackground, T output, Neighborhood neighborhood) {
         T open =open(imageForBackground, output, neighborhood).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, open, open, -1); //1-open
-        open.resetOffset().addOffset(image);
+        open.resetOffset().translate(image);
         return open;
     }
     
     public static <T extends Image<T>> T tophat(Image image, T output, Neighborhood neighborhood) {
         T open =open(image, output, neighborhood).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, open, open, -1); //1-open
-        open.resetOffset().addOffset(image);
+        open.resetOffset().translate(image);
         return open;
     }
     
     public static <T extends Image<T>> T tophatInv(Image image, T output, Neighborhood neighborhood) {
         T close =close(image, output, neighborhood).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, close, close, -1); //1-close
-        close.resetOffset().addOffset(image);
+        close.resetOffset().translate(image);
         return close;
     }
     /**
@@ -176,14 +177,14 @@ public class Filters {
         else res = (T)output.setName(name);
         float round=res instanceof ImageFloat ? 0: 0.5f;
         filter.setUp(image, neighborhood);
-        for (int z = 0; z < res.getSizeZ(); ++z) {
-            for (int y = 0; y < res.getSizeY(); ++y) {
-                for (int x = 0; x < res.getSizeX(); ++x) {
+        for (int z = 0; z < res.sizeZ(); ++z) {
+            for (int y = 0; y < res.sizeY(); ++y) {
+                for (int x = 0; x < res.sizeX(); ++x) {
                     res.setPixel(x, y, z, filter.applyFilter(x, y, z)+round);
                 }
             }
         }
-        res.resetOffset().addOffset(image);
+        res.resetOffset().translate(image);
         res.setCalibration(image);
         return res;
     }
@@ -405,7 +406,7 @@ public class Filters {
         @Override
         public void setUp(Image image, Neighborhood neighborhood) {
             super.setUp(image, neighborhood);
-            if (mask!=null && !image.sameDimensions(mask)) throw new IllegalArgumentException("Mask and Image to filter should have same dimentions: mask: "+mask.getBoundingBox()+" image: "+image.getBoundingBox());
+            if (mask!=null && !image.sameDimensions(mask)) throw new IllegalArgumentException("Mask and Image to filter should have same dimentions: mask: "+new SimpleBoundingBox(mask)+" image: "+image.getBoundingBox());
             else if (mask==null) mask=new BlankMask(image);
         }
         @Override public float applyFilter(int x, int y, int z) {

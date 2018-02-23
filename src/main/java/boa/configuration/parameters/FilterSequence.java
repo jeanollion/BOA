@@ -47,7 +47,7 @@ public class FilterSequence extends PluginParameterList<Filter> {
             input = t.applyTransformation(0, 0, input);
         }
         input.setCalibration(prop);
-        if (input.sameDimensions(prop)) input.resetOffset().addOffset(prop);
+        if (input.sameDimensions(prop)) input.resetOffset().translate(prop);
         return input;
     }
     @Override public FilterSequence add(Filter... instances) {

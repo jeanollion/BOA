@@ -27,6 +27,7 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.BlankMask;
+import static boa.image.BoundingBox.loop;
 import boa.image.ImageFloat;
 import boa.image.ImageInt;
 import boa.image.ImageInteger;
@@ -56,15 +57,15 @@ public class AverageMask implements TrackPostFilter{
         //if (track.size()<=1) return;
         if (referencePoint.getSelectedIndex()==0) { // upper left corner
             // size = maximal size
-            int maxX = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().getSizeX(), o2.getMask().getSizeX())).getMask().getSizeX();
-            int maxY = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().getSizeY(), o2.getMask().getSizeY())).getMask().getSizeY();
-            int maxZ = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().getSizeZ(), o2.getMask().getSizeZ())).getMask().getSizeZ();
+            int maxX = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().sizeX(), o2.getMask().sizeX())).getMask().sizeX();
+            int maxY = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().sizeY(), o2.getMask().sizeY())).getMask().sizeY();
+            int maxZ = Collections.max(track, (o1, o2)->Integer.compare(o1.getMask().sizeZ(), o2.getMask().sizeZ())).getMask().sizeZ();
             ImageInteger sum = ImageInteger.createEmptyLabelImage("average mask", track.size()+1, new BlankMask( maxX, maxY, maxZ));
             for (StructureObject o : track) {
                 ImageMask mask = o.getMask();
-                for (int z = 0; z<sum.getSizeZ(); ++z) {
-                    for (int y=0; y<sum.getSizeY(); ++y) {
-                        for (int x=0; x<sum.getSizeX(); ++x) {
+                for (int z = 0; z<sum.sizeZ(); ++z) {
+                    for (int y=0; y<sum.sizeY(); ++y) {
+                        for (int x=0; x<sum.sizeX(); ++x) {
                             if (mask.contains(x, y, z) && mask.insideMask(x, y, z)) sum.setPixel(x, y, z, sum.getPixel(x, y, z)+1);
                         }
                     }
@@ -76,7 +77,7 @@ public class AverageMask implements TrackPostFilter{
             for (StructureObject o : track) {
                 o.getObject().ensureMaskIsImageInteger();
                 ImageInteger mask = o.getObject().getMaskAsImageInteger();
-                mask.getBoundingBox().translateToOrigin().loop((x, y, z)->{ mask.setPixel(x, y, z, sum.getPixelInt(x, y, z)>=threshold?1:0);});
+                loop(mask.getBoundingBox().resetOffset(), (x, y, z)->{ mask.setPixel(x, y, z, sum.getPixelInt(x, y, z)>=threshold?1:0);});
                 o.getObject().resetMask(); // reset mask because bounds might have changed
                 o.getObject().clearVoxels();
             }

@@ -22,7 +22,7 @@ import boa.configuration.experiment.Experiment;
 import boa.data_structure.Selection;
 import boa.data_structure.StructureObject;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import static boa.image.Image.logger;
 import boa.image.io.ImageFormat;
@@ -83,7 +83,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         }
     }
     @Override
-    public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds) {
+    public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, MutableBoundingBox bounds) {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName);
         File f = new File(path);
         if (f.exists()) {

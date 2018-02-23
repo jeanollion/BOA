@@ -31,7 +31,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.AutoThresholder;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.IJImageWrapper;
 import boa.image.Image;
 import boa.image.ImageFloat;
@@ -96,16 +96,16 @@ public class SubtractBackgroundMicrochannel implements PreFilter, ToolTip {
             }
         }*/
         // mirror image on both Y ends
-        ImageFloat toFilter = new ImageFloat("", input.getSizeX(), 3*input.getSizeY(), input.getSizeZ());
-        ImageOperations.pasteImage(input, toFilter, new BoundingBox(0, input.getSizeY(), 0));
+        ImageFloat toFilter = new ImageFloat("", input.sizeX(), 3*input.sizeY(), input.sizeZ());
+        Image.pasteImage(input, toFilter, new MutableBoundingBox(0, input.sizeY(), 0));
         Image imageFlip = ImageTransformation.flip(input, ImageTransformation.Axis.Y);
-        ImageOperations.pasteImage(imageFlip, toFilter, null);
-        ImageOperations.pasteImage(imageFlip, toFilter, new BoundingBox(0, 2*input.getSizeY(), 0));
+        Image.pasteImage(imageFlip, toFilter, null);
+        Image.pasteImage(imageFlip, toFilter, new MutableBoundingBox(0, 2*input.sizeY(), 0));
         //ImageWindowManagerFactory.showImage(toFilter);
         double scale = radius.getValue().doubleValue();
         //scale = input.getSizeY();
         toFilter = IJSubtractBackground.filter(toFilter, scale , !method.getSelected(), !isDarkBck.getSelected(), smooth.getSelected(), corners.getSelected(), false);
-        Image crop = toFilter.crop(new BoundingBox(0, input.getSizeX()-1, input.getSizeY(), 2*input.getSizeY()-1, 0, input.getSizeZ()-1));
+        Image crop = toFilter.crop(new MutableBoundingBox(0, input.sizeX()-1, input.sizeY(), 2*input.sizeY()-1, 0, input.sizeZ()-1));
         
         // adjust filtered image to get homogeneous images among time.
         double currentValueM = ImageOperations.getMeanAndSigma(crop, null)[0]; // mean is more robust when no cell
@@ -120,7 +120,7 @@ public class SubtractBackgroundMicrochannel implements PreFilter, ToolTip {
         ImageOperations.affineOperation(crop, crop, 1, Math.max(diffQ, diffM)); // when empty microchannel -> diffM is higer than diff quantile -> preserves better background value
          
         crop.setCalibration(input);
-        crop.resetOffset().addOffset(input);
+        crop.resetOffset().translate(input);
         return crop;
     }
     

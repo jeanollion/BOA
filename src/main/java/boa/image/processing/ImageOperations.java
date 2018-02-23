@@ -23,7 +23,8 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
-import boa.image.BoundingBox.LoopFunction;
+import static boa.image.BoundingBox.loop;
+import boa.image.MutableBoundingBox;
 import boa.image.Histogram;
 import boa.image.Image;
 import boa.image.ImageByte;
@@ -32,6 +33,9 @@ import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
 import boa.image.ImageMask;
 import static boa.image.Image.logger;
+import boa.image.Offset;
+import boa.image.SimpleBoundingBox;
+import boa.image.SimpleOffset;
 import boa.image.TypeConverter;
 import static boa.image.processing.ImageOperations.Axis.*;
 import java.util.ArrayList;
@@ -44,6 +48,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.function.DoublePredicate;
 
 /**
  *
@@ -65,7 +70,7 @@ public class ImageOperations {
         Random r = new Random();
         double[] addValues = r.doubles(mask.count()).toArray();
         int[] idx =new int[1];
-        image.getBoundingBox().translateToOrigin().loop((x, y, z)->{
+        BoundingBox.loop(image.getBoundingBox().resetOffset(), (x, y, z)->{
             if (m.insideMask(x, y, z)) image.setPixel(x, y, z, image.getPixel(x, y, z)+addValues[idx[0]++]/div);
         });
         return image;
@@ -80,7 +85,7 @@ public class ImageOperations {
         return l;
     }
     public static Image applyPlaneByPlane(Image image, Function<Image, Image> function) {
-        if (image.getSizeZ()==1) return function.apply(image);
+        if (image.sizeZ()==1) return function.apply(image);
         else {
             List<Image> planes = image.splitZPlanes();
             planes = Utils.transform(planes, function);
@@ -143,16 +148,16 @@ public class ImageOperations {
         if (setBackground) {
             if (foregroundOverThreshold) {
                 if (strict) {
-                    for (int z = 0; z < image.getSizeZ(); z++) {
-                        for (int xy = 0; xy < image.getSizeXY(); xy++) {
+                    for (int z = 0; z < image.sizeZ(); z++) {
+                        for (int xy = 0; xy < image.sizeXY(); xy++) {
                             if (image.getPixel(xy, z)>threshold) {
                                 dest.setPixel(xy, z, 1);
                             } else dest.setPixel(xy, z, 0);
                         }
                     }
                 } else {
-                    for (int z = 0; z < image.getSizeZ(); z++) {
-                        for (int xy = 0; xy < image.getSizeXY(); xy++) {
+                    for (int z = 0; z < image.sizeZ(); z++) {
+                        for (int xy = 0; xy < image.sizeXY(); xy++) {
                             if (image.getPixel(xy, z)>=threshold) {
                                 dest.setPixel(xy, z, 1);
                             } else dest.setPixel(xy, z, 0);
@@ -161,16 +166,16 @@ public class ImageOperations {
                 }
             } else {
                 if (strict) {
-                    for (int z = 0; z < image.getSizeZ(); z++) {
-                        for (int xy = 0; xy < image.getSizeXY(); xy++) {
+                    for (int z = 0; z < image.sizeZ(); z++) {
+                        for (int xy = 0; xy < image.sizeXY(); xy++) {
                             if (image.getPixel(xy, z)<threshold) {
                                 dest.setPixel(xy, z, 1);
                             } else dest.setPixel(xy, z, 0);
                         }
                     }
                 } else {
-                    for (int z = 0; z < image.getSizeZ(); z++) {
-                        for (int xy = 0; xy < image.getSizeXY(); xy++) {
+                    for (int z = 0; z < image.sizeZ(); z++) {
+                        for (int xy = 0; xy < image.sizeXY(); xy++) {
                             if (image.getPixel(xy, z)<=threshold) {
                                 dest.setPixel(xy, z, 1);
                             } else dest.setPixel(xy, z, 0);
@@ -181,16 +186,16 @@ public class ImageOperations {
         } else {
             if (foregroundOverThreshold) {
                 if (strict) {
-                    for (int z = 0; z < image.getSizeZ(); z++) {
-                        for (int xy = 0; xy < image.getSizeXY(); xy++) {
+                    for (int z = 0; z < image.sizeZ(); z++) {
+                        for (int xy = 0; xy < image.sizeXY(); xy++) {
                             if (image.getPixel(xy, z)>threshold) {
                                 dest.setPixel(xy, z, 1);
                             }
                         }
                     }
                 } else {
-                    for (int z = 0; z < image.getSizeZ(); z++) {
-                        for (int xy = 0; xy < image.getSizeXY(); xy++) {
+                    for (int z = 0; z < image.sizeZ(); z++) {
+                        for (int xy = 0; xy < image.sizeXY(); xy++) {
                             if (image.getPixel(xy, z)>=threshold) {
                                 dest.setPixel(xy, z, 1);
                             }
@@ -199,16 +204,16 @@ public class ImageOperations {
                 }
             } else {
                 if (strict) {
-                    for (int z = 0; z < image.getSizeZ(); z++) {
-                        for (int xy = 0; xy < image.getSizeXY(); xy++) {
+                    for (int z = 0; z < image.sizeZ(); z++) {
+                        for (int xy = 0; xy < image.sizeXY(); xy++) {
                             if (image.getPixel(xy, z)<threshold) {
                                 dest.setPixel(xy, z, 1);
                             }
                         }
                     }
                 } else {
-                    for (int z = 0; z < image.getSizeZ(); z++) {
-                        for (int xy = 0; xy < image.getSizeXY(); xy++) {
+                    for (int z = 0; z < image.sizeZ(); z++) {
+                        for (int xy = 0; xy < image.sizeXY(); xy++) {
                             if (image.getPixel(xy, z)<=threshold) {
                                 dest.setPixel(xy, z, 1);
                             }
@@ -221,51 +226,7 @@ public class ImageOperations {
         return dest;
     }
 
-    public static void pasteImage(Image source, Image dest, BoundingBox offset) {
-        if (source.getClass()!=dest.getClass()) throw new IllegalArgumentException("Paste Image: source and destination should be of the same type (source: "+source.getClass().getSimpleName()+ " destination: "+dest.getClass().getSimpleName()+")");
-        if (offset == null) offset = new BoundingBox(0, 0, 0);
-        if (source.getSizeX()+offset.getxMin()>dest.getSizeX() || source.getSizeY()+offset.getyMin()>dest.getSizeY() || source.getSizeZ()+offset.getzMin()>dest.getSizeZ()) throw new IllegalArgumentException("Paste Image: source ("+source.getBoundingBox().translateToOrigin()+") does not fit in destination ("+dest.getBoundingBox().translateToOrigin()+") offset: "+offset );
-        Object[] sourceP = source.getPixelArray();
-        Object[] destP = dest.getPixelArray();
-        final int offDestFinal = dest.getSizeX()*offset.getyMin()+offset.getxMin();
-        int offDest=offDestFinal;
-        int offSource = 0;
-        for (int z = 0; z<source.getSizeZ(); ++z) {
-            for (int y = 0 ; y<source.getSizeY(); ++y) {
-                //logger.debug("paste imate: z source: {}, z dest: {}, y source: {} y dest: {} off source: {} off dest: {} size source: {} size dest: {}", z, z+offset.getzMin(), y, y+offset.getyMin(), offSource, off, ((byte[])sourceP[z]).length, ((byte[])destP[z+offset.getzMin()]).length);
-                System.arraycopy(sourceP[z], offSource, destP[z+offset.getzMin()], offDest, source.getSizeX());
-                offDest+=dest.getSizeX();
-                offSource+=source.getSizeX();
-            }
-            offDest=offDestFinal;
-            offSource=0;
-        }
-    }
     
-    public static void pasteImage(Image source, Image dest, BoundingBox destinationOffset, BoundingBox sourceView) {
-        if (source.getClass()!=dest.getClass()) throw new IllegalArgumentException("Paste Image: source and destination should be of the same type (source: "+source.getClass().getSimpleName()+ " destination: "+dest.getClass().getSimpleName()+")");
-        if (destinationOffset == null) destinationOffset = new BoundingBox(0, 0, 0);
-        if (sourceView ==null) sourceView = source.getBoundingBox();
-        if (sourceView.getSizeX()+destinationOffset.getxMin()>dest.getSizeX() || sourceView.getSizeY()+destinationOffset.getyMin()>dest.getSizeY() || sourceView.getSizeZ()+destinationOffset.getzMin()>dest.getSizeZ()) throw new IllegalArgumentException("Paste Image: source does not fit in destination");
-        if (sourceView.getSizeX()==0 || sourceView.getSizeY()==0 || sourceView.getSizeZ()==0) throw new IllegalArgumentException("Source view volume null: sizeX:"+sourceView.getSizeX()+" sizeY:"+sourceView.getSizeY()+ " sizeZ:"+sourceView.getSizeZ());
-        Object[] sourceP = source.getPixelArray();
-        Object[] destP = dest.getPixelArray();
-        final int offDestFinal = dest.getSizeX()*destinationOffset.getyMin()+destinationOffset.getxMin();
-        destinationOffset.translate(-sourceView.getxMin(), -sourceView.getyMin(), -sourceView.getzMin()); //loop is made over source coords
-        int offDest=offDestFinal;
-        final int offSourceFinal = sourceView.getxMin()+sourceView.getyMin()*source.getSizeX();
-        int offSource = offSourceFinal;
-        for (int z = sourceView.getzMin(); z<=sourceView.getzMax(); ++z) {
-            for (int y = sourceView.getyMin(); y<=sourceView.getyMax(); ++y) {
-                //logger.debug("paste image: z source: {}, z dest: {}, y source: {} y dest: {} x source: {} x dest: {}", z, z+destinationOffset.getzMin(), y, y+destinationOffset.getyMin(), offSource-y*source.getSizeX(), offDest-(y+destinationOffset.getyMin())*dest.getSizeX());
-                System.arraycopy(sourceP[z], offSource, destP[z+destinationOffset.getzMin()], offDest, sourceView.getSizeX());
-                offDest+=dest.getSizeX();
-                offSource+=source.getSizeX();
-            }
-            offDest=offDestFinal;
-            offSource=offSourceFinal;
-        }
-    }
 
     public static <T extends Image<T>> T addImage(Image source1, Image source2, T output, double coeff) {
         String name = source1.getName()+" + "+coeff+" x "+source2.getName();
@@ -277,20 +238,20 @@ public class ImageOperations {
         else if (!output.sameDimensions(source1)) output = (T)Image.createEmptyImage(name, output, source1);
         float round = output instanceof ImageInteger?0.5f:0;
         if (coeff==1) {
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, source1.getPixel(xy, z)+source2.getPixel(xy, z)+round);
                 }
             }
         } else if (coeff==-1) {
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, source1.getPixel(xy, z)-source2.getPixel(xy, z)+round);
                 }
             }
         } else {
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, source1.getPixel(xy, z)+source2.getPixel(xy, z)*coeff+round);
                 }
             }
@@ -313,20 +274,20 @@ public class ImageOperations {
         } else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(name, output, source1);
         additiveCoefficient += output instanceof ImageInteger?0.5:0;
         if (additiveCoefficient!=0 && multiplicativeCoefficient!=1) {
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, source1.getPixel(xy, z)*multiplicativeCoefficient+additiveCoefficient);
                 }
             } 
         } else if (additiveCoefficient==0) {
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, source1.getPixel(xy, z)*multiplicativeCoefficient);
                 }
             } 
         } else {
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, source1.getPixel(xy, z) +additiveCoefficient );
                 }
             } 
@@ -349,21 +310,21 @@ public class ImageOperations {
         } else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(name, output, source1);
         double end = output instanceof ImageInteger?0.5:0;
         if (additiveCoefficient!=0 && multiplicativeCoefficient!=1) {
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, (source1.getPixel(xy, z)+additiveCoefficient)*multiplicativeCoefficient+end);
                 }
             } 
         } else if (additiveCoefficient==0) {
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, source1.getPixel(xy, z)*multiplicativeCoefficient+end);
                 }
             } 
         } else {
             additiveCoefficient+=end;
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, source1.getPixel(xy, z) +additiveCoefficient );
                 }
             } 
@@ -379,11 +340,8 @@ public class ImageOperations {
         } else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(name, output, source1);
         final double end = output instanceof ImageInteger?0.5:0;
         final Image out = output;
-        source1.getBoundingBox().loop(new LoopFunction() {
-            @Override
-            public void loop(int x, int y, int z) {
-                out.setPixelWithOffset(x, y, z, (source1.getPixelWithOffset(x, y, z)+additiveCoefficient)*multiplicativeCoefficient+end);
-            }
+        BoundingBox.loop(source1.getBoundingBox(), (x, y, z) -> {
+            out.setPixelWithOffset(x, y, z, (source1.getPixelWithOffset(x, y, z)+additiveCoefficient)*multiplicativeCoefficient+end);
         });
         return output;
     }
@@ -392,8 +350,8 @@ public class ImageOperations {
         if (!source1.sameDimensions(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");
         if (output==null) output = (T)new ImageFloat(source1.getName()+" x "+source2.getName(), source1);
         else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
-        for (int z = 0; z<output.getSizeZ(); ++z) {
-            for (int xy=0; xy<output.getSizeXY(); ++xy) {
+        for (int z = 0; z<output.sizeZ(); ++z) {
+            for (int xy=0; xy<output.sizeXY(); ++xy) {
                 output.setPixel(xy, z, source1.getPixel(xy, z)*source2.getPixel(xy, z));
             }
         }
@@ -402,8 +360,8 @@ public class ImageOperations {
     public static <T extends Image<T>> T addValue(Image source1, double value, T output) {
         if (output==null) output = (T)new ImageFloat(source1.getName()+" + "+value, source1);
         else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(source1.getName()+" + "+value, output, source1);
-        for (int z = 0; z<output.getSizeZ(); ++z) {
-            for (int xy=0; xy<output.getSizeXY(); ++xy) {
+        for (int z = 0; z<output.sizeZ(); ++z) {
+            for (int xy=0; xy<output.sizeXY(); ++xy) {
                 output.setPixel(xy, z, source1.getPixel(xy, z)+value);
             }
         }
@@ -415,15 +373,15 @@ public class ImageOperations {
         if (output==null) output = (T)new ImageFloat(source1.getName()+" x "+source2.getName(), source1);
         else if (!output.sameDimensions(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
         if (multiplicativeCoefficient.length == 0) {
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, source1.getPixel(xy, z)/source2.getPixel(xy, z));
                 }
             }
         } else {
             double m = multiplicativeCoefficient[0];
-            for (int z = 0; z<output.getSizeZ(); ++z) {
-                for (int xy=0; xy<output.getSizeXY(); ++xy) {
+            for (int z = 0; z<output.sizeZ(); ++z) {
+                for (int xy=0; xy<output.sizeXY(); ++xy) {
                     output.setPixel(xy, z, m * source1.getPixel(xy, z)/source2.getPixel(xy, z));
                 }
             }
@@ -433,8 +391,8 @@ public class ImageOperations {
     
     public static ImageInteger or(ImageMask source1, ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("or", source1);
-        for (int z = 0; z<source1.getSizeZ(); ++z) {
-            for (int xy=0; xy<source1.getSizeXY(); ++xy) {
+        for (int z = 0; z<source1.sizeZ(); ++z) {
+            for (int xy=0; xy<source1.sizeXY(); ++xy) {
                 if (source1.insideMask(xy, z) || source2.insideMask(xy, z)) output.setPixel(xy, z, 1);
                 else output.setPixel(xy, z, 0);
             }
@@ -444,13 +402,11 @@ public class ImageOperations {
     public static ImageInteger orWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("or", source1);
         final ImageInteger out = output;
-        BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
-        loopBound.loop(new LoopFunction() {
-            public void loop(int x, int y, int z) {
-                if ((!source1.containsWithOffset(x, y, z) || !source1.insideMaskWithOffset(x, y, z)) 
-                        && (!source2.containsWithOffset(x, y, z) || !source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 0);
-                else out.setPixelWithOffset(x, y, z, 1);
-            }
+        MutableBoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
+        BoundingBox.loop(loopBound,(x, y, z) -> {
+            if ((!source1.containsWithOffset(x, y, z) || !source1.insideMaskWithOffset(x, y, z)) 
+                    && (!source2.containsWithOffset(x, y, z) || !source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 0);
+            else out.setPixelWithOffset(x, y, z, 1);
         });
         return out;
     }
@@ -459,12 +415,10 @@ public class ImageOperations {
         if (output==null) output = new ImageByte("or", source1);
         final ImageInteger out = output;
         //logger.debug("output: {}, trimmed: {}", output.getBoundingBox(), output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox())));
-        BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
-        loopBound.loop(new LoopFunction() {
-            public void loop(int x, int y, int z) {
-                if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))!=(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
-                else out.setPixelWithOffset(x, y, z, 0);
-            }
+        MutableBoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
+        BoundingBox.loop(loopBound,(x, y, z) -> {
+            if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))!=(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
+            else out.setPixelWithOffset(x, y, z, 0);
         });
         return out;
     }
@@ -472,12 +426,10 @@ public class ImageOperations {
     public static ImageInteger andWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("and", source1);
         final ImageInteger out = output;
-        BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
-        loopBound.loop(new LoopFunction() {
-            public void loop(int x, int y, int z) {
-                if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))&&(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
-                else out.setPixelWithOffset(x, y, z, 0);
-            }
+        MutableBoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
+        BoundingBox.loop(loopBound,(x, y, z) -> {
+            if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))&&(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
+            else out.setPixelWithOffset(x, y, z, 0);
         });
         return out;
     }
@@ -499,8 +451,8 @@ public class ImageOperations {
     public static <T extends Image<T>> T trim(T source, ImageMask mask, T output) {
         if (output==null) output = (T)Image.createEmptyImage(source.getName(), source, source);
         if (!output.sameDimensions(source)) output = Image.createEmptyImage("outside", source, source);
-        for (int z = 0; z<source.getSizeZ(); ++z) {
-            for (int xy=0; xy<source.getSizeXY(); ++xy) {
+        for (int z = 0; z<source.sizeZ(); ++z) {
+            for (int xy=0; xy<source.sizeXY(); ++xy) {
                 if (!mask.insideMask(xy, z)) output.setPixel(xy, z, 0);
                 else if (output!=source) output.setPixel(xy, z, source.getPixel(xy, z));
             }
@@ -511,8 +463,8 @@ public class ImageOperations {
     public static <T extends ImageInteger<T>> T not(ImageMask source1, T output) {
         if (output==null) output = (T)new ImageByte("not", source1);
         if (!output.sameDimensions(source1)) output = Image.createEmptyImage("not", output, source1);
-        for (int z = 0; z<source1.getSizeZ(); ++z) {
-            for (int xy=0; xy<source1.getSizeXY(); ++xy) {
+        for (int z = 0; z<source1.sizeZ(); ++z) {
+            for (int xy=0; xy<source1.sizeXY(); ++xy) {
                 if (source1.insideMask(xy, z)) output.setPixel(xy, z, 0);
                 else output.setPixel(xy, z, 1);
             }
@@ -522,8 +474,8 @@ public class ImageOperations {
     
     public static ImageInteger xor(ImageMask source1, ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("or", source1);
-        for (int z = 0; z<source1.getSizeZ(); ++z) {
-            for (int xy=0; xy<source1.getSizeXY(); ++xy) {
+        for (int z = 0; z<source1.sizeZ(); ++z) {
+            for (int xy=0; xy<source1.sizeXY(); ++xy) {
                 if (source1.insideMask(xy, z)!=source2.insideMask(xy, z)) output.setPixel(xy, z, 1);
                 else output.setPixel(xy, z, 0);
             }
@@ -533,8 +485,8 @@ public class ImageOperations {
     
     public static ImageInteger andNot(ImageMask source1, ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("or", source1);
-        for (int z = 0; z<source1.getSizeZ(); ++z) {
-            for (int xy=0; xy<source1.getSizeXY(); ++xy) {
+        for (int z = 0; z<source1.sizeZ(); ++z) {
+            for (int xy=0; xy<source1.sizeXY(); ++xy) {
                 if (source1.insideMask(xy, z) && !source2.insideMask(xy, z)) output.setPixel(xy, z, 1);
                 else output.setPixel(xy, z, 0);
             }
@@ -544,8 +496,8 @@ public class ImageOperations {
     
     public static ImageInteger and(ImageMask source1, ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("and", source1);
-        for (int z = 0; z<source1.getSizeZ(); ++z) {
-            for (int xy=0; xy<source1.getSizeXY(); ++xy) {
+        for (int z = 0; z<source1.sizeZ(); ++z) {
+            for (int xy=0; xy<source1.sizeXY(); ++xy) {
                 if (source1.insideMask(xy, z) && source2.insideMask(xy, z)) output.setPixel(xy, z, 1);
                 else output.setPixel(xy, z, 0);
             }
@@ -555,14 +507,14 @@ public class ImageOperations {
     
     public static void trimValues(Image image, double value, double replacementValue, boolean trimUnderValue) {
         if (trimUnderValue) {
-            for (int z = 0; z<image.getSizeZ(); ++z) {
-                for (int xy=0; xy<image.getSizeXY(); ++xy) {
+            for (int z = 0; z<image.sizeZ(); ++z) {
+                for (int xy=0; xy<image.sizeXY(); ++xy) {
                     if (image.getPixel(xy, z)<value) image.setPixel(xy, z, replacementValue);
                 }
             }
         } else {
-            for (int z = 0; z<image.getSizeZ(); ++z) {
-                for (int xy=0; xy<image.getSizeXY(); ++xy) {
+            for (int z = 0; z<image.sizeZ(); ++z) {
+                for (int xy=0; xy<image.sizeXY(); ++xy) {
                     if (image.getPixel(xy, z)>value) image.setPixel(xy, z, replacementValue);
                 }
             }
@@ -577,28 +529,85 @@ public class ImageOperations {
      */
     public static float[] meanProjection(Image image, Axis axis, BoundingBox limit) {
         float[] res;
-        if (limit==null) limit = new BoundingBox(image, false);
-        if (axis.equals(X)) {
-            res = new float[limit.getSizeX()];
-            for (int x = limit.getxMin(); x<=limit.getxMax(); ++x) {
-                double sum=0;
-                for (int z=limit.getzMin(); z<=limit.getzMax(); ++z) for (int y=limit.getyMin(); y<=limit.getyMax(); ++y) sum+=image.getPixel(x, y, z);
-                res[x-limit.getxMin()]=(float) (sum/(limit.getSizeY()*limit.getSizeZ()));
-            }
-        } else if (axis.equals(Y)) {
-            res = new float[limit.getSizeY()];
-            for (int y = limit.getyMin(); y<=limit.getyMax(); ++y) {
-                double sum=0;
-                for (int z=limit.getzMin(); z<=limit.getzMax(); ++z) for (int x=limit.getxMin(); x<=limit.getxMax(); ++x) sum+=image.getPixel(x, y, z);
-                res[y-limit.getyMin()]=(float) (sum/(limit.getSizeX()*limit.getSizeZ()));
-            }
-        } else {
-            res = new float[limit.getSizeZ()];
-            for (int z = limit.getzMin(); z<=limit.getzMax(); ++z) {
-                double sum=0;
-                for (int x=limit.getxMin(); x<=limit.getxMax(); ++x) for (int y=limit.getyMin(); y<=limit.getyMax(); ++y) sum+=image.getPixel(x, y, z);
-                res[z-limit.getzMin()]=(float) (sum/(limit.getSizeY()*limit.getSizeX()));
-            }
+        if (limit==null) limit = new SimpleBoundingBox(image).resetOffset();
+        switch (axis) {
+            case X:
+                res = new float[limit.sizeX()];
+                for (int x = limit.xMin(); x<=limit.xMax(); ++x) {
+                    double sum=0;
+                    for (int z=limit.zMin(); z<=limit.zMax(); ++z) for (int y=limit.yMin(); y<=limit.yMax(); ++y) sum+=image.getPixel(x, y, z);
+                    res[x-limit.xMin()]=(float) (sum/(limit.sizeY()*limit.sizeZ()));
+                }   break;
+            case Y:
+                res = new float[limit.sizeY()];
+                for (int y = limit.yMin(); y<=limit.yMax(); ++y) {
+                    double sum=0;
+                    for (int z=limit.zMin(); z<=limit.zMax(); ++z) for (int x=limit.xMin(); x<=limit.xMax(); ++x) sum+=image.getPixel(x, y, z);
+                    res[y-limit.yMin()]=(float) (sum/(limit.sizeX()*limit.sizeZ()));
+                }   break;
+            default:
+                res = new float[limit.sizeZ()];
+                for (int z = limit.zMin(); z<=limit.zMax(); ++z) {
+                    double sum=0;
+                    for (int x=limit.xMin(); x<=limit.xMax(); ++x) for (int y=limit.yMin(); y<=limit.yMax(); ++y) sum+=image.getPixel(x, y, z);
+                    res[z-limit.zMin()]=(float) (sum/(limit.sizeY()*limit.sizeX()));
+                }   break;
+        }
+        return res;
+    }
+    public static float[] meanProjection(Image image, Axis axis, BoundingBox limit, DoublePredicate useValue) {
+        float[] res;
+        if (limit==null) limit = new SimpleBoundingBox(image).resetOffset();
+        switch (axis) {
+            case X:
+                res = new float[limit.sizeX()];
+                for (int x = limit.xMin(); x<=limit.xMax(); ++x) {
+                    double sum=0;
+                    double count= 0;
+                    for (int z=limit.zMin(); z<=limit.zMax(); ++z) {
+                        for (int y=limit.yMin(); y<=limit.yMax(); ++y) {
+                            double v = image.getPixel(x, y, z);
+                            if (useValue.test(v)) {
+                                sum+=v;
+                                ++count;
+                            }
+                            
+                        }
+                    }
+                    res[x-limit.xMin()]=(float) (sum/count);
+                }   break;
+            case Y:
+                res = new float[limit.sizeY()];
+                for (int y = limit.yMin(); y<=limit.yMax(); ++y) {
+                    double sum=0;
+                    double count = 0;
+                    for (int z=limit.zMin(); z<=limit.zMax(); ++z) {
+                        for (int x=limit.xMin(); x<=limit.xMax(); ++x) {
+                            double v = image.getPixel(x, y, z);
+                            if (useValue.test(v)) {
+                                sum+=v;
+                                ++count;
+                            }
+                        }
+                    }
+                    res[y-limit.yMin()]=(float) (sum/count);
+                }   break;
+            default:
+                res = new float[limit.sizeZ()];
+                for (int z = limit.zMin(); z<=limit.zMax(); ++z) {
+                    double sum=0;
+                    double count = 0;
+                    for (int x=limit.xMin(); x<=limit.xMax(); ++x) {
+                        for (int y=limit.yMin(); y<=limit.yMax(); ++y) {
+                            double v = image.getPixel(x, y, z);
+                            if (useValue.test(v)) {
+                                sum+=v;
+                                ++count;
+                            }
+                        }
+                    }
+                    res[z-limit.zMin()]=(float) (sum/count);
+                }   break;
         }
         return res;
     }
@@ -613,54 +622,55 @@ public class ImageOperations {
     public static float[] maxProjection(Image image, Axis axis, BoundingBox limit) {
         float[] res;
         float value;
-        if (limit==null) limit = new BoundingBox(image, false);
-        if (axis.equals(X)) {
-            res = new float[limit.getSizeX()];
-            for (int x = limit.getxMin(); x<=limit.getxMax(); ++x) {
-                float max=image.getPixel(x, limit.getyMin(), limit.getzMin());
-                for (int z=limit.getzMin(); z<=limit.getzMax(); ++z) for (int y=limit.getyMin(); y<=limit.getyMax(); ++y) {value=image.getPixel(x, y, z); if (value>max) max=value;}
-                res[x-limit.getxMin()]=max;
-            }
-        } else if (axis.equals(Y)) {
-            res = new float[limit.getSizeY()];
-            for (int y = limit.getyMin(); y<=limit.getyMax(); ++y) {
-                float max=image.getPixel(limit.getxMin(), y, limit.getzMin());
-                for (int z=limit.getzMin(); z<=limit.getzMax(); ++z) for (int x=limit.getxMin(); x<=limit.getxMax(); ++x) {value=image.getPixel(x, y, z); if (value>max) max=value;}
-                res[y-limit.getyMin()]=max;
-            }
-        } else {
-            res = new float[limit.getSizeZ()];
-            for (int z = limit.getzMin(); z<=limit.getzMax(); ++z) {
-                float max=image.getPixel(limit.getxMin(), limit.getyMin(), z);
-                for (int x=limit.getxMin(); x<=limit.getxMax(); ++x) for (int y=limit.getyMin(); y<=limit.getyMax(); ++y) {value=image.getPixel(x, y, z); if (value>max) max=value;}
-                res[z-limit.getzMin()]=max;
-            }
+        if (limit==null) limit = new SimpleBoundingBox(image).resetOffset();
+        switch (axis) {
+            case X:
+                res = new float[limit.sizeX()];
+                for (int x = limit.xMin(); x<=limit.xMax(); ++x) {
+                    float max=image.getPixel(x, limit.yMin(), limit.zMin());
+                    for (int z=limit.zMin(); z<=limit.zMax(); ++z) for (int y=limit.yMin(); y<=limit.yMax(); ++y) {value=image.getPixel(x, y, z); if (value>max) max=value;}
+                    res[x-limit.xMin()]=max;
+                }   break;
+            case Y:
+                res = new float[limit.sizeY()];
+                for (int y = limit.yMin(); y<=limit.yMax(); ++y) {
+                    float max=image.getPixel(limit.xMin(), y, limit.zMin());
+                    for (int z=limit.zMin(); z<=limit.zMax(); ++z) for (int x=limit.xMin(); x<=limit.xMax(); ++x) {value=image.getPixel(x, y, z); if (value>max) max=value;}
+                    res[y-limit.yMin()]=max;
+                }   break;
+            default:
+                res = new float[limit.sizeZ()];
+                for (int z = limit.zMin(); z<=limit.zMax(); ++z) {
+                    float max=image.getPixel(limit.xMin(), limit.yMin(), z);
+                    for (int x=limit.xMin(); x<=limit.xMax(); ++x) for (int y=limit.yMin(); y<=limit.yMax(); ++y) {value=image.getPixel(x, y, z); if (value>max) max=value;}
+                    res[z-limit.zMin()]=max;
+                }   break;
         }
         return res;
     }
     public static ImageFloat meanZProjection(Image input) {return meanZProjection(input, null);}
     public static <T extends Image<T>> T meanZProjection(Image input, T output) {
-        BlankMask properties =  new BlankMask( input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
+        BlankMask properties =  new BlankMask( input.sizeX(), input.sizeY(), 1, input.xMin(), input.yMin(), input.zMin(), input.getScaleXY(), input.getScaleZ());
         if (output ==null) output = (T)new ImageFloat("mean Z projection", properties);
         else if (!output.sameDimensions(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
-        float size = input.getSizeZ();
-        for (int xy = 0; xy<input.getSizeXY(); ++xy) {
+        float size = input.sizeZ();
+        for (int xy = 0; xy<input.sizeXY(); ++xy) {
             float sum = 0;
-            for (int z = 0; z<input.getSizeZ(); ++z) sum+=input.getPixel(xy, z);
+            for (int z = 0; z<input.sizeZ(); ++z) sum+=input.getPixel(xy, z);
             output.setPixel(xy, 0, sum/size);
         }
         return output;
     }
     public static <T extends Image<T>> T maxZProjection(T input, int... zLim) {return maxZProjection(input, null, zLim);}
     public static <T extends Image<T>> T maxZProjection(T input, T output, int... zLim) {
-        BlankMask properties =  new BlankMask( input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
+        BlankMask properties =  new BlankMask( input.sizeX(), input.sizeY(), 1, input.xMin(), input.yMin(), input.zMin(), input.getScaleXY(), input.getScaleZ());
         if (output ==null) output = (T)Image.createEmptyImage("max Z projection", input, properties);
         else if (!output.sameDimensions(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
         int zMin = 0;
-        int zMax = input.getSizeZ()-1;
+        int zMax = input.sizeZ()-1;
         if (zLim.length>0) zMin = zLim[0];
         if (zLim.length>1) zMax = zLim[1];
-        for (int xy = 0; xy<input.getSizeXY(); ++xy) {
+        for (int xy = 0; xy<input.sizeXY(); ++xy) {
             float max = input.getPixel(xy, 0);
             for (int z = zMin+1; z<=zMax; ++z) {
                 if (input.getPixel(xy, z)>max) {
@@ -679,8 +689,8 @@ public class ImageOperations {
         double scale = 1 / (mm[1] - mm[0]);
         double offset = -mm[0] * scale;
         float[][] pixels = output.getPixelArray();
-        for (int z = 0; z < input.getSizeZ(); z++) {
-            for (int xy = 0; xy < input.getSizeXY(); xy++) {
+        for (int z = 0; z < input.sizeZ(); z++) {
+            for (int xy = 0; xy < input.sizeXY(); xy++) {
                 pixels[z][xy] = (float) (input.getPixel(xy, z) * scale + offset);
             }
         }
@@ -711,8 +721,8 @@ public class ImageOperations {
         //logger.debug("normalize: min ({}) = {}, max ({}) = {}, scale: {}, offset: {}", pMin, minAndMax[0], pMax, minAndMax[1], scale, offset);
         float[][] pixels = output.getPixelArray();
         if (saturate) {
-            for (int z = 0; z < input.getSizeZ(); z++) {
-                for (int xy = 0; xy < input.getSizeXY(); xy++) {
+            for (int z = 0; z < input.sizeZ(); z++) {
+                for (int xy = 0; xy < input.sizeXY(); xy++) {
                     float res = (float) (input.getPixel(xy, z) * scale + offset);
                     if (res<0) res = 0;
                     if (res>1) res = 1;
@@ -720,28 +730,28 @@ public class ImageOperations {
                 }
             }
         } else {
-            for (int z = 0; z < input.getSizeZ(); z++) {
-                for (int xy = 0; xy < input.getSizeXY(); xy++) {
+            for (int z = 0; z < input.sizeZ(); z++) {
+                for (int xy = 0; xy < input.sizeXY(); xy++) {
                     pixels[z][xy] = (float) (input.getPixel(xy, z) * scale + offset);
                 }
             }
         }
         return output;
     }
-    public static double[] getQuantiles(Image image, ImageMask mask, BoundingBox limits, double... percent) {
+    public static double[] getQuantiles(Image image, ImageMask mask, MutableBoundingBox limits, double... percent) {
         double[] mm = image.getMinAndMax(mask);
         Histogram histo = image.getHisto256(mm[0], mm[1], mask, limits);
         return histo.getQuantiles(percent);
     }
     
     
-    public static Voxel getGlobalExtremum(Image image, BoundingBox area, boolean max) {
-        float extrema = image.getPixel(area.getxMin(), area.getyMin(), area.getzMin());
-        int xEx=area.getxMin(), yEx=area.getyMin(), zEx=area.getzMin();
+    public static Voxel getGlobalExtremum(Image image, MutableBoundingBox area, boolean max) {
+        float extrema = image.getPixel(area.xMin(), area.yMin(), area.zMin());
+        int xEx=area.xMin(), yEx=area.yMin(), zEx=area.zMin();
         if (max) {
-            for (int z= area.getzMin();z<=area.getzMax();++z) {
-                for (int y = area.getyMin(); y<=area.getyMax(); y++) {
-                    for (int x=area.getxMin(); x<=area.getxMax(); ++x) {
+            for (int z= area.zMin();z<=area.zMax();++z) {
+                for (int y = area.yMin(); y<=area.yMax(); y++) {
+                    for (int x=area.xMin(); x<=area.xMax(); ++x) {
                         if (image.getPixel(x, y, z)>extrema) {
                             extrema = image.getPixel(x, y, z); 
                             yEx=y; xEx=x; zEx=z;
@@ -750,9 +760,9 @@ public class ImageOperations {
                 }
             }
         } else {
-            for (int z= area.getzMin();z<=area.getzMax();++z) {
-                for (int y = area.getyMin(); y<=area.getyMax(); y++) {
-                    for (int x=area.getxMin(); x<=area.getxMax(); ++x) {
+            for (int z= area.zMin();z<=area.zMax();++z) {
+                for (int y = area.yMin(); y<=area.yMax(); y++) {
+                    for (int x=area.xMin(); x<=area.xMax(); ++x) {
                         if (image.getPixel(x, y, z)<extrema) {
                             extrema = image.getPixel(x, y, z); 
                             yEx=y; xEx=x; zEx=z;
@@ -765,11 +775,11 @@ public class ImageOperations {
             
     }
     
-    public static void fill(Image image, double value, BoundingBox area) { // TODO: use System method
-        if (area==null) area=image.getBoundingBox().translateToOrigin();
-        for (int z= area.getzMin();z<=area.getzMax();++z) {
-            for (int y = area.getyMin(); y<=area.getyMax(); y++) {
-                for (int x=area.getxMin(); x<=area.getxMax(); ++x) {
+    public static void fill(Image image, double value, MutableBoundingBox area) { // TODO: use System method
+        if (area==null) area=image.getBoundingBox().resetOffset();
+        for (int z= area.zMin();z<=area.zMax();++z) {
+            for (int y = area.yMin(); y<=area.yMax(); y++) {
+                for (int x=area.xMin(); x<=area.xMax(); ++x) {
                     image.setPixel(x, y, z, value);
                 }
             }
@@ -778,10 +788,10 @@ public class ImageOperations {
     
     public static float getMinOverThreshold(Image image, float threshold) {
         float min = Float.MAX_VALUE;
-        BoundingBox limits = image.getBoundingBox();
-        for (int z = limits.getzMin(); z <= limits.getzMax(); z++) {
-            for (int y = limits.getyMin(); y<=limits.getyMax(); ++y) {
-                for (int x = limits.getxMin(); x <= limits.getxMax(); ++x) {
+        MutableBoundingBox limits = image.getBoundingBox().resetOffset();
+        for (int z = limits.zMin(); z <= limits.zMax(); z++) {
+            for (int y = limits.yMin(); y<=limits.yMax(); ++y) {
+                for (int x = limits.xMin(); x <= limits.xMax(); ++x) {
                     //if (mask.insideMask(x, y, z)) {
                     if (image.getPixel(x, y, z) < min && image.getPixel(x, y, z)>threshold) {
                         min = image.getPixel(x, y, z);
@@ -794,14 +804,14 @@ public class ImageOperations {
         return min;
     }
     
-    public static double[] getMeanAndSigma(Image image, ImageMask mask, Predicate<Double> useValue) {
+    public static double[] getMeanAndSigma(Image image, ImageMask mask, DoublePredicate useValue) {
         if (mask==null) mask = new BlankMask(image);
         double mean = 0;
         double count = 0;
         double values2 = 0;
         double value;
-        for (int z = 0; z < image.getSizeZ(); ++z) {
-            for (int xy = 0; xy < image.getSizeXY(); ++xy) {
+        for (int z = 0; z < image.sizeZ(); ++z) {
+            for (int xy = 0; xy < image.sizeXY(); ++xy) {
                 if (mask.insideMask(xy, z)) {
                     value = image.getPixel(xy, z);
                     if (useValue==null || useValue.test(value)) {
@@ -824,8 +834,8 @@ public class ImageOperations {
         double count = 0;
         double values2 = 0;
         double value;
-        for (int z = 0; z < image.getSizeZ(); ++z) {
-            for (int xy = 0; xy < image.getSizeXY(); ++xy) {
+        for (int z = 0; z < image.sizeZ(); ++z) {
+            for (int xy = 0; xy < image.sizeXY(); ++xy) {
                 if (mask.insideMask(xy, z)) {
                     value = image.getPixel(xy, z);
                     mean += value;
@@ -839,13 +849,13 @@ public class ImageOperations {
         return new double[]{mean, Math.sqrt(values2 - mean * mean), count};
     }
     
-    public static double[] getMeanAndSigmaWithOffset(Image image, ImageMask mask, Function<Double, Boolean> useValue) {
+    public static double[] getMeanAndSigmaWithOffset(Image image, ImageMask mask, DoublePredicate useValue) {
         if (mask==null) mask = new BlankMask(image);
         final ImageMask mask2 = mask;
         double[] vv2c = new double[3];
-        BoundingBox intersect = mask.getBoundingBox().getIntersection(image.getBoundingBox());
+        BoundingBox intersect = BoundingBox.getIntersection(mask, image);
         if (useValue==null) {
-            intersect.loop((int x, int y, int z) -> {
+            loop(intersect, (int x, int y, int z) -> {
                 if (mask2.insideMaskWithOffset(x, y, z)) {
                     double tmp = image.getPixelWithOffset(x, y, z);
                     vv2c[0] += tmp;
@@ -854,10 +864,10 @@ public class ImageOperations {
                 }
             });
         } else {
-            intersect.loop((int x, int y, int z) -> {
+            loop(intersect, (int x, int y, int z) -> {
                 if (mask2.insideMaskWithOffset(x, y, z)) {
                     double tmp = image.getPixelWithOffset(x, y, z);
-                    if (useValue.apply(tmp)) {
+                    if (useValue.test(tmp)) {
                         vv2c[0] += tmp;
                         vv2c[1] += tmp * tmp;
                         ++vv2c[2];

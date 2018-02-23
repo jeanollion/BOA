@@ -35,7 +35,7 @@ public class TestStream {
         im.getPixelArray()[0][5] = 3; // x=1 // y=1
         im.getPixelArray()[1][5] = 4; // x=1 // y=1 // z=1
         double[] values = im.stream().sorted().toArray();
-        double[] test = new double[im.getSizeXYZ()];
+        double[] test = new double[im.sizeXYZ()];
         test[test.length-1] = 4;
         test[test.length-2] = 3;
         test[test.length-3] = 2;
@@ -45,17 +45,17 @@ public class TestStream {
     @Test
     public void testStreamWithMask() {
         ImageFloat im = new ImageFloat("", 5, 4, 3);
-        im.addOffset(10, 11, 12);
+        im.translate(10, 11, 12);
         im.getPixelArray()[0][0] = 1;
         im.getPixelArray()[0][4] = 2; // x=4 y =0
-        im.getPixelArray()[0][im.getSizeX()*1+1] = 3; // x=1 // y=1
-        im.getPixelArray()[2][im.getSizeX()*1+3] = 4; // x=3 // y=1 // z=2
-        double[] values = im.stream(new BlankMask(im), true).sorted().toArray();
-        double[] test = new double[im.getSizeXYZ()];
+        im.getPixelArray()[0][im.sizeX()*1+1] = 3; // x=1 // y=1
+        im.getPixelArray()[2][im.sizeX()*1+3] = 4; // x=3 // y=1 // z=2
+        double[] test = new double[im.sizeXYZ()];
         test[test.length-1] = 4;
         test[test.length-2] = 3;
         test[test.length-3] = 2;
         test[test.length-4] = 1;
+        double[] values = im.stream(new BlankMask(im), true).sorted().toArray();
         assertArrayEquals("stream with blank mask, abs off", test, values, 0.0);
         values = im.stream(new BlankMask(im), false).sorted().toArray();
         assertArrayEquals("stream with blank mask, rel off", new double[0],  values, 0.0);
@@ -64,16 +64,16 @@ public class TestStream {
         values = im.stream(new BlankMask(im).resetOffset(), true).sorted().toArray();
         assertArrayEquals("stream with blank mask, no off, rel off", new double[0], values, 0.0);
         
-        ImageByte mask = new ImageByte("", 1, 1, 1).addOffset(3, 1, 2);
+        ImageByte mask = new ImageByte("", 1, 1, 1).translate(3, 1, 2);
         mask.getPixelArray()[0][0]=1;
         values = im.stream(mask, false).sorted().toArray();
         assertArrayEquals("stream mask, rel off", new double[]{4}, values, 0.0);
         values = im.stream(mask, true).sorted().toArray();
         assertArrayEquals("stream mask, abs off, no inter", new double[0], values, 0.0);
-        mask.addOffset(im);
+        mask.translate(im);
         values = im.stream(mask, true).sorted().toArray();
         assertArrayEquals("stream mask, abs off", new double[]{4}, values, 0.0);
-        BlankMask mask2 = new BlankMask(3, 1, 3).addOffset(new BoundingBox(1, 1, 0));
+        BlankMask mask2 = new BlankMask(3, 1, 3).translate(new MutableBoundingBox(1, 1, 0));
         test = new double[mask2.getSizeXYZ()];
         test[test.length-1] = 4;
         test[test.length-2] = 3;
@@ -81,7 +81,7 @@ public class TestStream {
         assertArrayEquals("stream mask2, rel off", test, values, 0.0);
         values = im.stream(mask2, true).sorted().toArray();
         assertArrayEquals("stream mask2, abs off no off", new double[0], values, 0.0);
-        values = im.stream(mask2.addOffset(im), true).sorted().toArray();
+        values = im.stream(mask2.translate(im), true).sorted().toArray();
         assertArrayEquals("stream mask2, abs off", test, values, 0.0);
     }
 }

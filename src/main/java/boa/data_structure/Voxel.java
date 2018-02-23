@@ -1,6 +1,7 @@
 package boa.data_structure;
 
 import static boa.data_structure.Region.logger;
+import boa.image.Offset;
 import java.util.Collection;
 import java.util.Comparator;
 
@@ -55,11 +56,16 @@ public class Voxel implements Comparable<Voxel> {
     }
 
     public Voxel translate(int dX, int dY, int dZ) {
-        //if ((x+dX)<0) logger.debug("voxel neg: dX: {}, v: {}", dX, this);
         x+=dX;
         y+=dY;
         z+=dZ;
-        
+        return this;
+    }
+    
+    public Voxel translate(Offset offset) {
+        x+=offset.xMin();
+        y+=offset.yMin();
+        z+=offset.zMin();
         return this;
     }
     

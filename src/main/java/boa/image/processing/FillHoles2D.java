@@ -80,11 +80,11 @@ public class FillHoles2D {
     }
     // TODO fix for other than byte processor!!
     public static void fillHoles(ImageInteger image, int midValue) {
-        if (image.getSizeZ()==1) {
+        if (image.sizeZ()==1) {
             fillHoles(IJImageWrapper.getImagePlus(image).getProcessor(), midValue);
         } else {
             ImageStack stack = IJImageWrapper.getImagePlus(image).getImageStack();
-            for (int i = 1; i<=image.getSizeZ(); i++) { // TODO multithread
+            for (int i = 1; i<=image.sizeZ(); i++) { // TODO multithread
                 fillHoles(stack.getProcessor(i), midValue);
             }
         }
@@ -172,7 +172,7 @@ public class FillHoles2D {
             if (interfaces.size()==1) return true;
             else { // link separated objects only if all but one are small enough
                 Set<Region> interactants = clust.getInteractants(object);
-                interactants.removeIf(o -> o.getLabel()==0 || o.getSize()<=fusionSize); 
+                interactants.removeIf(o -> o.getLabel()==0 || o.size()<=fusionSize); 
                 return interactants.size()<=1;
             }
         }

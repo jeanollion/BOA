@@ -261,7 +261,7 @@ public class PluginConfigurationUtils {
                     logger.warn("No active image");
                     return;
                 }
-                logger.debug("current image has: {} frames, {} channels, {} slices", imCT[0].length, imCT.length, imCT[0][0].getSizeZ());
+                logger.debug("current image has: {} frames, {} channels, {} slices", imCT[0].length, imCT.length, imCT[0][0].sizeZ());
                 MemoryImageContainer cont = new MemoryImageContainer(imCT);
                 logger.debug("container: {} frames, {} channels", cont.getFrameNumber(), cont.getChannelNumber());
                 InputImagesImpl images = cont.getInputImages(position.getName());

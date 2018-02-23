@@ -21,7 +21,8 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import boa.image.BoundingBox;
+import static boa.image.BoundingBox.getDistance;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
@@ -123,13 +124,13 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         c.addForbidFusionPredicate(forbidFusion);
         RegionCluster.verbose=this.testMode;
         if (minSizeFusion>0) c.mergeSmallObjects(minSizeFusion, objectMergeLimit, null);
-        if (ignoreEndOfChannelRegionWhenMerginSmallRegions && !popWS.getRegions().isEmpty()) yLimLastObject = Collections.max(popWS.getRegions(), (o1, o2)->Double.compare(o1.getBounds().getyMax(), o2.getBounds().getyMax())).getBounds().getyMax();
+        if (ignoreEndOfChannelRegionWhenMerginSmallRegions && !popWS.getRegions().isEmpty()) yLimLastObject = Collections.max(popWS.getRegions(), (o1, o2)->Double.compare(o1.getBounds().yMax(), o2.getBounds().yMax())).getBounds().yMax();
         if (curvaturePerCluster) updateCurvature(c.getClusters(), popWS.getLabelMap());
         c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
         if (minSizeFusion>0) {
             BiFunction<Region, Set<Region>, Region> noInterfaceCase = (smallO, set) -> {
                 if (set.isEmpty()) return null;
-                Region closest = Collections.min(set, (o1, o2) -> Double.compare(o1.getBounds().getDistance(smallO.getBounds()), o2.getBounds().getDistance(smallO.getBounds())));
+                Region closest = Collections.min(set, (o1, o2) -> Double.compare(getDistance(o1.getBounds(), smallO.getBounds()), getDistance(o2.getBounds(), smallO.getBounds())));
                 double d = GeometricalMeasurements.getDistanceBB(closest, smallO, false);
                 if (testMode) logger.debug("merge small objects with no interface: min distance: {} to {} = {}", smallO.getLabel(), closest.getLabel(), d);
                 if (d<maxMergeDistanceBB) return closest;
@@ -226,10 +227,10 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
                 // getJoinedMask of 2 objects
                 ImageInteger m1 = e1.getMaskAsImageInteger();
                 ImageInteger m2 = e2.getMaskAsImageInteger();
-                BoundingBox joinBox = m1.getBoundingBox(); 
+                MutableBoundingBox joinBox = m1.getBoundingBox(); 
                 joinBox.expand(m2.getBoundingBox());
                 ImageByte mask = new ImageByte("joinedMask:"+e1.getLabel()+"+"+e2.getLabel(), joinBox.getImageProperties());//.setCalibration(m1);
-                ImageOperations.pasteImage(m1, mask, m1.getBoundingBox().translate(mask.getBoundingBox().reverseOffset()));
+                Image.pasteImage(m1, mask, m1.getBoundingBox().translate(mask.getBoundingBox().reverseOffset()));
                 
                 if (testMode) for (Voxel v : e2.getVoxels()) mask.setPixelWithOffset(v.x, v.y, v.z, 2);
                 else ImageOperations.orWithOffset(m2, mask, mask);
@@ -287,7 +288,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             if (maxVoxel==null) return false;
             if (this.voxels.isEmpty()) return false;
             // criterion on size
-            if ((this.e1.getSize()<minSizeFusion && (Double.isNaN(yLimLastObject) || e1.getBounds().getyMax()<yLimLastObject)) || (e2.getSize()<minSizeFusion&& (Double.isNaN(yLimLastObject) || e2.getBounds().getyMax()<yLimLastObject))) return true; // fusion of small objects, except for last objects
+            if ((this.e1.size()<minSizeFusion && (Double.isNaN(yLimLastObject) || e1.getBounds().yMax()<yLimLastObject)) || (e2.size()<minSizeFusion&& (Double.isNaN(yLimLastObject) || e2.getBounds().yMax()<yLimLastObject))) return true; // fusion of small objects, except for last objects
 
             // criterion on curvature
             // curvature has been computed @ upadateSortValue
@@ -426,7 +427,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             // add border voxel
             ImageInteger mask = getJoinedMask();
             Set<Voxel> allBorderVoxels = new HashSet<>();
-            for (Voxel v : voxels) if (borderNeigh.hasNullValue(v.x-mask.getOffsetX(), v.y-mask.getOffsetY(), v.z-mask.getOffsetZ(), mask, true)) allBorderVoxels.add(v);
+            for (Voxel v : voxels) if (borderNeigh.hasNullValue(v.x-mask.xMin(), v.y-mask.yMin(), v.z-mask.zMin(), mask, true)) allBorderVoxels.add(v);
             //if ((testMode) && allBorderVoxels.isEmpty()) ImageWindowManagerFactory.showImage(mask.duplicate("joindedMask "+this));
             //logger.debug("all border voxels: {}", allBorderVoxels.size());
             populateBoderVoxel(allBorderVoxels);
@@ -435,7 +436,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         private void populateBoderVoxel(Collection<Voxel> allBorderVoxels) {
             if (allBorderVoxels.isEmpty()) return;
 
-            BoundingBox b = new BoundingBox();
+            MutableBoundingBox b = new MutableBoundingBox();
             for (Voxel v : allBorderVoxels) b.expand(v);
             ImageByte mask = new ImageByte("", b.getImageProperties());
             for (Voxel v : allBorderVoxels) mask.setPixelWithOffset(v.x, v.y, v.z, 1);

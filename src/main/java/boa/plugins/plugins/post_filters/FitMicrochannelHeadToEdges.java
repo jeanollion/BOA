@@ -27,10 +27,12 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
 import boa.data_structure.Voxel2D;
+import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageLabeller;
+import boa.image.SimpleBoundingBox;
 import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
 import java.util.List;
@@ -71,21 +73,21 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
     
     private static void cutHead(Image edgeMap, int margin, Region object) {
         BoundingBox b = object.getBounds();
-        BoundingBox head = new BoundingBox(b.getxMin()-margin, b.getxMax()+margin, b.getyMin()-margin, b.getyMin()+b.getSizeX(), b.getzMin(), b.getzMax());
+        BoundingBox head = new SimpleBoundingBox(b.xMin()-margin, b.xMax()+margin, b.yMin()-margin, b.yMin()+b.sizeX(), b.zMin(), b.zMax());
         Image edgeMapLocal = edgeMap.crop(head);
         List<Region> seeds = new ArrayList<>(3);
         int label = 0;
         double scaleXY = edgeMap.getScaleXY();
         double scaleZ = edgeMap.getScaleZ();
         Voxel corner1 = new Voxel(0, 0, 0);
-        Voxel corner2 = new Voxel(edgeMapLocal.getSizeX()-1, 0, 0);
+        Voxel corner2 = new Voxel(edgeMapLocal.sizeX()-1, 0, 0);
         seeds.add(new Region(corner1, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
         seeds.add(new Region(corner2, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
         // add all local min within innerHead
         int innerMargin = margin*2;
-        if (innerMargin*2>=b.getSizeX()-2) innerMargin = Math.max(1, b.getSizeX()/4);
-        BoundingBox innerHead = new BoundingBox(innerMargin, head.getSizeX()-1-innerMargin,innerMargin, head.getSizeY()-1-innerMargin, 0, head.getSizeZ()-1);
-        ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, innerHead.getImageProperties(1, 1), Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
+        if (innerMargin*2>=b.sizeX()-2) innerMargin = Math.max(1, b.sizeX()/4);
+        BoundingBox innerHead = new SimpleBoundingBox(innerMargin, head.sizeX()-1-innerMargin,innerMargin, head.sizeY()-1-innerMargin, 0, head.sizeZ()-1);
+        ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, new BlankMask(innerHead, 1, 1), Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds before and"));
         //ImageOperations.andWithOffset(maxL, innerHead.getImageProperties(1, 1), maxL);
         if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));

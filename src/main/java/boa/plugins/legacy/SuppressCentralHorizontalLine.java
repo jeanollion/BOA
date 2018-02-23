@@ -23,7 +23,7 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
@@ -44,10 +44,10 @@ public class SuppressCentralHorizontalLine  implements Transformation {
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         int pixNb = pixelNumber.getValue().intValue();
-        if ((image.getSizeY()-pixNb)%2==1) pixNb++;
-        Image res = Image.createEmptyImage(image.getName(), image, new BlankMask(image.getSizeX(), image.getSizeY()-pixNb, image.getSizeZ()));
-        ImageOperations.pasteImage(image, res, new BoundingBox(0, 0, 0), new BoundingBox(0, image.getSizeX()-1, 0, (image.getSizeY()-pixNb)/2-1, 0, image.getSizeZ()-1));
-        ImageOperations.pasteImage(image, res, new BoundingBox(0, (image.getSizeY()-pixNb)/2, 0), new BoundingBox(0, image.getSizeX()-1, (image.getSizeY()+pixNb)/2, image.getSizeY()-1, 0, image.getSizeZ()-1));
+        if ((image.sizeY()-pixNb)%2==1) pixNb++;
+        Image res = Image.createEmptyImage(image.getName(), image, new BlankMask(image.sizeX(), image.sizeY()-pixNb, image.sizeZ()));
+        Image.pasteImage(image, res, new MutableBoundingBox(0, 0, 0), new MutableBoundingBox(0, image.sizeX()-1, 0, (image.sizeY()-pixNb)/2-1, 0, image.sizeZ()-1));
+        Image.pasteImage(image, res, new MutableBoundingBox(0, (image.sizeY()-pixNb)/2, 0), new MutableBoundingBox(0, image.sizeX()-1, (image.sizeY()+pixNb)/2, image.sizeY()-1, 0, image.sizeZ()-1));
         return res;
     }
 

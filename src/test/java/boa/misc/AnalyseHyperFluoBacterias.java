@@ -26,10 +26,11 @@ import boa.data_structure.input_image.InputImagesImpl;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.MasterDAOFactory;
 import boa.data_structure.Region;
+import static boa.image.BoundingBox.loop;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.process.AutoThresholder;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
@@ -114,7 +115,7 @@ public class AnalyseHyperFluoBacterias {
         IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();
         if (images!=null && !images.isEmpty()) {
             List<ImageInteger> utlraCrop = Utils.transform(images, i->crop(i));
-            Roi3D r = IJImageWindowManager.createRoi((ImageInteger)Image.mergeZPlanes(utlraCrop), new BoundingBox(0, 0, 0), true);
+            Roi3D r = IJImageWindowManager.createRoi((ImageInteger)Image.mergeZPlanes(utlraCrop), new MutableBoundingBox(0, 0, 0), true);
             ImagePlus ip = (ImagePlus) ImageWindowManagerFactory.showImage(Image.mergeZPlanes(images).setName(name));
             iwm.displayObject(ip, r);
         }
@@ -132,7 +133,7 @@ public class AnalyseHyperFluoBacterias {
     }
     private static ImageInteger<? extends ImageInteger> crop(Image image) {
         
-        BoundingBox bds = new CropMicroChannelFluo2D().setThresholder(new BackgroundThresholder(3, 6, 3)).getBoundingBox(image);
+        MutableBoundingBox bds = new CropMicroChannelFluo2D().setThresholder(new BackgroundThresholder(3, 6, 3)).getBoundingBox(image);
         //BoundingBox bds = CropMicroChannelFluo2D.getBoundingBox(image, 30, 0, 350, thld, 0.6, 200, 0, 0, 0, 0);
         logger.debug("Bds: {}", bds);
         ImageByte res=  new ImageByte("crop", image);
@@ -158,15 +159,15 @@ public class AnalyseHyperFluoBacterias {
         double thld = getThreshold(i);
         ImageInteger tempMask = ImageOperations.threshold(i, thld, true, true, true, null);
         //Filters.binaryClose(tempMask, false, Filters.getNeighborhood(1, 0, i));
-        ImageOperations.filterObjects(tempMask, tempMask, o->o.getSize()<=1);
+        ImageOperations.filterObjects(tempMask, tempMask, o->o.size()<=1);
         //Filters.open(tempMask, tempMask, Filters.getNeighborhood(2, 0, i));
         if (masks!=null) masks.add(tempMask);
         if (!hyper) {
-            return tempMask.count() / i.getSizeXYZ();
+            return tempMask.count() / i.sizeXYZ();
         } else {
             double count = tempMask.count();
             double thld2 = IJAutoThresholder.runThresholder(i, null, null, AutoThresholder.Method.Otsu, 0);
-            tempMask.getBoundingBox().translateToOrigin().loop((x, y, z)->{if (i.getPixel(x, y, z)>thld2) tempMask.setPixel(x, y, z, 2);});
+            loop(tempMask.getBoundingBox().resetOffset(), (x, y, z)->{if (i.getPixel(x, y, z)>thld2) tempMask.setPixel(x, y, z, 2);});
             double count2 = new ThresholdMask(i, thld2, true, true).count();
             return count2/count;
         }

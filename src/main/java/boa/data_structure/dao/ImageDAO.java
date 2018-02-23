@@ -20,7 +20,7 @@ package boa.data_structure.dao;
 import boa.configuration.experiment.Experiment;
 import boa.data_structure.StructureObject;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageInteger;
 import java.io.InputStream;
@@ -35,7 +35,7 @@ public interface ImageDAO {
     public String getImageExtension();
     public InputStream openPreProcessedImageAsStream(int channelImageIdx, int timePoint, String microscopyFieldName);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
-    public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds);
+    public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, MutableBoundingBox bounds);
     public BlankMask getPreProcessedImageProperties(String microscopyFieldName);
     public void writePreProcessedImage(Image image, int channelImageIdx, int timePoint, String microscopyFieldName);
     public void writePreProcessedImage(InputStream image, int channelImageIdx, int timePoint, String microscopyFieldName);

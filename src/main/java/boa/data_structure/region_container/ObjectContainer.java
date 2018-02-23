@@ -19,7 +19,8 @@ package boa.data_structure.region_container;
 
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
+import boa.image.SimpleBoundingBox;
 import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -33,11 +34,11 @@ public abstract class ObjectContainer {
     public static final int MAX_VOX_3D = 20;
     public static final int MAX_VOX_2D = 30;
     protected transient StructureObject structureObject;
-    BoundingBox bounds;
+    SimpleBoundingBox bounds;
     boolean is2D;
     public ObjectContainer(StructureObject structureObject) {
         this.structureObject=structureObject;
-        this.bounds=structureObject.getBounds();
+        this.bounds=new SimpleBoundingBox(structureObject.getBounds());
     }
     public void setStructureObject(StructureObject structureObject) {
         this.structureObject=structureObject;
@@ -48,13 +49,13 @@ public abstract class ObjectContainer {
     public abstract Region getObject();
     public void updateObject() {
         is2D = structureObject.getObject().is2D();
-        bounds = structureObject.getObject().getBounds();
+        bounds = new SimpleBoundingBox(structureObject.getObject().getBounds());
     }
     public abstract void deleteObject();
     public abstract void relabelObject(int newIdx);
     public void initFromJSON(Map<String, Object> json) {
         JSONArray bds =  (JSONArray)json.get("bounds");
-        this.bounds=new BoundingBox();
+        this.bounds=new MutableBoundingBox();
         this.bounds.initFromJSONEntry(bds);
         if (json.containsKey("is2D")) is2D = (Boolean)json.get("is2D");
         else is2D = true; // for retrocompatibility. do not call to structure object's method at it may not be fully initiated and may not have access to experiment

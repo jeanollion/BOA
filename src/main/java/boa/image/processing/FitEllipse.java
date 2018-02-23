@@ -20,7 +20,7 @@ import ij.gui.EllipseRoi;
 import ij.gui.Roi;
 import ij.process.EllipseFitter;
 import ij.process.ImageProcessor;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.IJImageWrapper;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
@@ -77,8 +77,8 @@ public class FitEllipse {
         this.mask = mask;
         left = 0;
         top = 0;
-        width = mask.getSizeX();
-        height = mask.getSizeY();
+        width = mask.sizeX();
+        height = mask.sizeY();
         getEllipseParam();
     }
     
@@ -216,7 +216,7 @@ public class FitEllipse {
         ImageProcessor ip  = roi.getMask();
         ImagePlus imp = new ImagePlus("Ellipse Mask", ip);
         ImageByte res=  (ImageByte)IJImageWrapper.wrap(imp);    
-        res.addOffset(left-(int)((double)res.getSizeX()/2d-xCenter), top-(int)((double)res.getSizeY()/2d-yCenter), 0);
+        res.translate(left-(int)((double)res.sizeX()/2d-xCenter), top-(int)((double)res.sizeY()/2d-yCenter), 0);
         // a point in this mask needs to be shifted by the offset value to correspond to the original mask
         //logger.debug("offsetX: {}, offsetY: {}", res.getBoundingBox().getxMin(), res.getBoundingBox().getyMin());
         return res;
@@ -226,7 +226,7 @@ public class FitEllipse {
     public static EllipseFit2D fitEllipse2D(Region object) {
         FitEllipse fitter = new FitEllipse();
         ImageInteger<? extends ImageInteger> mask = object.getMaskAsImageInteger();
-        if (mask.getSizeZ()>1) mask = mask.getZPlane(mask.getSizeZ()/2);
+        if (mask.sizeZ()>1) mask = mask.getZPlane(mask.sizeZ()/2);
         
         fitter.fit(mask);
         // compute the error = nPixels outside the ROI / total pixels count
@@ -238,8 +238,8 @@ public class FitEllipse {
         res.angleRadians=fitter.theta;
         res.major=fitter.major;
         res.minor=fitter.minor;
-        res.xCenter=fitter.xCenter+object.getBounds().getxMin();
-        res.yCenter=fitter.yCenter+object.getBounds().getyMin();
+        res.xCenter=fitter.xCenter+object.getBounds().xMin();
+        res.yCenter=fitter.yCenter+object.getBounds().yMin();
         
         //logger.debug("ellipse fit: angle: {}, major: {}, minor: {}, xCenter: {}, yCenter: {}", fitter.angle, fitter.major, fitter.minor, fitter.xCenter, fitter.yCenter);
         return res;

@@ -80,7 +80,7 @@ public class IJSubtractBackground implements PreFilter, Filter {
         if (!(input instanceof ImageFloat)) input = TypeConverter.toFloat(input, null);
         else if (duplicate) input = input.duplicate();
         ImageStack ip = IJImageWrapper.getImagePlus(input).getImageStack();
-        for (int z = 0; z<input.getSizeZ(); ++z) {
+        for (int z = 0; z<input.sizeZ(); ++z) {
             new ij.plugin.filter.BackgroundSubtracter().rollingBallBackground(ip.getProcessor(z+1), radius, false, lightBackground, doSlidingParaboloid, smooth, corners);
             //process(ip.getProcessor(z+1), (float)radius, lightBackground, smooth);
         }

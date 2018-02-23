@@ -19,7 +19,7 @@ package boa.image.processing.neighborhood;
 
 import static boa.core.Processor.logger;
 import boa.data_structure.Voxel;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
@@ -104,9 +104,9 @@ public class ConicalNeighborhood extends DisplacementNeighborhood {
         return radius;
     }
 
-    @Override public BoundingBox getBoundingBox() {
+    @Override public MutableBoundingBox getBoundingBox() {
         int r = (int) radius;
-        return new BoundingBox(-r, r, -r, r, -this.radiusZDown.length, this.radiusZUp.length);
+        return new MutableBoundingBox(-r, r, -r, r, -this.radiusZDown.length, this.radiusZUp.length);
     }
     
     @Override public String toString() {
@@ -146,8 +146,8 @@ public class ConicalNeighborhood extends DisplacementNeighborhood {
             centerZ=this.radiusZDown.length;
             output = new ImageFloat("3D Conical Neighborhood: XY:", radXYMax*2+1, radXYMax*2+1, this.radiusZDown.length+this.radiusZUp.length+1);
         } else {
-            centerXY = output.getSizeX()/2+1;
-            centerZ = output.getSizeZ()/2+1;
+            centerXY = output.sizeX()/2+1;
+            centerZ = output.sizeZ()/2+1;
         }
         for (int i = 0; i<this.dx.length;++i) output.setPixel(centerXY+dx[i], centerXY+dy[i], centerZ+dz[i], i+1); //distances[i]
         return output;

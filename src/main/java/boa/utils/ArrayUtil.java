@@ -99,15 +99,15 @@ public class ArrayUtil {
      * 
      * @param array 
      * @param start start of search index, inclusive
-     * @param stop end of search index, exclusive
+     * @param stopExclusive end of search index, exclusive
      * @return index of maximum value
      */
-    public static int max(float[] array, int start, int stop) {
+    public static int max(float[] array, int start, int stopExclusive) {
         if (start<0) start=0;
-        if (stop>array.length) stop=array.length;
-        if (stop<start) {int temp = start; start=stop; stop=temp;}
+        if (stopExclusive>array.length) stopExclusive=array.length;
+        if (stopExclusive<start) {int temp = start; start=stopExclusive; stopExclusive=temp;}
         int idxMax = start;
-        for (int i = start+1; i<stop; ++i) if (array[i]>array[idxMax]) idxMax=i;
+        for (int i = start+1; i<stopExclusive; ++i) if (array[i]>array[idxMax]) idxMax=i;
         return idxMax;
     }
     public static int max(double[] array) {
@@ -204,27 +204,27 @@ public class ArrayUtil {
             return i;
         }
     }
-    public static int getFirstOccurence(float[] array, int start, int stop, float value, boolean inferior, boolean strict) {
+    public static int getFirstOccurence(float[] array, int start, int stopExclusive, float value, boolean inferior, boolean strict) {
         if (start<0) start=0;
-        if (stop>array.length) stop=array.length;
+        if (stopExclusive>array.length) stopExclusive=array.length;
         int i = start;
         if (array[start]<value) { // increasing values
-            if (start<=stop) { // increasing indicies
-                while(i<stop-1 && array[i]<value) i++;
+            if (start<=stopExclusive) { // increasing indicies
+                while(i<stopExclusive-1 && array[i]<value) i++;
                 if (inferior && (strict?array[i]>=value:array[i]>value) && i>start) return i-1;
                 else return i;
             } else { // decreasing indicies
-                while(i>stop && array[i]<value) i--;
+                while(i>stopExclusive && array[i]<value) i--;
                 if (inferior && (strict?array[i]>=value:array[i]>value) && i<start) return i+1;
                 else return i;
             }
         } else { // decreasing values
-            if (start<=stop) { // increasing indicies
-                while(i<stop-1 && array[i]>value) i++;
+            if (start<=stopExclusive) { // increasing indicies
+                while(i<stopExclusive-1 && array[i]>value) i++;
                 if (!inferior && (strict?array[i]<=value:array[i]<value) && i>start) return i-1;
                 else return i;
             } else { // decreasing indicies
-                while(i>stop && array[i]>value) i--;
+                while(i>stopExclusive && array[i]>value) i--;
                 if (!inferior && (strict?array[i]<=value:array[i]<value) && i<start) return i+1;
                 else return i;
             }

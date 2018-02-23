@@ -46,7 +46,7 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
     }
     @Override
     public void modifyRoi(Pair<StructureObject, BoundingBox> currentObject, Roi3D currentRoi, Collection<Pair<StructureObject, BoundingBox>> objectsToDisplay) {
-        Roi r = currentRoi.get(currentObject.value.getzMin());
+        Roi r = currentRoi.get(currentObject.value.zMin());
         currentRoi.clear();
         currentRoi.put(0, r);
         if (objectsToDisplay.size()>10) return;
@@ -57,9 +57,9 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
         if (s==null) return;
         //else logger.debug("spot found for: {} loc: {}", currentObject.key, s.localization);
         double[] center = new double[2];
-        center[0] = s.getObject().getCenter()[0] - currentObject.key.getParent(0).getBounds().getxMin();//+currentObject.value.getxMin();
-        center[1] = s.getObject().getCenter()[1] - currentObject.key.getParent(0).getBounds().getyMin();//+currentObject.value.getyMin();
-        logger.debug("spot: {} center: {}, off: {};{}", currentObject.key, center, currentObject.value.getxMin(), currentObject.value.getyMin());
+        center[0] = s.getObject().getCenter()[0] - currentObject.key.getParent(0).getBounds().xMin();//+currentObject.value.getxMin();
+        center[1] = s.getObject().getCenter()[1] - currentObject.key.getParent(0).getBounds().yMin();//+currentObject.value.getyMin();
+        logger.debug("spot: {} center: {}, off: {};{}", currentObject.key, center, currentObject.value.xMin(), currentObject.value.yMin());
         TextRoi txt = s.getLocalizationRoi(currentObject.value);
         int idx = 0;
         currentRoi.put(++idx, txt); // hack .. only for 2D case !

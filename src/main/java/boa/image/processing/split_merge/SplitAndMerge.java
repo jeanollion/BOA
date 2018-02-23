@@ -145,8 +145,8 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionClu
     }
     public final BiFunction<? super I, ? super I, Integer> compareBySize(boolean largerFirst) {
         return (i1, i2) -> {
-            int[] maxMin1 = i1.getE1().getSize()>i1.getE2().getSize() ? new int[]{i1.getE1().getSize(), i1.getE2().getSize()} : new int[]{i1.getE2().getSize(), i1.getE1().getSize()};
-            int[] maxMin2 = i2.getE1().getSize()>i2.getE2().getSize() ? new int[]{i2.getE1().getSize(), i2.getE2().getSize()} : new int[]{i2.getE2().getSize(), i2.getE1().getSize()};
+            int[] maxMin1 = i1.getE1().size()>i1.getE2().size() ? new int[]{i1.getE1().size(), i1.getE2().size()} : new int[]{i1.getE2().size(), i1.getE1().size()};
+            int[] maxMin2 = i2.getE1().size()>i2.getE2().size() ? new int[]{i2.getE1().size(), i2.getE2().size()} : new int[]{i2.getE2().size(), i2.getE1().size()};
             if (largerFirst) {
                 int c = Integer.compare(maxMin1[0], maxMin2[0]);
                 if (c!=0) return -c;

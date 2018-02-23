@@ -75,20 +75,20 @@ public class IJImageWrapper {
      * @return ImageJ's ImagePlus object, containing and ImageStack 
      */
     public static ImagePlus getImagePlus(Image image) {
-        ImageStack st = new ImageStack(image.getSizeX(), image.getSizeY(), image.getSizeZ());
+        ImageStack st = new ImageStack(image.sizeX(), image.sizeY(), image.sizeZ());
         if (image instanceof ImageByte) {
             byte[][] pixels = ((ImageByte)image).getPixelArray();
-            for (int z = 0; z < image.getSizeZ(); ++z) {
+            for (int z = 0; z < image.sizeZ(); ++z) {
                 st.setPixels(pixels[z], z + 1);
             }
         } else if (image instanceof ImageShort) {
             short[][] pixels = ((ImageShort)image).getPixelArray();
-            for (int z = 0; z < image.getSizeZ(); ++z) {
+            for (int z = 0; z < image.sizeZ(); ++z) {
                 st.setPixels(pixels[z], z + 1);
             }
         } else if (image instanceof ImageFloat) {
             float[][] pixels = ((ImageFloat)image).getPixelArray();
-            for (int z = 0; z < image.getSizeZ(); ++z) {
+            for (int z = 0; z < image.sizeZ(); ++z) {
                 st.setPixels(pixels[z], z + 1);
             }
         } else if (image instanceof ImageInt) {
@@ -143,9 +143,9 @@ public class IJImageWrapper {
 
     public static ImagePlus getImagePlus(Image[][] imageTC, double frameInterval) {
         TypeConverter.homogenizeBitDepth(imageTC);
-        int sizeZ = imageTC[0][0].getSizeZ();
+        int sizeZ = imageTC[0][0].sizeZ();
         int sizeC = imageTC[0].length;
-        ImageStack is = new ImageStack(imageTC[0][0].getSizeX(), imageTC[0][0].getSizeY(), sizeZ * imageTC.length * sizeC);
+        ImageStack is = new ImageStack(imageTC[0][0].sizeX(), imageTC[0][0].sizeY(), sizeZ * imageTC.length * sizeC);
         int count = 1;
         for (int z = 0; z < sizeZ; ++z) {
             for (int t = 0; t < imageTC.length; ++t) {
@@ -156,7 +156,7 @@ public class IJImageWrapper {
         }
         ImagePlus ip = new ImagePlus();
         
-        ip.setStack(is, imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
+        ip.setStack(is, imageTC[0].length, imageTC[0][0].sizeZ(), imageTC.length);
         ip.setOpenAsHyperStack(true);
         Calibration cal = new Calibration();
         cal.pixelWidth=imageTC[0][0].getScaleXY();

@@ -49,6 +49,7 @@ import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.image.ImageProperties;
+import boa.image.SimpleOffset;
 import boa.image.io.ImageReader;
 import boa.image.io.ImageWriter;
 import java.awt.Color;
@@ -155,7 +156,7 @@ public class SaveAndRetriveSegmentationData {
             List<Pair<StructureObject, BoundingBox>> so = i.getObjects();
             ArrayList<Region> o3DList = new ArrayList<Region>(so.size());
             for (Pair<StructureObject, BoundingBox> o : so) {
-                o3DList.add(o.key.getObject().translate(o.key.getBounds().reverseOffset()).translate(o.value));
+                o3DList.add(o.key.getObject().translate(new SimpleOffset(o.key.getBounds()).reverseOffset()).translate(o.value));
             }
             res.add(o3DList);
         }
@@ -296,7 +297,7 @@ public class SaveAndRetriveSegmentationData {
                 //if (points) continue;
                 ImageProcessor mask = rois[i].getMask();
                 Rectangle bds = rois[i].getBounds();
-                res.add(new Region((ImageInteger)IJImageWrapper.wrap(new ImagePlus("", mask)).addOffset(new BoundingBox(bds.x, bds.y, 0)), i+1, true));
+                res.add(new Region((ImageInteger)IJImageWrapper.wrap(new ImagePlus("", mask)).translate(new SimpleOffset(bds.x, bds.y, 0)), i+1, true));
             }
         } 
         return res;

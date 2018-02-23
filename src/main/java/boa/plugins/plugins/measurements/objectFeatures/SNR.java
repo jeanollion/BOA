@@ -32,6 +32,9 @@ import boa.image.BoundingBox;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
+import boa.image.Offset;
+import boa.image.SimpleBoundingBox;
+import boa.image.SimpleOffset;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,8 +58,8 @@ public class SNR extends IntensityMeasurement {
     protected ChoiceParameter foregroundFormula = new ChoiceParameter("Foreground", new String[]{"mean", "max", "value at center"}, "mean", false);
     @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundStructure, formula, foregroundFormula, dilateExcluded, erodeBorders};}
     HashMap<Region, Region> foregroundMapBackground;
-    BoundingBox foregorundOffset;
-    BoundingBox parentOffsetRev;
+    Offset foregorundOffset;
+    Offset parentOffsetRev;
     public SNR() {}
     public SNR(int backgroundStructureIdx) {
         backgroundStructure.setSelectedStructureIdx(backgroundStructureIdx);
@@ -79,8 +82,8 @@ public class SNR extends IntensityMeasurement {
         super.setUp(parent, childStructureIdx, foregroundPopulation);
         if (foregroundPopulation.getRegions().isEmpty()) return this;
         if (!foregroundPopulation.isAbsoluteLandmark()) foregorundOffset = parent.getBounds(); // the step it still at processing, thus their offset of objects is related to their direct parent
-        else foregorundOffset = new BoundingBox(0, 0, 0); // absolute offsets
-        parentOffsetRev = parent.getBounds().duplicate().reverseOffset();
+        else foregorundOffset = new SimpleOffset(0, 0, 0); // absolute offsets
+        parentOffsetRev = new SimpleOffset(parent.getBounds()).reverseOffset();
         
         List<Region> backgroundObjects;
         if (backgroundStructure.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {

@@ -126,8 +126,8 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         // filter border artefacts: thin objects in X direction, contact on one side of the image 
         ContactBorderMask contactLeft = new ContactBorderMask(1, parent.getMask(), Border.Xl);
         ContactBorderMask contactRight = new ContactBorderMask(1, parent.getMask(), Border.Xr);
-        double thicknessLimit = parent.getMask().getSizeX() * 0.4; // 0.33?
-        double thicknessLimit2 = parent.getMask().getSizeX() * 0.25; 
+        double thicknessLimit = parent.getMask().sizeX() * 0.4; // 0.33?
+        double thicknessLimit2 = parent.getMask().sizeX() * 0.25; 
         double thickYLimit = 15;
         pop.filter(r->{
             int cL = contactLeft.getContact(r);

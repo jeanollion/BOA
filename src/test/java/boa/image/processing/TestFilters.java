@@ -27,7 +27,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.IJImageWrapper;
 import boa.image.Image;
 import boa.image.ImageByte;
@@ -52,7 +52,7 @@ public class TestFilters {
     
     public void testScale() {
         String path = "/home/jollion/Documents/LJP/DataLJP/testsub60/imagesTest.ome.tiff";
-        Image source = ImageReader.openImage(path, new ImageIOCoordinates(0, 0, 0, new BoundingBox(17, 78, 242, 613, 0, 0)));
+        Image source = ImageReader.openImage(path, new ImageIOCoordinates(0, 0, 0, new MutableBoundingBox(17, 78, 242, 613, 0, 0)));
         double[] ms = ImageOperations.getMeanAndSigma(source, null, null);
         double scale = 2.5;
         //Image smoothThenScale = ImageFeatures.gaussianSmooth(source, scale, scale, false).setName("gaussian then scale");

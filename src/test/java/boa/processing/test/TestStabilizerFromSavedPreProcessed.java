@@ -38,7 +38,7 @@ public class TestStabilizerFromSavedPreProcessed {
         PluginFactory.findPlugins("boa.plugins.plugins");
         String dir = "/data/Images/Fluo/MopStab/160501_18_c0_small.tif";
         Image<? extends Image> im = ImageReader.openImage(dir);
-        Image[][] imCT = new Image[1][im.getSizeZ()];
+        Image[][] imCT = new Image[1][im.sizeZ()];
         int z = 0;
         for (Image i : im.splitZPlanes()) imCT[0][z++] = i;
         MemoryImageContainer cont = new MemoryImageContainer(imCT);
@@ -48,7 +48,7 @@ public class TestStabilizerFromSavedPreProcessed {
         ImageStabilizerXY.debug=true;
         
         stab.computeConfigurationData(0, in);
-        Image[][] imCTOut = new Image[1][im.getSizeZ()];
+        Image[][] imCTOut = new Image[1][im.sizeZ()];
         for (int t = 0; t<imCT[0].length; ++t) imCTOut[0][t] = stab.applyTransformation(0, t, imCT[0][t]);
         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("before stab", imCT);
         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("after stab", imCTOut);

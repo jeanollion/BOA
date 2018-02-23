@@ -67,13 +67,13 @@ public class RemoveEndofChannelBacteria implements PostFilter {
             double thickX = GeometricalMeasurements.medianThicknessX(o);
             if (contactThld>0) {
                 double contactDown = yDown.getContact(o);
-                if (contactDown>0 && sizeLimit>0 && o.getSize()<sizeLimit) return false;
+                if (contactDown>0 && sizeLimit>0 && o.size()<sizeLimit) return false;
                 double contactYDownNorm = contactDown / thickX;
                 if (contactYDownNorm>=contactThld) return false;
             }
             if (contactSideThld>0) { // end of channel : bacteria going out of channel -> contact with
                 double contactSides = xlr.getContact(o);
-                if (contactSides>0 && sizeLimit>0 && o.getSize()<sizeLimit) return false;
+                if (contactSides>0 && sizeLimit>0 && o.size()<sizeLimit) return false;
                 double thickY = GeometricalMeasurements.medianThicknessY(o);
                 double contactXNorm = contactSides / Math.min(thickX, thickY);
                 if (contactXNorm>=contactSideThld) return false;

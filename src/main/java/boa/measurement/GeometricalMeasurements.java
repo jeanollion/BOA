@@ -89,17 +89,17 @@ public class GeometricalMeasurements {
     public static double meanThicknessZ(Region object) {
         double mean = 0;
         double count = 0;
-        for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
-            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+        for (int y = 0; y < object.getBounds().sizeY(); ++y) {
+            for (int x = 0; x < object.getBounds().sizeX(); ++x) {
                 int min = -1;
                 int max = -1;
-                for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+                for (int z = 0; z < object.getBounds().sizeZ(); ++z) {
                     if (object.getMask().insideMask(x, y, z)) {
                         min = z;
                         break;
                     }
                 }
-                for (int z = object.getBounds().getSizeZ() - 1; z >= 0; --z) {
+                for (int z = object.getBounds().sizeZ() - 1; z >= 0; --z) {
                     if (object.getMask().insideMask(x, y, z)) {
                         max = z;
                         break;
@@ -118,17 +118,17 @@ public class GeometricalMeasurements {
     }
     public static double medianThicknessZ(Region object) {
         List<Integer> values = new ArrayList<>();
-        for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
-            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+        for (int y = 0; y < object.getBounds().sizeY(); ++y) {
+            for (int x = 0; x < object.getBounds().sizeX(); ++x) {
                 int min = -1;
                 int max = -1;
-                for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
+                for (int z = 0; z < object.getBounds().sizeZ(); ++z) {
                     if (object.getMask().insideMask(x, y, z)) {
                         min = z;
                         break;
                     }
                 }
-                for (int z = object.getBounds().getSizeZ() - 1; z >= 0; --z) {
+                for (int z = object.getBounds().sizeZ() - 1; z >= 0; --z) {
                     if (object.getMask().insideMask(x, y, z)) {
                         max = z;
                         break;
@@ -142,17 +142,17 @@ public class GeometricalMeasurements {
     public static double meanThicknessY(Region object) {
         double mean = 0;
         double count = 0;
-        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
-            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+        for (int z = 0; z < object.getBounds().sizeZ(); ++z) {
+            for (int x = 0; x < object.getBounds().sizeX(); ++x) {
                 int min = -1;
                 int max = -1;
-                for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+                for (int y = 0; y < object.getBounds().sizeY(); ++y) {
                     if (object.getMask().insideMask(x, y, z)) {
                         min = y;
                         break;
                     }
                 }
-                for (int y = object.getBounds().getSizeY() - 1; y >= 0; --y) {
+                for (int y = object.getBounds().sizeY() - 1; y >= 0; --y) {
                     if (object.getMask().insideMask(x, y, z)) {
                         max = y;
                         break;
@@ -171,17 +171,17 @@ public class GeometricalMeasurements {
     }
     public static double maxThicknessY(Region object) {
         double maxT = Double.NEGATIVE_INFINITY;
-        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
-            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+        for (int z = 0; z < object.getBounds().sizeZ(); ++z) {
+            for (int x = 0; x < object.getBounds().sizeX(); ++x) {
                 int min = -1;
                 int max = -1;
-                for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+                for (int y = 0; y < object.getBounds().sizeY(); ++y) {
                     if (object.getMask().insideMask(x, y, z)) {
                         min = y;
                         break;
                     }
                 }
-                for (int y = object.getBounds().getSizeY() - 1; y >= 0; --y) {
+                for (int y = object.getBounds().sizeY() - 1; y >= 0; --y) {
                     if (object.getMask().insideMask(x, y, z)) {
                         max = y;
                         break;
@@ -197,17 +197,17 @@ public class GeometricalMeasurements {
     }
     public static double medianThicknessY(Region object) {
         List<Integer> values = new ArrayList<>();
-        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
-            for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+        for (int z = 0; z < object.getBounds().sizeZ(); ++z) {
+            for (int x = 0; x < object.getBounds().sizeX(); ++x) {
                 int min = -1;
                 int max = -1;
-                for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+                for (int y = 0; y < object.getBounds().sizeY(); ++y) {
                     if (object.getMask().insideMask(x, y, z)) {
                         min = y;
                         break;
                     }
                 }
-                for (int y = object.getBounds().getSizeY() - 1; y >= 0; --y) {
+                for (int y = object.getBounds().sizeY() - 1; y >= 0; --y) {
                     if (object.getMask().insideMask(x, y, z)) {
                         max = y;
                         break;
@@ -222,17 +222,17 @@ public class GeometricalMeasurements {
     public static double meanThicknessX(Region object) {
         double mean = 0;
         double count = 0;
-        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
-            for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+        for (int z = 0; z < object.getBounds().sizeZ(); ++z) {
+            for (int y = 0; y < object.getBounds().sizeY(); ++y) {
                 int min = -1;
                 int max = -1;
-                for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                for (int x = 0; x < object.getBounds().sizeX(); ++x) {
                     if (object.getMask().insideMask(x, y, z)) {
                         min = x;
                         break;
                     }
                 }
-                for (int x = object.getBounds().getSizeX() - 1; x >= 0; --x) {
+                for (int x = object.getBounds().sizeX() - 1; x >= 0; --x) {
                     if (object.getMask().insideMask(x, y, z)) {
                         max = x;
                         break;
@@ -251,17 +251,17 @@ public class GeometricalMeasurements {
     }
     public static double maxThicknessX(Region object) {
         double maxT = Double.NEGATIVE_INFINITY;
-        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
-            for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+        for (int z = 0; z < object.getBounds().sizeZ(); ++z) {
+            for (int y = 0; y < object.getBounds().sizeY(); ++y) {
                 int min = -1;
                 int max = -1;
-                for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                for (int x = 0; x < object.getBounds().sizeX(); ++x) {
                     if (object.getMask().insideMask(x, y, z)) {
                         min = x;
                         break;
                     }
                 }
-                for (int x = object.getBounds().getSizeX() - 1; x >= 0; --x) {
+                for (int x = object.getBounds().sizeX() - 1; x >= 0; --x) {
                     if (object.getMask().insideMask(x, y, z)) {
                         max = x;
                         break;
@@ -277,17 +277,17 @@ public class GeometricalMeasurements {
     }
     public static double medianThicknessX(Region object) {
         List<Integer> values = new ArrayList<>();
-        for (int z = 0; z < object.getBounds().getSizeZ(); ++z) {
-            for (int y = 0; y < object.getBounds().getSizeY(); ++y) {
+        for (int z = 0; z < object.getBounds().sizeZ(); ++z) {
+            for (int y = 0; y < object.getBounds().sizeY(); ++y) {
                 int min = -1;
                 int max = -1;
-                for (int x = 0; x < object.getBounds().getSizeX(); ++x) {
+                for (int x = 0; x < object.getBounds().sizeX(); ++x) {
                     if (object.getMask().insideMask(x, y, z)) {
                         min = x;
                         break;
                     }
                 }
-                for (int x = object.getBounds().getSizeX() - 1; x >= 0; --x) {
+                for (int x = object.getBounds().sizeX() - 1; x >= 0; --x) {
                     if (object.getMask().insideMask(x, y, z)) {
                         max = x;
                         break;

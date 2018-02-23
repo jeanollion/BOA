@@ -129,7 +129,7 @@ public class EllipsoidalSubVoxNeighborhood {
                 zz=z+coords[i].z;
                 if (image.contains(xx, yy, zz)) {
                     if (coords[i].floating) {
-                        if (xx+1<image.getSizeX() && yy+1<image.getSizeY() && zz+1<image.getSizeZ()) values[valueCount++]=image.getPixelLinInter(xx, yy, zz, coords[i].dx, coords[i].dy, coords[i].dz);
+                        if (xx+1<image.sizeX() && yy+1<image.sizeY() && zz+1<image.sizeZ()) values[valueCount++]=image.getPixelLinInter(xx, yy, zz, coords[i].dx, coords[i].dy, coords[i].dz);
                     }
                     else values[valueCount++]=image.getPixel(xx, yy, zz);
                 }
@@ -140,7 +140,7 @@ public class EllipsoidalSubVoxNeighborhood {
                 yy=y+coords[i].y;
                 if (image.contains(xx, yy, 0)) {
                     if (coords[i].floating) {
-                        if (xx+1<image.getSizeX() && yy+1<image.getSizeY()) values[valueCount++]=image.getPixelLinInterXY(xx, yy, 0, coords[i].dx, coords[i].dy);
+                        if (xx+1<image.sizeX() && yy+1<image.sizeY()) values[valueCount++]=image.getPixelLinInterXY(xx, yy, 0, coords[i].dx, coords[i].dy);
                     }
                     else values[valueCount++]=image.getPixel(xx, yy, 0);
                 }

@@ -28,10 +28,12 @@ import boa.data_structure.input_image.InputImages;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import static boa.image.BoundingBox.intersect2D;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageLabeller;
 import boa.image.ImageMask;
+import boa.image.SimpleBoundingBox;
 import boa.image.processing.ImageOperations;
 import boa.image.ThresholdMask;
 import boa.image.TypeConverter;
@@ -52,6 +54,7 @@ import static boa.plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.PHASE
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.Arrays;
 
 /**
  *
@@ -112,7 +115,7 @@ public class AutoFlipY implements Transformation, ToolTip {
             int countNoFlip = 0;
             for (int f: frames) {
                 Image<? extends Image> image = inputImages.getImage(channelIdx, f);
-                if (image.getSizeZ()>1) {
+                if (image.sizeZ()>1) {
                     int plane = inputImages.getBestFocusPlane(f);
                     if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
                     image = image.splitZPlanes().get(plane);
@@ -138,7 +141,7 @@ public class AutoFlipY implements Transformation, ToolTip {
             int countNoFlip = 0;
             for (int f: frames) {
                 Image<? extends Image> image = inputImages.getImage(channelIdx, f);
-                if (image.getSizeZ()>1) {
+                if (image.sizeZ()>1) {
                     int plane = inputImages.getBestFocusPlane(f);
                     if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
                     image = image.splitZPlanes().get(plane);
@@ -154,25 +157,33 @@ public class AutoFlipY implements Transformation, ToolTip {
         } else if (method.getSelectedItem().equals(PHASE.name)) {
             int length = microchannelLength.getValue().intValue();
             Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
-            float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
-            int maxIdx = ArrayUtil.max(yProj);
-            int minIdx = ArrayUtil.min(yProj); //, maxIdx+1, yProj.length-1 // in case peak is touching edge of image no min after aberration: seach for min in whole y axis
-            double peakHeight = yProj[maxIdx] - yProj[minIdx];
-            float thld = (float)(peakHeight * 0.25 + yProj[minIdx] );
-            int startOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, maxIdx, 0, thld, true, true);
-            if (startOfPeakIdx<length) {
+            // if rotation before -> top & bottom of image can contain zeros -> mean proj would return NaN
+            float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null, v->v>0);
+            int start = 0;
+            while (Float.isNaN(yProj[start])) ++start;
+            int end = yProj.length;
+            while (Float.isNaN(yProj[end-1])) --end;
+            int peakIdx = ArrayUtil.max(yProj, start, end);           
+            double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end-start));
+            double peakHeight = yProj[peakIdx] - median;
+            float thld = (float)(peakHeight * 0.25 + median  ); //
+            int startOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true); // is there enough space above the peak ? 
+            if (startOfPeakIdx-start<length) {
                 flip = true;
-                return;
+                //return;
             }
-            int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, maxIdx, yProj.length-1, thld, true, true);
-            if (yProj.length-1 - endOfPeakIdx<length) {
+            int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, end, thld, true, true); // is there enough space under the peak ? 
+            if (end - endOfPeakIdx<=length) {
                 flip = false;
-                return;
+                
+                //return;
             }
+            //logger.debug("would flip: {} values: [{};{}], peak: [{}-{}-{}] height: {} [{}-{}]", flip, start, end, startOfPeakIdx, peakIdx, endOfPeakIdx,yProj[peakIdx]-median, yProj[peakIdx], median );
+                
             // compare upper and lower side X-variances withing frame of microchannel length
             // TODO : TEST !!!!
-            float[] xProjUpper = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new BoundingBox(0, image.getSizeX()-1, startOfPeakIdx-length, startOfPeakIdx, 0, image.getSizeZ()));
-            float[] xProjLower = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new BoundingBox(0, image.getSizeX()-1, endOfPeakIdx, endOfPeakIdx+length, 0, image.getSizeZ()));
+            float[] xProjUpper = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new SimpleBoundingBox(0, image.sizeX()-1, Math.max(start, startOfPeakIdx-length), startOfPeakIdx, 0, image.sizeZ()-1), v->v>0); 
+            float[] xProjLower = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new SimpleBoundingBox(0, image.sizeX()-1, endOfPeakIdx, Math.min(end-1, endOfPeakIdx+length), 0, image.sizeZ()-1), v->v>0);
             double varUpper = ArrayUtil.meanSigma(xProjUpper, 0, xProjUpper.length, null)[1];
             double varLower = ArrayUtil.meanSigma(xProjLower, 0, xProjLower.length, null)[1];
             flip = varLower>varUpper;
@@ -185,8 +196,8 @@ public class AutoFlipY implements Transformation, ToolTip {
         1) search for optical aberration
         2) get x variance for each line above and under aberration -> microchannels are where variance is maximal
         */
-        ImageMask upper = new BlankMask( image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
-        ImageMask lower = new BlankMask( image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY()+image.getSizeY()/2, image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        ImageMask upper = new BlankMask( image.sizeX(), image.sizeY()/2, image.sizeZ(), image.xMin(), image.yMin(), image.zMin(), image.getScaleXY(), image.getScaleZ());
+        ImageMask lower = new BlankMask( image.sizeX(), image.sizeY()/2, image.sizeZ(), image.xMin(), image.yMin()+image.sizeY()/2, image.zMin(), image.getScaleXY(), image.getScaleZ());
         double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null)[0];
         double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null)[0];
         if (testMode) logger.debug("AutoFlipY: upper half mean {} lower: {}", upperMean, lowerMean);
@@ -195,8 +206,8 @@ public class AutoFlipY implements Transformation, ToolTip {
         else return null;
     }
     private Boolean isFlipFluoUpperHalf(Image image) {
-        ImageMask upper = new BlankMask( image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
-        ImageMask lower = new BlankMask( image.getSizeX(), image.getSizeY()/2, image.getSizeZ(), image.getOffsetX(), image.getOffsetY()+image.getSizeY()/2, image.getOffsetZ(), image.getScaleXY(), image.getScaleZ());
+        ImageMask upper = new BlankMask( image.sizeX(), image.sizeY()/2, image.sizeZ(), image.xMin(), image.yMin(), image.zMin(), image.getScaleXY(), image.getScaleZ());
+        ImageMask lower = new BlankMask( image.sizeX(), image.sizeY()/2, image.sizeZ(), image.xMin(), image.yMin()+image.sizeY()/2, image.zMin(), image.getScaleXY(), image.getScaleZ());
         double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null)[0];
         double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null)[0];
         if (testMode) logger.debug("AutoFlipY: upper half mean {} lower: {}", upperMean, lowerMean);
@@ -209,40 +220,40 @@ public class AutoFlipY implements Transformation, ToolTip {
         SimpleThresholder thlder = fluoThld.instanciatePlugin();
         ImageMask mask = new ThresholdMask(image, thlder.runSimpleThresholder(image, null), true, true);
         List<Region> objects = ImageLabeller.labelImageList(mask);
-        objects.removeIf(o->o.getSize()<minSize);
+        objects.removeIf(o->o.size()<minSize);
         // filter by median sizeY
-        Map<Region, Integer> sizeY = objects.stream().collect(Collectors.toMap(o->o, o->o.getBounds().getSizeY()));
+        Map<Region, Integer> sizeY = objects.stream().collect(Collectors.toMap(o->o, o->o.getBounds().sizeY()));
         double medianSizeY = ArrayUtil.medianInt(sizeY.values());
         objects.removeIf(o->sizeY.get(o)<medianSizeY/2);
         if (testMode) logger.debug("objects: {}, minSize: {}, minSizeY: {} (median sizeY: {})", objects.size(), minSize, medianSizeY/2, medianSizeY);
         if (objects.isEmpty() || objects.size()<=2) return null;
-        Map<Region, BoundingBox> xBounds = objects.stream().collect(Collectors.toMap(o->o, o->new BoundingBox(o.getBounds().getxMin(), o.getBounds().getxMax(), 0, 1, 0, 1)));
+        Map<Region, MutableBoundingBox> xBounds = objects.stream().collect(Collectors.toMap(o->o, o->new MutableBoundingBox(o.getBounds().xMin(), o.getBounds().xMax(), 0, 1, 0, 1)));
         Iterator<Region> it = objects.iterator();
         List<Region> yMinOs = new ArrayList<>();
         List<Region> yMaxOs = new ArrayList<>();
         while(it.hasNext()) {
             Region o = it.next();
             List<Region> inter = new ArrayList<>(objects);
-            inter.removeIf(oo->!xBounds.get(oo).intersect2D(xBounds.get(o)));
-            yMinOs.add(Collections.min(inter, (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin())));
-            yMaxOs.add(Collections.max(inter, (o1, o2)->Integer.compare(o1.getBounds().getyMax(), o2.getBounds().getyMax())));
+            inter.removeIf(oo->!intersect2D(xBounds.get(oo), xBounds.get(o)));
+            yMinOs.add(Collections.min(inter, (o1, o2)->Integer.compare(o1.getBounds().yMin(), o2.getBounds().yMin())));
+            yMaxOs.add(Collections.max(inter, (o1, o2)->Integer.compare(o1.getBounds().yMax(), o2.getBounds().yMax())));
             objects.removeAll(inter);
             it = objects.iterator();
         }
         // filter outliers with distance to median value
-        double yMinMed = ArrayUtil.medianInt(Utils.transform(yMinOs, o->o.getBounds().getyMin()));
-        yMinOs.removeIf(o->Math.abs(o.getBounds().getyMin()-yMinMed)>o.getBounds().getSizeY()/4);
-        double yMaxMed = ArrayUtil.medianInt(Utils.transform(yMaxOs, o->o.getBounds().getyMax()));
-        yMaxOs.removeIf(o->Math.abs(o.getBounds().getyMax()-yMaxMed)>o.getBounds().getSizeY()/4);
+        double yMinMed = ArrayUtil.medianInt(Utils.transform(yMinOs, o->o.getBounds().yMin()));
+        yMinOs.removeIf(o->Math.abs(o.getBounds().yMin()-yMinMed)>o.getBounds().sizeY()/4);
+        double yMaxMed = ArrayUtil.medianInt(Utils.transform(yMaxOs, o->o.getBounds().yMax()));
+        yMaxOs.removeIf(o->Math.abs(o.getBounds().yMax()-yMaxMed)>o.getBounds().sizeY()/4);
         
         if (testMode) {
             //ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(mask, null, 1).setName("Segmentation mask"));
             this.upperObjectsTest.add(new RegionPopulation(yMinOs, image).getLabelMap().setName("Upper Objects"));
             this.lowerObjectsTest.add(new RegionPopulation(yMaxOs, image).getLabelMap().setName("Lower Objects"));
         }
-        List<Pair<Integer, Integer>> yMins = Utils.transform(yMinOs, o->new Pair<>(o.getBounds().getyMin(), o.getBounds().getSizeY()));
+        List<Pair<Integer, Integer>> yMins = Utils.transform(yMinOs, o->new Pair<>(o.getBounds().yMin(), o.getBounds().sizeY()));
         double sigmaMin = getSigma(yMins);
-        List<Pair<Integer, Integer>> yMaxs = Utils.transform(yMaxOs, o->new Pair<>(o.getBounds().getyMax(), o.getBounds().getSizeY()));
+        List<Pair<Integer, Integer>> yMaxs = Utils.transform(yMaxOs, o->new Pair<>(o.getBounds().yMax(), o.getBounds().sizeY()));
         double sigmaMax = getSigma(yMaxs);
         if (testMode) {
             logger.debug("yMins sigma: {}: {}", sigmaMin, Utils.toStringList(yMins));

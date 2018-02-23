@@ -111,9 +111,9 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     public double getAngle(Image image) {
         double angle=0;
         if (this.searchMethod.getSelectedItem().equals(SearchMethod.MAXVAR.getName())) { 
-            angle = computeRotationAngleXY(image, image.getSizeZ()/2, minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), true, false, 0);
+            angle = computeRotationAngleXY(image, image.sizeZ()/2, minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), true, false, 0);
         } else if (this.searchMethod.getSelectedItem().equals(SearchMethod.MAXARTEFACT.getName())) {
-            angle = computeRotationAngleXY(image, image.getSizeZ()/2, minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), false, true, 0);
+            angle = computeRotationAngleXY(image, image.sizeZ()/2, minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), false, true, 0);
         }
         return angle;
     }
@@ -136,7 +136,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         for (int f : frames) {
             Image<? extends Image> image = inputImages.getImage(channelIdx, f);
             image = prefilters.filter(image);
-            if (image.getSizeZ()>1) {
+            if (image.sizeZ()>1) {
                 int plane = inputImages.getBestFocusPlane(f);
                 if (plane<0) throw new RuntimeException("Autorotation can only be run on 2D images AND no autofocus algorithm was set");
                 image = image.splitZPlanes().get(plane);
@@ -204,7 +204,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     public double computeRotationAngleXY(Image image, int z , double ang1, double ang2, double stepsize1, double stepsize2, boolean var, boolean rotate90, double filterScale) {
         // first search:
         //float[] proj = new float[(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())];
-        float[] proj = new float[Math.min(image.getSizeX(),image.getSizeY())];
+        float[] proj = new float[Math.min(image.sizeX(),image.sizeY())];
         double inc = rotate90?90:0;
         double[] firstSearch = computeRotationAngleXY(image, z, ang1+inc, ang2+inc, stepsize1, proj, var, filterScale);
         double[] secondSearch = computeRotationAngleXY(image, z, -firstSearch[0]-2*stepsize1, -firstSearch[1]+2*stepsize1, stepsize2, proj, var, filterScale);

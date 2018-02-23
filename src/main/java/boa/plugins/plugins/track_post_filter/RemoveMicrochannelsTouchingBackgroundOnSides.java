@@ -61,29 +61,29 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
         if (allTracks.isEmpty()) return;
         List<StructureObject> objectsToRemove = new ArrayList<>();
         // left-most
-        StructureObject object = Collections.min(allTracks.keySet(), (o1, o2)->Double.compare(o1.getBounds().getXMean(), o2.getBounds().getXMean()));
+        StructureObject object = Collections.min(allTracks.keySet(), (o1, o2)->Double.compare(o1.getBounds().xMean(), o2.getBounds().xMean()));
         Image image = parentTrackByF.get(object.getFrame()).getRawImage(backgroundStructure.getSelectedStructureIdx());
-        RegionPopulation bck = ImageLabeller.labelImage(Arrays.asList(new Voxel[]{new Voxel(0, 0, 0), new Voxel(0, image.getSizeY()-1, 0 )}), image, true);
+        RegionPopulation bck = ImageLabeller.labelImage(Arrays.asList(new Voxel[]{new Voxel(0, 0, 0), new Voxel(0, image.sizeY()-1, 0 )}), image, true);
         //ImageWindowManagerFactory.showImage(bck.getLabelMap().duplicate("left background"));
         if (intersectWithBackground(object, bck)) objectsToRemove.addAll(allTracks.get(object));
         
         // right-most
         if (allTracks.size()>1) {
-            object = Collections.max(allTracks.keySet(), (o1, o2)->Double.compare(o1.getBounds().getXMean(), o2.getBounds().getXMean()));
+            object = Collections.max(allTracks.keySet(), (o1, o2)->Double.compare(o1.getBounds().xMean(), o2.getBounds().xMean()));
             image = parentTrackByF.get(object.getFrame()).getRawImage(backgroundStructure.getSelectedStructureIdx());
-            bck = ImageLabeller.labelImage(Arrays.asList(new Voxel[]{new Voxel(image.getSizeX()-1, 0, 0), new Voxel(image.getSizeX()-1, image.getSizeY()-1, 0 )}), image, true);
+            bck = ImageLabeller.labelImage(Arrays.asList(new Voxel[]{new Voxel(image.sizeX()-1, 0, 0), new Voxel(image.sizeX()-1, image.sizeY()-1, 0 )}), image, true);
             //ImageWindowManagerFactory.showImage(bck.getLabelMap().duplicate("right background"));
             if (intersectWithBackground(object, bck)) objectsToRemove.addAll(allTracks.get(object));
         }
         if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false);
     }
     private boolean intersectWithBackground(StructureObject object, RegionPopulation bck) {
-        bck.filter(o->o.getSize()>10); // 
+        bck.filter(o->o.size()>10); // 
         Region cutObject =object.getObject();
         int XMargin = this.XMargin.getValue().intValue();
-        if (XMargin>0 && object.getBounds().getSizeY()>2*XMargin) {
+        if (XMargin>0 && object.getBounds().sizeY()>2*XMargin) {
             BoundingBox bds = object.getBounds();
-            cutObject = new Region(new BlankMask( bds.getSizeX(), bds.getSizeY()-2*XMargin, bds.getSizeZ(), bds.getxMin(), bds.getyMin()+XMargin, bds.getzMin(), object.getScaleXY(), object.getScaleZ()), cutObject.getLabel(), cutObject.is2D());
+            cutObject = new Region(new BlankMask( bds.sizeX(), bds.sizeY()-2*XMargin, bds.sizeZ(), bds.xMin(), bds.yMin()+XMargin, bds.zMin(), object.getScaleXY(), object.getScaleZ()), cutObject.getLabel(), cutObject.is2D());
         }
         for (Region o : bck.getRegions()) {
             int inter = o.getOverlapMaskMask(cutObject, null, null);

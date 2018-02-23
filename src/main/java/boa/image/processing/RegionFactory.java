@@ -21,9 +21,12 @@ import boa.data_structure.Region;
 import boa.data_structure.Voxel;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
+import static boa.image.BoundingBox.loop;
+import boa.image.MutableBoundingBox;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
+import boa.image.SimpleImageProperties;
 import boa.image.TypeConverter;
 import boa.utils.HashMapGetCreate;
 import java.util.ArrayList;
@@ -41,9 +44,9 @@ public class RegionFactory {
     public static Region[] getRegions(ImageInteger labelImage, boolean ensureContinuousLabels) {
         HashMapGetCreate<Integer, Set<Voxel>> objects = new HashMapGetCreate<>(new HashMapGetCreate.SetFactory<>());
         int label;
-        int sizeX = labelImage.getSizeX();
-        for (int z = 0; z < labelImage.getSizeZ(); ++z) {
-            for (int xy = 0; xy < labelImage.getSizeXY(); ++xy) {
+        int sizeX = labelImage.sizeX();
+        for (int z = 0; z < labelImage.sizeZ(); ++z) {
+            for (int xy = 0; xy < labelImage.sizeXY(); ++xy) {
                 label = labelImage.getPixelInt(xy, z);
                 if (label != 0) objects.getAndCreateIfNecessary(label).add(new Voxel(xy % sizeX, xy / sizeX, z));
             }
@@ -52,22 +55,22 @@ public class RegionFactory {
         Region[] res = new Region[tm.size()];
         int i = 0;
         for (Entry<Integer, Set<Voxel>> e : tm.entrySet()) {
-            res[i] = new Region(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1, labelImage.getScaleXY(), labelImage.getScaleZ());
+            res[i] = new Region(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.sizeZ()==1, labelImage.getScaleXY(), labelImage.getScaleZ());
             ++i;
         }
         return res;
     }
   
     public static TreeMap<Integer, BoundingBox> getBounds(ImageInteger labelImage) {
-        HashMapGetCreate<Integer, BoundingBox> bounds = new HashMapGetCreate<>(i->new BoundingBox());
-        labelImage.getBoundingBox().translateToOrigin().loop((x, y, z)-> {
+        HashMapGetCreate<Integer, MutableBoundingBox> bounds = new HashMapGetCreate<>(i->new MutableBoundingBox());
+        loop(labelImage.getBoundingBox().resetOffset(), (x, y, z)-> {
             int label = labelImage.getPixelInt(x, y, z);
             if (label>0) bounds.getAndCreateIfNecessary(label).expand(x, y, z);
         });
         return new TreeMap<>(bounds);
     }
     public static BoundingBox getBounds(ImageMask mask) {
-        BoundingBox bounds = new BoundingBox();
+        MutableBoundingBox bounds = new MutableBoundingBox();
         ImageMask.loop(mask, (x, y, z)->{bounds.expand(x, y, z);});
         return bounds;
     }
@@ -83,7 +86,7 @@ public class RegionFactory {
         
         for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
             ImageByte label = labelImage.cropLabel(e.getKey(), e.getValue());
-            res[i] = new Region(label, ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getSizeZ()==1);
+            res[i] = new Region(label, ensureContinuousLabels?(i + 1):e.getKey(), labelImage.sizeZ()==1);
             ++i;
         }
         return res;
@@ -91,21 +94,21 @@ public class RegionFactory {
     /**
      * 
      * @param mask
-     * @return region where of voxels contained within {@param mask}
-     * the returned region has the same landmask as the mask
+     * @return region contained within {@param mask}
+     * the returned region has the same landmark as the mask
      */
     public static Region getObjectImage(ImageMask mask) {
-        if (mask instanceof BlankMask) return new Region(mask, 1, mask.getSizeZ()==1);
+        if (mask instanceof BlankMask) return new Region(mask, 1, mask.sizeZ()==1);
         BoundingBox bounds = getBounds(mask);
-        if (bounds.equals(mask.getBoundingBox().translateToOrigin())) {
-            return  new Region(mask, 1, mask.getSizeZ()==1);
+        if (bounds.sameDimensions(mask)) {
+            return  new Region(mask, 1, mask.sizeZ()==1);
         } else {
-            ImageByte newMask = new ImageByte("", bounds.getImageProperties(mask.getScaleXY(), mask.getScaleZ()));
-            newMask.getBoundingBox().loop((x, y, z)->{
+            ImageByte newMask = new ImageByte("", new SimpleImageProperties(bounds,mask.getScaleXY(), mask.getScaleZ()));
+            loop(bounds, (x, y, z)->{
                 if (mask.insideMask(x, y, z)) newMask.setPixelWithOffset(x, y, z, 1); // bounds has for landmask mask
             });
-            newMask.addOffset(mask.getBoundingBox()); 
-            return new Region(newMask, 1, mask.getSizeZ()==1);
+            newMask.translate(mask); 
+            return new Region(newMask, 1, mask.sizeZ()==1);
         }
     }
     public static void relabelImage(ImageInteger labelImage){
@@ -120,9 +123,9 @@ public class RegionFactory {
             currentLabel = e.getKey();
             if (currentLabel!=newLabel) {
                 BoundingBox b= e.getValue();
-                for (int z = b.getzMin(); z<=b.getzMax(); ++z) {
-                    for (int y = b.getyMin(); y<=b.getyMax(); ++y) {
-                        for (int x = b.getxMin(); x<=b.getxMax(); ++x) {
+                for (int z = b.zMin(); z<=b.zMax(); ++z) {
+                    for (int y = b.yMin(); y<=b.yMax(); ++y) {
+                        for (int x = b.xMin(); x<=b.xMax(); ++x) {
                             if (labelImage.getPixelInt(x, y, z)==currentLabel) labelImage.setPixel(x, y, z, newLabel);
                         }
                     }

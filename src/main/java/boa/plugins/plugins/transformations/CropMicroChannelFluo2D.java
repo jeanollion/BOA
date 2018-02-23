@@ -28,7 +28,7 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObjectProcessing;
 import ij.process.AutoThresholder;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
@@ -89,12 +89,12 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         return this;
     }
     @Override
-    public BoundingBox getBoundingBox(Image image) {
+    public MutableBoundingBox getBoundingBox(Image image) {
         double thld = this.threshold.instanciatePlugin().runSimpleThresholder(image, null);
         return getBoundingBox(image, null , thld);
     }
     
-    public BoundingBox getBoundingBox(Image image, ImageInteger thresholdedImage, double threshold) {
+    public MutableBoundingBox getBoundingBox(Image image, ImageInteger thresholdedImage, double threshold) {
         if (debug) testMode = true;
         Result r = MicrochannelFluo2D.segmentMicroChannels(image, thresholdedImage, 0, 0, this.channelHeight.getValue().intValue(), this.fillingProportion.getValue().doubleValue(), threshold, this.minObjectSize.getValue().intValue(), testMode);
         if (r == null) return null;
@@ -104,8 +104,8 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         int yStart = this.yStart.getValue().intValue();
         int yStop = this.yStop.getValue().intValue();
         int yMin = Math.max(yStart, r.yMin);
-        if (yStop==0) yStop = image.getSizeY()-1;
-        if (xStop==0) xStop = image.getSizeX()-1;
+        if (yStop==0) yStop = image.sizeY()-1;
+        if (xStop==0) xStop = image.sizeX()-1;
         yStop = Math.min(yStop, yMin+channelHeight.getValue().intValue() + cropMargin);
         
         yStart = Math.max(yMin-cropMargin, yStart);
@@ -114,7 +114,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         //xStop = Math.min(xStop, r.getXMax() + cropMargin);
         
         if (testMode) logger.debug("Xmin: {}, Xmax: {}", r.getXMin(), r.getXMax());
-        return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
+        return new MutableBoundingBox(xStart, xStop, yStart, yStop, 0, image.sizeZ()-1);
         
     }
     

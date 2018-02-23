@@ -30,7 +30,7 @@ import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
 import ij.process.AutoThresholder;
 import boa.image.BlankMask;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
@@ -50,6 +50,7 @@ import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import static boa.utils.Utils.plotProfile;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.function.Predicate;
 
@@ -86,7 +87,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         if (r==null) return null;
         ArrayList<Region> objects = new ArrayList<>(r.size());
         for (int idx = 0; idx<r.xMax.length; ++idx) {
-            objects.add(new Region(new BlankMask(r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1, true));
+            objects.add(new Region(new BlankMask(r.getBounds(idx, true), input.getScaleXY(), input.getScaleZ()), idx+1, true));
             logger.debug("mc: {}: bds: {}", idx, objects.get(objects.size()-1).getBounds());
         }
         return new RegionPopulation(objects, input);
@@ -154,9 +155,9 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         
         double derScale = 2;
         // get aberration
-        int aberrationStart = opticalAberration ? searchYLimWithOpticalAberration(image, 0.25, yMarginEndChannel, testMode) : image.getSizeY()-1;
+        int aberrationStart = opticalAberration ? searchYLimWithOpticalAberration(image, 0.25, yMarginEndChannel, testMode) : image.sizeY()-1;
         if (aberrationStart<=0) return null;
-        Image imCrop = image.crop(new BoundingBox(0, image.getSizeX()-1, 0, aberrationStart, 0, image.getSizeZ()-1));
+        Image imCrop = image.crop(new MutableBoundingBox(0, image.sizeX()-1, 0, aberrationStart, 0, image.sizeZ()-1));
         
         // get global closed-end Y coordinate
         Image imDerY = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
@@ -164,7 +165,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         int closedEndY = ArrayUtil.max(yProj, 0, (int)(yProj.length*0.75)); 
 
         // get X coordinates of each microchannel
-        imCrop = image.crop(new BoundingBox(0, image.getSizeX()-1, closedEndY, aberrationStart, 0, image.getSizeZ()-1));
+        imCrop = image.crop(new MutableBoundingBox(0, image.sizeX()-1, closedEndY, aberrationStart, 0, image.sizeZ()-1));
         float[] xProj = ImageOperations.meanProjection(imCrop, ImageOperations.Axis.X, null); 
         ArrayUtil.gaussianSmooth(xProj, 1); // derScale
         Image imDerX = ImageFeatures.getDerivative(imCrop, derScale, 1, 0, 0, true);
@@ -242,7 +243,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         // refine Y-coordinate of closed-end for each microchannel
         if (yClosedEndAdjustWindow>0) {
             for (int[] peak : peaks) {
-                BoundingBox win = new BoundingBox(peak[0], peak[1], Math.max(0, closedEndY-yClosedEndAdjustWindow), Math.min(imDerY.getSizeY()-1, closedEndY+yClosedEndAdjustWindow), 0, 0);
+                MutableBoundingBox win = new MutableBoundingBox(peak[0], peak[1], Math.max(0, closedEndY-yClosedEndAdjustWindow), Math.min(imDerY.sizeY()-1, closedEndY+yClosedEndAdjustWindow), 0, 0);
                 float[] proj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, win);
                 List<Integer> localMaxY = ArrayUtil.getRegionalExtrema(proj, 2, true);
                 //peak[2] = ArrayUtil.max(proj)-yStartAdjustWindow;
@@ -304,12 +305,16 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
      */
     public static int searchYLimWithOpticalAberration(Image image, double peakProportion, int margin, boolean testMode) {
 
-        float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
-        int maxIdx = ArrayUtil.max(yProj);
-        int minIdx = ArrayUtil.min(yProj); //, maxIdx+1, yProj.length-1 // in case peak is touching edge of image no min after aberration: seach for min in whole y axis
-        double peakHeight = yProj[maxIdx] - yProj[minIdx];
-        float thld = (float)(peakHeight * peakProportion + yProj[minIdx] );
-        int endOfPeakYIdx = ArrayUtil.getFirstOccurence(yProj, maxIdx, 0, thld, true, true);
+        float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null, v->v>0); // when image was rotated by a high angle zeros are introduced
+        int start = 0;
+        while (Float.isNaN(yProj[start])) ++start;
+        int end = yProj.length;
+        while (Float.isNaN(yProj[end-1])) --end;
+        int peakIdx = ArrayUtil.max(yProj, start, end);
+        double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end-start));
+        double peakHeight = yProj[peakIdx] - median;
+        float thld = (float)(peakHeight * peakProportion + median );
+        int endOfPeakYIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true);
         
         /*float[] slidingSigma = new float[debug ? yProj.length : endOfPeakIdx]; // endOfPeakIdx
         double[] meanSigma = new double[2];
@@ -330,7 +335,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
             new IJImageDisplayer().showImage(image);
             Utils.plotProfile("yProj", yProj);
             //Utils.plotProfile("Sliding sigma", slidingSigma);
-            logger.debug("Optical Aberration detection: minIdx: {}, maxIdx: {}, peakHeightThld: {}, enfOfPeak: {}, low limit of Mc: {}", minIdx, maxIdx, thld, endOfPeakYIdx, startOfMicroChannel);
+            logger.debug("Optical Aberration detection: minIdx: {}, baseLineValue: {}, peakHeightThld: {}, enfOfPeak: {}, low limit of Mc: {}", median, peakIdx, thld, endOfPeakYIdx, startOfMicroChannel);
         }
         return startOfMicroChannel;
     }

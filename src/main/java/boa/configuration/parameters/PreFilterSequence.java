@@ -56,7 +56,7 @@ public class PreFilterSequence extends PluginParameterList<PreFilter> {
             //logger.debug("prefilter: {}", p.getClass().getSimpleName());
         }
         input.setCalibration(prop);
-        if (input.sameDimensions(prop)) input.resetOffset().addOffset(prop);
+        if (input.sameDimensions(prop)) input.resetOffset().translate(prop);
         return input;
     }
     @Override public PreFilterSequence removeAll() {

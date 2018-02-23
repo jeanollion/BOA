@@ -23,7 +23,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.Region;
 import ij.process.AutoThresholder;
-import boa.image.BoundingBox;
+import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
@@ -65,38 +65,38 @@ public class CropMicroChannels2D {//implements TransformationTimeIndependent {
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
         // check configuration validity
-        if (xStop.getValue().intValue()==0 || xStop.getValue().intValue()>=image.getSizeX()) xStop.setValue(image.getSizeX()-1);
+        if (xStop.getValue().intValue()==0 || xStop.getValue().intValue()>=image.sizeX()) xStop.setValue(image.sizeX()-1);
         if (xStart.getValue().intValue()>=xStop.getValue().intValue()) {
             logger.warn("CropMicroChannels2D: illegal configuration: xStart>=xStop, set to default values");
             xStart.setValue(0);
-            xStop.setValue(image.getSizeX()-1);
+            xStop.setValue(image.sizeX()-1);
         }
-        if (yStop.getValue().intValue()==0 || yStop.getValue().intValue()>=image.getSizeY()) yStop.setValue(image.getSizeY()-1);
+        if (yStop.getValue().intValue()==0 || yStop.getValue().intValue()>=image.sizeY()) yStop.setValue(image.sizeY()-1);
         if (yStart.getValue().intValue()>=yStop.getValue().intValue()) {
             logger.warn("CropMicroChannels2D: illegal configuration: yStart>=yStop, set to default values");
             yStart.setValue(0);
-            yStop.setValue(image.getSizeY()-1);
+            yStop.setValue(image.sizeY()-1);
         }
         
-        if (channelHeight.getValue().intValue()>image.getSizeY()) throw new IllegalArgumentException("channel height > image height");
+        if (channelHeight.getValue().intValue()>image.sizeY()) throw new IllegalArgumentException("channel height > image height");
         
-        int z = image.getSizeZ()/2;
-        BoundingBox b = getBoundingBox(image, z, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
+        int z = image.sizeZ()/2;
+        MutableBoundingBox b = getBoundingBox(image, z, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
         // si b==null -> faire sur d'autres temps? 
         logger.debug("Crop Microp Channel: image: {} timepoint: {} boundingBox: {}", image.getName(), inputImages.getDefaultTimePoint(), b);
         configurationData=new ArrayList<Integer>(4);
-        configurationData.add(b.getxMin());
-        configurationData.add(b.getxMax());
-        configurationData.add(b.getyMin());
-        configurationData.add(b.getyMax());
+        configurationData.add(b.xMin());
+        configurationData.add(b.xMax());
+        configurationData.add(b.yMin());
+        configurationData.add(b.yMax());
     }
     
-    public static BoundingBox getBoundingBox(Image image, int z, int cropMargin, int margin, int channelHeight, int xStart, int xStop, int yStart, int yStop) {
+    public static MutableBoundingBox getBoundingBox(Image image, int z, int cropMargin, int margin, int channelHeight, int xStart, int xStop, int yStart, int yStop) {
         //get projections along X and Y axis
         float[] xProj = ImageOperations.meanProjection(image, ImageOperations.Axis.X, null);
-        ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), new float[][]{xProj});
+        ImageFloat imProjX = new ImageFloat("proj(X)", image.sizeX(), new float[][]{xProj});
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
-        ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
+        ImageFloat imProjY = new ImageFloat("proj(Y)", image.sizeY(), new float[][]{yProj});
         if (debug) plotProfile(imProjX, 0, 0, true);
         if (debug) plotProfile(imProjY, 0, 0, true);
         
@@ -106,11 +106,11 @@ public class CropMicroChannels2D {//implements TransformationTimeIndependent {
         Region[] objHeight = ImageLabeller.labelImage(heightMask);
         if (objHeight.length==0) return null;
         else if (objHeight.length==1) {
-            yStart = objHeight[0].getBounds().getxMin();
+            yStart = objHeight[0].getBounds().xMin();
         } else { // get object with maximum height
             int idxMax = 0;
-            for (int i = 1; i<objHeight.length;++i) if (objHeight[i].getBounds().getSizeX()>=objHeight[idxMax].getBounds().getSizeX()) idxMax=i;
-            yStart = objHeight[idxMax].getBounds().getxMin();
+            for (int i = 1; i<objHeight.length;++i) if (objHeight[i].getBounds().sizeX()>=objHeight[idxMax].getBounds().sizeX()) idxMax=i;
+            yStart = objHeight[idxMax].getBounds().xMin();
             if (debug) logger.debug("crop microchannels: yStart: {} idx of margin object: {}", yStart, idxMax);
         }
         // look for derivative maximum around new yStart:
@@ -134,26 +134,26 @@ public class CropMicroChannels2D {//implements TransformationTimeIndependent {
             int startObject;
             int xStartTemp=xStart;
             for (startObject = 0; startObject<objWidth.length;++startObject) {
-                int curX = objWidth[startObject].getBounds().getxMin();
+                int curX = objWidth[startObject].getBounds().xMin();
                 if (curX>=margin && curX>=xStart) {
                     xStartTemp=curX;
                     break;
                 }
             }
             // get first object border: first max of derivative before max of object:
-            int maxStart = ArrayUtil.max(imProjX.getPixelArray()[0], objWidth[startObject].getBounds().getxMin(), objWidth[startObject].getBounds().getxMax());
+            int maxStart = ArrayUtil.max(imProjX.getPixelArray()[0], objWidth[startObject].getBounds().xMin(), objWidth[startObject].getBounds().xMax());
             int maxDerStart = ArrayUtil.max(projDer.getPixelArray()[0], xStartTemp-cropMargin, maxStart);
             // get last object before xStop & margin
             int stopObject;
             int xStopTemp=xStop;
             for (stopObject = objWidth.length-1; stopObject>=startObject;--stopObject) {
-                int curX = objWidth[stopObject].getBounds().getxMax();
-                if (curX<=(image.getSizeX()-margin) && curX<=xStop) {
+                int curX = objWidth[stopObject].getBounds().xMax();
+                if (curX<=(image.sizeX()-margin) && curX<=xStop) {
                     xStopTemp=curX;
                     break;
                 }
             }
-            int maxStop = ArrayUtil.max(imProjX.getPixelArray()[0], objWidth[stopObject].getBounds().getxMin(), objWidth[stopObject].getBounds().getxMax());
+            int maxStop = ArrayUtil.max(imProjX.getPixelArray()[0], objWidth[stopObject].getBounds().xMin(), objWidth[stopObject].getBounds().xMax());
             int maxDerStop = ArrayUtil.min(projDer.getPixelArray()[0], maxStop, xStopTemp+cropMargin); // pente descendente
             
             xStart=Math.max(0, maxDerStart-cropMargin);
@@ -161,12 +161,12 @@ public class CropMicroChannels2D {//implements TransformationTimeIndependent {
             if (debug) logger.debug("crop microchannels: xStart: {} idx of margin object: {}, maxStart: {}, maxDerStart: {}", xStart, startObject, maxStart, maxDerStart);
             if (debug) logger.debug("crop microchannels: xStop: {} idx of margin object: {}, maxStop: {}, maxDerStop: {}", xStop, stopObject, maxStop, maxDerStop);
         }
-        return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
+        return new MutableBoundingBox(xStart, xStop, yStart, yStop, 0, image.sizeZ()-1);
     }
     
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        BoundingBox bounds = new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.getSizeZ()-1);
+        MutableBoundingBox bounds = new MutableBoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.sizeZ()-1);
         return image.crop(bounds);
     }
     
