@@ -36,7 +36,7 @@ public class ImageWindowManagerFactory {
         return currentImageManager;
     }
     public static Object showImage(Image image) {
-        return imageDisplayer.showImage(image);
+        return getDisplayer().showImage(image);
     }
     public static Object showImage5D(String title, Image[][] imageTC) {
         return getDisplayer().showImage5D(title, imageTC);

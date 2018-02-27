@@ -40,19 +40,19 @@ public class ArrayUtil {
         return IntStream.range(0, array.length).mapToDouble(i->array[i]);
     }
     public static DoubleStream stream(byte[] array) {
-        return IntStream.range(0, array.length).mapToDouble(i->array[i]);
+        return IntStream.range(0, array.length).mapToDouble(i->array[i]&0xff);
     }
     public static DoubleStream stream(short[] array) {
-        return IntStream.range(0, array.length).mapToDouble(i->array[i]);
+        return IntStream.range(0, array.length).mapToDouble(i->array[i]&0xffff);
     }
     public static DoubleStream stream(int[] array) {
         return IntStream.range(0, array.length).mapToDouble(i->array[i]);
     }
     public static IntStream streamInt(byte[] array) {
-        return IntStream.range(0, array.length).map(i->array[i]);
+        return IntStream.range(0, array.length).map(i->array[i]&0xff);
     }
     public static IntStream streamInt(short[] array) {
-        return IntStream.range(0, array.length).map(i->array[i]);
+        return IntStream.range(0, array.length).map(i->array[i]&0xffff);
     }
     public static IntStream streamInt(int[] array) {
         return IntStream.range(0, array.length).map(i->array[i]);

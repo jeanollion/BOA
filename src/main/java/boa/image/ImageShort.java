@@ -57,7 +57,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
             if (inter.isEmpty()) return DoubleStream.empty();
             if (inter.sameBounds(this) && inter.sameBounds(mask)) {
                 if (mask instanceof BlankMask) return this.streamPlane(z);
-                else return IntStream.range(0,sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
+                else return IntStream.range(0,sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]&0xffff:Double.NaN).filter(v->!Double.isNaN(v));
             }
             else { // loop within intersection
                 int sX = inter.sizeX();
@@ -66,7 +66,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
                 return IntStream.range(0,inter.getSizeXY()).mapToDouble(i->{
                         int x = i%sX+offX;
                         int y = i/sX+offY;
-                        return mask.insideMaskWithOffset(x, y, z+zMin)?pixels[z][x+y*sizeX-offsetXY]:Double.NaN;}
+                        return mask.insideMaskWithOffset(x, y, z+zMin)?pixels[z][x+y*sizeX-offsetXY]&0xffff:Double.NaN;}
                 ).filter(v->!Double.isNaN(v));
             }
         }
@@ -76,7 +76,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
             if (inter.isEmpty()) return DoubleStream.empty();
             if (inter.sameDimensions(mask) && inter.sameDimensions(this)) {
                 if (mask instanceof BlankMask) return this.streamPlane(z);
-                else return IntStream.range(0, sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]:Double.NaN).filter(v->!Double.isNaN(v));
+                else return IntStream.range(0, sizeXY).mapToDouble(i->mask.insideMask(i, z)?pixels[z][i]&0xffff:Double.NaN).filter(v->!Double.isNaN(v));
             }
             else {
                 int sX = inter.sizeX();
@@ -85,7 +85,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
                 return IntStream.range(0,inter.getSizeXY()).mapToDouble(i->{
                         int x = i%sX+offX;
                         int y = i/sX+offY;
-                        return mask.insideMaskWithOffset(x, y, z)?pixels[z][x+y*sizeX]:Double.NaN;}
+                        return mask.insideMaskWithOffset(x, y, z)?pixels[z][x+y*sizeX]&0xffff:Double.NaN;}
                 ).filter(v->!Double.isNaN(v));
             }
         }
@@ -100,7 +100,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
             if (inter.isEmpty()) return IntStream.empty();
             if (inter.sameBounds(this) && inter.sameBounds(mask)) {
                 if (mask instanceof BlankMask) return this.streamIntPlane(z);
-                else return IntStream.range(0,sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+                else return IntStream.range(0,sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]&0xffff:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
             }
             else { // loop within intersection
                 int sX = inter.sizeX();
@@ -109,7 +109,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
                 return IntStream.range(0,inter.getSizeXY()).map(i->{
                         int x = i%sX+offX;
                         int y = i/sX+offY;
-                        return mask.insideMaskWithOffset(x, y, z+zMin)?pixels[z][x+y*sizeX-offsetXY]:Integer.MAX_VALUE;}
+                        return mask.insideMaskWithOffset(x, y, z+zMin)?pixels[z][x+y*sizeX-offsetXY]&0xffff:Integer.MAX_VALUE;}
                 ).filter(v->v!=Integer.MAX_VALUE);
             }
         }
@@ -119,7 +119,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
             if (inter.isEmpty()) return IntStream.empty();
             if (inter.sameDimensions(mask) && inter.sameDimensions(this)) {
                 if (mask instanceof BlankMask) return this.streamIntPlane(z);
-                else return IntStream.range(0, sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+                else return IntStream.range(0, sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]&0xffff:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
             }
             else {
                 int sX = inter.sizeX();
@@ -128,7 +128,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
                 return IntStream.range(0,inter.getSizeXY()).map(i->{
                         int x = i%sX+offX;
                         int y = i/sX+offY;
-                        return mask.insideMaskWithOffset(x, y, z)?pixels[z][x+y*sizeX]:Integer.MAX_VALUE;}
+                        return mask.insideMaskWithOffset(x, y, z)?pixels[z][x+y*sizeX]&0xffff:Integer.MAX_VALUE;}
                 ).filter(v->v!=Integer.MAX_VALUE);
             }
         }
@@ -311,7 +311,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
         int[] histo = new int[256];
         LoopFunction function = (x, y, z) -> {
             if (m.insideMask(x, y, z)) {
-                int idx = (int) ((pixels[z][x+y*sizeX] - min) * coeff);
+                int idx = (int) (((pixels[z][x+y*sizeX]&0xffff) - min) * coeff);
                 histo[idx>=256?255:idx]++;
             }
         };

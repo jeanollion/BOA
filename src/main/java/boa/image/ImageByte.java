@@ -99,7 +99,7 @@ public class ImageByte extends ImageInteger<ImageByte> {
             if (inter.isEmpty()) return IntStream.empty();
             if (inter.sameBounds(this) && inter.sameBounds(mask)) {
                 if (mask instanceof BlankMask) return this.streamIntPlane(z);
-                else return IntStream.range(0,sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+                else return IntStream.range(0,sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]& 0xff:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
             }
             else { // loop within intersection
                 int sX = inter.sizeX();
@@ -108,7 +108,7 @@ public class ImageByte extends ImageInteger<ImageByte> {
                 return IntStream.range(0,inter.getSizeXY()).map(i->{
                         int x = i%sX+offX;
                         int y = i/sX+offY;
-                        return mask.insideMaskWithOffset(x, y, z+zMin)?pixels[z][x+y*sizeX-offsetXY]:Integer.MAX_VALUE;}
+                        return mask.insideMaskWithOffset(x, y, z+zMin)?pixels[z][x+y*sizeX-offsetXY]& 0xff:Integer.MAX_VALUE;}
                 ).filter(v->v!=Integer.MAX_VALUE);
             }
         }
@@ -118,7 +118,7 @@ public class ImageByte extends ImageInteger<ImageByte> {
             if (inter.isEmpty()) return IntStream.empty();
             if (inter.sameDimensions(mask) && inter.sameDimensions(this)) {
                 if (mask instanceof BlankMask) return this.streamIntPlane(z);
-                else return IntStream.range(0, sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
+                else return IntStream.range(0, sizeXY).map(i->mask.insideMask(i, z)?pixels[z][i]& 0xff:Integer.MAX_VALUE).filter(v->v!=Integer.MAX_VALUE);
             }
             else {
                 int sX = inter.sizeX();
@@ -127,7 +127,7 @@ public class ImageByte extends ImageInteger<ImageByte> {
                 return IntStream.range(0,inter.getSizeXY()).map(i->{
                         int x = i%sX+offX;
                         int y = i/sX+offY;
-                        return mask.insideMaskWithOffset(x, y, z)?pixels[z][x+y*sizeX]:Integer.MAX_VALUE;}
+                        return mask.insideMaskWithOffset(x, y, z)?pixels[z][x+y*sizeX]& 0xff:Integer.MAX_VALUE;}
                 ).filter(v->v!=Integer.MAX_VALUE);
             }
         }
@@ -303,7 +303,7 @@ public class ImageByte extends ImageInteger<ImageByte> {
         int[] histo = new int[256];
         LoopFunction function = (x, y, z) -> {
             if (m.insideMask(x, y, z)) {
-                histo[pixels[z][x+y*sizeX]]++;
+                histo[pixels[z][x+y*sizeX]& 0xff]++;
             }
         };
         BoundingBox.loop(limits, function);
