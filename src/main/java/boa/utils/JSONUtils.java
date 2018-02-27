@@ -242,10 +242,16 @@ public class JSONUtils {
             }
             return count==json.size()||count==list.size();
         } else { 
+            boolean success = true;
             for (int i =0;i<list.size(); ++i) {
-                list.get(i).initFromJSONEntry(((JSONObject)json.get(i)).values().iterator().next());
+                try {
+                    list.get(i).initFromJSONEntry(((JSONObject)json.get(i)).values().iterator().next());
+                } catch (Exception e) {
+                    logger.error("Error While initializing parameter: {} with: {}", list.get(i), json.get(i));
+                    success = false;
+                }
             }
-            return true;
+            return success;
         }
     }
     

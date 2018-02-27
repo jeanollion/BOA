@@ -93,7 +93,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
         }
         ImageByte res = (ImageByte) IJImageWrapper.wrap(new ImagePlus("MASK", stack));
         //logger.debug("creating object for: {}, scale: {}", structureObject, structureObject.getScaleXY());
-        res.setCalibration(bounds.getImageProperties(structureObject.getScaleXY(), structureObject.getScaleZ())).translate(bounds);
+        res.setCalibration(bounds.getBlankMask(structureObject.getScaleXY(), structureObject.getScaleZ())).translate(bounds);
         return res;
     }
 

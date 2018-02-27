@@ -49,23 +49,23 @@ import boa.utils.Pair;
  * @author jollion
  */
 public class TrackMaskX extends TrackMask {
-    int maxParentY, maxParentZ;
+    int maxParentSizeY, maxParentSizeZ;
     
-    public TrackMaskX(List<StructureObject> parentTrack, int childStructureIdx) {
+    public TrackMaskX(List<StructureObject> parentTrack, int childStructureIdx, boolean middleYZ) {
         super(parentTrack, childStructureIdx);
         int maxY=0, maxZ=0;
         for (int i = 0; i<parentTrack.size(); ++i) { // compute global Y and Z max to center parent masks
             if (maxY<parentTrack.get(i).getObject().getBounds().sizeY()) maxY=parentTrack.get(i).getObject().getBounds().sizeY();
             if (maxZ<parentTrack.get(i).getObject().getBounds().sizeZ()) maxZ=parentTrack.get(i).getObject().getBounds().sizeZ();
         }
-        maxParentY=maxY;
-        maxParentZ=maxZ;
-        logger.trace("track mask image object: max parent Y-size: {} z-size: {}", maxParentY, maxParentZ);
+        maxParentSizeY=maxY;
+        maxParentSizeZ=maxZ;
+        logger.trace("track mask image object: max parent Y-size: {} z-size: {}", maxParentSizeY, maxParentSizeZ);
         int currentOffsetX=0;
         for (int i = 0; i<parentTrack.size(); ++i) {
             trackOffset[i] = new SimpleBoundingBox(parentTrack.get(i).getBounds()).resetOffset(); 
-            //trackOffset[i].translate(currentOffsetX, (int)(maxParentY/2.0-trackOffset[i].getSizeY()/2.0), (int)(maxParentZ/2.0-trackOffset[i].getSizeZ()/2.0)); // Y & Z middle of parent track
-            trackOffset[i].translate(new SimpleOffset(currentOffsetX, 0, 0)); // Y & Z up of parent track
+            if (middleYZ) trackOffset[i].translate(new SimpleOffset(currentOffsetX, (int)((maxParentSizeY-1)/2.0-(trackOffset[i].sizeY()-1)/2.0), (int)((maxParentSizeZ-1)/2.0-(trackOffset[i].sizeZ()-1)/2.0))); // Y & Z middle of parent track
+            else trackOffset[i].translate(new SimpleOffset(currentOffsetX, 0, 0)); // Y & Z up of parent track
             trackObjects[i] = new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i]);
             currentOffsetX+=interval+trackOffset[i].sizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
@@ -113,13 +113,13 @@ public class TrackMaskX extends TrackMask {
         String structureName;
         if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(childStructureIdx).getName(); 
         else structureName= childStructureIdx+"";
-        final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Track: Parent:"+parents+" Segmented Image of: "+structureName, maxLabel, new SimpleImageProperties( trackOffset[trackOffset.length-1].xMax()+1, this.maxParentY, this.maxParentZ,parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
+        final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Track: Parent:"+parents+" Segmented Image of: "+structureName, maxLabel, new SimpleImageProperties( trackOffset[trackOffset.length-1].xMax()+1, this.maxParentSizeY, this.maxParentSizeZ,parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
         drawObjects(displayImage);
         return displayImage;
     }
     @Override 
     public Image generateEmptyImage(String name, Image type) {
-        return  Image.createEmptyImage(name, type, new SimpleImageProperties(trackOffset[trackOffset.length-1].xMax()+1, this.maxParentY, Math.max(type.sizeZ(), this.maxParentZ),parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
+        return  Image.createEmptyImage(name, type, new SimpleImageProperties(trackOffset[trackOffset.length-1].xMax()+1, this.maxParentSizeY, Math.max(type.sizeZ(), this.maxParentSizeZ),parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
     }
     
     class OffsetComparatorX implements Comparator<Offset>{

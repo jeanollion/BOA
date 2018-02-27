@@ -69,7 +69,7 @@ public class TestProcessMutations {
         ImageInteger parentMask = parent.getObject().getMaskAsImageInteger();
         MutableBoundingBox parentBounds = new MutableBoundingBox(parent.getBounds());
         if (parentBounds.sizeZ()==1 && input.sizeZ()>1) parentBounds.copyZ(input); // case of 2D ref image
-        Image localInput = input.sameDimensions(parentBounds.getImageProperties()) ? input : input.cropWithOffset(parentBounds);
+        Image localInput = input.sameDimensions(parentBounds.getBlankMask()) ? input : input.cropWithOffset(parentBounds);
         
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         MutationSegmenter.debug=true;

@@ -36,10 +36,12 @@ import boa.data_structure.StructureObjectTracker;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
 import boa.image.BlankMask;
+import boa.image.BoundingBox;
 import ij.process.AutoThresholder;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageMask;
+import boa.image.MutableBoundingBox;
 import boa.image.SimpleOffset;
 import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
@@ -89,10 +91,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
     BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum Size Increment", 2, 1.5, 1, null).setToolTipText("Typical maximum ratio of size between two frames");
     BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum size increment", 2, 0.7, 0.01, null).setToolTipText("Typical minimum ratio of size between two frames");
+    ChoiceParameter sizeFeature = new ChoiceParameter("Feature used for Size", new String[]{"Size", "Length"}, "Length", false).setToolTipText("Object feature used to compute the size ratio. <ul><li><em>Length</em> : Feret distance (max distance between two points of contour)</li><li><em>Size</em> : number of pixels</li></ul>");
+    
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1.5, 0, null).setToolTipText("Limits the cost of each single correction operation (merge/split). Value depends on the segmenter and the threshold for splitting set in the segmenter");
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null).setToolTipText("Limits the sum of costs for a correction over multiple frames");
     BoundedNumberParameter endOfChannelContactThreshold = new BoundedNumberParameter("End of channel contact Threshold", 2, 0.45, 0, 1).setToolTipText("A cell is considered to be partially outside the channel if the contact with the open-end of the channel divided by its thickness is superior to this value");
-    Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold};
+    Parameter[] parameters = new Parameter[]{segmenter, sizeFeature, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold};
 
     // multithreaded interface
     ExecutorService executor;
@@ -144,7 +148,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     Map<Integer, Image> inputImages;
     TrackParametrizer applyToSegmenter;
     TreeMap<Integer, StructureObject> parentsByF;
-    HashMapGetCreate<Integer, SegmenterSplitAndMerge> segmenters = new HashMapGetCreate(f->{
+    HashMapGetCreate<Integer, SegmenterSplitAndMerge> segmenters = new HashMapGetCreate<>(f->{
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
         if (applyToSegmenter!=null) applyToSegmenter.apply(parentsByF.get(f), s);
         return s;
@@ -153,29 +157,42 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     double maxGR, minGR, costLim, cumCostLim;
     double[] baseGrowthRate;
     
-    
     // debug static variables
     public static boolean debug=false, debugCorr=false;
-    public static double debugThreshold = Double.NaN;
     public static int verboseLevelLimit=1;
     public static int correctionStepLimit = 20;
     public static int bactTestFrame=-1;
-
+    
+    // parameters of the algorithm
     final static int correctionLoopLimit=3;
     final static int sizeIncrementFrameNumber = 7; // number of frames for sizeIncrement computation
     final static double significativeSIErrorThld = 0.25; // size increment difference > to this value lead to an error
     final static double SIErrorValue=1; //equivalence between a size-increment difference error and regular error 
-    final static double SIIncreaseThld = 0.1; // a cell is added to the assignment only is the error number is same or inferior and if the size increment difference is less than this value
+    final static double SIIncreaseThld = 0; // a cell is added to the assignment only is the error number is same or inferior and if the size increment difference is less than this value
     final static double SIQuiescentThld = 1.05; // under this value we consider cells are not growing -> if break in lineage no error count (cell dies)
     final static boolean setSIErrorsAsErrors = false; // SI errors are set as tracking errors in object attributes
-    final static int correctionLevelLimit = 10; // max bacteria idx for correction
-    final static int cellNumberLimitForAssignment = 10; // max bacterai idx for recursive testing in assignment 
+    final static int correctionIndexLimit = 10; // max bacteria idx for correction
+    final static int cellNumberLimitForAssignment = 10; // max bacteria idx for recursive testing in assignment 
     final static int maxCorrectionLength = 500; // limit lenth of correction scenario
-    final static boolean useVolumeAsSize=true; // used volume ws length to assess growth // if length -> length should be re-computed for merged objects and not just summed
     
     // functions for assigners
-    
-    Function<Region, Double> sizeFunction; 
+    HashMapGetCreate<Collection<Region>, Double> sizeMap = new HashMapGetCreate<>(col -> {
+        if (col.isEmpty()) return 0d;
+            if (col.size()==1) {
+                Region o = col.iterator().next();
+                return objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getSize() : getObjectSize(o);
+            }
+            if (this.sizeFeature.getSelectedIndex()==0) { // simple sum
+                return col.stream().mapToDouble(o->objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getSize() : getObjectSize(o)).sum();
+            } else { // merge only connected and compute size for each merged object
+                MutableBoundingBox bounds = BoundingBox.getMergedBoundingBox(col.stream().map(r->r.getBounds()));
+                bounds.setxMin(0).setyMin(0).setzMin(0); // objects are all in relative landmark
+                RegionPopulation pop = new RegionPopulation(new ArrayList(col), bounds.getBlankMask());
+                pop.mergeAllConnected();
+                return pop.getRegions().stream().mapToDouble(o->objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getSize() : getObjectSize(o)).sum();
+            }
+    });
+    Function<Collection<Region>, Double> sizeFunction = col -> sizeMap.getAndCreateIfNecessary(col);
     Function<Region, Double> sizeIncrementFunction;
     BiFunction<Region, Region, Boolean> areFromSameLine, haveSamePreviousObject;
     
@@ -249,7 +266,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             int idxMax=0;
             int idxLim = populations.get(minT).size();
             for (int t = minT+1; t<maxT; ++t) if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
-            idxLim = Math.min(correctionLevelLimit, idxLim);
+            idxLim = Math.min(correctionIndexLimit, idxLim);
             List<int[]> corrRanges = new ArrayList<>();
             List<int[]> corrRanges2 = new ArrayList<>(1);
             while(idxMax<idxLim) {
@@ -273,7 +290,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         for (int t = tRange[0]; t<=tRange[1]; ++t) {
                             if (populations.get(t).size()>idxLim) idxLim=populations.get(t).size();
                         }
-                        idxLim = Math.min(correctionLevelLimit, idxLim);
+                        idxLim = Math.min(correctionIndexLimit, idxLim);
                     }
                 }
                 idxMax++;
@@ -506,7 +523,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.cumCostLim = this.cumCostLimit.getValue().doubleValue();
         this.structureIdx=structureIdx;
         
-        sizeFunction = o -> objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getSize() : getObjectSize(o);
+        
         sizeIncrementFunction = o -> objectAttributeMap.containsKey(o) ? objectAttributeMap.get(o).getLineageSizeIncrement() : Double.NaN;
         haveSamePreviousObject = (o1, o2) -> {
             if (!objectAttributeMap.containsKey(o1) || !objectAttributeMap.containsKey(o2)) return false;
@@ -616,8 +633,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return res;
     }
     
-    protected static double getObjectSize(Region o) {
-        if (useVolumeAsSize) return GeometricalMeasurements.getVolume(o);
+    protected double getObjectSize(Region o) {
+        if (sizeFeature.getSelectedIndex()==0) return GeometricalMeasurements.getVolume(o);
         else return GeometricalMeasurements.getFeretMax(o);
     }
     /**
@@ -671,7 +688,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         public double getLength() {
             if (Double.isNaN(objectLength)) {
-                if (!useVolumeAsSize) objectLength = getSize();
+                if (sizeFeature.getSelectedIndex()==1) objectLength = getSize();
                 else objectLength = GeometricalMeasurements.getFeretMax(o);
             }
             return objectLength;
@@ -791,7 +808,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         
         public double getLineageSizeIncrement() {
             List<Double> list = getLineageSizeIncrementList();
-            if (list.size()<=1) return Double.NaN;
+            if (list.size()<=3) return Double.NaN;
             double res = ArrayUtil.median(list);
             if (res<minGR) res = minGR;
             else if (res>maxGR) res = maxGR;
@@ -840,7 +857,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return new TrackAssigner(populations.get(frame-1), populations.get(frame), baseGrowthRate, true, sizeFunction, sizeIncrementFunction, areFromSameLine, haveSamePreviousObject);
     }
     protected void setAssignmentToTrackAttributes(int frame, boolean lastAssignment) {
-        if (debug) logger.debug("assign previous: frame: {}", frame);
+        //if (debug||debugCorr) logger.debug("assign previous: frame: {}", frame);
         resetTrackAttributes(frame);
         TrackAssigner assigner = getTrackAssigner(frame).setVerboseLevel(0);
         assigner.assignAll();

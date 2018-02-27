@@ -146,13 +146,14 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         splitPop = filterRegionsAfterEdgeDetector(parent, structureIdx, splitPop);
         if (splitAndMerge==null || !parent.equals(currentParent)) {
             currentParent = parent;
-            splitAndMerge = initializeSplitAndMerge(input, splitPop.getLabelMap());
+            splitAndMerge = initializeSplitAndMerge(input, parent.getMask());
         }
         RegionPopulation split = splitAndMerge.split(splitPop.getLabelMap(), minSizePropagation.getValue().intValue());
         if (testMode) {
             ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(split, input).setName("Values after split by hessian"));
         }
         split = filterRegionAfterSplitByHessian(parent, structureIdx, split);
+        if (testMode) ImageWindowManagerFactory.showImage(split.getLabelMap().duplicate("labels before merge"));
         RegionPopulation res = splitAndMerge.merge(split, 0);
         res = localThreshold(input, res, parent, structureIdx, false);
         if (testMode) {
@@ -218,24 +219,25 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         if (objects.isEmpty() || objects.size()==1) return 0;
         Image input = parent.getPreFilteredImage(structureIdx);
         RegionPopulation mergePop = new RegionPopulation(objects, objects.get(0).isAbsoluteLandMark() ? input : new BlankMask(input).resetOffset());
+        mergePop.relabel(false); // ensure distinct labels , if not cluster cannot be found
         if (splitAndMerge==null || !parent.equals(currentParent)) {
             currentParent = parent;
-            splitAndMerge = initializeSplitAndMerge(input, mergePop.getLabelMap());
+            splitAndMerge = initializeSplitAndMerge(input, parent.getMask());
         }
         RegionCluster c = new RegionCluster(mergePop, false, true, splitAndMerge.getFactory());
         List<Set<Region>> clusters = c.getClusters();
-        double maxCost = Double.NEGATIVE_INFINITY;
         if (clusters.size()>1) { // merge impossible : presence of disconnected objects
             if (testMode) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
             return Double.POSITIVE_INFINITY;
         } 
+        double maxCost = Double.NEGATIVE_INFINITY;
         Set<SplitAndMergeHessian.Interface> allInterfaces = c.getInterfaces(clusters.get(0));
         for (SplitAndMergeHessian.Interface i : allInterfaces) {
             i.updateInterface();
             if (i.value>maxCost) maxCost = i.value;
         }
 
-        if (maxCost==Double.MIN_VALUE) return Double.POSITIVE_INFINITY;
+        if (Double.isInfinite(maxCost)) return Double.POSITIVE_INFINITY;
         return getCost(maxCost, splitAndMerge.splitThresholdValue, false);
         
     }

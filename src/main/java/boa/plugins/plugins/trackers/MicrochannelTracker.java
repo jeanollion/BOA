@@ -222,7 +222,8 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
             if (debug) {
                 logger.debug("track: {} ymin-shift: {}, width: {} (max: {}, mean: {})", track.get(0), shift, width, widths.get(widths.size()-1), meanWidth);
             }
-            // modify all objects of the track with the y-shift & width
+            
+            // 4) track-wise normalization of width & y-shift
             
             for (int i = 0; i<track.size(); ++i) {
                 StructureObject o = track.get(i);
@@ -233,8 +234,9 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                 //int offX = (int)Math.round( b.getXMean()-width/2d ); 
                 double offXd = b.xMean()-(width-1d)/2d;
                 double offXdr = offXd-(int)offXd;
-                if (false && offXdr==0) offX=(int)offXd;
-                else { // adjust localy: compare light in both cases
+                if (offXdr<0.5) offX=(int)offXd;
+                else if (offXdr>0.5) offX = (int)offXd + 1;
+                else { // adjust localy: compare light in both cases //TODO not a good criterion -> biais on the right side
                     MutableBoundingBox bLeft = new MutableBoundingBox((int)offXd, (int)offXd+width-1, offY, offY+b.sizeY()-1, b.zMin(), b.zMax());
                     MutableBoundingBox bRight = bLeft.duplicate().translate(1, 0, 0);
                     MutableBoundingBox bLeft2 = bLeft.duplicate().translate(-1, 0, 0);
@@ -242,10 +244,10 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                     bRight.contract(parentBounds);
                     bLeft2.contract(parentBounds);
                     Image r = o.getParent().getRawImage(structureIdx);
-                    double valueLeft = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft.getImageProperties(1, 1), null)[0];
-                    double valueLeft2 = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft2.getImageProperties(1, 1), null)[0];
-                    double valueRight = ImageOperations.getMeanAndSigmaWithOffset(r, bRight.getImageProperties(1, 1), null)[0];
-                    if (valueLeft2>valueRight && valueLeft2>valueLeft2) offX=(int)offXd-1;
+                    double valueLeft = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft.getBlankMask(), null)[0];
+                    double valueLeft2 = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft2.getBlankMask(), null)[0];
+                    double valueRight = ImageOperations.getMeanAndSigmaWithOffset(r, bRight.getBlankMask(), null)[0];
+                    if (valueLeft2>valueRight && valueLeft2>valueLeft) offX=(int)offXd-1;
                     else if (valueRight>valueLeft && valueRight>valueLeft2) offX=(int)offXd+1;
                     else offX=(int)offXd;
                     //logger.debug("offX for element: {}, width:{}>{}, left:{}={}, right:{}={} left2:{}={}", o, b, width, bLeft, valueLeft, bRight, valueRight, bLeft2, valueLeft2);

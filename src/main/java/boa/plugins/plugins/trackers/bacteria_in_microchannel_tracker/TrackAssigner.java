@@ -31,6 +31,7 @@ import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.Bact
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
+import java.util.Collection;
 
 /**
  *
@@ -43,7 +44,7 @@ public class TrackAssigner {
     double[] currentScore = null;
     protected int verboseLevel = 0;
     AssignerMode mode = AssignerMode.ADAPTATIVE;
-    final Function<Region, Double> sizeFunction;
+    final Function<Collection<Region>, Double> sizeFunction;
     private Function<Region, Double> sizeIncrementFunction;
     final BiFunction<Region, Region, Boolean> areFromSameLine, haveSamePreviousObjects;
     final List<Region> prev, next;
@@ -54,7 +55,7 @@ public class TrackAssigner {
     protected boolean truncatedChannel;
     int nextIncrementCheckRecursiveLevel = -1; 
     HashMapGetCreate<Region, Double> sizeIncrements = new HashMapGetCreate<>(o -> sizeIncrementFunction.apply(o));
-    protected TrackAssigner(List<Region> prev, List<Region> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Region, Double> sizeFunction, Function<Region, Double> sizeIncrementFunction, BiFunction<Region, Region, Boolean> areFromSameLine, BiFunction<Region, Region, Boolean> haveSamePreviousObjects) {
+    protected TrackAssigner(List<Region> prev, List<Region> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Collection<Region>, Double> sizeFunction, Function<Region, Double> sizeIncrementFunction, BiFunction<Region, Region, Boolean> areFromSameLine, BiFunction<Region, Region, Boolean> haveSamePreviousObjects) {
         this.prev= prev!=null ? prev : Collections.EMPTY_LIST;
         this.next= next!=null ? next : Collections.EMPTY_LIST;
         idxPrevLim = this.prev.size();

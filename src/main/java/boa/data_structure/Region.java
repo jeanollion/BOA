@@ -45,6 +45,7 @@ import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import static boa.utils.Utils.comparator;
 import static boa.utils.Utils.comparatorInt;
+import java.util.Arrays;
 /**
  * 
  * @author jollion
@@ -406,12 +407,14 @@ public class Region {
         EllipsoidalNeighborhood neigh = !is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true); // 1 and not 1.5 -> diagonal
         Set<Voxel> res = new HashSet<>();
         if (voxels!=null) {
-            for (int i = 0; i<neigh.dx.length; ++i) {
+            /*for (int i = 0; i<neigh.dx.length; ++i) {
                 neigh.dx[i]-=mask.xMin();
                 neigh.dy[i]-=mask.yMin();
                 if (!is2D()) neigh.dz[i]-=mask.zMin();
             }
             for (Voxel v: getVoxels()) if (touchBorder(v.x, v.y, v.z, neigh, mask)) res.add(v);
+            */
+            for (Voxel v: getVoxels()) if (touchBorderVox(v, neigh)) res.add(v);
         } else ImageMask.loop(mask, (x, y, z)->{ if (touchBorder(x, y, z, neigh, mask)) res.add(new Voxel(x+mask.xMin(), y+mask.yMin(), z+mask.zMin()));});
         return res;
     }
@@ -449,6 +452,19 @@ public class Region {
             yy=y+neigh.dy[i];
             zz=z+neigh.dz[i];
             if (!mask.contains(xx, yy, zz) || !mask.insideMask(xx, yy, zz)) return true;
+        }
+        return false;
+    }
+    private boolean touchBorderVox(Voxel v, EllipsoidalNeighborhood neigh) {
+        Voxel next = new Voxel(v.x, v.y, v.z);
+        for (int i = 0; i<neigh.dx.length; ++i) {
+            next.x=v.x+neigh.dx[i];
+            next.y=v.y+neigh.dy[i];
+            next.z=v.z+neigh.dz[i];
+            if (absoluteLandmark) {
+                if (!getBounds().containsWithOffset(next.x, next.y, next.z)) return true;
+            } else if (!getBounds().contains(next.x, next.y, next.z)) return true;
+            if (!voxels.contains(next)) return true;
         }
         return false;
     }
@@ -679,6 +695,22 @@ public class Region {
         //logger.debug("merge:  {} + {}, nb voxel avant: {}, nb voxels après: {}", this.getLabel(), other.getLabel(), nb,getVoxels().size() );
         this.mask=null; // reset mask
         this.bounds=null; // reset bounds
+    }
+    public static Region merge(Region... regions) {
+        return merge(Arrays.asList(regions));
+    }
+    public static Region merge(Collection<Region> regions) {
+        if (!Utils.objectsAllHaveSameProperty(regions, r->r.isAbsoluteLandMark())) throw new IllegalArgumentException("Trying to merge regions with different landmarks");
+        if (!Utils.objectsAllHaveSameProperty(regions, r->r.is2D)) throw new IllegalArgumentException("Trying to merge 2D with 3D regions");
+        Iterator<Region> it = regions.iterator();
+        Region ref = it.next();
+        MutableBoundingBox bounds = new MutableBoundingBox(ref.getBounds());
+        while (it.hasNext()) bounds.expand(it.next().getBounds());
+        ImageByte mask = new ImageByte("", new SimpleImageProperties(bounds, ref.getScaleXY(), ref.getScaleZ()));
+        for (Region r : regions) {
+            ImageMask.loopWithOffset(r.getMask(), (x, y, z)-> mask.setPixelWithOffset(x, y, z, 1));
+        }
+        return new Region(mask, 1, ref.is2D).setIsAbsoluteLandmark(ref.isAbsoluteLandMark());
     }
     
     public ObjectContainer getObjectContainer(StructureObject structureObject) {

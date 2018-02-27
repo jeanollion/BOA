@@ -127,15 +127,11 @@ public class SimpleBoundingBox<T extends SimpleBoundingBox<T>> implements Boundi
         return xMin==0 && yMin==0 && zMin==0;
     }
     
-    public BlankMask getImageProperties(float scaleXY, float scaleZ) {
+    public BlankMask getBlankMask(float scaleXY, float scaleZ) {
         return new BlankMask(this, scaleXY, scaleZ);
     }
     
-    public BlankMask getImageProperties(String name, float scaleXY, float scaleZ) {
-        return new BlankMask(this, scaleXY, scaleZ);
-    }
-    
-    public ImageProperties getImageProperties() {
+    public BlankMask getBlankMask() {
         return new BlankMask(this, 1, 1);
     }
     

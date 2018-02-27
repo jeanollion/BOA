@@ -37,7 +37,7 @@ public class ObjectContainerBlankMask extends ObjectContainer {
     }
     
     public BlankMask getImage() {
-        return bounds.getImageProperties("", getScaleXY(), getScaleZ());
+        return new BlankMask(bounds, getScaleXY(), getScaleZ());
     }
     
     @Override

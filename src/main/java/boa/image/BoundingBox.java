@@ -17,6 +17,8 @@
  */
 package boa.image;
 
+import java.util.stream.Stream;
+
 /**
  *
  * @author jollion
@@ -123,12 +125,33 @@ public interface BoundingBox<T> extends Offset<T> {
         return contained.xMin()>=container.xMin() && contained.xMax()<=container.xMax() && contained.yMin()>=container.yMin() && contained.yMax()<=container.yMax();
     }
     
+    public static MutableBoundingBox getMergedBoundingBox(Stream<BoundingBox> bounds) {
+        MutableBoundingBox res = new MutableBoundingBox();
+        bounds.forEach(b->res.expand(b));
+        return res;
+    }
+    
     public static void loop(BoundingBox bb, LoopFunction function) {
         if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();
         for (int z = bb.zMin(); z<=bb.zMax(); ++z) {
             for (int y = bb.yMin(); y<=bb.yMax(); ++y) {
                 for (int x=bb.xMin(); x<=bb.xMax(); ++x) {
                     function.loop(x, y, z);
+                }
+            }
+        }
+        if (function instanceof LoopFunction2) ((LoopFunction2)function).tearDown();
+    }
+    public static void loop(BoundingBox bb, LoopFunction function, LoopPredicate predicate) {
+        if (predicate==null) {
+            loop(bb, function);
+            return;
+        }
+        if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();
+        for (int z = bb.zMin(); z<=bb.zMax(); ++z) {
+            for (int y = bb.yMin(); y<=bb.yMax(); ++y) {
+                for (int x=bb.xMin(); x<=bb.xMax(); ++x) {
+                    if (predicate.test(x, y, z)) function.loop(x, y, z);
                 }
             }
         }
@@ -141,5 +164,42 @@ public interface BoundingBox<T> extends Offset<T> {
     }
     public static interface LoopFunction {
         public void loop(int x, int y, int z);
+    }
+    public static interface LoopPredicate {
+        public boolean test(int x, int y, int z);
+    }
+    public static LoopPredicate and(LoopPredicate... predicates) {
+        switch (predicates.length) {
+            case 0:
+                return (x, y, z)->true;
+            case 1:
+                return predicates[0];
+            case 2:
+                return (x, y, z) -> predicates[0].test(x, y, z) && predicates[1].test(x, y, z);
+            case 3:
+                return (x, y, z) -> predicates[0].test(x, y, z) && predicates[1].test(x, y, z) && predicates[2].test(x, y, z);
+            default:
+                return (x, y, z) -> {
+                    for (LoopPredicate p : predicates) if (!p.test(x, y, z)) return false;
+                    return true;
+                };
+        }
+    }
+    public static LoopPredicate or(LoopPredicate... predicates) {
+        switch (predicates.length) {
+            case 0:
+                return (x, y, z)->true;
+            case 1:
+                return predicates[0];
+            case 2:
+                return (x, y, z) -> predicates[0].test(x, y, z) || predicates[1].test(x, y, z);
+            case 3:
+                return (x, y, z) -> predicates[0].test(x, y, z) || predicates[1].test(x, y, z) || predicates[2].test(x, y, z);
+            default:
+                return (x, y, z) -> {
+                    for (LoopPredicate p : predicates) if (p.test(x, y, z)) return true;
+                    return false;
+                };
+        }
     }
 }

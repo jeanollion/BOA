@@ -24,13 +24,18 @@ import java.util.List;
 import java.util.ListIterator;
 import static boa.plugins.Plugin.logger;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SIErrorValue;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.cellNumberLimitForAssignment;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
+import boa.utils.Utils;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Class holding objects at a given frame linked to objects at the next frame
@@ -39,13 +44,14 @@ import java.util.Set;
  * @author jollion
  */
 public class Assignment {
-        final static boolean notSameLineIsError = true;
+        final static boolean notSameLineIsError = false;
         List<Region> prevObjects;
         List<Region> nextObjects;
         int idxPrev, idxNext;
         double sizePrev, sizeNext;
         double previousSizeIncrement = Double.NaN;
         double[] currentScore;
+        Map<Double, Assignment> deltaSizeMapAssignmentCandidate = new HashMap<>(3);
         TrackAssigner ta;
         public Assignment(TrackAssigner ta, int idxPrev, int idxNext) {
             prevObjects = new ArrayList();
@@ -144,7 +150,7 @@ public class Assignment {
             if (idxPrevEnd()<ta.idxPrevLim) {
                 Region o = ta.prev.get(idxPrevEnd());
                 prevObjects.add(o);
-                sizePrev+=ta.sizeFunction.apply(o);
+                sizePrev=ta.sizeFunction.apply(prevObjects);
                 previousSizeIncrement = Double.NaN;
                 currentScore=null;
                 return true;
@@ -154,7 +160,7 @@ public class Assignment {
             if (idxNextEnd()<ta.idxNextLim) {
                 Region o = ta.next.get(idxNextEnd());
                 nextObjects.add(o);
-                sizeNext+=ta.sizeFunction.apply(o);
+                sizeNext=ta.sizeFunction.apply(nextObjects);
                 currentScore=null;
                 return true;
             } else return false;
@@ -162,7 +168,8 @@ public class Assignment {
         public boolean remove(boolean prev, boolean removeFirst) {
             if (prev) {
                 if (!prevObjects.isEmpty()) {
-                    sizePrev-=ta.sizeFunction.apply(prevObjects.remove(removeFirst ? 0 : prevObjects.size()-1));
+                    prevObjects.remove(removeFirst ? 0 : prevObjects.size()-1);
+                    sizePrev=ta.sizeFunction.apply(prevObjects);
                     if (removeFirst) idxPrev++;
                     previousSizeIncrement = Double.NaN;
                     currentScore=null;
@@ -170,7 +177,8 @@ public class Assignment {
                 } else return false;
             } else {
                 if (!nextObjects.isEmpty()) {
-                    sizeNext-=ta.sizeFunction.apply(nextObjects.remove(removeFirst ? 0 : nextObjects.size()-1));
+                    nextObjects.remove(removeFirst ? 0 : nextObjects.size()-1);
+                    sizeNext=ta.sizeFunction.apply(nextObjects);
                     if (removeFirst) idxNext++;
                     return true;
                 } else return false;
@@ -180,37 +188,30 @@ public class Assignment {
             List<Region> l = prev ? prevObjects : nextObjects;
             if (l.size()<=n) return false;
             currentScore=null;
-            if (prev) {
-                previousSizeIncrement = Double.NaN;
-            }
-            
+            if (prev) previousSizeIncrement = Double.NaN;
             if (removeFirst) {
                 Iterator<Region> it = l.iterator();
                 while(l.size()>n) {
-                    if (prev) {
-                        sizePrev -= ta.sizeFunction.apply(it.next());
-                        idxPrev++;
-                    } else {
-                        sizeNext -= ta.sizeFunction.apply(it.next());
-                        idxNext++;
-                    }
+                    it.next();
+                    if (prev) idxPrev++;
+                    else idxNext++;
                     it.remove();
                 }
             } else {
                 ListIterator<Region> it = l.listIterator(l.size());
                 while(l.size()>n) {
-                    if (prev) sizePrev -= ta.sizeFunction.apply(it.previous());
-                    else sizeNext -= ta.sizeFunction.apply(it.previous());
+                    it.previous();
                     it.remove();
                 }
             }
-            
+            if (prev) this.sizePrev = ta.sizeFunction.apply(prevObjects);
+            else this.sizeNext = ta.sizeFunction.apply(nextObjects);
             return true;
         }
-
-        protected void incrementIfNecessary() {
+        
+        /*protected void incrementIfNecessary() {
             if (prevObjects.isEmpty()) incrementPrev();
-            boolean cellDeathScenario=false;
+            boolean cellDeathScenario=false; // testing only
             if (nextObjects.isEmpty()) {
                 if (false && ta.allowCellDeathScenario() && idxNextEnd()<ta.idxNextLim) cellDeathScenario=true;
                 else incrementNext();
@@ -219,10 +220,19 @@ public class Assignment {
             if (!cellDeathScenario) {
                 incrementUntilVerifyInequality();
                 if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} start increment: {}", ta.verboseLevel, this);
-                if (!verifyInequality()) return;
+                adjustAssignmentToFitPreviousSizeIncrement();
+                //if (!verifyInequality()) return;
             } else change = ta.checkNextIncrement();
             if (ta.currentAssignment!=this) throw new RuntimeException("TA's currentAssignment should be calling assignment");
-            while (ta.allowRecurstiveNextIncrementCheck() && change && this.idxPrev<=cellNumberLimitForAssignment) change = ta.checkNextIncrement();
+            //while (ta.allowRecurstiveNextIncrementCheck() && change && this.idxPrev<=cellNumberLimitForAssignment) change = ta.checkNextIncrement();
+        }*/
+        protected void incrementIfNecessary() {
+            if (prevObjects.isEmpty()) if (!incrementPrev()) return;
+            if (nextObjects.isEmpty()) if (!incrementNext()) return;
+            incrementUntilVerifyInequality();
+            if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} start: {}", ta.verboseLevel, this);
+            adjustAssignmentToFitPreviousSizeIncrement();
+            if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} after fit to SI: {}", ta.verboseLevel, this);
         }
                 
         protected void incrementUntilVerifyInequality() {
@@ -234,16 +244,73 @@ public class Assignment {
                 } 
             }
         }
+        protected void adjustAssignmentToFitPreviousSizeIncrement() {
+            if (Double.isNaN(getPreviousSizeIncrement())) return;
+            double currentDelta = previousSizeIncrement * sizePrev - sizeNext;
+            deltaSizeMapAssignmentCandidate.clear();
+            while(true) {
+                //logger.debug("Fit previous size increment: prevSI: {}, curSI: {} deltaSI: {} error: {} ass: {}", previousSizeIncrement, sizeNext/sizePrev, previousSizeIncrement-sizeNext/sizePrev, currentDelta, this);
+                if (currentDelta>0) { // missing @ next OR too much at prev
+                    if (this.prevObjects.size()>1) { // remove prev
+                        Assignment other = this.duplicate(ta);
+                        other.remove(true, false);
+                        double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                        if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                    }
+                    if (this.nextObjects.size()>1 && this.prevObjects.size()>1) { // remove prev&next
+                        Assignment other = this.duplicate(ta);
+                        other.remove(true, false);
+                        other.remove(false, false);
+                        double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                        if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                    }
+                    if (true) { // add to next
+                        Assignment other = this.duplicate(ta);
+                        if (other.incrementNext()) {
+                            double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                            if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                        }
+                    }
+                } else if (currentDelta<0) {
+                    if (this.nextObjects.size()>1) { // remove next
+                        Assignment other = this.duplicate(ta);
+                        other.remove(false, false);
+                        double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                        if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                    }
+                    if (this.nextObjects.size()>1 && this.prevObjects.size()>1) { // remove prev&next
+                        Assignment other = this.duplicate(ta);
+                        other.remove(true, false);
+                        other.remove(false, false);
+                        double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                        if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                    }
+                    if (true) { // add to prev
+                        Assignment other = this.duplicate(ta);
+                        if (other.incrementPrev()) {
+                            double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                            if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                        }
+                    }
+                }
+                if (deltaSizeMapAssignmentCandidate.isEmpty()) return;
+                Entry<Double, Assignment> next = Collections.min(deltaSizeMapAssignmentCandidate.entrySet(), (e1, e2)->Double.compare(Math.abs(e1.getKey()),Math.abs(e2.getKey())));
+                this.transferData(next.getValue());
+                currentDelta = next.getKey();
+                deltaSizeMapAssignmentCandidate.clear();
+            }
+        }
+        
         public double getPreviousSizeIncrement() {
             if (Double.isNaN(previousSizeIncrement) && !prevObjects.isEmpty()) {
                 previousSizeIncrement = ta.sizeIncrements.getAndCreateIfNecessary(prevObjects.get(0));
                 if (!prevFromPrevObject()) {  // compute size-weighted barycenter of size increment from lineage
-                    double totalSize= ta.sizeFunction.apply(prevObjects.get(0));
+                    double totalSize= prevObjects.get(0).size();
                     previousSizeIncrement *= totalSize;
                     for (int i = 1; i<prevObjects.size(); ++i) { 
                         double curSI = ta.sizeIncrements.getAndCreateIfNecessary(prevObjects.get(i));
                         if (!Double.isNaN(curSI)) {
-                            double size = ta.sizeFunction.apply(prevObjects.get(i));
+                            double size = prevObjects.get(i).size();
                             previousSizeIncrement+= curSI * size;
                             totalSize += size;
                         }
@@ -278,21 +345,22 @@ public class Assignment {
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignement score: prevSI: {}, SI: {}", ta.verboseLevel, prevSizeIncrement, sizeNext/sizePrev);
             return new double[]{getErrorCount(), Math.abs(prevSizeIncrement - sizeNext/sizePrev)};
         }
+        
+        public int getTrackingErrorCount() {
+            return Math.max(0, nextObjects.size()-2) + prevObjects.size()-1; // division in more than 2 + merging
+            //return Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1); // max erro @ prev OU @ next
+        }
         /**
          * Error number is the sum of (1) the number of sur-numerous objects in assignment: more than 2 objects at next frame or more than one object at previous frame, and the number of errors due to size increment (See {@link #getSizeIncrementErrors() }
          * No errors is counted is the assignment involve object at the opened-end of the microchannel to take into account missing bacteria
          * @return number of errors in this assignment
          */
         public double getErrorCount() {
-            int res = Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1); // max erro @ prev OU @ next
-            //int res =  Math.max(0, nextObjects.size()-2) + prevObjects.size()-1; // division in more than 2 + merging
+            int res = getTrackingErrorCount();
             //if ((!verifyInequality() || significantSizeIncrementError()) && !truncatedEndOfChannel()) ++res; // bad size increment
             if (!truncatedEndOfChannel()) {
-                if (!verifyInequality()) res+=1;
-                else {
-                    double sig = getSizeIncrementErrors();
-                    res+=sig*SIErrorValue;
-                }
+                double sig = getSizeIncrementErrors();
+                res+=sig*SIErrorValue;
             }
             if (notSameLineIsError && !prevFromSameLine()) ++res;
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, getError count: {}, errors: {}, truncated: {}", ta.verboseLevel, this, res, truncatedEndOfChannel());

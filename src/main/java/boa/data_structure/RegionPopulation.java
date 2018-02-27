@@ -113,15 +113,16 @@ public class RegionPopulation {
         return this;
     }
 
-    public RegionPopulation(List<Region> objects, ImageProperties properties) {
+    public RegionPopulation(Collection<Region> objects, ImageProperties properties) {
         if (properties==null) throw new IllegalArgumentException("ImageProperties should no be null");
         if (objects != null) {
-            this.objects = objects;
+            if (objects instanceof List) this.objects = (List)objects;
+            else this.objects = new ArrayList<>(objects);
         } else {
             this.objects = new ArrayList<>();
         }
         checkObjectValidity();
-        this.properties = new BlankMask( properties); // can be null in case label image is set afterwards
+        this.properties = new BlankMask( properties); 
     }
     
     private void checkObjectValidity() {
@@ -235,7 +236,7 @@ public class RegionPopulation {
                 for (Region o : objects) {
                     box.expand(o.getBounds());
                 }
-                properties = box.getImageProperties();                
+                properties = box.getBlankMask();                
             }
         }
         return properties;
@@ -621,6 +622,7 @@ public class RegionPopulation {
     }
     /**
      * Merge all objects connected if their label is above {@param fromLabel}
+     * Existing region are not modified, when merged, new regions are created
      * @param fromLabel 
      */
     private void mergeAllConnected(int fromLabel) {
@@ -653,9 +655,11 @@ public class RegionPopulation {
                                         otherRegion = temp;
                                         label = currentRegion.getLabel();
                                     }
-                                    currentRegion.merge(otherRegion);
+                                    Region newRegion = Region.merge(currentRegion, otherRegion);
                                     draw(otherRegion, label);
                                     toRemove.add(otherRegion);
+                                    objects.set(label-1, newRegion);
+                                    currentRegion = newRegion;
                                 }
                             }
                         }

@@ -565,8 +565,8 @@ public class GenerateXP {
             mcpc.addTrackPostFilters(
                 new TrackLengthFilter().setMinSize(10),  
                 new RemoveTracksStartingAfterFrame(),
-                new SegmentationPostFilter().addPostFilters(new FitMicrochannelHeadToEdges()),
-                new AverageMask()
+                new SegmentationPostFilter().addPostFilters(new FitMicrochannelHeadToEdges().setResetBounds(true).setOnlyHead(false))//,
+                //new AverageMask()
             );
             mc.setProcessingScheme(mcpc);
             bacteria.setProcessingScheme(

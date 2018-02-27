@@ -70,7 +70,7 @@ public class MergeScenario extends CorrectionScenario {
                 vox.addAll(rem.getVoxels());
                 tracker.objectAttributeMap.remove(rem);
             }
-            Region merged = new Region(vox, idxMin+1, o.is2D(), o.getScaleXY(), o.getScaleZ());
+            Region merged = new Region(vox, idxMin+1, o.is2D(), o.getScaleXY(), o.getScaleZ()); // new hashcode generated
             tracker.populations.get(frameMin).add(idxMin, merged);
             tracker.objectAttributeMap.put(merged, tracker.new TrackAttribute(merged, idxMin, frameMin));
             tracker.resetIndices(frameMin);

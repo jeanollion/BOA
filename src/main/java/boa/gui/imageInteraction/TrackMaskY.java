@@ -63,7 +63,7 @@ public class TrackMaskY extends TrackMask {
         int currentOffsetY=0;
         for (int i = 0; i<parentTrack.size(); ++i) {
             trackOffset[i] = new SimpleBoundingBox(parentTrack.get(i).getBounds()).resetOffset(); 
-            if (middleXZ) trackOffset[i].translate(new SimpleOffset((int)(0.5+maxParentX/2.0-trackOffset[i].sizeX()/2.0), currentOffsetY , (int)(0.5+maxParentZ/2.0-trackOffset[i].sizeZ()/2.0))); // Y & Z middle of parent track
+            if (middleXZ) trackOffset[i].translate(new SimpleOffset((int)((maxParentX-1)/2.0-(trackOffset[i].sizeX()-1)/2.0), currentOffsetY , (int)((maxParentZ-1)/2.0-(trackOffset[i].sizeZ()-1)/2.0))); // Y & Z middle of parent track
             else trackOffset[i].translate(new SimpleOffset(0, currentOffsetY, 0)); // X & Z up of parent track
             trackObjects[i] = new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i]);
             currentOffsetY+=interval+trackOffset[i].sizeY();

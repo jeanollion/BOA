@@ -229,7 +229,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
                 ImageInteger m2 = e2.getMaskAsImageInteger();
                 MutableBoundingBox joinBox = m1.getBoundingBox(); 
                 joinBox.expand(m2.getBoundingBox());
-                ImageByte mask = new ImageByte("joinedMask:"+e1.getLabel()+"+"+e2.getLabel(), joinBox.getImageProperties());//.setCalibration(m1);
+                ImageByte mask = new ImageByte("joinedMask:"+e1.getLabel()+"+"+e2.getLabel(), joinBox.getBlankMask());//.setCalibration(m1);
                 Image.pasteImage(m1, mask, m1.getBoundingBox().translate(mask.getBoundingBox().reverseOffset()));
                 
                 if (testMode) for (Voxel v : e2.getVoxels()) mask.setPixelWithOffset(v.x, v.y, v.z, 2);
@@ -438,7 +438,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
 
             MutableBoundingBox b = new MutableBoundingBox();
             for (Voxel v : allBorderVoxels) b.expand(v);
-            ImageByte mask = new ImageByte("", b.getImageProperties());
+            ImageByte mask = new ImageByte("", b.getBlankMask());
             for (Voxel v : allBorderVoxels) mask.setPixelWithOffset(v.x, v.y, v.z, 1);
             RegionPopulation pop = new RegionPopulation(mask, false);
             pop.translate(b, false);

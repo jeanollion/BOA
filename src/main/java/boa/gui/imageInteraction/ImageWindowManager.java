@@ -337,7 +337,7 @@ public abstract class ImageWindowManager<T, U, V> {
     public TrackMask generateTrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
         //setAllChildren(parentTrack, childStructureIdx); // if set -> tracking test cannot work ? 
         BoundingBox bb = parentTrack.get(0).getBounds();
-        return bb.sizeY()>=bb.sizeX() ? new TrackMaskX(parentTrack, childStructureIdx) : new TrackMaskY(parentTrack, childStructureIdx);
+        return bb.sizeY()>=bb.sizeX() ? new TrackMaskX(parentTrack, childStructureIdx, false) : new TrackMaskY(parentTrack, childStructureIdx);
     }
     public ImageObjectInterface getImageTrackObjectInterface(List<StructureObject> parentTrack, int childStructureIdx) {
         

@@ -36,7 +36,6 @@ import static boa.plugins.Plugin.logger;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import static boa.plugins.plugins.trackers.ObjectIdxTracker.getComparatorRegion;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.getObjectSize;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.ObjectModifier.Split;
@@ -51,7 +50,7 @@ import boa.utils.Utils;
 public class RearrangeObjectsFromPrev extends ObjectModifier {
     protected List<RearrangeAssignment> assignements;
     protected final Assignment assignment;
-    protected HashMapGetCreate<Region, Double> sizeMap = new HashMapGetCreate<>(o -> getObjectSize(o));
+    protected HashMapGetCreate<Region, Double> sizeMap = new HashMapGetCreate<>(o -> tracker.getObjectSize(o));
     public RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int frame, Assignment assignment) { // idxMax included
         super(frame, frame, tracker);
         objects.put(frame, new ArrayList(assignment.nextObjects)); // new arraylist -> can be modified
@@ -61,7 +60,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         for (Region o : assignment.prevObjects) {
             double[] sizeRange = new double[2];
             double si = tracker.sizeIncrementFunction.apply(o);
-            double size = tracker.sizeFunction.apply(o);
+            double size = o.size();
             if (Double.isNaN(si)) {
                 sizeRange[0] = tracker.minGR * size;
                 sizeRange[1] = tracker.maxGR * size;
@@ -85,7 +84,6 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
                 TrackAssigner ta = tracker.getTrackAssigner(frame+1).setVerboseLevel(verboseLevelLimit);
                 ta.assignUntil(assignment.getLastObject(false), true);
                 // check that ta's has assignments included in current assignments
-                if (debugCorr) logger.debug("RO: merge from next: current sizes: {}", Utils.toStringList(getObjects(frame), o->""+tracker.sizeFunction.apply(o)));
                 if (debugCorr) logger.debug("RO: merge from next: current assignment: [{}->{}] assignment with next: {}", assignment.idxNext, assignment.idxNextEnd()-1, ta.toString());
                 Assignment ass1 = ta.getAssignmentContaining(assignment.nextObjects.get(0), true);
                 if (ta.currentAssignment.getLastObject(true)==assignment.getLastObject(false) && ass1.prevObjects.get(0)==assignment.nextObjects.get(0)) {

@@ -68,15 +68,16 @@ public class TestTracker {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
         //String dbName = "Aya2";
-        String dbName = "MutH_150324";
+        String dbName = "AyaWT_mmglu";
+        //String dbName = "MutH_150324";
        // // String dbName = "fluo170512_WT";
         //String dbName = "fluo171113_WT_15s";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx =0;
-        int mcIdx =0;
+        int mcIdx =1;
         int structureIdx =1;
-        int[] frames = new int[]{0, 100};
+        int[] frames = new int[]{0, 1000}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -94,6 +95,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debug=false;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStepLimit=40;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
         testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
@@ -141,7 +143,7 @@ public class TestTracker {
         logger.debug("generating TOI");
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
         // display preFilteredImages
-        if (displayOnFilteredImages) for (StructureObject p : parentTrack)p.setRawImage(structureIdx, p.getPreFilteredImage(structureIdx));
+        if (displayOnFilteredImages) for (StructureObject p : parentTrack) p.setRawImage(structureIdx, p.getPreFilteredImage(structureIdx));
         
         
         Image interactiveImage = i.generateRawImage(structureIdx, true);
