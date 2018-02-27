@@ -80,11 +80,11 @@ import boa.utils.Utils;
 /**
  *
  * @author jollion
- * @param <T> image class
+ * @param <I> image class
  * @param <U> object ROI class
  * @param <V> track ROI class
  */
-public abstract class ImageWindowManager<T, U, V> {
+public abstract class ImageWindowManager<I, U, V> {
     public static enum RegisteredImageType { Interactive, RawInput, PreProcessed; }
     public static boolean displayTrackMode;
     public final static Color[] palette = new Color[]{new Color(166, 206, 227, 150), new Color(31,120,180, 150), new Color(178,223,138, 150), new Color(51,160,44, 150), new Color(251,154,153, 150), new Color(253,191,111, 150), new Color(255,127,0, 150), new Color(255,255,153, 150), new Color(177,89,40, 150)};
@@ -99,11 +99,11 @@ public abstract class ImageWindowManager<T, U, V> {
     protected final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
     protected final HashMap<Image, ImageObjectInterfaceKey> imageObjectInterfaceMap;
     protected final HashMapGetCreate<StructureObject, List<List<StructureObject>>> trackHeadTrackMap;
-    protected final LinkedHashMap<String, T> displayedRawInputFrames = new LinkedHashMap<>();
-    protected final LinkedHashMap<String, T> displayedPrePocessedFrames = new LinkedHashMap<>();
+    protected final LinkedHashMap<String, I> displayedRawInputFrames = new LinkedHashMap<>();
+    protected final LinkedHashMap<String, I> displayedPrePocessedFrames = new LinkedHashMap<>();
     protected final LinkedList<Image> displayedInteractiveImages = new LinkedList<>();
     final ImageObjectListener listener;
-    final ImageDisplayer<T> displayer;
+    final ImageDisplayer<I> displayer;
     int interactiveStructureIdx;
     int displayedImageNumber = 20;
     ZoomPane localZoom;
@@ -117,7 +117,7 @@ public abstract class ImageWindowManager<T, U, V> {
     
     protected final Map<Image, DefaultWorker> runningWorkers = new HashMap<>();
     
-    public ImageWindowManager(ImageObjectListener listener, ImageDisplayer displayer) {
+    public ImageWindowManager(ImageObjectListener listener, ImageDisplayer<I> displayer) {
         this.listener=null;
         this.displayer=displayer;
         imageObjectInterfaceMap = new HashMap<>();
@@ -133,7 +133,7 @@ public abstract class ImageWindowManager<T, U, V> {
             else return null;
         }
         try {
-            if (displayedInteractiveImages.contains(getDisplayer().getImage((T)image))) return RegisteredImageType.Interactive;
+            if (displayedInteractiveImages.contains(getDisplayer().getImage((I)image))) return RegisteredImageType.Interactive;
         } catch(Exception e) {}
         if (this.displayedRawInputFrames.values().contains(image)) return RegisteredImageType.RawInput;
         if (this.displayedPrePocessedFrames.values().contains(image)) return RegisteredImageType.PreProcessed;
@@ -210,9 +210,9 @@ public abstract class ImageWindowManager<T, U, V> {
     public void closeNonInteractiveWindows() {
         closeLastInputImages(0);
     }
-    public ImageDisplayer<T> getDisplayer() {return displayer;}
+    public ImageDisplayer<I> getDisplayer() {return displayer;}
     
-    //protected abstract T getImage(Image image);
+    //protected abstract I getImage(Image image);
     
     public void setInteractiveStructure(int structureIdx) {
         this.interactiveStructureIdx=structureIdx;
@@ -271,12 +271,12 @@ public abstract class ImageWindowManager<T, U, V> {
         GUI.updateRoiDisplayForSelections(image, i);
         closeLastActiveImages(displayedImageNumber);
     }
-    public String getPositionOfInputImage(T image) {
+    public String getPositionOfInputImage(I image) {
         String pos = Utils.getOneKey(displayedRawInputFrames, image);
         if (pos!=null) return pos;
         return Utils.getOneKey(displayedPrePocessedFrames, image);
     }
-    public void addInputImage(String position, T image, boolean raw) {
+    public void addInputImage(String position, I image, boolean raw) {
         if (image==null) return;
         addWindowClosedListener(image, e-> {
             if (raw) displayedRawInputFrames.remove(position);
@@ -306,7 +306,7 @@ public abstract class ImageWindowManager<T, U, V> {
             Iterator<String> it = displayedRawInputFrames.keySet().iterator();
             while(displayedRawInputFrames.size()>numberOfKeptImages && it.hasNext()) {
                 String i = it.next();
-                T im = displayedRawInputFrames.get(i);
+                I im = displayedRawInputFrames.get(i);
                 it.remove();
                 displayer.close(im);
             }
@@ -315,7 +315,7 @@ public abstract class ImageWindowManager<T, U, V> {
             Iterator<String> it = displayedPrePocessedFrames.keySet().iterator();
             while(displayedPrePocessedFrames.size()>numberOfKeptImages && it.hasNext()) {
                 String i = it.next();
-                T im = displayedPrePocessedFrames.get(i);
+                I im = displayedPrePocessedFrames.get(i);
                 it.remove();
                 displayer.close(im);
             }
@@ -422,7 +422,7 @@ public abstract class ImageWindowManager<T, U, V> {
     } 
     
     public ImageObjectInterface getCurrentImageObjectInterface() {
-        T current = getDisplayer().getCurrentImage();
+        I current = getDisplayer().getCurrentImage();
         if (current!=null) {
             Image im = getDisplayer().getImage(current);
             if (im!=null) {
@@ -506,14 +506,14 @@ public abstract class ImageWindowManager<T, U, V> {
      * @param image
      * @return list of coordinates (x, y, z starting from 0) within the image, in voxel unit
      */
-    protected abstract List<int[]> getSelectedPointsOnImage(T image);
+    protected abstract List<int[]> getSelectedPointsOnImage(I image);
     /**
      * 
      * @param image
      * @return mapping of containing objects (parents) to relative (to the parent) coordinated of selected point 
      */
     public Map<StructureObject, List<int[]>> getParentSelectedPointsMap(Image image, int parentStructureIdx) {
-        T dispImage;
+        I dispImage;
         if (image==null) {
             dispImage = displayer.getCurrentImage();
             if (dispImage==null) return null;
@@ -581,8 +581,8 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     
-    public abstract void displayObject(T image, U roi);
-    public abstract void hideObject(T image, U roi);
+    public abstract void displayObject(I image, U roi);
+    public abstract void hideObject(I image, U roi);
     protected abstract U generateObjectRoi(Pair<StructureObject, BoundingBox> object, Color color);
     protected abstract void setObjectColor(U roi, Color color);
     
@@ -594,7 +594,7 @@ public abstract class ImageWindowManager<T, U, V> {
     public void displayObjects(Image image, Collection<Pair<StructureObject, BoundingBox>> objectsToDisplay, Color color, boolean labileObjects, boolean hideIfAlreadyDisplayed) {
         if (objectsToDisplay.isEmpty() || (objectsToDisplay.iterator().next()==null)) return;
         if (color==null) color = ImageWindowManager.defaultRoiColor;
-        T dispImage;
+        I dispImage;
         if (image==null) {
             dispImage = displayer.getCurrentImage();
             if (dispImage==null) return;
@@ -640,7 +640,7 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     public void hideObjects(Image image, Collection<Pair<StructureObject, BoundingBox>> objects, boolean labileObjects) {
-        T dispImage;
+        I dispImage;
         if (image==null) {
             image = getDisplayer().getCurrentImage2();
             if (image==null) return;
@@ -668,7 +668,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         Set<U> rois = this.displayedLabileObjectRois.get(image);
         if (rois!=null) {
-            T dispImage = displayer.getImage(image);
+            I dispImage = displayer.getImage(image);
             if (dispImage==null) return;
             for (U roi: rois) displayObject(dispImage, roi);
             displayer.updateImageRoiDisplay(image);
@@ -684,7 +684,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         Set<U> rois = this.displayedLabileObjectRois.remove(image);
         if (rois!=null) {
-            T dispImage = displayer.getImage(image);
+            I dispImage = displayer.getImage(image);
             if (dispImage==null) return;
             for (U roi: rois) hideObject(dispImage, roi);
             displayer.updateImageRoiDisplay(image);
@@ -708,8 +708,8 @@ public abstract class ImageWindowManager<T, U, V> {
     
     /// track-related methods
     
-    protected abstract void displayTrack(T image, V roi);
-    protected abstract void hideTrack(T image, V roi);
+    protected abstract void displayTrack(I image, V roi);
+    protected abstract void hideTrack(I image, V roi);
     protected abstract V generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, Color color);
     protected abstract void setTrackColor(V roi, Color color);
     public void displayTracks(Image image, ImageObjectInterface i, Collection<List<StructureObject>> tracks, boolean labile) {
@@ -730,7 +730,7 @@ public abstract class ImageWindowManager<T, U, V> {
     public void displayTrack(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> track, Color color, boolean labile) {
         //logger.debug("display selected track: image: {}, track length: {} color: {}", image, track==null?"null":track.size(), color);
         if (track==null || track.isEmpty()) return;
-        T dispImage;
+        I dispImage;
         if (image==null) {
             dispImage = getDisplayer().getCurrentImage();
             if (dispImage==null) return;
@@ -773,7 +773,7 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     public void hideTracks(Image image, ImageObjectInterface i, Collection<StructureObject> trackHeads, boolean labile) {
-        T dispImage;
+        I dispImage;
         if (image==null) {
             dispImage = getDisplayer().getCurrentImage();
             if (dispImage==null) return;
@@ -799,10 +799,10 @@ public abstract class ImageWindowManager<T, U, V> {
         
     }
     
-    protected abstract void hideAllRois(T image);
+    protected abstract void hideAllRois(I image);
     public void hideAllRois(Image image, boolean labile, boolean nonLabile) {
         if (!labile && !nonLabile) return;
-        T im = getDisplayer().getImage(image);
+        I im = getDisplayer().getImage(image);
         if (im !=null) hideAllRois(im);
         if (!labile) {
             displayLabileObjects(image);
@@ -822,7 +822,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         Set<V> tracks = this.displayedLabileTrackRois.get(image);
         if (tracks!=null) {
-            T dispImage = displayer.getImage(image);
+            I dispImage = displayer.getImage(image);
             if (dispImage==null) return;
             for (V roi: tracks) displayTrack(dispImage, roi);
             displayer.updateImageRoiDisplay(image);
@@ -835,7 +835,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         Set<V> tracks = this.displayedLabileTrackRois.remove(image);
         if (tracks!=null) {
-            T dispImage = displayer.getImage(image);
+            I dispImage = displayer.getImage(image);
             if (dispImage==null) return;
             for (V roi: tracks) hideTrack(dispImage, roi);
             displayer.updateImageRoiDisplay(image);
@@ -901,7 +901,7 @@ public abstract class ImageWindowManager<T, U, V> {
     public void goToNextTrackError(Image trackImage, List<StructureObject> trackHeads, boolean next) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(rois.get(0).getParent().getTrackHead(), rois.get(0).getStructureIdx(), true));
         if (trackImage==null) {
-            T selectedImage = displayer.getCurrentImage();
+            I selectedImage = displayer.getCurrentImage();
             trackImage = displayer.getImage(selectedImage);
             if (trackImage==null) return;
         }
@@ -963,7 +963,7 @@ public abstract class ImageWindowManager<T, U, V> {
     public boolean goToNextObject(Image trackImage, List<StructureObject> objects, boolean next) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(rois.get(0).getParent().getTrackHead(), rois.get(0).getStructureIdx(), true));
         if (trackImage==null) {
-            T selectedImage = displayer.getCurrentImage();
+            I selectedImage = displayer.getCurrentImage();
             trackImage = displayer.getImage(selectedImage);
         }
         ImageObjectInterface i = this.getImageObjectInterface(trackImage);

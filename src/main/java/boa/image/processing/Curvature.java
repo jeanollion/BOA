@@ -19,6 +19,7 @@ package boa.image.processing;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.data_structure.Voxel;
+import boa.data_structure.region_container.RegionContainerIjRoi;
 import boa.image.BoundingBox.LoopFunction;
 import static boa.image.BoundingBox.loop;
 import ij.ImagePlus;
@@ -53,7 +54,7 @@ import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 public class Curvature {
     public static final Logger logger = LoggerFactory.getLogger(Curvature.class);
     public static KDTree<Double> computeCurvature(ImageInteger mask, int scale) {
-        Roi r = IJImageWindowManager.createRoi(mask, new SimpleOffset(0, 0, 0), false).get(0);
+        Roi r = RegionContainerIjRoi.createRoi(mask, new SimpleOffset(0, 0, 0), false).get(0);
         Fourier fourier = new Fourier();
         fourier.Init(r, mask.getScaleXY());
         //logger.debug("Curvature: length: {}, closed?: {}", fourier.NPT, fourier.closed());

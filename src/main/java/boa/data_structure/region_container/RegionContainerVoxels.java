@@ -37,11 +37,11 @@ import java.util.Set;
  *
  * @author jollion
  */
-public class ObjectContainerVoxels extends ObjectContainer {
+public class RegionContainerVoxels extends RegionContainer {
 
     int[] x, y, z;
     
-    public ObjectContainerVoxels(StructureObject structureObject) {
+    public RegionContainerVoxels(StructureObject structureObject) {
         super(structureObject);
         createCoordsArrays(structureObject.getObject());
     }
@@ -132,5 +132,5 @@ public class ObjectContainerVoxels extends ObjectContainer {
         y = JSONUtils.fromIntArray(yJ);
         if (zJ!=null) z = JSONUtils.fromIntArray(zJ);
     }
-    protected ObjectContainerVoxels() {}
+    protected RegionContainerVoxels() {}
 }

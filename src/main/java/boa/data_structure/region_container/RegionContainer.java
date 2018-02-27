@@ -30,13 +30,13 @@ import org.json.simple.JSONObject;
  * @author jollion
  */
 
-public abstract class ObjectContainer {
+public abstract class RegionContainer {
     public static final int MAX_VOX_3D = 20;
     public static final int MAX_VOX_2D = 30;
     protected transient StructureObject structureObject;
     SimpleBoundingBox bounds;
     boolean is2D;
-    public ObjectContainer(StructureObject structureObject) {
+    public RegionContainer(StructureObject structureObject) {
         this.structureObject=structureObject;
         this.bounds=new SimpleBoundingBox(structureObject.getBounds());
     }
@@ -66,12 +66,12 @@ public abstract class ObjectContainer {
         res.put("is2D", is2D);
         return res;
     }
-    protected ObjectContainer() {}
-    public static ObjectContainer createFromMap(StructureObject o, Map json) {
-        ObjectContainer res;
-        if (json.containsKey("x")) res = new ObjectContainerVoxels();
-        else if (json.containsKey("roi")||json.containsKey("roiZ")) res = new ObjectContainerIjRoi();
-        else res = new ObjectContainerBlankMask();
+    protected RegionContainer() {}
+    public static RegionContainer createFromMap(StructureObject o, Map json) {
+        RegionContainer res;
+        if (json.containsKey("x")) res = new RegionContainerVoxels();
+        else if (json.containsKey("roi")||json.containsKey("roiZ")) res = new RegionContainerIjRoi();
+        else res = new RegionContainerBlankMask();
         res.setStructureObject(o);
         res.initFromJSON(json);
         return res;

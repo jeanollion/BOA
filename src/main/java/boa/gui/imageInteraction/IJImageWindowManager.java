@@ -27,6 +27,7 @@ import boa.configuration.experiment.Structure;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
+import boa.data_structure.region_container.RegionContainerIjRoi;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -100,8 +101,8 @@ import boa.utils.Utils;
 public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, TrackRoi> {
     
            
-    public IJImageWindowManager(ImageObjectListener listener) {
-        super(listener, new IJImageDisplayer());
+    public IJImageWindowManager(ImageObjectListener listener, ImageDisplayer<ImagePlus> displayer) {
+        super(listener, displayer);
         //new ImageJ();
     }
     /*@Override
@@ -343,7 +344,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     @Override
     public Roi3D generateObjectRoi(Pair<StructureObject, BoundingBox> object, Color color) {
         if (object.key.getMask().sizeZ()<=0 || object.key.getMask().sizeXY()<=0) logger.error("wrong object dim: o:{} {}", object.key, object.key.getBounds());
-        Roi3D r =  createRoi(object.key.getMask(), object.value, !object.key.is2D());
+        Roi3D r =  RegionContainerIjRoi.createRoi(object.key.getMask(), object.value, !object.key.is2D());
         setObjectColor(r, color);
         return r;
     }
@@ -356,50 +357,6 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         }
     }
 
-    /**
-     * 
-     * @param mask
-     * @param offset
-     * @param is3D
-     * @return mapping of Roi to Z-slice (taking into account the provided offset)
-     */
-    public static Roi3D createRoi(ImageMask mask, Offset offset, boolean is3D) { 
-        if (offset==null) {
-            logger.error("ROI creation : offset null for mask: {}", mask.getName());
-            return null;
-        }
-        Roi3D res = new Roi3D(mask.sizeZ());
-        if (mask instanceof BlankMask) {
-            for (int z = 0; z<mask.sizeZ(); ++z) {
-                Roi rect = new Roi(0, 0, mask.sizeX(), mask.sizeY());
-                rect.setLocation(offset.xMin(), offset.yMin());
-                if (is3D) rect.setPosition(z+1+offset.zMin());
-                res.put(z+mask.zMin(), rect);
-            }
-            return res;
-        }
-        ThresholdToSelection tts = new ThresholdToSelection();
-        ImageInteger maskIm = TypeConverter.toImageInteger(mask, null);
-        ImagePlus maskPlus = IJImageWrapper.getImagePlus(maskIm);
-        tts.setup("", maskPlus);
-        int maxLevel = ImageInteger.getMaxValue(maskIm, true); // TODO necessary ??
-        for (int z = 0; z<mask.sizeZ(); ++z) {
-            ImageProcessor ip = maskPlus.getStack().getProcessor(z+1);
-            ip.setThreshold(1, maxLevel, ImageProcessor.NO_LUT_UPDATE);
-            tts.run(ip);
-            Roi roi = maskPlus.getRoi();
-            if (roi!=null) {
-                //roi.setPosition(z+1+mask.getOffsetZ());
-                Rectangle bds = roi.getBounds();
-                if (bds==null) logger.error("ROI creation : bounds null for mask: {}", mask.getName());
-                if (bds==null) continue;
-                roi.setLocation(bds.x+offset.xMin(), bds.y+offset.yMin());
-                if (is3D) roi.setPosition(z+1+offset.zMin());
-                res.put(z+offset.zMin(), roi);
-            }
-        }
-        return res;
-    }
     
     // track-related methods
     @Override

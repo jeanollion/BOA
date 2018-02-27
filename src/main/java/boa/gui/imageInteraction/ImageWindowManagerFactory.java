@@ -16,10 +16,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 package boa.gui.imageInteraction;
-
-import boa.gui.GUI;
-import static boa.gui.imageInteraction.ImageWindowManagerFactory.ImageEnvironnement.IJ;
 import boa.image.Image;
+import ij.ImagePlus;
+import java.util.function.Supplier;
 
 /**
  *
@@ -27,19 +26,23 @@ import boa.image.Image;
  */
 public class ImageWindowManagerFactory {
     private static ImageWindowManager currentImageManager;
-    public static enum ImageEnvironnement {IJ};
-    private final static ImageEnvironnement currentImageDisplayerType = IJ;
+    private static ImageDisplayer imageDisplayer;
+    public static <I> void setImageDisplayer(ImageDisplayer<I> imageDisplayer, ImageWindowManager<I, ?, ?> windowsManager) {
+        ImageWindowManagerFactory.imageDisplayer=imageDisplayer;
+        currentImageManager=windowsManager;
+    }
     public static ImageWindowManager getImageManager() {
-        if (currentImageManager==null) {
-            if (currentImageDisplayerType.equals(IJ)) currentImageManager = new IJImageWindowManager(GUI.hasInstance()?GUI.getInstance():null);
-        }
+        if (currentImageManager==null) currentImageManager = new IJImageWindowManager(null, getDisplayer());
         return currentImageManager;
     }
     public static Object showImage(Image image) {
-        return getImageManager().getDisplayer().showImage(image);
+        return imageDisplayer.showImage(image);
     }
-    public static ImageDisplayer instanciateDisplayer() {
-        if (currentImageDisplayerType.equals(IJ)) return new IJImageDisplayer();
-        else return null;
+    public static Object showImage5D(String title, Image[][] imageTC) {
+        return getDisplayer().showImage5D(title, imageTC);
+    }
+    private static ImageDisplayer getDisplayer() {
+        if (imageDisplayer==null) imageDisplayer = new IJImageDisplayer();
+        return imageDisplayer;
     }
 }

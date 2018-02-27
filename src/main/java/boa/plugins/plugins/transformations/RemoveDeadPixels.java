@@ -130,8 +130,8 @@ public class RemoveDeadPixels implements Transformation {
             // first frames are not computed
             for (int f = 0; f<frameRadius-1; ++f) testMeanTC[f][0] = testMeanTC[frameRadius-1][0];
             for (int f = 0; f<frameRadius-1; ++f) testMedianTC[f][0] = testMedianTC[frameRadius-1][0];
-            ImageWindowManagerFactory.instanciateDisplayer().showImage5D("Sliding median", testMedianTC);
-            ImageWindowManagerFactory.instanciateDisplayer().showImage5D("Sliding mean", testMeanTC);
+            ImageWindowManagerFactory.showImage5D("Sliding median", testMedianTC);
+            ImageWindowManagerFactory.showImage5D("Sliding mean", testMeanTC);
             logger.debug("number of dead voxels detected: {}", configMapF.size());
         }
     }

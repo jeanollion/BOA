@@ -7,7 +7,7 @@ import boa.configuration.parameters.PostLoadable;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.MicroscopyField;
 import boa.data_structure.dao.BasicObjectDAO;
-import boa.data_structure.region_container.ObjectContainer;
+import boa.data_structure.region_container.RegionContainer;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.MutableBoundingBox;
@@ -58,7 +58,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // object- and images-related attributes
     private transient Region object;
     private transient boolean objectModified=false;
-    protected ObjectContainer objectContainer;
+    protected RegionContainer objectContainer;
     protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
     protected transient SmallArray<Image> preFilteredImagesS=new SmallArray<>();
     protected transient SmallArray<Image> trackImagesC=new SmallArray<>();
@@ -1093,7 +1093,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         } 
         if (json.containsKey("object")) {
             Map objectJ = (Map)json.get("object");
-            objectContainer = ObjectContainer.createFromMap(this, objectJ);
+            objectContainer = RegionContainer.createFromMap(this, objectJ);
         }
     }
     public StructureObject(Map json) {

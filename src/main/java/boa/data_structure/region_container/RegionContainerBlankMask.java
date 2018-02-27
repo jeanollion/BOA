@@ -30,9 +30,9 @@ import org.json.simple.JSONObject;
  * @author jollion
  */
 
-public class ObjectContainerBlankMask extends ObjectContainer {
+public class RegionContainerBlankMask extends RegionContainer {
     
-    public ObjectContainerBlankMask(StructureObject structureObject) {
+    public RegionContainerBlankMask(StructureObject structureObject) {
         super(structureObject);
     }
     
@@ -51,5 +51,5 @@ public class ObjectContainerBlankMask extends ObjectContainer {
     public void relabelObject(int newIdx) {
         
     }
-    protected ObjectContainerBlankMask() {}
+    protected RegionContainerBlankMask() {}
 }

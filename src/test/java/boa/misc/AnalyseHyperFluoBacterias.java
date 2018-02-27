@@ -26,6 +26,7 @@ import boa.data_structure.input_image.InputImagesImpl;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.MasterDAOFactory;
 import boa.data_structure.Region;
+import boa.data_structure.region_container.RegionContainerIjRoi;
 import static boa.image.BoundingBox.loop;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -115,7 +116,7 @@ public class AnalyseHyperFluoBacterias {
         IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();
         if (images!=null && !images.isEmpty()) {
             List<ImageInteger> utlraCrop = Utils.transform(images, i->crop(i));
-            Roi3D r = IJImageWindowManager.createRoi((ImageInteger)Image.mergeZPlanes(utlraCrop), new MutableBoundingBox(0, 0, 0), true);
+            Roi3D r = RegionContainerIjRoi.createRoi((ImageInteger)Image.mergeZPlanes(utlraCrop), new MutableBoundingBox(0, 0, 0), true);
             ImagePlus ip = (ImagePlus) ImageWindowManagerFactory.showImage(Image.mergeZPlanes(images).setName(name));
             iwm.displayObject(ip, r);
         }

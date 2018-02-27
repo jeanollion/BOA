@@ -1,12 +1,12 @@
 package boa.data_structure;
 
 import com.google.common.collect.Sets;
-import boa.data_structure.region_container.ObjectContainer;
-import static boa.data_structure.region_container.ObjectContainer.MAX_VOX_3D;
-import static boa.data_structure.region_container.ObjectContainer.MAX_VOX_2D;
-import boa.data_structure.region_container.ObjectContainerBlankMask;
-import boa.data_structure.region_container.ObjectContainerIjRoi;
-import boa.data_structure.region_container.ObjectContainerVoxels;
+import boa.data_structure.region_container.RegionContainer;
+import static boa.data_structure.region_container.RegionContainer.MAX_VOX_3D;
+import static boa.data_structure.region_container.RegionContainer.MAX_VOX_2D;
+import boa.data_structure.region_container.RegionContainerBlankMask;
+import boa.data_structure.region_container.RegionContainerIjRoi;
+import boa.data_structure.region_container.RegionContainerVoxels;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.BoundingBox.LoopFunction;
@@ -713,10 +713,10 @@ public class Region {
         return new Region(mask, 1, ref.is2D).setIsAbsoluteLandmark(ref.isAbsoluteLandMark());
     }
     
-    public ObjectContainer getObjectContainer(StructureObject structureObject) {
-        if (mask instanceof BlankMask) return new ObjectContainerBlankMask(structureObject);
-        else if (!overVoxelSizeLimit()) return new ObjectContainerVoxels(structureObject);
-        else return new ObjectContainerIjRoi(structureObject);
+    public RegionContainer getObjectContainer(StructureObject structureObject) {
+        if (mask instanceof BlankMask) return new RegionContainerBlankMask(structureObject);
+        else if (!overVoxelSizeLimit()) return new RegionContainerVoxels(structureObject);
+        else return new RegionContainerIjRoi(structureObject);
     }
     
     public void setVoxelValues(Image image, boolean useOffset) {

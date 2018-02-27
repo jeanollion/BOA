@@ -117,6 +117,6 @@ public class TestOpenTiles {
         for (int i = 0; i<frameLimit; ++i) {
             mcImage[i][0] = mcs.get(i).getRawImage(0);
         }
-        ImageWindowManagerFactory.instanciateDisplayer().showImage5D("mc 1 ", mcImage);
+        ImageWindowManagerFactory.showImage5D("mc 1 ", mcImage);
     }
 }

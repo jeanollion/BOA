@@ -24,7 +24,7 @@ import boa.core.Task;
 import boa.configuration.experiment.ChannelImage;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Structure;
-import boa.data_structure.region_container.ObjectContainer;
+import boa.data_structure.region_container.RegionContainer;
 import boa.data_structure.dao.BasicMasterDAO;
 import boa.data_structure.dao.DBMapObjectDAO;
 import boa.data_structure.dao.MasterDAO;

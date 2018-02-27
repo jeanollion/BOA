@@ -28,6 +28,9 @@ import boa.data_structure.dao.ObjectDAO;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
+import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManager;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -111,7 +114,8 @@ public class SaveAndRetriveSegmentationData {
         List<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
         logger.debug("{} MC founds", mcTH.size());
         HashMap<Image, Overlay> res = new HashMap<Image, Overlay>(mcTH.size());
-        IJImageWindowManager windowManager = new IJImageWindowManager(null);
+        IJImageDisplayer disp = new IJImageDisplayer();
+        IJImageWindowManager windowManager = new IJImageWindowManager(null, disp);
         int count = 0;
         for (StructureObject th : mcTH) {
             List<StructureObject> track = dao.getTrack(th);
@@ -148,7 +152,8 @@ public class SaveAndRetriveSegmentationData {
         StructureObject root = dao.getRoot(0);
         List<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
         ArrayList<ArrayList<Region>> res = new ArrayList<ArrayList<Region>>();
-        IJImageWindowManager windowManager = new IJImageWindowManager(null);
+        IJImageDisplayer disp = new IJImageDisplayer();
+        IJImageWindowManager windowManager = new IJImageWindowManager(null, disp);
         for (StructureObject th : mcTH) {
             List<StructureObject> track = dao.getTrack(th);
             ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
