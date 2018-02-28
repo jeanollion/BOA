@@ -162,7 +162,7 @@ public class StructureObjectTreeGenerator {
         path.add(f);
         TimePointNode t = f.getChildren()[object.getFrame()];
         path.add(t);
-        ArrayList<StructureObject> objectPath = getObjectPath(object);
+        List<StructureObject> objectPath = getObjectPath(object);
         StructureNodeContainer lastStructureContainer = t;
         for (StructureObject o : objectPath) {
             StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
@@ -179,7 +179,7 @@ public class StructureObjectTreeGenerator {
     public ObjectNode getObjectNode(StructureObject object) {
         FieldNode f = experimentNode.getFieldNode(object.getPositionName());
         TimePointNode t = f.getChildren()[object.getFrame()];
-        ArrayList<StructureObject> objectPath = getObjectPath(object);
+         List<StructureObject> objectPath = getObjectPath(object);
         StructureNodeContainer lastStructureContainer = t;
         for (StructureObject o : objectPath) {
             StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
@@ -192,7 +192,7 @@ public class StructureObjectTreeGenerator {
     public StructureNode getStructureNode(StructureObject object) {
         FieldNode f = experimentNode.getFieldNode(object.getPositionName());
         TimePointNode t = f.getChildren()[object.getFrame()];
-        ArrayList<StructureObject> objectPath = getObjectPath(object);
+        List<StructureObject> objectPath = getObjectPath(object);
         StructureNodeContainer lastStructureContainer = t;
         for (StructureObject o : objectPath) {
             StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
@@ -204,7 +204,7 @@ public class StructureObjectTreeGenerator {
         return null;
     }
     
-    private ArrayList<StructureObject> getObjectPath(StructureObject object) {
+    private List<StructureObject> getObjectPath(StructureObject object) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
         res.add(object);
         if (object.isRoot()) return res;

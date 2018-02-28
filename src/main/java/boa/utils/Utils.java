@@ -305,6 +305,9 @@ public class Utils {
     public static <T> String toStringArray(double[] array) {
         return toStringArray(array, "[", "]", "; ", MeasurementExtractor.numberFormater).toString();
     }
+    public static <T> String toStringArray(float[] array) {
+        return toStringArray(array, "[", "]", "; ", MeasurementExtractor.numberFormater).toString();
+    }
     public static <T> StringBuilder toStringArray(T[] array, String init, String end, String sep, Function<T, Object> toString) {
         StringBuilder sb = new StringBuilder(init);
         if (array.length==0) {
@@ -343,6 +346,21 @@ public class Utils {
         sb.append(end);
         return sb;
     }
+    public static <T> StringBuilder toStringArray(float[] array, String init, String end, String sep, Function<Number, String> numberFormatter) {
+        StringBuilder sb = new StringBuilder(init);
+        if (array.length==0) {
+            sb.append(end);
+            return sb;
+        }
+        for (int i = 0; i<array.length-1; ++i) {
+            sb.append(numberFormatter.apply(array[i]));
+            sb.append(sep);
+        }
+        sb.append(numberFormatter.apply(array[array.length-1]));
+        sb.append(end);
+        return sb;
+    }
+    
     public static <T> StringBuilder toStringArray(int[] array, String init, String end, String sep) {
         StringBuilder sb = new StringBuilder(init);
         if (array.length==0) {
@@ -374,8 +392,8 @@ public class Utils {
         }
     }
     
-    public static<T> ArrayList<T> reverseOrder(ArrayList<T> arrayList) {
-        ArrayList<T> res = new ArrayList<>(arrayList.size());
+    public static<T> List<T> reverseOrder(List<T> arrayList) {
+        List<T> res = new ArrayList<>(arrayList.size());
         for (int i = arrayList.size()-1; i>=0; --i) res.add(arrayList.get(i));
         return res;
     }
@@ -691,7 +709,7 @@ public class Utils {
     }
     
     public static TreePath getTreePath(TreeNode node) {
-        ArrayList<TreeNode> path = new ArrayList<TreeNode>();
+        List<TreeNode> path = new ArrayList<TreeNode>();
         while(node!=null) {
             path.add(node);
             node = node.getParent();

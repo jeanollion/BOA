@@ -22,13 +22,11 @@ import boa.core.Task;
 import boa.configuration.experiment.MicroscopyField;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.StructureObject;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import ij.ImagePlus;
-import boa.image.IJImageWrapper;
-import boa.image.Image;
-import boa.image.TypeConverter;
+import boa.image.processing.bacteria_skeleton.BacteriaSpine;
 import boa.plugins.PluginFactory;
-import sc.fiji.skeletonize3D.Skeletonize3D_;
+import static boa.test_utils.TestUtils.logger;
+import boa.utils.geom.Point;
+import ij.ImageJ;
 
 /**
  *
@@ -37,20 +35,16 @@ import sc.fiji.skeletonize3D.Skeletonize3D_;
 public class TestSkeletonize {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
+        new ImageJ();
         //String dbName = "AyaWT_mmglu";
         String dbName = "MutH_150324";
-        int fieldNumber= 0, timePoint=0, mc=0, b=0;
+        int fieldNumber= 0, timePoint=2, mc=0, b=1;
         MasterDAO mDAO = new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
-        Image sk = TypeConverter.toByteMask(bact.getMask(), null, 255);
-        ImageWindowManagerFactory.showImage(sk.duplicate("input"));
-        ImagePlus skeleton = IJImageWrapper.getImagePlus(sk);
-        final Skeletonize3D_ skeletoniser = new Skeletonize3D_();
-        skeletoniser.setup("", skeleton);
-        skeletoniser.run(null);
-        ImageWindowManagerFactory.showImage(sk);
+        //BacteriaSkeleton sk = new BacteriaSkeleton(bact.getObject());
+        new BacteriaSpine(bact.getObject());
     }
 
 }

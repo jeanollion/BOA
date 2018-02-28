@@ -2,11 +2,12 @@ package boa.data_structure;
 
 import static boa.data_structure.Region.logger;
 import boa.image.Offset;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 
 
-public class Voxel implements Comparable<Voxel> {
+public class Voxel implements Comparable<Voxel>, Offset<Voxel> {
     public int x, y;
     public float value;
     public int z;
@@ -26,6 +27,13 @@ public class Voxel implements Comparable<Voxel> {
         this(x, y, z);
         this.value = value;
     }
+    public Voxel copyDataFrom(Voxel other) {
+        x=other.x;
+        y = other.y;
+        z=other.z;
+        value=other.value;
+        return this;
+    }
     public Voxel2D toVoxel2D() {
         return new Voxel2D(x, y, z, value);
     }
@@ -39,6 +47,7 @@ public class Voxel implements Comparable<Voxel> {
 
     @Override
     public int hashCode() {
+        //return Arrays.hashCode(new int[]{x, y, z});
         int hash = 7;
         hash = 97 * hash + this.x;
         hash = 97 * hash + this.y;
@@ -53,6 +62,10 @@ public class Voxel implements Comparable<Voxel> {
 
     public Voxel duplicate() {
         return new Voxel(x, y, z);
+    }
+    public Voxel setValue(float value) {
+        this.value = value;
+        return this;
     }
 
     public Voxel translate(int dX, int dY, int dZ) {
@@ -134,9 +147,14 @@ public class Voxel implements Comparable<Voxel> {
     public double getDistanceSquare(Voxel other) {
         return (x-other.x)*(x-other.x) + (y-other.y)*(y-other.y) + (z-other.z)*(z-other.z);
     }
-    
+    public double getDistanceSquareXY(Voxel other) {
+        return (x-other.x)*(x-other.x) + (y-other.y)*(y-other.y);
+    }
     public double getDistanceSquare(double xx, double yy, double zz) {
         return (x-xx)*(x-xx) + (y-yy)*(y-yy) + (z-zz)*(z-zz);
+    }
+    public double getDistanceSquareXY(double xx, double yy) {
+        return (x-xx)*(x-xx) + (y-yy)*(y-yy);
     }
     
     public double getDistance(Voxel other, double scaleXY, double scaleZ) {
@@ -149,5 +167,34 @@ public class Voxel implements Comparable<Voxel> {
     public static Voxel getClosest(Voxel v, Collection<? extends Voxel> collection) {
         if (collection==null || collection.isEmpty()) return null;
         return collection.stream().min((v1, v2)->Double.compare(v.getDistanceSquare(v1), v.getDistanceSquare(v2))).get();
+    }
+
+    @Override
+    public int xMin() {
+        return x;    
+    }
+
+    @Override
+    public int yMin() {
+        return y;
+    }
+
+    @Override
+    public int zMin() {
+        return z;
+    }
+
+    @Override
+    public Voxel resetOffset() {
+        x=0; y=0;z=0;
+        return this;
+    }
+
+    @Override
+    public Voxel reverseOffset() {
+        x = -x;
+        y=-y;
+        z=-z;
+        return this;
     }
 }
