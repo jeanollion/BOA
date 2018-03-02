@@ -43,8 +43,7 @@ public class TestSkeletonize {
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
-        //BacteriaSkeleton sk = new BacteriaSkeleton(bact.getObject());
-        new BacteriaSpine(bact.getObject());
+        BacteriaSpine.createSpine(bact.getObject());
     }
 
 }

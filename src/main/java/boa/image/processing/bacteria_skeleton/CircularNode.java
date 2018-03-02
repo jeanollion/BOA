@@ -54,7 +54,10 @@ public class CircularNode<T> implements Comparable<CircularNode> {
     public CircularNode<T> prev() {
         return prev;
     }
-    public CircularNode<T> get(T element) {
+    public CircularNode<T> getFollowing(boolean next) {
+        return next ? this.next : prev;
+    }
+    public CircularNode<T> getInNext(T element) {
         if (element==null) return null;
         if (element.equals(this.element)) return this;
         CircularNode<T> search = this.next;
@@ -65,11 +68,11 @@ public class CircularNode<T> implements Comparable<CircularNode> {
         return null;
     }
     /**
-     * Idem as get but searching in other direction
+     * Idem as getFollowing but searching in other direction
      * @param element
      * @return 
      */
-    public CircularNode<T> get2(T element) {
+    public CircularNode<T> getInPrev(T element) {
         if (element==null) return null;
         if (element.equals(this.element)) return this;
         CircularNode<T> search = this.prev;

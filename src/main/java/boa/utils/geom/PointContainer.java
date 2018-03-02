@@ -23,22 +23,22 @@ package boa.utils.geom;
  * @author jollion
  */
 public class PointContainer<T> extends Point {
-    public T o1;
+    public T content1;
     public PointContainer(T o, float... coords) {
         super(coords);
-        this.o1= o;
+        this.content1= o;
     }
-    public T get1() {
-        return o1;
+    public T getContent1() {
+        return content1;
     }
-    public PointContainer<T> set1(T o) {
-        this.o1 = o;
+    public PointContainer<T> setContent1(T o) {
+        this.content1 = o;
         return this;
     }
     public static <I>  PointContainer<I> fromPoint(Point p, I o) {
         return new PointContainer(o, p.coords);
     }
     @Override public String toString() {
-        return super.toString() + "["+o1.toString()+"]";
+        return super.toString() + "["+content1.toString()+"]";
     }
 }
