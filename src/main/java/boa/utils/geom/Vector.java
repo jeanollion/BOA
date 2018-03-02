@@ -28,7 +28,6 @@ import java.util.Collection;
  * @author jollion
  */
 public class Vector extends Point<Vector>  {
-    private double norm=Double.NaN;
     public Vector(float... coords) {
         super(coords);
     }
@@ -47,22 +46,22 @@ public class Vector extends Point<Vector>  {
         for (int i = 0; i<coords.length; ++i) coords[i] = (float)(v1.coords[i] * weight1 + v2.coords[i]*weight2);
         return new Vector(coords);
     }
+    public Vector add(Vector other, double w) {
+        for (int i = 0; i<coords.length; ++i) coords[i]+=other.coords[i]*w;
+        return this;
+    }
     public double norm() {
-        if (Double.isNaN(norm)) {
-            norm = 0;
-            for (float c : coords) norm+=c*c;
-            norm = Math.sqrt(norm);
-        }
-        return norm;
+        double norm = 0;
+        for (float c : coords) norm+=c*c;
+        return Math.sqrt(norm);
     }
     public Vector normalize() {
-        norm();
+        double norm = norm();
         for (int i = 0; i<coords.length; ++i) coords[i]/=norm;
-        norm = 1;
         return this;
     }
     public Vector multiply(double factor) {
-        for (int i = 0; i<coords.length; ++i) coords[i]*=norm;
+        for (int i = 0; i<coords.length; ++i) coords[i]*=factor;
         return this;
     }
     public double dotProduct(Vector v) {
@@ -81,11 +80,28 @@ public class Vector extends Point<Vector>  {
         return Double.NaN;
     }
     /**
+     * Un-oriented angle
+     * @param v
+     * @return angle in radian in [0; pi/2]
+     */
+    public double angle90(Vector v) {
+        double n = norm() * v.norm();
+        if (n > 0) return Math.acos(Math.abs(dotProduct(v)/n));
+        return Double.NaN;
+    }
+    /**
      * Oriented angle in XY plane
      * @return oriented angle of {@param v} relative to this vector 
      */
     public double angleXY(Vector v) {
         return Math.atan2(v.coords[1], v.coords[0]) - Math.atan2(coords[1], coords[0]);
+    }
+    public static Vector crossProduct3D(Vector u, Vector v) {
+        return new Vector(
+                u.getWithDimCheck(2)*v.getWithDimCheck(3) - u.getWithDimCheck(3)*v.getWithDimCheck(2),
+                u.getWithDimCheck(3)*v.getWithDimCheck(1) - u.getWithDimCheck(1)*v.getWithDimCheck(3),
+                u.getWithDimCheck(1)*v.getWithDimCheck(2) - u.getWithDimCheck(2)*v.getWithDimCheck(1)
+        );
     }
     
     public Vector rotateXY90() {

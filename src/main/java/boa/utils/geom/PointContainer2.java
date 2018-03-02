@@ -38,4 +38,7 @@ public class PointContainer2<T, U> extends PointContainer<T> {
     public static <T, U>  PointContainer2<T, U> fromPoint(Point p, T o, U o2) {
         return new PointContainer2(o, o2, p.coords);
     }
+    @Override public String toString() {
+        return super.toString() + "["+o2.toString()+"]";
+    }
 }

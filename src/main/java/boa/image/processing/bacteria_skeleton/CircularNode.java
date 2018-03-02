@@ -24,7 +24,7 @@ import java.util.Objects;
  *
  * @author jollion
  */
-public class CircularNode<T> {
+public class CircularNode<T> implements Comparable<CircularNode> {
     CircularNode<T> prev, next;
     T element;
     public CircularNode(T element) {
@@ -101,6 +101,22 @@ public class CircularNode<T> {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public int compareTo(CircularNode o) {
+        if (this.equals(o)) return 0;
+        if (this.prev.equals(o)) return 1;
+        if (this.next.equals(o)) return -1;
+        CircularNode p = o.prev;
+        CircularNode n = o.next;
+        while(!prev.equals(o)) {
+            if (this.equals(p)) return -1;
+            if (this.equals(n)) return 1;
+            p = p.prev;
+            n = n.next;
+        }
+        throw new IllegalArgumentException("Circular Node not from the same list");
     }
     
 }

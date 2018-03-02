@@ -17,6 +17,7 @@
  */
 package boa.utils.geom;
 
+import boa.data_structure.Voxel;
 import boa.image.Offset;
 import boa.utils.Utils;
 import java.util.Arrays;
@@ -48,43 +49,7 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
         this.coords=other.coords;
         return (T)this;
     }
-    @Override public String toString() {
-        return Utils.toStringArray(coords);
-    }
-    @Override
-    public int xMin() {
-        return (int)(coords[0]+0.5);
-    }
-
-    @Override
-    public int yMin() {
-        return (int)(coords[1]+0.5);
-    }
-
-    @Override
-    public int zMin() {
-        return (int)(coords[2]+0.5);
-    }
-
-    @Override
-    public T resetOffset() {
-        for (int i = 0; i<coords.length; ++i) coords[i]=0;
-        return (T)this;
-    }
-
-    @Override
-    public T reverseOffset() {
-        for (int i = 0; i<coords.length; ++i) coords[i]=-coords[i];
-        return (T)this;
-    }
-
-    @Override
-    public T translate(Offset other) {
-        coords[0] +=other.xMin();
-        if (coords.length>1) coords[1]+=other.yMin();
-        if (coords.length>2) coords[2]+=other.zMin();
-        return (T)this;
-    }
+    
     
     public T translate(Vector other) {
         for (int i = 0; i<coords.length; ++i) coords[i]+=other.coords[i];
@@ -124,28 +89,43 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
     public Vector asVector() {
         return new Vector(coords);
     }
-
+    public Voxel asVoxel() {
+        return new Voxel(xMin(), yMin(), zMin());
+    }
+    // offset implementation
     @Override
-    public int hashCode() {
-        return Arrays.hashCode(coords);
+    public int xMin() {
+        return (int)(coords[0]+0.5);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Point<?> other = (Point<?>) obj;
-        if (!Arrays.equals(this.coords, other.coords)) {
-            return false;
-        }
-        return true;
+    public int yMin() {
+        return coords.length<=1 ? 0 :(int)(coords[1]+0.5);
+    }
+
+    @Override
+    public int zMin() {
+        return coords.length<=2 ? 0 : (int)(coords[2]+0.5);
+    }
+
+    @Override
+    public T resetOffset() {
+        for (int i = 0; i<coords.length; ++i) coords[i]=0;
+        return (T)this;
+    }
+
+    @Override
+    public T reverseOffset() {
+        for (int i = 0; i<coords.length; ++i) coords[i]=-coords[i];
+        return (T)this;
+    }
+
+    @Override
+    public T translate(Offset other) {
+        coords[0] +=other.xMin();
+        if (coords.length>1) coords[1]+=other.yMin();
+        if (coords.length>2) coords[2]+=other.zMin();
+        return (T)this;
     }
     // RealLocalizable implementation
     @Override
@@ -172,5 +152,30 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
     public int numDimensions() {
         return coords.length;
     }
-    
+    // object methods
+    @Override public String toString() {
+        return Utils.toStringArray(coords);
+    }
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(coords);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Point<?> other = (Point<?>) obj;
+        if (!Arrays.equals(this.coords, other.coords)) {
+            return false;
+        }
+        return true;
+    }
 }

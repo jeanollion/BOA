@@ -38,7 +38,7 @@ public class TestSkeletonize {
         new ImageJ();
         //String dbName = "AyaWT_mmglu";
         String dbName = "MutH_150324";
-        int fieldNumber= 0, timePoint=2, mc=0, b=1;
+        int fieldNumber= 0, timePoint=0, mc=0, b=0; // F=2 B=1
         MasterDAO mDAO = new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
