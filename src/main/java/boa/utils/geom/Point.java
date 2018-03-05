@@ -72,6 +72,16 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
     public static Point middle2D(Offset o1, Offset o2) {
         return new Point((o1.xMin()+o2.xMin())/2f, (o1.yMin()+o2.yMin())/2f);
     }
+    public T weightedSum(Point other, double weight, double weightOther) {
+        for (int i = 0; i<coords.length; ++i) coords[i] = (float)(coords[i] * weight + other.coords[i]*weightOther);
+        return (T) this;
+    }
+    public static Point asPoint2D(Offset off) {
+        return new Point(off.xMin(), off.yMin());
+    }
+    public static Point asPoint(Offset off) {
+        return new Point(off.xMin(), off.yMin(), off.zMin());
+    }
     public T toMiddlePoint() {
         for (int i = 0; i<coords.length; ++i) coords[i]/=2f;
         return (T)this;
@@ -187,5 +197,12 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
             return false;
         }
         return true;
+    }
+    public static Point intersect2D(Point line1Point1, Point line1Point2, Point line2Point1, Point line2Point2) {
+        double d = (line1Point1.coords[0]-line1Point2.coords[0])*(line2Point1.coords[1]-line2Point2.coords[1]) - (line1Point1.coords[1]-line1Point2.coords[1])*(line2Point1.coords[0]-line2Point2.coords[0]);
+        if (d == 0) return null;
+        double xi = ((line2Point1.coords[0]-line2Point2.coords[0])*(line1Point1.coords[0]*line1Point2.coords[1]-line1Point1.coords[1]*line1Point2.coords[0])-(line1Point1.coords[0]-line1Point2.coords[0])*(line2Point1.coords[0]*line2Point2.coords[1]-line2Point1.coords[1]*line2Point2.coords[0]))/d;
+        double yi = ((line2Point1.coords[1]-line2Point2.coords[1])*(line1Point1.coords[0]*line1Point2.coords[1]-line1Point1.coords[1]*line1Point2.coords[0])-(line1Point1.coords[1]-line1Point2.coords[1])*(line2Point1.coords[0]*line2Point2.coords[1]-line2Point1.coords[1]*line2Point2.coords[0]))/d;
+        return new Point((float)xi, (float)yi);
     }
 }

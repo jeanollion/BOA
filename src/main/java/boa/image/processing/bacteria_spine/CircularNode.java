@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.image.processing.bacteria_skeleton;
+package boa.image.processing.bacteria_spine;
 
 import java.util.List;
 import java.util.Objects;
@@ -56,6 +56,9 @@ public class CircularNode<T> implements Comparable<CircularNode> {
     }
     public CircularNode<T> getFollowing(boolean next) {
         return next ? this.next : prev;
+    }
+    public CircularNode<T> getInFollowing(T element, boolean next) {
+        return next ? getInNext(element) : getInPrev(element);
     }
     public CircularNode<T> getInNext(T element) {
         if (element==null) return null;

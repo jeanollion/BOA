@@ -39,11 +39,8 @@ public class Vector extends Point<Vector>  {
         return new Vector(end.xMin()-start.xMin(), end.yMin()-start.yMin());
     }
     public static Vector vector(Point start, Point end) {
-        return weightedSum(start, end, -1, 1);
-    }
-    public static Vector weightedSum(Point v1, Point v2, double weight1, double weight2) {
-        float[] coords = new float[v1.coords.length];
-        for (int i = 0; i<coords.length; ++i) coords[i] = (float)(v1.coords[i] * weight1 + v2.coords[i]*weight2);
+        float[] coords = new float[start.numDimensions()];
+        for (int i = 0; i<coords.length; ++i) coords[i] = end.coords[i] - start.coords[i];
         return new Vector(coords);
     }
     public Vector add(Vector other, double w) {
@@ -113,4 +110,5 @@ public class Vector extends Point<Vector>  {
     @Override public Vector duplicate() {
         return new Vector(Arrays.copyOf(coords, coords.length));
     }
+    
 }
