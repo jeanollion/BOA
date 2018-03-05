@@ -631,7 +631,7 @@ public class Utils {
         List<File> nextFiles = new ArrayList<>();
         for (File f : files) {
             File[] ff = f.listFiles(file -> file.isDirectory());
-            if (ff.length>0) nextFiles.addAll(Arrays.asList(ff));
+            if (ff!=null && ff.length>0) nextFiles.addAll(Arrays.asList(ff));
         }
         return search(nextFiles, fileName, recLevels, currentLevel+1);
     }

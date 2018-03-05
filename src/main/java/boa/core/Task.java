@@ -271,6 +271,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         private void initDB() {
             if (db==null) {
+                if (dir==null) throw new RuntimeException("XP not found");
                 if (!"localhost".equals(dir) && new File(dir).exists()) db = MasterDAOFactory.createDAO(dbName, dir, MasterDAOFactory.DAOType.DBMap);
                 //else db = MasterDAOFactory.createDAO(dbName, dir, MasterDAOFactory.DAOType.Morphium);
             }

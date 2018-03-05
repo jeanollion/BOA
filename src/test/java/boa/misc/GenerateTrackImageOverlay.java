@@ -44,9 +44,9 @@ import static boa.utils.Utils.removeIf;
  *
  * @author jollion
  */
-public class GenerateImages {
+public class GenerateTrackImageOverlay {
     public static void main(String[] args) {
-        String dbName = "fluo171113_WT_15s";
+        String dbName = "fluo160428";
         int positionIdx = 1;
         int mcIdx = 1;
         int tStart = 190;

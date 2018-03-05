@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import net.imglib2.KDTree;
+import net.imglib2.RealLocalizable;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,7 +111,7 @@ public class BacteriaSpineLocalizer {
      * @param p
      * @return {@link BacteriaSpineCoord} representation of {@param p} from {@param referencePole}
      */
-    public BacteriaSpineCoord getCoord(Point p) {
+    public BacteriaSpineCoord getCoord(RealLocalizable p) {
         this.search.search(p);
         if (testMode)  logger.debug("get spine coord for: {}: nearst point: {} & {}", p, search.getSampler(0), search.getSampler(1));
         
@@ -136,8 +137,6 @@ public class BacteriaSpineLocalizer {
         Comparator<PointContainer2<Vector, Double>> comp = (p1, p2)->Double.compare(p1.getContent2(), p2.getContent2());
         Double spineCoord = coord.spineCoord(true) * length;
         PointContainer2<Vector, Double> searchKey = new PointContainer2<>(null, spineCoord);
-        int i = 0;
-        for (Point p : spine) logger.debug("spine: {} = {}", i++, p);
         int idx = Arrays.binarySearch(spine, searchKey, comp);
         if (testMode) logger.debug("projecting : {}, spineCoord: {}, search idx: {} (ip: {})", coord, spineCoord, idx, (idx<0?-idx-1:idx));
         if (idx<0) {

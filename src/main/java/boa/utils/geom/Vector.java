@@ -22,6 +22,7 @@ import boa.image.Offset;
 import boa.utils.Utils;
 import java.util.Arrays;
 import java.util.Collection;
+import net.imglib2.RealLocalizable;
 
 /**
  *
@@ -41,6 +42,11 @@ public class Vector extends Point<Vector>  {
     public static Vector vector(Point start, Point end) {
         float[] coords = new float[start.numDimensions()];
         for (int i = 0; i<coords.length; ++i) coords[i] = end.coords[i] - start.coords[i];
+        return new Vector(coords);
+    }
+    public static Vector vector(RealLocalizable start, RealLocalizable end) {
+        float[] coords = new float[start.numDimensions()];
+        for (int i = 0; i<coords.length; ++i) coords[i] =(float)(end.getDoublePosition(i) - start.getDoublePosition(i));
         return new Vector(coords);
     }
     public Vector add(Vector other, double w) {

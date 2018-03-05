@@ -37,7 +37,7 @@ import boa.image.processing.ImageFeatures;
 public class GenerateFigure {
     public static void main(String[] args) {
         new ImageJ();
-        String db = "fluo170602_uvrD";
+        String db = "fluo160428";
         MutableBoundingBox bounds = new MutableBoundingBox(0, 1000, 0, 300, 0, 0);
         generateImage(db, 0, 1, bounds);
     }
