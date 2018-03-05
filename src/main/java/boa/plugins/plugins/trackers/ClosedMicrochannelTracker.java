@@ -60,9 +60,9 @@ public class ClosedMicrochannelTracker implements Tracker {
         
         // get size for division criterion
         double[] previousSize = new double[previous.size()];
-        for (int i = 0; i<previousSize.length; ++i) previousSize[i] = GeometricalMeasurements.getVolume(previous.get(i).getObject());
+        for (int i = 0; i<previousSize.length; ++i) previousSize[i] = GeometricalMeasurements.getVolume(previous.get(i).getRegion());
         double[] nextSize = new double[next.size()];
-        for (int i = 0; i<nextSize.length; ++i) nextSize[i] = GeometricalMeasurements.getVolume(next.get(i).getObject());
+        for (int i = 0; i<nextSize.length; ++i) nextSize[i] = GeometricalMeasurements.getVolume(next.get(i).getRegion());
         
         int previousCounter=0;
         int nextCounter=0;

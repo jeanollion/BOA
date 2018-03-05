@@ -66,7 +66,7 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
                 im = TypeConverter.toFloat(im, null);
                 preFilteredImages.replace(o, im);
             }
-            fillBorders(o.getObject(), im);
+            fillBorders(o.getRegion(), im);
             tm.pasteMirror(im, allImagesY, idx++);
         }
         //ImageWindowManagerFactory.showImage(allImagesY);
@@ -125,8 +125,8 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
             this.parents=parentTrack;
             int maxX=0, maxZ=0;
             for (int i = 0; i<parentTrack.size(); ++i) { // compute global Y and Z max to center parent masks
-                if (maxX<parentTrack.get(i).getObject().getBounds().sizeX()) maxX=parentTrack.get(i).getObject().getBounds().sizeX();
-                if (maxZ<parentTrack.get(i).getObject().getBounds().sizeZ()) maxZ=parentTrack.get(i).getObject().getBounds().sizeZ();
+                if (maxX<parentTrack.get(i).getRegion().getBounds().sizeX()) maxX=parentTrack.get(i).getRegion().getBounds().sizeX();
+                if (maxZ<parentTrack.get(i).getRegion().getBounds().sizeZ()) maxZ=parentTrack.get(i).getRegion().getBounds().sizeZ();
             }
             maxParentSizeX=maxX;
             maxParentSizeZ=maxZ;

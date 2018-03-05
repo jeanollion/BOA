@@ -93,7 +93,7 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         List<StructureObject> objectsToRemove = new ArrayList<>();
         for (List<StructureObject> track : allTracks.values()) {
-            List<Double> values = Utils.transform(track, so->valueMap.get(so.getObject()));
+            List<Double> values = Utils.transform(track, so->valueMap.get(so.getRegion()));
             double value;
             if (statistics.getSelectedIndex()==0) value = ArrayUtil.mean(values);
             else if (statistics.getSelectedIndex()==1) value = ArrayUtil.median(values);

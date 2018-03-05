@@ -107,10 +107,10 @@ public class MutationTrackMeasurements implements Measurement {
                 }
             }
             Image intensities = parent.getRawImage(mutation.getSelectedStructureIdx());
-            double[] objectCenter = object.getObject().getCenter();
-            if (objectCenter==null) objectCenter = object.getObject().getMassCenter(intensities, false);
-            object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getObject(), intensities));
-            object.getMeasurements().setValue("SumIntensity", BasicMeasurements.getSum(object.getObject(), intensities));
+            double[] objectCenter = object.getRegion().getCenter();
+            if (objectCenter==null) objectCenter = object.getRegion().getMassCenter(intensities, false);
+            object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getRegion(), intensities));
+            object.getMeasurements().setValue("SumIntensity", BasicMeasurements.getSum(object.getRegion(), intensities));
             
             StructureObject parentBacteria = object.getParent(bacteria.getSelectedStructureIdx());
             if (parentBacteria!=null) {
@@ -121,8 +121,8 @@ public class MutationTrackMeasurements implements Measurement {
                 int nextTP = parentBacteria.getNextDivisionTimePoint();
                 object.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
 
-                object.getMeasurements().setValue("CoordProportionalY", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));
-                double[] parentCenter = parentBacteria.getObject().getGeomCenter(false);
+                object.getMeasurements().setValue("CoordProportionalY", getYProportionalPositionWithinContainer(parentBacteria.getRegion(), objectCenter[1]));
+                double[] parentCenter = parentBacteria.getRegion().getGeomCenter(false);
                 object.getMeasurements().setValue("CoordRelToCenterY", (objectCenter[1]-parentCenter[1]));
                 object.getMeasurements().setValue("CoordRelToCenterX", (objectCenter[0]-parentCenter[0]));
             }

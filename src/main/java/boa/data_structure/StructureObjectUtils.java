@@ -182,13 +182,13 @@ public class StructureObjectUtils {
             StructureObject currentParent=null;
             int currentIntersection=-1;
             for (StructureObject p : parent) {
-                if (p.getObject().intersect(c.getObject())) {
+                if (p.getRegion().intersect(c.getRegion())) {
                     if (currentParent==null) {
                         currentParent = p;
                     }
                     else { // in case of conflict: keep parent that intersect most
-                        if (currentIntersection==-1) currentIntersection = c.getObject().getOverlapMaskMask(p.getObject(),null,  null);
-                        int otherIntersection = c.getObject().getOverlapMaskMask(p.getObject(),null,  null);
+                        if (currentIntersection==-1) currentIntersection = c.getRegion().getOverlapMaskMask(p.getRegion(),null,  null);
+                        int otherIntersection = c.getRegion().getOverlapMaskMask(p.getRegion(),null,  null);
                         if (otherIntersection>currentIntersection) {
                             currentIntersection=otherIntersection;
                             currentParent=p;
@@ -203,13 +203,13 @@ public class StructureObjectUtils {
     
     public static List<StructureObject> getIncludedStructureObjects(List<StructureObject> candidates, StructureObject container) {
         ArrayList<StructureObject> res = new ArrayList<>();
-        for (StructureObject c : candidates) if (c.getObject().intersect(container.getObject())) res.add(c); // strict inclusion?
+        for (StructureObject c : candidates) if (c.getRegion().intersect(container.getRegion())) res.add(c); // strict inclusion?
         return res;
     }
     
     public static StructureObject getInclusionParent(Region children, Collection<StructureObject> parents, Offset offset) {
         if (parents.isEmpty() || children==null) return null;
-        Map<Region, StructureObject> soOMap = parents.stream().collect(Collectors.toMap(o->o.getObject(), o->o));
+        Map<Region, StructureObject> soOMap = parents.stream().collect(Collectors.toMap(o->o.getRegion(), o->o));
         Region parentObject = children.getContainer(soOMap.keySet(), offset, null); 
         return soOMap.get(parentObject);
     }
@@ -224,7 +224,7 @@ public class StructureObjectUtils {
         }
         int closestParentStructureIdx = o.getExperiment().getFirstCommonParentStructureIdx(o.getStructureIdx(), inclusionStructureIdx);
         for (StructureObject oo : objectsFromSameStructure) {
-            StructureObject i = getInclusionParent(oo.getObject(), oo.getParent(closestParentStructureIdx).getChildren(inclusionStructureIdx), null);
+            StructureObject i = getInclusionParent(oo.getRegion(), oo.getParent(closestParentStructureIdx).getChildren(inclusionStructureIdx), null);
             res.put(oo, i);
         }
         return res;
@@ -234,7 +234,7 @@ public class StructureObjectUtils {
         if (objectsFromSameStructure.isEmpty()) return Collections.EMPTY_MAP;
         Map<StructureObject, StructureObject>  res= new HashMap<>();
         for (StructureObject oo : objectsFromSameStructure) {
-            StructureObject i = getInclusionParent(oo.getObject(), inclusionObjects, null);
+            StructureObject i = getInclusionParent(oo.getRegion(), inclusionObjects, null);
             res.put(oo, i);
         }
         return res;

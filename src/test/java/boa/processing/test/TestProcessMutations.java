@@ -66,7 +66,7 @@ public class TestProcessMutations {
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         
-        ImageInteger parentMask = parent.getObject().getMaskAsImageInteger();
+        ImageInteger parentMask = parent.getRegion().getMaskAsImageInteger();
         MutableBoundingBox parentBounds = new MutableBoundingBox(parent.getBounds());
         if (parentBounds.sizeZ()==1 && input.sizeZ()>1) parentBounds.copyZ(input); // case of 2D ref image
         Image localInput = input.sameDimensions(parentBounds.getBlankMask()) ? input : input.cropWithOffset(parentBounds);
@@ -122,11 +122,11 @@ public class TestProcessMutations {
         input = mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().filter(input, mc.getMask());
         logger.debug("prefilters: {}, sizeZ: {}", mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().getChildCount(), input.sizeZ());
         if (parentMC) {
-            if (mcMask_!=null) mcMask_.add(mc.getObject().getMaskAsImageInteger());
+            if (mcMask_!=null) mcMask_.add(mc.getRegion().getMaskAsImageInteger());
             testSegMutation(input, mc, parentMask_, input_, outputLabel, intermediateImages_);
         } else {
             for (StructureObject bact : mc.getChildren(1)) {
-                if (mcMask_!=null) mcMask_.add(mc.getObject().getMaskAsImageInteger());
+                if (mcMask_!=null) mcMask_.add(mc.getRegion().getMaskAsImageInteger());
                 testSegMutation(input, bact, parentMask_, input_, outputLabel, intermediateImages_);
             }
         }

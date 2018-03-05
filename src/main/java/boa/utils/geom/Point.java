@@ -55,6 +55,10 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
         for (int i = 0; i<coords.length; ++i) coords[i]+=other.coords[i];
         return (T)this;
     }
+    public T translateRev(Vector other) {
+        for (int i = 0; i<coords.length; ++i) coords[i]-=other.coords[i];
+        return (T)this;
+    }
     public T averageWith(Point other) {
         for (int i = 0; i<coords.length; ++i) coords[i] = (coords[i]+other.coords[i])/2f;
         return (T)this;
@@ -125,6 +129,12 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
         coords[0] +=other.xMin();
         if (coords.length>1) coords[1]+=other.yMin();
         if (coords.length>2) coords[2]+=other.zMin();
+        return (T)this;
+    }
+    public T translateRev(Offset other) {
+        coords[0] -=other.xMin();
+        if (coords.length>1) coords[1]-=other.yMin();
+        if (coords.length>2) coords[2]-=other.zMin();
         return (T)this;
     }
     // RealLocalizable implementation

@@ -358,7 +358,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     public void clearCache() {
         applyOnAllOpenedObjects(o->{
             o.flushImages();
-            if (o.hasObject()) o.getObject().clearVoxels();
+            if (o.hasObject()) o.getRegion().clearVoxels();
         }); // free memory in case objects are stored elsewhere (eg selection, tack mask...)
         cache.clear();
         allObjectsRetrievedInCache.clear();

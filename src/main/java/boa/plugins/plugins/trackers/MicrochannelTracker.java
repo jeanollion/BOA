@@ -423,7 +423,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         StructureObject prev= it.next();
         while(it.hasNext()) {
             StructureObject next = it.next();
-            res+=getDistanceSquare(prev.getObject().getGeomCenter(false), next.getObject().getGeomCenter(false));
+            res+=getDistanceSquare(prev.getRegion().getGeomCenter(false), next.getRegion().getGeomCenter(false));
             prev = next;
         }
         return res/(list.size()-1);

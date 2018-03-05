@@ -32,7 +32,7 @@ public class IntensityRatio extends SNR {
     @Override public double performMeasurement(Region object) {
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
         Region parentObject; 
-        if (foregroundMapBackground==null) parentObject = super.parent.getObject();
+        if (foregroundMapBackground==null) parentObject = super.parent.getRegion();
         else parentObject=this.foregroundMapBackground.get(object);
         if (parentObject==null) return 0;
         IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject);

@@ -91,27 +91,27 @@ public class RelativePosition implements Measurement {
             if (object.getExperiment().isChildOf(reference.getSelectedStructureIdx(), objects.getSelectedStructureIdx()))  refObject = object.getParent(reference.getSelectedStructureIdx());
             else {
                 int refParent = reference.getFirstCommonParentStructureIdx(objects.getSelectedStructureIdx());
-                refObject = StructureObjectUtils.getInclusionParent(object.getObject(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
+                refObject = StructureObjectUtils.getInclusionParent(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
             }
         }
         if (refObject == null && reference.getSelectedStructureIdx()>=0) return;
         double[] objectCenter=null;
         int ctype= this.objectCenter.getSelectedIndex();
-        if (ctype==0) objectCenter = object.getObject().getMassCenter(object.getParent().getRawImage(object.getStructureIdx()), true); // mass center
-        else if (ctype==1) objectCenter = object.getObject().getGeomCenter(true); // geom center
+        if (ctype==0) objectCenter = object.getRegion().getMassCenter(object.getParent().getRawImage(object.getStructureIdx()), true); // mass center
+        else if (ctype==1) objectCenter = object.getRegion().getGeomCenter(true); // geom center
         else if (ctype==2) { // from segmentation
-            objectCenter = ArrayUtil.duplicate(object.getObject().getCenter());
-            objectCenter[0]*=object.getObject().getScaleXY();
-            objectCenter[1]*=object.getObject().getScaleXY();
-            if (objectCenter.length>2) objectCenter[2]*=object.getObject().getScaleZ();
+            objectCenter = ArrayUtil.duplicate(object.getRegion().getCenter());
+            objectCenter[0]*=object.getRegion().getScaleXY();
+            objectCenter[1]*=object.getRegion().getScaleXY();
+            if (objectCenter.length>2) objectCenter[2]*=object.getRegion().getScaleZ();
         } else if (ctype==3) { // corner
-            objectCenter = new double[]{object.getObject().getBounds().xMin(), object.getObject().getBounds().yMin(), object.getObject().getBounds().zMin()};
+            objectCenter = new double[]{object.getRegion().getBounds().xMin(), object.getRegion().getBounds().yMin(), object.getRegion().getBounds().zMin()};
         }
         if (objectCenter==null) return;
         double[] refPoint;
         if (refObject!=null) {
-            if (this.refPoint.getSelectedIndex()==0) refPoint = refObject.getObject().getMassCenter(refObject.isRoot() ? refObject.getRawImage(refObject.getStructureIdx()) : refObject.getParent().getRawImage(refObject.getStructureIdx()), true);
-            else if (this.refPoint.getSelectedIndex()==1) refPoint = refObject.getObject().getGeomCenter(true);
+            if (this.refPoint.getSelectedIndex()==0) refPoint = refObject.getRegion().getMassCenter(refObject.isRoot() ? refObject.getRawImage(refObject.getStructureIdx()) : refObject.getParent().getRawImage(refObject.getStructureIdx()), true);
+            else if (this.refPoint.getSelectedIndex()==1) refPoint = refObject.getRegion().getGeomCenter(true);
             else { // corner
                 refPoint = new double[objectCenter.length];
                 refPoint[0] = refObject.getBounds().xMin() * refObject.getScaleXY();

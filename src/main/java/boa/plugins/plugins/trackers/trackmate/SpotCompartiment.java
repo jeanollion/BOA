@@ -51,7 +51,7 @@ public class SpotCompartiment {
     public SpotCompartiment(StructureObject o) {
         //long t0 = System.currentTimeMillis();
         object = o;
-        double[][] poles = getPoles(object.getObject(), 0.5, yLengthForXMeanComputation);
+        double[][] poles = getPoles(object.getRegion(), 0.5, yLengthForXMeanComputation);
         offsetUp = poles[0];
         offsetDown = poles[1];
         //nextDivisionTimePoint = object.getNextDivisionTimePoint();
@@ -90,14 +90,14 @@ public class SpotCompartiment {
         next.removeIf(o->!prev.equals(o.getPrevious()));
         if (next.size()>1) return true;
         if (next.size()==1) {
-            //logger.debug("div next frame for {}->{}: attibute: {}, size {}, sizePrev*0.8:{} eocp: {}, eoc:{}", prev, next.get(0), (Boolean)next.get(0).getAttribute("TruncatedDivision"), (double)next.get(0).getObject().getSize() , prev.getObject().getSize() * sizeProportion, isEndOfChannel(prev) , isEndOfChannel(next.get(0)));
+            //logger.debug("div next frame for {}->{}: attibute: {}, size {}, sizePrev*0.8:{} eocp: {}, eoc:{}", prev, next.get(0), (Boolean)next.get(0).getAttribute("TruncatedDivision"), (double)next.get(0).getRegion().getSize() , prev.getRegion().getSize() * sizeProportion, isEndOfChannel(prev) , isEndOfChannel(next.get(0)));
             Object o = next.get(0).getAttribute("TruncatedDivision");
             if (o!=null) {
                 if (o instanceof String) return Boolean.parseBoolean((String)o);
                 return (Boolean)o;
             }
             if (!isEndOfChannel(prev) || !isEndOfChannel(next.get(0))) return false; // only end of channel
-            return (double)next.get(0).getObject().size() < prev.getObject().size() * sizeProportion;
+            return (double)next.get(0).getRegion().size() < prev.getRegion().size() * sizeProportion;
         } else return false;
     }
     public static boolean isEndOfChannel(StructureObject o) {
@@ -225,7 +225,7 @@ public class SpotCompartiment {
             StructureObject sibling = compartiment.object.getTrackHead().getPrevious();
             while(sibling!=null && sibling.getTimePoint()!=compartiment.object.getTimePoint()) sibling = sibling.getNext();
             if (sibling!=null) {
-                compartimentOffsetDivisionUp = getPole(sibling.getObject(), poleMargin, true);
+                compartimentOffsetDivisionUp = getPole(sibling.getRegion(), poleMargin, true);
             } else {
                 throw new RuntimeException("SpotWithinCompartment :: no offset Found: "+compartiment.toString());
                 //compartimentOffsetDivision = new double[]{}; // to signal no sibling was found
@@ -259,18 +259,18 @@ public class SpotCompartiment {
             StructureObject beforeDiv = this.object.getInTrack(nextDivisionTimePoint-1);
             if (beforeDiv==null) logger.debug("no object found before div at frame: {}, for track: {}, object: {}", nextDivisionTimePoint-1, object.getTrackHead(), object);
             else {
-                int halfyL = (int)Math.round(object.getObject().getBounds().sizeY()*yLengthForXMean/2d);
+                int halfyL = (int)Math.round(object.getRegion().getBounds().sizeY()*yLengthForXMean/2d);
                 List<StructureObject> siblings = getDivisionSiblings(beforeDiv);
                 if (siblings.size()==2) { // cut the object whith the same proportion
                     double c1 = (double) siblings.get(0).getMask().count();
                     double c2 = (double) siblings.get(1).getMask().count();
                     double p = c1 / (c1+c2);
                     upperCompartimentCount = (int)(p * count +0.5);
-                    this.offsetDivisionMiddle = getPoleByCount(object.getObject(), upperCompartimentCount, -halfyL, halfyL); 
+                    this.offsetDivisionMiddle = getPoleByCount(object.getRegion(), upperCompartimentCount, -halfyL, halfyL); 
                 }
             }
         } 
-        if (offsetDivisionMiddle==null) offsetDivisionMiddle = object.getObject().getGeomCenter(true);
+        if (offsetDivisionMiddle==null) offsetDivisionMiddle = object.getRegion().getGeomCenter(true);
         
         // upper and lower bounds for the middle area
         int upperMiddleUpLimit = (int) (upperCompartimentCount/2 - middleAreaProportion/2d * upperCompartimentCount+0.5);
@@ -278,7 +278,7 @@ public class SpotCompartiment {
         int lowerCompartimentCount = count - upperCompartimentCount;
         int lowerMiddleUpLimit = (int) (upperCompartimentCount + lowerCompartimentCount/2 - middleAreaProportion/2d * lowerCompartimentCount+0.5);
         int lowerMiddleLowLimit = (int) (upperCompartimentCount + lowerCompartimentCount/2 + middleAreaProportion/2d * lowerCompartimentCount+0.5);
-        middleYLimits = getYPositionWithinCompartimentByCount(object.getObject(), upperMiddleUpLimit, upperMiddleLowLimit, lowerMiddleUpLimit, lowerMiddleLowLimit);
+        middleYLimits = getYPositionWithinCompartimentByCount(object.getRegion(), upperMiddleUpLimit, upperMiddleLowLimit, lowerMiddleUpLimit, lowerMiddleLowLimit);
     }
     
     public boolean sameTrackOrDirectChildren(SpotCompartiment nextCompartiment) {

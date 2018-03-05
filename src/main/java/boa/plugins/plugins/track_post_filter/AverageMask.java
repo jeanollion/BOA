@@ -75,11 +75,11 @@ public class AverageMask implements TrackPostFilter{
             if (debug && track.get(0).getIdx()==debugIdx) ImageWindowManagerFactory.showImage(sum.setName("sum thld: "+threshold));
             
             for (StructureObject o : track) {
-                o.getObject().ensureMaskIsImageInteger();
-                ImageInteger mask = o.getObject().getMaskAsImageInteger();
+                o.getRegion().ensureMaskIsImageInteger();
+                ImageInteger mask = o.getRegion().getMaskAsImageInteger();
                 loop(mask.getBoundingBox().resetOffset(), (x, y, z)->{ mask.setPixel(x, y, z, sum.getPixelInt(x, y, z)>=threshold?1:0);});
-                o.getObject().resetMask(); // reset mask because bounds might have changed
-                o.getObject().clearVoxels();
+                o.getRegion().resetMask(); // reset mask because bounds might have changed
+                o.getRegion().clearVoxels();
             }
         }
     }

@@ -80,7 +80,7 @@ public class ObjectIdxTracker implements Tracker {
         return new Comparator<StructureObjectPreProcessing>() {
             @Override
             public int compare(StructureObjectPreProcessing arg0, StructureObjectPreProcessing arg1) {
-                return compareCenters(getCenterArray(arg0.getObject().getBounds()), getCenterArray(arg1.getObject().getBounds()), order);
+                return compareCenters(getCenterArray(arg0.getRegion().getBounds()), getCenterArray(arg1.getRegion().getBounds()), order);
             }
         };
     }

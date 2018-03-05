@@ -1108,7 +1108,7 @@ public abstract class ImageWindowManager<I, U, V> {
         menu.add(new JMenuItem("TrackHead:"+o.getTrackHead()));
         menu.add(new JMenuItem("Time: "+toString(o.getMeasurements().getCalibratedTimePoint())));
         menu.add(new JMenuItem("IsTrackHead: "+o.isTrackHead()));
-        menu.add(new JMenuItem("Is2D: "+o.getObject().is2D()));
+        menu.add(new JMenuItem("Is2D: "+o.getRegion().is2D()));
         //DecimalFormat df = new DecimalFormat("#.####");
         if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {
             menu.addSeparator();

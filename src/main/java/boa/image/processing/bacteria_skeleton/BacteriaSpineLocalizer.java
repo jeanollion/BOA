@@ -65,7 +65,7 @@ public class BacteriaSpineLocalizer {
             this.index = index;
         }
     };
-    public double toPole(double spineDist, ReferencePole pole) {
+    protected double toPole(double spineDist, ReferencePole pole) {
         switch(pole) {
             case FirstPole:
             default:
@@ -78,7 +78,7 @@ public class BacteriaSpineLocalizer {
                 return spineDist - length[1];
         }
     }
-    public double fromPole(double normalizedSplineDist, ReferencePole pole, Compartment comp) {
+    protected double fromPole(double normalizedSplineDist, ReferencePole pole, Compartment comp) {
         switch(pole) {
             case FirstPole:
                 if (comp.equals(Compartment.SecondDaughter)) throw new IllegalArgumentException("compartiment is second daugter and pole is first pole");
@@ -101,7 +101,7 @@ public class BacteriaSpineLocalizer {
      * @param referencePole
      * @return {@link BacteriaSpineCoord} representation of {@param p} from {@param referencePole}
      */
-    protected BacteriaSpineCoord getCoord(Point p, ReferencePole referencePole, Compartment comp) {
+    public BacteriaSpineCoord getCoord(Point p, ReferencePole referencePole, Compartment comp) {
         this.search.search(p);
         boolean firstPointIsCloserToPole = toPole(search.getSampler(0).get().getContent2(), referencePole)<=toPole(search.getSampler(1).get().getContent2(), referencePole);
         PointContainer2<Vector, Double> r1 = search.getSampler(firstPointIsCloserToPole?0:1).get();

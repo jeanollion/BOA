@@ -291,7 +291,7 @@ public class ManualCorrection {
             List<StructureObject> allObjects = Utils.flattenMap(map);
             TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
             tmi.addObjects(map);
-            //double meanLength = allObjects.stream().mapToDouble( s->GeometricalMeasurements.getFeretMax(s.getObject())).average().getAsDouble();
+            //double meanLength = allObjects.stream().mapToDouble( s->GeometricalMeasurements.getFeretMax(s.getRegion())).average().getAsDouble();
             //logger.debug("Mean size: {}", meanLength);
             tmi.processFTF(Math.sqrt(Double.MAX_VALUE)/100); // not Double.MAX_VALUE -> causes trackMate to crash possibly because squared.. 
             tmi.processGC(Math.sqrt(Double.MAX_VALUE)/100, 0, split, merge);
@@ -437,7 +437,7 @@ public class ManualCorrection {
                 ImageByte mask = e.getKey().getMask() instanceof ImageInteger ? TypeConverter.cast((ImageInteger)e.getKey().getMask(), new ImageByte("Manual Segmentation Mask", 0, 0, 0)) : TypeConverter.toByteMask(e.getKey().getMask(), null, 1);
                 
                 List<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
-                for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new MutableBoundingBox(0, 0, 0));
+                for (StructureObject c : oldChildren) c.getRegion().draw(mask, 0, new MutableBoundingBox(0, 0, 0));
                 if (test) iwm.getDisplayer().showImage((ImageByte)mask, 0, 1);
                 // remove seeds out of mask
                 ImageMask refMask =  ref2D ? new ImageMask2D(mask) : mask;
@@ -523,7 +523,7 @@ public class ManualCorrection {
             for (StructureObject objectToSplit : objectsByPosition.get(f)) {
                 if (defaultSplitter==null) splitter = xp.getStructure(structureIdx).getObjectSplitter();
                 splitter.setSplitVerboseMode(test);
-                if (test) splitter.splitObject(objectToSplit.getParent(), objectToSplit.getStructureIdx(), objectToSplit.getObject());
+                if (test) splitter.splitObject(objectToSplit.getParent(), objectToSplit.getStructureIdx(), objectToSplit.getRegion());
                 else {
                     StructureObject newObject = objectToSplit.split(splitter);
                     if (newObject==null) logger.warn("Object could not be splitted!");

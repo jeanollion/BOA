@@ -74,7 +74,7 @@ public class InclusionObjectIdx implements Measurement {
         if (object.getExperiment().isChildOf(reference.getSelectedStructureIdx(), objects.getSelectedStructureIdx()))  refObject = object.getParent(reference.getSelectedStructureIdx());
         else {
             int refParent = reference.getFirstCommonParentStructureIdx(objects.getSelectedStructureIdx());
-            refObject = StructureObjectUtils.getInclusionParent(object.getObject(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
+            refObject = StructureObjectUtils.getInclusionParent(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
         }
         if (refObject == null) return;
         object.getMeasurements().setValue(key.getValue(), refObject.getIdx());

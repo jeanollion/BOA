@@ -48,8 +48,8 @@ public abstract class RegionContainer {
     public boolean is2D() {return is2D;}
     public abstract Region getObject();
     public void updateObject() {
-        is2D = structureObject.getObject().is2D();
-        bounds = new SimpleBoundingBox(structureObject.getObject().getBounds());
+        is2D = structureObject.getRegion().is2D();
+        bounds = new SimpleBoundingBox(structureObject.getRegion().getBounds());
     }
     public abstract void deleteObject();
     public abstract void relabelObject(int newIdx);

@@ -75,7 +75,7 @@ public class BacteriaTransMeasurements implements Measurement {
     }
 
     @Override public void performMeasurement(StructureObject object) {
-        Region bactObject = object.getObject();
+        Region bactObject = object.getRegion();
         BoundingBox parentOffset = object.getParent().getBounds();
         double[] center=bactObject.getGeomCenter(true);
         center[0]-=parentOffset.xMin()*object.getScaleXY();

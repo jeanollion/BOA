@@ -568,8 +568,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             StructureObject parent = this.parentsByF.get(timePoint);
             List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
             if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
-                if (segment || correction) o.getObject().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
-                return o.getObject();
+                if (segment || correction) o.getRegion().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
+                return o.getRegion();
             }));
             else populations.put(timePoint, Collections.EMPTY_LIST); 
             //logger.debug("get object @ {}, size: {}", timePoint, populations.get(timePoint].size());

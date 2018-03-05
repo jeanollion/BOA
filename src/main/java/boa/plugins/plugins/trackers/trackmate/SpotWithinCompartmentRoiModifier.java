@@ -53,7 +53,7 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
         double distLim = displayDistanceThreshold;
         if (objectsToDisplay.size()==2) displayDistanceThreshold = Double.POSITIVE_INFINITY;
         if (currentObject.key.getStructureIdx()!=structureIdx) return;
-        SpotWithinCompartment s = tmi.objectSpotMap.get(currentObject.key.getObject());
+        SpotWithinCompartment s = tmi.objectSpotMap.get(currentObject.key.getRegion());
         if (s==null) return;
         //else logger.debug("spot found for: {} loc: {}", currentObject.key, s.localization);
         double[] center = new double[2];
@@ -67,7 +67,7 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
         SpotWithinCompartment.rois=new ArrayList<>(6);
         for (Pair<StructureObject, BoundingBox> p : objectsToDisplay) {
             if (p.key.equals(currentObject.key)) continue;
-            SpotWithinCompartment s2 = tmi.objectSpotMap.get(p.key.getObject());
+            SpotWithinCompartment s2 = tmi.objectSpotMap.get(p.key.getRegion());
             if (s2==null || s2.frame>=s.frame) continue;
             if (p.key.getFrame()<currentObject.key.getFrame()) {
                 SpotWithinCompartment.offsetS1 = p.value;

@@ -22,10 +22,18 @@ import boa.core.Task;
 import boa.configuration.experiment.MicroscopyField;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.StructureObject;
+import boa.data_structure.Voxel;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.image.Image;
 import boa.image.processing.bacteria_skeleton.BacteriaSpine;
+import boa.image.processing.bacteria_skeleton.BacteriaSpineCoord;
+import boa.image.processing.bacteria_skeleton.BacteriaSpineLocalizer;
+import boa.image.processing.bacteria_skeleton.CircularNode;
 import boa.plugins.PluginFactory;
 import static boa.test_utils.TestUtils.logger;
 import boa.utils.geom.Point;
+import boa.utils.geom.PointContainer2;
+import boa.utils.geom.Vector;
 import ij.ImageJ;
 
 /**
@@ -43,7 +51,23 @@ public class TestSkeletonize {
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
-        BacteriaSpine.createSpine(bact.getObject());
+        CircularNode<Voxel>[] contour = new CircularNode[1];
+        PointContainer2<Vector, Double>[] spine = BacteriaSpine.createSpine(bact.getRegion(), contour);
+        Image test = BacteriaSpine.drawSpine(bact.getBounds(), spine, contour[0]);
+        // test localization
+        double[] center = bact.getRegion().getGeomCenter(false);
+        Point p = new Point((float)center[0], (float)center[1]);
+        Point pT = p.duplicate().translateRev(bact.getBounds());
+        test.setPixel((int)(pT.get(0)*5+0.5)+1, (int)(pT.get(1)*5+0.5)+1, 0, 1000);
+        BacteriaSpineLocalizer loc = new BacteriaSpineLocalizer(bact.getRegion());
+        BacteriaSpineCoord coord = loc.getCoord(p, BacteriaSpineLocalizer.ReferencePole.FirstPole, BacteriaSpineLocalizer.Compartment.WholeCell);
+        Point p2 = loc.project(coord);
+        Point p2T = p2.duplicate().translateRev(bact.getBounds());
+        test.setPixel((int)(p2T.get(0)*5+0.5)+1, (int)(p2T.get(1)*5+0.5)+1, 0, 1001);
+        coord.normalizedSpineCoordinate = coord.normalizedSpineCoordinate * spine[spine.length-1].getContent2();
+        logger.debug("coords: {}", coord);
+        logger.debug("testDistance: {}", p2.dist(p));
+        ImageWindowManagerFactory.showImage(test);
     }
 
 }

@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
  */
 public class BacteriaSpine {
     public static final Logger logger = LoggerFactory.getLogger(BacteriaSpine.class);
-    public static boolean verbose = true;
+    public static boolean verbose = false;
 
     public static Image drawSpine(BoundingBox bounds, PointContainer2<Vector, Double>[] spine, CircularNode<Voxel> circularContour) { // image size x3 for subpixel visualization
         int zoomFactor = 5;
@@ -222,10 +222,8 @@ public class BacteriaSpine {
                 if (newPoint!=newPoint2) { // keep point closest to both borders
                     double d1 = dir.norm();
                     double d2 = dir2.norm();
-                    if (d1==d2) { // average with 
-                        logger.debug("average point: {}+{} -> {}", newPoint, newPoint2, newPoint.duplicate().averageWith(newPoint2));
+                    if (d1==d2) { // average 2 points & dir 
                         newPoint.averageWith(newPoint2);
-                        logger.debug("average dir: {}+{} -> {}", dir, dir2, dir.duplicate().averageWith(dir2));
                         dir.averageWith(dir2);
                     } else if (d1<d2) push2 = false;
                     else push1=false;

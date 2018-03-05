@@ -118,7 +118,7 @@ public class RepairObjectInconsitencies {
         double scale = list.get(0).getScaleXY();
         double scaledDistanceSqError = pixelDistanceError*pixelDistanceError * scale * scale;
         List<RealPoint> points = new ArrayList<RealPoint>(list.size());
-        for (StructureObject o : list) points.add(new RealPoint(o.getObject().getGeomCenter(true)));
+        for (StructureObject o : list) points.add(new RealPoint(o.getRegion().getGeomCenter(true)));
         KDTree<StructureObject> kdTree = new KDTree<StructureObject>(list, points);
         RadiusNeighborSearchOnKDTree<StructureObject> search = new RadiusNeighborSearchOnKDTree(kdTree);
         HashMapGetCreate<RealPoint, Set<StructureObject>> res = new HashMapGetCreate<RealPoint, Set<StructureObject>>(new HashMapGetCreate.SetFactory<RealPoint, StructureObject>());

@@ -71,7 +71,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
             List<StructureObject> toRemove=null;
             if (parent.getChildren(structureIdx)!=null) {
                 for (StructureObject o : parent.getChildren(structureIdx)) {
-                    if (!pop.getRegions().contains(o.getObject())) {
+                    if (!pop.getRegions().contains(o.getRegion())) {
                         if (toRemove==null) toRemove= new ArrayList<>();
                         toRemove.add(o);
                     }

@@ -92,19 +92,19 @@ public class ObjectInclusionCount implements Measurement {
     public static int count(StructureObject container, List<StructureObject> toCount, double proportionInclusion, boolean onlyTrackHeads) {
         if (toCount==null || toCount.isEmpty()) return 0;
         int count = 0;
-        Region containerObject = container.getObject();
+        Region containerObject = container.getRegion();
         for (StructureObject o : toCount) {
             if (onlyTrackHeads && !o.isTrackHead()) continue;
-            if (o.getObject().intersect(containerObject)) {
+            if (o.getRegion().intersect(containerObject)) {
                 if (proportionInclusion==0) ++count;
                 else {
-                    if (o.getObject().getVoxels().isEmpty()) continue;
-                    double incl = (double)o.getObject().getOverlapMaskMask(containerObject, null, null) / (double)o.getObject().getVoxels().size();
+                    if (o.getRegion().getVoxels().isEmpty()) continue;
+                    double incl = (double)o.getRegion().getOverlapMaskMask(containerObject, null, null) / (double)o.getRegion().getVoxels().size();
                     //logger.debug("inclusion: {}, threshold: {}, container: {}, parent:{}", incl, percentageInclusion, container, o.getParent());
                     if (incl>=proportionInclusion) ++count;
                 }
             }
-            //o.getObject().resetOffset();
+            //o.getRegion().resetOffset();
         }
         //logger.debug("inclusion count: commont parent: {} container: {}, toTest: {}, result: {}", commonParent, container, toCount.size(), count);
         return count;

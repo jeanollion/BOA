@@ -54,8 +54,8 @@ public class TrackMaskY extends TrackMask {
         super(parentTrack, childStructureIdx);
         int maxX=0, maxZ=0;
         for (int i = 0; i<parentTrack.size(); ++i) { // compute global Y and Z max to center parent masks
-            if (maxX<parentTrack.get(i).getObject().getBounds().sizeX()) maxX=parentTrack.get(i).getObject().getBounds().sizeX();
-            if (maxZ<parentTrack.get(i).getObject().getBounds().sizeZ()) maxZ=parentTrack.get(i).getObject().getBounds().sizeZ();
+            if (maxX<parentTrack.get(i).getRegion().getBounds().sizeX()) maxX=parentTrack.get(i).getRegion().getBounds().sizeX();
+            if (maxZ<parentTrack.get(i).getRegion().getBounds().sizeZ()) maxZ=parentTrack.get(i).getRegion().getBounds().sizeZ();
         }
         maxParentX=maxX;
         maxParentZ=maxZ;

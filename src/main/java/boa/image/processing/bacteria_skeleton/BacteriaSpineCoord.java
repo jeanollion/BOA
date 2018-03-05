@@ -25,9 +25,13 @@ import boa.image.processing.bacteria_skeleton.BacteriaSpineLocalizer.ReferencePo
  * @author jollion
  */
 public class BacteriaSpineCoord {
-    ReferencePole pole;
-    Compartment comp;
-    boolean left;
-    double absoluteDistanceFromSpine;
-    double normalizedSpineCoordinate;
+    public ReferencePole pole;
+    public Compartment comp;
+    public boolean left;
+    public double absoluteDistanceFromSpine;
+    public double normalizedSpineCoordinate;
+    @Override
+    public String toString() {
+        return new StringBuilder().append("along spine: ").append(normalizedSpineCoordinate).append(" distance from spine:").append(absoluteDistanceFromSpine).append(" left:").append(left).append("compartment: ").append(comp).append("pole: ").append(pole).toString();
+    }
 }

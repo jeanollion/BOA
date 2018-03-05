@@ -57,7 +57,7 @@ public class ManualObjectStrecher {
             if (children.isEmpty()) continue;
             // get uppermost children : 
             StructureObject child = children.stream().min((s1, s2)->Integer.compare(s1.getBounds().yMin(), s2.getBounds().yMin())).orElse(children.get(0));
-            Region childObject = child.getObject().duplicate();
+            Region childObject = child.getRegion().duplicate();
             Offset offset = new SimpleOffset(p.key.getBounds()).reverseOffset().translate(p.value);
             childObject.translate(offset); // translate object in ROI referencial
             Set<Voxel> contour = childObject.getContour();
@@ -138,12 +138,12 @@ public class ManualObjectStrecher {
             if (allO.length>0) {
                 Region newObject = allO[0].translate(strechMap.getBoundingBox());
                 objectsToUpdate.add(new Pair(child, newObject));
-                logger.debug("resulting object bounds: {} (old: {})", newObject, child.getObject().getBounds(), newObject);
+                logger.debug("resulting object bounds: {} (old: {})", newObject, child.getRegion().getBounds(), newObject);
             }
             intensityMap.translate(offset);
             childObject.translate(offset);
         }
-        logger.debug("objects to update: {}", Utils.toStringList(objectsToUpdate, p->p.key.getObject().getVoxels().size()+">"+p.value.getVoxels().size()));
+        logger.debug("objects to update: {}", Utils.toStringList(objectsToUpdate, p->p.key.getRegion().getVoxels().size()+">"+p.value.getVoxels().size()));
         ManualCorrection.updateObjects(objectsToUpdate, true);
     }
     public static void drawLine(int x,int y,int x2, int y2, int z, int value, Image image) {

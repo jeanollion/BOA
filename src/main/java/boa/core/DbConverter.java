@@ -81,7 +81,7 @@ public class DbConverter {
                 for (List<StructureObject> list : allTracks) toWrite.addAll(list);
                 objectCount+=toWrite.size();
                 for (StructureObject o : toWrite) {
-                    o.getObject();
+                    o.getRegion();
                     o.getMeasurements();
                 }
                 readTime+=tr1-tr0;

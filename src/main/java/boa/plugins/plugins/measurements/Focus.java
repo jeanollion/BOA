@@ -78,7 +78,7 @@ public class Focus implements Measurement {
         if (input.sizeZ()>1) {
             throw new RuntimeException("Focus measurement cannot be run on 3D images");
             /*List<Double> centers = Utils.transform(object.getChildren(structureIdx), o->{
-                double[] center = object.getObject().getGeomCenter(false);
+                double[] center = object.getRegion().getGeomCenter(false);
                 if (center.length==3) return center[2];
                 else return mid;
             });
@@ -87,11 +87,11 @@ public class Focus implements Measurement {
         Image grad = ImageFeatures.getGradientMagnitude(input, scale.getValue().doubleValue(), false);
         double gradAtBorder = 0, intensity=0, borderCount=0, count=0;
         for (StructureObject o : object.getChildren(structureIdx)) {
-            Set<Voxel> contour = o.getObject().getContour();
+            Set<Voxel> contour = o.getRegion().getContour();
             for (Voxel v : contour) gradAtBorder+=grad.getPixelWithOffset(v.x, v.y, v.z);
             borderCount += contour.size();
-            count+=o.getObject().size();
-            intensity+=BasicMeasurements.getSum(o.getObject(), input);
+            count+=o.getRegion().size();
+            intensity+=BasicMeasurements.getSum(o.getRegion(), input);
         }
         gradAtBorder/=borderCount;
         intensity/=count;

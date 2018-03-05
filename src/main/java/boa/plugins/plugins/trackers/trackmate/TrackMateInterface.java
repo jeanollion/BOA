@@ -100,7 +100,7 @@ public class TrackMateInterface<S extends Spot> {
         });
     }
     public void addObjects(Map<Integer, List<StructureObject>> objectsF) {
-        for (StructureObject c : Utils.flattenMap(objectsF)) addObject(c.getObject(), c.getFrame());
+        for (StructureObject c : Utils.flattenMap(objectsF)) addObject(c.getRegion(), c.getFrame());
     }
     
     public boolean processFTF(double distanceThreshold) {
@@ -362,7 +362,7 @@ public class TrackMateInterface<S extends Spot> {
         for (StructureObject child : objects) {
             edgesBucket.clear();
             //logger.debug("settings links for: {}", child);
-            S s = objectSpotMap.get(child.getObject());
+            S s = objectSpotMap.get(child.getRegion());
             getSortedEdgesOf(s, prev, edgesBucket);
             //logger.debug("set {} edge for: {}: links: {}: {}", prev?"prev":"next", s, edgesBucket.size(), edgesBucket);
             if (edgesBucket.size()==1) {
@@ -467,7 +467,7 @@ public class TrackMateInterface<S extends Spot> {
     private StructureObject getStructureObject(List<StructureObject> candidates, S s) {
         if (candidates==null || candidates.isEmpty()) return null;
         Region o = spotObjectMap.get(s);
-        for (StructureObject c : candidates) if (c.getObject() == o) return c;
+        for (StructureObject c : candidates) if (c.getRegion() == o) return c;
         return null;
     }
     

@@ -207,7 +207,7 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
             if (ok) {
                 tmi.setTrackLinks(objectsF);
                 tmi.resetEdges();
-                MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getObject(), o.getFrame()));
+                MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getRegion(), o.getFrame()));
                 postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
                 removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
                 objectsF = StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx);
@@ -219,7 +219,7 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
         if (ok) {
             //switchCrossingLinksWithLQBranches(tmi, maxLinkingDistanceGC/Math.sqrt(2), maxLinkingDistanceGC, maxGap); // remove crossing links
             tmi.setTrackLinks(objectsF);
-            MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getObject(), o.getFrame())); // TODO : do directly in graph
+            MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getRegion(), o.getFrame())); // TODO : do directly in graph
             //postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC); //
             trimLQExtremityWithGaps(tmi, 2, true, true); // a track cannot start with a LQ spot separated by a gap
         }
@@ -265,17 +265,17 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
                     for (int i = 1; i<currentTrack.size(); ++i) {
                         compartimentList.add(currentTrack.get(i));
                         if (isTruncated(currentTrack.get(i)) || isTruncated(currentTrack.get(i-1))) SIList.add(Double.NaN);
-                        else SIList.add((double)currentTrack.get(i).getObject().size() / (double)currentTrack.get(i-1).getObject().size());
+                        else SIList.add((double)currentTrack.get(i).getRegion().size() / (double)currentTrack.get(i-1).getRegion().size());
                     }
                     putNext(currentTrack.get(currentTrack.size()-1), nexts);
                     //logger.debug("nexts: {}", nexts);
                     if (nexts.isEmpty()) break;
                     else {
                         Collections.sort(nexts, c);
-                        double sizeNext = 0; for (StructureObject n : nexts) sizeNext+=n.getObject().size();
+                        double sizeNext = 0; for (StructureObject n : nexts) sizeNext+=n.getRegion().size();
                         compartimentList.add(nexts.get(0));
                         if (isTruncated(currentTrack.get(currentTrack.size()-1)) || isTruncated(nexts.get(nexts.size()-1))) SIList.add(Double.NaN);
-                        else SIList.add(sizeNext / currentTrack.get(currentTrack.size()-1).getObject().size());
+                        else SIList.add(sizeNext / currentTrack.get(currentTrack.size()-1).getRegion().size());
                         currentTrack = compartimentTracks.get(nexts.get(0));
                     }
                 }
@@ -288,7 +288,7 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
                     SIMedian.set(i, lastNonNan);
                 } else lastNonNan = SIMedian.get(i);
             }
-            //logger.debug("Objects sizes: {}", Utils.toStringList(compartimentList, o->o.getObject().getSize()));
+            //logger.debug("Objects sizes: {}", Utils.toStringList(compartimentList, o->o.getRegion().getSize()));
             //logger.debug("Objects SI: {}", SIList);
             //logger.debug("Object SI Med: {}", SIMedian);
             for (int i =0; i<compartimentList.size(); ++i) {
@@ -413,7 +413,7 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
         for (List<StructureObject> list : allTracks.values()) {
             boolean hQ = false;
             for (StructureObject o : list) {
-                SpotWithinCompartment s = tmi.objectSpotMap.get(o.getObject());
+                SpotWithinCompartment s = tmi.objectSpotMap.get(o.getRegion());
                 if (s!=null && !s.lowQuality) {
                     hQ = true;
                     break;
@@ -422,7 +422,7 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
             if (!hQ) { // erase track
                 for (StructureObject o : list) {
                     o.getParent().getChildren(structureIdx).remove(o);
-                    tmi.removeObject(o.getObject(), o.getFrame());
+                    tmi.removeObject(o.getRegion(), o.getFrame());
                     parentsToRelabel.add(o.getParent());
                     eraseCount++;
                 }

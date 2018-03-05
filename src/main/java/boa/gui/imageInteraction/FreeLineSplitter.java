@@ -58,7 +58,7 @@ public class FreeLineSplitter implements ObjectSplitter {
         this.yPoints=yPoints;
         offsetMap = new HashMap<>(objects.size());
         for (Pair<StructureObject, BoundingBox> p : objects) {
-            offsetMap.put(p.key.getObject(), p.value);
+            offsetMap.put(p.key.getRegion(), p.value);
         }
     }
     @Override

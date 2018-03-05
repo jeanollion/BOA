@@ -46,7 +46,7 @@ import static boa.utils.Utils.removeIf;
  */
 public class GenerateImages {
     public static void main(String[] args) {
-        String dbName = "boa_fluo151127";
+        String dbName = "fluo171113_WT_15s";
         int positionIdx = 1;
         int mcIdx = 1;
         int tStart = 190;
@@ -64,7 +64,7 @@ public class GenerateImages {
         allBacts.values().removeIf(l->l.isEmpty());
         //Map<StructureObject, StructureObject> parentMap = getInclusionParentMap(flattenMap(allMuts), 1);
         Map<StructureObject, StructureObject> parentMap = getInclusionParentMap(flattenMap(allMuts), flattenMap(allBacts));
-        for (List<StructureObject> l : allMuts.values()) l.removeIf(o->o.getFrame()<tStart||o.getFrame()>tEnd||parentMap.get(o)==null || parentMap.get(o).getIdx()>1 || parentMap.get(o).getPrevious().getIdx()>0 || BasicMeasurements.getMeanValue(o.getObject(), o.getParent().getRawImage(2))<meanIntensityThld);
+        for (List<StructureObject> l : allMuts.values()) l.removeIf(o->o.getFrame()<tStart||o.getFrame()>tEnd||parentMap.get(o)==null || parentMap.get(o).getIdx()>1 || parentMap.get(o).getPrevious().getIdx()>0 || BasicMeasurements.getMeanValue(o.getRegion(), o.getParent().getRawImage(2))<meanIntensityThld);
         allMuts.values().removeIf(l->l.isEmpty());
         mcTrack.removeIf(o -> o.getFrame()<tStart||o.getFrame()>tEnd);
         IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();

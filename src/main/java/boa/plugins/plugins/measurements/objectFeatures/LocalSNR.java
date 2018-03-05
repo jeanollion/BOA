@@ -64,7 +64,7 @@ public class LocalSNR extends SNR {
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
         Offset offset = object.isAbsoluteLandMark() ? new SimpleOffset(0, 0, 0) : super.parent.getBounds();
         final Region backgroundObject; 
-        if (foregroundMapBackground==null) backgroundObject = super.parent.getObject();
+        if (foregroundMapBackground==null) backgroundObject = super.parent.getRegion();
         else backgroundObject=this.foregroundMapBackground.get(object);
         if (backgroundObject==null) return 0;
         

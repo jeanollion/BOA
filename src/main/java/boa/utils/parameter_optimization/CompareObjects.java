@@ -291,14 +291,14 @@ public class CompareObjects {
             if (pop.getRegions().isEmpty()) continue;
             //logger.debug("quality was : {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()));
             for (StructureObject parentB : parent.getChildObjects(1)) {
-                List<Region> objects = parentB.getObject().getIncludedObjects(pop.getRegions());
+                List<Region> objects = parentB.getRegion().getIncludedObjects(pop.getRegions());
                 if (objects.isEmpty()) continue;
                 MutationSegmenter currentSeg = (MutationSegmenter)ps.getSegmenter();
                 if (!pthMapParametrizer.isEmpty()) pthMapParametrizer.get(parent.getTrackHead()).apply(parent, currentSeg);
                 currentSeg.setQuality(objects, parentB.getBounds(), parent.getPreFilteredImage(structureIdx).cropWithOffset(parentB.getBounds()), parent.getMask());
             }
             // transfer quality to structureObject & store
-            for (StructureObject o : parent.getChildren(structureIdx)) o.setAttribute("Quality", o.getObject().getQuality());
+            for (StructureObject o : parent.getChildren(structureIdx)) o.setAttribute("Quality", o.getRegion().getQuality());
             dbRef.getDao(positionName).store(parent.getChildren(structureIdx));
             //logger.debug("quality is now : {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()));
         }
@@ -353,7 +353,7 @@ public class CompareObjects {
                 ++fpn[0];
                 if (fp!=null) fp.add(o);
             } else { // simple assign by decreasing distCC
-                HashMapGetCreate<StructureObject, Double> distMap = new HashMapGetCreate<>(oo->GeometricalMeasurements.getDistanceSquare(oo.getObject(), o.getObject()));
+                HashMapGetCreate<StructureObject, Double> distMap = new HashMapGetCreate<>(oo->GeometricalMeasurements.getDistanceSquare(oo.getRegion(), o.getRegion()));
                 StructureObject closest = Collections.min(objectsRef, Utils.comparator(distMap));
                 double d = distMap.getAndCreateIfNecessary(closest); // case of n==1
                 if (d<=distCCThldSq) { // assigned

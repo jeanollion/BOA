@@ -132,7 +132,7 @@ public class DeleteFromDAOTest {
         StructureObject mc = dao.getChildren(root, 0).get(0);
         assertEquals(prefix+"number of stored objects ", 15, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements ", 5, countObjects(masterDAO, Measurements.class));
-        assertTrue(prefix+"object retrieved: ", mc.getObject().getVoxels().size()>=1);
+        assertTrue(prefix+"object retrieved: ", mc.getRegion().getVoxels().size()>=1);
         logger.debug("before delete children");
         dao.deleteChildren(mc, 1);
         assertEquals(prefix+"number of objects after delete children", 14, countObjects(masterDAO, StructureObject.class));

@@ -77,7 +77,7 @@ public class BacteriaFluoMeasurements implements Measurement {
     }
 
     public void performMeasurement(StructureObject object) {
-        Region bactObject = object.getObject();
+        Region bactObject = object.getRegion();
         Image bactImage = object.getRawImage(bacteria.getSelectedIndex());
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
         BoundingBox parentOffset = object.getParent().getBounds();

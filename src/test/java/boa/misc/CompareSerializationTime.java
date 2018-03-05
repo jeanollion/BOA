@@ -58,8 +58,8 @@ public class CompareSerializationTime {
             StructureObject o = objects.get(i);
             StructureObject o2 = unserList.get(i);
             
-            if (o.getObject().getVoxels().size()!=
-                    o2.getObject().getVoxels().size()) ++count;
+            if (o.getRegion().getVoxels().size()!=
+                    o2.getRegion().getVoxels().size()) ++count;
         }
         //for (int i = 0; i<objects.size(); ++i) logger.debug("{}>{}", objects.get(i), serList.get(0));
         logger.debug(serName+" time to Serialize: {}, unser: {}, unequals: {}", ((double)(t1-t0))/objects.size(), ((double)(t2-t1))/objects.size(), count);

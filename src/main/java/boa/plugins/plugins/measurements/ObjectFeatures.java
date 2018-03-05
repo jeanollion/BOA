@@ -101,7 +101,7 @@ public class ObjectFeatures implements Measurement {
                 f.setUp(object, structureIdx, object.getObjectPopulation(structureIdx));
                 if (f instanceof ObjectFeatureWithCore) ((ObjectFeatureWithCore)f).setUpOrAddCore(cores, preFilters);
                 for (StructureObject o : object.getChildren(structureIdx)) {
-                    double m = f.performMeasurement(o.getObject()); 
+                    double m = f.performMeasurement(o.getRegion()); 
                     o.getMeasurements().setValue(((TextParameter)ofp.getAdditionalParameters().get(0)).getValue(), m);
                 }
             }

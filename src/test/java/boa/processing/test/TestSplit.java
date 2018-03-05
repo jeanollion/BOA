@@ -65,7 +65,7 @@ public class TestSplit {
         }
         
         splitter.setSplitVerboseMode(true);
-        splitter.splitObject(parent, structureIdx, o.getObject());
+        splitter.splitObject(parent, structureIdx, o.getRegion());
         
     }
 }

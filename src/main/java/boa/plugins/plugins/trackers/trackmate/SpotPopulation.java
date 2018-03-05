@@ -118,7 +118,7 @@ public class SpotPopulation {
             parentT.put(p.getFrame(), p);
             for (StructureObject s : p.getChildren(structureIdx)) {
                 s.resetTrackLinks(true, true);
-                s.setAttribute("Quality", s.getObject().getQuality());
+                s.setAttribute("Quality", s.getRegion().getQuality());
             }
         }
         TreeSet<DefaultWeightedEdge> nextEdges = new TreeSet(new Comparator<DefaultWeightedEdge>() {
@@ -129,7 +129,7 @@ public class SpotPopulation {
         for (StructureObject parent : parentTrack) {
             for (StructureObject child : parent.getChildren(structureIdx)) {
                 //logger.debug("settings links for: {}", child);
-                SpotWithinCompartment s = objectSpotMap.get(child.getObject());
+                SpotWithinCompartment s = objectSpotMap.get(child.getRegion());
                 getSortedEdgesOf(s, graph, false, nextEdges);
                 if (!nextEdges.isEmpty()) {
                     DefaultWeightedEdge nextEdge = nextEdges.last(); //main edge -> for previous.next
@@ -155,7 +155,7 @@ public class SpotPopulation {
         for (List<StructureObject> list : allTracks.values()) {
             boolean hQ = false;
             for (StructureObject o : list) {
-                if (o.getObject().getQuality()>=this.distanceParameters.qualityThreshold && (list.size()>1 || objectSpotMap.containsKey(o.getObject()))) {
+                if (o.getRegion().getQuality()>=this.distanceParameters.qualityThreshold && (list.size()>1 || objectSpotMap.containsKey(o.getRegion()))) {
                     hQ = true;
                     break;
                 }
@@ -164,7 +164,7 @@ public class SpotPopulation {
                 for (StructureObject o : list) {
                     o.getParent().getChildren(structureIdx).remove(o);
                     if (removeFromSpotPopulation) {
-                        Spot s = objectSpotMap.remove(o.getObject());
+                        Spot s = objectSpotMap.remove(o.getRegion());
                         if (s!=null) {
                             collection.remove(s, o.getFrame());
                             collectionLQ.remove(s, o.getFrame());
@@ -180,7 +180,7 @@ public class SpotPopulation {
     }
     
     public void removeSpot(StructureObject o) {
-        SpotWithinCompartment s = this.objectSpotMap.remove(o.getObject());
+        SpotWithinCompartment s = this.objectSpotMap.remove(o.getRegion());
         if (s!=null) {
             collection.remove(s, o.getFrame());
             if (s.lowQuality) collectionLQ.remove(s, o.getFrame());
@@ -238,7 +238,7 @@ public class SpotPopulation {
     private StructureObject getStructureObject(StructureObject parent, int structureIdx, SpotWithinCompartment s) {
         List<StructureObject> children = parent.getChildren(structureIdx);
         Region o = s.object;
-        for (StructureObject c : children) if (c.getObject() == o) return c;
+        for (StructureObject c : children) if (c.getRegion() == o) return c;
         return null;
     }
     

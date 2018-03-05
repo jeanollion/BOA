@@ -79,7 +79,7 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
     }
     private boolean intersectWithBackground(StructureObject object, RegionPopulation bck) {
         bck.filter(o->o.size()>10); // 
-        Region cutObject =object.getObject();
+        Region cutObject =object.getRegion();
         int XMargin = this.XMargin.getValue().intValue();
         if (XMargin>0 && object.getBounds().sizeY()>2*XMargin) {
             BoundingBox bds = object.getBounds();

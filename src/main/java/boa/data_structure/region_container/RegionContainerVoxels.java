@@ -43,14 +43,14 @@ public class RegionContainerVoxels extends RegionContainer {
     
     public RegionContainerVoxels(StructureObject structureObject) {
         super(structureObject);
-        createCoordsArrays(structureObject.getObject());
+        createCoordsArrays(structureObject.getRegion());
     }
 
     @Override
     public void updateObject() {
         super.updateObject();
-        if (structureObject.getObject().getVoxels() != null) {
-            createCoordsArrays(structureObject.getObject());
+        if (structureObject.getRegion().getVoxels() != null) {
+            createCoordsArrays(structureObject.getRegion());
         } else {
             x = null;
             y = null;

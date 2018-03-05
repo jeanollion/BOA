@@ -90,7 +90,7 @@ public class SNR extends IntensityMeasurement {
             backgroundObjects = parent.getObjectPopulation(backgroundStructure.getSelectedStructureIdx()).getRegions();
         } else {
             backgroundObjects = new ArrayList<>(1);
-            backgroundObjects.add(parent.getObject());
+            backgroundObjects.add(parent.getRegion());
         }
         double erodeRad= this.erodeBorders.getValue().doubleValue();
         double dilRad = this.dilateExcluded.getValue().doubleValue();
@@ -135,7 +135,7 @@ public class SNR extends IntensityMeasurement {
         
         if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
         Region parentObject; 
-        if (foregroundMapBackground==null) parentObject = super.parent.getObject();
+        if (foregroundMapBackground==null) parentObject = super.parent.getRegion();
         else parentObject=this.foregroundMapBackground.get(object);
         if (parentObject==null) return 0;
         IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject);

@@ -161,7 +161,7 @@ public class SaveAndRetriveSegmentationData {
             List<Pair<StructureObject, BoundingBox>> so = i.getObjects();
             ArrayList<Region> o3DList = new ArrayList<Region>(so.size());
             for (Pair<StructureObject, BoundingBox> o : so) {
-                o3DList.add(o.key.getObject().translate(new SimpleOffset(o.key.getBounds()).reverseOffset()).translate(o.value));
+                o3DList.add(o.key.getRegion().translate(new SimpleOffset(o.key.getBounds()).reverseOffset()).translate(o.value));
             }
             res.add(o3DList);
         }

@@ -159,7 +159,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     public void drawObjects(ImageInteger image) {
         if (objects == null) reloadObjects();
         for (int i = 0; i < getOffsets().length; ++i) {
-            objects.get(i).getObject().drawWithoutObjectOffset(image, objects.get(i).getObject().getLabel(), offsets[i]);
+            objects.get(i).getRegion().drawWithoutObjectOffset(image, objects.get(i).getRegion().getLabel(), offsets[i]);
         }
     }
 
@@ -167,8 +167,8 @@ public class StructureObjectMask extends ImageObjectInterface {
         if (objects == null) reloadObjects();
         int maxLabel = 0;
         for (StructureObject o : objects) {
-            if (o.getObject().getLabel() > maxLabel) {
-                maxLabel = o.getObject().getLabel();
+            if (o.getRegion().getLabel() > maxLabel) {
+                maxLabel = o.getRegion().getLabel();
             }
         }
         return maxLabel;

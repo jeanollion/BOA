@@ -85,7 +85,7 @@ public class RemoveEndofChannelBacteria implements PostFilter {
         return childPopulation;
     }
     private static StructureObject getSO(StructureObject parent, int childStructureIdx, Region ob ) {
-        for (StructureObject o : parent.getChildren(childStructureIdx)) if (o.getObject()==ob) return o;
+        for (StructureObject o : parent.getChildren(childStructureIdx)) if (o.getRegion()==ob) return o;
         return null;
     }
 

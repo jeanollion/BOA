@@ -100,7 +100,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public StructureObject duplicate(boolean generateNewID, boolean duplicateObject) {
         StructureObject res;
         if (isRoot()) res = new StructureObject(timePoint, (BlankMask)(duplicateObject?getMask().duplicateMask():getMask()), dao);
-        else res= new StructureObject(timePoint, structureIdx, idx, duplicateObject?getObject().duplicate():getObject(), getParent());
+        else res= new StructureObject(timePoint, structureIdx, idx, duplicateObject?getRegion().duplicate():getRegion(), getParent());
         if (!generateNewID) res.id=id;
         res.previousId=previousId;
         res.nextId=nextId;
@@ -137,7 +137,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public double getCalibratedTimePoint() {
         if (getExperiment()==null) return Double.NaN;
         MicroscopyField f = getExperiment().getPosition(getPositionName());
-        int z = (int)Math.round((getObject().getBounds().zMin()+getObject().getBounds().zMax())/2);
+        int z = (int)Math.round((getRegion().getBounds().zMin()+getRegion().getBounds().zMax())/2);
         double res  = f.getInputImages()==null || isRoot() ? Double.NaN : f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
         //double res = Double.NaN; // for old xp TODO change
         if (Double.isNaN(res)) res = timePoint * f.getFrameDuration();
@@ -191,8 +191,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             StructureObject p = this;
             while (p.getStructureIdx()!=common) p = p.getParent();
             List<StructureObject> candidates = p.getChildren(parentStructureIdx);
-            logger.debug("{} (2D?:{} so2D?: {}) common parent: {}, candidates: {}", this, getObject().is2D(), is2D(), p, candidates);
-            return StructureObjectUtils.getInclusionParent(getObject(), candidates, null);
+            logger.debug("{} (2D?:{} so2D?: {}) common parent: {}, candidates: {}", this, getRegion().is2D(), is2D(), p, candidates);
+            return StructureObjectUtils.getInclusionParent(getRegion(), candidates, null);
         }
     }
     public void setParent(StructureObject parent) {
@@ -667,9 +667,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         StructureObject otherO = (StructureObject)other;
         // update object
         if (other==null) logger.debug("merge: {}, other==null", this);
-        if (getObject()==null) logger.debug("merge: {}+{}, object==null", this, other);
-        if (otherO.getObject()==null) logger.debug("merge: {}+{}, other object==null", this, other);
-        getObject().merge(otherO.getObject()); 
+        if (getRegion()==null) logger.debug("merge: {}+{}, object==null", this, other);
+        if (otherO.getRegion()==null) logger.debug("merge: {}+{}, other object==null", this, other);
+        getRegion().merge(otherO.getRegion()); 
         flushImages();
         objectModified = true;
         // update links
@@ -700,7 +700,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
-        RegionPopulation pop = splitter.splitObject(getParent(), structureIdx, getObject()); //getRawImage(structureIdx)
+        RegionPopulation pop = splitter.splitObject(getParent(), structureIdx, getRegion()); //getRawImage(structureIdx)
         if (pop==null || pop.getRegions().size()==1) {
             logger.warn("split error: {}", this);
             return null;
@@ -720,7 +720,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public boolean hasObject() {return object!=null;}
     // object- and image-related methods
-    public Region getObject() {
+    public Region getRegion() {
         if (object==null) {
             if (objectContainer==null) return null;
             synchronized(this) {
@@ -743,9 +743,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             flushImages();
         }
     }
-    public ImageProperties getMaskProperties() {return getObject().getImageProperties();}
-    @Override public ImageMask getMask() {return getObject().getMask();}
-    public BoundingBox getBounds() {return getObject().getBounds();}
+    public ImageProperties getMaskProperties() {return getRegion().getImageProperties();}
+    @Override public ImageMask getMask() {return getRegion().getMask();}
+    public BoundingBox getBounds() {return getRegion().getBounds();}
     protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
     public void updateObjectContainer(){
         //logger.debug("updating object for: {}, container null? {}, was modified? {}, flag: {}", this,objectContainer==null, objectModified, flag);
@@ -890,7 +890,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public boolean is2D() {
-        if (getObject()!=null) return getObject().is2D();
+        if (getRegion()!=null) return getRegion().is2D();
         if (isRoot()) return true;
         return getExperiment().getPosition(getPositionName()).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
     }
@@ -925,7 +925,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public <T extends BoundingBox<T>> BoundingBox<T> getRelativeBoundingBox(StructureObject stop) throws RuntimeException {
-        SimpleBoundingBox res = new SimpleBoundingBox(getObject().getBounds());
+        SimpleBoundingBox res = new SimpleBoundingBox(getRegion().getBounds());
         if (stop==null || stop == getRoot()) return res;
         else return res.translate(new SimpleOffset(stop.getBounds()).reverseOffset());
     }
@@ -954,7 +954,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (child==null || child.isEmpty()) return new RegionPopulation(new ArrayList<>(0), this.getMaskProperties());
         else {
             ArrayList<Region> objects = new ArrayList<>(child.size());
-            for (StructureObject s : child) objects.add(s.getObject());
+            for (StructureObject s : child) objects.add(s.getRegion());
             return new RegionPopulation(objects, this.getMaskProperties());
         }
     }

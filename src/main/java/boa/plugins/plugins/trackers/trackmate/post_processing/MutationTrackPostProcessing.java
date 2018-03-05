@@ -69,7 +69,7 @@ public class MutationTrackPostProcessing {
         for (Entry<StructureObject, List<StructureObject>> e : trackHeadTrackMap.entrySet()) {
             List<SpotWithinCompartment> l = new ArrayList<SpotWithinCompartment>(e.getValue().size());
             trackHeadSpotTrackMap.put(e.getKey(), l);
-            for (StructureObject o : e.getValue()) l.add(objectSpotMap.get(o.getObject()));
+            for (StructureObject o : e.getValue()) l.add(objectSpotMap.get(o.getRegion()));
         }
         spotTrackMap = new HashMapGetCreate<List<SpotWithinCompartment>, Track>(new Factory<List<SpotWithinCompartment>, Track>() {
             public Track create(List<SpotWithinCompartment> key) {return new Track(key);}
@@ -90,8 +90,8 @@ public class MutationTrackPostProcessing {
             // cherche un spot s proche dans la même bactérie tq LQ(s) ou LQ(trackHead(track))
             if (nextTrack.size()==1) continue;
             StructureObject nextTrackTH = nextTrack.get(0);
-            SpotWithinCompartment sNextTrackTH  = objectSpotMap.get(nextTrackTH.getObject());
-            SpotWithinCompartment sNextTrackN  = objectSpotMap.get(nextTrack.get(1).getObject());
+            SpotWithinCompartment sNextTrackTH  = objectSpotMap.get(nextTrackTH.getRegion());
+            SpotWithinCompartment sNextTrackN  = objectSpotMap.get(nextTrack.get(1).getRegion());
             
             double minDist = Double.POSITIVE_INFINITY;
             StructureObject bestPrevTrackEnd=null;
@@ -104,8 +104,8 @@ public class MutationTrackPostProcessing {
                 if (prevTrackEnd.getNext()!=null) continue; // look only within track ends
                 if (prevTrackEnd.getPrevious()==null) continue; // look only wihtin tracks with >=1 element
                 //if (trackHeadTrackMap.get(headTrackTail.getTrackHead()).size()>=maxTrackSize) continue;
-                SpotWithinCompartment sprevTrackEnd  = (SpotWithinCompartment)objectSpotMap.get(prevTrackEnd.getObject());
-                SpotWithinCompartment sPrevTrackP = (SpotWithinCompartment)objectSpotMap.get(prevTrackEnd.getPrevious().getObject());
+                SpotWithinCompartment sprevTrackEnd  = (SpotWithinCompartment)objectSpotMap.get(prevTrackEnd.getRegion());
+                SpotWithinCompartment sPrevTrackP = (SpotWithinCompartment)objectSpotMap.get(prevTrackEnd.getPrevious().getRegion());
                 if (!sNextTrackTH.lowQuality && !sprevTrackEnd.lowQuality) continue;
                 double dEndToN = sprevTrackEnd.squareDistanceTo(sNextTrackN);
                 double dPToTH = sPrevTrackP.squareDistanceTo(sNextTrackTH);

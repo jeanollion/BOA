@@ -70,7 +70,7 @@ public class MutationMeasurements implements Measurement {
 
     public void performMeasurement(StructureObject object) {
         object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
-        /*Region mutObject = object.getObject();
+        /*Region mutObject = object.getRegion();
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
         BoundingBox parentOffset = object.getParent().getBounds();
         double[] center = mutObject.getCenter(mutImage, true);
@@ -83,7 +83,7 @@ public class MutationMeasurements implements Measurement {
         */
         StructureObject parentBacteria;
         if (bacteria.getSelectedStructureIdx()==object.getParent().getStructureIdx()) parentBacteria = object.getParent();
-        else parentBacteria = StructureObjectUtils.getInclusionParent(object.getObject(), object.getParent().getChildren(bacteria.getSelectedStructureIdx()), null);
+        else parentBacteria = StructureObjectUtils.getInclusionParent(object.getRegion(), object.getParent().getChildren(bacteria.getSelectedStructureIdx()), null);
         if (parentBacteria==null) {
             //logger.warn("No bacteria parent found for object: {}", object);
         } else object.getMeasurements().setValue("ParentBacteriaIdx", parentBacteria.getIdx());

@@ -115,13 +115,13 @@ public class RegionContainerIjRoi extends RegionContainer {
     
     public RegionContainerIjRoi(StructureObject structureObject) {
         super(structureObject);
-        createRoi(structureObject.getObject());
+        createRoi(structureObject.getRegion());
     }
 
     @Override
     public void updateObject() {
         super.updateObject();
-        if (structureObject.getObject().getMask() != null) createRoi(structureObject.getObject());
+        if (structureObject.getRegion().getMask() != null) createRoi(structureObject.getRegion());
         else roiZ = null;
     }
 

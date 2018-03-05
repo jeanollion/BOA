@@ -81,7 +81,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
 
     public void performMeasurement(StructureObject object) {
         // measurements on microchannels
-        Region o = object.getObject();
+        Region o = object.getRegion();
         long t0 = System.currentTimeMillis();
         object.getMeasurements().setValue("MutationCount", ObjectInclusionCount.count(object, mutation.getSelectedIndex(), 0, true));
         object.getMeasurements().setValue("BacteriaCount", ObjectInclusionCount.count(object, bacteria.getSelectedIndex(), 0, false));
@@ -103,7 +103,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         if (mutList.isEmpty()) object.getMeasurements().setValue("MutationMeanIntensity", BasicMeasurements.getMeanValue(o, mutImage));
         if (!mutList.isEmpty()) {
             Set<Voxel> mutVox = new HashSet<>();
-            for (StructureObject m : mutList) mutVox.addAll(m.getObject().getVoxels());
+            for (StructureObject m : mutList) mutVox.addAll(m.getRegion().getVoxels());
             double[] snr = BasicMeasurements.getSNR(mutVox, o.getVoxels(), mutImage, true);
             object.getMeasurements().setValue("MutationSNR", snr[0]);
             object.getMeasurements().setValue("MutationForeground", snr[1]);    
@@ -111,7 +111,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         }
         long t3 = System.currentTimeMillis();
         /*for (StructureObject m : mutList) {
-              m.getMeasurements().setValue("MutationForegroundSingle", BasicMeasurements.getMeanValue(m.getObject().getVoxels(), mutImage));
+              m.getMeasurements().setValue("MutationForegroundSingle", BasicMeasurements.getMeanValue(m.getRegion().getVoxels(), mutImage));
               modifiedObjects.add(m);
         }*/
         long t4=t3, t5=t3;
@@ -120,9 +120,9 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
             StructureObject mm = bactList.get(0);
             object.getMeasurements().setValue("M_MutationCount", ObjectInclusionCount.count(mm, mutList, 0, true));
             t4 = System.currentTimeMillis();
-            object.getMeasurements().setValue("M_FeretMax", GeometricalMeasurements.getFeretMax(mm.getObject()));
-            object.getMeasurements().setValue("M_MeanValue", BasicMeasurements.getMeanValue(mm.getObject(), bactImage));
-            object.getMeasurements().setValue("M_Volume", GeometricalMeasurements.getVolume(mm.getObject()));
+            object.getMeasurements().setValue("M_FeretMax", GeometricalMeasurements.getFeretMax(mm.getRegion()));
+            object.getMeasurements().setValue("M_MeanValue", BasicMeasurements.getMeanValue(mm.getRegion(), bactImage));
+            object.getMeasurements().setValue("M_Volume", GeometricalMeasurements.getVolume(mm.getRegion()));
             t5 = System.currentTimeMillis();
             
         }
