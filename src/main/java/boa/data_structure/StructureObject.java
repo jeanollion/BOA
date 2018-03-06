@@ -34,6 +34,7 @@ import boa.utils.JSONUtils;
 import boa.utils.Pair;
 import boa.utils.SmallArray;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
 
 
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject>, PostLoadable, JSONSerializable {
@@ -79,7 +80,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (this.parent!=null) this.dao=parent.dao;
         // attributes
         if (!Double.isNaN(object.getQuality())) setAttribute("Quality", object.getQuality());
-        if (object.getCenter()!=null) setAttributeArray("Center", object.getCenter());
+        if (object.getCenter()!=null) attributes.put("Center", object.getCenter());
     }
     /**
      * Constructor for root objects only.
@@ -118,6 +119,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             res.attributes=new HashMap<>(attributes.size());
             for (Entry<String, Object> e : attributes.entrySet()) {
                 if (e.getValue() instanceof double[]) res.attributes.put(e.getKey(), Arrays.copyOf((double[])e.getValue(), ((double[])e.getValue()).length));
+                else if (e.getValue() instanceof float[]) res.attributes.put(e.getKey(), Arrays.copyOf((float[])e.getValue(), ((float[])e.getValue()).length));
+                else if (e.getValue() instanceof Point) res.attributes.put(e.getKey(), ((Point)e.getValue()).duplicate());
                 else res.attributes.put(e.getKey(), e.getValue());
             }
         }        
@@ -728,7 +731,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     object=objectContainer.getObject().setIsAbsoluteLandmark(true); 
                     if (attributes!=null) {
                         if (attributes.containsKey("Quality")) object.setQuality((Double)attributes.get("Quality"));
-                        if (attributes.containsKey("Center")) object.setCenter(JSONUtils.fromDoubleArray((List)attributes.get("Center")));
+                        if (attributes.containsKey("Center")) object.setCenter(new Point(JSONUtils.fromFloatArray((List)attributes.get("Center"))));
                     }
                 }
             }

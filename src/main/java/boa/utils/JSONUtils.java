@@ -56,7 +56,9 @@ public class JSONUtils {
     }
     public static Object toJSONEntry(Object o) {
         if (o==null) return "null";
+        if (o instanceof JSONSerializable) return ((JSONSerializable)o).toJSONEntry();
         else if (o instanceof double[]) return toJSONArray((double[])o);
+        else if (o instanceof double[]) return toJSONArray((float[])o);
         else if (o instanceof int[]) return toJSONArray((int[])o);
         else if (o instanceof Number) return o;
         else if (o instanceof Boolean) return o;
@@ -106,7 +108,22 @@ public class JSONUtils {
         }
         return res;
     }
+    public static float[] fromFloatArray(List array) {
+        float[] res = new float[array.size()];
+        for (int i = 0; i<res.length; ++i) {
+            if (array.get(i)==null) {
+                logger.debug("fromDoubleArrayError: {}", array);
+                res[i] = Float.NaN;
+            } else res[i]=((Number)array.get(i)).floatValue();
+        }
+        return res;
+    }
     public static JSONArray toJSONArray(double[] array) {
+        JSONArray res = new JSONArray();
+        for (double d : array) res.add(d);
+        return res;
+    }
+    public static JSONArray toJSONArray(float[] array) {
         JSONArray res = new JSONArray();
         for (double d : array) res.add(d);
         return res;

@@ -57,6 +57,7 @@ import static boa.plugins.Plugin.logger;
 import boa.utils.Pair;
 import boa.utils.SymetricalPair;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
 /**
  *
  * @author jollion
@@ -482,9 +483,9 @@ public class TrackMateInterface<S extends Spot> {
     public static class DefaultRegionSpotFactory implements SpotFactory<Spot> {
         @Override
         public Spot toSpot(Region o, int frame) {
-            double[] center = o.getCenter();
+            Point center = o.getCenter();
             if (center==null) center = o.getGeomCenter(true);
-            Spot s = new Spot(center[0], center[1], center.length>=2 ? center[2] : 0, 1, 1);
+            Spot s = new Spot(center.get(0), center.get(1), center.getWithDimCheck(2), 1, 1);
             s.getFeatures().put(Spot.FRAME, (double)frame);
             return s;
         }

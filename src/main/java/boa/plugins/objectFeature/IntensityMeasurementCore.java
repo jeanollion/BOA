@@ -31,6 +31,7 @@ import boa.measurement.BasicMeasurements;
 import boa.plugins.objectFeature.ObjectFeatureCore;
 import boa.plugins.plugins.measurements.objectFeatures.LocalSNR;
 import boa.utils.DoubleStatistics;
+import boa.utils.geom.Point;
 import java.util.stream.DoubleStream;
 
 /**
@@ -74,9 +75,9 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
         
         public double getValueAtCenter() {
             if (Double.isNaN(valueAtCenter)) {
-                double[] center = o.getCenter();
+                Point center = o.getCenter();
                 if (center==null) center = o.getGeomCenter(false);
-                this.valueAtCenter = o.isAbsoluteLandMark() ? intensityMap.getPixelWithOffset(center[0], center[1], center.length>=3 ? center[2] : 0) : intensityMap.getPixel(center[0], center[1], center.length>=3 ? center[2] : 0);
+                this.valueAtCenter = o.isAbsoluteLandMark() ? intensityMap.getPixelWithOffset(center.get(0), center.get(1), center.getWithDimCheck(2)) : intensityMap.getPixel(center.get(0), center.get(1), center.getWithDimCheck(2));
             }
             return valueAtCenter;
         }

@@ -27,6 +27,7 @@ import boa.measurement.GeometricalMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -77,12 +78,12 @@ public class ChromaticShiftBeads implements Measurement{
                 }
             }
             if (closest !=null) {
-                double[] c1 = o1.getRegion().getMassCenter(object.getRawImage(structure.getSelectedIndex()), false);
-                double[] c2 = closest.getRegion().getMassCenter(object.getRawImage(structure2.getSelectedIndex()), false);
-                o1.getMeasurements().setValue("dXPix", c2[0]-c1[0]);
-                o1.getMeasurements().setValue("dYPix", c2[1]-c1[1]);
-                o1.getMeasurements().setValue("dZSlice", c2[2]-c1[2]);
-                logger.debug("Chromatic Shift: o1: {}, closest: {} (dist: {}), dX: {}, dY: {}, dZ: {}", o1, closest, dist, c2[0]-c1[0], c2[1]-c1[1], c2[2]-c1[2]);
+                Point c1 = o1.getRegion().getMassCenter(object.getRawImage(structure.getSelectedIndex()), false);
+                Point c2 = closest.getRegion().getMassCenter(object.getRawImage(structure2.getSelectedIndex()), false);
+                o1.getMeasurements().setValue("dXPix", c2.get(0)-c1.get(0));
+                o1.getMeasurements().setValue("dYPix", c2.get(1)-c1.get(1));
+                o1.getMeasurements().setValue("dZSlice", c2.get(2)-c1.get(2));
+                logger.debug("Chromatic Shift: o1: {}, closest: {} (dist: {}), dX: {}, dY: {}, dZ: {}", o1, closest, dist, c2.get(0)-c1.get(0), c2.get(1)-c1.get(1), c2.get(2)-c1.get(2));
             }
         }
         

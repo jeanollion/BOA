@@ -19,15 +19,19 @@ package boa.utils.geom;
 
 import boa.data_structure.Voxel;
 import boa.image.Offset;
+import boa.utils.JSONSerializable;
+import boa.utils.JSONUtils;
 import boa.utils.Utils;
 import java.util.Arrays;
+import java.util.List;
+import net.imglib2.Localizable;
 import net.imglib2.RealLocalizable;
 
 /**
  *
  * @author jollion
  */
-public class Point<T extends Point> implements Offset<T>, RealLocalizable{
+public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONSerializable, Localizable{
     protected float[] coords;
     public Point(float... coords) {
         this.coords=coords;
@@ -49,14 +53,17 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
         this.coords=other.coords;
         return (T)this;
     }
-    
+    public T set(float value, int dim) {
+        this.coords[dim] = value;
+        return (T)this;
+    }
     
     public T translate(Vector other) {
-        for (int i = 0; i<coords.length; ++i) coords[i]+=other.coords[i];
+        for (int i = 0; i<Math.min(coords.length, other.coords.length); ++i) coords[i]+=other.coords[i];
         return (T)this;
     }
     public T translateRev(Vector other) {
-        for (int i = 0; i<coords.length; ++i) coords[i]-=other.coords[i];
+        for (int i = 0; i<Math.min(coords.length, other.coords.length); ++i) coords[i]-=other.coords[i];
         return (T)this;
     }
     public T averageWith(Point other) {
@@ -65,6 +72,16 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
     }
     public Point duplicate() {
         return new Point(Arrays.copyOf(coords, coords.length));
+    }
+    /**
+     * 
+     * @param dimension dimension of the output point
+     * @return duplicated point with {@param dimensions}
+     */
+    public Point duplicate(int dimension) {
+        float[] res=  new float[dimension];
+        System.arraycopy(coords, 0, res, 0, dimension);
+        return new Point(res);
     }
     public static Point middle(Offset o1, Offset o2) {
         return new Point((o1.xMin()+o2.xMin())/2f, (o1.yMin()+o2.yMin())/2f, (o1.zMin()+o2.zMin())/2f);
@@ -95,6 +112,10 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
         double d = 0;
         for (int i = 0; i<coords.length; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
         return Math.sqrt(d);
+    }
+    public Point multiply(double factor, int dim) {
+        if (coords.length>dim) coords[dim]*=factor;
+        return this;
     }
     /**
      * Coordinates are not copies any modification on the will impact this instance 
@@ -204,5 +225,35 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable{
         double xi = ((line2Point1.coords[0]-line2Point2.coords[0])*(line1Point1.coords[0]*line1Point2.coords[1]-line1Point1.coords[1]*line1Point2.coords[0])-(line1Point1.coords[0]-line1Point2.coords[0])*(line2Point1.coords[0]*line2Point2.coords[1]-line2Point1.coords[1]*line2Point2.coords[0]))/d;
         double yi = ((line2Point1.coords[1]-line2Point2.coords[1])*(line1Point1.coords[0]*line1Point2.coords[1]-line1Point1.coords[1]*line1Point2.coords[0])-(line1Point1.coords[1]-line1Point2.coords[1])*(line2Point1.coords[0]*line2Point2.coords[1]-line2Point1.coords[1]*line2Point2.coords[0]))/d;
         return new Point((float)xi, (float)yi);
+    }
+    // json interface
+    @Override
+    public Object toJSONEntry() {
+        return JSONUtils.toJSONArray(coords);
+    }
+
+    @Override
+    public void initFromJSONEntry(Object jsonEntry) {
+        coords = JSONUtils.fromFloatArray((List)jsonEntry);
+    }
+    // localizable interface
+    @Override
+    public void localize(int[] position) {
+        for (int i = 0; i<coords.length; ++i) position[i] = (int)(coords[i]+0.5);
+    }
+
+    @Override
+    public void localize(long[] position) {
+        for (int i = 0; i<coords.length; ++i) position[i] = (int)(coords[i]+0.5);
+    }
+
+    @Override
+    public int getIntPosition(int d) {
+        return (int)(coords[d]+0.5);
+    }
+
+    @Override
+    public long getLongPosition(int d) {
+        return (long)(coords[d]+0.5);
     }
 }

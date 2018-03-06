@@ -32,6 +32,7 @@ import boa.measurement.GeometricalMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -81,12 +82,14 @@ public class BacteriaFluoMeasurements implements Measurement {
         Image bactImage = object.getRawImage(bacteria.getSelectedIndex());
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
         BoundingBox parentOffset = object.getParent().getBounds();
-        double[] center=bactObject.getMassCenter(bactImage, true);
-        center[0]-=parentOffset.xMin()*object.getScaleXY();
-        center[1]-=parentOffset.yMin()*object.getScaleXY();
+        Point center=bactObject.getMassCenter(bactImage, false);
+        center.translateRev(parentOffset);
+        center.multiply(object.getScaleXY(), 0);
+        center.multiply(object.getScaleXY(), 1);
+        
         //if (object.getTimePoint()==0) logger.debug("object: {} center: {}, parentOffset: {}, objectoffset: {} bactImageOffset: {}, mutImageOffset: {}", object, center, parentOffset, object.getBounds(), bactImage.getBoundingBox(), mutImage.getBoundingBox());
-        object.getMeasurements().setValue("BacteriaCenterX", center[0]);
-        object.getMeasurements().setValue("BacteriaCenterY", center[1]);
+        object.getMeasurements().setValue("BacteriaCenterX", center.get(0));
+        object.getMeasurements().setValue("BacteriaCenterY", center.get(1));
         object.getMeasurements().setValue("MeanRFPInBacteria", BasicMeasurements.getMeanValue(bactObject, bactImage));
         object.getMeasurements().setValue("MeanYFPInBacteria", BasicMeasurements.getMeanValue(bactObject, mutImage));
         object.getMeasurements().setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));

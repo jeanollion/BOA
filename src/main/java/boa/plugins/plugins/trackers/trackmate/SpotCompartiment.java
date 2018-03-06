@@ -30,6 +30,7 @@ import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import static boa.plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import boa.plugins.plugins.trackers.trackmate.SpotWithinCompartment.Localization;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -135,9 +136,9 @@ public class SpotCompartiment {
             }
         }
         if (count==0) {
-            double[] center = o.getGeomCenter(false); // more stable using cell's center for x & z
-            xMean = center[0];
-            zMean = (center.length>2?center[2]:o.getBounds().zMean());
+            Point center = o.getGeomCenter(false); // more stable using cell's center for x & z
+            xMean = center.get(0);
+            zMean = (center.numDimensions()>2?center.get(2):o.getBounds().zMean());
         } else {
             xMean/=count;
             zMean/=count;

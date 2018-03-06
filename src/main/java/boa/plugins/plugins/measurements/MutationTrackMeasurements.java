@@ -37,6 +37,7 @@ import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -107,7 +108,7 @@ public class MutationTrackMeasurements implements Measurement {
                 }
             }
             Image intensities = parent.getRawImage(mutation.getSelectedStructureIdx());
-            double[] objectCenter = object.getRegion().getCenter();
+            Point objectCenter = object.getRegion().getCenter();
             if (objectCenter==null) objectCenter = object.getRegion().getMassCenter(intensities, false);
             object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getRegion(), intensities));
             object.getMeasurements().setValue("SumIntensity", BasicMeasurements.getSum(object.getRegion(), intensities));
@@ -121,10 +122,10 @@ public class MutationTrackMeasurements implements Measurement {
                 int nextTP = parentBacteria.getNextDivisionTimePoint();
                 object.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
 
-                object.getMeasurements().setValue("CoordProportionalY", getYProportionalPositionWithinContainer(parentBacteria.getRegion(), objectCenter[1]));
-                double[] parentCenter = parentBacteria.getRegion().getGeomCenter(false);
-                object.getMeasurements().setValue("CoordRelToCenterY", (objectCenter[1]-parentCenter[1]));
-                object.getMeasurements().setValue("CoordRelToCenterX", (objectCenter[0]-parentCenter[0]));
+                object.getMeasurements().setValue("CoordProportionalY", getYProportionalPositionWithinContainer(parentBacteria.getRegion(), objectCenter.get(1)));
+                Point parentCenter = parentBacteria.getRegion().getGeomCenter(false);
+                object.getMeasurements().setValue("CoordRelToCenterY", (objectCenter.get(1)-parentCenter.get(1)));
+                object.getMeasurements().setValue("CoordRelToCenterX", (objectCenter.get(0)-parentCenter.get(0)));
             }
         }
     }

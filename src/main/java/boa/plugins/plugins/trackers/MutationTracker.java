@@ -72,6 +72,7 @@ import boa.utils.Pair;
 import boa.utils.SlidingOperator;
 import boa.utils.SymetricalPair;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -171,18 +172,18 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
                 //if (compartimentSO==null) return null;
                 SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(compartimentSO);
                 if (compartiment==null) return null;
-                double[] center = o.getCenter();
+                Point center = o.getCenter();
                 if (center==null) center = o.getGeomCenter(false);
-                else center =center.clone(); // in order to avoid modifying original array
-                center[0]*=o.getScaleXY();
-                center[1]*=o.getScaleXY();
-                if (center.length>2) center[2]*=o.getScaleZ();
+                else center =center.duplicate(); // in order to avoid modifying original array
+                center.multiply(o.getScaleXY(), 0);
+                center.multiply(o.getScaleXY(), 1);
+                center.multiply(o.getScaleZ(), 2);
                 return new SpotWithinCompartment(o, frame, compartiment, center, distParams);
             }
 
             @Override
             public SpotWithinCompartment duplicate(SpotWithinCompartment s) {
-                double[] center = new double[]{s.getFeature(Spot.POSITION_X), s.getFeature(Spot.POSITION_Y), s.getFeature(Spot.POSITION_Z)};
+                Point center = new Point(new float[]{s.getFeature(Spot.POSITION_X).floatValue(), s.getFeature(Spot.POSITION_Y).floatValue(), s.getFeature(Spot.POSITION_Z).floatValue()});
                 return new SpotWithinCompartment(s.getObject(), s.frame, s.compartiment, center, distParams);
             }
         });

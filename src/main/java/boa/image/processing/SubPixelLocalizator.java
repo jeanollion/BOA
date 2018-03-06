@@ -87,11 +87,11 @@ public class SubPixelLocalizator {
         }
         for (RefinedPeak< Point > r : refined) {
             Region o = objects.get(peaks.indexOf(r.getOriginalPeak()));
-            double[] position= new double[img.sizeZ()>1?3 : 2];
-            position[0] = r.getDoublePosition(0);
-            position[1] = r.getDoublePosition(1);
-            if (img.sizeZ()>1) position[2] = r.getDoublePosition(2);
-            o.setCenter(position);
+            float[] position= new float[img.sizeZ()>1?3 : 2];
+            position[0] = r.getFloatPosition(0);
+            position[1] = r.getFloatPosition(1);
+            if (img.sizeZ()>1) position[2] = r.getFloatPosition(2);
+            o.setCenter(new boa.utils.geom.Point(position));
             if (setQuality) o.setQuality(r.getValue());
         }
     }

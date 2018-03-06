@@ -45,6 +45,7 @@ import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import static boa.utils.Utils.comparator;
 import static boa.utils.Utils.comparatorInt;
+import boa.utils.geom.Point;
 import java.util.Arrays;
 /**
  * 
@@ -60,7 +61,7 @@ public class Region {
     protected double scaleXY=1, scaleZ=1;
     protected boolean absoluteLandmark=false; // false = coordinates relative to the direct parent
     protected double quality=Double.NaN;
-    protected double[] center;
+    protected Point center;
     final protected boolean is2D;
     /**
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
@@ -114,13 +115,13 @@ public class Region {
     
     public Region duplicate() {
         if (this.mask!=null) {
-            return new Region(mask.duplicateMask(), label, is2D).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
+            return new Region(mask.duplicateMask(), label, is2D).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(center.duplicate());
         }
         else if (this.voxels!=null) {
             Set<Voxel> vox = new HashSet<> (voxels.size());
             for (Voxel v : voxels) vox.add(v.duplicate());
-            if (bounds==null) return new Region(vox, label, is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
-            else return new Region(vox, label, new SimpleBoundingBox(bounds), is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
+            if (bounds==null) return new Region(vox, label, is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(center.duplicate());
+            else return new Region(vox, label, new SimpleBoundingBox(bounds), is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(center.duplicate());
         }
         return null;
     }
@@ -177,21 +178,21 @@ public class Region {
         return resList;
     }*/
     
-    public Region setCenter(double[] center) {
+    public Region setCenter(Point center) {
         this.center=center;
         return this;
     }
     
-    public double[] getCenter() {
+    public Point getCenter() {
         return center;
     }
     
-    public double[] getGeomCenter(boolean scaled) {
-        double[] center = new double[3];
+    public Point getGeomCenter(boolean scaled) {
+        float[] center = new float[3];
         if (mask instanceof BlankMask) {
-            center[0] = ((BlankMask)mask).xMean();
-            center[1] = ((BlankMask)mask).yMean();
-            center[2] = ((BlankMask)mask).zMean();
+            center[0] = (float)((BlankMask)mask).xMean();
+            center[1] = (float)((BlankMask)mask).yMean();
+            center[2] = (float)((BlankMask)mask).zMean();
         } else if (voxels!=null) {
             for (Voxel v : getVoxels()) {
                 center[0] += v.x;
@@ -219,13 +220,13 @@ public class Region {
             center[1] *=this.getScaleXY();
             center[2] *=this.getScaleZ();
         }
-        return center;
+        return new Point(center);
     }
-    public double[] getMassCenter(Image image, boolean scaled) { // TODO also perform from mask
+    public Point getMassCenter(Image image, boolean scaled) { // TODO also perform from mask
         getVoxels();
         if (voxels!=null) {
             synchronized(voxels) {
-                double[] center = new double[3];
+                float[] center = new float[3];
                 double count = 0;
                 if (absoluteLandmark) {
                     for (Voxel v : voxels) {
@@ -258,7 +259,7 @@ public class Region {
                     center[1] *=this.getScaleXY();
                     center[2] *=this.getScaleZ();
                 }
-                return center;
+                return new Point(center);
             }
         } else throw new RuntimeException("NOT SUPPORTED YET");
     }
@@ -830,11 +831,7 @@ public class Region {
             if (mask!=null) mask.translate(offset);
             if (bounds!=null) bounds.translate(offset);
             if (voxels!=null) for (Voxel v : voxels) v.translate(offset);
-            if (center!=null) {
-                center[0]+=offset.xMin();
-                center[1]+=offset.yMin();
-                if (center.length>2) center[2]+=offset.zMin();
-            }
+            if (center!=null) center.translate(offset);
         }
         return this;
     }

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import static boa.plugins.Plugin.logger;
 import boa.utils.Pair;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -56,9 +57,7 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
         SpotWithinCompartment s = tmi.objectSpotMap.get(currentObject.key.getRegion());
         if (s==null) return;
         //else logger.debug("spot found for: {} loc: {}", currentObject.key, s.localization);
-        double[] center = new double[2];
-        center[0] = s.getObject().getCenter()[0] - currentObject.key.getParent(0).getBounds().xMin();//+currentObject.value.getxMin();
-        center[1] = s.getObject().getCenter()[1] - currentObject.key.getParent(0).getBounds().yMin();//+currentObject.value.getyMin();
+        Point center = s.getObject().getCenter().duplicate().translateRev(currentObject.key.getParent(0).getBounds());
         logger.debug("spot: {} center: {}, off: {};{}", currentObject.key, center, currentObject.value.xMin(), currentObject.value.yMin());
         TextRoi txt = s.getLocalizationRoi(currentObject.value);
         int idx = 0;

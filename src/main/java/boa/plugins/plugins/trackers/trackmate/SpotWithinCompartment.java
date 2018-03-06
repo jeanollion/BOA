@@ -34,6 +34,7 @@ import java.util.Locale;
 import static boa.plugins.Plugin.logger;
 import static boa.plugins.plugins.trackers.trackmate.SpotWithinCompartmentRoiModifier.displayPoles;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -49,8 +50,8 @@ public class SpotWithinCompartment extends Spot {
     public boolean lowQuality=false;
     protected final DistanceComputationParameters distanceParameters;
     
-    public SpotWithinCompartment(Region object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter, DistanceComputationParameters distanceParameters) {
-        super(scaledCenter[0], scaledCenter[1], scaledCenter.length>2?scaledCenter[2]:0, 1, 1);
+    public SpotWithinCompartment(Region object, int timePoint, SpotCompartiment compartiment, Point scaledCenter, DistanceComputationParameters distanceParameters) {
+        super(scaledCenter.get(0), scaledCenter.get(1), scaledCenter.getWithDimCheck(2), 1, 1);
         //logger.debug("create spot: F={}, Idx={}, center={}", timePoint, object.getLabel()-1, Utils.toStringArray(scaledCenter));
         getFeatures().put(Spot.FRAME, (double)compartiment.object.getFrame());
         getFeatures().put(Spot.QUALITY, object.getQuality());

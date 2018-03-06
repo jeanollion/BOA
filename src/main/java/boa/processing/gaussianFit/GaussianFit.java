@@ -95,15 +95,10 @@ public class GaussianFit {
         Map<Localizable, Region> locObj = new HashMap<Localizable, Region>(peaks.size());
         List<Localizable> peaksLoc = new ArrayList<Localizable>(peaks.size());
         for (Region o : peaks) {
-            double[] center = o.getGeomCenter(false);
-            if (o.isAbsoluteLandMark()) {
-                center[0]-=image.getBoundingBox().xMin();
-                center[1]-=image.getBoundingBox().yMin();
-                center[2]-=image.getBoundingBox().zMin();
-            }
-            Localizable l = getLocalizable(center, is3D);
-            peaksLoc.add(l);
-            locObj.put(l, o);
+            boa.utils.geom.Point center = o.getCenter();
+            if (o.isAbsoluteLandMark()) center.translateRev(image);
+            peaksLoc.add(center);
+            locObj.put(center, o);
         }
         LevenbergMarquardtSolver solver = new LevenbergMarquardtSolver(maxIter, lambda, termEpsilon);
         //BruteForceSolver solver = new BruteForceSolver(is3D?new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN, typicalSigmas[3][0], typicalSigmas[3][1], typicalSigmas[3][2]} : new double[] {Double.NaN, Double.NaN, Double.NaN, typicalSigmas[3][0], typicalSigmas[3][1]});
@@ -141,10 +136,7 @@ public class GaussianFit {
             return sum;
     }
     
-    private static Localizable getLocalizable(double[] v, boolean is3D) {
-        if (is3D) return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d), (long)(v[2]+0.5d));
-        else return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d));
-    }
+    
     public static void display2DImageAndRois(Image image, Map<Region, double[]> params) {
         ImagePlus ip = new IJImageDisplayer().showImage(image);
         final Overlay overlay = new Overlay();

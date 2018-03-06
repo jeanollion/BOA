@@ -31,6 +31,7 @@ import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
 import boa.utils.ArrayUtil;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -95,33 +96,49 @@ public class RelativePosition implements Measurement {
             }
         }
         if (refObject == null && reference.getSelectedStructureIdx()>=0) return;
-        double[] objectCenter=null;
+        Point objectCenter=null;
         int ctype= this.objectCenter.getSelectedIndex();
-        if (ctype==0) objectCenter = object.getRegion().getMassCenter(object.getParent().getRawImage(object.getStructureIdx()), true); // mass center
-        else if (ctype==1) objectCenter = object.getRegion().getGeomCenter(true); // geom center
-        else if (ctype==2) { // from segmentation
-            objectCenter = ArrayUtil.duplicate(object.getRegion().getCenter());
-            objectCenter[0]*=object.getRegion().getScaleXY();
-            objectCenter[1]*=object.getRegion().getScaleXY();
-            if (objectCenter.length>2) objectCenter[2]*=object.getRegion().getScaleZ();
-        } else if (ctype==3) { // corner
-            objectCenter = new double[]{object.getRegion().getBounds().xMin(), object.getRegion().getBounds().yMin(), object.getRegion().getBounds().zMin()};
+        switch (ctype) {
+            case 0:
+                objectCenter = object.getRegion().getMassCenter(object.getParent().getRawImage(object.getStructureIdx()), false); // mass center
+                break;
+            case 1:
+                objectCenter = object.getRegion().getGeomCenter(false); // geom center
+                break;
+            case 2: // from segmentation
+                objectCenter = object.getRegion().getCenter().duplicate();
+                break;
+            case 3: // corner
+                objectCenter = Point.asPoint(object.getRegion().getBounds());
+                break;
+            default:
+                break;
         }
         if (objectCenter==null) return;
-        double[] refPoint;
+        objectCenter.multiply(object.getRegion().getScaleXY(), 0);
+        objectCenter.multiply(object.getRegion().getScaleXY(), 1);
+        objectCenter.multiply(object.getRegion().getScaleZ(), 2);
+        Point refPoint=null;
         if (refObject!=null) {
-            if (this.refPoint.getSelectedIndex()==0) refPoint = refObject.getRegion().getMassCenter(refObject.isRoot() ? refObject.getRawImage(refObject.getStructureIdx()) : refObject.getParent().getRawImage(refObject.getStructureIdx()), true);
-            else if (this.refPoint.getSelectedIndex()==1) refPoint = refObject.getRegion().getGeomCenter(true);
-            else { // corner
-                refPoint = new double[objectCenter.length];
-                refPoint[0] = refObject.getBounds().xMin() * refObject.getScaleXY();
-                refPoint[1] = refObject.getBounds().yMin() * refObject.getScaleXY();
-                if (objectCenter.length>2) refPoint[2] = refObject.getBounds().zMin() * refObject.getScaleZ();
+            switch (this.refPoint.getSelectedIndex()) {
+                case 0:
+                    refPoint = refObject.getRegion().getMassCenter(refObject.isRoot() ? refObject.getRawImage(refObject.getStructureIdx()) : refObject.getParent().getRawImage(refObject.getStructureIdx()), false);
+                    break;
+                case 1:
+                    refPoint = refObject.getRegion().getGeomCenter(false);
+                    break;
+                default:
+                    // corner
+                    objectCenter = Point.asPoint(refObject.getBounds());
+                    break;
             }
-        } else refPoint = new double[3]; // absolute
-        object.getMeasurements().setValue(getKey("X"), (objectCenter[0]-refPoint[0]));
-        object.getMeasurements().setValue(getKey("Y"), (objectCenter[1]-refPoint[1]));
-        if (objectCenter.length>2) object.getMeasurements().setValue(getKey("Z"), (objectCenter[2]-refPoint[2]));
+        } else refPoint = new Point(0, 0, 0); // absolute
+        refPoint.multiply(object.getRegion().getScaleXY(), 0);
+        refPoint.multiply(object.getRegion().getScaleXY(), 1);
+        refPoint.multiply(object.getRegion().getScaleZ(), 2);
+        object.getMeasurements().setValue(getKey("X"), (objectCenter.get(0)-refPoint.get(0)));
+        object.getMeasurements().setValue(getKey("Y"), (objectCenter.get(1)-refPoint.get(1)));
+        if (objectCenter.numDimensions()>2) object.getMeasurements().setValue(getKey("Z"), (objectCenter.get(2)-refPoint.getWithDimCheck(2)));
         
     }
 

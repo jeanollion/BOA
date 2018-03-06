@@ -43,6 +43,7 @@ import boa.utils.HashMapGetCreate;
 import boa.utils.HashMapGetCreate.Factory;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -64,9 +65,9 @@ public class SpotPopulation {
         else throw new IllegalArgumentException("No spots included");
     }
     public Set<SpotWithinCompartment> getSpotSet(boolean includehighQuality, boolean includelowQuality) {
-        Set<SpotWithinCompartment> res =  new HashSet<SpotWithinCompartment>();
+        Set<SpotWithinCompartment> res =  new HashSet<>();
         for (SpotWithinCompartment s : objectSpotMap.values()) {
-            if ((includelowQuality&&s.lowQuality) || (includehighQuality&&!s.lowQuality)) res.add(s);
+            if ((includelowQuality && s.lowQuality) || (includehighQuality&&!s.lowQuality)) res.add(s);
         }
         return res;
     }
@@ -95,14 +96,14 @@ public class SpotPopulation {
                 continue;
             }
             SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(parent);
-            double[] center = o.getCenter();
+            Point center = o.getCenter();
             if (center==null) {
                 if (intensityMap==null) intensityMap = container.getRawImage(spotSturctureIdx);
                 center = intensityMap!=null ? o.getMassCenter(intensityMap, true) : o.getGeomCenter(true);
             } else {
-                center[0]*=o.getScaleXY();
-                center[1]*=o.getScaleXY();
-                if (center.length>2) center[2]*=o.getScaleZ();
+                center.multiply(o.getScaleXY(), 0);
+                center.multiply(o.getScaleXY(), 1);
+                center.multiply(o.getScaleZ(), 2);
             }
             SpotWithinCompartment s = new SpotWithinCompartment(o, container.getFrame(), compartiment, center, distanceParameters);
             collection.add(s, container.getFrame());

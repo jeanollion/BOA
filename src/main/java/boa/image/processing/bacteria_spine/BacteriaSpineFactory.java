@@ -112,8 +112,7 @@ public class BacteriaSpineFactory {
     
     public static PointContainer2<Vector, Double>[] createSpine(Region bacteria) {
         if (!bacteria.is2D()) throw new IllegalArgumentException("Only works on 2D regions");
-        double[] centerCoord = bacteria.getGeomCenter(false);
-        Point center = new Point((float)centerCoord[0], (float)centerCoord[1]);
+        Point center = bacteria.getGeomCenter(false);
         Set<Voxel> contour = bacteria.getContour();
         CircularNode<Voxel> circContour;
         try {
@@ -124,8 +123,7 @@ public class BacteriaSpineFactory {
             ImageByte newMask = TypeConverter.toByteMask(bacteria.getMask(), null, 1);
             FillHoles2D.fillHoles(newMask, 2);
             bacteria = new Region(newMask, bacteria.getLabel(), bacteria.is2D());
-            centerCoord = bacteria.getGeomCenter(false);
-            center = new Point((float)centerCoord[0], (float)centerCoord[1]);
+            center = bacteria.getGeomCenter(false);
             contour = bacteria.getContour();
             circContour = getCircularContour(contour, center);
         }

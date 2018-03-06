@@ -72,6 +72,7 @@ import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -286,7 +287,7 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
             setCenterAndQuality(wsMap[i], smooth, pops[i], z);
             for (Region o : pops[i].getRegions()) {
                 if (planeByPlane && lapSPZ.length>1) { // keep track of z coordinate
-                    o.setCenter(new double[]{o.getCenter()[0], o.getCenter()[1], 0}); // adding z dimention
+                    o.setCenter(o.getCenter().duplicate(3)); // adding z dimention
                     o.translate(new SimpleOffset(0, 0, z));
                 }  
             }
@@ -294,7 +295,7 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         RegionPopulation pop = MultiScaleWatershedTransform.combine(pops, input);
         if (debug) {
             logger.debug("Parent: {}: Q: {}", parent, Utils.toStringList(pop.getRegions(), o->""+o.getQuality()));
-            logger.debug("Parent: {}: C: {}", parent ,Utils.toStringList(pop.getRegions(), o->""+Utils.toStringArray(o.getCenter())));
+            logger.debug("Parent: {}: C: {}", parent ,Utils.toStringList(pop.getRegions(), o->""+o.getCenter()));
         }
         pop.filter(new RegionPopulation.RemoveFlatObjects(false));
         pop.filter(new RegionPopulation.Size().setMin(minSpotSize));
@@ -334,16 +335,16 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         SubPixelLocalizator.setSubPixelCenter(map, pop.getRegions(), true); // lap -> better in case of close objects
         for (Region o : pop.getRegions()) { // quality criterion : sqrt (smooth * lap)
             if (o.getQuality()==0) { // localizator didnt work
-                double[] center = o.getMassCenter(map, false);
-                if (center[0]>map.sizeX()-1) center[0] = map.sizeX()-1;
-                if (center[1]>map.sizeY()-1) center[1] = map.sizeY()-1;
-                if (center.length>=2 && center[2]>map.sizeZ()-1) center[2] = map.sizeZ()-1;
+                Point center = o.getMassCenter(map, false);
+                if (center.get(0)>map.sizeX()-1) center.set(map.sizeX()-1, 0);
+                if (center.get(1)>map.sizeY()-1) center.set(map.sizeY()-1, 1);
+                if (center.numDimensions()>=2 && center.get(2)>map.sizeZ()-1) center.set(map.sizeZ()-1, 2);
                 o.setCenter(center);
             }
-            double zz = o.getCenter().length>2?o.getCenter()[2]:z;
+            double zz = o.getCenter().numDimensions()>2?o.getCenter().get(2):z;
             //logger.debug("size : {} set quality: center: {} : z : {}, bounds: {}, is2D: {}", o.getSize(), o.getCenter(), z, wsMap[i].getBoundingBox().translateToOrigin(), o.is2D());
             if (zz>map.sizeZ()-1) zz=map.sizeZ()-1;
-            o.setQuality(Math.sqrt(map.getPixel(o.getCenter()[0], o.getCenter()[1], zz) * map2.getPixel(o.getCenter()[0], o.getCenter()[1], zz)));
+            o.setQuality(Math.sqrt(map.getPixel(o.getCenter().get(0), o.getCenter().get(1), zz) * map2.getPixel(o.getCenter().get(0), o.getCenter().get(1), zz)));
         }
     }
     private static <T extends Image<T>> List<T> arrangeSpAndZPlanes(T[] spZ, boolean ZbyZ) {
@@ -364,21 +365,21 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         
         for(Region o : objects) o.setCenter(o.getMassCenter(locMap, false));
         pop.translate(b, false);
-        logger.debug("mass center: centers: {}", Utils.toStringList(objects, o -> Utils.toStringArray(o.getCenter())+" value: "+o.getQuality()));
+        logger.debug("mass center: centers: {}", Utils.toStringList(objects, o -> o.getCenter()+" value: "+o.getQuality()));
         pop.translate(b.duplicate().reverseOffset(), false);
         
         for(Region o : objects) o.setCenter(o.getGeomCenter(false));
         pop.translate(b, false);
-        logger.debug("geom center {}: centers: {}", name, Utils.toStringList(objects, o -> Utils.toStringArray(o.getCenter())+" value: "+o.getQuality()));
+        logger.debug("geom center {}: centers: {}", name, Utils.toStringList(objects, o -> o.getCenter()+" value: "+o.getQuality()));
         pop.translate(b.duplicate().reverseOffset(), false);
         
         
         SubPixelLocalizator.setSubPixelCenter(locMap, objects, true);
         pop.translate(b, false);
-        logger.debug("locMap: {}, centers: {}", name, Utils.toStringList(objects, o -> Utils.toStringArray(o.getCenter())+" value: "+o.getQuality()));
+        logger.debug("locMap: {}, centers: {}", name, Utils.toStringList(objects, o ->  o.getCenter() +" value: "+o.getQuality()));
         pop.translate(b.duplicate().reverseOffset(), false);
-        logger.debug("smooth values: {}", Utils.toStringList(objects, o->""+smooth.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)) );
-        logger.debug("lap values: {}", Utils.toStringList(objects, o->""+lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)) );
+        logger.debug("smooth values: {}", Utils.toStringList(objects, o->""+smooth.getPixel(o.getCenter().get(0), o.getCenter().get(1), o.getCenter().getWithDimCheck(2))) );
+        logger.debug("lap values: {}", Utils.toStringList(objects, o->""+lap.getPixel(o.getCenter().get(0), o.getCenter().get(1), o.getCenter().getWithDimCheck(2))) );
         
         
         
@@ -392,11 +393,11 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         if (offset==null) offset = new MutableBoundingBox();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
         for (Region o : objects) {
-            double[] center = o.getCenter();
+            Point center = o.getCenter().duplicate().translateRev(offset);
             if (center==null) throw new IllegalArgumentException("No center for object: "+o);
-            double smooth = pv.getSmoothedMap().getPixel(center[0]-offset.xMin(), center[1]-offset.yMin(), center.length>2?center[2]-offset.zMin():0);
+            double smooth = pv.getSmoothedMap().getPixel(center.get(0), center.get(1), center.getWithDimCheck(2));
             List<Double> lapValues = new ArrayList<>(pv.getLaplacianMap().length);
-            for (Image lap : pv.getLaplacianMap()) lapValues.add((double)lap.getPixel(center[0]-offset.xMin(), center[1]-offset.yMin(), center.length>2?center[2]-offset.zMin():0));
+            for (Image lap : pv.getLaplacianMap()) lapValues.add((double)lap.getPixel(center.get(0), center.get(1), center.getWithDimCheck(2)));
             o.setQuality(Math.sqrt(smooth * Collections.max(lapValues)));
             //logger.debug("object: {} smooth: {} lap: {} q: {}", o.getCenter(), smooth, Collections.max(lapValues), o.getQuality());
         }

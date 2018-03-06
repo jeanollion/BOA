@@ -32,6 +32,7 @@ import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
 import boa.image.processing.bacteria_spine.CircularNode;
 import boa.plugins.PluginFactory;
 import static boa.test_utils.TestUtils.logger;
+import boa.utils.HashMapGetCreateRedirected;
 import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
 import boa.utils.geom.Vector;
@@ -42,7 +43,7 @@ import java.util.Set;
  *
  * @author jollion
  */
-public class TestSkeletonize {
+public class TestSpine {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
@@ -53,8 +54,37 @@ public class TestSkeletonize {
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
-        double[] centerCoord = bact.getRegion().getGeomCenter(false);
-        Point center = new Point((float)centerCoord[0], (float)centerCoord[1]);
+        StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(1);
+        StructureObject bact2 = root2.getChildren(0).get(mc).getChildren(1).get(0);
+        //testLocalization(bact);
+        testProjection(bact, bact2);
+    }
+    public static void testProjection(StructureObject bact1, StructureObject bact2) {
+        Point center = bact1.getRegion().getGeomCenter(false).translate(new Vector(-2, 43.7f));
+        HashMapGetCreateRedirected<StructureObject, BacteriaSpineLocalizer> locMap = new HashMapGetCreateRedirected<>(b->new BacteriaSpineLocalizer(b.getRegion()), HashMapGetCreateRedirected.Syncronization.NO_SYNC);
+        Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, locMap);
+        
+        
+        
+        center.translateRev(bact1.getBounds());
+        proj.translateRev(bact2.getBounds());
+        Image im1 = locMap.get(bact1).draw().setName("bact:"+bact1);
+        im1.setPixel((int)(center.get(0)*5+0.5)+1, (int)(center.get(1)*5+0.5)+1, 0, 1000);
+        Image im2 = locMap.get(bact2).draw().setName("bact:"+bact2);
+        
+        im2.setPixel((int)(proj.get(0)*5+0.5)+1, (int)(proj.get(1)*5+0.5)+1, 0, 1000);
+        ImageWindowManagerFactory.showImage(im1);
+        ImageWindowManagerFactory.showImage(im2);
+        /*Image im1 = bact1.getRawImage(bact1.getStructureIdx());
+        im1.setPixelWithOffset(center.xMin(), center.yMin(),center.zMin(), 4000);
+        Image im2 = bact2.getRawImage(bact2.getStructureIdx());
+        im2.setPixelWithOffset(proj.xMin(), proj.yMin(),proj.zMin(), 4000);
+        ImageWindowManagerFactory.showImage(im1);
+        ImageWindowManagerFactory.showImage(im2);*/
+    }
+    
+    public static void testLocalization(StructureObject bact) {
+        Point center = bact.getRegion().getGeomCenter(false);
         Set<Voxel> contour = bact.getRegion().getContour();
         CircularNode<Voxel> circContour = BacteriaSpineFactory.getCircularContour(contour, center);
         PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(bact.getMask(), contour, circContour, center);
@@ -75,5 +105,4 @@ public class TestSkeletonize {
         logger.debug("testDistance: {}", p2.dist(p));
         ImageWindowManagerFactory.showImage(test);
     }
-
 }

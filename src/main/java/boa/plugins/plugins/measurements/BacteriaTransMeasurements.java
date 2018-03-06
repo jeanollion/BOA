@@ -34,6 +34,7 @@ import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import org.apache.commons.math3.linear.RealMatrix;
 import boa.plugins.Measurement;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -77,13 +78,14 @@ public class BacteriaTransMeasurements implements Measurement {
     @Override public void performMeasurement(StructureObject object) {
         Region bactObject = object.getRegion();
         BoundingBox parentOffset = object.getParent().getBounds();
-        double[] center=bactObject.getGeomCenter(true);
-        center[0]-=parentOffset.xMin()*object.getScaleXY();
-        center[1]-=parentOffset.yMin()*object.getScaleXY();
+        Point center=bactObject.getGeomCenter(false);
+        center.translateRev(parentOffset);
+        center.multiply(object.getScaleXY(), 0);
+        center.multiply(object.getScaleXY(), 1);
         //if (object.getTimePoint()==0) logger.debug("object: {} center: {}, parentOffset: {}, objectoffset: {} bactImageOffset: {}, mutImageOffset: {}", object, center, parentOffset, object.getBounds(), bactImage.getBoundingBox(), mutImage.getBoundingBox());
         Measurements m = object.getMeasurements();
-        m.setValue("BacteriaCenterX", center[0]);
-        m.setValue("BacteriaCenterY", center[1]);
+        m.setValue("BacteriaCenterX", center.get(0));
+        m.setValue("BacteriaCenterY", center.get(1));
         m.setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));
         m.setValue("BacteriaArea", GeometricalMeasurements.getVolume(bactObject));
         

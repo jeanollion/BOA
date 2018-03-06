@@ -19,6 +19,7 @@ package boa.image.processing.bacteria_spine;
 
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
+import boa.image.Image;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
@@ -27,8 +28,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import net.imglib2.KDTree;
 import net.imglib2.RealLocalizable;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
@@ -63,7 +67,9 @@ public class BacteriaSpineLocalizer {
     public double getLength() {
         return length;
     }
-    
+    public Image draw() {
+        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, BacteriaSpineFactory.getCircularContour(bacteria.getContour(), bacteria.getGeomCenter(false)));
+    }
     /*public static enum ReferencePole {
         FirstPole(0, 1), LastPole(1, -1), DivisionPoleAsSecondPole(2, -1), DivisionPoleAsFirstPole(3, 1);
         public final int index, reverse;
@@ -174,14 +180,16 @@ public class BacteriaSpineLocalizer {
         StructureObject cur = destination;
         while (cur!=source) {
             successiveContainers.add(cur);
+            logger.debug("successive containers: {}", successiveContainers);
             cur = cur.getPrevious();
             if (cur.getFrame()<source.getFrame()) return null;
         }
         successiveContainers = Utils.reverseOrder(successiveContainers);
+        logger.debug("successive containers: {}", successiveContainers);
         Point curentProj = sourcePoint;
         for (StructureObject next : successiveContainers) {
             if (cur.getTrackHead()==next.getTrackHead()) {
-                logger.debug("project: {}({}) -> {}({})", curentProj, project(curentProj, localizerMap.get(cur), localizerMap.get(next)));
+                logger.debug("project: {} -> {}", cur, next);
                 curentProj = project(curentProj, localizerMap.get(cur), localizerMap.get(next));
             }
             else { // division -> get division proportion
@@ -191,7 +199,7 @@ public class BacteriaSpineLocalizer {
                 double curLength = localizerMap.get(next).getLength();
                 double prop = curLength/(totalLength+curLength);
                 boolean upperCell = next.getIdx() < sib.stream().mapToInt(o->o.getIdx()).min().getAsInt();
-                logger.debug("project div: {}({}) -> {}({}), div prop: {}, upper cell: {}", curentProj, projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell));
+                logger.debug("project div: {}({}) -> {}({}), div prop: {}, upper cell: {}", cur, next, prop, upperCell);
                 curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell);
             }
             cur = next;
@@ -200,11 +208,14 @@ public class BacteriaSpineLocalizer {
     }
     public static Point project(Point sourcePoint, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination) {
         BacteriaSpineCoord c = source.getCoord(sourcePoint);
+        logger.debug("proj: {} -> {}", c, destination.getCoord(destination.project(c)));
         return destination.project(c);
     }
     public static Point projectDiv(Point origin, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, double divProportion, boolean upperCell) {
         BacteriaSpineCoord c = source.getCoord(origin);
         c.setDivisionPoint(divProportion, upperCell);
+        logger.debug("proj div: {} -> {}", c, destination.getCoord(destination.project(c)));
         return destination.project(c);
     }
+    public enum PROJECTION {PROPORTIONAL, NEAREST_POLE};
 }

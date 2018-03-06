@@ -24,6 +24,7 @@ import boa.image.processing.localthickness.LocalThickness;
 import java.util.ArrayList;
 import java.util.List;
 import boa.utils.ArrayUtil;
+import boa.utils.geom.Point;
 import java.util.Iterator;
 import java.util.stream.DoubleStream;
 
@@ -75,11 +76,11 @@ public class GeometricalMeasurements {
         return getDistance(o1.getMassCenter(im1, false), o2.getMassCenter(im2, false), o1.getScaleXY(), o1.getScaleZ());
     }
     
-    public static double getDistance(double[] c1, double[] c2, double scaleXY, double scaleZ) {
-        return Math.sqrt(Math.pow((c1[0]-c2[0])*scaleXY, 2) + Math.pow((c1[1]-c2[1])*scaleXY, 2) + Math.pow((c1[2]-c2[2])*scaleZ, 2));
+    public static double getDistance(Point c1, Point  c2, double scaleXY, double scaleZ) {
+        return Math.sqrt(Math.pow((c1.get(0)-c2.get(0))*scaleXY, 2) + Math.pow((c1.get(1)-c2.get(1))*scaleXY, 2) + Math.pow((c1.getWithDimCheck(2)-c2.getWithDimCheck(2))*scaleZ, 2));
     }
-    public static double getDistanceSquare(double[] c1, double[] c2, double scaleXY, double scaleZ) {
-        return Math.pow((c1[0]-c2[0])*scaleXY, 2) + Math.pow((c1[1]-c2[1])*scaleXY, 2) + Math.pow((c1[2]-c2[2])*scaleZ, 2);
+    public static double getDistanceSquare(Point c1, Point c2, double scaleXY, double scaleZ) {
+        return Math.pow((c1.get(0)-c2.get(0))*scaleXY, 2) + Math.pow((c1.get(1)-c2.get(1))*scaleXY, 2) + Math.pow((c1.getWithDimCheck(2)-c2.getWithDimCheck(2))*scaleZ, 2);
     }
     public static double localThickness(Region object) {
         Image ltMap = LocalThickness.localThickness(object.getMaskAsImageInteger(), object.is2D()?1:object.getScaleXY()/object.getScaleZ(), true, 1);
