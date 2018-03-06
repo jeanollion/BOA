@@ -23,6 +23,11 @@ package boa.image.processing.bacteria_spine;
  */
 public class BacteriaSpineCoord {
     public final double[] coords = new double[4];
+    public BacteriaSpineCoord duplicate() {
+        BacteriaSpineCoord dup = new BacteriaSpineCoord();
+        System.arraycopy(coords, 0, dup.coords, 0, coords.length);
+        return dup;
+    }
     public double spineCoord(boolean normalized) {
         return normalized?coords[0]/coords[2] : coords[0];
     }
@@ -51,6 +56,19 @@ public class BacteriaSpineCoord {
         coords[3] = spineRadius;
         return this;
     }
+    /**
+     * modifies the spine coordinate so that it can be projected in a daughter cell 
+     * @param divisionProportion size of daughter cell / sum of daugter cells sizes
+     * @param upperCell wheter the projection will be done in the upper daughter cell or not
+     * @return same modified object
+     */
+    public BacteriaSpineCoord setDivisionPoint(double divisionProportion, boolean upperCell) {
+        double newSpineLength = spineLength() * divisionProportion;
+        this.setSpineLength(newSpineLength);
+        if (!upperCell) setSpineCoord(spineCoord(false)-newSpineLength);
+        return this;
+    }
+    
     @Override
     public String toString() {
         return new StringBuilder().append("along spine: ").append(spineCoord(false)).append("/").append(spineLength()).append(" distance from spine:").append(distFromSpine(false)).append("/").append(spineRadius()).toString();

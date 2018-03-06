@@ -18,6 +18,8 @@
 package boa.image.processing.bacteria_spine;
 
 import boa.data_structure.Region;
+import boa.data_structure.StructureObject;
+import boa.utils.Utils;
 import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
 import boa.utils.geom.Vector;
@@ -26,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import net.imglib2.KDTree;
 import net.imglib2.RealLocalizable;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
@@ -160,5 +163,48 @@ public class BacteriaSpineLocalizer {
         if (testMode) logger.debug("projecting from vertebra: {}(w:{}) & {}(w:{}), spine point: {} dir: {}", v1, w, v2, 1-w,  v1v2.duplicate(), dir);
         return v1v2.translate(dir);
     }
-    
+    public static double distance(Point sourcePoint, Point otherPoint, StructureObject source, StructureObject destination, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
+        Point proj = project(sourcePoint, source, destination, localizerMap);
+        if (proj==null) return Double.POSITIVE_INFINITY;
+        return otherPoint.dist(proj) * source.getScaleXY();
+    }
+    public static Point project(Point sourcePoint, StructureObject source, StructureObject destination, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
+        if (destination.getPrevious()==source.getPrevious() && destination.getTrackHead()==source.getTrackHead()) return project(sourcePoint, localizerMap.get(source), localizerMap.get(destination));
+        List<StructureObject> successiveContainers = new ArrayList<>(destination.getFrame()-source.getFrame()+1);
+        StructureObject cur = destination;
+        while (cur!=source) {
+            successiveContainers.add(cur);
+            cur = cur.getPrevious();
+            if (cur.getFrame()<source.getFrame()) return null;
+        }
+        successiveContainers = Utils.reverseOrder(successiveContainers);
+        Point curentProj = sourcePoint;
+        for (StructureObject next : successiveContainers) {
+            if (cur.getTrackHead()==next.getTrackHead()) {
+                logger.debug("project: {}({}) -> {}({})", curentProj, project(curentProj, localizerMap.get(cur), localizerMap.get(next)));
+                curentProj = project(curentProj, localizerMap.get(cur), localizerMap.get(next));
+            }
+            else { // division -> get division proportion
+                List<StructureObject> sib = next.getDivisionSiblings(false);
+                double totalLength = 0;
+                for (StructureObject n : sib) totalLength += localizerMap.get(n).getLength();
+                double curLength = localizerMap.get(next).getLength();
+                double prop = curLength/(totalLength+curLength);
+                boolean upperCell = next.getIdx() < sib.stream().mapToInt(o->o.getIdx()).min().getAsInt();
+                logger.debug("project div: {}({}) -> {}({}), div prop: {}, upper cell: {}", curentProj, projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell));
+                curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell);
+            }
+            cur = next;
+        }
+        return curentProj;
+    }
+    public static Point project(Point sourcePoint, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination) {
+        BacteriaSpineCoord c = source.getCoord(sourcePoint);
+        return destination.project(c);
+    }
+    public static Point projectDiv(Point origin, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, double divProportion, boolean upperCell) {
+        BacteriaSpineCoord c = source.getCoord(origin);
+        c.setDivisionPoint(divProportion, upperCell);
+        return destination.project(c);
+    }
 }
