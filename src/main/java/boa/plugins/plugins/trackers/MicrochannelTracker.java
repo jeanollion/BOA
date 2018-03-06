@@ -20,6 +20,7 @@ package boa.plugins.plugins.trackers;
 import boa.configuration.parameters.BooleanParameter;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
+import boa.configuration.parameters.ConditionalParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParameterUtils;
@@ -86,8 +87,11 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
     NumberParameter yShiftQuantile = new BoundedNumberParameter("Y-shift Quantile", 2, 0.5, 0, 1).setToolTipText("After Tracking, microchannel region relative y-shift (compared to the base line) are unifomized per-track, for each track: the y-shift is replaced by the quantile of all y-shift");
     NumberParameter widthQuantile = new BoundedNumberParameter("With Quantile", 2, 0.9, 0, 1).setToolTipText("After Tracking, microchannel width  are uniformized per-track, for each track: the with of every object is replaced by the quantile of all width");;
     BooleanParameter allowGaps = new BooleanParameter("Allow Gaps", true).setToolTipText("If a frame contains no microchannels (tipically when focus is lost), allow to connect microchannels track prior to the gap with thoses after the gap. This will result in microchannel tracks containing gaps. If false tracks will be disconnected");
-    
-    Parameter[] parameters = new Parameter[]{segmenter, maxShiftGC, maxDistanceFTFWidthFactor, yShiftQuantile, widthQuantile, allowGaps};
+    BooleanParameter normalizeWidths = new BooleanParameter("Normalize Widths", false);
+    ConditionalParameter widthCond = new ConditionalParameter(normalizeWidths).setActionParameters("true", new Parameter[]{widthQuantile});
+    BooleanParameter normalizeYshift = new BooleanParameter("Normalize Y-shifts", false);
+    ConditionalParameter shiftCond = new ConditionalParameter(normalizeWidths).setActionParameters("true", new Parameter[]{yShiftQuantile});
+    Parameter[] parameters = new Parameter[]{segmenter, maxShiftGC, maxDistanceFTFWidthFactor, shiftCond, widthCond, allowGaps};
     public static boolean debug = false;
     
     String toolTip = "<html><b>Microchannel tracker</b>"
@@ -108,8 +112,18 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         this.segmenter.setPlugin(s);
         return this;
     }
+    public MicrochannelTracker setAllowGaps(boolean allowGaps) {
+        this.allowGaps.setSelected(allowGaps);
+        return this;
+    }
     public MicrochannelTracker setYShiftQuantile(double quantile) {
+        this.normalizeYshift.setSelected(true);
         this.yShiftQuantile.setValue(quantile);
+        return this;
+    }
+    public MicrochannelTracker setWidthQuantile(double quantile) {
+        this.normalizeWidths.setSelected(true);
+        this.widthQuantile.setValue(quantile);
         return this;
     }
     public MicrochannelTracker setTrackingParameters(int maxShift, double maxDistanceWidthFactor) {
@@ -205,15 +219,23 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                 if (o.getIdx()>=r.size()) { // object created from gap closing 
                     if (!widths.isEmpty()) widths.add(widths.get(widths.size()-1)); // for index consitency
                     else widths.add(null);
+                    if (!shifts.isEmpty()) shifts.add(shifts.get(shifts.size()-1)); // for index consitency
+                    else shifts.add(null);
                 } else {
                     shifts.add(r.yMinShift[o.getIdx()]);
                     widths.add((double)r.getXWidth(o.getIdx()));
                 }
             }
-            if (shifts.isEmpty()) {
-                logger.error("no shifts in track : {} length: {}", track.get(0).getTrackHead(), track.size());
-                continue;
-            }
+            // replace null values by following non null value
+            int nonNullIdx = 0;
+            while(nonNullIdx<shifts.size() && shifts.get(nonNullIdx)==null) ++nonNullIdx;
+            int nonNullValue = nonNullIdx<shifts.size() ? shifts.get(nonNullIdx) : 0;
+            for (int i = 0; i<nonNullIdx; ++i) shifts.set(i, nonNullValue);
+            nonNullIdx = 0;
+            while(nonNullIdx<widths.size() && widths.get(nonNullIdx)==null) ++nonNullIdx;
+            if (nonNullIdx>=widths.size()) continue;
+            for (int i = 0; i<nonNullIdx; ++i) widths.set(i, widths.get(nonNullIdx));
+            
             int shift = (int)Math.round(ArrayUtil.quantileInt(shifts, yShiftQuantile.getValue().doubleValue()));
             double meanWidth = 0, c=0; for (Double d : widths) if (d!=null) {meanWidth+=d; ++c;} // global mean value
             meanWidth/=c;
@@ -224,38 +246,42 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
             }
             
             // 4) track-wise normalization of width & y-shift
-            
+            boolean normWidth = this.normalizeWidths.getSelected();
+            boolean normShift = this.normalizeYshift.getSelected();
             for (int i = 0; i<track.size(); ++i) {
                 StructureObject o = track.get(i);
                 BoundingBox b = o.getBounds();
                 BoundingBox parentBounds = o.getParent().getBounds();
-                int offY = b.yMin() + shift; // shift was not included before
+                int offY = b.yMin() + (normShift ?  shift : shifts.get(i)); // shift was not included before
                 int offX; // if width change -> offset X change
-                //int offX = (int)Math.round( b.getXMean()-width/2d ); 
-                double offXd = b.xMean()-(width-1d)/2d;
-                double offXdr = offXd-(int)offXd;
-                if (offXdr<0.5) offX=(int)offXd;
-                else if (offXdr>0.5) offX = (int)offXd + 1;
-                else { // adjust localy: compare light in both cases //TODO not a good criterion -> biais on the right side
-                    MutableBoundingBox bLeft = new MutableBoundingBox((int)offXd, (int)offXd+width-1, offY, offY+b.sizeY()-1, b.zMin(), b.zMax());
-                    MutableBoundingBox bRight = bLeft.duplicate().translate(1, 0, 0);
-                    MutableBoundingBox bLeft2 = bLeft.duplicate().translate(-1, 0, 0);
-                    bLeft.contract(parentBounds);
-                    bRight.contract(parentBounds);
-                    bLeft2.contract(parentBounds);
-                    Image r = o.getParent().getRawImage(structureIdx);
-                    double valueLeft = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft.getBlankMask(), null)[0];
-                    double valueLeft2 = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft2.getBlankMask(), null)[0];
-                    double valueRight = ImageOperations.getMeanAndSigmaWithOffset(r, bRight.getBlankMask(), null)[0];
-                    if (valueLeft2>valueRight && valueLeft2>valueLeft) offX=(int)offXd-1;
-                    else if (valueRight>valueLeft && valueRight>valueLeft2) offX=(int)offXd+1;
-                    else offX=(int)offXd;
-                    //logger.debug("offX for element: {}, width:{}>{}, left:{}={}, right:{}={} left2:{}={}", o, b, width, bLeft, valueLeft, bRight, valueRight, bLeft2, valueLeft2);
+                int currentWidth;
+                if (normWidth) {
+                    currentWidth = width;
+                    double offXd = b.xMean()-(width-1d)/2d;
+                    double offXdr = offXd-(int)offXd;
+                    if (offXdr<0.5) offX=(int)offXd;
+                    else if (offXdr>0.5) offX = (int)offXd + 1;
+                    else { // adjust localy: compare light in both cases //TODO not a good criterion -> biais on the right side
+                        MutableBoundingBox bLeft = new MutableBoundingBox((int)offXd, (int)offXd+width-1, offY, offY+b.sizeY()-1, b.zMin(), b.zMax());
+                        MutableBoundingBox bRight = bLeft.duplicate().translate(1, 0, 0);
+                        MutableBoundingBox bLeft2 = bLeft.duplicate().translate(-1, 0, 0);
+                        bLeft.contract(parentBounds);
+                        bRight.contract(parentBounds);
+                        bLeft2.contract(parentBounds);
+                        Image r = o.getParent().getRawImage(structureIdx);
+                        double valueLeft = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft.getBlankMask(), null)[0];
+                        double valueLeft2 = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft2.getBlankMask(), null)[0];
+                        double valueRight = ImageOperations.getMeanAndSigmaWithOffset(r, bRight.getBlankMask(), null)[0];
+                        if (valueLeft2>valueRight && valueLeft2>valueLeft) offX=(int)offXd-1;
+                        else if (valueRight>valueLeft && valueRight>valueLeft2) offX=(int)offXd+1;
+                        else offX=(int)offXd;
+                        //logger.debug("offX for element: {}, width:{}>{}, left:{}={}, right:{}={} left2:{}={}", o, b, width, bLeft, valueLeft, bRight, valueRight, bLeft2, valueLeft2);
+                    }
+                } else {
+                    offX = b.xMin();
+                    currentWidth = b.sizeX();
                 }
-                
-                
-                
-                if (width+offX>parentBounds.xMax() || offX<0) {
+                if (currentWidth+offX>parentBounds.xMax() || offX<0) {
                     if (debug) logger.debug("remove out of bound track: {}", track.get(0).getTrackHead());
                     toRemove.addAll(track);
                     break;
@@ -264,7 +290,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                 }
                 int height = b.sizeY();
                 if (height+offY>parentBounds.yMax()) height = parentBounds.yMax()-offY;
-                BlankMask m = new BlankMask( width, height, b.sizeZ(), offX, offY, b.zMin(), o.getScaleXY(), o.getScaleZ());
+                BlankMask m = new BlankMask( currentWidth, height, b.sizeZ(), offX, offY, b.zMin(), o.getScaleXY(), o.getScaleZ());
                 o.setObject(new Region(m, o.getIdx()+1, o.is2D()));
             }
         }

@@ -57,8 +57,8 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
     BooleanParameter resetBounds = new BooleanParameter("Reset Bounds", true).setToolTipText("Whether bounds should be reset or not. If average mask track-post-filter is set afterwards, bounds should not be reset so that regions can be aligned on their top-left-corner");
     Parameter[] parameters = new Parameter[]{watershedMap, onlyHead, resetBounds};
     public static boolean debug = false;
-    public static int debugLabel = 1;
-    
+    public static int debugLabel = 10;
+    public boolean verbose = false;
     public FitMicrochannelHeadToEdges setResetBounds(boolean resetBounds) {
         this.resetBounds.setSelected(resetBounds);
         return this;
@@ -71,7 +71,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Image edge = watershedMap.filter(parent.getRawImage(childStructureIdx), parent.getMask());
-        FitMicrochannelHeadToEdges.fit(edge, childPopulation, onlyHead.getSelected(), resetBounds.getSelected());
+        FitMicrochannelHeadToEdges.fit(edge, childPopulation, onlyHead.getSelected(), resetBounds.getSelected(), debug||verbose);
         return childPopulation;
     }
 
@@ -79,17 +79,17 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
     public Parameter[] getParameters() {
         return parameters;
     }
-    public static void fit(Image edgeMap, RegionPopulation inputPop, boolean onlyHead, boolean resetMask) {
-        if (debug) ImageWindowManagerFactory.showImage(edgeMap);
+    public static void fit(Image edgeMap, RegionPopulation inputPop, boolean onlyHead, boolean resetMask, boolean verbose) {
+        if (verbose) ImageWindowManagerFactory.showImage(edgeMap);
         for (Region o : inputPop.getRegions()) {
-            if (onlyHead) fitHead(edgeMap, 3, o, resetMask);
-            else fitWhole(edgeMap, 3, o, resetMask);
+            if (onlyHead) fitHead(edgeMap, 3, o, resetMask, verbose);
+            else fitWhole(edgeMap, 3, o, resetMask, verbose);
         }
         inputPop.redrawLabelMap(true);
-        if (debug && !inputPop.getRegions().isEmpty()) logger.debug("object mask type: {}", inputPop.getRegions().get(0).getMask().getClass().getSimpleName());
+        if (verbose && !inputPop.getRegions().isEmpty()) logger.debug("object mask type: {}", inputPop.getRegions().get(0).getMask().getClass().getSimpleName());
     }
     
-    private static void fitHead(Image edgeMap, int margin, Region object, boolean resetMask) {
+    private static void fitHead(Image edgeMap, int margin, Region object, boolean resetMask, boolean verbose) {
         BoundingBox b = object.getBounds();
         BoundingBox head = new SimpleBoundingBox(b.xMin()-margin, b.xMax()+margin, b.yMin()-margin, b.yMin()+b.sizeX(), b.zMin(), b.zMax());
         Image edgeMapLocal = edgeMap.crop(head);
@@ -105,24 +105,26 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         int innerMargin = margin*2;
         if (innerMargin*2>=b.sizeX()-2) innerMargin = Math.max(1, b.sizeX()/4);
         BoundingBox innerHead = new SimpleBoundingBox(innerMargin, head.sizeX()-1-innerMargin,innerMargin, head.sizeY()-1-innerMargin, 0, head.sizeZ()-1);
-        ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, new BlankMask(innerHead, 1, 1), Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
+        ImageByte mask = new ImageByte("", edgeMapLocal);
+        ImageOperations.fill(mask, 1, innerHead);
+        ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, mask, Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds before and"));
         //ImageOperations.andWithOffset(maxL, innerHead.getImageProperties(1, 1), maxL);
-        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));
         seeds.addAll(ImageLabeller.labelImageList(maxL));
         //seeds.add(new Region(new Voxel((gradLocal.getSizeX()-1)/2, (gradLocal.getSizeY()-1)/2, 0), ++label, (float)scaleXY, (float)scaleZ));
-        RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, null, false);
-        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf"));
+        RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, new WatershedTransform.SizeFusionCriterion(5), false);
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf"));
         pop.getRegions().removeIf(o->!o.contains(corner1)&&!o.contains(corner2));
         pop.relabel(true);
-        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
         pop.translate(head, true);
         object.andNot(pop.getLabelMap());
         if (resetMask) object.resetMask(); // no reset so that all image have same upper-left-corner -> for average mask
-        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
     }
-    private static void fitWhole(Image edgeMap, int margin, Region object, boolean resetMask) {
+    private static void fitWhole(Image edgeMap, int margin, Region object, boolean resetMask, boolean verbose) {
         BoundingBox b = object.getBounds();
         BoundingBox cut = new SimpleBoundingBox(b.xMin()-margin, b.xMax()+margin, b.yMin()-margin, b.yMax(), b.zMin(), b.zMax());
         Image edgeMapLocal = edgeMap.crop(cut);
@@ -144,21 +146,42 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         int innerMargin = margin*2;
         if (innerMargin*2>=b.sizeX()-2) innerMargin = Math.max(1, b.sizeX()/4);
         BoundingBox innerRegion = new SimpleBoundingBox(innerMargin, cut.sizeX()-1-innerMargin,innerMargin, cut.sizeY()-1-innerMargin, 0, cut.sizeZ()-1);
-        ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, new BlankMask(innerRegion, 1, 1), Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
+        ImageByte mask = new ImageByte("", edgeMapLocal);
+        ImageOperations.fill(mask, 1, innerRegion);
+        // roughly remove upper l&r angle -> remove triangles
+        double x0 = margin;
+        double x1=  (edgeMapLocal.sizeX()-1)/2.0;
+        double x20 = x1;
+        double x21 = edgeMapLocal.sizeX()-1-margin;
+        double y1 = innerMargin;
+        double y0 = innerRegion.sizeX();
+        double y20 = y1;
+        double y21 = y0;
+        double a1  = (y1-y0)/(x1-x0);
+        double a2 = (y21-y20)/(x21-x20);
+        
+        for (int x = (int)x0; x<=x21; ++x) {
+            for (int y = (int)y1; y<=y0; ++y) {
+                if (y-y0<=a1*(x-x0)) mask.setPixel(x, y, 0, 0);
+                if ((y-y20)<=a2*(x-x20)) mask.setPixel(x, y, 0, 0);
+            }
+        }
+        ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, mask, Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(mask.duplicate("innnerMask"));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds before and"));
         //ImageOperations.andWithOffset(maxL, innerHead.getImageProperties(1, 1), maxL);
-        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));
         seeds.addAll(ImageLabeller.labelImageList(maxL));
         //seeds.add(new Region(new Voxel((gradLocal.getSizeX()-1)/2, (gradLocal.getSizeY()-1)/2, 0), ++label, (float)scaleXY, (float)scaleZ));
-        RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, null, false);
-        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf"));
+        RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, new WatershedTransform.SizeFusionCriterion(5), false);
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf"));
         pop.getRegions().removeIf(o->!o.contains(corner1)&&!o.contains(corner2));
         pop.relabel(true);
-        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
         pop.translate(cut, true);
         object.andNot(pop.getLabelMap());
         if (resetMask) object.resetMask(); // no reset so that all image have same upper-left-corner -> for average mask
-        if (debug && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
     }
 }

@@ -54,7 +54,7 @@ public class SelectBestFocusPlane implements Transformation, Autofocus {
     }
 
     @Override
-    public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  throws Exception {
+    public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  {
         final double scale = gradientScale.getValue().doubleValue();
         final Integer[] conf = new Integer[inputImages.getFrameNumber()];
         if (inputImages.getSizeZ(channelIdx)>1) {
@@ -77,7 +77,6 @@ public class SelectBestFocusPlane implements Transformation, Autofocus {
                 );
             }
             tr.startAndJoin();
-            tr.throwErrorIfNecessary("");
         }
         bestFocusPlaneIdxT.addAll(Arrays.asList(conf));
     }

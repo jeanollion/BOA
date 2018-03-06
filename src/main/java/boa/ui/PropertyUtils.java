@@ -17,6 +17,8 @@
  */
 package boa.ui;
 
+import boa.configuration.parameters.Listenable;
+import boa.configuration.parameters.NumberParameter;
 import static boa.gui.GUI.logger;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.dao.MasterDAOFactory;
@@ -89,6 +91,10 @@ public class PropertyUtils {
         getProps().setProperty(key, Integer.toString(value));
         saveParamChanges();
     }
+    public static void set(String key, double value) {
+        getProps().setProperty(key, Double.toString(value));
+        saveParamChanges();
+    }
     public static void remove(String key) {
         getProps().remove(key);
         saveParamChanges();
@@ -98,6 +104,9 @@ public class PropertyUtils {
     }
     public static int get(String key, int defaultValue) {
         return Integer.parseInt(getProps().getProperty(key, Integer.toString(defaultValue)));
+    }
+    public static double get(String key, double defaultValue) {
+        return Double.parseDouble(getProps().getProperty(key, Double.toString(defaultValue)));
     }
     public static void set(String key, boolean value) {
         getProps().setProperty(key, Boolean.toString(value));
@@ -180,5 +189,17 @@ public class PropertyUtils {
             ++idx;
         }
         return idxSel;
+    }
+    public static void setPersistant(Listenable parameter, String key) {
+        if (parameter instanceof NumberParameter) {
+            NumberParameter np = (NumberParameter)parameter;    
+            np.setValue(get(key, ((NumberParameter) parameter).getValue().doubleValue()));
+            logger.debug("persit number: {} = {} -> {}", np.getName(), ((NumberParameter) parameter).getValue().doubleValue(), np.toString());
+            parameter.addListener(p->{
+                //logger.debug("persist parameter: {}", ((Parameter)parameter).getName());
+                PropertyUtils.set(key, np.getValue().doubleValue());
+            });
+        } else logger.debug("persistance on parameter not supported yet!");
+        
     }
 }

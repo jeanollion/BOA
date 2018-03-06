@@ -480,7 +480,7 @@ public class GenerateXP {
         if (processing) {
             mc.setProcessingScheme(new SegmentAndTrack(
                     new MicrochannelTracker().setSegmenter(new MicrochannelFluo2D()
-                    ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)
+                    ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05).setWidthQuantile(0.9)
                     ).addTrackPostFilters(new RemoveMicrochannelsTouchingBackgroundOnSides(2),
                             new RemoveMicrochannelsWithOverexpression(99, 5).setTrim(true),
                             new TrackLengthFilter().setMinSize(5), 
@@ -559,15 +559,15 @@ public class GenerateXP {
         Structure mc = xp.getStructure(0);
         Structure bacteria = xp.getStructure(1);
         if (processing) {
-            SegmentAndTrack mcpc;
-            if (!subTransPre) mcpc = new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D())).addPreFilters(new IJSubtractBackground(0.3, true, false, true, false));
-            else mcpc =new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D()));
+            SegmentAndTrack mcpc = new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D()).setAllowGaps(false));
+            if (!subTransPre) mcpc.addPreFilters(new IJSubtractBackground(10, true, false, true, false));
             mcpc.addTrackPostFilters(
                 new TrackLengthFilter().setMinSize(10),  
                 new RemoveTracksStartingAfterFrame(),
                 new SegmentationPostFilter().addPostFilters(new FitMicrochannelHeadToEdges().setResetBounds(true).setOnlyHead(false))//,
                 //new AverageMask()
             );
+            
             mc.setProcessingScheme(mcpc);
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(

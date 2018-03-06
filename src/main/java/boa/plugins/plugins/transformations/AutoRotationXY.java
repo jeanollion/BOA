@@ -121,7 +121,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), getAngle(image), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
     }
     List<Image> sinogram1Test, sinogram2Test;
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {     
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) {     
         if (testMode) {
             sinogram1Test = new ArrayList<>();
             sinogram2Test = new ArrayList<>();

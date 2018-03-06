@@ -513,6 +513,11 @@
                 <Property name="text" type="java.lang.String" value="Local Zoom"/>
               </Properties>
             </Menu>
+            <Menu class="javax.swing.JMenu" name="multiThreadMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Multithread"/>
+              </Properties>
+            </Menu>
           </SubComponents>
         </Menu>
         <Menu class="javax.swing.JMenu" name="ShortcutMenu">

@@ -102,7 +102,7 @@ public class AutoFlipY implements Transformation, ToolTip {
     }
     List<Image> upperObjectsTest, lowerObjectsTest;
     @Override
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception {
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         flip=null;
         if (method.getSelectedItem().equals(FLUO.name)) { 
             if (testMode) {
@@ -282,7 +282,7 @@ public class AutoFlipY implements Transformation, ToolTip {
     }
     
     @Override
-    public Image applyTransformation(int channelIdx, int timePoint, Image image) throws Exception {
+    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (flip) {
             ///logger.debug("AutoFlipY: flipping (flip config: {} ({}))", flip, flip.getClass().getSimpleName());
             return ImageTransformation.flip(image, ImageTransformation.Axis.Y);

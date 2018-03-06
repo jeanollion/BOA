@@ -26,7 +26,7 @@ import boa.plugins.ops.ParameterWithValue;
  *
  * @author jollion
  */
-public class NumberParameter extends SimpleParameter implements OpParameter {
+public class NumberParameter extends SimpleParameter implements Listenable, OpParameter {
     //@Transient NumberParameterUI ui;
     Number value;
     int decimalPlaces;

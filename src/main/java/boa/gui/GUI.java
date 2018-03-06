@@ -136,6 +136,7 @@ import boa.utils.FileIO.ZipWriter;
 import boa.utils.ImportExportJSON;
 import boa.utils.JSONUtils;
 import boa.utils.Pair;
+import boa.utils.ThreadRunner;
 import boa.utils.Utils;
 import static boa.utils.Utils.addHorizontalScrollBar;
 import javax.swing.ToolTipManager;
@@ -182,8 +183,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private ProgressIcon progressBar;
     private NumberParameter localZoomFactor = new BoundedNumberParameter("Local Zoom Factor", 1, 4, 2, null);
     private NumberParameter localZoomArea = new BoundedNumberParameter("Local Zoom Area", 0, 35, 15, null);
+    private NumberParameter threadNumber = new BoundedNumberParameter("Max Thread Number", 0, System.getProperty("os.name").toLowerCase().indexOf("win")>=0 ? 1 : ThreadRunner.getMaxCPUs(), 1, ThreadRunner.getMaxCPUs());
     final private List<Component> relatedToXPSet;
     final private List<Component> relatedToReadOnly;
+    public static int getThreadNumber() {
+        if (!hasInstance()) return System.getProperty("os.name").toLowerCase().indexOf("win")>=0 ? 1 : ThreadRunner.getMaxCPUs();
+        return getInstance().threadNumber.getValue().intValue();
+    }
     /**
      * Creates new form GUI
      */
@@ -255,10 +261,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         PropertyUtils.setPersistant(exportPPImagesMenuItem, "export_ppimages", true);
         PropertyUtils.setPersistant(exportTrackImagesMenuItem, "export_trackImages", true);
         
+        
         // local zoom
+        PropertyUtils.setPersistant(localZoomFactor, "local_zoom_factor");
+        PropertyUtils.setPersistant(localZoomArea, "local_zoom_area");
         ConfigurationTreeGenerator.addToMenu(localZoomFactor.getName(), localZoomFactor.getUI().getDisplayComponent(), localZoomMenu);
         ConfigurationTreeGenerator.addToMenu(localZoomArea.getName(), localZoomArea.getUI().getDisplayComponent(), localZoomMenu);
+        
+        // multithread
+        PropertyUtils.setPersistant(threadNumber, "thread_number");
         PluginFactory.findPlugins("boa.plugins.plugins");
+        ConfigurationTreeGenerator.addToMenu(threadNumber.getName(), threadNumber.getUI().getDisplayComponent(), multiThreadMenu);
         
         pyGtw = new PythonGateway();
         pyGtw.startGateway();
@@ -1144,6 +1157,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         activateLoggingMenuItem = new javax.swing.JCheckBoxMenuItem();
         appendToFileMenuItem = new javax.swing.JCheckBoxMenuItem();
         localZoomMenu = new javax.swing.JMenu();
+        multiThreadMenu = new javax.swing.JMenu();
         ShortcutMenu = new javax.swing.JMenu();
         ActiveSelMenu = new javax.swing.JMenu();
         jMenuItem20 = new javax.swing.JMenuItem();
@@ -2047,6 +2061,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         localZoomMenu.setText("Local Zoom");
         miscMenu.add(localZoomMenu);
+
+        multiThreadMenu.setText("Multithread");
+        miscMenu.add(multiThreadMenu);
 
         mainMenu.add(miscMenu);
 
@@ -3824,6 +3841,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JList microscopyFieldList;
     private javax.swing.JMenu miscMenu;
+    private javax.swing.JMenu multiThreadMenu;
     private javax.swing.JMenuItem newXPFromTemplateMenuItem;
     private javax.swing.JMenuItem newXPMenuItem;
     private javax.swing.JButton nextTrackErrorButton;

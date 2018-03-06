@@ -70,7 +70,7 @@ public class RemoveDeadPixels implements Transformation {
         return configMapF;
     }
     @Override
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) throws Exception { 
+    public void computeConfigurationData(int channelIdx, InputImages inputImages)   { 
         configDataFXYZV.clear();
         configMapF = new HashMapGetCreate<>(new HashMapGetCreate.SetFactory<>());
         Image median = new ImageFloat("", inputImages.getImage(channelIdx, 0));
@@ -142,7 +142,7 @@ public class RemoveDeadPixels implements Transformation {
     }
 
     @Override
-    public Image applyTransformation(int channelIdx, int timePoint, Image image) throws Exception {
+    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         /*double thld= threshold.getValue().doubleValue();
         Image median = Filters.median(image, null, Filters.getNeighborhood(1.5, 1, image));
         //Image blurred = ImageFeatures.gaussianSmooth(image, 5, 5, false);

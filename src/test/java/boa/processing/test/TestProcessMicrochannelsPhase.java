@@ -52,12 +52,12 @@ public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        int time =0;
+        int time =508;
         int field = 0;
         //String dbName = "TestThomasRawStacks";
-        String dbName = "Aya2";
+        String dbName = "Aya_170324";
         //String dbName = "MutH_150324";
-        FitMicrochannelHeadToEdges.debugLabel=6;
+        FitMicrochannelHeadToEdges.debugLabel=11;
         testSegMicrochannelsFromXP(dbName, field, time);
         //testPostProcessTracking(dbName, field, time);
     }
@@ -76,8 +76,11 @@ public class TestProcessMicrochannelsPhase {
         //MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
         mDAO.getExperiment().getStructure(0).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
+        ImageWindowManagerFactory.showImage(root.getRawImage(0).duplicate("raw images"));
+        ImageWindowManagerFactory.showImage(root.getPreFilteredImage(0).duplicate("pre-Filtered images"));
         RegionPopulation pop = s.runSegmenter(root.getPreFilteredImage(0), 0, root);
         root.setChildrenObjects(pop, 0);
+        logger.debug("{} objects found", pop.getRegions().size());
         FitMicrochannelHeadToEdges.debug=true;
         if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
             TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters();
@@ -86,10 +89,9 @@ public class TestProcessMicrochannelsPhase {
             pop = root.getObjectPopulation(0);
         }
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
-        ImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(input);
-        disp.showImage(pop.getLabelMap());
-        logger.debug("{} objects found", pop.getRegions().size());
+        ImageWindowManagerFactory.showImage(input);
+        ImageWindowManagerFactory.showImage(pop.getLabelMap());
+        logger.debug("{} objects found after post-filters", pop.getRegions().size());
         // test split
         //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
         //disp.showImage(popSplit.getLabelImage());

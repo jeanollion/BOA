@@ -402,7 +402,7 @@ public class ImageOperations {
     public static ImageInteger orWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("or", source1);
         final ImageInteger out = output;
-        MutableBoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
+        BoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
         BoundingBox.loop(loopBound,(x, y, z) -> {
             if ((!source1.containsWithOffset(x, y, z) || !source1.insideMaskWithOffset(x, y, z)) 
                     && (!source2.containsWithOffset(x, y, z) || !source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 0);
@@ -415,7 +415,7 @@ public class ImageOperations {
         if (output==null) output = new ImageByte("or", source1);
         final ImageInteger out = output;
         //logger.debug("output: {}, trimmed: {}", output.getBoundingBox(), output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox())));
-        MutableBoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
+        BoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
         BoundingBox.loop(loopBound,(x, y, z) -> {
             if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))!=(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
             else out.setPixelWithOffset(x, y, z, 0);
@@ -426,7 +426,7 @@ public class ImageOperations {
     public static ImageInteger andWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("and", source1);
         final ImageInteger out = output;
-        MutableBoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
+        BoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
         BoundingBox.loop(loopBound,(x, y, z) -> {
             if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))&&(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
             else out.setPixelWithOffset(x, y, z, 0);
@@ -738,14 +738,14 @@ public class ImageOperations {
         }
         return output;
     }
-    public static double[] getQuantiles(Image image, ImageMask mask, MutableBoundingBox limits, double... percent) {
+    public static double[] getQuantiles(Image image, ImageMask mask, BoundingBox limits, double... percent) {
         double[] mm = image.getMinAndMax(mask);
         Histogram histo = image.getHisto256(mm[0], mm[1], mask, limits);
         return histo.getQuantiles(percent);
     }
     
     
-    public static Voxel getGlobalExtremum(Image image, MutableBoundingBox area, boolean max) {
+    public static Voxel getGlobalExtremum(Image image, BoundingBox area, boolean max) {
         float extrema = image.getPixel(area.xMin(), area.yMin(), area.zMin());
         int xEx=area.xMin(), yEx=area.yMin(), zEx=area.zMin();
         if (max) {
@@ -775,7 +775,7 @@ public class ImageOperations {
             
     }
     
-    public static void fill(Image image, double value, MutableBoundingBox area) { // TODO: use System method
+    public static void fill(Image image, double value, BoundingBox area) { // TODO: use System method
         if (area==null) area=image.getBoundingBox().resetOffset();
         for (int z= area.zMin();z<=area.zMax();++z) {
             for (int y = area.yMin(); y<=area.yMax(); y++) {
@@ -788,7 +788,7 @@ public class ImageOperations {
     
     public static float getMinOverThreshold(Image image, float threshold) {
         float min = Float.MAX_VALUE;
-        MutableBoundingBox limits = image.getBoundingBox().resetOffset();
+        BoundingBox limits = image.getBoundingBox().resetOffset();
         for (int z = limits.zMin(); z <= limits.zMax(); z++) {
             for (int y = limits.yMin(); y<=limits.yMax(); ++y) {
                 for (int x = limits.xMin(); x <= limits.xMax(); ++x) {

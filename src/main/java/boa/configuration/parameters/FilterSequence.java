@@ -41,7 +41,7 @@ public class FilterSequence extends PluginParameterList<Filter> {
         super(name, "Transformation", Filter.class);
     }
     
-    public Image filter(Image input)  throws Exception {
+    public Image filter(Image input)  {
         ImageProperties prop = input.getProperties();
         for (Filter t : get()) {
             input = t.applyTransformation(0, 0, input);

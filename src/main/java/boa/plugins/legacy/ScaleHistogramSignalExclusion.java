@@ -67,7 +67,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     }
     Map<Integer, Image> testMasks;
     @Override
-    public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  throws Exception{
+    public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         if (testMode) testMasks = new HashMap<>(inputImages.getFrameNumber());
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();
@@ -97,7 +97,6 @@ public class ScaleHistogramSignalExclusion implements Transformation {
             );
         }
         tr.startAndJoin();
-        tr.throwErrorIfNecessary("");
         meanSigmaT=new ArrayList<ArrayList<Double>>(muSigma.length);
         for (Double[] d : muSigma) {
             //logger.debug("muSigma: {}", (Object[])d);

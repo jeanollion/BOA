@@ -22,7 +22,8 @@ package boa.plugins;
  * @author jollion
  */
 /**
- * Transformation that doest not need method computeConfigurationData to be applied. Applied on one single image
+ * Transformation that doest not need method computeConfigurationData to be applied. 
+ * Applied on one single image at single frame
  * @author jollion
  */
 public interface Filter extends TransformationTimeIndependent {

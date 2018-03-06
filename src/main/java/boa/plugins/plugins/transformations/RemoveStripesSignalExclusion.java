@@ -96,7 +96,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
     }
     Map<Integer, Image> testMasks, testMasks2;
     @Override
-    public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  throws Exception {
+    public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  {
         final int chExcl = signalExclusion.getSelectedIndex();
         final int chExcl2 = this.signalExclusionBool2.getSelected() ? signalExclusion2.getSelectedIndex() : -1;
         if (testMode && chExcl>=0) {
@@ -152,7 +152,6 @@ public class RemoveStripesSignalExclusion implements Transformation {
             );
         }
         tr.startAndJoin();
-        tr.throwErrorIfNecessary("");
         if (testMode) { // make stripes images
             Image[][] stripesTC = new Image[meanFZY.length][1];
             for (int f = 0; f<meanFZY.length; ++f) {

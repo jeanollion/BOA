@@ -208,7 +208,9 @@ public class Processor {
         ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx) -> {
             execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao, subExecutor);
         };
-        ThreadRunner.execute(allParentTracks.values(), false, ta);
+        logger.debug("thread number: {}", GUI.getThreadNumber() );
+        ExecutorService mainExecutor = Executors.newFixedThreadPool(GUI.getThreadNumber(), ThreadRunner.priorityThreadFactory(Thread.NORM_PRIORITY));
+        ThreadRunner.execute(allParentTracks.values(), false, ta, mainExecutor, null);
         
         // store in DAO
         List<StructureObject> children = new ArrayList<>();
