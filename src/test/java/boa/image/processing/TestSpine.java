@@ -29,6 +29,8 @@ import boa.image.SimpleOffset;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import boa.image.processing.bacteria_spine.BacteriaSpineCoord;
 import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
+import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE;
+import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL;
 import boa.image.processing.bacteria_spine.CircularNode;
 import boa.plugins.PluginFactory;
 import static boa.test_utils.TestUtils.logger;
@@ -62,7 +64,7 @@ public class TestSpine {
     public static void testProjection(StructureObject bact1, StructureObject bact2) {
         Point center = bact1.getRegion().getGeomCenter(false).translate(new Vector(-2, 43.7f));
         HashMapGetCreateRedirected<StructureObject, BacteriaSpineLocalizer> locMap = new HashMapGetCreateRedirected<>(b->new BacteriaSpineLocalizer(b.getRegion()), HashMapGetCreateRedirected.Syncronization.NO_SYNC);
-        Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, locMap);
+        Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, NEAREST_POLE, locMap);
         
         
         
@@ -98,7 +100,7 @@ public class TestSpine {
         BacteriaSpineLocalizer loc = new BacteriaSpineLocalizer(bact.getRegion());
         loc.testMode=true;
         BacteriaSpineCoord coord = loc.getCoord(p);
-        Point p2 = loc.project(coord);
+        Point p2 = loc.project(coord, NEAREST_POLE);
         Point p2T = p2.duplicate().translateRev(bact.getBounds());
         test.setPixel((int)(p2T.get(0)*5+0.5)+1, (int)(p2T.get(1)*5+0.5)+1, 0, 1001);
         logger.debug("coords: {}", coord);

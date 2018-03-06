@@ -70,51 +70,7 @@ public class BacteriaSpineLocalizer {
     public Image draw() {
         return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, BacteriaSpineFactory.getCircularContour(bacteria.getContour(), bacteria.getGeomCenter(false)));
     }
-    /*public static enum ReferencePole {
-        FirstPole(0, 1), LastPole(1, -1), DivisionPoleAsSecondPole(2, -1), DivisionPoleAsFirstPole(3, 1);
-        public final int index, reverse;
-        private ReferencePole(int index, int reverse) {
-            this.index = index;
-            this.reverse=reverse;
-        }
-    };
-    public static enum Compartment {
-        WholeCell(0), FirstDaughter(1), SecondDaughter(2);
-        public final int index;
-        private Compartment(int index) {
-            this.index = index;
-        }
-    };
-    protected double toPole(double spineDist, ReferencePole pole) {
-        switch(pole) {
-            case FirstPole:
-            default:
-                return spineDist;
-            case LastPole:
-                return length[0] - spineDist;
-            case DivisionPoleAsSecondPole:
-                return length[1] - spineDist;
-            case DivisionPoleAsFirstPole:
-                return spineDist - length[1];
-        }
-    }
-    protected double fromPole(double normalizedSplineDist, ReferencePole pole, Compartment comp) {
-        switch(pole) {
-            case FirstPole:
-                if (comp.equals(Compartment.SecondDaughter)) throw new IllegalArgumentException("compartiment is second daugter and pole is first pole");
-            default:
-                return normalizedSplineDist * length[comp.index];
-            case LastPole:
-                if (comp.equals(Compartment.FirstDaughter)) throw new IllegalArgumentException("compartiment is first daugter and pole is last pole");
-                return length[comp.index] * (1- normalizedSplineDist);
-            case DivisionPoleAsSecondPole:
-                if (!comp.equals(Compartment.FirstDaughter)) throw new IllegalArgumentException("div as second pole and not first daughter");
-                return length[comp.index] * (1-normalizedSplineDist);
-            case DivisionPoleAsFirstPole:
-                if (!comp.equals(Compartment.SecondDaughter)) throw new IllegalArgumentException("div as first pole and not second daughter");
-                return normalizedSplineDist * length[comp.index] + length[1];
-        }
-    }*/
+
     /**
      * 
      * @param p
@@ -142,9 +98,9 @@ public class BacteriaSpineLocalizer {
         if (testMode) logger.debug("get coord : {}, delta spine dist: {}, spine dir: {}", res, deltaSpineDist, spineDir);
         return res;
     }
-    public Point project(BacteriaSpineCoord coord) {
+    public Point project(BacteriaSpineCoord coord, PROJECTION proj) {
         Comparator<PointContainer2<Vector, Double>> comp = (p1, p2)->Double.compare(p1.getContent2(), p2.getContent2());
-        Double spineCoord = coord.spineCoord(true) * length;
+        Double spineCoord = coord.getProjectedSpineCoord(length, proj);
         PointContainer2<Vector, Double> searchKey = new PointContainer2<>(null, spineCoord);
         int idx = Arrays.binarySearch(spine, searchKey, comp);
         if (testMode) logger.debug("projecting : {}, spineCoord: {}, search idx: {} (ip: {})", coord, spineCoord, idx, (idx<0?-idx-1:idx));
@@ -169,13 +125,13 @@ public class BacteriaSpineLocalizer {
         if (testMode) logger.debug("projecting from vertebra: {}(w:{}) & {}(w:{}), spine point: {} dir: {}", v1, w, v2, 1-w,  v1v2.duplicate(), dir);
         return v1v2.translate(dir);
     }
-    public static double distance(Point sourcePoint, Point otherPoint, StructureObject source, StructureObject destination, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
-        Point proj = project(sourcePoint, source, destination, localizerMap);
+    public static double distance(Point sourcePoint, Point otherPoint, StructureObject source, StructureObject destination, PROJECTION projType, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
+        Point proj = project(sourcePoint, source, destination, projType, localizerMap);
         if (proj==null) return Double.POSITIVE_INFINITY;
         return otherPoint.dist(proj) * source.getScaleXY();
     }
-    public static Point project(Point sourcePoint, StructureObject source, StructureObject destination, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
-        if (destination.getPrevious()==source.getPrevious() && destination.getTrackHead()==source.getTrackHead()) return project(sourcePoint, localizerMap.get(source), localizerMap.get(destination));
+    public static Point project(Point sourcePoint, StructureObject source, StructureObject destination, PROJECTION proj, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
+        if (destination.getPrevious()==source.getPrevious() && destination.getTrackHead()==source.getTrackHead()) return project(sourcePoint, localizerMap.get(source), localizerMap.get(destination), proj);
         List<StructureObject> successiveContainers = new ArrayList<>(destination.getFrame()-source.getFrame()+1);
         StructureObject cur = destination;
         while (cur!=source) {
@@ -190,7 +146,7 @@ public class BacteriaSpineLocalizer {
         for (StructureObject next : successiveContainers) {
             if (cur.getTrackHead()==next.getTrackHead()) {
                 logger.debug("project: {} -> {}", cur, next);
-                curentProj = project(curentProj, localizerMap.get(cur), localizerMap.get(next));
+                curentProj = project(curentProj, localizerMap.get(cur), localizerMap.get(next), proj);
             }
             else { // division -> get division proportion
                 List<StructureObject> sib = next.getDivisionSiblings(false);
@@ -200,22 +156,22 @@ public class BacteriaSpineLocalizer {
                 double prop = curLength/(totalLength+curLength);
                 boolean upperCell = next.getIdx() < sib.stream().mapToInt(o->o.getIdx()).min().getAsInt();
                 logger.debug("project div: {}({}) -> {}({}), div prop: {}, upper cell: {}", cur, next, prop, upperCell);
-                curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell);
+                curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell, proj);
             }
             cur = next;
         }
         return curentProj;
     }
-    public static Point project(Point sourcePoint, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination) {
+    public static Point project(Point sourcePoint, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, PROJECTION proj) {
         BacteriaSpineCoord c = source.getCoord(sourcePoint);
-        logger.debug("proj: {} -> {}", c, destination.getCoord(destination.project(c)));
-        return destination.project(c);
+        logger.debug("proj: {} -> {}", c, destination.getCoord(destination.project(c, proj)));
+        return destination.project(c,proj);
     }
-    public static Point projectDiv(Point origin, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, double divProportion, boolean upperCell) {
+    public static Point projectDiv(Point origin, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, double divProportion, boolean upperCell, PROJECTION proj) {
         BacteriaSpineCoord c = source.getCoord(origin);
         c.setDivisionPoint(divProportion, upperCell);
-        logger.debug("proj div: {} -> {}", c, destination.getCoord(destination.project(c)));
-        return destination.project(c);
+        logger.debug("proj div: {} -> {}", c, destination.getCoord(destination.project(c, proj)));
+        return destination.project(c, proj);
     }
-    public enum PROJECTION {PROPORTIONAL, NEAREST_POLE};
+    public static enum PROJECTION {PROPORTIONAL, NEAREST_POLE};
 }

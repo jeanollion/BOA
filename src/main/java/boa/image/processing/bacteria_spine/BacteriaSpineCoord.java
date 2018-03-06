@@ -17,6 +17,9 @@
  */
 package boa.image.processing.bacteria_spine;
 
+import static boa.image.processing.bacteria_spine.BacteriaSpineFactory.logger;
+import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION;
+
 /**
  *
  * @author jollion
@@ -30,6 +33,23 @@ public class BacteriaSpineCoord {
     }
     public double spineCoord(boolean normalized) {
         return normalized?coords[0]/coords[2] : coords[0];
+    }
+    public double getProjectedSpineCoord(double newSpineLength, PROJECTION proj) {
+        logger.debug("proj type: {}", proj);
+        switch(proj) {
+            case PROPORTIONAL:
+            default:
+                logger.debug("prop proj");
+                return spineCoord(true) * newSpineLength;
+            case NEAREST_POLE:
+                if (spineCoord(true)<=0.5) { // upper pole
+                    logger.debug("upper pole: new l {}, old l {}, res: {}",newSpineLength , spineLength(), spineCoord(false));
+                    return spineCoord(false);
+                } else { // lower pole
+                    logger.debug("lower pole: new l {}, old l {}, res: {}",newSpineLength , spineLength(), newSpineLength-(spineLength() - spineCoord(false)));
+                    return newSpineLength-(spineLength() - spineCoord(false));
+                }
+        }
     }
     public double spineLength() {
         return coords[2];
