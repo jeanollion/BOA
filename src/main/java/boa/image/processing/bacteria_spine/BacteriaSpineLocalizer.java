@@ -60,6 +60,11 @@ public class BacteriaSpineLocalizer {
         length = spine[spine.length-1].getContent2();
     }
 
+    public BacteriaSpineLocalizer setTestMode(boolean testMode) {
+        this.testMode = testMode;
+        return this;
+    }
+    
     public PointContainer2<Vector, Double>[] getSpine() {
         return spine;
     }
@@ -91,7 +96,7 @@ public class BacteriaSpineLocalizer {
         
         res.setSpineCoord( (r1.getContent2() + deltaSpineDist * (r1.getContent2()<r2.getContent2()?1:-1)) );
         res.setSpineLength(length);
-        Vector spineDir = r1.getContent1().duplicate().weightedSum(r2.getContent1(),deltaSpineDist, L-deltaSpineDist);
+        Vector spineDir = r1.getContent1().duplicate().weightedSum(r2.getContent1(),deltaSpineDist/L, (L-deltaSpineDist)/L);
         res.setSpineRadius(spineDir.norm());
         double sign = Math.signum(spineDir.dotProduct(Vector.vector(r1.duplicate().weightedSum(r2, deltaSpineDist, L-deltaSpineDist), p))); // on which side of the spine is the point ? 
         res.setDistFromSpine(sign * Math.sqrt(d1Sq - deltaSpineDist*deltaSpineDist));
@@ -131,7 +136,7 @@ public class BacteriaSpineLocalizer {
         return otherPoint.dist(proj) * source.getScaleXY();
     }
     public static Point project(Point sourcePoint, StructureObject source, StructureObject destination, PROJECTION proj, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
-        if (destination.getPrevious()==source.getPrevious() && destination.getTrackHead()==source.getTrackHead()) return project(sourcePoint, localizerMap.get(source), localizerMap.get(destination), proj);
+        if (destination.getPrevious()==source && destination.getTrackHead()==source.getTrackHead()) return project(sourcePoint, localizerMap.get(source), localizerMap.get(destination), proj);
         List<StructureObject> successiveContainers = new ArrayList<>(destination.getFrame()-source.getFrame()+1);
         StructureObject cur = destination;
         while (cur!=source) {
@@ -164,14 +169,17 @@ public class BacteriaSpineLocalizer {
     }
     public static Point project(Point sourcePoint, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, PROJECTION proj) {
         BacteriaSpineCoord c = source.getCoord(sourcePoint);
-        logger.debug("proj: {} -> {}", c, destination.getCoord(destination.project(c, proj)));
-        return destination.project(c,proj);
+        Point res = destination.project(c, proj);
+        logger.debug("projecting: {} -> {}", sourcePoint, res);
+        logger.debug("proj: {} -> {}", c, destination.getCoord(res));
+        return res;
     }
     public static Point projectDiv(Point origin, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, double divProportion, boolean upperCell, PROJECTION proj) {
         BacteriaSpineCoord c = source.getCoord(origin);
         c.setDivisionPoint(divProportion, upperCell);
-        logger.debug("proj div: {} -> {}", c, destination.getCoord(destination.project(c, proj)));
-        return destination.project(c, proj);
+        Point res = destination.project(c, proj);
+        logger.debug("proj div: {} -> {}", c, destination.getCoord(res));
+        return res;
     }
     public static enum PROJECTION {PROPORTIONAL, NEAREST_POLE};
 }

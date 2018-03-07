@@ -35,11 +35,9 @@ public class BacteriaSpineCoord {
         return normalized?coords[0]/coords[2] : coords[0];
     }
     public double getProjectedSpineCoord(double newSpineLength, PROJECTION proj) {
-        logger.debug("proj type: {}", proj);
         switch(proj) {
             case PROPORTIONAL:
             default:
-                logger.debug("prop proj");
                 return spineCoord(true) * newSpineLength;
             case NEAREST_POLE:
                 if (spineCoord(true)<=0.5) { // upper pole
