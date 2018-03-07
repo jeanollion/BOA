@@ -54,7 +54,7 @@ public class BacteriaSpineLocalizer {
     public BacteriaSpineLocalizer(Region bacteria) {
         this.bacteria=bacteria;
         spine = BacteriaSpineFactory.createSpine(bacteria);
-        List<PointContainer2<Vector, Double>> spList = new ArrayList<>(Arrays.asList(spine)); // KD tree shuffles elements
+        List<PointContainer2<Vector, Double>> spList = new ArrayList<>(Arrays.asList(spine)); // KD tree shuffles elements -> new list
         this.spineKDTree = new KDTree<>(spList, spList);
         search = new KNearestNeighborSearchOnKDTree(spineKDTree, 2);
         length = spine[spine.length-1].getContent2();
@@ -78,10 +78,10 @@ public class BacteriaSpineLocalizer {
 
     /**
      * 
-     * @param p
+     * @param p xy point
      * @return {@link BacteriaSpineCoord} representation of {@param p} from {@param referencePole} or null if it could not be computed
      */
-    public BacteriaSpineCoord getCoord(RealLocalizable p) {
+    public BacteriaSpineCoord getSpineCoord(RealLocalizable p) {
         Point source = Point.wrap(p);
         this.search.search(p);
         if (testMode)  logger.debug("get spine coord for: {}: nearst point: {} & {}", p, search.getSampler(0), search.getSampler(1));
@@ -161,7 +161,12 @@ public class BacteriaSpineLocalizer {
         return res;
         
     }
-    
+    /**
+     * 
+     * @param coord coordinate to project on this spine
+     * @param proj projection type
+     * @return and xy coordinate of {@param coord} in the current spine
+     */
     public Point project(BacteriaSpineCoord coord, PROJECTION proj) {
         Comparator<PointContainer2<Vector, Double>> comp = (p1, p2)->Double.compare(p1.getContent2(), p2.getContent2());
         Double spineCoord = coord.getProjectedSpineCoord(length, proj);
@@ -259,17 +264,17 @@ public class BacteriaSpineLocalizer {
         return curentProj;
     }
     public static Point project(Point sourcePoint, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, PROJECTION proj) {
-        BacteriaSpineCoord c = source.getCoord(sourcePoint);
+        BacteriaSpineCoord c = source.getSpineCoord(sourcePoint);
         Point res = destination.project(c, proj);
         //logger.debug("projecting: {} -> {}", sourcePoint, res);
-        //logger.debug("proj: {} -> {}", c, res==null ? null : destination.getCoord(res));
+        //logger.debug("proj: {} -> {}", c, res==null ? null : destination.getSpineCoord(res));
         return res;
     }
     public static Point projectDiv(Point origin, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, double divProportion, boolean upperCell, PROJECTION proj) {
-        BacteriaSpineCoord c = source.getCoord(origin);
+        BacteriaSpineCoord c = source.getSpineCoord(origin);
         c.setDivisionPoint(divProportion, upperCell);
         Point res = destination.project(c, proj);
-        //logger.debug("proj div: {} -> {}", c, res==null ? null : destination.getCoord(res));
+        //logger.debug("proj div: {} -> {}", c, res==null ? null : destination.getSpineCoord(res));
         return res;
     }
     public static enum PROJECTION {PROPORTIONAL, NEAREST_POLE};

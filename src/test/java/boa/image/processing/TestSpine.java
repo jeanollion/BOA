@@ -64,8 +64,8 @@ public class TestSpine {
     public static void testProjection(StructureObject bact1, StructureObject bact2) {
         Point center = bact1.getRegion().getGeomCenter(false).translate(new Vector(-2, 45.7f));
         HashMapGetCreateRedirected<StructureObject, BacteriaSpineLocalizer> locMap = new HashMapGetCreateRedirected<>(b->new BacteriaSpineLocalizer(b.getRegion()).setTestMode(false), HashMapGetCreateRedirected.Syncronization.NO_SYNC);
-        Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, PROPORTIONAL, locMap); //NEAREST_POLE
-        
+        Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, NEAREST_POLE, locMap); 
+        //Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, PROPORTIONAL, locMap);
         
         
         center.translateRev(bact1.getBounds());
@@ -99,7 +99,7 @@ public class TestSpine {
         test.setPixel((int)(pT.get(0)*5+0.5)+1, (int)(pT.get(1)*5+0.5)+1, 0, 1000);
         BacteriaSpineLocalizer loc = new BacteriaSpineLocalizer(bact.getRegion());
         loc.testMode=true;
-        BacteriaSpineCoord coord = loc.getCoord(p);
+        BacteriaSpineCoord coord = loc.getSpineCoord(p);
         Point p2 = loc.project(coord, NEAREST_POLE);
         Point p2T = p2.duplicate().translateRev(bact.getBounds());
         test.setPixel((int)(p2T.get(0)*5+0.5)+1, (int)(p2T.get(1)*5+0.5)+1, 0, 1001);
