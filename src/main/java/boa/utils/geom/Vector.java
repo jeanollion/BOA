@@ -106,6 +106,9 @@ public class Vector extends Point<Vector>  {
                 u.getWithDimCheck(1)*v.getWithDimCheck(2) - u.getWithDimCheck(2)*v.getWithDimCheck(1)
         );
     }
+    public static double crossProduct2D(Vector u, Vector v) {
+        return u.coords[0]*v.coords[1]-u.coords[1]*v.coords[0];
+    }
     
     public Vector rotateXY90() {
         float temp = coords[0];

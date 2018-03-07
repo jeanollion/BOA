@@ -99,6 +99,12 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     public static Point asPoint(Offset off) {
         return new Point(off.xMin(), off.yMin(), off.zMin());
     }
+    public static Point wrap(RealLocalizable p) {
+        if (p instanceof Point) return ((Point)p);
+        float[] coords = new float[p.numDimensions()];
+        p.localize(coords);
+        return new Point(coords);
+    }
     public T toMiddlePoint() {
         for (int i = 0; i<coords.length; ++i) coords[i]/=2f;
         return (T)this;
@@ -214,10 +220,7 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
             return false;
         }
         final Point<?> other = (Point<?>) obj;
-        if (!Arrays.equals(this.coords, other.coords)) {
-            return false;
-        }
-        return true;
+        return Arrays.equals(this.coords, other.coords);
     }
     public static Point intersect2D(Point line1Point1, Point line1Point2, Point line2Point1, Point line2Point2) {
         double d = (line1Point1.coords[0]-line1Point2.coords[0])*(line2Point1.coords[1]-line2Point2.coords[1]) - (line1Point1.coords[1]-line1Point2.coords[1])*(line2Point1.coords[0]-line2Point2.coords[0]);

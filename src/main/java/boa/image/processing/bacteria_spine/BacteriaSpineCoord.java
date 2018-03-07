@@ -44,7 +44,7 @@ public class BacteriaSpineCoord {
                     logger.debug("upper pole: new l {}, old l {}, res: {}",newSpineLength , spineLength(), spineCoord(false));
                     return spineCoord(false);
                 } else { // lower pole
-                    logger.debug("lower pole: new l {}, old l {}, res: {}",newSpineLength , spineLength(), newSpineLength-(spineLength() - spineCoord(false)));
+                    logger.debug("lower pole: new l {}, old l {}, coord: {}, delta: {}, res: {}",newSpineLength , spineLength(), spineCoord(false), spineLength() - spineCoord(false), newSpineLength-(spineLength() - spineCoord(false)));
                     return newSpineLength-(spineLength() - spineCoord(false));
                 }
         }
@@ -81,9 +81,8 @@ public class BacteriaSpineCoord {
      * @return same modified object
      */
     public BacteriaSpineCoord setDivisionPoint(double divisionProportion, boolean upperCell) {
-        double newSpineLength = spineLength() * divisionProportion;
-        this.setSpineLength(newSpineLength);
-        if (!upperCell) setSpineCoord(spineCoord(false)-newSpineLength);
+        if (!upperCell) setSpineCoord(spineCoord(false)-(1-divisionProportion)*spineLength()); // shift coord of the size of the upper cell
+        setSpineLength(spineLength() * divisionProportion);
         return this;
     }
     
