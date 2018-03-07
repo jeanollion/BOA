@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import boa.utils.Pair;
+import boa.utils.geom.Point;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -197,15 +198,15 @@ public class SaveAndRetriveSegmentationData {
             String corrected = "-corrected";
             //String corrected = "";
             if (new File(name+corrected+".zip").exists()) {
-                double[][] reference = getCenters(getObjects(name+corrected+".zip"), im, mask);
-                double[][] observed = getCenters(objectsMC.get(mcIdx), im, mask);
+                List<Point> reference = getCenters(getObjects(name+corrected+".zip"), im, mask);
+                List<Point> observed = getCenters(objectsMC.get(mcIdx), im, mask);
                 int[] comparison = compare(observed, reference, distanceThreshold);
                 total[0]+=comparison[0];
                 total[1]+=comparison[1];
                 total[2]+=comparison[2];
-                total[3]+=observed.length;
-                total[4]+=reference.length;
-                logger.info("idx={}: FP: {}, FN: {}, #error: {}, #total: {}, #ref: {}", mcIdx, comparison[0], comparison[1], comparison[2], observed.length, reference.length);
+                total[3]+=observed.size();
+                total[4]+=reference.size();
+                logger.info("idx={}: FP: {}, FN: {}, #error: {}, #total: {}, #ref: {}", mcIdx, comparison[0], comparison[1], comparison[2], observed.size(), reference.size());
             }
         }
         logger.info("FP: {}({}), FN: {}({}), #error: {}, #total: {}, #total ref: {}", total[0], (double)total[0]/(double)total[3], total[1], (double)total[1]/(double)total[3], total[2], total[3], total[4]);
@@ -223,23 +224,23 @@ public class SaveAndRetriveSegmentationData {
      * @param threshold
      * @return [false Positive, false negative, stack]
      */
-    private static int[] compare(double[][] observed, double[][] reference, double threshold) {
+    private static int[] compare(List<Point> observed, List<Point> reference, double threshold) {
         int falsePositive=0, falseNegative=0, stack=0;
-        int[] refMatch = new int[reference.length];
+        int[] refMatch = new int[reference.size()];
         Arrays.fill(refMatch, -1);
-        for (int i = 0; i<observed.length; ++i) {
-            int c = getClosestCenter(observed[i], reference, threshold);
+        for (int i = 0; i<observed.size(); ++i) {
+            int c = getClosestCenter(observed.get(i), reference, threshold);
             if (c>=0) {
                 if (refMatch[c]>=0) stack++;
                 else refMatch[c] = i; 
             } else {
-                logger.debug("false pos, x:{}, y:{}", observed[i][0], observed[i][1]);
+                logger.debug("false pos: {}", observed.get(i));
                 ++falsePositive;
             }
         }
-        for (int i = 0; i<reference.length; ++i) {
+        for (int i = 0; i<reference.size(); ++i) {
             if (refMatch[i]<0) {
-                logger.debug("false neg, x:{}, y:{}", reference[i][0], reference[i][1]);
+                logger.debug("false neg: {}", reference.get(i));
                 ++falseNegative;
             }
         }
@@ -250,11 +251,11 @@ public class SaveAndRetriveSegmentationData {
         return Math.pow(c1[0]-c2[0], 2) + Math.pow(c1[1]-c2[1], 2) ;
     }
     
-    private static int getClosestCenter(double[] center, double[][] otherCenters, double threhsold) {
+    private static int getClosestCenter(Point center, List<Point> otherCenters, double threhsold) {
         double minD = threhsold;
         int min = -1;
-        for (int i = 0; i<otherCenters.length; ++i) {
-            double d = dist2(center, otherCenters[i]);
+        for (int i = 0; i<otherCenters.size(); ++i) {
+            double d = center.distSq(otherCenters.get(i));
             if (d<minD) {
                 minD = d;
                 min = i;
@@ -263,26 +264,23 @@ public class SaveAndRetriveSegmentationData {
         return min;
     }
     
-    public static double[][] getCenters(String name, ImageMask mask) {
+    public static List<Point> getCenters(String name, ImageMask mask) {
         Image im = ImageReader.openImage(name+".tif");
         ArrayList<Region> objects = getObjects(name+".zip");
         return getCenters(objects, im, mask);
     }
     
-    public static double[][] getCenters(ArrayList<Region> objects, Image image, ImageMask mask) {
-        ArrayList<double[]> res=  new ArrayList<double[]>();
+    public static List<Point> getCenters(ArrayList<Region> objects, Image image, ImageMask mask) {
+        ArrayList<Point> res=  new ArrayList<>();
         for (int i = 0; i<objects.size(); ++i) {
             Region o = objects.get(i);
-            double[] d = o.getMassCenter(image, false);
-            Voxel v = getVoxel(d);
+            Point d = o.getMassCenter(image, false);
+            Voxel v = d.asVoxel();
             if (mask==null || (mask.contains(v.x, v.y, v.z) && mask.insideMask(v.x, v.y, v.z))) res.add(d);
         }
-        return res.toArray(new double[0][0]);
+        return res;
     }
     
-    private static Voxel getVoxel(double[] coords) {
-        return new Voxel((int)(coords[0]+0.5), (int)(coords[1]+0.5), (int)(coords[2]+0.5));
-    }
     
     public static ArrayList<Region> getObjects(String roiListDir) {
         RoiManager rm = getRM();
