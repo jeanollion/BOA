@@ -56,14 +56,14 @@ public class TestSpine {
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
-        StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(2);
+        StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         StructureObject bact2 = root2.getChildren(0).get(mc).getChildren(1).get(1);
         //testLocalization(bact);
         testProjection(bact, bact2);
     }
     public static void testProjection(StructureObject bact1, StructureObject bact2) {
         Point center = bact1.getRegion().getGeomCenter(false).translate(new Vector(-2, 45.7f));
-        HashMapGetCreateRedirected<StructureObject, BacteriaSpineLocalizer> locMap = new HashMapGetCreateRedirected<>(b->new BacteriaSpineLocalizer(b.getRegion()).setTestMode(false), HashMapGetCreateRedirected.Syncronization.NO_SYNC);
+        HashMapGetCreateRedirected<StructureObject, BacteriaSpineLocalizer> locMap = new HashMapGetCreateRedirected<>(b->new BacteriaSpineLocalizer(b.getRegion()).setTestMode(true), HashMapGetCreateRedirected.Syncronization.NO_SYNC);
         Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, NEAREST_POLE, locMap); 
         //Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, PROPORTIONAL, locMap);
         

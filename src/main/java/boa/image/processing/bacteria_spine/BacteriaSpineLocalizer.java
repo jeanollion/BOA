@@ -36,6 +36,7 @@ import java.util.Set;
 import net.imglib2.KDTree;
 import net.imglib2.RealLocalizable;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
+import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,14 +50,14 @@ public class BacteriaSpineLocalizer {
     final Region bacteria;
     PointContainer2<Vector, Double>[] spine;
     KDTree<PointContainer2<Vector, Double>> spineKDTree;
-    KNearestNeighborSearchOnKDTree<PointContainer2<Vector, Double>> search;
+    NearestNeighborSearchOnKDTree<PointContainer2<Vector, Double>> search;
     double length;
     public BacteriaSpineLocalizer(Region bacteria) {
         this.bacteria=bacteria;
         spine = BacteriaSpineFactory.createSpine(bacteria);
         List<PointContainer2<Vector, Double>> spList = new ArrayList<>(Arrays.asList(spine)); // KD tree shuffles elements -> new list
         this.spineKDTree = new KDTree<>(spList, spList);
-        search = new KNearestNeighborSearchOnKDTree(spineKDTree, 2);
+        search = new NearestNeighborSearchOnKDTree(spineKDTree);
         length = spine[spine.length-1].getContent2();
     }
 
@@ -82,12 +83,29 @@ public class BacteriaSpineLocalizer {
      * @return {@link BacteriaSpineCoord} representation of {@param p} from {@param referencePole} or null if it could not be computed
      */
     public BacteriaSpineCoord getSpineCoord(RealLocalizable p) {
+        search.search(p);
+        if (testMode)  logger.debug("get spine coord for: {}: nearst point: {}(d={}) & {}(d={}) 3rd closest: {}(d={})", p, search.getSampler().get(), search.getSquareDistance());
+        PointContainer2<Vector, Double> v = search.getSampler().get();
+        // get 2 adjacent other points
+        int idx = Arrays.binarySearch(spine, v, SPINE_COMPARATOR);
+        PointContainer2<Vector, Double> vPrev = idx>0 ? spine[idx-1] : null;
+        PointContainer2<Vector, Double> vNext = idx<spine.length-1 ? spine[idx+1] : null;
         Point source = Point.wrap(p);
-        this.search.search(p);
-        if (testMode)  logger.debug("get spine coord for: {}: nearst point: {} & {}", p, search.getSampler(0), search.getSampler(1));
-        
-        PointContainer2<Vector, Double> r0 = search.getSampler(0).get();
-        PointContainer2<Vector, Double> r1 = search.getSampler(1).get();
+        if (testMode && vPrev!=null && vNext!=null) logger.debug("compare two coords");
+        BacteriaSpineCoord c1 = vPrev==null? null:getSpineCoord(source, v, vPrev);
+        BacteriaSpineCoord c2 = vNext==null? null:getSpineCoord(source, v, vNext);
+        if (c1==null) return c2;
+        if (c2==null) return c1;
+        return Math.abs(c1.distFromSpine(false))<Math.abs(c2.distFromSpine(false)) ? c1 : c2;
+    }
+    /**
+     * 
+     * @param source
+     * @param r0 closest vertebra to {@param source}
+     * @param r1
+     * @return 
+     */
+    private BacteriaSpineCoord getSpineCoord(Point source, PointContainer2<Vector, Double> r0, PointContainer2<Vector, Double> r1) {
         BacteriaSpineCoord res = new BacteriaSpineCoord().setSpineLength(length);
         // specific cases
         if (source.equals(r0)) { // source is r0
@@ -103,39 +121,63 @@ public class BacteriaSpineLocalizer {
         Vector v0 = r0.getContent1().duplicate().normalize();
         Vector v1 = r1.getContent1().duplicate().normalize();
         Vector A = Vector.vector(r0, source);
-        Vector Aa = Vector.vector(r1, source);
+        Vector A1 = Vector.vector(r1, source);
         if (A.duplicate().normalize().equals(v0)) { // point is in direction of r0
             res.setSpineCoord(r0.getContent2());
             res.setSpineRadius(r0.getContent1().norm());
             res.setDistFromSpine(A.norm());
             return res;
         }
-        if (Aa.duplicate().normalize().equals(v1)) { // point is in direction of r1
+        if (A1.duplicate().normalize().equals(v1)) { // point is in direction of r1
             res.setSpineCoord(r1.getContent2());
             res.setSpineRadius(r1.getContent1().norm());
-            res.setDistFromSpine(Aa.norm());
+            res.setDistFromSpine(A1.norm());
             return res;
         }
+        Vector B = Vector.vector(r0, r1); 
+        // inside segment condition:
+        if (Vector.crossProduct2D(A, v0)*Vector.crossProduct2D(A1, v1)>0) { // point is outside segment: 
+            double dotP = A.dotProduct(B);
+            if ((dotP<0 && r0.equals(spine[0])) || (dotP>0 && r0.equals(spine[spine.length-1]))) { //only allow if before rO & r0 = first, or after r0 & rO = last
+                Point intersection = Point.intersect2D(source, source.duplicate().translateRev(v0), r0, r1);
+                Vector sourceDir = Vector.vector(intersection, source);
+                Vector r0_inter = Vector.vector(r0, intersection);
+                double before = Math.signum(dotP); // intersection if before r0 -> only allow if ro is first  // intersection is after r0 -> only allow if r0 is last
+                Vector spineDir = r0.getContent1();
+                res.setSpineRadius(spineDir.norm());
+                double sign = Math.signum(sourceDir.dotProduct(spineDir));
+                res.setDistFromSpine(sourceDir.norm() * sign);
+                res.setSpineCoord(r0.getContent2()+before*r0_inter.norm());
+                return res;
+            }
+            return null;
+        }
+        
         if (v0.equals(v1)) { // simple intersection of p & dir 
-            if (testMode) logger.debug("vertabra with colinear direction case");
-            Point inter = Point.intersect2D(source, source.duplicate().translateRev(v0), r0, r1);
-            double alpha = Vector.vector(r0, inter).norm() / Vector.vector(r0, r1).norm();
-            double w = 1-alpha;
-            Vector spineDir = r0.getContent1().duplicate().weightedSum(r1.getContent1(), w, 1-w);
-            res.setSpineRadius(spineDir.norm());
-            Vector sourceDir = Vector.vector(inter, source);
-            double sign = Math.signum(sourceDir.dotProduct(spineDir));
-            res.setDistFromSpine(sourceDir.norm() * sign);
-            res.setSpineCoord((1-w) * r0.getContent2() + w*r1.getContent2());
-            return res;
+            Point intersection = Point.intersect2D(source, source.duplicate().translateRev(v0), r0, r1);
+            Vector sourceDir = Vector.vector(intersection, source);
+            Vector r0_inter = Vector.vector(r0, intersection);
+            if (r0_inter.dotProduct(Vector.vector(r1, intersection))>0) { // case where intersection is not between 2 vertebra: only allow if there are no vertebra afterwards
+                throw new IllegalArgumentException("out-of-segment case should have been handled with cross-product tests!");
+            } else {
+                double alpha = r0_inter.norm() / Vector.vector(r0, r1).norm();
+                double w = 1-alpha;
+                Vector spineDir = r0.getContent1().duplicate().weightedSum(r1.getContent1(), w, 1-w);
+                res.setSpineRadius(spineDir.norm());
+                double sign = Math.signum(sourceDir.dotProduct(spineDir));
+                res.setDistFromSpine(sourceDir.norm() * sign);
+                res.setSpineCoord(w * r0.getContent2() + (1-w)*r1.getContent2());
+                if (testMode) logger.debug("vertabra with colinear direction case weight: {}, intersection: {} res -> {}", w, intersection, res);
+                return res;
+            }
         }
-        if (testMode) logger.debug("general case");
+        
         // need to solve alpha & d = distance from spine in the direction spineDir = weighted sum of v0 & v1
         A.reverseOffset(); //  not null  & not colinear to V0 
-        Vector B = Vector.vector(r0, r1); 
+        
         Vector C = v1;
         Vector D = v0.duplicate().weightedSum(v1, 1, -1); // not null
-        // vector walk: source -> r0 -> inter -> source. "inter" begin intersection point of source point and r0r1. direction inter-source is weighted sum of direction ro & direction r1
+        // vector walk: source -> r0 -> intersection -> source. "intersection" begin intersection point of source point and r0r1. direction inter-source is weighted sum of direction ro & direction r1
         // equation to solve is A + alpha*B + d * C + alpha*d * D = 0 (1)
         // first stip eliminate the non linear term -> get a linear relation between 
         double a = Vector.crossProduct2D(D, A);
@@ -150,17 +192,21 @@ public class BacteriaSpineLocalizer {
         // alpha2 * AA + alpha  * BB + C = 0
         double alpha = solveQuadratic(AA, BB, CC);
         double w = 1-alpha;
-        if (testMode) logger.debug("weight: {}, d: {}", 1-alpha, a/c + alpha * b/c);
-        if (Double.isNaN(alpha)) return null;
+        if (Double.isNaN(alpha)) {
+            if (testMode) logger.debug("general case: no solution");
+            return null;
+        }
         double d = a/c + alpha * b/c; // relative value -> can be negative
         
         Vector spineDir = r0.getContent1().duplicate().weightedSum(r1.getContent1(), a, 1-w);
         res.setSpineRadius(spineDir.norm());
         res.setDistFromSpine(d);
         res.setSpineCoord(w * r0.getContent2() + (1-w)*r1.getContent2());
+        if (testMode) logger.debug("general case. weight: {}, d: {}, coord: {}", w, d, res);
         return res;
         
     }
+    public final static Comparator<PointContainer2<Vector, Double>> SPINE_COMPARATOR = (p1, p2)->Double.compare(p1.getContent2(), p2.getContent2());
     /**
      * 
      * @param coord coordinate to project on this spine
@@ -168,11 +214,10 @@ public class BacteriaSpineLocalizer {
      * @return and xy coordinate of {@param coord} in the current spine
      */
     public Point project(BacteriaSpineCoord coord, PROJECTION proj) {
-        Comparator<PointContainer2<Vector, Double>> comp = (p1, p2)->Double.compare(p1.getContent2(), p2.getContent2());
         Double spineCoord = coord.getProjectedSpineCoord(length, proj);
         if (spineCoord<=-1 || spineCoord>=length+1) return null; //border cases allow only 1 pixel outside
         PointContainer2<Vector, Double> searchKey = new PointContainer2<>(null, spineCoord);
-        int idx = Arrays.binarySearch(spine, searchKey, comp);
+        int idx = Arrays.binarySearch(spine, searchKey, SPINE_COMPARATOR);
         if (testMode) logger.debug("projecting : {}, spineCoord: {}, search idx: {} (ip: {})", coord, spineCoord, idx, (idx<0?-idx-1:idx));
         if (idx<0) {
             int ip = -idx-1;
@@ -199,16 +244,17 @@ public class BacteriaSpineLocalizer {
         if (testMode) logger.debug("projecting from single vertebra: {}", vertebra);
         return vertebra.duplicate().translate(vertebra.getContent1().duplicate().multiply(distanceFromSpine));
     }
-    private Point projectFrom2Vertebra(PointContainer2<Vector, Double> v1, PointContainer2<Vector, Double> v2, double spineCoord, double distanceFromSpine) {
-        double interVertebraDist = v2.getContent2()-v1.getContent2();
-        double w = 1-(spineCoord-v1.getContent2())/interVertebraDist;
-        Point v1v2 = v1.duplicate().weightedSum(v2, w, 1-w);
-        Vector dir = v1.getContent1().duplicate().weightedSum(v2.getContent1(), w, 1-w).normalize().multiply(distanceFromSpine);
-        if (testMode) logger.debug("projecting from vertebra: {}(w:{}) & {}(w:{}), spine point: {} dir: {}", v1, w, v2, 1-w,  v1v2.duplicate(), dir);
-        return v1v2.translate(dir);
+    private Point projectFrom2Vertebra(PointContainer2<Vector, Double> v0, PointContainer2<Vector, Double> v1, double spineCoord, double distanceFromSpine) {
+        double interVertebraDist = v1.getContent2()-v0.getContent2();
+        double w = 1-((spineCoord-v0.getContent2())/interVertebraDist);
+        Point intersection = v0.duplicate().weightedSum(v1, w, 1-w);
+        Vector dir = v0.getContent1().duplicate().weightedSum(v1.getContent1(), w, 1-w).normalize().multiply(distanceFromSpine);
+        if (testMode) logger.debug("projecting from vertebra: {}(w:{}) & {}(w:{}), intervertebra dist: {}, spine point: {} dir: {}", v0, w, v1, 1-w,  interVertebraDist, intersection.duplicate(), dir);
+        return intersection.translate(dir);
     }
     private static double solveQuadratic(Vector AA, Vector BB, Vector CC) {
         double[] rootsX = BacteriaSpineLocalizer.solveQuadratic(AA.get(0), BB.get(0), CC.get(0));
+        //logger.debug("roots: {}, {}", rootsX, BacteriaSpineLocalizer.solveQuadratic(AA.get(1), BB.get(1), CC.get(1)));
         if (rootsX.length==0) return Double.NaN;
         if (rootsX[0]>0 && rootsX[0]<1) return rootsX[0];
         if (rootsX.length==1) return Double.NaN;
