@@ -15,14 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.trackers.trackmate.post_processing;
+package boa.plugins.plugins.trackers.nested_spot_tracker.post_processing;
 
 import org.apache.commons.math3.distribution.RealDistribution;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.AbstractScoreFunction;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.DistributionFunction;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.Function;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.LinearTrimmedFunction;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.ScoreFunction;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.AbstractScoreFunction;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.DistributionFunction;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.Function;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.LinearTrimmedFunction;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.ScoreFunction;
 
 /**
  *

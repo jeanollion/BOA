@@ -15,9 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.trackers.trackmate.post_processing;
+package boa.plugins.plugins.trackers.nested_spot_tracker.post_processing;
 
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
@@ -37,16 +37,16 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
-import boa.plugins.plugins.trackers.trackmate.SpotPopulation;
-import boa.plugins.plugins.trackers.trackmate.SpotWithinCompartment;
+import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithinCompartment;
 import static boa.plugins.Plugin.logger;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.SplitScenario;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.Track;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.SplitScenario;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.Track;
 import boa.utils.HashMapGetCreate;
 import boa.utils.HashMapGetCreate.Factory;
 import boa.utils.Pair;
 import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceImpl;
+import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithQuality;
 
 /**
  *
@@ -54,26 +54,24 @@ import boa.image.processing.clustering.InterfaceImpl;
  */
 public class MutationTrackPostProcessing {
     final TreeMap<StructureObject, List<StructureObject>> trackHeadTrackMap; // sorted by timePoint
-    final Map<Region, SpotWithinCompartment>  objectSpotMap;
-    final Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotTrackMap;
-    final HashMapGetCreate<List<SpotWithinCompartment>, Track> spotTrackMap;
+    final Map<Region, ? extends SpotWithQuality>  objectSpotMap;
+    final Map<StructureObject, List<SpotWithQuality>> trackHeadSpotTrackMap;
+    final HashMapGetCreate<List<SpotWithQuality>, Track> spotTrackMap;
     final RemoveObjectCallBact removeObject;
     final int spotStructureIdx;
-    public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, Map<Region, SpotWithinCompartment> objectSpotMap, RemoveObjectCallBact removeObject) {
+    public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, Map<Region, ? extends SpotWithQuality> objectSpotMap, RemoveObjectCallBact removeObject) {
         this.removeObject=removeObject;
         this.spotStructureIdx=structureIdx;
-        trackHeadTrackMap = new TreeMap<StructureObject, List<StructureObject>>(getStructureObjectComparator());
+        trackHeadTrackMap = new TreeMap<>(getStructureObjectComparator());
         trackHeadTrackMap.putAll(StructureObjectUtils.getAllTracks(parentTrack, structureIdx));
         this.objectSpotMap = objectSpotMap;
-        trackHeadSpotTrackMap = new HashMap<StructureObject, List<SpotWithinCompartment>>(trackHeadTrackMap.size());
+        trackHeadSpotTrackMap = new HashMap<>(trackHeadTrackMap.size());
         for (Entry<StructureObject, List<StructureObject>> e : trackHeadTrackMap.entrySet()) {
-            List<SpotWithinCompartment> l = new ArrayList<SpotWithinCompartment>(e.getValue().size());
+            List<SpotWithQuality> l = new ArrayList<>(e.getValue().size());
             trackHeadSpotTrackMap.put(e.getKey(), l);
             for (StructureObject o : e.getValue()) l.add(objectSpotMap.get(o.getRegion()));
         }
-        spotTrackMap = new HashMapGetCreate<List<SpotWithinCompartment>, Track>(new Factory<List<SpotWithinCompartment>, Track>() {
-            public Track create(List<SpotWithinCompartment> key) {return new Track(key);}
-        });
+        spotTrackMap = new HashMapGetCreate<>((List<SpotWithQuality> key) -> new Track(key));
         
     }
     public static interface RemoveObjectCallBact {
@@ -81,7 +79,7 @@ public class MutationTrackPostProcessing {
     }
     
     public void connectShortTracksByDeletingLQSpot(double maxDist) {
-        Set<StructureObject> parentsToRelabel = new HashSet<StructureObject>();
+        Set<StructureObject> parentsToRelabel = new HashSet<>();
         double maxSqDist = maxDist * maxDist;
         Iterator<List<StructureObject>> it = trackHeadTrackMap.values().iterator();
         while (it.hasNext()) {
@@ -90,8 +88,8 @@ public class MutationTrackPostProcessing {
             // cherche un spot s proche dans la même bactérie tq LQ(s) ou LQ(trackHead(track))
             if (nextTrack.size()==1) continue;
             StructureObject nextTrackTH = nextTrack.get(0);
-            SpotWithinCompartment sNextTrackTH  = objectSpotMap.get(nextTrackTH.getRegion());
-            SpotWithinCompartment sNextTrackN  = objectSpotMap.get(nextTrack.get(1).getRegion());
+            SpotWithQuality sNextTrackTH  = objectSpotMap.get(nextTrackTH.getRegion());
+            SpotWithQuality sNextTrackN  = objectSpotMap.get(nextTrack.get(1).getRegion());
             
             double minDist = Double.POSITIVE_INFINITY;
             StructureObject bestPrevTrackEnd=null;
@@ -100,17 +98,17 @@ public class MutationTrackPostProcessing {
                 logger.debug("no spot found for: {}, tl : {}", nextTrackTH, nextTrack.size());
                 continue;
             }
-            for (StructureObject prevTrackEnd : sNextTrackTH.compartiment.object.getChildren(spotStructureIdx)) { // look in spots within same compartiment
+            for (StructureObject prevTrackEnd : sNextTrackTH.parent().getChildren(spotStructureIdx)) { // look in spots within same compartiment
                 if (prevTrackEnd.getNext()!=null) continue; // look only within track ends
                 if (prevTrackEnd.getPrevious()==null) continue; // look only wihtin tracks with >=1 element
                 //if (trackHeadTrackMap.get(headTrackTail.getTrackHead()).size()>=maxTrackSize) continue;
                 SpotWithinCompartment sprevTrackEnd  = (SpotWithinCompartment)objectSpotMap.get(prevTrackEnd.getRegion());
                 SpotWithinCompartment sPrevTrackP = (SpotWithinCompartment)objectSpotMap.get(prevTrackEnd.getPrevious().getRegion());
-                if (!sNextTrackTH.lowQuality && !sprevTrackEnd.lowQuality) continue;
+                if (!sNextTrackTH.isLowQuality() && !sprevTrackEnd.lowQuality) continue;
                 double dEndToN = sprevTrackEnd.squareDistanceTo(sNextTrackN);
                 double dPToTH = sPrevTrackP.squareDistanceTo(sNextTrackTH);
                 if (dEndToN>maxSqDist && dPToTH>maxSqDist) continue;
-                if (sNextTrackTH.lowQuality && sprevTrackEnd.lowQuality) { // 2 LQ spots: compare distances
+                if (sNextTrackTH.isLowQuality() && sprevTrackEnd.lowQuality) { // 2 LQ spots: compare distances
                     if (dEndToN<dPToTH) {
                         if (bestPrevTrackEnd==null || minDist>dEndToN) {
                             minDist = dEndToN;
@@ -124,7 +122,7 @@ public class MutationTrackPostProcessing {
                             bestPrevTrackEnd = prevTrackEnd;
                         }
                     }
-                } else if (!sNextTrackTH.lowQuality && dPToTH<=maxSqDist) { // keep the high quality spot
+                } else if (!sNextTrackTH.isLowQuality() && dPToTH<=maxSqDist) { // keep the high quality spot
                     if (bestPrevTrackEnd==null || minDist>dPToTH) {
                         minDist = dPToTH;
                         deleteNextTrackTH = false;
@@ -144,8 +142,8 @@ public class MutationTrackPostProcessing {
                 it.remove();
                 StructureObject prevTrackTH = bestPrevTrackEnd.getTrackHead();
                 List<StructureObject> prevTrack = this.trackHeadTrackMap.get(prevTrackTH);
-                List<SpotWithinCompartment> spotPrevTrack = trackHeadSpotTrackMap.get(prevTrackTH);
-                List<SpotWithinCompartment> spotNextTrack = trackHeadSpotTrackMap.remove(nextTrackTH);
+                List<SpotWithQuality> spotPrevTrack = trackHeadSpotTrackMap.get(prevTrackTH);
+                List<SpotWithQuality> spotNextTrack = trackHeadSpotTrackMap.remove(nextTrackTH);
                 spotTrackMap.remove(spotPrevTrack);
                 spotTrackMap.remove(spotNextTrack);
                 if (deleteNextTrackTH) {
@@ -177,12 +175,12 @@ public class MutationTrackPostProcessing {
         TrackLikelyhoodEstimator estimator = new TrackLikelyhoodEstimator(sf, minimalTrackLength, maximalSplitNumber);
         logger.debug("distance function: 0={} 0.3={}, 0.4={}, 0.5={}, 0.6={}, 0.7={}, 1={}", sf.getDistanceFunction().y(0), sf.getDistanceFunction().y(0.3), sf.getDistanceFunction().y(0.4), sf.getDistanceFunction().y(0.5), sf.getDistanceFunction().y(0.6), sf.getDistanceFunction().y(0.7), sf.getDistanceFunction().y(1));
         
-        Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotMapTemp = new HashMap<StructureObject, List<SpotWithinCompartment>>();
-        for (Entry<StructureObject, List<SpotWithinCompartment>> e : trackHeadSpotTrackMap.entrySet()) {
+        Map<StructureObject, List<SpotWithQuality>> trackHeadSpotMapTemp = new HashMap<>();
+        for (Entry<StructureObject, List<SpotWithQuality>> e : trackHeadSpotTrackMap.entrySet()) {
             List<StructureObject> track = trackHeadTrackMap.get(e.getKey());
             SplitScenario s = estimator.splitTrack(spotTrackMap.getAndCreateIfNecessary(e.getValue()));
             List<List<StructureObject>> tracks = s.splitTrack(track);
-            List<List<SpotWithinCompartment>> spotTracks = s.splitTrack(e.getValue());
+            List<List<SpotWithQuality>> spotTracks = s.splitTrack(e.getValue());
             boolean modif = tracks.size()>1;
             for (int i = 0; i<tracks.size(); ++i) {
                 List<StructureObject> subTrack = tracks.get(i);

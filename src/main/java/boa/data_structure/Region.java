@@ -115,7 +115,7 @@ public class Region {
     
     public Region duplicate() {
         if (this.mask!=null) {
-            return new Region(mask.duplicateMask(), label, is2D).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(center.duplicate());
+            return new Region(getMask().duplicateMask(), label, is2D).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(center==null ? null : center.duplicate());
         }
         else if (this.voxels!=null) {
             Set<Voxel> vox = new HashSet<> (voxels.size());

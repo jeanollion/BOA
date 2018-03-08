@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,16 +100,27 @@ public class BacteriaSpineLocalizer {
         PointContainer2<Vector, Double> v = spine[idx];
         //long t3 = System.currentTimeMillis();
         //logger.debug("KDTree search: {}ms, idx search: {}ms, globalmin bin search: {}ms idx: {} idx2 {}, dist: {}, dist2: {}", t1-t0, t2-t1, t3-t2, idx, idx2, spine[idx].distSq(source), spine[idx2].distSq(source));
-        //if (testMode)  logger.debug("get spine coord for: {}: nearst point: {}(d={}) & {}(d={}) 3rd closest: {}(d={})", p, search.getSampler().get(), search.getSquareDistance());
+        if (testMode)  logger.debug("get spine coord for: {}: nearst point: {}(d={}) prev: {}(d={}),  next: {}(d={})", p, spine[idx], spine[idx].distSq(source), idx>0?spine[idx-1]:null, idx>0?spine[idx-1].distSq(source):0, idx<spine.length-1?spine[idx+1]:null, idx<spine.length-1?spine[idx+1].distSq(source):0);
         
         PointContainer2<Vector, Double> vPrev = idx>0 ? spine[idx-1] : null;
         PointContainer2<Vector, Double> vNext = idx<spine.length-1 ? spine[idx+1] : null;
         
-        if (testMode && vPrev!=null && vNext!=null) logger.debug("compare two coords");
+       
         BacteriaSpineCoord c1 = vPrev==null? null:getSpineCoord(source, v, vPrev);
         BacteriaSpineCoord c2 = vNext==null? null:getSpineCoord(source, v, vNext);
-        if (c1==null) return c2;
-        if (c2==null) return c1;
+        if (c1==null && c2==null) { // try with adjacent
+            int idxPrev = idx-2;
+            int idxNext = idx+2;
+            while(c1==null && c2 == null && (idxPrev>=0 || idxNext<spine.length)) {
+                if (idxPrev>=0) c1 =  getSpineCoord(source, spine[idxPrev+1],  spine[idxPrev]);
+                if (idxNext<spine.length) c2 =  getSpineCoord(source, spine[idxNext-1],  spine[idxNext]);
+                ++idxNext;
+                --idxPrev;
+            }
+        }
+        if (c1==null && c2!=null) return c2;
+        if (c2==null && c1!=null) return c1;
+        if (testMode && vPrev!=null && vNext!=null) logger.debug("compare two coords");
         return Math.abs(c1.distFromSpine(false))<Math.abs(c2.distFromSpine(false)) ? c1 : c2;
     }
     /**
@@ -211,7 +223,7 @@ public class BacteriaSpineLocalizer {
         }
         double d = a/c + alpha * b/c; // relative value -> can be negative
         double w = 1-alpha;
-        Vector spineDir = r0.getContent1().duplicate().weightedSum(r1.getContent1(), a, 1-w);
+        Vector spineDir = r0.getContent1().duplicate().weightedSum(r1.getContent1(), w, 1-w);
         res.setSpineRadius(spineDir.norm());
         res.setDistFromSpine(d);
         res.setSpineCoord(w * r0.getContent2() + (1-w)*r1.getContent2());
@@ -308,9 +320,19 @@ public class BacteriaSpineLocalizer {
         if (proj==null) return Double.POSITIVE_INFINITY;
         return otherPoint.dist(proj) * source.getScaleXY();
     }
+    public static double distance(BacteriaSpineCoord sourceCoord, Point otherPoint, StructureObject source, StructureObject destination, PROJECTION projType, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
+        Point proj = project(sourceCoord, source, destination, projType, localizerMap);
+        logger.debug("distance: coord: {}->proj: {}", sourceCoord, proj);
+        if (proj==null) return Double.POSITIVE_INFINITY;
+        
+        return otherPoint.dist(proj) * source.getScaleXY();
+    }
     public static Point project(Point sourcePoint, StructureObject source, StructureObject destination, PROJECTION proj, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
-        boolean testMode = false;
-        if (destination.getPrevious()==source && destination.getTrackHead()==source.getTrackHead()) return project(sourcePoint, localizerMap.get(source), localizerMap.get(destination), proj);
+        return project(localizerMap.get(source).getSpineCoord(sourcePoint), source, destination, proj, localizerMap);
+    }
+    public static Point project(BacteriaSpineCoord sourceCoord, StructureObject source, StructureObject destination, PROJECTION proj, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
+        boolean testMode = true;
+        if (destination.getPrevious()==source && destination.getTrackHead()==source.getTrackHead()) return localizerMap.get(destination).project(sourceCoord, proj);
         List<StructureObject> successiveContainers = new ArrayList<>(destination.getFrame()-source.getFrame()+1);
         StructureObject cur = destination;
         while (cur!=source) {
@@ -321,11 +343,12 @@ public class BacteriaSpineLocalizer {
         }
         successiveContainers = Utils.reverseOrder(successiveContainers);
         if (testMode) logger.debug("successive containers: {}", successiveContainers);
-        Point curentProj = sourcePoint;
+        Point curentProj=null;
         for (StructureObject next : successiveContainers) {
             if (cur.getTrackHead()==next.getTrackHead()) {
-                if (testMode) logger.debug("project: {} -> {}", cur, next);
-                curentProj = project(curentProj, localizerMap.get(cur), localizerMap.get(next), proj);
+                if (source==cur) curentProj = localizerMap.get(next).project(sourceCoord, proj);
+                else curentProj = project(curentProj, localizerMap.get(cur), localizerMap.get(next), proj);
+                if (testMode) logger.debug("project: {} -> {}: {}", cur, next, curentProj);
             }
             else { // division -> get division proportion
                 List<StructureObject> sib = next.getDivisionSiblings(false);
@@ -334,8 +357,10 @@ public class BacteriaSpineLocalizer {
                 double curLength = localizerMap.get(next).getLength();
                 double prop = curLength/(totalLength+curLength);
                 boolean upperCell = next.getIdx() < sib.stream().mapToInt(o->o.getIdx()).min().getAsInt();
-                if (testMode) logger.debug("project div: {} -> {}, div prop: {}, upper cell: {}", cur, next, prop, upperCell);
-                curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell, proj);
+                //if (testMode) logger.debug("project div: coord before proj {} {}", curentProj,  (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj))); //.setDivisionPoint(prop, upperCell)
+                if (source==cur) curentProj = localizerMap.get(next).project(sourceCoord.duplicate().setDivisionPoint(prop, upperCell), proj);
+                else curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell, proj);
+                if (testMode) logger.debug("project div: {} -> {}, div prop: {}, upper cell: {} coord div: {}", cur, next, prop, upperCell, curentProj);
             }
             if (curentProj==null) return null;
             cur = next;

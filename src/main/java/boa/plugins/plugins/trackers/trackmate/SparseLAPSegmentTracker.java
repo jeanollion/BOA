@@ -1,6 +1,7 @@
 
 package boa.plugins.plugins.trackers.trackmate;
 
+import boa.plugins.plugins.trackers.nested_spot_tracker.DistanceComputationParameters;
 import fiji.plugin.trackmate.Logger;
 import fiji.plugin.trackmate.Spot;
 import static fiji.plugin.trackmate.tracking.LAPUtils.checkFeatureMap;

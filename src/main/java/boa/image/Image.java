@@ -10,6 +10,7 @@ import boa.image.processing.neighborhood.Neighborhood;
 import boa.utils.ArrayUtil;
 import boa.utils.StreamConcatenation;
 import boa.utils.Utils;
+import java.util.Collections;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
@@ -177,7 +178,7 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
      * @return array of image, dimention of array = z dimention of original image, each image has the corresponding z plane of each image of {@param images}
      */
     public static <T extends Image<T>> List<T> mergeImagesInZ(List<T> images) {
-        if (images==null || images.isEmpty()) return null;
+        if (images==null || images.isEmpty()) return Collections.EMPTY_LIST;
         if (!sameSize(images)) throw new IllegalArgumentException("All images should have same size");
         int sizeZ = images.get(0).sizeZ();
         if (sizeZ==1) return new ArrayList<T>(){{add(mergeZPlanes(images));}};

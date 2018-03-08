@@ -15,15 +15,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.trackers.trackmate.post_processing;
+package boa.plugins.plugins.trackers.nested_spot_tracker.post_processing;
 
 import boa.data_structure.StructureObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.math3.distribution.RealDistribution;
-import boa.plugins.plugins.trackers.trackmate.SpotWithinCompartment;
+import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithinCompartment;
 import static boa.plugins.Plugin.logger;
+import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithQuality;
 
 /**
  *
@@ -263,14 +264,14 @@ public class TrackLikelyhoodEstimator {
             this.frames=frames;
             this.distances=squareDistances;
         }
-        public Track(List<SpotWithinCompartment> track) {
+        public Track(List<SpotWithQuality> track) {
             frames = new int[track.size()];
             if (track.size()>1) { 
                 distances = new double[frames.length-1];
                 int lim = track.size();
-                frames[0] = track.get(0).frame;
+                frames[0] = track.get(0).frame();
                 for (int i = 1; i<lim; ++i) {
-                    frames[i] = track.get(i).frame;
+                    frames[i] = track.get(i).frame();
                     distances[i-1] = Math.sqrt(track.get(i-1).squareDistanceTo(track.get(i)));
                 }
             } else distances = new double[0];

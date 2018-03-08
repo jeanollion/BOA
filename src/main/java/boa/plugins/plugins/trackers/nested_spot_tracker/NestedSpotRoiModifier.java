@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.trackers.trackmate;
+package boa.plugins.plugins.trackers.nested_spot_tracker;
 
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.ImageWindowManager;
@@ -24,6 +24,7 @@ import fiji.plugin.trackmate.Spot;
 import ij.gui.Roi;
 import ij.gui.TextRoi;
 import boa.image.BoundingBox;
+import boa.plugins.plugins.trackers.trackmate.TrackMateInterface;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,12 +36,12 @@ import boa.utils.geom.Point;
  *
  * @author jollion
  */
-public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiModifier<Roi3D> {
+public class NestedSpotRoiModifier implements ImageWindowManager.RoiModifier<Roi3D> {
     public static double displayDistanceThreshold = 1.5;
     public static boolean displayPoles = false;
     final TrackMateInterface<SpotWithinCompartment> tmi;
     final int structureIdx;
-    public SpotWithinCompartmentRoiModifier(TrackMateInterface<SpotWithinCompartment> tmi, int structureIdx) {
+    public NestedSpotRoiModifier(TrackMateInterface<SpotWithinCompartment> tmi, int structureIdx) {
         this.tmi=tmi;
         this.structureIdx=structureIdx;
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);

@@ -80,7 +80,7 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
      */
     public Point duplicate(int dimension) {
         float[] res=  new float[dimension];
-        System.arraycopy(coords, 0, res, 0, dimension);
+        System.arraycopy(coords, 0, res, 0, Math.min(dimension, coords.length));
         return new Point(res);
     }
     public static Point middle(Offset o1, Offset o2) {

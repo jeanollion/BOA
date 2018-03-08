@@ -897,6 +897,12 @@ public class Utils {
         for (int i = 0; i<array.length; ++i) outputArray[i] = func.apply(array[i]);
         return outputArray;
     }
+    public static <T, U> U[] transform(T[] array, Function<Integer,U[]> outputArrayCreator, Function<T, U> func) {
+        if (array==null) return null;
+        U[] outputArray = outputArrayCreator.apply(array.length);
+        for (int i = 0; i<array.length; ++i) outputArray[i] = func.apply(array[i]);
+        return outputArray; 
+    }
 
     public static void cleanDirectByteBuffer(ByteBuffer buffer) {
         try {

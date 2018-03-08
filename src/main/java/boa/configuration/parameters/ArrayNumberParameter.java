@@ -28,6 +28,11 @@ public class ArrayNumberParameter extends SimpleListParameter<BoundedNumberParam
     public ArrayNumberParameter(String name, int unmutableIndex, BoundedNumberParameter childInstance) {
         super(name, unmutableIndex, childInstance);
         newInstanceNameFunction = i->Integer.toString(i);
+        if (unmutableIndex>=0) {
+            for (int i = 0;i<=unmutableIndex; ++i) {
+                this.insert(createChildInstance());
+            }
+        }
     }
     public ArrayNumberParameter setSorted(boolean sorted) {
         this.sorted=sorted;

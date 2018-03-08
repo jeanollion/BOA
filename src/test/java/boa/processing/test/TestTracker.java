@@ -52,7 +52,7 @@ import boa.plugins.plugins.track_post_filter.TrackLengthFilter;
 import boa.plugins.plugins.trackers.MutationTracker;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
-import boa.plugins.plugins.trackers.trackmate.SpotWithinCompartmentRoiModifier;
+import boa.plugins.plugins.trackers.nested_spot_tracker.NestedSpotRoiModifier;
 import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
 import boa.utils.Pair;
 import boa.utils.Utils;
@@ -68,15 +68,15 @@ public class TestTracker {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
         //String dbName = "Aya2";
-        String dbName = "AyaWT_mmglu";
+        //String dbName = "AyaWT_mmglu";
         //String dbName = "MutH_150324";
-       // // String dbName = "fluo170512_WT";
-        //String dbName = "fluo171113_WT_15s";
+        // String dbName = "fluo170512_WT";
+        String dbName = "fluo171113_WT_15s";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx =0;
-        int mcIdx =1;
-        int structureIdx =1;
+        int mcIdx =3;
+        int structureIdx =2;
         int[] frames = new int[]{0, 1000}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
@@ -139,7 +139,7 @@ public class TestTracker {
         logger.debug("track: {} ({}) children of {} = ({})", StructureObjectUtils.getAllTracks(parentTrack, structureIdx).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, structureIdx).values(), o->o.size()), parentTrack.get(0), parentTrack.get(0).getChildren(structureIdx));
 
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        if (structureIdx==2 && MutationTracker.debugTMI!=null) iwm.setRoiModifier(new SpotWithinCompartmentRoiModifier(MutationTracker.debugTMI, 2));
+        if (structureIdx==2 && MutationTracker.debugTMI!=null) iwm.setRoiModifier(new NestedSpotRoiModifier(MutationTracker.debugTMI, 2));
         logger.debug("generating TOI");
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
         // display preFilteredImages

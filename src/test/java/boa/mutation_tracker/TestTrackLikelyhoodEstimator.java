@@ -27,13 +27,13 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import static org.junit.Assert.assertArrayEquals;
 import org.junit.Before;
 import org.junit.Test;
-import boa.plugins.plugins.trackers.trackmate.post_processing.DistancePenaltyScoreFunction;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.DistributionFunction;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.HarmonicScoreFunction;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.LinearTrimmedFunction;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.ScoreFunction;
-import boa.plugins.plugins.trackers.trackmate.post_processing.TrackLikelyhoodEstimator.Track;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.DistancePenaltyScoreFunction;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.DistributionFunction;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.HarmonicScoreFunction;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.LinearTrimmedFunction;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.ScoreFunction;
+import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.Track;
 
 /**
  *

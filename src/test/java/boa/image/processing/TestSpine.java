@@ -52,11 +52,12 @@ public class TestSpine {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
         //String dbName = "AyaWT_mmglu";
-        String dbName = "MutH_150324";
-        int fieldNumber= 0, timePoint=0, mc=0, b=0; // F=2 B=1
+        //String dbName = "MutH_150324";
+        String dbName = "fluo171113_WT_15s";
+        int postition= 0, frame=0, mc=0, b=0; // F=2 B=1
         MasterDAO mDAO = new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
-        StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
+        MicroscopyField f = mDAO.getExperiment().getPosition(postition);
+        StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
         StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         StructureObject bact2 = root2.getChildren(0).get(mc).getChildren(1).get(1);
@@ -65,8 +66,9 @@ public class TestSpine {
     }
     public static void testProjection(StructureObject bact1, StructureObject bact2) {
         int zoomFactor = 7;
-        Point center = bact1.getRegion().getGeomCenter(false).translate(new Vector(-2, 43.7f));
-        Map<StructureObject, BacteriaSpineLocalizer> locMap = HashMapGetCreate.getRedirectedMap((StructureObject b)->new BacteriaSpineLocalizer(b.getRegion()).setTestMode(false), Syncronization.NO_SYNC);
+        Point center = bact1.getRegion().getGeomCenter(false).translate(new Vector(-2, 105.7f));
+        if (!bact1.getRegion().contains(center.asVoxel())) throw new IllegalArgumentException("projected point outside bacteria");
+        Map<StructureObject, BacteriaSpineLocalizer> locMap = HashMapGetCreate.getRedirectedMap((StructureObject b)->new BacteriaSpineLocalizer(b.getRegion()).setTestMode(true), Syncronization.NO_SYNC);
         Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, NEAREST_POLE, locMap); 
         //Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, PROPORTIONAL, locMap);
         

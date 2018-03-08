@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.plugins.plugins.trackers.trackmate;
+package boa.plugins.plugins.trackers.nested_spot_tracker;
 
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
@@ -28,7 +28,7 @@ import java.util.List;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import static boa.plugins.plugins.trackers.ObjectIdxTracker.getComparator;
-import boa.plugins.plugins.trackers.trackmate.SpotWithinCompartment.Localization;
+import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithinCompartment.Localization;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
 
@@ -38,11 +38,11 @@ import boa.utils.geom.Point;
  */
 public class SpotCompartiment {
     public final StructureObject object;
-    double[] offsetUp, offsetDown;
+    Point offsetUp, offsetDown;
     //double[] offsetDivisionUp, offsetDivisionDown;
     //int previousDivisionTime;
     int nextDivisionTimePoint;
-    double[] offsetDivisionMiddle;
+    Point offsetDivisionMiddle;
     double[] middleYLimits;
     boolean upperDaughterCell=true;
     public static double middleAreaProportion = 0.5;
@@ -52,7 +52,7 @@ public class SpotCompartiment {
     public SpotCompartiment(StructureObject o) {
         //long t0 = System.currentTimeMillis();
         object = o;
-        double[][] poles = getPoles(object.getRegion(), 0.5, yLengthForXMeanComputation);
+        Point[] poles = getPoles(object.getRegion(), 0.5, yLengthForXMeanComputation);
         offsetUp = poles[0];
         offsetDown = poles[1];
         //nextDivisionTimePoint = object.getNextDivisionTimePoint();
@@ -105,17 +105,17 @@ public class SpotCompartiment {
         return (o==Collections.max(o.getParent().getChildren(o.getStructureIdx()), (o1, o2)->Double.compare(o1.getBounds().yMean(), o2.getBounds().yMean())));
     }
     @Override public String toString() {
-        return "{"+object.toString()+"offX:"+object.getBounds().xMin()*object.getScaleXY()+";Y="+object.getBounds().yMin()*object.getScaleZ()+"|isUpperDaugther:"+upperDaughterCell+"|Ylim:"+Utils.toStringArray(middleYLimits)+"|up:"+Utils.toStringArray(offsetUp)+"|down:"+Utils.toStringArray(offsetDown)+"|middle:"+Utils.toStringArray(offsetDivisionMiddle);
+        return "{"+object.toString()+"offX:"+object.getBounds().xMin()*object.getScaleXY()+";Y="+object.getBounds().yMin()*object.getScaleZ()+"|isUpperDaugther:"+upperDaughterCell+"|Ylim:"+ middleYLimits +"|up:"+ offsetUp +"|down:"+ offsetDown +"|middle:"+ offsetDivisionMiddle ;
     }
     
-    public double[] getOffset(Localization localization) {
+    public Point getOffset(Localization localization) {
         if (Localization.UP.equals(localization)) return offsetUp;
         else if (Localization.LOW.equals(localization)) return this.offsetDown;
         else if (Localization.MIDDLE.equals(localization)) return this.offsetDivisionMiddle;
         else return null;
     }
     
-    private static double[] getPole(Region o, double margin, int marginYUp, int marginYDown) {
+    private static Point getPole(Region o, double margin, int marginYUp, int marginYDown) {
         double xMean = 0, zMean = 0, count=0;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
@@ -144,10 +144,10 @@ public class SpotCompartiment {
             zMean/=count;
         }
         
-        return new double[]{ xMean * o.getScaleXY(), (o.getBounds().yMin()+margin)* o.getScaleXY(), zMean * o.getScaleZ()};
+        return new Point( (float) (xMean * o.getScaleXY()), (float) ((o.getBounds().yMin()+margin)* o.getScaleXY()),(float) (zMean * o.getScaleZ()));
     }
     
-    private static double[][] getPoles(Region o, double proportionOfWidth, double yLenghtForXMean) {
+    private static Point[] getPoles(Region o, double proportionOfWidth, double yLenghtForXMean) {
         int[] ySize = new int[o.getBounds().sizeY()];
         double meanYSize = 0;
         ImageMask mask = o.getMask();
@@ -168,14 +168,14 @@ public class SpotCompartiment {
         int yUp = 0;
         while(ySize[yUp]<minYSize) yUp++;
         int yL = (int)Math.round(yLenghtForXMean*bds.sizeY());
-        double[] poleUp = getPole(o, yUp, 0, yL);
+        Point poleUp = getPole(o, yUp, 0, yL);
         int yDown = ySize.length-1;
         while(ySize[yDown]<minYSize) yDown--;
-        double[] poleDown = getPole(o, yDown, o.getBounds().sizeY()-yL-1, o.getBounds().sizeY()-1);
-        return new double[][]{poleUp, poleDown};
+        Point poleDown = getPole(o, yDown, o.getBounds().sizeY()-yL-1, o.getBounds().sizeY()-1);
+        return new Point[]{poleUp, poleDown};
     }
     
-    private static double[] getPoleByCount(Region o, int limit, int marginYUp, int marginYDown) {
+    private static Point getPoleByCount(Region o, int limit, int marginYUp, int marginYDown) {
         int count=0, countPrev, countCur=-1;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
