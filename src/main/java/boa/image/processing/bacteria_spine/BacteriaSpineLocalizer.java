@@ -49,16 +49,20 @@ public class BacteriaSpineLocalizer {
     public boolean testMode;
     final Region bacteria;
     PointContainer2<Vector, Double>[] spine;
-    KDTree<PointContainer2<Vector, Double>> spineKDTree;
-    NearestNeighborSearchOnKDTree<PointContainer2<Vector, Double>> search;
+    //KDTree<PointContainer2<Vector, Double>> spineKDTree;
+    //NearestNeighborSearchOnKDTree<PointContainer2<Vector, Double>> search;
     double length;
     public BacteriaSpineLocalizer(Region bacteria) {
         this.bacteria=bacteria;
+        long t0 = System.currentTimeMillis();
         spine = BacteriaSpineFactory.createSpine(bacteria);
-        List<PointContainer2<Vector, Double>> spList = new ArrayList<>(Arrays.asList(spine)); // KD tree shuffles elements -> new list
-        this.spineKDTree = new KDTree<>(spList, spList);
-        search = new NearestNeighborSearchOnKDTree(spineKDTree);
+        long t1 = System.currentTimeMillis();
+        //List<PointContainer2<Vector, Double>> spList = new ArrayList<>(Arrays.asList(spine)); // KD tree shuffles elements -> new list
+        //this.spineKDTree = new KDTree<>(spList, spList);
+        //search = new NearestNeighborSearchOnKDTree(spineKDTree);
+        long t2 = System.currentTimeMillis();
         length = spine[spine.length-1].getContent2();
+        //logger.debug("spine creation: {} ms KDTree: {} ms", t1-t0, t2-t1);
     }
 
     public BacteriaSpineLocalizer setTestMode(boolean testMode) {
@@ -73,8 +77,8 @@ public class BacteriaSpineLocalizer {
     public double getLength() {
         return length;
     }
-    public Image draw() {
-        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, BacteriaSpineFactory.getCircularContour(bacteria.getContour(), bacteria.getGeomCenter(false)));
+    public Image draw(int zoomFactor) {
+        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, BacteriaSpineFactory.getCircularContour(bacteria.getContour(), bacteria.getGeomCenter(false)), zoomFactor);
     }
 
     /**
@@ -83,14 +87,23 @@ public class BacteriaSpineLocalizer {
      * @return {@link BacteriaSpineCoord} representation of {@param p} from {@param referencePole} or null if it could not be computed
      */
     public BacteriaSpineCoord getSpineCoord(RealLocalizable p) {
-        search.search(p);
-        if (testMode)  logger.debug("get spine coord for: {}: nearst point: {}(d={}) & {}(d={}) 3rd closest: {}(d={})", p, search.getSampler().get(), search.getSquareDistance());
-        PointContainer2<Vector, Double> v = search.getSampler().get();
+        //long t0 = System.currentTimeMillis();
+        //search.search(p);
+        //PointContainer2<Vector, Double> v = search.getSampler().get();
+        //long t1 = System.currentTimeMillis();
         // get 2 adjacent other points
-        int idx = Arrays.binarySearch(spine, v, SPINE_COMPARATOR);
+        //int idx = Arrays.binarySearch(spine, v, SPINE_COMPARATOR);
+        //long t2 = System.currentTimeMillis();
+        Point source = Point.wrap(p);
+        int idx  =getNearestVertebra(source);
+        PointContainer2<Vector, Double> v = spine[idx];
+        //long t3 = System.currentTimeMillis();
+        //logger.debug("KDTree search: {}ms, idx search: {}ms, globalmin bin search: {}ms idx: {} idx2 {}, dist: {}, dist2: {}", t1-t0, t2-t1, t3-t2, idx, idx2, spine[idx].distSq(source), spine[idx2].distSq(source));
+        //if (testMode)  logger.debug("get spine coord for: {}: nearst point: {}(d={}) & {}(d={}) 3rd closest: {}(d={})", p, search.getSampler().get(), search.getSquareDistance());
+        
         PointContainer2<Vector, Double> vPrev = idx>0 ? spine[idx-1] : null;
         PointContainer2<Vector, Double> vNext = idx<spine.length-1 ? spine[idx+1] : null;
-        Point source = Point.wrap(p);
+        
         if (testMode && vPrev!=null && vNext!=null) logger.debug("compare two coords");
         BacteriaSpineCoord c1 = vPrev==null? null:getSpineCoord(source, v, vPrev);
         BacteriaSpineCoord c2 = vNext==null? null:getSpineCoord(source, v, vNext);
@@ -175,8 +188,8 @@ public class BacteriaSpineLocalizer {
         // need to solve alpha & d = distance from spine in the direction spineDir = weighted sum of v0 & v1
         A.reverseOffset(); //  not null  & not colinear to V0 
         
-        Vector C = v1;
-        Vector D = v0.duplicate().weightedSum(v1, 1, -1); // not null
+        Vector C = v0;
+        Vector D = v1.duplicate().weightedSum(v0, 1, -1); // not null
         // vector walk: source -> r0 -> intersection -> source. "intersection" begin intersection point of source point and r0r1. direction inter-source is weighted sum of direction ro & direction r1
         // equation to solve is A + alpha*B + d * C + alpha*d * D = 0 (1)
         // first stip eliminate the non linear term -> get a linear relation between 
@@ -191,13 +204,13 @@ public class BacteriaSpineLocalizer {
         // (1) & (2) -> system of quadratic equation (colinear -> one single equation, take the positive root in ]0:1[ )
         // alpha2 * AA + alpha  * BB + C = 0
         double alpha = solveQuadratic(AA, BB, CC);
-        double w = 1-alpha;
+        
         if (Double.isNaN(alpha)) {
-            if (testMode) logger.debug("general case: no solution");
+            if (testMode) logger.debug("general case: between{} & {} no solution", r0, r1);
             return null;
         }
         double d = a/c + alpha * b/c; // relative value -> can be negative
-        
+        double w = 1-alpha;
         Vector spineDir = r0.getContent1().duplicate().weightedSum(r1.getContent1(), a, 1-w);
         res.setSpineRadius(spineDir.norm());
         res.setDistFromSpine(d);
@@ -252,6 +265,26 @@ public class BacteriaSpineLocalizer {
         if (testMode) logger.debug("projecting from vertebra: {}(w:{}) & {}(w:{}), intervertebra dist: {}, spine point: {} dir: {}", v0, w, v1, 1-w,  interVertebraDist, intersection.duplicate(), dir);
         return intersection.translate(dir);
     }
+    public int getNearestVertebra(Point p) {
+        int low = 0;
+        int high = spine.length-1;
+        // we know there is only one global (regional) local minima. modifies binary search -> chooses the decreasing side
+        while (low < high) {
+            int mid = (low + high) >>> 1;
+            double dMid = spine[mid].distSq(p);
+            double dPrev = spine[mid-1].distSq(p);
+            //logger.debug("[{}-{}-{}] dPrev: [{}-{}-{}]", low, mid, high, dPrev, dMid, dNext);
+            if (dPrev<=dMid)  {
+                high = mid - 1;
+            } else {
+                double dNext = spine[mid+1].distSq(p);
+                if (dNext<dMid) low = mid + 1;
+                else return mid;
+            }
+        }
+        return low;
+    
+    }
     private static double solveQuadratic(Vector AA, Vector BB, Vector CC) {
         double[] rootsX = BacteriaSpineLocalizer.solveQuadratic(AA.get(0), BB.get(0), CC.get(0));
         //logger.debug("roots: {}, {}", rootsX, BacteriaSpineLocalizer.solveQuadratic(AA.get(1), BB.get(1), CC.get(1)));
@@ -301,7 +334,7 @@ public class BacteriaSpineLocalizer {
                 double curLength = localizerMap.get(next).getLength();
                 double prop = curLength/(totalLength+curLength);
                 boolean upperCell = next.getIdx() < sib.stream().mapToInt(o->o.getIdx()).min().getAsInt();
-                if (testMode) logger.debug("project div: {}({}) -> {}({}), div prop: {}, upper cell: {}", cur, next, prop, upperCell);
+                if (testMode) logger.debug("project div: {} -> {}, div prop: {}, upper cell: {}", cur, next, prop, upperCell);
                 curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell, proj);
             }
             if (curentProj==null) return null;
@@ -311,6 +344,7 @@ public class BacteriaSpineLocalizer {
     }
     public static Point project(Point sourcePoint, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, PROJECTION proj) {
         BacteriaSpineCoord c = source.getSpineCoord(sourcePoint);
+        if (c==null) return null;
         Point res = destination.project(c, proj);
         //logger.debug("projecting: {} -> {}", sourcePoint, res);
         //logger.debug("proj: {} -> {}", c, res==null ? null : destination.getSpineCoord(res));
@@ -318,6 +352,7 @@ public class BacteriaSpineLocalizer {
     }
     public static Point projectDiv(Point origin, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, double divProportion, boolean upperCell, PROJECTION proj) {
         BacteriaSpineCoord c = source.getSpineCoord(origin);
+        if (c==null) return null;
         c.setDivisionPoint(divProportion, upperCell);
         Point res = destination.project(c, proj);
         //logger.debug("proj div: {} -> {}", c, res==null ? null : destination.getSpineCoord(res));

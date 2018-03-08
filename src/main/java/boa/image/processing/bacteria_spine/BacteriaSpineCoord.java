@@ -41,10 +41,10 @@ public class BacteriaSpineCoord {
                 return spineCoord(true) * newSpineLength;
             case NEAREST_POLE:
                 if (spineCoord(true)<=0.5) { // upper pole
-                    logger.debug("upper pole: new l {}, old l {}, res: {}",newSpineLength , spineLength(), spineCoord(false));
+                    //logger.debug("upper pole: new l {}, old l {}, res: {}",newSpineLength , spineLength(), spineCoord(false));
                     return spineCoord(false);
                 } else { // lower pole
-                    logger.debug("lower pole: new l {}, old l {}, coord: {}, delta: {}, res: {}",newSpineLength , spineLength(), spineCoord(false), spineLength() - spineCoord(false), newSpineLength-(spineLength() - spineCoord(false)));
+                    //logger.debug("lower pole: new l {}, old l {}, coord: {}, delta: {}, res: {}",newSpineLength , spineLength(), spineCoord(false), spineLength() - spineCoord(false), newSpineLength-(spineLength() - spineCoord(false)));
                     return newSpineLength-(spineLength() - spineCoord(false));
                 }
         }

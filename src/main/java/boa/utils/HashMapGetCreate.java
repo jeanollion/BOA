@@ -38,22 +38,22 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
         super(initialCapacity);
         this.factory=factory;
     }
-    public V getAndCreateIfNecessary(K key) {
+    public V getAndCreateIfNecessary(Object key) {
         V v = super.get(key);
         if (v==null) {
-            v = factory.create(key);
-            super.put(key, v);
+            v = factory.create((K)key);
+            super.put((K)key, v);
         }
         return v;
     }
-    public V getAndCreateIfNecessarySync(K key) {
+    public V getAndCreateIfNecessarySync(Object key) {
         V v = super.get(key);
         if (v==null) {
             synchronized(this) {
                 v = super.get(key);
                 if (v==null) {
-                    v = factory.create(key);
-                    super.put(key, v);
+                    v = factory.create((K)key);
+                    super.put((K)key, v);
                 }
             }
         }
@@ -64,15 +64,15 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
      * @param key
      * @return 
      */
-    public V getAndCreateIfNecessarySyncOnKey(K key) {
+    public V getAndCreateIfNecessarySyncOnKey(Object key) {
         V v = super.get(key);
         if (v==null) {
             synchronized(key) {
                 v = super.get(key);
                 if (v==null) {
-                    v = factory.create(key);
+                    v = factory.create((K)key);
                     synchronized(this){
-                        super.put(key, v);
+                        super.put((K)key, v);
                     }
                 }
             }
@@ -109,6 +109,65 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
         }
         @Override public HashMapGetCreate<L, V> create(K key) {
             return new HashMapGetCreate<>(factory);
+        }
+    }
+    public enum Syncronization {NO_SYNC, SYNC_ON_KEY, SYNC_ON_MAP};
+    public static <K, V> HashMapGetCreate<K, V> getRedirectedMap(Factory<K, V> factory, Syncronization sync) {
+        switch(sync) {
+            case NO_SYNC:
+            default:
+                return new HashMapGetCreateRedirected(factory);
+            case SYNC_ON_KEY:
+                return new HashMapGetCreateRedirectedSyncKey(factory);
+            case SYNC_ON_MAP:
+                return new HashMapGetCreateRedirectedSync(factory);
+        }
+    }
+    public static <K, V> HashMapGetCreate<K, V> getRedirectedMap(int initialCapacity, Factory<K, V> factory, Syncronization sync) {
+        switch(sync) {
+            case NO_SYNC:
+            default:
+                return new HashMapGetCreateRedirected(initialCapacity, factory);
+            case SYNC_ON_KEY:
+                return new HashMapGetCreateRedirectedSyncKey(initialCapacity, factory);
+            case SYNC_ON_MAP:
+                return new HashMapGetCreateRedirectedSync(initialCapacity, factory);
+        }
+    }
+    public static class HashMapGetCreateRedirected<K, V> extends HashMapGetCreate<K, V> {
+        public HashMapGetCreateRedirected(Factory<K, V> factory) {
+            super(factory);
+        }
+        public HashMapGetCreateRedirected(int initialCapacity, Factory<K, V> factory) {
+            super(initialCapacity, factory);
+        }
+        @Override
+        public V get(Object key) {
+            return super.getAndCreateIfNecessary(key);
+        }
+    }
+    public static class HashMapGetCreateRedirectedSyncKey<K, V> extends HashMapGetCreate<K, V> {
+        public HashMapGetCreateRedirectedSyncKey(Factory<K, V> factory) {
+            super(factory);
+        }
+        public HashMapGetCreateRedirectedSyncKey(int initialCapacity, Factory<K, V> factory) {
+            super(initialCapacity, factory);
+        }
+        @Override
+        public V get(Object key) {
+            return super.getAndCreateIfNecessarySyncOnKey(key);
+        }
+    }
+    public static class HashMapGetCreateRedirectedSync<K, V> extends HashMapGetCreate<K, V> {
+        public HashMapGetCreateRedirectedSync(Factory<K, V> factory) {
+            super(factory);
+        }
+        public HashMapGetCreateRedirectedSync(int initialCapacity, Factory<K, V> factory) {
+            super(initialCapacity, factory);
+        }
+        @Override
+        public V get(Object key) {
+            return super.getAndCreateIfNecessarySync(key);
         }
     }
 }
