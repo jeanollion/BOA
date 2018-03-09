@@ -102,6 +102,8 @@ import boa.plugins.plugins.track_post_filter.SegmentationPostFilter;
 import boa.plugins.plugins.transformations.AutoFlipY;
 import boa.plugins.plugins.transformations.RemoveDeadPixels;
 import boa.image.processing.ImageTransformation;
+import boa.image.processing.ImageTransformation.MainAxis;
+import boa.plugins.plugins.measurements.objectFeatures.ThicknessAxis;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.plugins.plugins.segmenters.BacteriaIntensityPhase;
 import boa.plugins.plugins.track_post_filter.AverageMask;
@@ -577,6 +579,8 @@ public class GenerateXP {
                     ).addTrackPreFilters(
                         new SubtractBackgroundMicrochannels(),
                         new NormalizeTrack(1, true)
+                    ).addPostFilters(
+                            new FeatureFilter(new ThicknessAxis().setAxis(MainAxis.X), 5, true, true)
                     ).addTrackPostFilters(
                             new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria().setContactSidesProportion(0)), 
                             new RemoveTrackByFeature().setFeature(new Size(), 10, true).setStatistics(2)

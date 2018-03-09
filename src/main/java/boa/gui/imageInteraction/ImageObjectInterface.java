@@ -39,6 +39,8 @@ public abstract class ImageObjectInterface {
     final protected int childStructureIdx;
     private Boolean is2D=null;
     protected boolean guiMode = true;
+    boolean displayPreFilteredImages= false;
+    
     public ImageObjectInterface(List<StructureObject> parents, int childStructureIdx) {
         if (parents.isEmpty()) throw new IllegalArgumentException("Empty parent list");
         parentStructureIdx = parents.get(0).getStructureIdx();
@@ -64,7 +66,7 @@ public abstract class ImageObjectInterface {
     public abstract BoundingBox getObjectOffset(StructureObject object);
     public abstract ImageInteger generateLabelImage();
     public abstract void drawObjects(ImageInteger image);
-    public abstract Image generateRawImage(int structureIdx, boolean executeInBackground);
+    public abstract Image generatemage(int structureIdx, boolean executeInBackground);
     public abstract boolean isTimeImage();
     public int getChildStructureIdx() {return childStructureIdx;}
     public abstract List<Pair<StructureObject, BoundingBox>> getObjects();
@@ -75,6 +77,10 @@ public abstract class ImageObjectInterface {
             if (b!=null) res.add(new Pair(o, b));
         }
         return res;
+    }
+    public <T extends ImageObjectInterface> T setDisplayPreFilteredImages(boolean displayPreFilteredImages) {
+        this.displayPreFilteredImages = displayPreFilteredImages;
+        return (T)this;
     }
     /**
      * 

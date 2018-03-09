@@ -2248,7 +2248,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             List<StructureObject> parentTrack = StructureObjectUtils.getTrack(nextParent, false);
             i= ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentTrack, i.getChildStructureIdx());
             Image im = ImageWindowManagerFactory.getImageManager().getImage(i, i.getChildStructureIdx());
-            if (im==null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(i.getChildStructureIdx(), true), i, i.getChildStructureIdx(), true);
+            if (im==null) ImageWindowManagerFactory.getImageManager().addImage(i.generatemage(i.getChildStructureIdx(), true), i, i.getChildStructureIdx(), true);
             else ImageWindowManagerFactory.getImageManager().setActive(im);
         }
     }
@@ -2327,7 +2327,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     Image im = iwm.getImage(nextI);
                     boolean newImage = im==null;
                     if (im==null) {
-                        im = nextI.generateRawImage(structureDisplay, true);
+                        im = nextI.generatemage(structureDisplay, true);
                         iwm.addImage(im, nextI, structureDisplay, true);
                         
                     }

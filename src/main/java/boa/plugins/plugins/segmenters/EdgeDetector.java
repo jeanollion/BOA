@@ -57,6 +57,7 @@ import boa.image.processing.WatershedTransform;
 import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
 import boa.plugins.SimpleThresholder;
+import java.util.List;
 /**
  *
  * @author jollion
@@ -140,6 +141,11 @@ public class EdgeDetector implements Segmenter, ToolTip {
     public Image getWsPriorityMap(Image input, StructureObjectProcessing parent) {
         if (this.watershedPriorityMap==null) watershedPriorityMap = ImageFeatures.gaussianSmooth(input, 2, false); // TODO parameter?
         return watershedPriorityMap;
+    }
+    public EdgeDetector setPreFilters(List<PreFilter> prefilters) {
+        this.watershedMap.removeAllElements();
+        this.watershedMap.add(prefilters);
+        return this;
     }
     public EdgeDetector setPreFilters(PreFilter... prefilters) {
         this.watershedMap.removeAllElements();

@@ -91,7 +91,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
     BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum Size Increment", 2, 1.5, 1, null).setToolTipText("Typical maximum ratio of size between two frames");
     BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum size increment", 2, 0.7, 0.01, null).setToolTipText("Typical minimum ratio of size between two frames");
-    ChoiceParameter sizeFeature = new ChoiceParameter("Feature used for Size", new String[]{"Size", "Length"}, "Length", false).setToolTipText("Object feature used to compute the size ratio. <ul><li><em>Length</em> : Feret distance (max distance between two points of contour)</li><li><em>Size</em> : number of pixels</li></ul>");
+    ChoiceParameter sizeFeature = new ChoiceParameter("Feature used for Size", new String[]{"Size", "Length", "SpineLength"}, "Length", false).setToolTipText("Object feature used to compute the size ratio. <ul><li><em>Size</em> : number of pixels</li><li><em>Length</em> : Feret distance (max distance between two points of contour)</li><li><em>Spine Length</em>Length of the spine (taking into acount curvatures). More precise and much slower than other methods</li></ul>");
     
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1.5, 0, null).setToolTipText("Limits the cost of each single correction operation (merge/split). Value depends on the segmenter and the threshold for splitting set in the segmenter");
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null).setToolTipText("Limits the sum of costs for a correction over multiple frames");
@@ -634,8 +634,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     protected double getObjectSize(Region o) {
-        if (sizeFeature.getSelectedIndex()==0) return GeometricalMeasurements.getVolume(o);
-        else return GeometricalMeasurements.getFeretMax(o);
+        switch(sizeFeature.getSelectedIndex()) {
+            case 0: 
+            default :
+                return GeometricalMeasurements.getVolume(o);
+            case 1:
+                return GeometricalMeasurements.getFeretMax(o);
+            case 2:
+                return GeometricalMeasurements.getSpineLength(o);
+        }
     }
     /**
      * Class holing link information

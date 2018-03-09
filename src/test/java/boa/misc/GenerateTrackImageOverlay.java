@@ -70,8 +70,8 @@ public class GenerateTrackImageOverlay {
         IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();
         
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(mcTrack, 1);
-        Image imBact = i.generateRawImage(1, false);
-        Image imMut = i.generateRawImage(2, false);
+        Image imBact = i.generatemage(1, false);
+        Image imMut = i.generatemage(2, false);
         MutableBoundingBox crop = new MutableBoundingBox(0, imBact.sizeX()-1, 0, yMax, 0, 0);
         imBact=imBact.crop(crop);
         imMut=imMut.crop(crop);

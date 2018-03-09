@@ -32,7 +32,9 @@ import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
+import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
+import boa.image.ImageMask;
 import boa.image.SimpleBoundingBox;
 import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
@@ -42,6 +44,7 @@ import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.WatershedTransform;
 import boa.plugins.plugins.pre_filters.ImageFeature;
+import boa.plugins.plugins.pre_filters.Sigma;
 import boa.plugins.plugins.segmenters.EdgeDetector;
 import boa.utils.Utils;
 import java.util.HashSet;
@@ -52,10 +55,11 @@ import java.util.Set;
  * @author jollion
  */
 public class FitMicrochannelHeadToEdges implements PostFilter {
-    protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map");
+    protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new Sigma(3).setMedianRadius(2)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map"); //new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)
     BooleanParameter onlyHead = new BooleanParameter("Fit only head", false);
+    BoundedNumberParameter trimUpperPixels = new BoundedNumberParameter("Trim Upper Pixels", 0, 2, 0, null).setToolTipText("Erase Pixels of a region if they are closer than this value to the background in the upper y-direction");
     BooleanParameter resetBounds = new BooleanParameter("Reset Bounds", true).setToolTipText("Whether bounds should be reset or not. If average mask track-post-filter is set afterwards, bounds should not be reset so that regions can be aligned on their top-left-corner");
-    Parameter[] parameters = new Parameter[]{watershedMap, onlyHead, resetBounds};
+    Parameter[] parameters = new Parameter[]{watershedMap, onlyHead, trimUpperPixels, resetBounds};
     public static boolean debug = false;
     public static int debugLabel = 10;
     public boolean verbose = false;
@@ -71,7 +75,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Image edge = watershedMap.filter(parent.getRawImage(childStructureIdx), parent.getMask());
-        FitMicrochannelHeadToEdges.fit(edge, childPopulation, onlyHead.getSelected(), resetBounds.getSelected(), debug||verbose);
+        FitMicrochannelHeadToEdges.fit(edge, childPopulation, onlyHead.getSelected(), this.trimUpperPixels.getValue().intValue(), resetBounds.getSelected(), debug||verbose);
         return childPopulation;
     }
 
@@ -79,17 +83,17 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
     public Parameter[] getParameters() {
         return parameters;
     }
-    public static void fit(Image edgeMap, RegionPopulation inputPop, boolean onlyHead, boolean resetMask, boolean verbose) {
+    public static void fit(Image edgeMap, RegionPopulation inputPop, boolean onlyHead, int trimUpperPixelRadius, boolean resetMask, boolean verbose) {
         if (verbose) ImageWindowManagerFactory.showImage(edgeMap);
         for (Region o : inputPop.getRegions()) {
-            if (onlyHead) fitHead(edgeMap, 3, o, resetMask, verbose);
-            else fitWhole(edgeMap, 3, o, resetMask, verbose);
+            if (onlyHead) fitHead(edgeMap, 3, o, trimUpperPixelRadius, resetMask, verbose);
+            else fitWhole(edgeMap, 3, o, trimUpperPixelRadius, resetMask, verbose);
         }
         inputPop.redrawLabelMap(true);
         if (verbose && !inputPop.getRegions().isEmpty()) logger.debug("object mask type: {}", inputPop.getRegions().get(0).getMask().getClass().getSimpleName());
     }
     
-    private static void fitHead(Image edgeMap, int margin, Region object, boolean resetMask, boolean verbose) {
+    private static void fitHead(Image edgeMap, int margin, Region object, int trimUpperPixelRadius, boolean resetMask, boolean verbose) {
         BoundingBox b = object.getBounds();
         BoundingBox head = new SimpleBoundingBox(b.xMin()-margin, b.xMax()+margin, b.yMin()-margin, b.yMin()+b.sizeX(), b.zMin(), b.zMax());
         Image edgeMapLocal = edgeMap.crop(head);
@@ -120,11 +124,12 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
         pop.translate(head, true);
         object.andNot(pop.getLabelMap());
+        trimUpperPixels(object, trimUpperPixelRadius);
         if (resetMask) object.resetMask(); // no reset so that all image have same upper-left-corner -> for average mask
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
     }
-    private static void fitWhole(Image edgeMap, int margin, Region object, boolean resetMask, boolean verbose) {
+    private static void fitWhole(Image edgeMap, int margin, Region object, int trimUpperPixelRadius, boolean resetMask, boolean verbose) {
         BoundingBox b = object.getBounds();
         BoundingBox cut = new SimpleBoundingBox(b.xMin()-margin, b.xMax()+margin, b.yMin()-margin, b.yMax(), b.zMin(), b.zMax());
         Image edgeMapLocal = edgeMap.crop(cut);
@@ -180,8 +185,20 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
         pop.translate(cut, true);
         object.andNot(pop.getLabelMap());
+        trimUpperPixels(object, trimUpperPixelRadius);
         if (resetMask) object.resetMask(); // no reset so that all image have same upper-left-corner -> for average mask
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
+    }
+    public static void trimUpperPixels(Region region, int radius) {
+        if (radius<=0) return;
+        ImageInteger mask = region.getMaskAsImageInteger();
+        List<Voxel> toErase = new ArrayList<>();
+        ImageMask.loop(mask, (x, y, z)->{
+            for (int dy = 1; dy<=radius; ++dy) {
+                if (y<dy || !mask.insideMask(x, y-dy, z)) toErase.add(new Voxel(x, y, z));
+            }
+        });
+        for (Voxel v : toErase) mask.setPixel(v.x, v.y, v.z, 0);
     }
 }

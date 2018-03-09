@@ -22,6 +22,7 @@ import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
+import boa.configuration.parameters.PreFilterSequence;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -72,13 +73,17 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
     protected double minThld = 0;
     // configuration-related attributes
     PluginParameter<SimpleThresholder> threhsolder = new PluginParameter<>("Local Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
+    PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)).setToolTipText("Filters used to define edge map used in first watershed step. <br />Median + Sigma are more suitable for noisy images (involve less derivation)<br />Gradient magnitude is another option");  // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2)
     NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.3, 0, null).setToolTipText("Lower value splits more. At step 2) regions are merge if sum(hessian)|interface / sum(raw intensity)|interface < (this parameter)"); // TODO was 0.12 before change of scale (hess *= sqrt(2pi)-> *2.5 
     NumberParameter localThresholdFactor = new BoundedNumberParameter("Local Threshold Factor", 2, 1.25, 0, null).setToolTipText("Factor defining the local threshold.  Lower value of this factor will yield in smaller cells. T = median value - (inter-quartile) * (this factor).");
     NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 100, 50, null).setToolTipText("Minimum Object Size in voxels");
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 50, 1, null).setToolTipText("Minimal size of region at watershed partitioning @ step 2)");
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 0, 5).setToolTipText("Scale (pixels) for gaussian filtering for the local thresholding step");
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6).setToolTipText("In pixels. Used in step 2). Lower value -> finner split, more sentitive to noise. Influences the value of split threshold parameter");
-    Parameter[] parameters = new Parameter[]{splitThreshold, localThresholdFactor, minSize, smoothScale, hessianScale};
+    @Override
+    public Parameter[] getParameters() {
+        return new Parameter[]{watershedMap, splitThreshold, localThresholdFactor, minSize, smoothScale, hessianScale};
+    }
     private final String toolTip = "<b>Intensity-based 2D segmentation:</b>"
             + "<ol><li>Foreground is detected using the plugin EdgeDetector using Median 3 + Sigma 3 as watershed map & the method secondary map using hessian max as secondary map</li>"
             + "<li>Forground region is split by applying a watershed transform on the maximal hessian eigen value, regions are then merged, using a criterion described in \"Split Threshold\" parameter</li>"
@@ -117,7 +122,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
     }
     @Override
     public String toString() {
-        return "Bacteria Intensity: " + Utils.toStringArray(parameters);
+        return "Bacteria Intensity: " + Utils.toStringArray(getParameters());
     }   
     protected SplitAndMergeHessian initializeSplitAndMerge(Image input, ImageMask foregroundMask) {
         SplitAndMergeHessian res= new SplitAndMergeHessian(input, splitThreshold.getValue().doubleValue(), hessianScale.getValue().doubleValue());
@@ -134,9 +139,9 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         EdgeDetector seg = new EdgeDetector().setIsDarkBackground(true); // keep defaults parameters ? 
         seg.setTestMode(testMode);
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2)); // min = 1.5
-        seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)); // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2)
+        seg.setPreFilters(watershedMap.get());
         if (Double.isNaN(threshold)) seg.setThrehsoldingMethod(1).setThresholder(Double.isNaN(minThld) ? threhsolder.instanciatePlugin(): new CompareThresholds(threhsolder.instanciatePlugin(), new ConstantValue(minThld), true)); // honors min value
-        else seg.setThrehsoldingMethod(1).setThresholder(new ConstantValue(Math.max(threshold, minThld)));
+        else seg.setThrehsoldingMethod(1).setThresholder(new ConstantValue(Double.isNaN(minThld) ? threshold : Math.max(threshold, minThld)));
         return seg;
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
@@ -191,10 +196,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
     }
     
     
-    @Override
-    public Parameter[] getParameters() {
-        return parameters;
-    }
+    
 
     public boolean does3D() {
         return true;

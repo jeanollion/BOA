@@ -17,6 +17,9 @@
  */
 package boa.plugins.plugins.segmenters;
 
+import boa.configuration.parameters.BooleanParameter;
+import boa.configuration.parameters.ChoiceParameter;
+import boa.configuration.parameters.Parameter;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.RegionPopulation.Border;
 import boa.data_structure.RegionPopulation.ContactBorderMask;
@@ -24,23 +27,38 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.image.BoundingBox;
+import boa.image.Histogram;
 import boa.image.Image;
+import boa.image.ImageFloat;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
+import boa.image.MutableBoundingBox;
+import boa.image.SimpleBoundingBox;
 import boa.image.TypeConverter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
+import boa.image.processing.ImageOperations;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.measurement.BasicMeasurements;
 import boa.measurement.GeometricalMeasurements;
+import static boa.plugins.Plugin.logger;
 import boa.plugins.TrackParametrizable;
+import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.pre_filters.Sigma;
+import boa.plugins.plugins.thresholders.IJAutoThresholder;
+import boa.utils.ArrayUtil;
 import boa.utils.DoubleStatistics;
+import ij.process.AutoThresholder;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
@@ -50,10 +68,17 @@ import java.util.stream.Stream;
  * @author jollion
  */
 public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackParametrizable<BacteriaIntensityPhase> {
+    BooleanParameter filterBorderArtefacts = new BooleanParameter("Filter border Artefacts", true);
+    ChoiceParameter thresholdMethod=  new ChoiceParameter("Threshold Method", new String[]{"Local Threshold", "Global Threshold"}, "Global Threshold", false);
+    @Override
+    public Parameter[] getParameters() {
+        return new Parameter[]{watershedMap, thresholdMethod, splitThreshold, localThresholdFactor, minSize, smoothScale, hessianScale, filterBorderArtefacts};
+    }
     public BacteriaIntensityPhase() {
         this.splitThreshold.setValue(0.1);
         this.minSize.setValue(100);
         this.hessianScale.setValue(3);
+        this.watershedMap.removeAll().add(new Sigma(3).setMedianRadius(2));
         localThresholdFactor.setToolTipText("Factor defining the local threshold. Lower value of this factor will yield in smaller cells. T = mean_w - sigma_w * (this factor), with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
         localThresholdFactor.setValue(1);
     }
@@ -119,15 +144,17 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
      * @return 
      */
     protected RegionPopulation filterBorderArtefacts(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+        if (!filterBorderArtefacts.getSelected()) return pop;
         boolean verbose = testMode;
         double globThld = this.globalThreshold;
         Image intensity = parent.getPreFilteredImage(structureIdx);
         if (intensity==null) throw new IllegalArgumentException("no prefiltered image");
         // filter border artefacts: thin objects in X direction, contact on one side of the image 
+        // TODO PARAMETERS ? 
         ContactBorderMask contactLeft = new ContactBorderMask(1, parent.getMask(), Border.Xl);
         ContactBorderMask contactRight = new ContactBorderMask(1, parent.getMask(), Border.Xr);
-        double thicknessLimit = parent.getMask().sizeX() * 0.4; // 0.33?
-        double thicknessLimit2 = parent.getMask().sizeX() * 0.25; 
+        double thicknessLimitKeep = parent.getMask().sizeX() * 0.5; // 0.33? // OVER this thickness objects are kept
+        double thicknessLimitRemove = Math.max(4, parent.getMask().sizeX() * 0.33); // UNDER THIS VALUE long objects are removed
         double thickYLimit = 15;
         pop.filter(r->{
             int cL = contactLeft.getContact(r);
@@ -135,11 +162,11 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             if (cL==0 && cR ==0) return true;
             int c = Math.max(cL, cR);
             double thickX = GeometricalMeasurements.meanThicknessX(r);
-            if (thickX>thicknessLimit) return true;
+            if (thickX>thicknessLimitKeep) return true;
             double thickY = GeometricalMeasurements.meanThicknessY(r);
             if (verbose) logger.debug("filter after seg: thickX: {} contact: {}/{}", thickX, c, thickY*0.75);
             if (c < thickY*0.75) return true;
-            if (thickY>thickYLimit && thickX<thicknessLimit2) return false; // long and thin objects are always border artifacts
+            if (thickY>thickYLimit && thickX<thicknessLimitRemove) return false; // long and thin objects are always border artifacts
             return BasicMeasurements.getQuantileValue(r, intensity, 0.5)[0]>globThld; // avoid removing foreground
         });
         ContactBorderMask contactUp = new ContactBorderMask(1, parent.getMask(), Border.YUp);
@@ -152,7 +179,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             if (cUp<r.getVoxels().size()/5) return true;
             double thickness = GeometricalMeasurements.localThickness(r);
             if (verbose) logger.debug("upper artefact: contact: {}/{} thickness: {}", cUp, r.getVoxels().size(), thickness);
-            return thickness>thicknessLimit;
+            return thickness>thicknessLimitKeep;
         });
         
         return pop;
@@ -162,7 +189,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx, boolean callFromSplit) {
         double dilRadius = callFromSplit ? 0 : 2;
         Image smooth = ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
-        Image edgeMap = Sigma.filter(smooth, 3, 1, 3, 1);
+        Image edgeMap = Sigma.filter(input, 3, 1, 3, 1);
         if (splitVerbose) ImageWindowManagerFactory.showImage(edgeMap.setName("local threshold edge map"));
         ImageMask mask = parent.getMask();
         pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask);
@@ -172,18 +199,87 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     }
     
     
-    // apply to segmenter from whole track information (will be set prior to all other methods=
+    // apply to segmenter from whole track information (will be set prior to call any other methods)
     
     boolean isVoid = false;
     double globalThreshold = Double.NaN;
     @Override
     public TrackParametrizer<BacteriaIntensityPhase> run(int structureIdx, List<StructureObject> parentTrack) {
         Set<StructureObject> voidMC = new HashSet<>();
-        double[] minAndGlobalThld = TrackParametrizable.getVoidMicrochannels(structureIdx, parentTrack, 0.4, voidMC);
+        double[] minAndGlobalThld = getVoidMicrochannels(structureIdx, parentTrack, voidMC);
         return (p, s) -> {
             if (voidMC.contains(p)) s.isVoid=true; 
             s.minThld=minAndGlobalThld[0];
             s.globalThreshold = minAndGlobalThld[1];
+            if (thresholdMethod.getSelectedIndex()==1) s.threshold = minAndGlobalThld[1]; // global threshold
         };
+    }
+    /**
+     * Detected whether all microchannels are void, only part of it or none.
+     * @param structureIdx
+     * @param parentTrack
+     * @param outputVoidMicrochannels will add the void microchannels inside this set
+     * @return [the minimal threshold if some channels are void or positive infinity if all channels are void ; the global threshold in non-empty microchannels]
+     */
+    private double[] getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, Set<StructureObject> outputVoidMicrochannels) {
+        double voidThldSigma = 0.1; 
+        //double bimodalThld = 0.55d;
+        // get sigma in the middle line of each MC
+        Function<StructureObject, float[]> getSigma = p->{
+            Image im = p.getPreFilteredImage(structureIdx);
+            MutableBoundingBox bb= new MutableBoundingBox(im).resetOffset().extend(new SimpleBoundingBox(im.sizeX()/4, -im.sizeX()/4, im.sizeX()/4, -im.sizeX()/4, 0, 0)); // only central line to avoid border effects
+            double[] sum = new double[3];
+            BoundingBox.loop(bb, (x, y, z)-> {
+                if (p.getMask().insideMask(x, y, z)) {
+                    double v = im.getPixel(x, y, z);
+                    sum[0]+=v;
+                    sum[1]+=v*v;
+                    sum[2]++;
+                }
+            });
+            double mean = sum[0]/sum[2];
+            double mean2 = sum[1]/sum[2];
+            return new float[]{(float)mean, (float)Math.sqrt(mean2 - mean * mean)};
+        };
+        float[][] musigmas = new float[parentTrack.size()][];
+        for ( int idx = 0; idx<musigmas.length; ++idx) musigmas[idx] = getSigma.apply(parentTrack.get(idx));
+        // 1) criterion for void microchannel track
+        double maxSigma = Arrays.stream(musigmas).mapToDouble(f->f[1]).max().getAsDouble(); //ArrayUtil.quantiles(Arrays.stream(musigmas).mapToDouble(f->f[1]).toArray(), 0.99)[0];
+        if (maxSigma<voidThldSigma) {
+            outputVoidMicrochannels.addAll(parentTrack);
+            return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
+        }
+        // 2) criterion for void microchannels : low sigma & low intensity value (to avoid removing them when they are full)
+        // intensity criterion based on global otsu threshold
+        double globalThld = getGlobalOtsuThreshold(parentTrack.stream(), structureIdx);
+        for ( int idx = 0; idx<musigmas.length; ++idx) if (musigmas[idx][1]<voidThldSigma && musigmas[idx][0]<globalThld) outputVoidMicrochannels.add(parentTrack.get(idx));
+        if (outputVoidMicrochannels.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
+        // 3) get global otsu thld for images with foreground
+        globalThld = getGlobalOtsuThreshold(parentTrack.stream().filter(p->!outputVoidMicrochannels.contains(p)), structureIdx);
+        logger.debug("global threshold on images with forground: {}", globalThld);
+        // 4) estimate a minimal threshold : middle point between mean value under global threshold and global threshold
+        double minThreshold = Double.NaN;
+        if (this.thresholdMethod.getSelectedIndex()==0) {
+            double[] sum = new double[3];
+            double thld = globalThld;
+            for (StructureObject p : parentTrack) {
+                Image im = p.getPreFilteredImage(structureIdx);
+                ImageMask.loop(p.getMask(), (x, y, z)-> {
+                    double v = im.getPixel(x, y, z);
+                    if (v<thld) {
+                        sum[0]+=v;
+                        sum[1]++;
+                    }
+                });
+            }
+            double mean = sum[0]/sum[1];
+            minThreshold = (mean+globalThld)/2.0;
+        }
+        return new double[]{minThreshold, globalThld}; //outputVoidMicrochannels.isEmpty() ? Double.NaN : thld // min threshold was otsu of otsu when there are void channels
+    }
+    private static double getGlobalOtsuThreshold(Stream<StructureObject> parent, int structureIdx) {
+        Map<Image, ImageMask> imageMapMask = parent.collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
+        Histogram histo = Histogram.getHisto256(imageMapMask, null);
+        return IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
     }
 }

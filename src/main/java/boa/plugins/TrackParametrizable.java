@@ -18,6 +18,8 @@
 package boa.plugins;
 
 import boa.data_structure.StructureObject;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.imageInteraction.TrackMaskX;
 import boa.image.BlankMask;
 import boa.image.Histogram;
 import boa.image.Image;
@@ -30,6 +32,7 @@ import static boa.plugins.Plugin.logger;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
+import boa.utils.Utils;
 import ij.process.AutoThresholder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -100,54 +103,6 @@ public interface TrackParametrizable<P extends Plugin> {
             return thlder.runSimpleThresholder(globalImage, globalMask);
         }
     }
-    /**
-     * Detected whether all microchannels are void, only part of it or none.
-     * @param structureIdx
-     * @param parentTrack
-     * @param thldForVoidMC 
-     * @param outputVoidMicrochannels will add the void microchannels inside this set
-     * @return [the minimal threshold if some channels are void or positive infinity if all channels are void ; the global threshold in non-empty microchannels]
-     */
-    public static double[] getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, double thldForVoidMC, Set<StructureObject> outputVoidMicrochannels) {
-        double bimodalThld = 0.4d;
-        float[] thlds = new float[parentTrack.size()];
-        int idx = 0;
-        SimpleThresholder thlder = new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu);
-        for ( StructureObject p : parentTrack) thlds[idx++] = (float)thlder.runSimpleThresholder(p.getPreFilteredImage(structureIdx), p.getMask());
-        
-        
-        ImageFloat thldsIm = new ImageFloat("", thlds.length, thlds);
-        double thld = thlder.runSimpleThresholder(thldsIm, null);
-        double[] ms = ImageOperations.getMeanAndSigma(thldsIm, null);
-        double[] msUnder = ImageOperations.getMeanAndSigma(thldsIm, null, v->v<thld);
-        double[] msOver = ImageOperations.getMeanAndSigma(thldsIm, null, v->v>thld);
-        logger.debug("test void microchannel otsu: thld: {} under: {} over: {}, all: {}, test: {}< {}", thld, msUnder, msOver, ms, msUnder[0]+msUnder[1], msOver[0]);
-        
-        // detect if cells get out or in with difference with previous channel
-        /*float[] thldsDiff = new float[preFilteredImages.size()-1];
-        for (int i =0; i<thldsDiff.length;++i) thldsDiff[i] = Math.abs(thlds[i+1] - thlds[i]);
-        ImageFloat thldsDiffIm = new ImageFloat("", thldsDiff.length, thldsDiff);
-        double[] msDiff = ImageOperations.getMeanAndSigma(thldsDiffIm, null);
-        double maxDiff = thldsDiff[ArrayUtil.max(thldsDiff)];
-        logger.debug("max diff: {} ms diff : {}", maxDiff, msDiff);
-        */
-        
-        // test bimodal: normed difference of mean of 2 classes
-        double diff = (msOver[0]-msUnder[0]) / thld;
-        logger.debug("test void microchannel otsu: bimodal: diff: {}  bimodal: {}, minValue: {}", diff, diff>bimodalThld, thld);
-        if (diff>bimodalThld) { // bimodal
-            idx = 0;
-            for (StructureObject s : parentTrack) if (thlds[idx++]<thld) outputVoidMicrochannels.add(s);
-        }
-        if (thld<thldForVoidMC) outputVoidMicrochannels.addAll(parentTrack);
-        if (outputVoidMicrochannels.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
-        //return Double.NaN;
-        // get global otsu thld for images with foreground
-        Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!outputVoidMicrochannels.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
-        Histogram histo = Histogram.getHisto256(imageMapMask, null);
-        double globalThld = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
-        logger.debug("global otsu thld: {}", globalThld);
-        return new double[]{outputVoidMicrochannels.isEmpty() ? Double.NaN : thld, globalThld};
-    }
+    
     
 }

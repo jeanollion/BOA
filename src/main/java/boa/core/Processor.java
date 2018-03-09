@@ -332,7 +332,7 @@ public class Processor {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().generateTrackMask(track, parentStructureIdx);
             for (int childSIdx : cSI) {
                 //GUI.log("Generating Image for track:"+track.get(0)+", structureIdx:"+childSIdx+" ...");
-                Image im = i.generateRawImage(childSIdx, false);
+                Image im = i.generatemage(childSIdx, false);
                 int channelIdx = dao.getExperiment().getChannelImageIdx(childSIdx);
                 imageDAO.writeTrackImage(track.get(0), channelIdx, im);
             }

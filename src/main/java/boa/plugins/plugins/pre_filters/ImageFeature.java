@@ -40,6 +40,7 @@ import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.LoG;
 import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.StructureMax;
 import boa.image.processing.ImageFeatures;
 import boa.utils.Utils;
+import java.util.Arrays;
 
 /**
  *
@@ -54,10 +55,14 @@ public class ImageFeature implements PreFilter {
         HessianMax("Hessian Max"),
         HessianMin("Hessian Min"),
         HessianMaxNorm("Normalized Hessian Max"), 
-        StructureMax("Structure Max"),;
+        StructureMax("Structure Max"),
+        StructureDet("Structure Det");
         final String name;
         Feature(String name) {
             this.name=name;
+        }
+        public static  Feature getFeature(String name) {
+            return Utils.getFirst(Arrays.asList(Feature.values()), f->f.name.equals(name));
         }
     }
     ChoiceParameter feature = new ChoiceParameter("Feature", Utils.transform(Feature.values(), new String[Feature.values().length], f->f.name), Feature.GAUSS.name, false);
@@ -92,28 +97,37 @@ public class ImageFeature implements PreFilter {
     public Image runPreFilter(Image input, ImageMask mask) {
         //logger.debug("ImageFeature: feature equasl: {}, scale equals: {}, normScale equals: {}", feature==cond.getActionableParameter(), scale == cond.getCurrentParameters().get(0), normScale == cond.getParameters("Normalized Hessian Max").get(1));
         //logger.debug("ImageFeauture: feature: {}, scale: {}, scaleZ: {} (from image: {}) normScale: {}", feature.getSelectedItem(), scale.getScaleXY(), scale.getScaleZ(mask.getScaleXY(), mask.getScaleZ()), scale.getUseImageCalibration(), normScale.getValue());
-        String f = feature.getSelectedItem();
+        Feature f = Feature.getFeature(feature.getSelectedItem());
         double scaleXY = scale.getScaleXY();
         double scaleZ = scale.getScaleZ(mask.getScaleXY(), mask.getScaleZ());
-        if (GAUSS.name.equals(f)) return ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
-        else if (GRAD.name.equals(f)) return ImageFeatures.getGradientMagnitude(input, scaleXY, true);
-        else if (LoG.name.equals(f)) return ImageFeatures.getLaplacian(input, scaleXY, true, true);
-        else if (HessianDet.name.equals(f)) return ImageFeatures.getHessianMaxAndDeterminant(input, scaleXY, true)[1];
-        else if (HessianMax.name.equals(f)) return ImageFeatures.getHessian(input, scaleXY, true)[0];
-        else if (HessianMin.name.equals(f)) {
-            ImageFloat[] hess = ImageFeatures.getHessian(input, scaleXY, true);
-            return hess[hess.length-1];
+        switch(f) {
+            case GAUSS:
+                return ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
+            case GRAD: 
+                return ImageFeatures.getGradientMagnitude(input, scaleXY, true);
+            case LoG:
+                return ImageFeatures.getLaplacian(input, scaleXY, true, true);
+            case HessianDet:
+                return ImageFeatures.getHessianMaxAndDeterminant(input, scaleXY, true)[1];
+            case HessianMax:
+                return ImageFeatures.getHessian(input, scaleXY, true)[0];
+            case HessianMin:
+                ImageFloat[] hess = ImageFeatures.getHessian(input, scaleXY, true);
+                return hess[hess.length-1];
+            case HessianMaxNorm:
+                Image hessian  = ImageFeatures.getHessian(input, scaleXY, true)[0];
+                Image norm = ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
+                ImageOperations.divide(hessian, norm, hessian);
+                return hessian;
+            case StructureMax:
+                return ImageFeatures.getStructure(input, smoothScale.getScaleXY(), scale.getScaleXY(), false)[0];
+            case StructureDet:
+                return ImageFeatures.getStructureMaxAndDeterminant(input, smoothScale.getScaleXY(), scale.getScaleXY(), false)[1];
+            default:
+                throw new IllegalArgumentException("Feature not supported");
         }
-        else if (HessianMaxNorm.name.equals(f)) {
-            Image hess  = ImageFeatures.getHessian(input, scaleXY, true)[0];
-            Image norm = ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
-            ImageOperations.divide(hess, norm, hess);
-            return hess;
-        } else if (StructureMax.name.equals(f)) {
-            return ImageFeatures.getStructure(input, smoothScale.getScaleXY(), scale.getScaleXY(), false)[0];
-        } else throw new IllegalArgumentException("No selected feature");
     }
-
+    @Override
     public Parameter[] getParameters() {
         return new Parameter[]{cond};
     }

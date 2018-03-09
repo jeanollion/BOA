@@ -51,9 +51,6 @@ public class SimpleRotationXY implements TransformationTimeIndependent {
         this.angle.setValue(angle);
     }
     
-    public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
-        
-    }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), angle.getValue().floatValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncomplete.getSelected());

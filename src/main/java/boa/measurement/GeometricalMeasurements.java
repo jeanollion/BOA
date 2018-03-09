@@ -20,11 +20,15 @@ package boa.measurement;
 import boa.data_structure.Region;
 import boa.data_structure.Voxel;
 import boa.image.Image;
+import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import boa.image.processing.localthickness.LocalThickness;
 import java.util.ArrayList;
 import java.util.List;
 import boa.utils.ArrayUtil;
 import boa.utils.geom.Point;
+import boa.utils.geom.PointContainer2;
+import boa.utils.geom.Vector;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.stream.DoubleStream;
 
@@ -53,7 +57,16 @@ public class GeometricalMeasurements {
         }
         return Math.sqrt(d2Max);
     }
-    
+    public static double getSpineLength(Region r) {
+        PointContainer2<?, Double>[] spine = BacteriaSpineFactory.createSpine(r);
+        return spine[spine.length-1].getContent2();
+    }
+    public static double[] getSpineLengthAndWidth(Region r) {
+        PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(r);
+        double width = ArrayUtil.median(Arrays.stream(spine).mapToDouble(s->s.getContent1().norm()).toArray());
+        double length = spine[spine.length-1].getContent2();
+        return new double[]{length, width};
+    }
     public static double getDistance(Region o1, Region o2) {
         return getDistance(o1.getGeomCenter(false), o2.getGeomCenter(false), o1.getScaleXY(), o1.getScaleZ());
     }
@@ -183,6 +196,32 @@ public class GeometricalMeasurements {
                     }
                 }
                 for (int y = object.getBounds().sizeY() - 1; y >= 0; --y) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        max = y;
+                        break;
+                    }
+                }
+                if (min >= 0) {
+                    double cur = max - min + 1;
+                    if (cur>maxT) maxT=cur;
+                }
+            }
+        }
+        return maxT;
+    }
+    public static double maxThicknessZ(Region object) {
+        double maxT = Double.NEGATIVE_INFINITY;
+        for (int y = 0; y < object.getBounds().sizeY(); ++y) {
+            for (int x = 0; x < object.getBounds().sizeX(); ++x) {
+                int min = -1;
+                int max = -1;
+                for (int z = 0; z < object.getBounds().sizeZ(); ++z) {
+                    if (object.getMask().insideMask(x, y, z)) {
+                        min = z;
+                        break;
+                    }
+                }
+                for (int z = object.getBounds().sizeZ() - 1; z>= 0; --z) {
                     if (object.getMask().insideMask(x, y, z)) {
                         max = y;
                         break;

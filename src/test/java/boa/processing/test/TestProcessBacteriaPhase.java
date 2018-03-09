@@ -71,12 +71,13 @@ public class TestProcessBacteriaPhase {
         //String dbName = "MutD5_141209";
         //String dbName = "MutH_150324";
         //String dbName = "Aya2";
-        String dbName = "AyaWT_mmglu";
+        //String dbName = "AyaWT_mmglu";
+        String dbName = "170919_thomas";
         //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
         int microChannel =1;
-        int[] time =new int[]{235, 235}; //22
+        int[] time =new int[]{250, 250}; //22
         //setMask=true;
         //thld = 776;
         
@@ -114,10 +115,10 @@ public class TestProcessBacteriaPhase {
         GUI.getInstance(); // for hotkeys...
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, 1);
-        Image im = i.generateRawImage(1, true);
+        Image im = i.generatemage(1, true);
         iwm.addImage(im, i, 1, true);
         for (StructureObject mc : parentTrack)  mc.setRawImage(1, mc.getPreFilteredImage(1));
-        im = i.generateRawImage(1, true);
+        im = i.generatemage(1, true);
         iwm.addImage(im, i, 1, true);
         iwm.setInteractiveStructure(1);
         iwm.displayAllObjects(im);

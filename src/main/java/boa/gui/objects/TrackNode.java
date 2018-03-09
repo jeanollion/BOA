@@ -269,7 +269,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             //trackNode.loadAllTrackObjects(path);
                             int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(getTrack(), structureIdx);
-                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, true);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generatemage(structureIdx, true), i, structureIdx, true);
                             GUI.getInstance().setInteractiveStructureIdx(structureIdx);
                             GUI.getInstance().setTrackStructureIdx(structureIdx);
                         }

@@ -40,7 +40,7 @@ import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 public class Sigma implements PreFilter, Filter {
     ScaleXYZParameter radius = new ScaleXYZParameter("Radius", 3, 1, true).setToolTipText("Radius in pixel");
     ScaleXYZParameter medianRadius = new ScaleXYZParameter("Median Filtering Radius", 0, 1, true).setToolTipText("Radius for median filtering, prior to sigma, in pixel. 0 = no median filtering");
-    Parameter[] parameters = new Parameter[]{radius};
+    Parameter[] parameters = new Parameter[]{radius, medianRadius};
     public Sigma() {}
     public Sigma(double radius) {
         this.radius.setScaleXY(radius);

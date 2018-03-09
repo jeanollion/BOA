@@ -71,12 +71,13 @@ public class TestTracker {
         //String dbName = "AyaWT_mmglu";
         //String dbName = "MutH_150324";
         // String dbName = "fluo170512_WT";
-        String dbName = "fluo171113_WT_15s";
+        //String dbName = "fluo171113_WT_15s";
+        String dbName = "170919_thomas";
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx =0;
-        int mcIdx =3;
-        int structureIdx =2;
+        int mcIdx =10;
+        int structureIdx =1;
         int[] frames = new int[]{0, 1000}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
@@ -146,7 +147,7 @@ public class TestTracker {
         if (displayOnFilteredImages) for (StructureObject p : parentTrack) p.setRawImage(structureIdx, p.getPreFilteredImage(structureIdx));
         
         
-        Image interactiveImage = i.generateRawImage(structureIdx, true);
+        Image interactiveImage = i.generatemage(structureIdx, true);
         iwm.addImage(interactiveImage, i, structureIdx, true);
         logger.debug("total objects: {} ({})", i.getObjects().size(), StructureObjectUtils.getChildrenByFrame(parentTrack, structureIdx).size());
         
@@ -197,7 +198,7 @@ public class TestTracker {
         for (String name : BacteriaClosedMicrochannelTrackerLocalCorrections.stepParents.keySet()) {
             List<StructureObject> pt = BacteriaClosedMicrochannelTrackerLocalCorrections.stepParents.get(name);
             ImageObjectInterface i = iwm.getImageTrackObjectInterface(pt, structureIdx);
-            Image im = i.generateRawImage(structureIdx, true).duplicate(name); // duplicate if not hascode collapse in case of trackImage
+            Image im = i.generatemage(structureIdx, true).duplicate(name); // duplicate if not hascode collapse in case of trackImage
             //im.setName(name);
             iwm.addImage(im, i, structureIdx, true);
             iwm.setInteractiveStructure(structureIdx);

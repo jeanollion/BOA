@@ -163,7 +163,7 @@ public class PluginConfigurationUtils {
                                    lastTest=null;
                                 }
                                 ImageObjectInterface ioi = iwm.generateTrackMask(parentTrack, structureIdx);
-                                Image interactiveImage = ioi.generateRawImage(structureIdx, true);
+                                Image interactiveImage = ioi.generatemage(structureIdx, true);
                                 iwm.addImage(interactiveImage, ioi, structureIdx, true);
                                 lastTest= new Pair<>(interactiveImage, ioi);
                                 iwm.addWindowClosedListener(interactiveImage, e->{iwm.removeImage(interactiveImage);iwm.removeImageObjectInterface(ioi.getKey()); GUI.getInstance().populateSelections(); lastTest=null; logger.debug("cloooooose image"); return null;});

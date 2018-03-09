@@ -401,14 +401,10 @@ public class ArrayUtil {
     }
     public static int[] generateIntegerArray(int start, int stopExcl) {
         if (stopExcl<start) return new int[0];
-        int[] res = new int[stopExcl-start];
-        for (int i = start; i<stopExcl; ++i) res[i-start]=i;
-        return res;
+        return IntStream.range(start, stopExcl).toArray();
     }
     public static int[] generateIntegerArray(int size) {
-        int[] res = new int[size];
-        for (int i = 0; i<size; ++i) res[i]=i;
-        return res;
+        return IntStream.range(0, size).toArray();
     }
     public static double mean(Collection<Double> col) {
         if (col.isEmpty()) return Double.NaN;
@@ -428,6 +424,12 @@ public class ArrayUtil {
         return new double[]{sum, sum2};
     }
     public static double median(float[] array) {
+        if (array.length==0) return Double.NaN;
+        Arrays.sort(array);
+        if (array.length%2==1) return array[array.length/2];
+        else return (array[array.length/2]+array[array.length/2-1])/2.0d;
+    }
+    public static double median(double[] array) {
         if (array.length==0) return Double.NaN;
         Arrays.sort(array);
         if (array.length%2==1) return array[array.length/2];

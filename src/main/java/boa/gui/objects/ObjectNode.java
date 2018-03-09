@@ -152,7 +152,7 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
                             int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx(), true);
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, true);
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generatemage(structureIdx, true), i, structureIdx, true);
                         }
                     }
                 );

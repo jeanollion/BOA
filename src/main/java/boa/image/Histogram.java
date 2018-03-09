@@ -21,6 +21,7 @@ import boa.image.processing.ImageOperations;
 import static boa.image.Image.logger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -54,10 +55,10 @@ public class Histogram {
         return byteHisto ? 1 : (minAndMax[1] - minAndMax[0]) / 256d;
     }
     public void add(Histogram other) {
-        for (int i = 0; i < 256; ++i) data[i] += other.data[i];
+        for (int i = 0; i < 256; ++i) data[i]+=other.data[i];
     }
     public void remove(Histogram other) {
-        for (int i = 0; i < 256; ++i) data[i] -= other.data[i];
+        for (int i = 0; i < 256; ++i) data[i]-=other.data[i];
     }
     
     public double getValueFromIdx(double thld256) {
@@ -127,14 +128,12 @@ public class Histogram {
             minAndMax[0] = mm[0];
             minAndMax[1] = mm[1];
         }
-        Histogram histo = null;
-        for (Entry<Image, ImageMask> e : images.entrySet()) {
-            Histogram h = e.getKey().getHisto256(minAndMax[0], minAndMax[1], e.getValue(), null);
-            if (histo == null) {
-                histo = h;
-            } else {
-                histo.add(h);
-            }
+        Iterator<Entry<Image, ImageMask>> it = images.entrySet().iterator();
+        Entry<Image, ImageMask> e = it.next();
+        Histogram histo = e.getKey().getHisto256(minAndMax[0], minAndMax[1], e.getValue(), null);
+        while (it.hasNext()) {
+            e = it.next();
+            histo.add(e.getKey().getHisto256(minAndMax[0], minAndMax[1], e.getValue(), null));
         }
         return histo;
     }

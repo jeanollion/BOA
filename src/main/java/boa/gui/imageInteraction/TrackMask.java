@@ -113,8 +113,12 @@ public abstract class TrackMask extends ImageObjectInterface {
         track.removeIf(o -> o.key.getFrame()<tpMin || o.key.getFrame()>tpMax);
     }
     public abstract Image generateEmptyImage(String name, Image type);
-    
-    @Override public Image generateRawImage(final int structureIdx, boolean executeInBackground) {
+    @Override public <T extends ImageObjectInterface> T setDisplayPreFilteredImages(boolean displayPreFilteredImages) {
+        super.setDisplayPreFilteredImages(displayPreFilteredImages);
+        for (StructureObjectMask m : trackObjects) m.setDisplayPreFilteredImages(displayPreFilteredImages);
+        return (T)this;
+    }
+    @Override public Image generatemage(final int structureIdx, boolean executeInBackground) {
         // use track image only if parent is first element of track image
         if (trackObjects[0].parent.getOffsetInTrackImage()!=null && trackObjects[0].parent.getOffsetInTrackImage().xMin()==0 && trackObjects[0].parent.getTrackImage(structureIdx)!=null) return trackObjects[0].parent.getTrackImage(structureIdx);
         /*long t00 = System.currentTimeMillis();
@@ -123,7 +127,7 @@ public abstract class TrackMask extends ImageObjectInterface {
         }
         long t01 = System.currentTimeMillis();
         logger.debug("total loading time: {}", t01-t00);*/
-        Image image0 = trackObjects[0].generateRawImage(structureIdx, false);
+        Image image0 = trackObjects[0].generatemage(structureIdx, false);
         if (image0==null) return null;
         String structureName;
         if (getParent().getExperiment()!=null) structureName = getParent().getExperiment().getStructure(structureIdx).getName(); 
@@ -139,7 +143,7 @@ public abstract class TrackMask extends ImageObjectInterface {
             @Override
             public String run(int i) {
                 //long t0 = System.currentTimeMillis();
-                Image image = trackObjects[i].generateRawImage(structureIdx, false);
+                Image image = trackObjects[i].generatemage(structureIdx, false);
                 Image.pasteImage(image, displayImage, trackOffset[i]);
                 if (count>=updateImageFrequency || i==trackObjects.length-1) {
                     ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage); //, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1])

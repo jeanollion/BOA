@@ -7,7 +7,7 @@
 
     <groupId>ljp</groupId>
     <artifactId>functional-bioimage-core</artifactId>
-    <version>1.5.7-SNAPSHOT</version>
+    <version>1.5.8-SNAPSHOT</version>
 
     <name>functional-bioimage-core</name>
     <description>Bacteria Analyzer</description>
@@ -69,7 +69,7 @@
         <dependency>
             <groupId>ome</groupId>
             <artifactId>formats-gpl</artifactId>
-            <version>5.1.10</version>
+            <version>5.8.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

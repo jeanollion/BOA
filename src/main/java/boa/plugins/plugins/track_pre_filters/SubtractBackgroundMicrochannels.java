@@ -51,7 +51,7 @@ import java.util.TreeMap;
 public class SubtractBackgroundMicrochannels implements TrackPreFilter{
     BooleanParameter isDarkBck = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
-    NumberParameter radius = new BoundedNumberParameter("Radius", 0, 10000, 1, null).setToolTipText("Higher value -> less homogeneity/faster. Radius of the paraboloïd will be this value * mean Y size of microchannels");
+    NumberParameter radius = new BoundedNumberParameter("Radius", 0, 10000, 1, null).setToolTipText("Lower value -> less homogeneity/faster. <br />Radius of the paraboloïd will be this value * mean Y size of microchannels");
     Parameter[] parameters = new Parameter[]{radius, isDarkBck, smooth};
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {

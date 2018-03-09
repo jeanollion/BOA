@@ -126,7 +126,7 @@ public class BacteriaLineageMeasurements implements Measurement {
         res.add(new MeasurementKeyObject("PreviousDivisionFrame", structure.getSelectedIndex()));
         return res;
     }
-    
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }

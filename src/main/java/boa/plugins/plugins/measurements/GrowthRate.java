@@ -55,8 +55,9 @@ public class GrowthRate implements Measurement {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
     protected PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, new Size(), false).setToolTipText("Object Feature used to compute Growth Rate");
     protected TextParameter suffix = new TextParameter("Suffix", "", false).setToolTipText("Suffix added to measurement keys");
-    protected BooleanParameter residuals = new BooleanParameter("Save Residuals", true);
-    protected Parameter[] parameters = new Parameter[]{structure, feature, suffix, residuals};
+    protected BooleanParameter residuals = new BooleanParameter("Save Residuals", false);
+    protected BooleanParameter intersection = new BooleanParameter("Save Intersection", false);
+    protected Parameter[] parameters = new Parameter[]{structure, feature, suffix, residuals, intersection};
     public GrowthRate() {}
     
     public GrowthRate(int structureIdx) {
@@ -87,6 +88,7 @@ public class GrowthRate implements Measurement {
         int bIdx = structure.getSelectedIndex();
         String suffix = this.suffix.getValue();
         boolean res = residuals.getSelected();
+        boolean inter = intersection.getSelected();
         MultipleException ex = new MultipleException();
         final ArrayList<ObjectFeatureCore> cores = new ArrayList<>();
         HashMapGetCreate<StructureObject, ObjectFeature> ofMap = new HashMapGetCreate<>(p -> {
@@ -112,7 +114,7 @@ public class GrowthRate implements Measurement {
                 idx = 0;
                 for (StructureObject b : l) {
                     b.getMeasurements().setValue("GrowthRate"+suffix, beta[1] );
-                    b.getMeasurements().setValue("GrowthRateIntersection"+suffix, beta[0] );
+                    if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, beta[0] );
                     if (res) b.getMeasurements().setValue("GrowthRateResidual"+suffix, residuals[idx++] );
                 }
             }
@@ -127,11 +129,12 @@ public class GrowthRate implements Measurement {
         ArrayList<MeasurementKey> res = new ArrayList<>(3);
         String suffix = this.suffix.getValue();
         res.add(new MeasurementKeyObject("GrowthRate"+suffix, structure.getSelectedIndex()));
-        res.add(new MeasurementKeyObject("GrowthRateIntersection"+suffix, structure.getSelectedIndex()));
-        res.add(new MeasurementKeyObject("GrowthRateResidual"+suffix, structure.getSelectedIndex()));
+        if (intersection.getSelected()) res.add(new MeasurementKeyObject("GrowthRateIntersection"+suffix, structure.getSelectedIndex()));
+        if (residuals.getSelected()) res.add(new MeasurementKeyObject("GrowthRateResidual"+suffix, structure.getSelectedIndex()));
         return res;
     }
     
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
