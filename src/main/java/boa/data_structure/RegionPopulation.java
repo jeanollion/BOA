@@ -348,7 +348,7 @@ public class RegionPopulation {
         for (Region r : getRegions()) {
             if (!labelMapThld.containsKey(r.getLabel())) continue;
             double thld = labelMapThld.get(r.getLabel());
-            boolean change = r.erodeContours(erodeMap, thld, darkBackground, keepOnlyBiggestObject, r.getContour());
+            boolean change = r.erodeContours(erodeMap, thld, darkBackground, keepOnlyBiggestObject, r.getContour(), null);
             if (change && !keepOnlyBiggestObject) {
                 List<Region> subRegions = ImageLabeller.labelImageListLowConnectivity(r.mask);
                 if (subRegions.size()>1) {
@@ -368,7 +368,7 @@ public class RegionPopulation {
         constructObjects(); // updates bounds of objects
         return this;
     }
-    public RegionPopulation localThresholdEdges(Image erodeMap, Image edgeMap, double iqrFactor, boolean darkBackground, boolean keepOnlyBiggestObject, double dilateRegionRadius, ImageMask mask) {
+    public RegionPopulation localThresholdEdges(Image erodeMap, Image edgeMap, double iqrFactor, boolean darkBackground, boolean keepOnlyBiggestObject, double dilateRegionRadius, ImageMask mask, Predicate<Voxel> removeContourVoxel) {
         if (dilateRegionRadius>0) {
             labelImage =  (ImageInteger)Filters.applyFilter(getLabelMap(), null, new Filters.BinaryMaxLabelWise().setMask(mask), Filters.getNeighborhood(dilateRegionRadius, mask));
             constructObjects();
@@ -403,7 +403,12 @@ public class RegionPopulation {
         for (Region r : getRegions()) {
             if (!labelMapThld.containsKey(r.getLabel())) continue;
             double thld = labelMapThld.get(r.getLabel());
-            boolean change = r.erodeContours(erodeMap, thld, darkBackground, keepOnlyBiggestObject, r.getContour());
+            Set<Voxel> contour = r.getContour();
+            if (removeContourVoxel!=null) {
+                contour.removeIf(removeContourVoxel);
+                if (contour.isEmpty()) continue;
+            }
+            boolean change = r.erodeContours(erodeMap, thld, darkBackground, keepOnlyBiggestObject, contour, removeContourVoxel);
             //logger.debug("local thld edge: object: {}, thld: {}, changes: {}, absLandMark: {}", r.getLabel(), thld, change, r.isAbsoluteLandMark());
             if (change && !keepOnlyBiggestObject) {
                 List<Region> subRegions = ImageLabeller.labelImageListLowConnectivity(r.mask);

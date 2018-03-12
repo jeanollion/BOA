@@ -19,8 +19,12 @@
 package boa.plugins.plugins.segmenters;
 
 import boa.configuration.parameters.BooleanParameter;
+import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
+import boa.configuration.parameters.ConditionalParameter;
+import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
+import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.RegionPopulation.Border;
 import boa.data_structure.RegionPopulation.ContactBorderMask;
@@ -59,6 +63,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
@@ -70,17 +75,21 @@ import java.util.stream.Stream;
  */
 public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackParametrizable<BacteriaIntensityPhase> {
     BooleanParameter filterBorderArtefacts = new BooleanParameter("Filter border Artefacts", true);
+    BooleanParameter upperCellCorrection = new BooleanParameter("Upper Cell Correction", false).setToolTipText("If true: when the upper cell is touching the top of the microchannel, a different local threshold factor is applied to the upper half of the cell");
+    NumberParameter upperCellLocalThresholdFactor = new BoundedNumberParameter("Upper cell local threshold factor", 2, 2, 0, null).setToolTipText("Local Threshold factor applied to the upper part of the cell");
+    NumberParameter maxYCoordinate = new BoundedNumberParameter("Max yMin coordinate of upper cell", 0, 5, 0, null);
+    ConditionalParameter cond = new ConditionalParameter(upperCellCorrection).setActionParameters("true", upperCellLocalThresholdFactor, maxYCoordinate);
     ChoiceParameter thresholdMethod=  new ChoiceParameter("Threshold Method", new String[]{"Local Threshold", "Global Threshold"}, "Global Threshold", false);
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{watershedMap, thresholdMethod, splitThreshold, localThresholdFactor, minSize, smoothScale, hessianScale, filterBorderArtefacts};
+        return new Parameter[]{watershedMap, thresholdMethod, splitThreshold , minSize, hessianScale, filterBorderArtefacts, localThresholdFactor, cond, smoothScale};
     }
     public BacteriaIntensityPhase() {
         this.splitThreshold.setValue(0.1);
         this.minSize.setValue(100);
         this.hessianScale.setValue(3);
         this.watershedMap.removeAll().add(new Sigma(3).setMedianRadius(2));
-        localThresholdFactor.setToolTipText("Factor defining the local threshold. Lower value of this factor will yield in smaller cells. T = mean_w - sigma_w * (this factor), with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
+        localThresholdFactor.setToolTipText("Factor defining the local threshold. <br />Lower value of this factor will yield in smaller cells. <br />Threshold = mean_w - sigma_w * (this factor), <br />with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
         localThresholdFactor.setValue(1);
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
@@ -188,13 +197,32 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     
     @Override
     protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx, boolean callFromSplit) {
+        if (pop.getRegions().isEmpty()) return pop;
         double dilRadius = callFromSplit ? 0 : 2;
-        Image smooth = ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
-        Image edgeMap = Sigma.filter(input, 3, 1, 3, 1);
-        if (splitVerbose) ImageWindowManagerFactory.showImage(edgeMap.setName("local threshold edge map"));
+        Image smooth = smoothScale.getValue().doubleValue()<1 ? parent.getRawImage(structureIdx) : ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
+        Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), parent.getMask(), 3, 1, smoothScale.getValue().doubleValue(), 1);
+        if (testMode || (callFromSplit && splitVerbose)) {
+            ImageWindowManagerFactory.showImage(smooth.setName("local threshold intensity map"));
+            ImageWindowManagerFactory.showImage(edgeMap.setName("local threshold edge map"));
+        }
         ImageMask mask = parent.getMask();
-        pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask);
-        if (splitVerbose) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after localThreshold"));
+        // different local threshold for middle part of upper cell when touches borders
+        boolean differentialLF = false;
+        if (upperCellCorrection.getSelected()) {
+            Region upperCell = pop.getRegions().stream().min((r1, r2)->Integer.compare(r1.getBounds().yMin(), r2.getBounds().yMin())).get();
+            if (upperCell.getBounds().yMin()<=maxYCoordinate.getValue().intValue()) {
+                differentialLF = true;
+                double yLim = upperCell.getGeomCenter(false).get(1)+upperCell.getBounds().sizeY()/3.0;
+                pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask, v->v.y<yLim); // local threshold for lower cells & half lower part of cell
+                if (testMode || (callFromSplit && splitVerbose)) {
+                    logger.debug("y lim: {}", yLim);
+                    ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after lower localThreshold"));
+                }
+                pop.localThresholdEdges(smooth, edgeMap, upperCellLocalThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask, v->v.y>yLim); // local threshold for half upper part of 1st cell                
+            } 
+        } 
+        if (!differentialLF) pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask, null);
+        if (testMode || (callFromSplit && splitVerbose)) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after localThreshold"));
         pop.smoothRegions(2, true, mask);
         return pop;
     }

@@ -65,6 +65,7 @@ import static boa.utils.Utils.comparator;
 import static boa.utils.Utils.comparatorInt;
 import boa.utils.geom.Point;
 import java.util.Arrays;
+import java.util.function.Predicate;
 /**
  * 
  * @author jollion
@@ -501,24 +502,24 @@ public class Region {
      * @param contour will be modified if a set
      * @return if any change was made
      */
-    public boolean erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, boolean keepOnlyBiggestObject, Collection<Voxel> contour) {
+    public boolean erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, boolean keepOnlyBiggestObject, Collection<Voxel> contour, Predicate<Voxel> stopPropagation) {
         boolean changes = false;
         TreeSet<Voxel> heap = contour==null ? new TreeSet<>(getContour()) : new TreeSet<>(contour);
         EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
         ensureMaskIsImageInteger();
         ImageInteger mask = getMaskAsImageInteger();
-        int xx, yy, zz;
+        Voxel n = new Voxel(0, 0, 0);
         while(!heap.isEmpty()) {
             Voxel v = heap.pollFirst();
             if (removeIfLowerThanThreshold ? image.getPixel(v.x, v.y, v.z)<=threshold : image.getPixel(v.x, v.y, v.z)>=threshold) {
                 changes = true;
                 mask.setPixel(v.x-mask.xMin(), v.y-mask.yMin(), v.z-mask.zMin(), 0);
                 for (int i = 0; i<neigh.dx.length; ++i) {
-                    xx=v.x+neigh.dx[i];
-                    yy=v.y+neigh.dy[i];
-                    zz=v.z+neigh.dz[i];
-                    if (mask.contains(xx-mask.xMin(), yy-mask.yMin(), zz-mask.zMin()) && mask.insideMask(xx-mask.xMin(), yy-mask.yMin(), zz-mask.zMin())) {
-                        heap.add(new Voxel(xx, yy, zz));
+                    n.x=v.x+neigh.dx[i];
+                    n.y=v.y+neigh.dy[i];
+                    n.z=v.z+neigh.dz[i];
+                    if (mask.contains(n.x-mask.xMin(), n.y-mask.yMin(), n.z-mask.zMin()) && mask.insideMask(n.x-mask.xMin(), n.y-mask.yMin(), n.z-mask.zMin()) && (stopPropagation==null || !stopPropagation.test(n))) {
+                        heap.add(n.duplicate());
                     }
                 }
             }

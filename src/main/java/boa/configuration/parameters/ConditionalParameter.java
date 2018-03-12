@@ -83,7 +83,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
         action.setConditionalParameter(this);
         setActionValue(action.getValue());
     }
-    public ConditionalParameter setActionParameters(String actionValue, Parameter[] parameters) {
+    public ConditionalParameter setActionParameters(String actionValue, Parameter... parameters) {
         return setActionParameters(actionValue, parameters, false);
     }
     public List<Parameter> getActionParameters(String actionValue) {

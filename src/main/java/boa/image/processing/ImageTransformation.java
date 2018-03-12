@@ -62,7 +62,6 @@ public class ImageTransformation {
     public static Image rotateXY(Image image, double angle, InterpolationScheme interpolation, boolean removeIncompleteRowsAndColumns) {
         if (angle%90==0) {
             if (angle<0) angle = 360+angle;
-            logger.debug("rotation: {}", angle/90);
             return turn(image, (int)angle/90, 0, 0);
         } else {
             Image im =  rotate(image, angle, 0, 0, interpolation, !removeIncompleteRowsAndColumns, true);

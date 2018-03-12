@@ -187,6 +187,25 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         pop.translate(cut, true);
         object.andNot(pop.getLabelMap());
         trimUpperPixels(object, trimUpperPixelRadius);
+        // trim xLeft & xRight to mean value
+        double[] xLMean = new double[2];
+        double[] xRMean = new double[2];
+        ImageInteger regionMask = object.getMaskAsImageInteger();
+        ImageMask.loop(object.getMask(), (x, y, z)-> {
+            if (y<=regionMask.sizeX()) return; // do not take into acount head
+            if (x==0 || !regionMask.insideMask(x-1, y, z)) {
+                xLMean[0]+=x;
+                xLMean[1]++;
+            }
+            if (x==regionMask.sizeX()-1 || !regionMask.insideMask(x+1, y, z)) {
+                xRMean[0]+=x;
+                xRMean[1]++;
+            }
+        });
+        xLMean[0]/=xLMean[1];
+        xRMean[0]/=xRMean[1];
+        ImageMask.loop(object.getMask(), (x, y, z)-> {if (x<xLMean[0] || x>xRMean[0]) regionMask.setPixel(x, y, z, 0);});
+        
         if (resetMask) object.resetMask(); // no reset so that all image have same upper-left-corner -> for average mask
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));

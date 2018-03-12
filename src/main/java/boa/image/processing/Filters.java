@@ -197,8 +197,13 @@ public class Filters {
         public abstract float applyFilter(int x, int y, int z);
     }
     private static class Mean extends Filter {
+        public Mean() {}
+        ImageMask mask;
+        public Mean(ImageMask mask) {
+            this.mask = mask;
+        }
         @Override public float applyFilter(int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image, null);
+            neighborhood.setPixels(x, y, z, image, mask);
             if (neighborhood.getValueCount()==0) return 0;
             double mean = 0;
             for (int i = 0; i<neighborhood.getValueCount(); ++i) mean+=neighborhood.getPixelValues()[i];
@@ -206,8 +211,13 @@ public class Filters {
         }
     }
     public static class Sigma extends Filter {
+        public Sigma() {}
+        ImageMask mask;
+        public Sigma(ImageMask mask) {
+            this.mask = mask;
+        }
         @Override public float applyFilter(int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image, null);
+            neighborhood.setPixels(x, y, z, image, mask);
             if (neighborhood.getValueCount()==0) return 0;
             double mean = 0;
             double values2 = 0;
@@ -221,8 +231,13 @@ public class Filters {
         }
     }
     public static class Variance extends Filter {
+        public Variance() {}
+        ImageMask mask;
+        public Variance(ImageMask mask) {
+            this.mask = mask;
+        }
         @Override public float applyFilter(int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image, null);
+            neighborhood.setPixels(x, y, z, image, mask);
             if (neighborhood.getValueCount()==0) return 0;
             double mean = 0;
             double values2 = 0;
@@ -251,8 +266,13 @@ public class Filters {
         }
     }
     public static class Median extends Filter {
+        public Median(){};
+        ImageMask mask;
+        public Median(ImageMask mask){
+            this.mask = mask;
+        };
         @Override public float applyFilter(int x, int y, int z) {
-            neighborhood.setPixels(x, y, z, image, null);
+            neighborhood.setPixels(x, y, z, image, mask);
             if (neighborhood.getValueCount()==0) return 0;
             Arrays.sort(neighborhood.getPixelValues(), 0, neighborhood.getValueCount());
             if (neighborhood.getValueCount()%2==0) return (neighborhood.getPixelValues()[neighborhood.getValueCount()/2-1]+neighborhood.getPixelValues()[neighborhood.getValueCount()/2])/2f;

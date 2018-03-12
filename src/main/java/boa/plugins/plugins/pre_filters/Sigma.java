@@ -26,12 +26,14 @@ import boa.configuration.parameters.ScaleXYZParameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
+import boa.image.ImageFloat;
 import boa.image.ImageMask;
 import java.util.ArrayList;
 import boa.plugins.Filter;
 import boa.plugins.PreFilter;
 import boa.plugins.TransformationTimeIndependent;
 import boa.image.processing.Filters;
+import static boa.image.processing.Filters.applyFilter;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 
 /**
@@ -63,12 +65,15 @@ public class Sigma implements PreFilter, Filter {
     }
     @Override
     public Image runPreFilter(Image input, ImageMask mask) {
-        return filter(input, radius.getScaleXY(), radius.getScaleZ(input.getScaleXY(), input.getScaleZ()), medianRadius.getScaleXY(), medianRadius.getScaleZ(input.getScaleXY(), input.getScaleZ()));
+        return filter(input, mask, radius.getScaleXY(), radius.getScaleZ(input.getScaleXY(), input.getScaleZ()), medianRadius.getScaleXY(), medianRadius.getScaleZ(input.getScaleXY(), input.getScaleZ()));
     }
     
     public static Image filter(Image input, double radiusXY, double radiusZ, double medianXY, double medianZ) {
-        if (medianXY>1) input = Filters.median(input, null, Filters.getNeighborhood(medianXY, medianZ, input));
-        return Filters.sigma(input, null, Filters.getNeighborhood(radiusXY, radiusZ, input));
+        return filter(input, null, radiusXY, radiusZ, medianXY, medianZ);
+    }
+    public static Image filter(Image input, ImageMask mask, double radiusXY, double radiusZ, double medianXY, double medianZ) {
+        if (medianXY>1)  input = applyFilter(input, new ImageFloat("sigma", input), new Filters.Median(mask), Filters.getNeighborhood(medianXY, medianZ, input));
+        return applyFilter(input, new ImageFloat("sigma", input), new Filters.Sigma(mask), Filters.getNeighborhood(radiusXY, radiusZ, input));
     }
     @Override
     public Parameter[] getParameters() {

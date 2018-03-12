@@ -161,9 +161,13 @@ public class AutoFlipY implements Transformation, ToolTip {
             // if rotation before -> top & bottom of image can contain zeros -> mean proj would return NaN
             float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null, v->v>0);
             int start = 0;
-            while (Float.isNaN(yProj[start])) ++start;
+            while (start<yProj.length && Float.isNaN(yProj[start])) ++start;
             int end = yProj.length;
-            while (Float.isNaN(yProj[end-1])) --end;
+            while (end>0 && Float.isNaN(yProj[end-1])) --end;
+            if (end>start) {
+                logger.error("Autoflip error @ Frame: {}, channel {}",  inputImages.getDefaultTimePoint(), channelIdx);
+                return;
+            }
             int peakIdx = ArrayUtil.max(yProj, start, end);           
             double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end-start));
             double peakHeight = yProj[peakIdx] - median;
@@ -182,7 +186,6 @@ public class AutoFlipY implements Transformation, ToolTip {
             //logger.debug("would flip: {} values: [{};{}], peak: [{}-{}-{}] height: {} [{}-{}]", flip, start, end, startOfPeakIdx, peakIdx, endOfPeakIdx,yProj[peakIdx]-median, yProj[peakIdx], median );
                 
             // compare upper and lower side X-variances withing frame of microchannel length
-            // TODO : TEST !!!!
             float[] xProjUpper = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new SimpleBoundingBox(0, image.sizeX()-1, Math.max(start, startOfPeakIdx-length), startOfPeakIdx, 0, image.sizeZ()-1), v->v>0); 
             float[] xProjLower = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new SimpleBoundingBox(0, image.sizeX()-1, endOfPeakIdx, Math.min(end-1, endOfPeakIdx+length), 0, image.sizeZ()-1), v->v>0);
             double varUpper = ArrayUtil.meanSigma(xProjUpper, 0, xProjUpper.length, null)[1];
