@@ -164,10 +164,7 @@ public class AutoFlipY implements Transformation, ToolTip {
             while (start<yProj.length && Float.isNaN(yProj[start])) ++start;
             int end = yProj.length;
             while (end>0 && Float.isNaN(yProj[end-1])) --end;
-            if (end>start) {
-                logger.error("Autoflip error @ Frame: {}, channel {}",  inputImages.getDefaultTimePoint(), channelIdx);
-                return;
-            }
+            if (start>=end)  throw new RuntimeException("Autoflip error @ Frame: "+inputImages.getDefaultTimePoint()+", channel "+channelIdx);
             int peakIdx = ArrayUtil.max(yProj, start, end);           
             double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end-start));
             double peakHeight = yProj[peakIdx] - median;
