@@ -81,7 +81,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         }
         // merge phase: merge until 2 objects per assignment & remove each merge cost to global cost
         if (a==null && needToMerge()) { 
-            if (frame+1<tracker.maxT) { 
+            if (frame+1<tracker.maxFExcluded) { 
                 TrackAssigner ta = tracker.getTrackAssigner(frame+1).setVerboseLevel(verboseLevelLimit);
                 ta.assignUntil(assignment.getLastObject(false), true);
                 // check that ta's has assignments included in current assignments

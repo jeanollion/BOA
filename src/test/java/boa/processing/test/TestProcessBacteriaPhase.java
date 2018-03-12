@@ -70,14 +70,15 @@ public class TestProcessBacteriaPhase {
         //String dbName = "MF1_170523";
         //String dbName = "MutD5_141209";
         //String dbName = "MutH_150324";
+        String dbName = "MutH_140115";
         //String dbName = "Aya2";
         //String dbName = "AyaWT_mmglu";
-        String dbName = "170919_glyc_lac";
+        //String dbName = "170919_glyc_lac";
         //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =23;
-        int[] time =new int[]{145, 145}; //22
+        int microChannel =0;
+        int[] time =new int[]{11, 11}; //22
         //setMask=true;
         //thld = 776;
         

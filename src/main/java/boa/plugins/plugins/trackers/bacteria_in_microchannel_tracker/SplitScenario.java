@@ -82,7 +82,7 @@ public class SplitScenario extends CorrectionScenario {
             return res;
         }
         @Override protected SplitScenario getNextScenario() { // until next division event OR reach end of channel & division with 2n sister lost
-            if (frameMin == tracker.maxT-1) return null;
+            if (frameMin == tracker.maxFExcluded-1) return null;
             TrackAttribute ta = tracker.objectAttributeMap.get(o);
             if (ta==null) return null;
             if (ta.next==null) {
