@@ -27,6 +27,7 @@ import boa.image.BoundingBox;
 import static boa.image.BoundingBox.loop;
 import boa.image.MutableBoundingBox;
 import boa.image.Histogram;
+import boa.image.IJImageWrapper;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
@@ -45,6 +46,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import boa.utils.Utils;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.process.StackProcessor;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -900,5 +904,34 @@ public class ImageOperations {
             if (!keepOnlyDilatedPart) ImageOperations.andWithOffset(dilatedMask, image, dilatedMask); // ensures the object is included in the mask
         }
         return dilatedMask;
+    }
+    public static enum IJInterpolation {
+        NEAREST_NEIGHBOR(ij.process.ImageProcessor.NEAREST_NEIGHBOR), 
+        BILINEAR(ij.process.ImageProcessor.BILINEAR),
+        BICUBIC(ij.process.ImageProcessor.BICUBIC);
+        int methodIdx;
+        private IJInterpolation(int method) {this.methodIdx=method;}
+        public int method() {return methodIdx;}
+    }
+    
+    public static Image resizeXY(Image image, int newX, int newY, IJInterpolation interpolation) {
+        if (interpolation == null) interpolation = IJInterpolation.BICUBIC;
+        if (newX==0 || newY==0) throw new IllegalArgumentException("cant resize to 0");
+        if (newX == image.sizeX() && newY == image.sizeY()) return image.duplicate();
+        ImagePlus ip = IJImageWrapper.getImagePlus(image);
+        ip.getProcessor().setInterpolationMethod(interpolation.method());
+        StackProcessor sp = new StackProcessor(ip.getStack(), ip.getProcessor());
+        ip = new ImagePlus(image.getName() + "::resized", sp.resize(newX, newY, true));
+        
+        return IJImageWrapper.wrap(ip);
+    }
+    public static Image resizeZ(Image image, int newZ, IJInterpolation interpolation) {
+        if (newZ==0) throw new IllegalArgumentException("cant resize to 0");
+        if (interpolation == null) interpolation = IJInterpolation.BICUBIC;
+        ImagePlus ip = IJImageWrapper.getImagePlus(image);
+        if ( newZ == image.sizeZ()) return image.duplicate();
+        ij.plugin.Resizer r = new ij.plugin.Resizer();
+        ip = r.zScale(ip, newZ, interpolation.method());
+        return IJImageWrapper.wrap(ip);
     }
 }

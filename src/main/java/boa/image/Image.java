@@ -28,6 +28,7 @@ import boa.image.processing.neighborhood.Neighborhood;
 import boa.utils.ArrayUtil;
 import boa.utils.StreamConcatenation;
 import boa.utils.Utils;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -162,6 +163,9 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
         logger.debug("after contract: {}", bds);
         planes = Utils.transform(planes, p -> p.getBoundingBox().resetOffset().equals(bds) ? p : p.crop(bds.duplicate().center(p.getBoundingBox().resetOffset())));
         return mergeZPlanes(planes);
+    }
+    public static <T extends Image<T>> T mergeZPlanes(T... planes) {
+        return mergeZPlanes(Arrays.asList(planes));
     }
     public static <T extends Image<T>> T mergeZPlanes(List<T> planes) {
         if (planes==null || planes.isEmpty()) return null;
