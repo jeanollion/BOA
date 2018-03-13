@@ -103,21 +103,21 @@ public class ImageFeature implements PreFilter {
         double scaleZ = scale.getScaleZ(mask.getScaleXY(), mask.getScaleZ());
         switch(f) {
             case GAUSS:
-                return ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
+                return ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, false);
             case GRAD: 
-                return ImageFeatures.getGradientMagnitude(input, scaleXY, true);
+                return ImageFeatures.getGradientMagnitude(input, scaleXY, false);
             case LoG:
-                return ImageFeatures.getLaplacian(input, scaleXY, true, true);
+                return ImageFeatures.getLaplacian(input, scaleXY, true, false);
             case HessianDet:
-                return ImageFeatures.getHessianMaxAndDeterminant(input, scaleXY, true)[1];
+                return ImageFeatures.getHessianMaxAndDeterminant(input, scaleXY, false)[1];
             case HessianMax:
-                return ImageFeatures.getHessian(input, scaleXY, true)[0];
+                return ImageFeatures.getHessian(input, scaleXY, false)[0];
             case HessianMin:
-                ImageFloat[] hess = ImageFeatures.getHessian(input, scaleXY, true);
+                ImageFloat[] hess = ImageFeatures.getHessian(input, scaleXY, false);
                 return hess[hess.length-1];
             case HessianMaxNorm:
-                Image hessian  = ImageFeatures.getHessian(input, scaleXY, true)[0];
-                Image norm = ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
+                Image hessian  = ImageFeatures.getHessian(input, scaleXY, false)[0];
+                Image norm = ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, false);
                 ImageOperations.divide(hessian, norm, hessian);
                 return hessian;
             case StructureMax:
@@ -125,7 +125,7 @@ public class ImageFeature implements PreFilter {
             case StructureDet:
                 return ImageFeatures.getStructureMaxAndDeterminant(input, smoothScale.getScaleXY(), scale.getScaleXY(), false)[1];
             default:
-                throw new IllegalArgumentException("Feature not supported");
+                throw new IllegalArgumentException("Feature "+feature.getSelectedItem()+"not supported");
         }
     }
     @Override

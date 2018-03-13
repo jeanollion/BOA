@@ -740,6 +740,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return res;
     }
     public boolean hasObject() {return object!=null;}
+    public boolean hasObjectContainer() {return objectContainer!=null;}
     // object- and image-related methods
     public Region getRegion() {
         if (object==null) {

@@ -63,11 +63,12 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
     @Override
     public void filter(int structureIdx, List<StructureObject> parentTrack) throws MultipleException {
         if (postFilters.getChildCount()==0) return;
+        boolean rootParent = parentTrack.stream().findAny().get().isRoot();
         List<StructureObject> objectsToRemove = new ArrayList<>();
         ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             //logger.debug("seg post-filter: {}", parent);
-            pop.translate(new SimpleBoundingBox(parent.getBounds()).reverseOffset(), false); // go back to relative landmark
+            if (!rootParent) pop.translate(new SimpleBoundingBox(parent.getBounds()).reverseOffset(), false); // go back to relative landmark
             pop=postFilters.filter(pop, structureIdx, parent);
             List<StructureObject> toRemove=null;
             if (parent.getChildren(structureIdx)!=null) {
@@ -75,16 +76,16 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
                     if (!pop.getRegions().contains(o.getRegion())) {
                         if (toRemove==null) toRemove= new ArrayList<>();
                         toRemove.add(o);
-                    }
+                    } 
                 }
             }
-            pop.translate(parent.getBounds(), true); // go back to absolute landmark
+            if (!rootParent) pop.translate(parent.getBounds(), true); // go back to absolute landmark
             if (toRemove!=null) {
                 synchronized(objectsToRemove) {
                     objectsToRemove.addAll(toRemove);
                 }
             }
-            // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
+            parent.getChildObjects(structureIdx).stream().filter((o) -> (o.hasObjectContainer())).forEachOrdered((o) -> { o.updateObjectContainer(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
         }, executor, null);
         if (!objectsToRemove.isEmpty()) { 
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());

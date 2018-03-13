@@ -54,13 +54,9 @@ public class TrackMaskX extends TrackMask {
     
     public TrackMaskX(List<StructureObject> parentTrack, int childStructureIdx, boolean middleYZ) {
         super(parentTrack, childStructureIdx);
-        int maxY=0, maxZ=0;
-        for (int i = 0; i<parentTrack.size(); ++i) { // compute global Y and Z max to center parent masks
-            if (maxY<parentTrack.get(i).getRegion().getBounds().sizeY()) maxY=parentTrack.get(i).getRegion().getBounds().sizeY();
-            if (maxZ<parentTrack.get(i).getRegion().getBounds().sizeZ()) maxZ=parentTrack.get(i).getRegion().getBounds().sizeZ();
-        }
-        maxParentSizeY=maxY;
-        maxParentSizeZ=maxZ;
+        maxParentSizeY = parentTrack.stream().mapToInt(p->p.getBounds().sizeY()).max().getAsInt();
+        maxParentSizeZ = parentTrack.stream().mapToInt(p->p.getBounds().sizeZ()).max().getAsInt();
+
         logger.trace("track mask image object: max parent Y-size: {} z-size: {}", maxParentSizeY, maxParentSizeZ);
         int currentOffsetX=0;
         for (int i = 0; i<parentTrack.size(); ++i) {

@@ -161,7 +161,10 @@ public class WatershedTransform {
                     if (!mask.insideMask(v.x, v.y, v.z)) continue;
                     for (int i = 0; i<neigh.getSize(); ++i) {
                         Voxel n = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]) ;
-                        if (segmentedMap.contains(n.x, n.y, n.z) && mask.insideMask(n.x, n.y, n.z)) heap.add(n);
+                        if (segmentedMap.contains(n.x, n.y, n.z) && mask.insideMask(n.x, n.y, n.z)) {
+                            n.value = watershedMap.getPixel(n.x, n.y, n.z);
+                            heap.add(n);
+                        }
                     }
                 }
             }

@@ -54,7 +54,7 @@ import boa.utils.Pair;
 public abstract class TrackMask extends ImageObjectInterface {
     BoundingBox[] trackOffset;
     StructureObjectMask[] trackObjects;
-    static final int updateImageFrequency=10;
+    static final int updateImageFrequency=50;
     static final int interval=0; 
     static final float displayMinMaxFraction = 0.9f;
     

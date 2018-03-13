@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  * @author jollion
  * @param <I>
  */
-public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> & RegionCluster.InterfaceVoxels<I>> {
+public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& RegionCluster.InterfaceVoxels<I>
     public boolean testMode;
     protected ClusterCollection.InterfaceFactory<Region, I> factory;
     protected HashMapGetCreate<Region, Double> medianValues;
