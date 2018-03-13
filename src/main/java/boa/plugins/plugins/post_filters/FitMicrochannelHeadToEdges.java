@@ -131,8 +131,12 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
     }
     private static void fitWhole(Image edgeMap, int margin, Region object, int trimUpperPixelRadius, boolean resetMask, boolean verbose) {
+        double innerMaskSlope = 1;
         BoundingBox b = object.getBounds();
-        BoundingBox cut = new SimpleBoundingBox(b.xMin()-margin, b.xMax()+margin, b.yMin()-margin, b.yMax(), b.zMin(), b.zMax());
+        int marginL = Math.min(margin, b.xMin());
+        int marginR = Math.min(margin , edgeMap.sizeX()-1 - b.xMax());
+        int marginUp = Math.min(margin, b.yMin());
+        BoundingBox cut = new SimpleBoundingBox(b.xMin()-marginL, b.xMax()+marginR, b.yMin()-marginUp, b.yMax(), b.zMin(), b.zMax());
         Image edgeMapLocal = edgeMap.crop(cut);
         List<Region> seeds = new ArrayList<>(3);
         int label = 0;
@@ -143,24 +147,24 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         Set<Voxel> left = new HashSet<>();
         Set<Voxel> right = new HashSet<>();
         for (int y = 0;y<edgeMapLocal.sizeY(); ++y) {
-            left.add(new Voxel(0, y, 0));
-            right.add(new Voxel(edgeMapLocal.sizeX()-1, y, 0));
+            if (marginL>0) left.add(new Voxel(0, y, 0));
+            if (marginR>0) right.add(new Voxel(edgeMapLocal.sizeX()-1, y, 0));
         }
         seeds.add(new Region(left, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
         seeds.add(new Region(right, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
         // add all local min within innerHead
-        int innerMargin = margin*2;
-        if (innerMargin*2>=b.sizeX()-2) innerMargin = Math.max(1, b.sizeX()/4);
-        BoundingBox innerRegion = new SimpleBoundingBox(innerMargin, cut.sizeX()-1-innerMargin,innerMargin, cut.sizeY()-1-innerMargin, 0, cut.sizeZ()-1);
+        int innerMargin = margin;
+        if (innerMargin*4>=b.sizeX()-2) innerMargin = Math.max(1, b.sizeX()/8);
+        BoundingBox innerRegion = new SimpleBoundingBox(innerMargin+marginL, cut.sizeX()-1-innerMargin-marginR,innerMargin+marginUp, cut.sizeY()-1, 0, cut.sizeZ()-1);
         ImageByte mask = new ImageByte("", edgeMapLocal);
         ImageOperations.fill(mask, 1, innerRegion);
-        // roughly remove upper l&r angle -> remove triangles
-        double x0 = margin;
-        double x1=  (edgeMapLocal.sizeX()-1)/2.0;
+        // roughly remove upper l&r angle from inner mask
+        double x0 = marginL;
+        double x1=  innerRegion.xMean();
         double x20 = x1;
-        double x21 = edgeMapLocal.sizeX()-1-margin;
-        double y1 = innerMargin;
-        double y0 = innerRegion.sizeX();
+        double x21 = edgeMapLocal.sizeX()-1-marginL;
+        double y0 = +innerMargin+marginUp+innerRegion.sizeX() * innerMaskSlope; // * coeff
+        double y1 = innerMargin+marginUp;
         double y20 = y1;
         double y21 = y0;
         double a1  = (y1-y0)/(x1-x0);
