@@ -96,7 +96,6 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
         return (Region e1, Region e2) -> new Interface(e1, e2);
     }
     
-    
     public class Interface extends InterfaceRegionImpl<Interface> implements RegionCluster.InterfaceVoxels<Interface> {
         public double value;
         Set<Voxel> voxels;

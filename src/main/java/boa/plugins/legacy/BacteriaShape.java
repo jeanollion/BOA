@@ -145,7 +145,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter {
         sam.setTestMode(testMode);
         
         //if (testMode) ImageWindowManagerFactory.showImage(pop.duplicate().filter(removeBackgroundRegions).getLabelMap().setName("remove back objects"));
-        sam.forbidFusionForegroundBackground(r-> !removeBackgroundRegions.keepObject(r), r->true); // was r->sam.getMedianValues().getAndCreateIfNecessary(r)>=thld
+        sam.addForbidFusionForegroundBackground(r-> !removeBackgroundRegions.keepObject(r), r->true); // was r->sam.getMedianValues().getAndCreateIfNecessary(r)>=thld
         //sam.addForbidByMedianDifference(thldDiff);
         if (sam.testMode) ImageWindowManagerFactory.showImage(sam.drawInterfaceValues(pop));
         sam.merge(pop, 0);

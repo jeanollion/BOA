@@ -44,11 +44,14 @@ import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.WatershedTransform;
+import boa.image.processing.split_merge.SplitAndMergeEdge;
 import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.pre_filters.Sigma;
 import boa.plugins.plugins.segmenters.EdgeDetector;
 import boa.utils.Utils;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -131,39 +134,40 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
     }
     private static void fitWhole(Image edgeMap, int margin, Region object, int trimUpperPixelRadius, boolean resetMask, boolean verbose) {
-        double innerMaskSlope = 1;
+        double innerMaskSlope = 0.5;
         BoundingBox b = object.getBounds();
         int marginL = Math.min(margin, b.xMin());
         int marginR = Math.min(margin , edgeMap.sizeX()-1 - b.xMax());
         int marginUp = Math.min(margin, b.yMin());
         BoundingBox cut = new SimpleBoundingBox(b.xMin()-marginL, b.xMax()+marginR, b.yMin()-marginUp, b.yMax(), b.zMin(), b.zMax());
         Image edgeMapLocal = edgeMap.crop(cut);
-        List<Region> seeds = new ArrayList<>(3);
-        int label = 0;
-        double scaleXY = edgeMap.getScaleXY();
-        double scaleZ = edgeMap.getScaleZ();
-        Voxel corner1 = new Voxel(0, 0, 0);
-        Voxel corner2 = new Voxel(edgeMapLocal.sizeX()-1, 0, 0);
-        Set<Voxel> left = new HashSet<>();
-        Set<Voxel> right = new HashSet<>();
+        List<Region> seeds = new ArrayList<>(); // for watershed partition
+        
+        // seeds that are background: corners and if possible L&R sides
+        Voxel cornerL = new Voxel(0, 0, 0);
+        Voxel cornerR = new Voxel(edgeMapLocal.sizeX()-1, 0, 0);
+        Set<Voxel> leftBck = new HashSet<>();
+        Set<Voxel> rightBck = new HashSet<>();
         for (int y = 0;y<edgeMapLocal.sizeY(); ++y) {
-            if (marginL>0) left.add(new Voxel(0, y, 0));
-            if (marginR>0) right.add(new Voxel(edgeMapLocal.sizeX()-1, y, 0));
+            if (y==0 || marginL>0) leftBck.add(new Voxel(0, y, 0));
+            if (y==0 || marginR>0) rightBck.add(new Voxel(edgeMapLocal.sizeX()-1, y, 0));
         }
-        seeds.add(new Region(left, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
-        seeds.add(new Region(right, ++label, object.is2D(), (float)scaleXY, (float)scaleZ));
-        // add all local min within innerHead
+        seeds.add(new Region(leftBck, 1, object.is2D(), edgeMap.getScaleXY(), edgeMap.getScaleZ()));
+        seeds.add(new Region(rightBck, 1, object.is2D(), edgeMap.getScaleXY(), edgeMap.getScaleZ()));
+        
+        // this mask will define seeds that are for sure in the foreground : arrow shape mask in the center of the image
         int innerMargin = margin;
         if (innerMargin*4>=b.sizeX()-2) innerMargin = Math.max(1, b.sizeX()/8);
         BoundingBox innerRegion = new SimpleBoundingBox(innerMargin+marginL, cut.sizeX()-1-innerMargin-marginR,innerMargin+marginUp, cut.sizeY()-1, 0, cut.sizeZ()-1);
-        ImageByte mask = new ImageByte("", edgeMapLocal);
+        
+        ImageByte mask = new ImageByte("", edgeMapLocal); 
         ImageOperations.fill(mask, 1, innerRegion);
         // roughly remove upper l&r angle from inner mask
         double x0 = marginL;
         double x1=  innerRegion.xMean();
         double x20 = x1;
         double x21 = edgeMapLocal.sizeX()-1-marginL;
-        double y0 = +innerMargin+marginUp+innerRegion.sizeX() * innerMaskSlope; // * coeff
+        double y0 = innerMargin+marginUp+innerRegion.sizeX() * innerMaskSlope; 
         double y1 = innerMargin+marginUp;
         double y20 = y1;
         double y21 = y0;
@@ -176,22 +180,50 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
                 if ((y-y20)<=a2*(x-x20)) mask.setPixel(x, y, 0, 0);
             }
         }
-        ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, mask, Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(mask.duplicate("innnerMask"));
-        //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds before and"));
-        //ImageOperations.andWithOffset(maxL, innerHead.getImageProperties(1, 1), maxL);
-        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(maxL.duplicate("inner seeds after and"));
-        seeds.addAll(ImageLabeller.labelImageList(maxL));
-        //seeds.add(new Region(new Voxel((gradLocal.getSizeX()-1)/2, (gradLocal.getSizeY()-1)/2, 0), ++label, (float)scaleXY, (float)scaleZ));
+        
+        ImageByte maxL = Filters.localExtrema(edgeMapLocal, null, false, null, Filters.getNeighborhood(1.5, 1.5, edgeMapLocal)).resetOffset();
+        List<Region> allSeeds= ImageLabeller.labelImageList(maxL);
+        Set<Voxel> foregroundVox = new HashSet<>();
+        Iterator<Region> it = allSeeds.iterator();
+        while (it.hasNext()) {
+            Region n = it.next();
+            for (Voxel v : n.getVoxels()) {
+                if (leftBck.contains(v) || rightBck.contains(v)) {
+                    it.remove();
+                    break;
+                }
+                if (mask.insideMask(v.x, v.y, v.z)) {
+                    foregroundVox.addAll(n.getVoxels());
+                    it.remove();
+                    break;
+                }
+            }
+        }
+        seeds.add(new Region(foregroundVox, 1, object.is2D(), object.getScaleXY(), object.getScaleZ()));
+        // remaining seeds can be either from background OR from foreground
+        seeds.addAll(allSeeds); 
+        
         RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, new WatershedTransform.SizeFusionCriterion(5), false);
+        Region bck1 = pop.getRegions().stream().filter(r->r.getVoxels().contains(cornerL)).findFirst().get();
+        Region bck2 = pop.getRegions().stream().filter(r->r.getVoxels().contains(cornerR)).findFirst().get();
+        
+        if ((bck1!=bck2 && pop.getRegions().size()>3) || (bck1==bck2 && pop.getRegions().size()>2)) { // some seeds were not merge either with bck or foreground -> decide with merge sort algorithm on edge value
+            SplitAndMergeEdge sm  = new SplitAndMergeEdge(edgeMapLocal, edgeMapLocal, Double.POSITIVE_INFINITY, false);
+            sm.addForbidFusionForegroundBackground(r->r==bck1||r==bck2, r->!Collections.disjoint(r.getVoxels(), foregroundVox));
+            if (bck1!=bck2) sm.addForbidFusion(i->(i.getE1()==bck1&&i.getE2()==bck2) || (i.getE1()==bck1&&i.getE2()==bck2)); // to be able to know how many region we want in the end. somtimes bck1 & bck2 can't merge
+            pop = sm.merge(pop, bck1==bck2 ? 2 :3); // keep 3 regions = background on both sides & foreground
+        }
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf"));
-        pop.getRegions().removeIf(o->!o.contains(corner1)&&!o.contains(corner2));
+        pop.getRegions().removeIf(o->!o.contains(cornerL)&&!o.contains(cornerR)); // remove background
         pop.relabel(true);
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
         pop.translate(cut, true);
         object.andNot(pop.getLabelMap());
-        trimUpperPixels(object, trimUpperPixelRadius);
-        // trim xLeft & xRight to mean value
+        
+        trimUpperPixels(object, trimUpperPixelRadius); // avoid strong top border artefact 
+        
+        // trim xLeft & xRight to mean value 
         double[] xLMean = new double[2];
         double[] xRMean = new double[2];
         ImageInteger regionMask = object.getMaskAsImageInteger();
@@ -210,7 +242,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         xRMean[0]/=xRMean[1];
         ImageMask.loop(object.getMask(), (x, y, z)-> {if (x<xLMean[0] || x>xRMean[0]) regionMask.setPixel(x, y, z, 0);});
         
-        if (resetMask) object.resetMask(); // no reset so that all image have same upper-left-corner -> for average mask
+        if (resetMask) object.resetMask(); // If average mask filter is used: no reset so that all image have same upper-left-corner
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after remove head"));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));
     }
