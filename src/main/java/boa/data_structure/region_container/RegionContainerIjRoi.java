@@ -86,7 +86,7 @@ public class RegionContainerIjRoi extends RegionContainer {
             return res;
         }
         ThresholdToSelection tts = new ThresholdToSelection();
-        ImageInteger maskIm = TypeConverter.toImageInteger(mask, null); // copy only in necessary
+        ImageInteger maskIm = TypeConverter.toImageInteger(mask, null); // copy only if necessary
         ImagePlus maskPlus = IJImageWrapper.getImagePlus(maskIm);
         tts.setup("", maskPlus);
         int maxLevel = ImageInteger.getMaxValue(maskIm, true); // TODO necessary ??
@@ -124,15 +124,10 @@ public class RegionContainerIjRoi extends RegionContainer {
     }
 
     private void createRoi(Region object) {
-        if (this.structureObject.getFrame()==858 && this.structureObject.getIdx()==0) {
-            logger.debug("MASK BEFORE RECONSTRUCT:: {} ({})", bounds, object.getBounds());
-            ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("MASK BEFORE SAVE TO ROI: bds:"+structureObject.getBounds()));
-        }
         Map<Integer, Roi> roiZTemp = createRoi(object.getMask(), object.getBounds(), object.is2D());
         roiZ = new ArrayList<>(roiZTemp.size());
         roiZTemp = new TreeMap<>(roiZTemp);
         for (Entry<Integer, Roi> e : roiZTemp.entrySet()) roiZ.add(RoiEncoder.saveAsByteArray(e.getValue()));
-        if (this.structureObject.getFrame()==858 && this.structureObject.getIdx()==0) getMask();
     }
     
     private ImageByte getMask() {
@@ -157,13 +152,10 @@ public class RegionContainerIjRoi extends RegionContainer {
         ImageByte res = (ImageByte) IJImageWrapper.wrap(new ImagePlus("MASK", stack));
         //logger.debug("creating object for: {}, scale: {}", structureObject, structureObject.getScaleXY());
         res.setCalibration(bounds.getBlankMask(structureObject.getScaleXY(), structureObject.getScaleZ())).translate(bounds);
-        if (this.structureObject.getFrame()==858 && this.structureObject.getIdx()==0) {
-            ImageWindowManagerFactory.showImage(res.duplicate("MASK AFTER RECONSTRUCT: "+bounds));
-            logger.debug("MASK AFTER RECONSTRUCT:: {}", bounds);
-        }
         return res;
     }
 
+    @Override
     public Region getObject() {
         return new Region(getMask(), structureObject.getIdx() + 1, is2D);
     }

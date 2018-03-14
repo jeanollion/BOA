@@ -324,6 +324,19 @@ public class Region {
         };
         BoundingBox.loop(BoundingBox.getIntersection(otherMask, getBounds()), function);
     }
+    public synchronized void and(ImageMask otherMask) {
+        getMask();
+        ensureMaskIsImageInteger();
+        ImageInteger mask = getMaskAsImageInteger();
+        LoopFunction function = (x, y, z)-> {
+            if (!mask.insideMaskWithOffset(x, y, z)) return;
+            if (!otherMask.insideMaskWithOffset(x, y, z)) {
+                mask.setPixelWithOffset(x, y, z, 0);
+                if (voxels!=null) voxels.remove(new Voxel(x, y, z));
+            }
+        };
+        BoundingBox.loop(BoundingBox.getIntersection(otherMask, getBounds()), function);
+    }
     public boolean contains(Voxel v) {
         if (voxels!=null) return voxels.contains(v);
         else return mask.containsWithOffset(v.x, v.y, v.z) && mask.insideMaskWithOffset(v.x, v.y, v.z);

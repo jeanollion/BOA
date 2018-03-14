@@ -496,6 +496,21 @@ public class ArrayUtil {
         }
         return res;
     }
+    public static double[] quantiles(int[] values, double... quantile) {
+        if (quantile.length==0) return new double[0];
+        Arrays.sort(values);
+        double[] res = new double[quantile.length];
+        for (int qIdx = 0; qIdx<quantile.length; ++qIdx) {
+            double idxD = quantile[qIdx] * (values.length-1);
+            if (idxD<0) idxD=0;
+            else if (idxD>values.length-1) idxD = values.length-1;
+            int idx = (int) idxD;
+            double delta = idxD - idx;
+            if (delta==0) res[qIdx] = values[idx];
+            else res[qIdx] = (1 - delta) * values[idx]  + (delta) * values[idx+1];
+        }
+        return res;
+    }
     public static double[] quantiles(double[] values, double... quantile) {
         if (quantile.length==0) return new double[0];
         Arrays.sort(values);

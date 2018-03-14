@@ -48,6 +48,7 @@ import boa.plugins.ProcessingScheme;
 import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.plugins.track_post_filter.AverageMask;
+import boa.plugins.plugins.track_post_filter.RemoveTracksStartingAfterFrame;
 import boa.plugins.plugins.track_post_filter.TrackLengthFilter;
 import boa.plugins.plugins.trackers.MutationTracker;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
@@ -78,8 +79,8 @@ public class TestTracker {
         //String dbName = "MutD5_141202";
         int pIdx =0;
         int mcIdx =0;
-        int structureIdx =1;
-        int[] frames = new int[]{00, 15}; //{215, 237};
+        int structureIdx =0;
+        int[] frames = new int[]{830, 870}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -99,8 +100,8 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStepLimit=40;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
-        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
+        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);
@@ -135,7 +136,10 @@ public class TestTracker {
         
         if (ps instanceof ProcessingSchemeWithTracking && structureIdx==0) {
             TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)ps).getTrackPostFilters();
-            for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) if (pp.instanciatePlugin() instanceof TrackLengthFilter) pp.setActivated(false);
+            for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) {
+                if (pp.instanciatePlugin() instanceof TrackLengthFilter) pp.setActivated(false);
+                else if (pp.instanciatePlugin() instanceof RemoveTracksStartingAfterFrame) pp.setActivated(false);
+            }
         }
         
         if (trackOnly) ps.trackOnly(structureIdx, parentTrack, null);

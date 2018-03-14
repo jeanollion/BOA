@@ -193,9 +193,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         ThreadRunner.execute(parentTrack, false, ta, executor, null);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
-        if (debug && boundingBoxes.length>0) {
-            for (int i = 0; i<boundingBoxes[0].size(); ++i) logger.debug("bb {}-> {}",i, boundingBoxes[0].getBounds(i, true));
-        }
+        
         // tracking
         if (debug) logger.debug("mc2: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         track(structureIdx, parentTrack);
@@ -206,13 +204,8 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         if (debug) logger.debug("mc4: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         logger.debug("Microchannel tracker: trackHead number: {}", allTracks.size());
         List<StructureObject> toRemove = new ArrayList<>();
-        for (List<StructureObject> track : allTracks.values()) { // compute median shift on the whole track + mean width
+        for (List<StructureObject> track : allTracks.values()) { // set shift & width to all objects
             if (track.isEmpty()) continue;
-            /*if (!debug && track.size()<this.minTrackLength.getValue().intValue()) {
-                toRemove.addAll(track);
-                continue;
-            }*/
-            
             List<Integer> shifts = new ArrayList<>(track.size());
             List<Double> widths = new ArrayList<>(track.size());
             for (StructureObject o : track) {
@@ -227,28 +220,28 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                     widths.add((double)r.getXWidth(o.getIdx()));
                 }
             }
-            // replace null values by following non null value
+            // replace null at begining values by following non null value
             int nonNullIdx = 0;
             while(nonNullIdx<shifts.size() && shifts.get(nonNullIdx)==null) ++nonNullIdx;
             int nonNullValue = nonNullIdx<shifts.size() ? shifts.get(nonNullIdx) : 0;
+            
             for (int i = 0; i<nonNullIdx; ++i) shifts.set(i, nonNullValue);
+            //if (debug) logger.debug("shifts non null idx: {} values: {}", nonNullIdx, shifts);
             nonNullIdx = 0;
             while(nonNullIdx<widths.size() && widths.get(nonNullIdx)==null) ++nonNullIdx;
             if (nonNullIdx>=widths.size()) continue;
             for (int i = 0; i<nonNullIdx; ++i) widths.set(i, widths.get(nonNullIdx));
-            
-            int shift = (int)Math.round(ArrayUtil.quantileInt(shifts, yShiftQuantile.getValue().doubleValue()));
-            double meanWidth = 0, c=0; for (Double d : widths) if (d!=null) {meanWidth+=d; ++c;} // global mean value
-            meanWidth/=c;
-            int width = (int)Math.round(ArrayUtil.quantile(widths, widthQuantile.getValue().doubleValue()));
-            
-            if (debug) {
-                logger.debug("track: {} ymin-shift: {}, width: {} (max: {}, mean: {})", track.get(0), shift, width, widths.get(widths.size()-1), meanWidth);
-            }
-            
-            // 4) track-wise normalization of width & y-shift
+            //if (debug) logger.debug("widths non null idx: {} values: {}", nonNullIdx, widths);
             boolean normWidth = this.normalizeWidths.getSelected();
             boolean normShift = this.normalizeYshift.getSelected();
+            int shift = !normShift ? -1 : (int)Math.round(ArrayUtil.quantiles(shifts.stream().mapToInt(Integer::intValue).toArray(), yShiftQuantile.getValue().doubleValue())[0]); // quantile function sorts the values!!
+            int width = !normWidth ? -1 : (int)Math.round(ArrayUtil.quantiles(widths.stream().mapToDouble(Double::doubleValue).toArray(), widthQuantile.getValue().doubleValue())[0]); // quantile function sorts the values!!
+            
+            if ((normShift || normWidth) && debug)  logger.debug("track: {} ymin-shift: {}, width: {} (max: {}, )", track.get(0), shift, width, widths.get(widths.size()-1));
+ 
+            //if (debug) logger.debug("track: {} before norm & shiftY: {}", track.get(0), Utils.toStringList(track, o->o.getBounds()));
+            
+            // 4) track-wise normalization of width & y-shift
             for (int i = 0; i<track.size(); ++i) {
                 StructureObject o = track.get(i);
                 BoundingBox b = o.getBounds();
@@ -292,9 +285,11 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                 int height = b.sizeY();
                 if (height+offY>parentBounds.yMax()) height = parentBounds.yMax()-offY;
                 BlankMask m = new BlankMask( currentWidth, height, b.sizeZ(), offX, offY, b.zMin(), o.getScaleXY(), o.getScaleZ());
-                o.setObject(new Region(m, o.getIdx()+1, o.is2D()));
+                o.setRegion(new Region(m, o.getIdx()+1, o.is2D()));
             }
+            //if (debug) logger.debug("track: {} after norm & shiftY: {}", track.get(0), Utils.toStringList(track, o->o.getBounds()));
         }
+        
         if (debug) logger.debug("mc after adjust width: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         if (!toRemove.isEmpty()) {
             Map<StructureObject, List<StructureObject>> toRemByParent = StructureObjectUtils.splitByParent(toRemove);

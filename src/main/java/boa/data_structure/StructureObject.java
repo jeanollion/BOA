@@ -740,7 +740,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return res;
     }
     public boolean hasObject() {return object!=null;}
-    public boolean hasObjectContainer() {return objectContainer!=null;}
+    public boolean objectHasBeenModified() {return objectModified=true;}
     // object- and image-related methods
     public Region getRegion() {
         if (object==null) {
@@ -757,7 +757,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return object;
     }
-    public void setObject(Region o) {
+    public void setRegion(Region o) {
         synchronized(this) {
             objectContainer=null;
             object=o;

@@ -144,7 +144,7 @@ public class ManualCorrection {
     public static void updateObjects(List<Pair<StructureObject, Region>> objectsToUpdate, boolean updateDisplay) {
         if (objectsToUpdate==null || objectsToUpdate.isEmpty()) return;
         for (Pair<StructureObject, Region> p : objectsToUpdate) {
-            p.key.setObject(p.value);
+            p.key.setRegion(p.value);
             p.key.getDAO().store(p.key);
         }
         if (updateDisplay) updateDisplayAndSelectObjects(Pair.unpairKeys(objectsToUpdate));

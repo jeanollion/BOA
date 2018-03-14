@@ -69,6 +69,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             //logger.debug("seg post-filter: {}", parent);
             if (!rootParent) pop.translate(new SimpleBoundingBox(parent.getBounds()).reverseOffset(), false); // go back to relative landmark
+            //if(parent.getFrame()==858) postFilters.set
             pop=postFilters.filter(pop, structureIdx, parent);
             List<StructureObject> toRemove=null;
             if (parent.getChildren(structureIdx)!=null) {
@@ -85,17 +86,26 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
                     objectsToRemove.addAll(toRemove);
                 }
             }
-            parent.getChildObjects(structureIdx).stream().filter((o) -> (o.hasObjectContainer())).forEachOrdered((o) -> { o.updateObjectContainer(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
+            parent.getChildObjects(structureIdx).stream().forEachOrdered((o) -> { o.objectHasBeenModified(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
+            
         }, executor, null);
         if (!objectsToRemove.isEmpty()) { 
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
-            if (this.deleteMethod.getSelectedIndex()==0) ManualCorrection.deleteObjects(null, objectsToRemove, false); // only delete
-            else if (this.deleteMethod.getSelectedIndex()==2) ManualCorrection.prune(null, objectsToRemove, false); // prune tracks
-            else if (this.deleteMethod.getSelectedIndex()==1) { 
-                Set<StructureObject> trackHeads = new HashSet<>(Utils.transform(objectsToRemove, o->o.getTrackHead()));
-                objectsToRemove.clear();
-                for (StructureObject th : trackHeads) objectsToRemove.addAll(StructureObjectUtils.getTrack(th, false));
-                ManualCorrection.deleteObjects(null, objectsToRemove, false);
+            switch (this.deleteMethod.getSelectedIndex()) {
+                case 0:
+                    ManualCorrection.deleteObjects(null, objectsToRemove, false); // only delete
+                    break;
+                case 2:
+                    ManualCorrection.prune(null, objectsToRemove, false); // prune tracks
+                    break;
+                case 1:
+                    Set<StructureObject> trackHeads = new HashSet<>(Utils.transform(objectsToRemove, o->o.getTrackHead()));
+                    objectsToRemove.clear();
+                    for (StructureObject th : trackHeads) objectsToRemove.addAll(StructureObjectUtils.getTrack(th, false));
+                    ManualCorrection.deleteObjects(null, objectsToRemove, false);
+                    break;
+                default:
+                    break;
             }
         }
     }
