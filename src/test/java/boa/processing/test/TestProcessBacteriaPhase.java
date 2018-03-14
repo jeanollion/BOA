@@ -63,6 +63,7 @@ public class TestProcessBacteriaPhase {
     static double thld = Double.NaN;
     static boolean setMask = false;
     static boolean normalize = false;
+    static int trackPrefilterRange = 100;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
@@ -77,8 +78,8 @@ public class TestProcessBacteriaPhase {
         //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =0;
-        int[] time =new int[]{11, 11}; //22
+        int microChannel =1;
+        int[] time =new int[]{35, 35}; //22
         //setMask=true;
         //thld = 776;
         
@@ -95,6 +96,7 @@ public class TestProcessBacteriaPhase {
         List<StructureObject> parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(rootTrack, 0), o->o.getIdx()==microChannel);
         
         ProcessingScheme psc = mDAO.getExperiment().getStructure(1).getProcessingScheme();
+        parentTrack.removeIf(o -> o.getFrame()<timePointMin-trackPrefilterRange || o.getFrame()>timePointMax+trackPrefilterRange);
         psc.getTrackPreFilters(true).filter(1, parentTrack, null);
         TrackParametrizer apply = TrackParametrizable.getTrackParametrizer(1, parentTrack, psc.getSegmenter(), null);
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);

@@ -95,6 +95,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
     public String getToolTipText() {return toolTip;}
     
     //segmentation-related attributes (kept for split and merge methods)
+    EdgeDetector edgeDetector;
     SplitAndMergeHessian splitAndMerge;
     StructureObjectProcessing currentParent; 
     
@@ -131,7 +132,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         return res;
     }
     /**
-     * Initialize the EdgeDetector that will create a parittion of the image and filter the region
+     * Initialize the EdgeDetector that will create a parittion of the image and filter the regions
      * @param parent
      * @param structureIdx
      * @return 
@@ -141,13 +142,13 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         seg.setTestMode(testMode);
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2)); // min = 1.5
         seg.setPreFilters(watershedMap.get());
-        if (Double.isNaN(threshold)) seg.setThrehsoldingMethod(1).setThresholder(Double.isNaN(minThld) ? threhsolder.instanciatePlugin(): new CompareThresholds(threhsolder.instanciatePlugin(), new ConstantValue(minThld), true)); // honors min value
-        else seg.setThrehsoldingMethod(1).setThresholder(new ConstantValue(Double.isNaN(minThld) ? threshold : Math.max(threshold, minThld)));
+        if (Double.isNaN(threshold)) seg.setThrehsoldingMethod(EdgeDetector.THLD_METHOD.VALUE_MAP).setThresholder(Double.isNaN(minThld) ? threhsolder.instanciatePlugin(): new CompareThresholds(threhsolder.instanciatePlugin(), new ConstantValue(minThld), true)); // honors min value
+        else seg.setThrehsoldingMethod(EdgeDetector.THLD_METHOD.VALUE_MAP).setThresholder(new ConstantValue(Double.isNaN(minThld) ? threshold : Math.max(threshold, minThld)));
         return seg;
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        EdgeDetector seg = initEdgeDetector(parent, structureIdx);
-        RegionPopulation splitPop = seg.runSegmenter(input, structureIdx, parent);
+        edgeDetector = initEdgeDetector(parent, structureIdx);
+        RegionPopulation splitPop = edgeDetector.runSegmenter(input, structureIdx, parent);
         splitPop.smoothRegions(1, true, parent.getMask());
         splitPop = filterRegionsAfterEdgeDetector(parent, structureIdx, splitPop);
         if (splitAndMerge==null || !parent.equals(currentParent)) {

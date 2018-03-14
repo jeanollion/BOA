@@ -158,7 +158,7 @@ public class BacteriaShape implements SegmenterSplitAndMerge, ObjectSplitter {
         }
         pop.filter(removeBackgroundRegions);
         
-        EdgeDetector seg = new EdgeDetector().setThrehsoldingMethod(1);
+        EdgeDetector seg = new EdgeDetector().setThrehsoldingMethod(EdgeDetector.THLD_METHOD.VALUE_MAP);
         seg.setThresholder(new ConstantValue(backgroundThld)).filterRegions(pop, input, parent.getMask());
         //seg.setIsDarkBackground(false).setThresholder(new ConstantValue(0.05)).filterRegions(pop, sigma, parent.getMask());
         

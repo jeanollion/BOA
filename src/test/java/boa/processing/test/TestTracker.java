@@ -65,6 +65,7 @@ import java.util.Map.Entry;
  */
 public class TestTracker {
     static boolean displayOnFilteredImages = true;
+    static int trackPrefilterRange = 200;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
@@ -78,9 +79,9 @@ public class TestTracker {
         // MuttH_150324 -> p0 mc1 -> artefact bord microcannaux
         //String dbName = "MutD5_141202";
         int pIdx =0;
-        int mcIdx =0;
-        int structureIdx =0;
-        int[] frames = new int[]{830, 870}; //{215, 237};
+        int mcIdx =1;
+        int structureIdx =1;
+        int[] frames = new int[]{425, 435}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -100,8 +101,8 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStepLimit=40;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
-        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
+        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);
@@ -115,13 +116,13 @@ public class TestTracker {
         List<StructureObject> parentTrack=null;
         if (structureIdx==0) {
             parentTrack = roots;
-            roots.removeIf(o -> o.getFrame()<tStart-200 || o.getFrame()>tEnd+200);
+            roots.removeIf(o -> o.getFrame()<tStart-trackPrefilterRange || o.getFrame()>tEnd+trackPrefilterRange);
             ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
             roots.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }
         else {
             parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, 0), o->o.getIdx()==mcIdx&& o.getFrame()<=tEnd);
-            parentTrack.removeIf(o -> o.getFrame()<tStart-200 || o.getFrame()>tEnd+200);
+            parentTrack.removeIf(o -> o.getFrame()<tStart-trackPrefilterRange || o.getFrame()>tEnd+trackPrefilterRange);
             ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
             parentTrack.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }

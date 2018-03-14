@@ -44,6 +44,7 @@ import boa.image.TypeConverter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations;
+import boa.image.processing.split_merge.SplitAndMergeEdge;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.measurement.BasicMeasurements;
 import boa.measurement.GeometricalMeasurements;
@@ -51,12 +52,14 @@ import static boa.plugins.Plugin.logger;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.pre_filters.Sigma;
+import static boa.plugins.plugins.segmenters.EdgeDetector.valueFunction;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.utils.ArrayUtil;
 import boa.utils.DoubleStatistics;
 import ij.process.AutoThresholder;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -136,63 +139,113 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     protected EdgeDetector initEdgeDetector(StructureObjectProcessing parent, int structureIdx) {
         EdgeDetector seg = super.initEdgeDetector(parent, structureIdx);
         seg.seedRadius.setValue(1.5);
+        seg.setThrehsoldingMethod(EdgeDetector.THLD_METHOD.NO_THRESHOLDING);
         return seg;
     }
     @Override 
     protected RegionPopulation filterRegionAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        return filterBorderArtefacts(parent, structureIdx, pop);
+        return pop;
+        //return filterBorderArtefacts(parent, structureIdx, pop);
     }
     @Override
     protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        return filterBorderArtefacts(parent, structureIdx, pop);
+        if (pop.getRegions().isEmpty()) return pop;
+        Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(parent.getPreFilteredImage(structureIdx))));
+        if (Double.isNaN(threshold)) { // if need to compute thld -> compute thld
+            Image valueMap = EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values);
+            threshold = threhsolder.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
+            if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("value map. thld = "+threshold));
+        } else if (testMode)  ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values).setName("value map. thld = "+threshold));
+        if (!Double.isNaN(minThld)) threshold = Math.max(minThld, threshold);
+        if (Double.isNaN(globalThreshold)) globalThreshold = threshold;
+        // define 3 categories: background / forground / intertermined
+        // foreground -> high intensity, foreground -> low intensity -> merge them
+        Function<Region, Integer> artefactFunc = getFilterBorderArtefacts(parent, structureIdx);
+        if (testMode) {
+            Map<Region, Double> valuesArt = pop.getRegions().stream().collect(Collectors.toMap(r->r, r->artefactFunc.apply(r)+2d));
+            ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), valuesArt).setName("artefact map"));
+            
+        }
+        Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<Math.min(globalThreshold, threshold) || artefactFunc.apply(r)==-1).collect(Collectors.toSet());
+        Set<Region> foregroundL = pop.getRegions().stream().filter(r->values.get(r)>Math.max(globalThreshold, threshold) && !backgroundL.contains(r) && artefactFunc.apply(r)==1).collect(Collectors.toSet());
+        pop.getRegions().removeAll(backgroundL);
+        pop.getRegions().removeAll(foregroundL);
+        Region background = Region.merge(backgroundL);
+        Region foreground = Region.merge(foregroundL);
+        pop.getRegions().add(0, background); // fixed index so that same instance when merged
+        pop.getRegions().add(1, foreground); // fixed index so that same instance when merged
+        pop.relabel(false);
+        if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back fusion"));
+        SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false);
+        sm.addForbidFusionForegroundBackground(r->r==background, r->r==foreground);
+        sm.merge(pop, 2); // merge intertermined until 2 categories in the image
+        pop.getRegions().remove(background);
+        pop.relabel(true);
+        if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back & intertermined fusion"));
+        return pop;
     }
     /**
-     * Filter Border Artefacts using: 1) a criterion on contact on sides and low X-thickness for side artefacts, a criterion on contact with closed-end of microchannel and local-thickness
+     * See {@link #getFilterBorderArtefacts(boa.data_structure.StructureObjectProcessing, int) }
      * @param parent
      * @param structureIdx
      * @param pop
      * @return 
      */
     protected RegionPopulation filterBorderArtefacts(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        if (!filterBorderArtefacts.getSelected()) return pop;
+        Function<Region, Integer> artifactFunc  = getFilterBorderArtefacts(parent, structureIdx);
+        pop.filter(r->artifactFunc.apply(r)>=0);
+        return pop;
+    }
+    /**
+     * Border Artefacts criterion 
+     * 1) a criterion on contact on sides and low X-thickness for side artefacts, 
+     * 2) a criterion on contact with closed-end of microchannel and local-thickness
+     * @param parent
+     * @param structureIdx
+     * @return function that return 1 if the object is not a border artefact, -1 if it is one, 0 if it is not known
+     */
+    protected Function<Region, Integer> getFilterBorderArtefacts(StructureObjectProcessing parent, int structureIdx) {
+        if (!filterBorderArtefacts.getSelected()) return r->1;
         boolean verbose = testMode;
-        double globThld = this.globalThreshold;
-        Image intensity = parent.getPreFilteredImage(structureIdx);
-        if (intensity==null) throw new IllegalArgumentException("no prefiltered image");
         // filter border artefacts: thin objects in X direction, contact on one side of the image 
-        // TODO PARAMETERS ? 
         ContactBorderMask contactLeft = new ContactBorderMask(1, parent.getMask(), Border.Xl);
         ContactBorderMask contactRight = new ContactBorderMask(1, parent.getMask(), Border.Xr);
-        double thicknessLimitKeep = parent.getMask().sizeX() * 0.5; // 0.33? // OVER this thickness objects are kept
-        double thicknessLimitRemove = Math.max(4, parent.getMask().sizeX() * 0.33); // UNDER THIS VALUE long objects are removed
+        double thicknessLimitKeep = parent.getMask().sizeX() * 0.5;  // OVER this thickness objects are kept
+        double thicknessLimitRemove = Math.max(4, parent.getMask().sizeX() * 0.33); // UNDER THIS VALUE long objects in contact are removed, other might be artefacts
         double thickYLimit = 15;
-        pop.filter(r->{
+        Function<Region, Integer> f1 = r->{
             int cL = contactLeft.getContact(r);
             int cR = contactRight.getContact(r);
-            if (cL==0 && cR ==0) return true;
+            if (cL==0 && cR ==0) return 1;
             int c = Math.max(cL, cR);
             double thickX = GeometricalMeasurements.meanThicknessX(r);
-            if (thickX>thicknessLimitKeep) return true;
+            if (thickX>thicknessLimitKeep) return 1;
             double thickY = GeometricalMeasurements.meanThicknessY(r);
-            if (verbose) logger.debug("filter after seg: thickX: {} contact: {}/{}", thickX, c, thickY*0.75);
-            if (c < thickY*0.75) return true;
-            if (thickY>thickYLimit && thickX<thicknessLimitRemove) return false; // long and thin objects are always border artifacts
-            return BasicMeasurements.getQuantileValue(r, intensity, 0.5)[0]>globThld; // avoid removing foreground
-        });
+            if (verbose) logger.debug("artefact: thickX: {}/{} contact: {}/{}", thickX, thicknessLimitRemove, c, thickY*0.5);
+            if (c < thickY*0.25) return 1; // if contact with either L or right should be enough
+            //if (thickY>thickYLimit && thickX<thicknessLimitRemove) return -1; // long and thin objects are always border artifacts
+            return 0;
+            //return false;
+            //return BasicMeasurements.getQuantileValue(r, intensity, 0.5)[0]>globThld; // avoid removing foreground
+        };
         ContactBorderMask contactUp = new ContactBorderMask(1, parent.getMask(), Border.YUp);
         ContactBorderMask contactUpLR = new ContactBorderMask(1, parent.getMask(), Border.XYup);
         // remove the artefact at the top of the channel
-        pop.filter(r->{
+        Function<Region, Integer> f2 = r->{
             int cUp = contactUp.getContact(r); // consider only objects in contact with the top of the parent mask
-            if (cUp<=2) return true;
+            if (cUp<=2) return 1;
             cUp = contactUpLR.getContact(r);
-            if (cUp<r.getVoxels().size()/5) return true;
+            if (cUp<r.getVoxels().size()/5) return 1;
             double thickness = GeometricalMeasurements.localThickness(r);
-            if (verbose) logger.debug("upper artefact: contact: {}/{} thickness: {}", cUp, r.getVoxels().size(), thickness);
-            return thickness>thicknessLimitKeep;
-        });
-        
-        return pop;
+            if (verbose) logger.debug("upper artefact: contact: {}/{} thickness: {}", cUp, r.getVoxels().size(), thickness, thicknessLimitRemove);
+            if (thickness>thicknessLimitRemove) return 1;
+            return 0;
+        };
+        return r->{
+            int r1 = f1.apply(r);
+            if (r1==-1 || r1==0) return r1;
+            return f2.apply(r);
+        };
     }
     
     @Override
