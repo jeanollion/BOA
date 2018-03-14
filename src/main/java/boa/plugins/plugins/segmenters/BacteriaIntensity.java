@@ -209,9 +209,11 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         RegionPopulation pop =  splitObject(parent, structureIdx, o); // after this step pop is in same landmark as o
         if (pop.getRegions().size()<=1) return Double.POSITIVE_INFINITY;
         else {
+            if (tempSplitMask==null) tempSplitMask = new ImageByte("split mask", parent.getMask());
             result.addAll(pop.getRegions());
             if (pop.getRegions().size()>2) return 0; //   objects could not be merged during step process means no contact (effect of local threshold)
             SplitAndMergeHessian.Interface inter = getInterface(result.get(0), result.get(1));
+            //logger.debug("split @ {}-{}, inter size: {} value: {}/{}", parent, o.getLabel(), inter.getVoxels().size(), inter.value, splitAndMerge.splitThresholdValue);
             if (inter.getVoxels().size()<=1) return 0;
             double cost = getCost(inter.value, splitAndMerge.splitThresholdValue, true);
             return cost;
@@ -246,13 +248,14 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         
     }
     
+    protected ImageByte tempSplitMask;
     private SplitAndMergeHessian.Interface getInterface(Region o1, Region o2) {
-        o1.draw(splitAndMerge.getSplitMask(), o1.getLabel());
-        o2.draw(splitAndMerge.getSplitMask(), o2.getLabel());
-        SplitAndMergeHessian.Interface inter = RegionCluster.getInteface(o1, o2, splitAndMerge.tempSplitMask, splitAndMerge.getFactory());
+        o1.draw(tempSplitMask, o1.getLabel());
+        o2.draw(tempSplitMask, o2.getLabel());
+        SplitAndMergeHessian.Interface inter = RegionCluster.getInteface(o1, o2, tempSplitMask, splitAndMerge.getFactory());
         inter.updateInterface();
-        o1.draw(splitAndMerge.getSplitMask(), 0);
-        o2.draw(splitAndMerge.getSplitMask(), 0);
+        o1.draw(tempSplitMask, 0);
+        o2.draw(tempSplitMask, 0);
         return inter;
     }
     public static double getCost(double value, double threshold, boolean valueShouldBeBelowThresholdForAPositiveCost)  {

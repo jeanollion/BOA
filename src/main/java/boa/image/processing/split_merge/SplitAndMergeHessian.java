@@ -46,7 +46,6 @@ import boa.image.processing.split_merge.SplitAndMergeHessian.Interface;
 public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
     Image hessian;
     Image normalizedHessian;
-    public ImageByte tempSplitMask;
     public final double splitThresholdValue, hessianScale;
     Function<Interface, Double> interfaceValue;
 
@@ -89,11 +88,6 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
     }
     @Override public Image getWatershedMap() {
         return getHessian();
-    }
-
-    public ImageByte getSplitMask() {
-        if (tempSplitMask==null) tempSplitMask = new ImageByte("split mask", intensityMap);
-        return tempSplitMask;
     }
     
     @Override
