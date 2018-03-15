@@ -257,7 +257,7 @@ public class StructureObjectUtils {
         return Selection.indicesToString(getIndexTree(o));
     }
     public static void setAllChildren(List<StructureObject> parentTrack, int structureIdx) {
-        if (parentTrack.isEmpty()) return;
+        if (parentTrack.isEmpty() || structureIdx == -1) return;
         ObjectDAO dao = parentTrack.get(0).getDAO();
         if (dao instanceof BasicObjectDAO) return;
         logger.debug("set all children: parent: {}, structure: {}", parentTrack.get(0).getTrackHead(), structureIdx);
@@ -278,6 +278,7 @@ public class StructureObjectUtils {
     }
     public static List<StructureObject> getAllObjects(ObjectDAO dao, int structureIdx) {
         List<StructureObject> roots= dao.getRoots();
+        if (structureIdx == -1) return roots;
         setAllChildren(roots, structureIdx);
         return getAllChildren(roots, structureIdx);
     }

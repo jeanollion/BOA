@@ -379,97 +379,67 @@
             <Property name="text" type="java.lang.String" value="Misc"/>
           </Properties>
           <SubComponents>
-            <MenuItem class="javax.swing.JMenuItem" name="closeAllWindowsMenuItem">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Close all windows"/>
-              </Properties>
-              <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="closeAllWindowsMenuItemActionPerformed"/>
-              </Events>
-            </MenuItem>
-            <MenuItem class="javax.swing.JMenuItem" name="CloseNonInteractiveWindowsMenuItem">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Close Non Interactive Windows"/>
-              </Properties>
-              <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="CloseNonInteractiveWindowsMenuItemActionPerformed"/>
-              </Events>
-            </MenuItem>
-            <MenuItem class="javax.swing.JMenuItem" name="clearMemoryMenuItem">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Clear Memory"/>
-              </Properties>
-              <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearMemoryMenuItemActionPerformed"/>
-              </Events>
-            </MenuItem>
-            <MenuItem class="javax.swing.JMenuItem" name="clearPPImageMenuItem">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Clear Pre-Processed Images"/>
-              </Properties>
-              <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearPPImageMenuItemActionPerformed"/>
-              </Events>
-            </MenuItem>
-            <MenuItem class="javax.swing.JMenuItem" name="clearTrackImagesMenuItem">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Clear Track Images"/>
-              </Properties>
-              <Events>
-                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearTrackImagesMenuItemActionPerformed"/>
-              </Events>
-            </MenuItem>
             <Menu class="javax.swing.JMenu" name="jMenu1">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Limit Number of opened Images"/>
+                <Property name="text" type="java.lang.String" value="Close Image / Clear Memory"/>
               </Properties>
               <SubComponents>
-                <MenuItem class="javax.swing.JRadioButtonMenuItem" name="limitDispNoLimit">
+                <MenuItem class="javax.swing.JMenuItem" name="clearMemoryMenuItem">
                   <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="No Limit"/>
+                    <Property name="text" type="java.lang.String" value="Clear Memory"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="limitDispNoLimitActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearMemoryMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
-                <MenuItem class="javax.swing.JRadioButtonMenuItem" name="limitDisp1">
+                <MenuItem class="javax.swing.JMenuItem" name="clearPPImageMenuItem">
                   <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="1"/>
+                    <Property name="text" type="java.lang.String" value="Clear Pre-Processed Images"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="limitDisp1ActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearPPImageMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
-                <MenuItem class="javax.swing.JRadioButtonMenuItem" name="limitDisp2">
+                <MenuItem class="javax.swing.JMenuItem" name="CloseNonInteractiveWindowsMenuItem">
                   <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="2"/>
+                    <Property name="text" type="java.lang.String" value="Close Non Interactive Windows"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="limitDisp2ActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="CloseNonInteractiveWindowsMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
-                <MenuItem class="javax.swing.JRadioButtonMenuItem" name="limitDisp5">
+                <MenuItem class="javax.swing.JMenuItem" name="closeAllWindowsMenuItem">
                   <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="5"/>
+                    <Property name="text" type="java.lang.String" value="Close all windows"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="limitDisp5ActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="closeAllWindowsMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
-                <MenuItem class="javax.swing.JRadioButtonMenuItem" name="limitDisp10">
+                <MenuItem class="javax.swing.JMenuItem" name="clearTrackImagesMenuItem">
                   <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="10"/>
+                    <Property name="text" type="java.lang.String" value="Clear Track Images"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="limitDisp10ActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearTrackImagesMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
               </SubComponents>
+            </Menu>
+            <Menu class="javax.swing.JMenu" name="openedImageNumberLimitMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Number of opened Images Limit"/>
+              </Properties>
+            </Menu>
+            <Menu class="javax.swing.JMenu" name="localZoomMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Local Zoom"/>
+              </Properties>
+            </Menu>
+            <Menu class="javax.swing.JMenu" name="multiThreadMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Multithread"/>
+              </Properties>
             </Menu>
             <Menu class="javax.swing.JMenu" name="logMenu">
               <Properties>
@@ -507,16 +477,6 @@
                   </Events>
                 </MenuItem>
               </SubComponents>
-            </Menu>
-            <Menu class="javax.swing.JMenu" name="localZoomMenu">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Local Zoom"/>
-              </Properties>
-            </Menu>
-            <Menu class="javax.swing.JMenu" name="multiThreadMenu">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Multithread"/>
-              </Properties>
             </Menu>
           </SubComponents>
         </Menu>
@@ -566,6 +526,14 @@
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Tab: toggle local zoom"/>
                   </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JMenuItem" name="jMenuItem26">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Alt + mouse wheel mouve: fast scroll"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jMenuItem26ActionPerformed"/>
+                  </Events>
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="jMenuItem13">
                   <Properties>

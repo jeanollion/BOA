@@ -294,7 +294,7 @@ public abstract class ImageWindowManager<I, U, V> {
     }
     public void closeLastActiveImages(int numberOfKeptImages) {
         logger.debug("close active images: total opened {} limit: {}", displayedInteractiveImages.size(), numberOfKeptImages);
-        if (numberOfKeptImages<0) return;
+        if (numberOfKeptImages<=0) return;
         if (displayedInteractiveImages.size()>numberOfKeptImages) {
             Iterator<Image> it = displayedInteractiveImages.iterator();
             while(displayedInteractiveImages.size()>numberOfKeptImages && it.hasNext()) {
@@ -306,7 +306,7 @@ public abstract class ImageWindowManager<I, U, V> {
     }
     public void closeLastInputImages(int numberOfKeptImages) {
         //logger.debug("close input images: raw: {} pp: {} limit: {}", displayedRawInputFrames.size(), displayedPrePocessedFrames.size(), numberOfKeptImages);
-        if (numberOfKeptImages<0) return;
+        if (numberOfKeptImages<=0) return;
         if (displayedRawInputFrames.size()>numberOfKeptImages) {
             Iterator<String> it = displayedRawInputFrames.keySet().iterator();
             while(displayedRawInputFrames.size()>numberOfKeptImages && it.hasNext()) {

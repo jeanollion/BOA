@@ -308,7 +308,9 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public boolean isDirectChildOf(int parentStructureIdx, int childStructureIdx) {
-        return this.getStructure(childStructureIdx).getParentStructure()==parentStructureIdx;
+        if (childStructureIdx<=parentStructureIdx) return false;
+        else if (childStructureIdx==-1) return false;
+        return getStructure(childStructureIdx).getParentStructure()==parentStructureIdx;
     }
     
     public boolean isChildOf(int parentStructureIdx, int childStructureIdx) {
@@ -394,7 +396,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @return 
      */
     public int[] getPathToStructure(int startStructureIdx, int stopStructureIdx) {
-        ArrayList<Integer> pathToStructure = new ArrayList<Integer>(this.getStructureCount());
+        ArrayList<Integer> pathToStructure = new ArrayList<>(this.getStructureCount());
         pathToStructure.add(stopStructureIdx);
         if (startStructureIdx!=stopStructureIdx) {
             int p = getStructure(stopStructureIdx).getParentStructure();

@@ -160,14 +160,21 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     
     @Override public void addMouseWheelListener(final Image image, Predicate<BoundingBox> callBack) {
         final ImagePlus imp = getImage(image);
+        if (imp==null) return;
         final ImageWindow iw = imp.getWindow();
         final ImageCanvas ic = imp.getCanvas();
+        if (iw==null || ic ==null) return;
         MouseWheelListener mwl = e ->  { // code modified from IJ source to better suit needs for LARGE track mask images + call back to display images
             synchronized (iw) {
-                int rotation = e.getWheelRotation();
-                int amount = e.getScrollAmount();
-                boolean ctrl = (e.getModifiers()&Event.CTRL_MASK)!=0;
-                boolean alt = e.isAltDown();
+                if (e==null && callBack!=null) { // can be called when scroll moved manually
+                    boolean update = callBack.test(new SimpleBoundingBox(ic.getSrcRect().x, ic.getSrcRect().x+ic.getSrcRect().width-1, ic.getSrcRect().y, ic.getSrcRect().y+ic.getSrcRect().height-1, 0, 0));
+                    if (update ) imp.updateAndRepaintWindow();
+                    return;
+                }
+                int rotation =   e.getWheelRotation();
+                int amount =   e.getScrollAmount();
+                boolean ctrl =  (e.getModifiers()&Event.CTRL_MASK)!=0;
+                boolean alt =   e.isAltDown(); // accelerated scrolling
                 if (amount<1) amount=1;
                 if (rotation==0) return;
                 int width = imp.getWidth();
@@ -176,7 +183,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 int xstart = srcRect.x;
                 int ystart = srcRect.y;
                 boolean scrollSlices = iw instanceof StackWindow && (width<2000 && height<2000);
-                logger.debug("scroll : type {}, amount: {}, rotation: {}, would scroll in x: {} in y: {}", e.getScrollType(), amount, rotation, rotation*amount* (alt ? Math.max(width/200, 1) : srcRect.width/4), rotation*amount* (alt ? Math.max(height/200, 1) : srcRect.height/4));
+                //logger.debug("scroll : type {}, amount: {}, rotation: {}, would scroll in x: {} in y: {}", e.getScrollType(), amount, rotation, rotation*amount* (alt ? Math.max(width/200, 1) : srcRect.width/4), rotation*amount* (alt ? Math.max(height/200, 1) : srcRect.height/4));
                 if ((ctrl||IJ.shiftKeyDown()) && ic!=null) { // zoom
                         Point loc = ic.getCursorLoc();
                         int x = ic.screenX(loc.x);
@@ -204,29 +211,27 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                     }
                 } else {
                     if ((double)srcRect.height/height>(double)srcRect.width/width || (srcRect.height/height<srcRect.width/width && IJ.spaceBarDown())) { // scroll in the most needed direction
-                            srcRect.x += rotation*amount* (alt ? Math.max(width/200, 1) : srcRect.width/6); 
+                            srcRect.x += rotation*amount* (alt ? Math.max(width/200, 1) : srcRect.width/8); 
                             if (srcRect.x<0) srcRect.x = 0;
                             if (srcRect.x+srcRect.width>width) srcRect.x = width-srcRect.width;
-                    } else {
-                            srcRect.y += rotation*amount*(alt ?  Math.max(height/200, 1) : srcRect.height/6);  
+                    } else { // most needed direction is Y
+                            srcRect.y += rotation*amount*(alt ?  Math.max(height/200, 1) : srcRect.height/8);  
                             if (srcRect.y<0) srcRect.y = 0;
                             if (srcRect.y+srcRect.height>height) srcRect.y = height-srcRect.height;
                     }
-                    if (srcRect.x!=xstart || srcRect.y!=ystart) {
-                        boolean update = false;
-                        if (callBack !=null ) {
-                            update = callBack.test(new SimpleBoundingBox(srcRect.x, srcRect.x+srcRect.width-1, srcRect.y, srcRect.y+srcRect.height-1, 0, 0));
-                        } 
-                        if (update) imp.updateAndRepaintWindow();
-                        else  ic.repaint();
-                    }
+                }
+                if (srcRect.x!=xstart || srcRect.y!=ystart) {
+                    boolean update = false;
+                    if (callBack !=null )  update = callBack.test(new SimpleBoundingBox(srcRect.x, srcRect.x+srcRect.width-1, srcRect.y, srcRect.y+srcRect.height-1, 0, 0));
+                    if (update) imp.updateAndRepaintWindow();
+                    else  ic.repaint();
                 }
             }    
 	};
         
         if (callBack!=null) { // initial call back
-            callBack.test(new SimpleBoundingBox(ic.getSrcRect().x, ic.getSrcRect().x+ic.getSrcRect().width-1, ic.getSrcRect().y, ic.getSrcRect().y+ic.getSrcRect().height-1, 0, 0));
-            imp.updateAndRepaintWindow();
+            boolean update = callBack.test(new SimpleBoundingBox(ic.getSrcRect().x, ic.getSrcRect().x+ic.getSrcRect().width-1, ic.getSrcRect().y, ic.getSrcRect().y+ic.getSrcRect().height-1, 0, 0));
+            if (update ) imp.updateAndRepaintWindow();
         }
         
         for (MouseWheelListener mwl2: iw.getMouseWheelListeners()) iw.removeMouseWheelListener(mwl2);
@@ -350,7 +355,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             ip.draw();
             //ip.updateAndDraw();
             //ip.updateAndRepaintWindow();
-            
+            for (MouseWheelListener mwl : ip.getWindow().getMouseWheelListeners()) mwl.mouseWheelMoved(null); // case of track masks : will update image content
         } 
     }
     @Override

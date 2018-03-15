@@ -239,7 +239,7 @@ public class SelectionUtils {
         List<String> parentStrings = parentStructureIdx!=sel.getStructureIdx()?Utils.transform(sel.getElementStrings(position), s->Selection.getParent(s, path.length)):new ArrayList<>(sel.getElementStrings(position));
         Utils.removeDuplicates(parentStrings, false);
         List<StructureObject> allObjects = StructureObjectUtils.getAllObjects(db.getDao(position), parentStructureIdx);
-        //logger.debug("path: {}, parent strings: {} ({}), allObjects: {}", path, parentStrings.size(), parentStrings.subList(0, 2), allObjects.size());
+        logger.debug("get Parents: path: {}, parent strings: {} ({}), allObjects: {}", path, parentStrings.size(), parentStrings.subList(0, 2), allObjects.size());
         return new ArrayList<>(SelectionUtils.filter(allObjects, parentStrings));
     }
     public static List<StructureObject> getParentTrackHeads(Selection sel, String position, int parentStructureIdx, MasterDAO db) {
