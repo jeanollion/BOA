@@ -43,11 +43,14 @@ public class FrameRange implements Comparable<FrameRange>{
         return this;
     }
     public boolean overlap(FrameRange other) {
+        return overlap(other, 0);
+    }
+    public boolean overlap(FrameRange other, int tolerance) {
         if (other==null) return false;
         int c = compareTo(other);
         if (c==0) return true;
         if (c==1) return other.overlap(this);
-        return max>=other.min && min<=other.max;
+        return max+tolerance>=other.min;
     }
     @Override
     public int compareTo(FrameRange o) {
@@ -60,6 +63,9 @@ public class FrameRange implements Comparable<FrameRange>{
         return "["+min+";"+max+"]";
     }
     public static void mergeOverlappingRanges(List<FrameRange> ranges) {
+        mergeOverlappingRanges(ranges, 0);
+    }
+    public static void mergeOverlappingRanges(List<FrameRange> ranges, int tolerance) {
         if (ranges==null || ranges.size()<=1) return;
         Collections.sort(ranges);
         Iterator<FrameRange> it = ranges.iterator();

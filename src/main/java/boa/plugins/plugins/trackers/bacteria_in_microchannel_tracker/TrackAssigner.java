@@ -19,6 +19,7 @@
 package boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker;
 
 import boa.data_structure.Region;
+import boa.plugins.Plugin;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,20 +27,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import static boa.plugins.Plugin.logger;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SIIncreaseThld;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 import java.util.Collection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jollion
  */
 public class TrackAssigner {
-    
+    public final static Logger logger = LoggerFactory.getLogger(TrackAssigner.class);
     public static enum AssignerMode {ADAPTATIVE, RANGE};
     
     double[] currentScore = null;
