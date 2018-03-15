@@ -253,7 +253,11 @@ public abstract class ImageWindowManager<I, U, V> {
         }
         //T dispImage = getImage(image);
         imageObjectInterfaceMap.put(image, new ImageObjectInterfaceKey(i.parents, displayedStructureIdx, i.isTimeImage()));
-        if (displayImage) displayImage(image, i);
+        if (displayImage) {
+            displayImage(image, i);
+            if (i instanceof TrackMask && ((TrackMask)i).imageCallback.containsKey(image)) this.displayer.addMouseWheelListener(image, ((TrackMask)i).imageCallback.get(image));
+        }
+        
     }
     
     public void displayImage(Image image, ImageObjectInterface i) {

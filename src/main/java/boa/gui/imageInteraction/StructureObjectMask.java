@@ -156,7 +156,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         return displayPreFilteredImages? generateFilteredImage(structureIdx, executeInBackground) : parent.getRawImage(structureIdx);
     }
     public Image generateFilteredImage(int structureIdx, boolean executeInBackground) {
-        return parent.getPreFilteredImage(structureIdx)==null?generatemage(structureIdx, executeInBackground):parent.getPreFilteredImage(structureIdx);
+        return parent.getPreFilteredImage(structureIdx)==null?parent.getRawImage(structureIdx):parent.getPreFilteredImage(structureIdx);
     }
 
     @Override

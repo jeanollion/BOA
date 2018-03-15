@@ -29,7 +29,9 @@ import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  *
@@ -53,6 +55,7 @@ public interface ImageDisplayer<T> {
     public Image getCurrentImage2();
     public Image[][] getCurrentImageCT();
     public void flush();
+    public void addMouseWheelListener(Image image, Predicate<BoundingBox> movementCallBack);
     //public int[] getFCZCount(T image);
     //public boolean isVisible(Image image);
     //public Image[][] reslice(Image image, int[] FCZCount);

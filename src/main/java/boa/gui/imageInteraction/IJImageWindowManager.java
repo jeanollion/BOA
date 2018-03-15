@@ -94,6 +94,9 @@ import boa.plugins.ObjectSplitter;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.awt.Event;
+import java.awt.Point;
+import java.util.function.Consumer;
 
 /**
  *
@@ -120,10 +123,12 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         if (IJ.getToolName()=="point"||IJ.getToolName()=="multipoint") IJ.setTool("rect");
         else IJ.setTool("multipoint");
     }
+    
     @Override
     public void addMouseListener(final Image image) {
         final ImagePlus ip = displayer.getImage(image);
         final ImageCanvas canvas = ip.getCanvas();
+        
         if (canvas==null) {
             logger.warn("image: {} could not be set interactive", image.getName());
             return;

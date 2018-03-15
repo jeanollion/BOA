@@ -32,6 +32,7 @@ import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageInteger;
 import boa.image.Offset;
+import boa.image.SimpleBoundingBox;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -46,6 +47,8 @@ import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import boa.utils.Pair;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  *
@@ -57,7 +60,7 @@ public abstract class TrackMask extends ImageObjectInterface {
     static final int updateImageFrequency=50;
     static final int interval=0; 
     static final float displayMinMaxFraction = 0.9f;
-    
+    Map<Image, Predicate<BoundingBox>> imageCallback = new HashMap<>();
     public TrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
         super(parentTrack, childStructureIdx);
         trackOffset = new BoundingBox[parentTrack.size()];
@@ -120,15 +123,10 @@ public abstract class TrackMask extends ImageObjectInterface {
         return (T)this;
     }
     
-    @Override public Image generatemage(final int structureIdx, boolean executeInBackground) {
+    @Override public Image generatemage(final int structureIdx, boolean background) {
         // use track image only if parent is first element of track image
         if (trackObjects[0].parent.getOffsetInTrackImage()!=null && trackObjects[0].parent.getOffsetInTrackImage().xMin()==0 && trackObjects[0].parent.getTrackImage(structureIdx)!=null) return trackObjects[0].parent.getTrackImage(structureIdx);
-        /*long t00 = System.currentTimeMillis();
-        for (int i =0; i<trackObjects.length; ++i) {
-            trackObjects[i].generateRawImage(structureIdx);
-        }
-        long t01 = System.currentTimeMillis();
-        logger.debug("total loading time: {}", t01-t00);*/
+        
         Image image0 = trackObjects[0].generatemage(structureIdx, false);
         if (image0==null) return null;
         String structureName;
@@ -136,36 +134,32 @@ public abstract class TrackMask extends ImageObjectInterface {
         else structureName= structureIdx+"";
         final Image displayImage =  generateEmptyImage("Track: Parent:"+parents.get(0)+" Raw Image of"+structureName, image0);
         Image.pasteImage(image0, displayImage, trackOffset[0]);
-        //final double[] minAndMax = image0.getMinAndMax(null);
-        //long[] totalTime = new long[1];
-        // draw image in another thread..
-        // update display every paste...
-        WorkerTask t= new WorkerTask() {
-            int count = 0;
-            @Override
-            public String run(int i) {
-                //long t0 = System.currentTimeMillis();
-                Image image = trackObjects[i].generatemage(structureIdx, false);
-                Image.pasteImage(image, displayImage, trackOffset[i]);
-                if (count>=updateImageFrequency || i==trackObjects.length-1) {
-                    ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage); //, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1])
-                    //t4 = System.currentTimeMillis();
-                    count=0;
-                } else count++;
-                return null;
+        
+        if (!background) {
+            for (int i = 0; i<trackOffset.length; ++i) {
+                Image subImage = trackObjects[i].generatemage(structureIdx, false);
+                Image.pasteImage(subImage, displayImage, trackOffset[i]);
             }
-
-        };
-        if (executeInBackground) {
-            DefaultWorker w = DefaultWorker.execute(t, trackObjects.length, null);
-            ImageWindowManagerFactory.getImageManager().runningWorkers.put(displayImage, w);
-            w.setEndOfWork(()->{ 
-                ImageWindowManagerFactory.getImageManager().runningWorkers.remove(displayImage); 
-                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);  //, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1])
-            });
         } else {
-            DefaultWorker.executeInForeground(t, trackObjects.length);
+            boolean[] pastedImage = new boolean[trackOffset.length];
+            pastedImage[0] = true;
+            Predicate<BoundingBox> callBack  = bounds -> {
+                int idxMin = getClosestFrame(bounds.xMin(), bounds.yMin());
+                int idxMax = getClosestFrame(bounds.xMax(), bounds.yMax());
+                boolean imageHasBeenPasted = false;
+                for (int i = idxMin; i<=idxMax; ++i) {
+                    if (!pastedImage[i]) {
+                        Image subImage = trackObjects[i].generatemage(structureIdx, false);
+                        Image.pasteImage(subImage, displayImage, trackOffset[i]);
+                        pastedImage[i]=true;
+                        imageHasBeenPasted = true;
+                    }
+                }
+                return imageHasBeenPasted;
+            };
+            this.imageCallback.put(displayImage, callBack);
         }
+        
         return displayImage;
     }
 

@@ -31,6 +31,7 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
+import boa.image.BoundingBox;
 import ij.ImageJ;
 import ij.process.AutoThresholder;
 import boa.image.MutableBoundingBox;
@@ -53,6 +54,7 @@ import boa.utils.Utils;
 import java.util.Map;
 import java.util.TreeMap;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
+import java.util.function.Consumer;
 
 /**
  *

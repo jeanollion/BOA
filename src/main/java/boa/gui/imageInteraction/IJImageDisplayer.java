@@ -27,6 +27,7 @@ import boa.image.IJImageWrapper;
 import boa.image.Image;
 import static boa.gui.GUI.logger;
 import boa.core.DefaultWorker;
+import static boa.gui.GUI.logger;
 import i5d.Image5D;
 import i5d.cal.ChannelDisplayProperties;
 import i5d.gui.ChannelControl;
@@ -42,13 +43,21 @@ import boa.image.ImageFloat;
 import boa.image.ImageShort;
 import boa.image.SimpleBoundingBox;
 import boa.image.TypeConverter;
+import ij.gui.ImageWindow;
+import ij.gui.StackWindow;
+import ij.plugin.frame.SyncWindows;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Event;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelListener;
 import java.awt.image.ColorModel;
 import java.util.HashMap;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import javax.swing.SwingUtilities;
 
 /**
@@ -82,6 +91,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ip.setDisplayRange(displayRange[0], displayRange[1]);
         //logger.debug("show image:w={}, h={}, disp: {}", ip.getWidth(), ip.getHeight(), displayRange);
         if (!ip.isVisible()) ip.show();
+        addMouseWheelListener(image, null);
         if (displayRange.length>=3) zoom(ip, displayRange[2]);
         else zoom(ip, ImageDisplayer.zoomMagnitude);
         ImageWindowManagerFactory.getImageManager().addLocalZoom(ip.getCanvas());
@@ -146,7 +156,81 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             }
         };
         DefaultWorker w = DefaultWorker.execute(t, 1, null);
+    }
+    
+    @Override public void addMouseWheelListener(final Image image, Predicate<BoundingBox> callBack) {
+        final ImagePlus imp = getImage(image);
+        final ImageWindow iw = imp.getWindow();
+        final ImageCanvas ic = imp.getCanvas();
+        MouseWheelListener mwl = e ->  { // code modified from IJ source to better suit needs for LARGE track mask images + call back to display images
+            synchronized (iw) {
+                int rotation = e.getWheelRotation();
+                int amount = e.getScrollAmount();
+                boolean ctrl = (e.getModifiers()&Event.CTRL_MASK)!=0;
+                boolean alt = e.isAltDown();
+                if (amount<1) amount=1;
+                if (rotation==0) return;
+                int width = imp.getWidth();
+                int height = imp.getHeight();
+                Rectangle srcRect = ic.getSrcRect();
+                int xstart = srcRect.x;
+                int ystart = srcRect.y;
+                boolean scrollSlices = iw instanceof StackWindow && (width<2000 && height<2000);
+                logger.debug("scroll : type {}, amount: {}, rotation: {}, would scroll in x: {} in y: {}", e.getScrollType(), amount, rotation, rotation*amount* (alt ? Math.max(width/200, 1) : srcRect.width/4), rotation*amount* (alt ? Math.max(height/200, 1) : srcRect.height/4));
+                if ((ctrl||IJ.shiftKeyDown()) && ic!=null) { // zoom
+                        Point loc = ic.getCursorLoc();
+                        int x = ic.screenX(loc.x);
+                        int y = ic.screenY(loc.y);
+                        if (rotation<0) ic.zoomIn(x, y);
+                        else ic.zoomOut(x, y);
+                        return;
+                }
+                if (scrollSlices) {
+                    StackWindow sw = (StackWindow)iw;
+                    if (sw.isHyperStack()) {
+                            if (rotation>0)
+                                    IJ.run(imp, "Next Slice [>]", "");
+                            else if (rotation<0)
+                                    IJ.run(imp, "Previous Slice [<]", "");
+                    } else {
+                            int slice = imp.getCurrentSlice() + rotation;
+                            if (slice<1)
+                                    slice = 1;
+                            else if (slice>imp.getStack().getSize())
+                                    slice = imp.getStack().getSize();
+                            imp.setSlice(slice);
+                            imp.updateStatusbarValue();
+                            SyncWindows.setZ(sw, slice);
+                    }
+                } else {
+                    if ((double)srcRect.height/height>(double)srcRect.width/width || (srcRect.height/height<srcRect.width/width && IJ.spaceBarDown())) { // scroll in the most needed direction
+                            srcRect.x += rotation*amount* (alt ? Math.max(width/200, 1) : srcRect.width/6); 
+                            if (srcRect.x<0) srcRect.x = 0;
+                            if (srcRect.x+srcRect.width>width) srcRect.x = width-srcRect.width;
+                    } else {
+                            srcRect.y += rotation*amount*(alt ?  Math.max(height/200, 1) : srcRect.height/6);  
+                            if (srcRect.y<0) srcRect.y = 0;
+                            if (srcRect.y+srcRect.height>height) srcRect.y = height-srcRect.height;
+                    }
+                    if (srcRect.x!=xstart || srcRect.y!=ystart) {
+                        boolean update = false;
+                        if (callBack !=null ) {
+                            update = callBack.test(new SimpleBoundingBox(srcRect.x, srcRect.x+srcRect.width-1, srcRect.y, srcRect.y+srcRect.height-1, 0, 0));
+                        } 
+                        if (update) imp.updateAndRepaintWindow();
+                        else  ic.repaint();
+                    }
+                }
+            }    
+	};
         
+        if (callBack!=null) { // initial call back
+            callBack.test(new SimpleBoundingBox(ic.getSrcRect().x, ic.getSrcRect().x+ic.getSrcRect().width-1, ic.getSrcRect().y, ic.getSrcRect().y+ic.getSrcRect().height-1, 0, 0));
+            imp.updateAndRepaintWindow();
+        }
+        
+        for (MouseWheelListener mwl2: iw.getMouseWheelListeners()) iw.removeMouseWheelListener(mwl2);
+        iw.addMouseWheelListener(mwl);
     }
     
     @Override public ImagePlus getImage(Image image) {
