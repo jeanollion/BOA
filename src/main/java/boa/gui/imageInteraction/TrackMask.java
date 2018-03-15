@@ -125,7 +125,7 @@ public abstract class TrackMask extends ImageObjectInterface {
     
     @Override public Image generatemage(final int structureIdx, boolean background) {
         // use track image only if parent is first element of track image
-        if (trackObjects[0].parent.getOffsetInTrackImage()!=null && trackObjects[0].parent.getOffsetInTrackImage().xMin()==0 && trackObjects[0].parent.getTrackImage(structureIdx)!=null) return trackObjects[0].parent.getTrackImage(structureIdx);
+        //if (trackObjects[0].parent.getOffsetInTrackImage()!=null && trackObjects[0].parent.getOffsetInTrackImage().xMin()==0 && trackObjects[0].parent.getTrackImage(structureIdx)!=null) return trackObjects[0].parent.getTrackImage(structureIdx);
         
         Image image0 = trackObjects[0].generatemage(structureIdx, false);
         if (image0==null) return null;
