@@ -35,11 +35,11 @@ import java.util.HashMap;
 import java.util.Map;
 import boa.plugins.Thresholder;
 import boa.image.processing.Filters;
-import boa.image.processing.WatershedTransform;
-import boa.image.processing.WatershedTransform.FusionCriterion;
-import boa.image.processing.WatershedTransform.PropagationCriterion;
-import boa.image.processing.WatershedTransform.Spot;
-import static boa.image.processing.WatershedTransform.watershed;
+import boa.image.processing.watershed.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform.FusionCriterion;
+import boa.image.processing.watershed.WatershedTransform.PropagationCriterion;
+import boa.image.processing.watershed.WatershedTransform.Spot;
+import static boa.image.processing.watershed.WatershedTransform.watershed;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 
@@ -108,7 +108,8 @@ public class ObjectCountThresholder implements Thresholder {
                 return true;
             }
         };
-        watershed(input, mask, seeds, descendingIntensities.getSelected(), p, f, true);
+        WatershedTransform.WatershedConfiguration config = new WatershedTransform.WatershedConfiguration().decreasingPropagation(descendingIntensities.getSelected()).lowConectivity(true).propagationCriterion(p).fusionCriterion(f);
+        watershed(input, mask, seeds,config);
         if (debug) {
             double[] values = new double[256];
             double[] counts = new double[256];

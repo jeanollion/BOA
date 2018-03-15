@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.image.processing;
+package boa.image.processing.watershed;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import static boa.core.Processor.logger;
@@ -30,6 +30,7 @@ import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
 import boa.image.ImageMask;
+import boa.image.processing.Filters;
 import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +52,35 @@ import boa.utils.HashMapGetCreate;
  * @author jollion
  */
 public class WatershedTransform {
+    public enum PropagationType {DIRECT, NORMAL};
+    public static class WatershedConfiguration {
+        boolean lowConnectivity;
+        boolean decreasingPropagation;
+        PropagationCriterion propagationCriterion;
+        FusionCriterion fusionCriterion;
+        PropagationType prop = PropagationType.NORMAL;
+        public WatershedConfiguration() {}
+        public WatershedConfiguration propagationCriterion(PropagationCriterion c) {
+            this.propagationCriterion = c;
+            return this;
+        }
+        public WatershedConfiguration propagation(PropagationType prop) {
+            this.prop = prop;
+            return this;
+        }
+        public WatershedConfiguration fusionCriterion(FusionCriterion c) {
+            this.fusionCriterion = c;
+            return this;
+        }
+        public WatershedConfiguration lowConectivity(boolean lowConnectivity) {
+            this.lowConnectivity = lowConnectivity;
+            return this;
+        }
+        public WatershedConfiguration decreasingPropagation(boolean decreasingPropagation) {
+            this.decreasingPropagation = decreasingPropagation;
+            return this;
+        }
+    }
     final protected TreeSet<Voxel> heap;
     final protected Spot[] spots; // map label -> spot (spots[0]==null)
     protected int spotNumber;
@@ -64,6 +94,7 @@ public class WatershedTransform {
     protected boolean computeSpotCenter = false;
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
+    PropagationType prop;
     public static List<Region> duplicateSeeds(List<Region> seeds) {
         List<Region> res = new ArrayList<>(seeds.size());
         for (Region o : seeds) res.add(new Region(new HashSet<>(o.getVoxels()), o.getLabel(), o.is2D(), o.getScaleXY(), o.getScaleZ()));
@@ -75,45 +106,42 @@ public class WatershedTransform {
         for (Voxel v : seeds) res.add(new Region(new HashSet<Voxel>(){{add(v);}}, label++, is2D, scaleXY, scaleZ));
         return res;
     }
-    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
-        ImageByte seeds = Filters.localExtrema(watershedMap, null, decreasingPropagation, mask, Filters.getNeighborhood(1.5, 1.5, watershedMap));
+    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, WatershedConfiguration config) {
+        ImageByte seeds = Filters.localExtrema(watershedMap, null, config.decreasingPropagation, mask, Filters.getNeighborhood(1.5, 1.5, watershedMap));
         //new IJImageDisplayer().showImage(seeds.setName("seeds"));
-        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion,fusionCriterion, lowConnectivity);
+        return watershed(watershedMap, mask, seeds, config);
+    }
+    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, WatershedConfiguration config) {
+        return watershed(watershedMap, mask, Arrays.asList(ImageLabeller.labelImage(seeds)), config);
     }
     /**
      * 
      * @param watershedMap
      * @param mask
      * @param regionalExtrema CONTAINED REGION WILL BE MODIFIED
-     * @param decreasingPropagation
-     * @param propagationCriterion
-     * @param fusionCriterion
+     * @param  config watershed configuration
      * @return 
      */
-    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, List<Region> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
-        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion).setLowConnectivity(lowConnectivity);
+    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, List<Region> regionalExtrema, WatershedConfiguration config) {
+        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, config);
         wt.run();
         return wt.getRegionPopulation();
     }
     
-    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, boolean lowConnectivity) {
-        return watershed(watershedMap, mask, Arrays.asList(ImageLabeller.labelImage(seeds)), invertWatershedMapValues, null, null, lowConnectivity);
-    }
-    public static RegionPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
-        return watershed(watershedMap, mask, Arrays.asList(ImageLabeller.labelImage(seeds)), decreasingPropagation, propagationCriterion, fusionCriterion, lowConnectivity);
-    }
+    
     /**
      * 
      * @param watershedMap
      * @param mask
      * @param regionalExtrema CONTAINED REGION WILL BE MODIFIED
-     * @param decreasingPropagation
-     * @param propagationCriterion
-     * @param fusionCriterion 
+     * @param config watershed configuration
      */
-    public WatershedTransform(Image watershedMap, ImageMask mask, List<Region> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+    public WatershedTransform(Image watershedMap, ImageMask mask, List<Region> regionalExtrema, WatershedConfiguration config) {
         if (mask==null) mask=new BlankMask( watershedMap);
-        this.decreasingPropagation = decreasingPropagation;
+        if (config ==null) config = new WatershedConfiguration(); // default config
+        this.decreasingPropagation = config.decreasingPropagation;
+        this.lowConnectivity = config.lowConnectivity;
+        this.prop = config.prop;
         heap = decreasingPropagation ? new TreeSet<>(Voxel.getInvertedComparator()) : new TreeSet<>();
         //heap = decreasingPropagation ? new PriorityQueue<>(Voxel.getInvertedComparator()) : new PriorityQueue<>();
         this.mask=mask;
@@ -124,15 +152,12 @@ public class WatershedTransform {
         for (int i = 0; i<regionalExtrema.size(); ++i) spots[i+1] = new Spot(i+1, regionalExtrema.get(i).getVoxels()); // do modify seed objects
         logger.trace("watershed transform: number of seeds: {} segmented map type: {}", regionalExtrema.size(), segmentedMap.getClass().getSimpleName());
         is3D=watershedMap.sizeZ()>1;   
-        if (propagationCriterion==null) setPropagationCriterion(new DefaultPropagationCriterion());
-        else setPropagationCriterion(propagationCriterion);
-        if (fusionCriterion==null) setFusionCriterion(new DefaultFusionCriterion());
-        else setFusionCriterion(fusionCriterion);
+        if (config.propagationCriterion==null) setPropagationCriterion(new DefaultPropagationCriterion());
+        else setPropagationCriterion(config.propagationCriterion);
+        if (config.fusionCriterion==null) setFusionCriterion(new DefaultFusionCriterion());
+        else setFusionCriterion(config.fusionCriterion);
     }
-    public WatershedTransform setLowConnectivity(boolean lowConnectivity) {
-        this.lowConnectivity = lowConnectivity;
-        return this;
-    }
+
     public WatershedTransform setFusionCriterion(FusionCriterion fusionCriterion) {
         this.fusionCriterion=fusionCriterion;
         fusionCriterion.setUp(this);
@@ -150,8 +175,20 @@ public class WatershedTransform {
         this.computeSpotCenter = true;
         return this;
     }
-    
     public void run() {
+        if (null == prop) throw new IllegalArgumentException("Unknown propagation type");
+        else switch (prop) {
+            case NORMAL:
+                runNormal();
+                break;
+            case DIRECT:
+                runDirectSegmentation();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown propagation type");
+        }
+    }
+    public void runNormal() {
         double rad = lowConnectivity ? 1 : 1.5;
         EllipsoidalNeighborhood neigh = watershedMap.sizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
         

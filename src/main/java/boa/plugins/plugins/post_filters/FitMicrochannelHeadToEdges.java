@@ -43,7 +43,7 @@ import java.util.List;
 import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
 import boa.image.processing.split_merge.SplitAndMergeEdge;
 import boa.image.processing.split_merge.SplitAndMergeRegionCriterion;
 import boa.plugins.plugins.pre_filters.ImageFeature;
@@ -180,7 +180,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
             allSeeds.stream().forEach(r->r.getVoxels().stream().forEach(v->maxL.setPixel(v.x, v.y, v.z, 3)));
             ImageWindowManagerFactory.showImage(maxL.setName("Seeds 1=bck, 2=fore, 3=?"));
         }
-        RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, false, null, new WatershedTransform.SizeFusionCriterion(0), false);
+        RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, null);
         if (seedsInMaskAreForeground) {
             Voxel foreVox = foregroundVox.stream().findAny().get();
             Region fore = pop.getRegions().stream().filter(r->r.getVoxels().contains(foreVox)).findFirst().get();

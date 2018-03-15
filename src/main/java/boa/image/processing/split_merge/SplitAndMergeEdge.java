@@ -26,7 +26,7 @@ import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.processing.ImageFeatures;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -83,6 +83,10 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
         return this;
     }
     @Override public Image getWatershedMap() {
+        return edge;
+    }
+    @Override
+    public Image getSeedCreationMap() {
         return edge;
     }
 

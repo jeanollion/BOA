@@ -34,7 +34,7 @@ import boa.image.processing.Curvature;
 import boa.image.processing.EDT;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageOperations;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
 import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
@@ -42,6 +42,7 @@ import boa.image.processing.localthickness.LocalThickness;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.image.processing.split_merge.SplitAndMergeBacteriaShape.InterfaceLocalShape;
+import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 import boa.measurement.BasicMeasurements;
 import boa.measurement.GeometricalMeasurements;
 import static boa.plugins.Plugin.logger;
@@ -145,15 +146,18 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         return popWS;
     }
     @Override
+    public Image getSeedCreationMap() {
+        return getEDM();
+    }
+    @Override
     public RegionPopulation splitAndMerge(ImageMask segmentationMask, int minSizePropagation, int objectMergeLimit) {
         setDistanceMap(segmentationMask);
-        WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
-        ImageByte seeds = Filters.localExtrema(getEDM(), null, true, segmentationMask, Filters.getNeighborhood(3, 3, getEDM())); // TODO seed radius -> parameter ? 
+        WatershedConfiguration config = new WatershedConfiguration().lowConectivity(true);
+        if (minSizePropagation>1) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+        config.propagation(WatershedTransform.PropagationType.DIRECT).decreasingPropagation(true);
+        ImageByte seeds = Filters.localExtrema(getSeedCreationMap(), null, true, segmentationMask, Filters.getNeighborhood(3, 3, getSeedCreationMap())); // TODO seed radius -> parameter ? 
         ImageOperations.jitterIntegerValues(distanceMap, segmentationMask, 3);
-        WatershedTransform wt = new WatershedTransform(distanceMap, segmentationMask, ImageLabeller.labelImageList(seeds), true, null, sfc);
-        wt.setLowConnectivity(true);
-        wt.runDirectSegmentation();
-        RegionPopulation popWS = wt.getRegionPopulation();
+        RegionPopulation popWS = WatershedTransform.watershed(distanceMap, segmentationMask, ImageLabeller.labelImageList(seeds), config);
         
         if (testMode) {
             popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);

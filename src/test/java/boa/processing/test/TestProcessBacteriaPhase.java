@@ -48,7 +48,6 @@ import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
-import boa.plugins.legacy.BacteriaShape;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.utils.Utils;
 import java.util.Map;
@@ -63,23 +62,23 @@ public class TestProcessBacteriaPhase {
     static double thld = Double.NaN;
     static boolean setMask = false;
     static boolean normalize = false;
-    static int trackPrefilterRange = 100;
+    static int trackPrefilterRange = 1000;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
         
         //String dbName = "MF1_170523";
         //String dbName = "MutD5_141209";
-        //String dbName = "MutH_150324";
-        String dbName = "MutH_140115";
+        String dbName = "MutH_150324";
+        //String dbName = "MutH_140115";
         //String dbName = "Aya2";
         //String dbName = "AyaWT_mmglu";
         //String dbName = "170919_glyc_lac";
         //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =1;
-        int[] time =new int[]{35, 35}; //22
+        int microChannel =3;
+        int[] time =new int[]{21, 21}; //22
         //setMask=true;
         //thld = 776;
         
@@ -108,7 +107,6 @@ public class TestProcessBacteriaPhase {
             if (apply!=null) apply.apply(mc, seg);
             if (parentTrack.size()==1) {
                 if (seg instanceof BacteriaIntensity) ((BacteriaIntensity)seg).testMode=true;
-                if (seg instanceof BacteriaShape) ((BacteriaShape)seg).testMode=true;
             }
             mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
            

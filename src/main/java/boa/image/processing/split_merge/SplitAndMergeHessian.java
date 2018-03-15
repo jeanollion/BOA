@@ -26,7 +26,7 @@ import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.processing.ImageFeatures;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -44,8 +44,8 @@ import boa.image.processing.split_merge.SplitAndMergeHessian.Interface;
  * @author jollion
  */
 public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
-    Image hessian;
-    Image normalizedHessian;
+    Image hessian, seedCreationMap, watershedMap;
+    
     public final double splitThresholdValue, hessianScale;
     Function<Interface, Double> interfaceValue;
 
@@ -72,10 +72,14 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
         this.interfaceValue=interfaceValue;
         return this;
     }
-
-    
-    public SplitAndMergeHessian setWatershedMap(Image hessian) {
+    public SplitAndMergeHessian setHessian(Image hessian) {
         this.hessian = hessian;
+        return this;
+    }
+    
+    public SplitAndMergeHessian setWatershedMap(Image wsMap, boolean isEdgeMap) {
+        this.watershedMap = wsMap;
+        this.wsMapIsEdgeMap=isEdgeMap;
         return this;
     }
     public Image getHessian() {
@@ -87,7 +91,15 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
         return hessian;
     }
     @Override public Image getWatershedMap() {
-        return getHessian();
+        return watershedMap!=null ? watershedMap : getHessian();
+    }
+    @Override public Image getSeedCreationMap() {
+        return seedCreationMap!=null?seedCreationMap:getWatershedMap();
+    }
+    public SplitAndMergeHessian setSeedCreationMap(Image seedCreationMap, boolean localMin) {
+        this.seedCreationMap = seedCreationMap;
+        this.localMinOnSeedMap=localMin;
+        return this;
     }
     
     @Override

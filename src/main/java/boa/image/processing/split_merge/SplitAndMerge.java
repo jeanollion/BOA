@@ -23,10 +23,11 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
+import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.processing.Filters;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
 import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
@@ -52,6 +53,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
     protected ClusterCollection.InterfaceFactory<Region, I> factory;
     protected HashMapGetCreate<Region, Double> medianValues;
     protected Image intensityMap;
+    boolean wsMapIsEdgeMap = true, localMinOnSeedMap=true;
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
@@ -70,7 +72,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
     public Image getIntensityMap() {
         return intensityMap;
     }
-    
+    public abstract Image getSeedCreationMap();
     public abstract Image getWatershedMap();
     protected abstract ClusterCollection.InterfaceFactory<Region, I> createFactory();
     public ClusterCollection.InterfaceFactory<Region, I> getFactory() {
@@ -136,8 +138,10 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
         return merge(popWS, objectMergeLimit);
     }
     public RegionPopulation split(ImageMask segmentationMask, int minSizePropagation) {
-        WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
-        RegionPopulation popWS = WatershedTransform.watershed(getWatershedMap(), segmentationMask, false, null, sfc, false);
+        ImageByte seeds = Filters.localExtrema(getSeedCreationMap(), null, !localMinOnSeedMap, segmentationMask, Filters.getNeighborhood(1.5, 1.5, getSeedCreationMap()));
+        WatershedTransform.WatershedConfiguration config = new WatershedTransform.WatershedConfiguration().decreasingPropagation(!wsMapIsEdgeMap);
+        if (minSizePropagation>1) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+        RegionPopulation popWS = WatershedTransform.watershed(getWatershedMap(), segmentationMask, seeds, config);
         if (testMode) popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         return popWS;
     }

@@ -60,10 +60,11 @@ import boa.measurement.GeometricalMeasurements;
 import boa.plugins.ObjectFeature;
 import boa.plugins.plugins.trackers.ObjectIdxTracker.IndexingOrder;
 import boa.image.processing.Filters;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
 import boa.image.processing.neighborhood.DisplacementNeighborhood;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
@@ -305,7 +306,7 @@ public class RegionPopulation {
             }
         }
         ArrayList<Region> seeds = new ArrayList<>(Arrays.asList(RegionFactory.getObjectsImage(seedMap, false)));        
-        RegionPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null, lowConnectivity);
+        RegionPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, new WatershedConfiguration().lowConectivity(lowConnectivity));
         this.objects = pop.getRegions();
         objects.remove(0); // remove background object
         relabel(true);

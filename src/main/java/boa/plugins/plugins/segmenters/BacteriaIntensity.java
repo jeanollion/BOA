@@ -71,7 +71,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
     public static boolean verbose = false;
     public boolean testMode = false;
     protected double threshold=Double.NaN;
-    protected double minThld = 0;
+    protected double minThld = Double.NaN;
     // configuration-related attributes
     PluginParameter<SimpleThresholder> threhsolder = new PluginParameter<>("Local Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)).setToolTipText("Filters used to define edge map used in first watershed step. <br />Median + Sigma are more suitable for noisy images (involve less derivation)<br />Gradient magnitude is another option");  // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2)
@@ -126,8 +126,10 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
     public String toString() {
         return "Bacteria Intensity: " + Utils.toStringArray(getParameters());
     }   
-    protected SplitAndMergeHessian initializeSplitAndMerge(Image input, ImageMask foregroundMask) {
-        SplitAndMergeHessian res= new SplitAndMergeHessian(input, splitThreshold.getValue().doubleValue(), hessianScale.getValue().doubleValue());
+    protected SplitAndMergeHessian initializeSplitAndMerge(StructureObjectProcessing parent, int structureIdx, ImageMask foregroundMask) {
+        //if (edgeDetector==null) edgeDetector = initEdgeDetector(parent, structureIdx); //call from split/merge/manualseg
+        SplitAndMergeHessian res= new SplitAndMergeHessian(parent.getPreFilteredImage(structureIdx), splitThreshold.getValue().doubleValue(), hessianScale.getValue().doubleValue());
+        res.setWatershedMap(parent.getPreFilteredImage(structureIdx), false).setSeedCreationMap(parent.getPreFilteredImage(structureIdx), true); //this.edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask())
         res.setTestMode(testMode);
         return res;
     }
@@ -153,10 +155,11 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         splitPop = filterRegionsAfterEdgeDetector(parent, structureIdx, splitPop);
         if (splitAndMerge==null || !parent.equals(currentParent)) {
             currentParent = parent;
-            splitAndMerge = initializeSplitAndMerge(input, parent.getMask());
+            splitAndMerge = initializeSplitAndMerge(parent, structureIdx, parent.getMask());
         }
         RegionPopulation split = splitAndMerge.split(splitPop.getLabelMap(), minSizePropagation.getValue().intValue());
         if (testMode) {
+            ImageWindowManagerFactory.showImage(splitAndMerge.getHessian());
             ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(split, input).setName("Values after split by hessian"));
         }
         split = filterRegionAfterSplitByHessian(parent, structureIdx, split);
@@ -228,7 +231,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         mergePop.relabel(false); // ensure distinct labels , if not cluster cannot be found
         if (splitAndMerge==null || !parent.equals(currentParent)) {
             currentParent = parent;
-            splitAndMerge = initializeSplitAndMerge(input, parent.getMask());
+            splitAndMerge = initializeSplitAndMerge(parent, structureIdx, parent.getMask());
         }
         RegionCluster c = new RegionCluster(mergePop, false, true, splitAndMerge.getFactory());
         List<Set<Region>> clusters = c.getClusters();
@@ -286,7 +289,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         ImageInteger mask = object.isAbsoluteLandMark() ? object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox()) :object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox().resetOffset()); // extend mask to get the same size as the image
         if (splitAndMerge==null || !parent.equals(currentParent)) {
             currentParent = parent;
-            splitAndMerge = initializeSplitAndMerge(input,parent.getMask());
+            splitAndMerge = initializeSplitAndMerge(parent, structureIdx,parent.getMask());
         }
         splitAndMerge.setTestMode(splitVerbose);
         RegionPopulation res = splitAndMerge.splitAndMerge(mask, minSizePropagation.getValue().intValue(), 2);
@@ -308,7 +311,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
         List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.sizeZ()==1, input.getScaleXY(), input.getScaleZ());
         EdgeDetector seg = initEdgeDetector(parent, structureIdx);
         RegionPopulation pop = seg.run(input, segmentationMask);
-        SplitAndMergeHessian splitAndMerge=initializeSplitAndMerge(input, pop.getLabelMap());
+        SplitAndMergeHessian splitAndMerge=initializeSplitAndMerge(parent, structureIdx, pop.getLabelMap());
         pop = splitAndMerge.merge(pop, 0);
         pop.filter(o->{
             for(Region so : seedObjects ) if (o.intersect(so)) return true;

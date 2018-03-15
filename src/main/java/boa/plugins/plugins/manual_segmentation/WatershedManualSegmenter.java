@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import boa.plugins.ManualSegmenter;
 import boa.plugins.Thresholder;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
 import boa.plugins.SimpleThresholder;
 
 /**
@@ -58,7 +58,8 @@ public class WatershedManualSegmenter implements ManualSegmenter {
         for (int[] p : points) {
             if (segmentationMask.insideMask(p[0], p[1], p[2])) mask.setPixel(p[0], p[1], p[2], label++);
         }
-        RegionPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), prop, null, false);
+        WatershedTransform.WatershedConfiguration config = new WatershedTransform.WatershedConfiguration().decreasingPropagation(decreasingIntensities.getSelected()).propagationCriterion(prop);
+        RegionPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, config);
         if (verbose) {
             ImageDisplayer disp = new IJImageDisplayer();
             disp.showImage(input);

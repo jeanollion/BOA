@@ -80,7 +80,7 @@ public class TestTracker {
         int pIdx =0;
         int mcIdx =3;
         int structureIdx =1;
-        int[] frames = new int[]{30, 42}; //{215, 237};
+        int[] frames = new int[]{0, 1000}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -100,8 +100,8 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStepLimit=40;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
-        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
+        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);

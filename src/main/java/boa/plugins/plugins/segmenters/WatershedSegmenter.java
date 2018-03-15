@@ -37,7 +37,8 @@ import boa.plugins.SimpleThresholder;
 import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.Filters;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 
 /**
  *
@@ -57,7 +58,8 @@ public class WatershedSegmenter implements Segmenter {
         Image watershedMap = watershedMapFilters.filter(input, parent.getMask());
         
         ImageByte localExtrema = Filters.localExtrema(watershedMap, null, decreasePropagation.getSelected(), parent.getMask(), Filters.getNeighborhood(localExtremaRadius.getValue().doubleValue(), watershedMap));
-        RegionPopulation pop = WatershedTransform.watershed(watershedMap, parent.getMask(), localExtrema, decreasePropagation.getSelected(), null, null, false);
+        WatershedConfiguration config = new WatershedConfiguration().decreasingPropagation(decreasePropagation.getSelected());
+        RegionPopulation pop = WatershedTransform.watershed(watershedMap, parent.getMask(), localExtrema, config);
         // remove regions with low intensity value
         Image intensityMap = intensityFilter.filter(input, parent.getMask());
         if (debug) {

@@ -54,7 +54,8 @@ import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
 import boa.plugins.SimpleThresholder;
@@ -184,11 +185,9 @@ public class EdgeDetector implements Segmenter, ToolTip {
     }
     public RegionPopulation partitionImage(Image input, ImageMask mask) {
         int minSizePropagation = this.minSizePropagation.getValue().intValue();
-        WatershedTransform.SizeFusionCriterion sfc = minSizePropagation>1 ? new WatershedTransform.SizeFusionCriterion(minSizePropagation) : null;
-        WatershedTransform wt = new WatershedTransform(getWsMap(input, mask), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, mask))), false, null, sfc);
-        wt.setLowConnectivity(false);
-        wt.run();
-        RegionPopulation res =  wt.getRegionPopulation();
+        WatershedConfiguration config = new WatershedConfiguration().lowConectivity(false);
+        if (minSizePropagation>1) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+        RegionPopulation res =  WatershedTransform.watershed(getWsMap(input, mask), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, mask))), config);
         if (testMode) {
             ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("Segmented Regions"));
             ImageWindowManagerFactory.showImage(seedMap.setName("Seeds"));

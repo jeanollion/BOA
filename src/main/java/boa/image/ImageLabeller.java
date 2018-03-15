@@ -35,7 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 import java.util.Set;
 
 /**
@@ -121,7 +122,8 @@ public class ImageLabeller {
                 return mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(v2.x, v2.y, v2.z) && mask.getPixel(v1.x, v1.y, v1.z)==mask.getPixel(currentVoxel.x, currentVoxel.y, currentVoxel.z);
             }
         };
-        RegionPopulation pop = WatershedTransform.watershed(mask, null, WatershedTransform.createSeeds(seeds, mask.sizeZ()==1, mask.getScaleXY(), mask.getScaleZ()), false, prop, fus, lowConnectivity);
+        WatershedConfiguration config = new WatershedConfiguration().lowConectivity(lowConnectivity).fusionCriterion(fus).propagationCriterion(prop);
+        RegionPopulation pop = WatershedTransform.watershed(mask, null, WatershedTransform.createSeeds(seeds, mask.sizeZ()==1, mask.getScaleXY(), mask.getScaleZ()), config);
         return pop;
     }
     protected Region[] getObjects() {

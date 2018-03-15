@@ -62,13 +62,14 @@ import boa.plugins.plugins.manual_segmentation.WatershedObjectSplitter;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.image.processing.Filters.LocalMax;
 import boa.image.processing.ImageFeatures;
-import boa.image.processing.MultiScaleWatershedTransform;
+import boa.image.processing.watershed.MultiScaleWatershedTransform;
 import boa.image.processing.SubPixelLocalizator;
-import boa.image.processing.WatershedTransform.SizeFusionCriterion;
-import boa.image.processing.WatershedTransform.ThresholdPropagationOnWatershedMap;
-import static boa.image.processing.WatershedTransform.watershed;
+import boa.image.processing.watershed.WatershedTransform.SizeFusionCriterion;
+import boa.image.processing.watershed.WatershedTransform.ThresholdPropagationOnWatershedMap;
+import static boa.image.processing.watershed.WatershedTransform.watershed;
 import boa.image.processing.neighborhood.CylindricalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
 import boa.utils.HashMapGetCreate;
@@ -421,7 +422,8 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.sizeZ()==1, input.getScaleXY(), input.getScaleZ());
         Image lap = pv.getLaplacianMap()[0]; // todo max in scale space for each seed? 
         Image smooth = pv.getSmoothedMap();
-        RegionPopulation pop =  watershed(lap, parentMask, seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
+        WatershedConfiguration config = new WatershedConfiguration().decreasingPropagation(true).propagationCriterion(new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue())).fusionCriterion(new SizeFusionCriterion(minSpotSize.getValue().intValue())).lowConectivity(false);
+        RegionPopulation pop =  watershed(lap, parentMask, seedObjects, config);
         setCenterAndQuality(lap, smooth, pop, 0);
         
         if (verboseManualSeg) {

@@ -43,7 +43,7 @@ import java.util.List;
 import boa.plugins.ObjectSplitter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
 
 /**
  *
@@ -95,7 +95,8 @@ public class WatershedObjectSplitter implements ObjectSplitter {
                     else seeds = seeds.subList(0, seeds.size()/2);
                 }
             }
-            RegionPopulation pop =  WatershedTransform.watershed(watershedMap, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2), false);
+            WatershedTransform.WatershedConfiguration config = new WatershedTransform.WatershedConfiguration().decreasingPropagation(decreasingPropagation).fusionCriterion(new WatershedTransform.NumberFusionCriterion(2));
+            RegionPopulation pop =  WatershedTransform.watershed(watershedMap, mask, seeds, config);
             if (verbose) {
                 new IJImageDisplayer().showImage(localMax);
                 new IJImageDisplayer().showImage(watershedMap.setName("watershedMap"));
@@ -115,7 +116,8 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             //new IJImageDisplayer().showImage(localMax.setName("localMax"));
             return null;
         } else {
-            RegionPopulation pop =  WatershedTransform.watershed(watershedMap, mask, WatershedTransform.duplicateSeeds(seeds), decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2), false);
+            WatershedTransform.WatershedConfiguration config = new WatershedTransform.WatershedConfiguration().decreasingPropagation(decreasingPropagation).fusionCriterion(new WatershedTransform.NumberFusionCriterion(2));
+            RegionPopulation pop =  WatershedTransform.watershed(watershedMap, mask, WatershedTransform.duplicateSeeds(seeds), config);
             List<Region> remove = new ArrayList<Region>();
             pop.filter(new RegionPopulation.Size().setMin(minSize), remove);
             if (verbose) logger.debug("seeds: {}, objects: {}, removed: {}", seeds.size(), pop.getRegions().size()+remove.size(), remove.size());
@@ -133,7 +135,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
                     logger.error("Split spot error: no seed removed");
                     break;
                 }
-                pop =  WatershedTransform.watershed(watershedMap, mask, WatershedTransform.duplicateSeeds(seeds), decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2), false);
+                pop =  WatershedTransform.watershed(watershedMap, mask, WatershedTransform.duplicateSeeds(seeds), config);
                 pop.filter(new RegionPopulation.Size().setMin(minSize), remove);
                 if (verbose) logger.debug("seeds: {}, objects: {}, removed: {}", seeds.size(), pop.getRegions().size()+remove.size(), remove.size());
             }

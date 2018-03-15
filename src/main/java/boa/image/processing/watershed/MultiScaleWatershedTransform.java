@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.image.processing;
+package boa.image.processing.watershed;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import static boa.core.Processor.logger;

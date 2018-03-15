@@ -26,7 +26,7 @@ import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.processing.ImageFeatures;
-import boa.image.processing.WatershedTransform;
+import boa.image.processing.watershed.WatershedTransform;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -51,6 +51,8 @@ public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeReg
     final Image wsMap;
     public final double splitThresholdValue;
     Function<Interface, Double> interfaceValue;
+
+    
     public static enum InterfaceValue {MEAN_INTENSITY_IN_REGIONS, DIFF_INTENSITY_BTWN_REGIONS, DIFF_MEDIAN_BTWN_REGIONS};
     public SplitAndMergeRegionCriterion(Image edgeMap, Image intensityMap, double splitThreshold, InterfaceValue method) {
         super(intensityMap);
@@ -82,6 +84,10 @@ public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeReg
         return this;
     }
     @Override public Image getWatershedMap() {
+        return wsMap;
+    }
+    @Override
+    public Image getSeedCreationMap() {
         return wsMap;
     }
 
