@@ -50,7 +50,7 @@ import boa.plugins.PluginFactory;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.transformations.AutoRotationXY;
-import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
+import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 import boa.plugins.plugins.transformations.RemoveStripesSignalExclusion;
 import boa.plugins.plugins.transformations.SaturateHistogramHyperfluoBacteria;
 import boa.image.processing.Filters;
@@ -134,7 +134,7 @@ public class AnalyseHyperFluoBacterias {
     }
     private static ImageInteger<? extends ImageInteger> crop(Image image) {
         
-        MutableBoundingBox bds = new CropMicroChannelFluo2D().setThresholder(new BackgroundThresholder(3, 6, 3)).getBoundingBox(image);
+        MutableBoundingBox bds = new CropMicrochannelsFluo2D().setThresholder(new BackgroundThresholder(3, 6, 3)).getBoundingBox(image);
         //BoundingBox bds = CropMicroChannelFluo2D.getBoundingBox(image, 30, 0, 350, thld, 0.6, 200, 0, 0, 0, 0);
         logger.debug("Bds: {}", bds);
         ImageByte res=  new ImageByte("crop", image);

@@ -26,7 +26,7 @@ import boa.data_structure.image_container.MemoryImageContainer;
 import boa.image.Image;
 import boa.image.io.ImageReader;
 import boa.plugins.PluginFactory;
-import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
+import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 import boa.plugins.plugins.transformations.ImageStabilizerXY;
 
 /**
@@ -44,7 +44,7 @@ public class TestStabilizerFromSavedPreProcessed {
         MemoryImageContainer cont = new MemoryImageContainer(imCT);
         InputImagesImpl in = cont.getInputImages("18");
         logger.debug("Frames: {}", in.getFrameNumber());
-        ImageStabilizerXY stab = new ImageStabilizerXY(1, 1000, 1e-12, 20).setAdditionalTranslation(1, 1, 1).setCropper(new CropMicroChannelFluo2D(410, 45, 200, 0.5, 10));
+        ImageStabilizerXY stab = new ImageStabilizerXY(1, 1000, 1e-12, 20).setAdditionalTranslation(1, 1, 1).setCropper(new CropMicrochannelsFluo2D(410, 45, 200, 0.5, 10));
         ImageStabilizerXY.debug=true;
         
         stab.computeConfigurationData(0, in);

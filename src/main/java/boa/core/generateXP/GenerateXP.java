@@ -78,8 +78,8 @@ import boa.plugins.plugins.trackers.MutationTracker;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.plugins.plugins.transformations.AutoRotationXY;
-import boa.plugins.plugins.transformations.CropMicroChannelBF2D;
-import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
+import boa.plugins.plugins.transformations.CropMicrochannelsPhase2D;
+import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 import boa.plugins.plugins.transformations.CropMicroChannels;
 import boa.plugins.legacy.CropMicroChannels2D;
 import boa.plugins.plugins.transformations.Flip;
@@ -456,7 +456,7 @@ public class GenerateXP {
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE));
         //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
         //ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-        CropMicroChannels cropper = new CropMicroChannelFluo2D(410, 45, 200, 0.5, 10);
+        CropMicroChannels cropper = new CropMicrochannelsFluo2D(410, 45, 200, 0.5, 10);
         ps.addTransformation(0, null, cropper).setActivated(true);
         //ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, 0).setCropper(cropper)).setActivated(false); // additional translation to correct chromatic shift
     }
@@ -465,7 +465,7 @@ public class GenerateXP {
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
         ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, true)));
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.PHASE));
-        ps.addTransformation(0, null, new CropMicroChannelBF2D());
+        ps.addTransformation(0, null, new CropMicrochannelsPhase2D());
         if (subTransPre) ps.addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, false)); // subtract after crop because subtract alter optical aberation detection. Optimization: paraboloid = true / range=03-05 best = 0.3 
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
     }

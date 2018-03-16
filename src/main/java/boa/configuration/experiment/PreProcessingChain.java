@@ -153,17 +153,20 @@ public class PreProcessingChain extends SimpleContainerParameter {
      * @param outputChannel channel(s) on which apply transformation (null = all channels or same channel, depending {@link TransformationTimeIndependent#getOutputChannelSelectionMode() })
      * @param transformation 
      */
-    public TransformationPluginParameter<Transformation> addTransformation(int inputChannel, int[] outputChannel, Transformation transformation) {
+    public TransformationPluginParameter<Transformation> addTransformation(int idx, int inputChannel, int[] outputChannel, Transformation transformation) {
         if (inputChannel<-1) throw new IllegalArgumentException("Input channel should be >=0");
         Experiment xp = ParameterUtils.getExperiment(this);
         if (xp!=null &&  inputChannel>=xp.getChannelImageCount()) throw new IllegalArgumentException("Input channel should be < channel image count ("+xp.getChannelImageCount()+")");
         TransformationPluginParameter<Transformation> tpp= new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false);
-        transformations.insert(tpp);
+        transformations.insert(tpp, idx);
         tpp.setPlugin(transformation);
         tpp.setInputChannel(inputChannel);
         if (outputChannel==null && (transformation.getOutputChannelSelectionMode()==Transformation.SelectionMode.MULTIPLE || transformation.getOutputChannelSelectionMode()==Transformation.SelectionMode.SINGLE) ) outputChannel = new int[]{inputChannel};
         tpp.setOutputChannel(outputChannel);
         return tpp;
+    }
+    public TransformationPluginParameter<Transformation> addTransformation(int inputChannel, int[] outputChannel, Transformation transformation) {
+        return addTransformation(this.transformations.getChildCount(), inputChannel, outputChannel, transformation);
     }
     /*
     @Override 

@@ -67,7 +67,7 @@ import boa.plugins.plugins.trackers.MutationTracker;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import boa.plugins.plugins.transformations.AutoRotationXY;
-import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
+import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 import boa.plugins.plugins.transformations.Flip;
 import boa.plugins.plugins.transformations.ImageStabilizerXY;
 import boa.plugins.plugins.transformations.SaturateHistogram;
@@ -195,7 +195,7 @@ public class GenerateMutationDynamicsXP {
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-            xp.getPreProcessingTemplate().addTransformation(bactChan, null, new CropMicroChannelFluo2D(410, 45, 200, 0.6, 5));
+            xp.getPreProcessingTemplate().addTransformation(bactChan, null, new CropMicrochannelsFluo2D(410, 45, 200, 0.6, 5));
             if (!stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, new int[]{bactChan}, new SimpleTranslation(-1, -1, 0)); // 0.19 microns en Z
             if (stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, null, new ImageStabilizerXY(4, 2000, 1e-12, 5).setAdditionalTranslation(bactChan, -1, -1)); // additional translation to correct chromatic shift
         }

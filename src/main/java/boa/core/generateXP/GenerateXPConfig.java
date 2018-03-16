@@ -21,11 +21,16 @@ package boa.core.generateXP;
 import static boa.core.generateXP.GenerateXP.generateXPFluo;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.PreProcessingChain;
+import boa.configuration.parameters.TransformationPluginParameter;
+import boa.plugins.plugins.transformations.CropMicrochannelsPhase2D;
+import boa.plugins.plugins.transformations.SimpleCrop;
+import boa.plugins.plugins.transformations.SimpleRotationXY;
 import java.io.File;
 import java.util.ArrayList;
 import boa.utils.FileIO;
 import boa.utils.ImportExportJSON;
 import boa.utils.JSONUtils;
+import boa.utils.Utils;
 
 /**
  *
@@ -49,9 +54,14 @@ public class GenerateXPConfig {
         exportXP(path, xpTransFluo, false);*/
         
         // XP THOMAS
-        //Experiment xpTransJULOU = GenerateXP.generateXPTrans("MotherMachinePhaseContrastJULOU", null, true, 0, 0, Double.NaN);
-        //xpTransJULOU.getChannelImages().
-        //exportXP(path, xpTransJULOU, false);
+        /*Experiment xpJulou = GenerateXP.generateXPTrans("MotherMachinePhaseContrastJULOU", null, true, 0, 0, Double.NaN);
+        xpJulou.getChannelImages().insert(xpJulou.getChannelImages().createChildInstance("Fluo"));
+        xpJulou.getPreProcessingTemplate().addTransformation(0, 0, null, new SimpleRotationXY(90));
+        xpJulou.getPreProcessingTemplate().addTransformation(1, 0, null, new SimpleCrop().yMin(340));
+        TransformationPluginParameter<CropMicrochannelsPhase2D> crop = Utils.getFirst(xpJulou.getPreProcessingTemplate().getTransformations(false), t->t.instanciatePlugin() instanceof CropMicrochannelsPhase2D);
+        crop.setLocalDerivateXThld(50);
+        
+        exportXP(path, xpJulou, false);*/
         
         
     }

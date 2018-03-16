@@ -39,7 +39,7 @@ import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
 import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
-import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
+import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 /**
  *
  * @author jollion
@@ -63,7 +63,7 @@ public class TestProcessMicrochannels {
         logger.debug("field name: {}, root==null? {} frame: {}", f.getName(), root==null, root.getFrame());
         Image input = root.getRawImage(0);
         MicrochannelFluo2D.debug=true;
-        CropMicroChannelFluo2D.debug=true;
+        CropMicrochannelsFluo2D.debug=true;
         //ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 50, 0.6d, 100);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();

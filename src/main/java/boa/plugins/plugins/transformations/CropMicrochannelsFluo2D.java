@@ -54,14 +54,14 @@ import boa.plugins.MicrochannelSegmenter.Result;
  *
  * @author jollion
  */
-public class CropMicroChannelFluo2D extends CropMicroChannels {
+public class CropMicrochannelsFluo2D extends CropMicroChannels {
     
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.5, 0.05, 1);
     PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new BackgroundThresholder(3, 6, 3), false);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number};
     
-    public CropMicroChannelFluo2D(int channelHeight, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
+    public CropMicrochannelsFluo2D(int channelHeight, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
         this.channelHeight.setValue(channelHeight);
         this.cropMarginY.setValue(cropMargin);
         this.minObjectSize.setValue(minObjectSize);
@@ -69,23 +69,23 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         this.number.setValue(timePointNumber);
     }
     
-    public CropMicroChannelFluo2D() {
+    public CropMicrochannelsFluo2D() {
         //this.margin.setValue(30);
     }
-    public CropMicroChannelFluo2D setThresholder(SimpleThresholder instance) {
+    public CropMicrochannelsFluo2D setThresholder(SimpleThresholder instance) {
         this.threshold.setPlugin(instance);
         return this;
     }
-    public CropMicroChannelFluo2D setTimePointNumber(int timePointNumber) {
+    public CropMicrochannelsFluo2D setTimePointNumber(int timePointNumber) {
         this.number.setValue(timePointNumber);
         return this;
     }
-    public CropMicroChannelFluo2D setChannelDim(int channelHeight, double fillingProportion) {
+    public CropMicrochannelsFluo2D setChannelDim(int channelHeight, double fillingProportion) {
         this.channelHeight.setValue(channelHeight);
         this.fillingProportion.setValue(fillingProportion);
         return this;
     }
-    public CropMicroChannelFluo2D setParameters(int minObjectSize) {
+    public CropMicrochannelsFluo2D setParameters(int minObjectSize) {
         this.minObjectSize.setValue(minObjectSize);
         return this;
     }

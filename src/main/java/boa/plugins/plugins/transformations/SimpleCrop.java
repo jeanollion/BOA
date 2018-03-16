@@ -51,6 +51,18 @@ public class SimpleCrop implements Transformation {
         zMin.setValue(z);
         zLength.setValue(zL);
     }
+    public SimpleCrop yMin(int y) {
+        this.yMin.setValue(y);
+        return this;
+    }
+    public SimpleCrop xMin(int x) {
+        this.xMin.setValue(x);
+        return this;
+    }
+    public SimpleCrop zMin(int z) {
+        this.zMin.setValue(z);
+        return this;
+    }
     public SimpleCrop(int... bounds){
         if (bounds.length>0) xMin.setValue(bounds[0]);
         if (bounds.length>1) xLength.setValue(bounds[1]);

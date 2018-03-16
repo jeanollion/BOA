@@ -32,7 +32,7 @@ import boa.plugins.plugins.pre_filters.IJSubtractBackground;
  *
  * @author jollion
  */
-public class CropMicroChannelBF2D extends CropMicroChannels {
+public class CropMicrochannelsPhase2D extends CropMicroChannels {
     public static boolean debug = false;
     NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Typical Width (pixels)", 0, 20, 5, null);
     NumberParameter microChannelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
@@ -42,7 +42,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     FilterSequence filters = new FilterSequence("Pre-Filters").add(new IJSubtractBackground(10, true, false, true, false));
     Parameter[] parameters = new Parameter[]{filters, channelHeight, cropMarginY, microChannelWidth, microChannelWidthMin, microChannelWidthMax, localDerExtremaThld, yEndMargin, xStart, xStop, yStart, yStop, number};
     
-    public CropMicroChannelBF2D(int cropMarginY, int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax, int timePointNumber) {
+    public CropMicrochannelsPhase2D(int cropMarginY, int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax, int timePointNumber) {
         this.cropMarginY.setValue(cropMarginY);
         this.microChannelWidth.setValue(microChannelWidth);
         this.microChannelWidthMin.setValue(microChannelWidthMin);
@@ -50,21 +50,21 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         
         this.number.setValue(timePointNumber);
     }
-    public CropMicroChannelBF2D() {
+    public CropMicrochannelsPhase2D() {
         
     }
     
-    public CropMicroChannelBF2D setTimePointNumber(int timePointNumber) {
+    public CropMicrochannelsPhase2D setTimePointNumber(int timePointNumber) {
         this.number.setValue(timePointNumber);
         return this;
     }
-    public CropMicroChannelBF2D setChannelWidth(int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax) {
+    public CropMicrochannelsPhase2D setChannelWidth(int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax) {
         this.microChannelWidth.setValue(microChannelWidth);
         this.microChannelWidthMin.setValue(microChannelWidthMin);
         this.microChannelWidthMax.setValue(microChannelWidthMax);
         return this;
     }
-    public CropMicroChannelBF2D setLocalDerivateXThld(double thld) {
+    public CropMicrochannelsPhase2D setLocalDerivateXThld(double thld) {
         this.localDerExtremaThld.setValue(thld);
         return this;
     }

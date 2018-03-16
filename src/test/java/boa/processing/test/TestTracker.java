@@ -54,7 +54,7 @@ import boa.plugins.plugins.trackers.MutationTracker;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
 import boa.plugins.plugins.trackers.nested_spot_tracker.NestedSpotRoiModifier;
-import boa.plugins.plugins.transformations.CropMicroChannelFluo2D;
+import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 import boa.utils.Pair;
 import boa.utils.Utils;
 import java.util.Map.Entry;
@@ -95,7 +95,7 @@ public class TestTracker {
         AverageMask.debugIdx = 5;
         MicrochannelTracker.debug=true;
         MutationTracker.registerTMI=true;
-        CropMicroChannelFluo2D.debug=false;
+        CropMicrochannelsFluo2D.debug=false;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debug=false;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
