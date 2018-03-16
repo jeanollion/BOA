@@ -43,7 +43,8 @@ public class TestTrackPreFilter {
     public static final Logger logger = LoggerFactory.getLogger(TestTrackPreFilter.class);
     public static void main(String[] args) {
         
-        String dbName = "170919_thomas";
+        //String dbName = "170919_thomas";
+        String dbName = "AyaWT_mmglu";
         int pIdx =0;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);

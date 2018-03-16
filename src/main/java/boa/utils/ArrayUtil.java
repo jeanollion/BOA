@@ -404,6 +404,12 @@ public class ArrayUtil {
         if (stopExcl<start) return new int[0];
         return IntStream.range(start, stopExcl).toArray();
     }
+    public static float[] generateFloatArray(int start, int stopExcl) {
+        if (stopExcl<start) return new float[0];
+        float[] res = new float[stopExcl-start];
+        for (int i = 0; i<res.length; ++i) res[i] = start+i;
+        return res;
+    }
     public static int[] generateIntegerArray(int size) {
         return IntStream.range(0, size).toArray();
     }

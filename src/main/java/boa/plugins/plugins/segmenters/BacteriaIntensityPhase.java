@@ -168,6 +168,11 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         }
         Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<minThld || artefactFunc.apply(r)==-1).collect(Collectors.toSet());
         Set<Region> foregroundL = pop.getRegions().stream().filter(r->values.get(r)>Math.max(globalThreshold, threshold) && !backgroundL.contains(r) && artefactFunc.apply(r)==1).collect(Collectors.toSet());
+        if (foregroundL.isEmpty()) {
+            pop.getRegions().clear();
+            pop.relabel(true);
+            return pop;
+        }
         pop.getRegions().removeAll(backgroundL);
         pop.getRegions().removeAll(foregroundL);
         Region background = Region.merge(backgroundL);
@@ -308,7 +313,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         // get sigma in the middle line of each MC
         Function<StructureObject, float[]> getSigma = p->{
             Image im = p.getPreFilteredImage(structureIdx);
-            MutableBoundingBox bb= new MutableBoundingBox(im).resetOffset().extend(new SimpleBoundingBox(im.sizeX()/4, -im.sizeX()/4, im.sizeX()/4, -im.sizeX()/4, 0, 0)); // only central line to avoid border effects
+            MutableBoundingBox bb= new MutableBoundingBox(im).resetOffset().extend(new SimpleBoundingBox(im.sizeX()/3, -im.sizeX()/3, im.sizeX()/3, -im.sizeX()/3, 0, 0)); // only central line to avoid border effects
             double[] sum = new double[3];
             BoundingBox.loop(bb, (x, y, z)-> {
                 if (p.getMask().insideMask(x, y, z)) {
@@ -327,13 +332,15 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         // 1) criterion for void microchannel track
         double maxSigma = Arrays.stream(musigmas).mapToDouble(f->f[1]).max().getAsDouble(); //ArrayUtil.quantiles(Arrays.stream(musigmas).mapToDouble(f->f[1]).toArray(), 0.99)[0];
         if (maxSigma<voidThldSigma) {
+            logger.debug("parent: {} max sigma: {} all channels considered void: {}", parentTrack.get(0), maxSigma);
             outputVoidMicrochannels.addAll(parentTrack);
             return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         }
         // 2) criterion for void microchannels : low sigma & low intensity value (to avoid removing them when they are full)
         // intensity criterion based on global otsu threshold
         double globalThld = getGlobalOtsuThreshold(parentTrack.stream(), structureIdx);
-        for ( int idx = 0; idx<musigmas.length; ++idx) if (musigmas[idx][1]<voidThldSigma && musigmas[idx][0]<globalThld) outputVoidMicrochannels.add(parentTrack.get(idx));
+        for ( int idx = 0; idx<musigmas.length; ++idx) if (musigmas[idx][1]<voidThldSigma && musigmas[idx][0]<globalThld) outputVoidMicrochannels.add(parentTrack.get(idx)); //
+        logger.debug("parent: {} max sigma: {} global thld: {} void mc {}/{}", parentTrack.get(0), maxSigma, globalThld,outputVoidMicrochannels.size(), parentTrack.size() );
         if (outputVoidMicrochannels.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         // 3) get global otsu thld for images with foreground
         globalThld = getGlobalOtsuThreshold(parentTrack.stream().filter(p->!outputVoidMicrochannels.contains(p)), structureIdx);
@@ -355,7 +362,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             }
             double mean = sum[0]/sum[1];
             minThreshold = (mean+globalThld)/2.0;
-            logger.debug("global threshold on images with forground: [{};{}]", minThreshold, globalThld);
+            logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), minThreshold, globalThld);
         }
         return new double[]{minThreshold, globalThld}; //outputVoidMicrochannels.isEmpty() ? Double.NaN : thld // min threshold was otsu of otsu when there are void channels
     }

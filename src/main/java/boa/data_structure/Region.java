@@ -733,6 +733,7 @@ public class Region {
         return merge(Arrays.asList(regions));
     }
     public static Region merge(Collection<Region> regions) {
+        if (regions==null || regions.isEmpty()) return null;
         if (!Utils.objectsAllHaveSameProperty(regions, r->r.isAbsoluteLandMark())) throw new IllegalArgumentException("Trying to merge regions with different landmarks");
         if (!Utils.objectsAllHaveSameProperty(regions, r->r.is2D)) throw new IllegalArgumentException("Trying to merge 2D with 3D regions");
         Iterator<Region> it = regions.iterator();

@@ -52,14 +52,15 @@ public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        int time =209;
+        int time =105;
         int field = 0;
         //String dbName = "TestThomasRawStacks";
-        //String dbName = "AyaWT_mmglu";
+        String dbName = "AyaWT_mmglu";
         //String dbName = "170919_thomas";
-        String dbName = "MutH_150324";
+        //String dbName = "MutH_150324";
         //String dbName = "MutH_140115";
-        FitMicrochannelHeadToEdges.debugLabel=1;
+        FitMicrochannelHeadToEdges.debugLabel=9;
+        MicrochannelPhase2D.debugIdx=8;
         testSegMicrochannelsFromXP(dbName, field, time);
         //testPostProcessTracking(dbName, field, time);
     }

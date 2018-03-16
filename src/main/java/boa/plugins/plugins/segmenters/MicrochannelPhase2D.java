@@ -51,6 +51,7 @@ import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import static boa.utils.Utils.plotProfile;
+import ij.gui.Plot;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.function.Predicate;
@@ -69,6 +70,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
     Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, localDerExtremaThld}; //sigmaThreshold
     public final static double PEAK_RELATIVE_THLD = 0.6;
     public static boolean debug = false;
+    public static int debugIdx = -1;
     protected String toolTip = "<html><b>Microchannel Segmentation in phase-contrast images:</b>"
             + "<ol><li>Search for optical aberration  y coordinate -> yAberration</li>"
             + "<li>Search for global closed-end y-coordinate of Microchannels: global max of the Y-proj of d/dy -> yEnd</li>"
@@ -241,16 +243,20 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
             } else ++maxIdx;
         }
         
-        // refine Y-coordinate of closed-end for each microchannel
+        // refine Y-coordinate of closed-end for each microchannel. As MC shape is generally ellipsoidal @ close-end, only get the profile in the 1/3-X center part
         if (yClosedEndAdjustWindow>0) {
-            for (int[] peak : peaks) {
-                MutableBoundingBox win = new MutableBoundingBox(peak[0], peak[1], Math.max(0, closedEndY-yClosedEndAdjustWindow), Math.min(imDerY.sizeY()-1, closedEndY+yClosedEndAdjustWindow), 0, 0);
+            for (int idx = 0; idx<peaks.size();++idx) {
+                int[] peak = peaks.get(idx);
+                double sizeX = peak[1]-peak[2]+1;
+                MutableBoundingBox win = new MutableBoundingBox((int)(peak[0]+sizeX/3+0.5), (int)(peak[1]-sizeX/3+0.5), Math.max(0, closedEndY-yClosedEndAdjustWindow), Math.min(imDerY.sizeY()-1, closedEndY+yClosedEndAdjustWindow), 0, 0);
                 float[] proj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, win);
                 List<Integer> localMaxY = ArrayUtil.getRegionalExtrema(proj, 2, true);
                 //peak[2] = ArrayUtil.max(proj)-yStartAdjustWindow;
                 if (localMaxY.isEmpty()) continue;
                 peak[2] = localMaxY.get(0)-yClosedEndAdjustWindow;
-                //if (debug) plotProfile("yProjDerAdjust", proj);
+                if (debug && debugIdx==idx) {
+                    new Plot("Y start adjustment", "y", "Y-der", ArrayUtil.generateFloatArray(win.yMin(), win.yMin()+win.sizeY()), proj).show();
+                }
             }
         }
         Result r= new Result(peaks, closedEndY, aberrationStart);

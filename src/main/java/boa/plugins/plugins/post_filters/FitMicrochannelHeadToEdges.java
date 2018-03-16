@@ -62,7 +62,7 @@ import java.util.stream.Stream;
  */
 public class FitMicrochannelHeadToEdges implements PostFilter {
     protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new Sigma(3).setMedianRadius(2)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map"); //new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)
-    BoundedNumberParameter trimUpperPixels = new BoundedNumberParameter("Trim Upper Pixels", 0, 2, 0, null).setToolTipText("Erase Pixels of a region if they are closer than this value to the background in the upper y-direction");
+    BoundedNumberParameter trimUpperPixels = new BoundedNumberParameter("Trim Upper Pixels", 0, 0, 0, null).setToolTipText("Erase Pixels of a region if they are closer than this value to the background in the upper y-direction");
     BoundedNumberParameter fitMargin = new BoundedNumberParameter("Fit margin", 0, 9, 0, null).setToolTipText("Fit will be done in a window around segmented microchannel, with this margin on the left , right & upper sides");
     BoundedNumberParameter morphoRadius = new BoundedNumberParameter("Open / close radius", 1, 5, 0, null).setToolTipText("Radius for morpholical close (remove small invaginations) and open (remove small protuberances) <br /> 0 for no close & no open");
     BooleanParameter resetBounds = new BooleanParameter("Reset Bounds", true).setToolTipText("Whether bounds should be reset or not. <br />If average mask track-post-filter is set afterwards, bounds should not be reset so that regions can be aligned on their top-left-corner");
