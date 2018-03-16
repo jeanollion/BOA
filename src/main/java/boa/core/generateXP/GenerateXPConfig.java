@@ -41,12 +41,18 @@ public class GenerateXPConfig {
         Experiment xpTrans = GenerateXP.generateXPTrans("MotherMachinePhaseContrast", null, true, 0, 0, Double.NaN);
         exportXP(path, xpTrans, false);
         
-        Experiment xpTransFluo = GenerateXP.generateXPFluo("MotherMachinePhaseContrastAndMutations", null, true, 0, 0, Double.NaN, null);
+        /*Experiment xpTransFluo = GenerateXP.generateXPFluo("MotherMachinePhaseContrastAndMutations", null, true, 0, 0, Double.NaN, null);
         GenerateXP.setParametersPhase(xpTransFluo, true, false);
         PreProcessingChain ps = xpTransFluo.getPreProcessingTemplate();
         ps.removeAllTransformations();
         GenerateXP.setPreprocessingTransAndMut(ps, 0, 0, Double.NaN);
-        exportXP(path, xpTransFluo, false);
+        exportXP(path, xpTransFluo, false);*/
+        
+        // XP THOMAS
+        //Experiment xpTransJULOU = GenerateXP.generateXPTrans("MotherMachinePhaseContrastJULOU", null, true, 0, 0, Double.NaN);
+        //xpTransJULOU.getChannelImages().
+        //exportXP(path, xpTransJULOU, false);
+        
         
     }
     private static void exportXP(String dir, Experiment xp, boolean zip) {

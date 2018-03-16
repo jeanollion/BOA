@@ -57,7 +57,7 @@ public class BacteriaSpineLocalizer {
     public BacteriaSpineLocalizer(Region bacteria) {
         this.bacteria=bacteria;
         long t0 = System.currentTimeMillis();
-        spine = BacteriaSpineFactory.createSpine(bacteria);
+        spine = BacteriaSpineFactory.createSpine(bacteria, true);
         long t1 = System.currentTimeMillis();
         //List<PointContainer2<Vector, Double>> spList = new ArrayList<>(Arrays.asList(spine)); // KD tree shuffles elements -> new list
         //this.spineKDTree = new KDTree<>(spList, spList);

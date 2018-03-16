@@ -197,7 +197,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
                 it.remove();
                 allElements.remove(i.getE2());
                 i.performFusion();
-                if (updateInterfacesAfterFusion(i, interfaces)) { // if any change in the interface treeset, recompute the iterator
+                if (updateInterfacesAfterFusion(i)) { // if any change in the interface treeset, recompute the iterator
                     //Collections.sort(interfaces);
                     it=interfaces.iterator();
                 } 
@@ -225,7 +225,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
      * @param i
      * @return true if changes were made in the interfaces set
      */
-    protected boolean updateInterfacesAfterFusion(I i, Collection<I> interfaces) {
+    protected boolean updateInterfacesAfterFusion(I i) {
         Collection<I> l1 = interfaceByElement.get(i.getE1());
         Collection<I> l2 = interfaceByElement.remove(i.getE2());
         boolean change = false;

@@ -114,7 +114,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
      */
     public RegionPopulation merge(RegionPopulation popWS, int numberOfObjectsToKeep) {
         RegionCluster.verbose=testMode;
-        RegionCluster<I> c = new RegionCluster<>(popWS, false, true, getFactory());
+        RegionCluster<I> c = new RegionCluster<>(popWS, null, true, getFactory()); // TODO INCLUDE BACKGROUND
         c.addForbidFusionPredicate(forbidFusion);
         c.mergeSort(numberOfObjectsToKeep<=1, 0, numberOfObjectsToKeep);
         //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
@@ -146,7 +146,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
         return popWS;
     }
     public RegionCluster<I> getInterfaces(RegionPopulation population, boolean lowConnectivity) {
-        return new RegionCluster<>(population, false, lowConnectivity, getFactory());
+        return new RegionCluster<>(population, lowConnectivity, getFactory());
     }
     public final BiFunction<? super I, ? super I, Integer> compareBySize(boolean largerFirst) {
         return (i1, i2) -> {

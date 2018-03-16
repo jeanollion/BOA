@@ -20,7 +20,13 @@ package boa.measurement;
 
 import boa.data_structure.Region;
 import boa.data_structure.Voxel;
+import boa.image.BoundingBox;
 import boa.image.Image;
+import boa.image.ImageFloat;
+import boa.image.ImageInteger;
+import boa.image.SimpleBoundingBox;
+import boa.image.processing.EDT;
+import boa.image.processing.Filters;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import boa.image.processing.localthickness.LocalThickness;
 import java.util.ArrayList;
@@ -58,12 +64,24 @@ public class GeometricalMeasurements {
         }
         return Math.sqrt(d2Max);
     }
-    public static double getSpineLength(Region r) {
-        PointContainer2<?, Double>[] spine = BacteriaSpineFactory.createSpine(r);
+    public static double getDistanceMapWidth(Region r) {
+        ImageFloat edt = EDT.transform(r.getMask(), true, 1, r.getScaleZ()/r.getScaleXY(), 1);
+        Filters.LocalMax lm = new Filters.LocalMax(r.getMask());
+        lm.setUp(edt, Filters.getNeighborhood(1.5, edt));
+        List<Double> localMax= new ArrayList<>();
+        BoundingBox.loop(new SimpleBoundingBox(edt).resetOffset(), (x, y, z)-> {
+            if (lm.applyFilter(x, y, z)>0) localMax.add((double)edt.getPixel(x, y, z));
+        });
+        return ArrayUtil.median(localMax) * 2;
+    }
+    
+    public static double getSpineLength(Region r, boolean tryToFillHoles) {
+        PointContainer2<?, Double>[] spine = BacteriaSpineFactory.createSpine(r, tryToFillHoles);
         return spine[spine.length-1].getContent2();
     }
-    public static double[] getSpineLengthAndWidth(Region r) {
-        PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(r);
+    public static double[] getSpineLengthAndWidth(Region r, boolean tryToFillHoles) {
+        PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(r, tryToFillHoles);
+        if (spine==null) return new double[]{Double.NaN, Double.NaN};
         double width = ArrayUtil.median(Arrays.stream(spine).mapToDouble(s->s.getContent1().norm()).toArray());
         double length = spine[spine.length-1].getContent2();
         return new double[]{length, width};

@@ -122,7 +122,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
     public RegionPopulation merge(RegionPopulation popWS, int objectMergeLimit) {
         if (distanceMap == null && (useThicknessCriterion || curvaturePerCluster)) setDistanceMap(popWS.getLabelMap());
         popWS.smoothRegions(2, true, null);
-        RegionCluster<InterfaceLocalShape> c = new RegionCluster(popWS, false, true, getFactory());
+        RegionCluster<InterfaceLocalShape> c = new RegionCluster(popWS, true, getFactory());
         c.addForbidFusionPredicate(forbidFusion);
         RegionCluster.verbose=this.testMode;
         if (minSizeFusion>0) c.mergeSmallObjects(minSizeFusion, objectMergeLimit, null);
@@ -417,6 +417,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             addVoxel(getEDM(), v2);
         }
         private void addVoxel(Image image, Voxel v) {
+            if (!image.contains(v.x, v.y, v.z)) return;
             double pixVal =image!=null ? image.getPixel(v.x, v.y, v.z) : 0;
             if (pixVal>maxDistance) {
                 maxDistance = pixVal;

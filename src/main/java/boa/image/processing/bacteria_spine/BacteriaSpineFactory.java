@@ -113,7 +113,7 @@ public class BacteriaSpineFactory {
         return spineImage;
     }
     
-    public static PointContainer2<Vector, Double>[] createSpine(Region bacteria) {
+    public static PointContainer2<Vector, Double>[] createSpine(Region bacteria, boolean tryToFillHolesIfNecessary) {
         if (!bacteria.is2D()) throw new IllegalArgumentException("Only works on 2D regions");
         Point center = bacteria.getGeomCenter(false);
         Set<Voxel> contour = bacteria.getContour();
@@ -122,6 +122,8 @@ public class BacteriaSpineFactory {
             circContour = getCircularContour(contour, center);
         } catch (RuntimeException e) {
             logger.error("error creating spine: ", e);
+            if (!tryToFillHolesIfNecessary) return null;
+            
             // retry after filling holes
             ImageByte newMask = TypeConverter.toByteMask(bacteria.getMask(), null, 1);
             FillHoles2D.fillHoles(newMask, 2);

@@ -144,8 +144,8 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     }
     @Override 
     protected RegionPopulation filterRegionAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        return pop;
-        //return filterBorderArtefacts(parent, structureIdx, pop);
+        //return pop;
+        return filterBorderArtefacts(parent, structureIdx, pop);
     }
     @Override
     protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
@@ -154,17 +154,17 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         if (Double.isNaN(threshold)) { // if need to compute thld -> compute thld
             Image valueMap = EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values);
             threshold = threhsolder.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
-            if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("value map. thld = "+threshold));
-        } else if (testMode)  ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values).setName("value map. thld = "+threshold));
+            if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("value map. thld = "+threshold+" global: "+globalThreshold+ " min thld:"+minThld));
+        } else if (testMode)  ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values).setName("value map. thld = "+threshold+" global: "+globalThreshold+ " min thld:"+minThld));
         if (!Double.isNaN(minThld)) threshold = Math.max(minThld, threshold);
         if (Double.isNaN(globalThreshold)) globalThreshold = threshold;
-        // define 3 categories: background / forground / intertermined
+        // define 3 categories: background / forground / unknown
         // foreground -> high intensity, foreground -> low intensity -> merge them
         Function<Region, Integer> artefactFunc = getFilterBorderArtefacts(parent, structureIdx);
         if (testMode) {
             Map<Region, Double> valuesArt = pop.getRegions().stream().collect(Collectors.toMap(r->r, r->artefactFunc.apply(r)+2d));
             ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), valuesArt).setName("artefact map"));
-            
+            ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("region before artefact filter"));
         }
         Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<minThld || artefactFunc.apply(r)==-1).collect(Collectors.toSet());
         Set<Region> foregroundL = pop.getRegions().stream().filter(r->values.get(r)>Math.max(globalThreshold, threshold) && !backgroundL.contains(r) && artefactFunc.apply(r)==1).collect(Collectors.toSet());
@@ -198,7 +198,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
      */
     protected RegionPopulation filterBorderArtefacts(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
         Function<Region, Integer> artifactFunc  = getFilterBorderArtefacts(parent, structureIdx);
-        pop.filter(r->artifactFunc.apply(r)>=0);
+        pop.filter(r->artifactFunc.apply(r)>=0 && (Double.isNaN(minThld) || splitAndMerge.getMedianValues().getAndCreateIfNecessary(r)>minThld));
         return pop;
     }
     /**
@@ -216,18 +216,20 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         ContactBorderMask contactLeft = new ContactBorderMask(1, parent.getMask(), Border.Xl);
         ContactBorderMask contactRight = new ContactBorderMask(1, parent.getMask(), Border.Xr);
         double thicknessLimitKeep = parent.getMask().sizeX() * 0.5;  // OVER this thickness objects are kept
-        double thicknessLimitRemove = Math.max(4, parent.getMask().sizeX() * 0.33); // UNDER THIS VALUE other might be artefacts
+        double thicknessLimitRemove = Math.max(4, parent.getMask().sizeX() * 0.25); // UNDER THIS VALUE other might be artefacts
         Function<Region, Integer> f1 = r->{
             int cL = contactLeft.getContact(r);
             int cR = contactRight.getContact(r);
             if (cL==0 && cR ==0) return 1;
             int c = Math.max(cL, cR);
-            double thickX = GeometricalMeasurements.meanThicknessX(r);
-            if (thickX>thicknessLimitKeep) return 1;
+            //double thick = GeometricalMeasurements.getDistanceMapWidth(r);
+            //double length = r.size() / thick;
+            double thick = GeometricalMeasurements.maxThicknessX(r);
+            if (thick>thicknessLimitKeep) return 1;
             double thickY = GeometricalMeasurements.meanThicknessY(r);
-            if (verbose) logger.debug("artefact: thickX: {}/{} contact: {}/{}", thickX, thicknessLimitRemove, c, thickY*0.5);
-            if (c < thickY*0.25) return 1; // if contact with either L or right should be enough
-            if (thickX<=thicknessLimitRemove && c>thickY*0.9) return -1; // thin objects stuck to the border 
+            if (verbose) logger.debug("R: {} artefact: thick: {}/{} (mean: {}) contact: {}/{} ", r.getLabel(), thick, thicknessLimitRemove, GeometricalMeasurements.meanThicknessX(r), c, thickY);
+            if (c < thickY*0.25) return 1; // contact with either L or right should be enough
+            if (thick<=thicknessLimitRemove && c>thickY*0.9) return -1; // thin objects stuck to the border 
             return 0;
             //return false;
             //return BasicMeasurements.getQuantileValue(r, intensity, 0.5)[0]>globThld; // avoid removing foreground
@@ -346,24 +348,22 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         globalThld = getGlobalOtsuThreshold(parentTrack.stream().filter(p->!outputVoidMicrochannels.contains(p)), structureIdx);
         
         // 4) estimate a minimal threshold : middle point between mean value under global threshold and global threshold
-        double minThreshold = Double.NaN;
-        if (this.thresholdMethod.getSelectedIndex()==0) {
-            double[] sum = new double[3];
-            double thld = globalThld;
-            for (StructureObject p : parentTrack) {
-                Image im = p.getPreFilteredImage(structureIdx);
-                ImageMask.loop(p.getMask(), (x, y, z)-> {
-                    double v = im.getPixel(x, y, z);
-                    if (v<thld) {
-                        sum[0]+=v;
-                        sum[1]++;
-                    }
-                });
-            }
-            double mean = sum[0]/sum[1];
-            minThreshold = (mean+globalThld)/2.0;
-            logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), minThreshold, globalThld);
+        double[] sum = new double[3];
+        double thld = globalThld;
+        for (StructureObject p : parentTrack) {
+            Image im = p.getPreFilteredImage(structureIdx);
+            ImageMask.loop(p.getMask(), (x, y, z)-> {
+                double v = im.getPixel(x, y, z);
+                if (v<thld) {
+                    sum[0]+=v;
+                    sum[1]++;
+                }
+            });
         }
+        double mean = sum[0]/sum[1];
+        double minThreshold = (mean+globalThld)/2.0;
+        logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), minThreshold, globalThld);
+
         return new double[]{minThreshold, globalThld}; //outputVoidMicrochannels.isEmpty() ? Double.NaN : thld // min threshold was otsu of otsu when there are void channels
     }
     private static double getGlobalOtsuThreshold(Stream<StructureObject> parent, int structureIdx) {

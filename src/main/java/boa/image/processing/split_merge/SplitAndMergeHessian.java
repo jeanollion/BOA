@@ -59,7 +59,6 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
                 return Double.NaN;
             } else {
                 double hessSum = 0, intensitySum = 0;
-                getHessian();
                 for (Voxel v : voxels) {
                     hessSum+=hessian.getPixel(v.x, v.y, v.z);
                     intensitySum += intensityMap.getPixel(v.x, v.y, v.z);
@@ -104,6 +103,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
     
     @Override
     protected ClusterCollection.InterfaceFactory<Region, Interface> createFactory() {
+        getHessian(); // ensure hessian creation, as hessian is needed for interface value computation
         return (Region e1, Region e2) -> new Interface(e1, e2);
     }
     
@@ -137,8 +137,8 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
 
         @Override
         public void addPair(Voxel v1, Voxel v2) {
-           voxels.add(v1);
-           voxels.add(v2);
+           if (hessian.contains(v1.x, v1.y, v1.z)) voxels.add(v1);
+           if (hessian.contains(v2.x, v2.y, v2.z)) voxels.add(v2);
         }
 
         @Override

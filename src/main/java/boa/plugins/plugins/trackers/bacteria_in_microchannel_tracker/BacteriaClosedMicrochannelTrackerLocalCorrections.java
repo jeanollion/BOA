@@ -570,7 +570,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             case 1:
                 return GeometricalMeasurements.getFeretMax(o);
             case 2:
-                return GeometricalMeasurements.getSpineLength(o);
+                return GeometricalMeasurements.getSpineLength(o, true);
         }
     }
     /**

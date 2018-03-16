@@ -68,10 +68,10 @@ public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        
+        String dbName = "170919_thomas";
         //String dbName = "MF1_170523";
         //String dbName = "MutD5_141209";
-        String dbName = "MutH_150324";
+        //String dbName = "MutH_150324";
         //String dbName = "MutH_140115";
         //String dbName = "Aya2";
         //String dbName = "AyaWT_mmglu";
@@ -79,8 +79,8 @@ public class TestProcessBacteriaPhase {
         //String dbName = "WT_150616";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =3;
-        int[] time =new int[]{21, 21}; //22
+        int microChannel =2;
+        int[] time =new int[]{0, 32}; //22
         //setMask=true;
         //thld = 776;
         

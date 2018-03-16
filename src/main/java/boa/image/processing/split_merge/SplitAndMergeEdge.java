@@ -76,7 +76,7 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
 
     public BiFunction<? super Interface, ? super Interface, Integer> compareMethod=null;
     public Image drawInterfaceValues(RegionPopulation pop) {
-        return RegionCluster.drawInterfaceValues(new RegionCluster<>(pop, false, true, getFactory()), i->{i.updateInterface(); return i.value;});
+        return RegionCluster.drawInterfaceValues(new RegionCluster<>(pop, true, getFactory()), i->{i.updateInterface(); return i.value;});
     }
     public SplitAndMergeEdge setInterfaceValue(Function<Interface, Double> interfaceValue) {
         this.interfaceValue=interfaceValue;
@@ -133,8 +133,8 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
 
         @Override
         public void addPair(Voxel v1, Voxel v2) {
-           voxels.add(v1);
-           voxels.add(v2);
+           if (edge.contains(v1.x, v1.y, v1.z)) voxels.add(v1);
+           if (edge.contains(v2.x, v2.y, v2.z)) voxels.add(v2);
         }
 
         @Override

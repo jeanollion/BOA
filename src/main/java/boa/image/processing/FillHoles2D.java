@@ -22,6 +22,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
+import boa.image.BlankMask;
 import ij.ImageStack;
 import ij.process.FloodFiller;
 import ij.process.ImageProcessor;
@@ -150,7 +151,7 @@ public class FillHoles2D {
             allObjects.addAll(foregroundObjects.getRegions());
             RegionPopulation mixedPop = new RegionPopulation(allObjects, population.getImageProperties());
             mixedPop.relabel();
-            clust = new RegionCluster(mixedPop, true, false, f); // high connectivity -> more selective 
+            clust = new RegionCluster(mixedPop, new BlankMask(foregroundObjects.getImageProperties()), false, f); // high connectivity -> more selective 
             //if (debug) new IJImageDisplayer().showImage(RegionCluster.drawInterfaces(clust));
         }
         private Map<Integer, Integer> getInterfaceSize(Region o) {

@@ -233,7 +233,7 @@ public class BacteriaIntensity implements SegmenterSplitAndMerge, ManualSegmente
             currentParent = parent;
             splitAndMerge = initializeSplitAndMerge(parent, structureIdx, parent.getMask());
         }
-        RegionCluster c = new RegionCluster(mergePop, false, true, splitAndMerge.getFactory());
+        RegionCluster c = new RegionCluster(mergePop, true, splitAndMerge.getFactory());
         List<Set<Region>> clusters = c.getClusters();
         if (clusters.size()>1) { // merge impossible : presence of disconnected objects
             if (testMode) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());

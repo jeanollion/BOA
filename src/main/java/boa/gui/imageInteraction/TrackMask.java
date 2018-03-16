@@ -143,9 +143,10 @@ public abstract class TrackMask extends ImageObjectInterface {
         } else {
             boolean[] pastedImage = new boolean[trackOffset.length];
             pastedImage[0] = true;
+            int frame0= parents.get(0).getFrame();
             Predicate<BoundingBox> callBack  = bounds -> {
-                int idxMin = getClosestFrame(bounds.xMin(), bounds.yMin());
-                int idxMax = getClosestFrame(bounds.xMax(), bounds.yMax());
+                int idxMin = getClosestFrame(bounds.xMin(), bounds.yMin())-frame0;
+                int idxMax = getClosestFrame(bounds.xMax(), bounds.yMax())-frame0;
                 boolean imageHasBeenPasted = false;
                 for (int i = idxMin; i<=idxMax; ++i) {
                     if (!pastedImage[i]) {

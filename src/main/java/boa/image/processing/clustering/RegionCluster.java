@@ -23,12 +23,14 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.image.BlankMask;
 import static boa.image.BoundingBox.isIncluded;
 import static boa.image.BoundingBox.isIncluded2D;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
+import boa.image.ImageMask;
 import boa.image.ImageShort;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +45,7 @@ import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
+import java.util.Iterator;
 import java.util.function.Predicate;
 
 /**
@@ -51,20 +54,28 @@ import java.util.function.Predicate;
  */
 public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollection<Region, I> {
     RegionPopulation population;
+    ImageMask backgroundMask;
+    Region backgroundRegion;
     //public boolean testMode = false;
     public final static Comparator<Region> regionComparator = (Region o1, Region o2) -> Integer.compare(o1.getLabel(), o2.getLabel());
-    
-    public RegionCluster(RegionPopulation population, boolean background, boolean lowConnectivity, InterfaceFactory<Region, I> interfaceFactory) {
+    public RegionCluster(RegionPopulation population, boolean lowConnectivity, InterfaceFactory<Region, I> interfaceFactory) {
+        this(population, null, lowConnectivity, interfaceFactory);
+    }
+    public RegionCluster(RegionPopulation population, ImageMask backgroundMask, boolean lowConnectivity, InterfaceFactory<Region, I> interfaceFactory) {
         super(population.getRegions(), regionComparator, interfaceFactory);
         this.population=population;
-        setInterfaces(background, lowConnectivity);
+        this.backgroundMask = backgroundMask==null ? new BlankMask(population.getImageProperties()) : backgroundMask;
+        setInterfaces(backgroundMask!=null, lowConnectivity);
     }
     
     
     protected void setInterfaces(boolean background, boolean lowConnectivity) {
         Map<Integer, Region> objects = new HashMap<>();
         for (Region o : population.getRegions()) objects.put(o.getLabel(), o);
-        if (background) objects.put(0, new Region(new HashSet<>(), 0, population.getImageProperties(), population.getImageProperties().sizeZ()==1, population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
+        if (background) {
+            backgroundRegion = new Region(new HashSet<>(), 0, population.getImageProperties(), population.getImageProperties().sizeZ()==1, population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ());
+            objects.put(0, backgroundRegion);
+        }
         ImageInteger inputLabels = population.getLabelMap();
         Voxel n;
         int otherLabel;
@@ -74,7 +85,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
                 vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region, because voxel can overlap & voxel can be used to store values interface-wise
                 for (int i = 0; i<neigh.length; ++i) {
                     n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]); // only forward for interaction with other spots & background
-                    if (inputLabels.contains(n.x, n.y, n.z)) { 
+                    if (inputLabels.contains(n.x, n.y, n.z) && backgroundMask.insideMask(n.x, n.y, n.z)) { 
                         otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
                         if (otherLabel!=o.getLabel()) {
                             if (background || otherLabel!=0) {
@@ -131,7 +142,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     }
     
     public static <I extends InterfaceRegion<I>> void mergeSort(RegionPopulation population, InterfaceFactory<Region, I> interfaceFactory, boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
-        RegionCluster<I> c = new RegionCluster<>(population, false, true, interfaceFactory);
+        RegionCluster<I> c = new RegionCluster<>(population, null, true, interfaceFactory);
         c.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
     }
     
@@ -167,7 +178,20 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         if (nInit > population.getRegions().size()) population.relabel(true);
         return population.getRegions();
     }
-    
+    public void mergeBackgroundObjectsWithBackground(Predicate<Region> isBackgroundObject) {
+        if (backgroundRegion==null) throw new IllegalArgumentException("Backgorund not active");
+        Iterator<Region> it = population.getRegions().iterator();
+        while (it.hasNext()) {
+            Region n = it.next();
+            if (isBackgroundObject.test(n)) {
+                I i = getInterface(backgroundRegion, n, true);
+                i.performFusion();
+                updateInterfacesAfterFusion(i);
+                it.remove();
+                interfaces.remove(i);
+            }
+        }
+    }
     public void mergeSmallObjects(double sizeLimit, int numberOfObjecsToKeep, BiFunction<Region, Set<Region>, Region> noInterfaceCase) {
         if (numberOfObjecsToKeep<0) numberOfObjecsToKeep=0;
         for (I i : interfaces) i.updateInterface();
@@ -186,7 +210,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
                 if (strongestInterface!=null) {
                     if (verbose) logger.debug("mergeSmallObjects: {}, size: {}, interface: {}, all: {}", s.getLabel(), s.size(), strongestInterface, inter);
                     strongestInterface.performFusion();
-                    updateInterfacesAfterFusion(strongestInterface, interfaces);
+                    updateInterfacesAfterFusion(strongestInterface);
                     allElements.remove(strongestInterface.getE2());
                     interfaces.remove(strongestInterface);
                     queue.remove(strongestInterface.getE2());
@@ -226,7 +250,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     }
     
     public static void mergeUntil(RegionPopulation pop, int objectLimit, int interfaceLimit) {
-        RegionCluster<SimpleInterfaceVoxelSet> cluster = new RegionCluster<>(pop, false, false, SimpleInterfaceVoxelSet.interfaceFactory());
+        RegionCluster<SimpleInterfaceVoxelSet> cluster = new RegionCluster<>(pop, false, SimpleInterfaceVoxelSet.interfaceFactory());
         cluster.mergeSort(false, interfaceLimit, objectLimit);
     }
 }
