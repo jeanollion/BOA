@@ -258,7 +258,7 @@ public class Assignment {
                         double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
                         if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                     }
-                    if (this.nextObjects.size()>1 && this.prevObjects.size()>1) { // remove prev&next
+                    if (this.nextObjects.size()>1 && this.prevObjects.size()>1) { // remove prev & next
                         Assignment other = this.duplicate(ta);
                         other.remove(true, false);
                         other.remove(false, false);
@@ -270,6 +270,15 @@ public class Assignment {
                         if (other.incrementNext()) {
                             double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
                             if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                            else if (other.incrementPrev() && other.prevFromPrevObject()){ // also try to add prev & next. This scenario need to be limited, if not it can grow easily
+                                otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                                if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                                /*Assignment other2 = new Assignment(ta, idxPrevEnd(), idxNextEnd());
+                                other2.incrementNext();
+                                other2.incrementPrev();
+                                double otherDelta2 = other2.getPreviousSizeIncrement() * other2.sizePrev - other2.sizeNext;
+                                if (Math.abs(otherDelta)<(Math.abs(currentDelta)+Math.abs(otherDelta2))/2d) deltaSizeMapAssignmentCandidate.put(otherDelta, other);*/
+                            }
                         }
                     }
                 } else if (currentDelta<0) {
@@ -279,7 +288,7 @@ public class Assignment {
                         double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
                         if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                     }
-                    if (this.nextObjects.size()>1 && this.prevObjects.size()>1) { // remove prev&next
+                    if (this.nextObjects.size()>1 && this.prevObjects.size()>1) { // remove prev & next
                         Assignment other = this.duplicate(ta);
                         other.remove(true, false);
                         other.remove(false, false);
@@ -291,6 +300,16 @@ public class Assignment {
                         if (other.incrementPrev()) {
                             double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
                             if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                            else if (other.incrementNext() && other.prevFromPrevObject()) { // also try to add next
+                                otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                                if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
+                                /*Assignment other2 = new Assignment(ta, idxPrevEnd(), idxNextEnd());
+                                other2.incrementNext();
+                                other2.incrementPrev();
+                                otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                                double otherDelta2 = other2.getPreviousSizeIncrement() * other2.sizePrev - other2.sizeNext;
+                                if (Math.abs(otherDelta)<(Math.abs(currentDelta)+Math.abs(otherDelta2))/2d) deltaSizeMapAssignmentCandidate.put(otherDelta, other);*/
+                            }
                         }
                     }
                 }

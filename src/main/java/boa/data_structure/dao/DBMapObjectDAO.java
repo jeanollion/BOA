@@ -360,7 +360,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         logger.debug("clearing cache for Dao: {} / objects: {}, measurements: {}", this.positionName, this.dbS.keySet(), this.measurementdbS.keySet());
         applyOnAllOpenedObjects(o->{
             o.flushImages();
-            if (o.hasObject()) o.getRegion().clearVoxels();
+            if (o.hasRegion()) o.getRegion().clearVoxels();
         }); // free memory in case objects are stored elsewhere (eg selection, tack mask...)
         cache.clear();
         allObjectsRetrievedInCache.clear();

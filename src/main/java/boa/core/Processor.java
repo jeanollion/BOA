@@ -247,7 +247,12 @@ public class Processor {
             } catch(Exception e) {
                 throw e;
             } finally {
-                for (StructureObject o : parentTrack) o.setPreFilteredImage(null, structureIdx); // erase preFiltered images
+                parentTrack.stream().map((p) -> {
+                    p.setPreFilteredImage(null, structureIdx); // erase preFiltered images
+                    return p;
+                }).filter((p) -> (p.hasChildren(structureIdx))).forEachOrdered((p) -> {
+                    p.getChildren(structureIdx).stream().filter((c) -> (c.hasRegion())).forEachOrdered((c) -> c.getRegion().clearVoxels());
+                }); 
                 logger.debug("prefiltered images erased: {} for structure: {}", parentTrack.get(0), structureIdx);
             }
         }
