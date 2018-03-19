@@ -74,6 +74,10 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         this.resetBounds.setSelected(resetBounds);
         return this;
     }
+    public FitMicrochannelHeadToEdges setTrimUpperPixels(int trimUpperPixels) {
+        this.trimUpperPixels.setValue(trimUpperPixels);
+        return this;
+    }
     
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {

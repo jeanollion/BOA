@@ -567,7 +567,7 @@ public class GenerateXP {
             mcpc.addTrackPostFilters(
                 new TrackLengthFilter().setMinSize(10),  
                 new RemoveTracksStartingAfterFrame(),
-                new SegmentationPostFilter().addPostFilters(new FitMicrochannelHeadToEdges().setResetBounds(true))//,
+                new SegmentationPostFilter().addPostFilters(new FitMicrochannelHeadToEdges().setResetBounds(true).setTrimUpperPixels(2))//,
                 //new AverageMask()
             );
             
