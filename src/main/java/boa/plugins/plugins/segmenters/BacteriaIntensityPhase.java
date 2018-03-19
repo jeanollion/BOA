@@ -182,6 +182,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         pop.relabel(false);
         if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back fusion"));
         SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false);
+        sm.allowMergeWithBackground(parent.getMask());
         sm.addForbidFusionForegroundBackground(r->r==background, r->r==foreground);
         sm.merge(pop, 2); // merge intertermined until 2 categories in the image
         pop.getRegions().remove(background);

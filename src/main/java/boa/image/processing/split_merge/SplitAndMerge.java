@@ -54,6 +54,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
     protected HashMapGetCreate<Region, Double> medianValues;
     protected Image intensityMap;
     boolean wsMapIsEdgeMap = true, localMinOnSeedMap=true;
+    ImageMask foregroundMask;
     public void setTestMode(boolean testMode) {
         this.testMode = testMode;
     }
@@ -71,6 +72,17 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
 
     public Image getIntensityMap() {
         return intensityMap;
+    }
+    /**
+     * Allows merging of objects with a background object corresponding to the outter contour of the {@param foregroundMask}, allowing out-of-bound voxels
+     * Voxels added to the interface can be out of the bounds of forground mask, a {@link Image#contains(int, int, int) } check should be done in the {@link InterfaceRegionImpl#addPair(boa.data_structure.Voxel, boa.data_structure.Voxel)} method
+     * @param <T> type of split and merge instance
+     * @param foregroundMask mask defining foreground, background is outside is mask 
+     * @return same instance for convinience
+     */
+    public <T extends SplitAndMerge> T allowMergeWithBackground(ImageMask foregroundMask) {
+        this.foregroundMask= foregroundMask;
+        return (T)this;
     }
     public abstract Image getSeedCreationMap();
     public abstract Image getWatershedMap();
@@ -114,7 +126,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
      */
     public RegionPopulation merge(RegionPopulation popWS, int numberOfObjectsToKeep) {
         RegionCluster.verbose=testMode;
-        RegionCluster<I> c = new RegionCluster<>(popWS, null, true, getFactory()); // TODO INCLUDE BACKGROUND
+        RegionCluster<I> c = new RegionCluster<>(popWS, foregroundMask, true, getFactory()); // TODO INCLUDE BACKGROUND
         c.addForbidFusionPredicate(forbidFusion);
         c.mergeSort(numberOfObjectsToKeep<=1, 0, numberOfObjectsToKeep);
         //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));

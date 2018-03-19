@@ -27,5 +27,12 @@ import java.util.Collection;
  * @author jollion
  */
 public interface InterfaceRegion<T extends Interface<Region, T>> extends Interface<Region, T> {
+    /**
+     * Adds the pair of voxels to the interface
+     * {@param v1} and {@param v2} correspond respectively to regions returned by {@link InterfaceRegion#getE1() } & {@link InterfaceRegion#getE2() }
+     * If {@link RegionCluster} has a foreground mask, ie allows fusion to the backgorund object, {@param v1} can be out-of-bounds so a bound check should be performed
+     * @param v1
+     * @param v2 
+     */
     public abstract void addPair(Voxel v1, Voxel v2);
 }

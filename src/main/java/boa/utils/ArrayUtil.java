@@ -487,6 +487,15 @@ public class ArrayUtil {
         if (delta==0 || idx==array.length-1) return array[idxInf];
         else return array[idxInf] * (1-delta) + array[idxInf+1] * delta;
     }
+    public static double quantile(double[] array, double q) {
+        if (array.length==0) return Double.NaN;
+        Arrays.sort(array);
+        double idx = (array.length-1)*q;
+        int idxInf = (int)idx;
+        double delta = idx - idxInf;
+        if (delta==0 || idx==array.length-1) return array[idxInf];
+        else return array[idxInf] * (1-delta) + array[idxInf+1] * delta;
+    }
     public static double[] quantiles(float[] values, double... quantile) {
         if (quantile.length==0) return new double[0];
         Arrays.sort(values);

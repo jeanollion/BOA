@@ -38,6 +38,8 @@ import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.split_merge.SplitAndMergeHessian.Interface;
+import boa.utils.ArrayUtil;
+import java.util.stream.Stream;
 
 /**
  *
@@ -54,16 +56,15 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
         splitThresholdValue=splitThreshold;
         this.hessianScale=hessianScale;
         interfaceValue = i->{
-            Collection<Voxel> voxels = i.getVoxels();
-            if (voxels.isEmpty()) {
+            if (i.getVoxels().isEmpty()) {
                 return Double.NaN;
             } else {
-                double hessSum = 0, intensitySum = 0;
-                for (Voxel v : voxels) {
-                    hessSum+=hessian.getPixel(v.x, v.y, v.z);
-                    intensitySum += intensityMap.getPixel(v.x, v.y, v.z);
-                }
-                return hessSum / intensitySum;
+                double[] sum = new double[2];
+                Stream.concat(i.voxels.stream(), i.duplicatedVoxels.stream()).forEach(v->{
+                    sum[0]+=hessian.getPixel(v.x, v.y, v.z);
+                    sum[1]+=intensityMap.getPixel(v.x, v.y, v.z);
+                });
+                return sum[0] / sum[1];
             }
         };
     }
@@ -111,9 +112,11 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
     public class Interface extends InterfaceRegionImpl<Interface> implements RegionCluster.InterfaceVoxels<Interface> {
         public double value;
         Set<Voxel> voxels;
+        Set<Voxel> duplicatedVoxels;
         public Interface(Region e1, Region e2) {
             super(e1, e2);
             voxels = new HashSet<>();
+            duplicatedVoxels = new HashSet<>();
         }
 
         @Override public void updateInterface() {
@@ -125,6 +128,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
             //fusionInterfaceSetElements(otherInterface, elementComparator);
             Interface other = otherInterface;
             voxels.addAll(other.voxels); 
+            duplicatedVoxels.addAll(other.duplicatedVoxels);
             value = Double.NaN;// updateSortValue will be called afterwards
         }
 
@@ -137,8 +141,9 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
 
         @Override
         public void addPair(Voxel v1, Voxel v2) {
-           if (hessian.contains(v1.x, v1.y, v1.z)) voxels.add(v1);
-           if (hessian.contains(v2.x, v2.y, v2.z)) voxels.add(v2);
+            if (foregroundMask==null || !foregroundMask.contains(v1.x, v1.y, v1.z)) duplicatedVoxels.add(v2);
+            else  voxels.add(v1);
+            voxels.add(v2);
         }
 
         @Override

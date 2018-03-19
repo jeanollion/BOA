@@ -54,18 +54,18 @@ import java.util.function.Predicate;
  */
 public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollection<Region, I> {
     RegionPopulation population;
-    ImageMask backgroundMask;
+    ImageMask foregroundMask;
     Region backgroundRegion;
     //public boolean testMode = false;
     public final static Comparator<Region> regionComparator = (Region o1, Region o2) -> Integer.compare(o1.getLabel(), o2.getLabel());
     public RegionCluster(RegionPopulation population, boolean lowConnectivity, InterfaceFactory<Region, I> interfaceFactory) {
         this(population, null, lowConnectivity, interfaceFactory);
     }
-    public RegionCluster(RegionPopulation population, ImageMask backgroundMask, boolean lowConnectivity, InterfaceFactory<Region, I> interfaceFactory) {
+    public RegionCluster(RegionPopulation population, ImageMask foregroundMask, boolean lowConnectivity, InterfaceFactory<Region, I> interfaceFactory) {
         super(population.getRegions(), regionComparator, interfaceFactory);
         this.population=population;
-        this.backgroundMask = backgroundMask==null ? new BlankMask(population.getImageProperties()) : backgroundMask;
-        setInterfaces(backgroundMask!=null, lowConnectivity);
+        this.foregroundMask = foregroundMask==null ? new BlankMask(population.getImageProperties()) : foregroundMask;
+        setInterfaces(foregroundMask!=null, lowConnectivity);
     }
     
     
@@ -85,7 +85,7 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
                 vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region, because voxel can overlap & voxel can be used to store values interface-wise
                 for (int i = 0; i<neigh.length; ++i) {
                     n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]); // only forward for interaction with other spots & background
-                    if (inputLabels.contains(n.x, n.y, n.z) && backgroundMask.insideMask(n.x, n.y, n.z)) { 
+                    if (inputLabels.contains(n.x, n.y, n.z) && foregroundMask.insideMask(n.x, n.y, n.z)) { 
                         otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
                         if (otherLabel!=o.getLabel()) {
                             if (background || otherLabel!=0) {

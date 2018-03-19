@@ -40,7 +40,10 @@ import boa.image.processing.clustering.RegionCluster;
 import boa.measurement.BasicMeasurements;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 /**
  *
@@ -57,13 +60,10 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
         this.edge = edgeMap;
         splitThresholdValue=splitThreshold;
         interfaceValue = i->{
-            Collection<Voxel> voxels = i.getVoxels();
-            if (voxels.isEmpty()) {
+            if (i.getVoxels().isEmpty()) {
                 return Double.NaN;
             } else {
-                float[] values = new float[voxels.size()];
-                int idx = 0;
-                for (Voxel v : voxels)  values[idx++]=edge.getPixel(v.x, v.y, v.z);
+                double[] values = Stream.concat(i.voxels.stream(), i.duplicatedVoxels.stream()).mapToDouble(v->edge.getPixel(v.x, v.y, v.z)).toArray();
                 double val= ArrayUtil.quantile(values, 0.5);
                 if (normalizeEdgeValues) {// normalize by intensity (mean better than median, better than mean @ edge)
                     double sum = BasicMeasurements.getSum(i.getE1(), intensityMap)+BasicMeasurements.getSum(i.getE2(), intensityMap);
@@ -102,10 +102,12 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
     
     public class Interface extends InterfaceRegionImpl<Interface> implements RegionCluster.InterfaceVoxels<Interface> {
         public double value;
-        Set<Voxel> voxels;
+        Set<Voxel> voxels; // to allow duplicate values from background
+        Set<Voxel> duplicatedVoxels;
         public Interface(Region e1, Region e2) {
             super(e1, e2);
             voxels = new HashSet<>();
+            duplicatedVoxels = new HashSet<>();
         }
         @Override public void performFusion() {
             SplitAndMergeEdge.this.regionChanged(e1);
@@ -121,6 +123,7 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
             //fusionInterfaceSetElements(otherInterface, elementComparator);
             Interface other = otherInterface;
             voxels.addAll(other.voxels); 
+            duplicatedVoxels.addAll(other.duplicatedVoxels);
             value = Double.NaN;// updateSortValue will be called afterwards
         }
 
@@ -133,8 +136,9 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
 
         @Override
         public void addPair(Voxel v1, Voxel v2) {
-           if (edge.contains(v1.x, v1.y, v1.z)) voxels.add(v1);
-           if (edge.contains(v2.x, v2.y, v2.z)) voxels.add(v2);
+            if (foregroundMask==null || !foregroundMask.contains(v1.x, v1.y, v1.z)) duplicatedVoxels.add(v2);
+            else  voxels.add(v1);
+            voxels.add(v2);
         }
 
         @Override
