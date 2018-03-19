@@ -216,15 +216,16 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         // filter border artefacts: thin objects in X direction, contact on one side of the image 
         ContactBorderMask contactLeft = new ContactBorderMask(1, parent.getMask(), Border.Xl);
         ContactBorderMask contactRight = new ContactBorderMask(1, parent.getMask(), Border.Xr);
+        ContactBorderMask contactUp = new ContactBorderMask(1, parent.getMask(), Border.YUp);
         double thicknessLimitKeep = parent.getMask().sizeX() * 0.5;  // OVER this thickness objects are kept
         double thicknessLimitRemove = Math.max(4, parent.getMask().sizeX() * 0.25); // UNDER THIS VALUE other might be artefacts
         Function<Region, Integer> f1 = r->{
             int cL = contactLeft.getContact(r);
             int cR = contactRight.getContact(r);
             if (cL==0 && cR ==0) return 1;
+            int cUp = contactUp.getContact(r);
             int c = Math.max(cL, cR);
-            //double thick = GeometricalMeasurements.getDistanceMapWidth(r);
-            //double length = r.size() / thick;
+            if (cUp>c) return 1;
             double thick = GeometricalMeasurements.maxThicknessX(r);
             if (thick>thicknessLimitKeep) return 1;
             double thickY = GeometricalMeasurements.meanThicknessY(r);
@@ -235,7 +236,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             //return false;
             //return BasicMeasurements.getQuantileValue(r, intensity, 0.5)[0]>globThld; // avoid removing foreground
         };
-        ContactBorderMask contactUp = new ContactBorderMask(1, parent.getMask(), Border.YUp);
+        
         ContactBorderMask contactUpLR = new ContactBorderMask(1, parent.getMask(), Border.XYup);
         // remove the artefact at the top of the channel
         Function<Region, Integer> f2 = r->{
@@ -243,7 +244,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             if (cUp<=2) return 1;
             cUp = contactUpLR.getContact(r);
             if (cUp<r.getVoxels().size()/5) return 1;
-            double thickness = GeometricalMeasurements.localThickness(r);
+            double thickness = GeometricalMeasurements.getDistanceMapWidth(r);
             if (verbose) logger.debug("upper artefact: contact: {}/{} thickness: {}", cUp, r.getVoxels().size(), thickness, thicknessLimitRemove);
             if (thickness>thicknessLimitRemove) return 1;
             return 0;

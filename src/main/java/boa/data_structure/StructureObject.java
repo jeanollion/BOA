@@ -739,7 +739,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         res.setAttribute(correctionSplitNew, true);
         return res;
     }
-    public boolean hasObject() {return object!=null;}
+    public boolean hasRegion() {return object!=null;}
     public boolean objectHasBeenModified() {return objectModified=true;}
     // object- and image-related methods
     public Region getRegion() {

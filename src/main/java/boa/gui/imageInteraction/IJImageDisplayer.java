@@ -173,8 +173,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 }
                 int rotation =   e.getWheelRotation();
                 int amount =   e.getScrollAmount();
-                boolean ctrl =  (e.getModifiers()&Event.CTRL_MASK)!=0;
-                boolean alt =   e.isAltDown(); // accelerated scrolling
+                boolean ctrl = e.isControlDown();
+                boolean acceleratedScrolling =   e.isShiftDown(); // accelerated scrolling
                 if (amount<1) amount=1;
                 if (rotation==0) return;
                 int width = imp.getWidth();
@@ -183,8 +183,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 int xstart = srcRect.x;
                 int ystart = srcRect.y;
                 boolean scrollSlices = iw instanceof StackWindow && (width<2000 && height<2000);
-                //logger.debug("scroll : type {}, amount: {}, rotation: {}, would scroll in x: {} in y: {}", e.getScrollType(), amount, rotation, rotation*amount* (alt ? Math.max(width/200, 1) : srcRect.width/4), rotation*amount* (alt ? Math.max(height/200, 1) : srcRect.height/4));
-                if ((ctrl||IJ.shiftKeyDown()) && ic!=null) { // zoom
+                //logger.debug("scroll : type {}, amount: {}, rotation: {}, would scroll in x: {} in y: {}, ctrl: {} alt {}", e.getScrollType(), amount, rotation, rotation*amount* (acceleratedScrolling ? Math.max(width/30, 1) : srcRect.width/8), rotation*amount* (acceleratedScrolling ? Math.max(height/30, 1) : srcRect.height/8), ctrl, acceleratedScrolling);
+                if (ctrl && ic!=null) { // zoom
                         Point loc = ic.getCursorLoc();
                         int x = ic.screenX(loc.x);
                         int y = ic.screenY(loc.y);
@@ -211,11 +211,11 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                     }
                 } else {
                     if ((double)srcRect.height/height>(double)srcRect.width/width || (srcRect.height/height<srcRect.width/width && IJ.spaceBarDown())) { // scroll in the most needed direction
-                            srcRect.x += rotation*amount* (alt ? Math.max(width/200, 1) : srcRect.width/8); 
+                            srcRect.x += rotation*amount* (acceleratedScrolling ? Math.max(width/60, 1) : srcRect.width/8); 
                             if (srcRect.x<0) srcRect.x = 0;
                             if (srcRect.x+srcRect.width>width) srcRect.x = width-srcRect.width;
                     } else { // most needed direction is Y
-                            srcRect.y += rotation*amount*(alt ?  Math.max(height/200, 1) : srcRect.height/8);  
+                            srcRect.y += rotation*amount*(acceleratedScrolling ?  Math.max(height/60, 1) : srcRect.height/8);  
                             if (srcRect.y<0) srcRect.y = 0;
                             if (srcRect.y+srcRect.height>height) srcRect.y = height-srcRect.height;
                     }

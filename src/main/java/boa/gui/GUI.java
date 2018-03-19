@@ -2041,7 +2041,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         jMenuItem25.setText("Tab: toggle local zoom");
         jMenu4.add(jMenuItem25);
 
-        jMenuItem26.setText("Alt + mouse wheel mouve: fast scroll");
+        jMenuItem26.setText("Shift + mouse wheel mouve: fast scroll");
         jMenuItem26.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jMenuItem26ActionPerformed(evt);
