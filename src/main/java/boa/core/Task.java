@@ -279,10 +279,11 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         public Task setPositions(String... positions) {
             if (positions!=null && positions.length>0) {
-                initDB();
+                boolean initDB = db==null;
+                if (initDB) initDB();
                 this.positions=new ArrayList<>(positions.length);
                 for (int i = 0; i<positions.length; ++i) this.positions.add(db.getExperiment().getPositionIdx(positions[i]));
-                db=null;
+                if (initDB) db=null; // only set to null if no db was set before, to be able to run on GUI db without lock issues
             }
             return this;
         }
@@ -298,7 +299,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             return this;
         }
         public boolean isValid() {
-            initDB();
+            boolean initDB = db==null;
+            if (initDB) initDB();
             if (db.isReadOnly()) { // except if only extract measurement or data
                 publish("db is read only! task cannot be run");
                 return false;
@@ -306,7 +308,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (db.getExperiment()==null) {
                 errors.add(new Pair(dbName, new Exception("DB: "+ dbName+ " not found")));
                 printErrors();
-                db = null;
+                if (initDB) db = null;
                 return false;
             } 
             if (structures!=null) checkArray(structures, db.getExperiment().getStructureCount(), "Invalid structure: ");

@@ -357,6 +357,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     }
     @Override
     public void clearCache() {
+        logger.debug("clearing cache for Dao: {} / objects: {}, measurements: {}", this.positionName, this.dbS.keySet(), this.measurementdbS.keySet());
         applyOnAllOpenedObjects(o->{
             o.flushImages();
             if (o.hasObject()) o.getRegion().clearVoxels();
@@ -379,6 +380,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     private synchronized void closeAllObjectFiles(boolean commit) {
         for (DB db : dbS.values()) {
             if (!readOnly && commit&&!db.isClosed()) db.commit();
+            //logger.debug("closing object file : {} ({})", db, Utils.toStringList(Utils.getKeys(dbS, db), i->this.getDBFile(i)));
             db.close();
         }
         dbS.clear();
@@ -596,7 +598,9 @@ public class DBMapObjectDAO implements ObjectDAO {
             synchronized(measurementdbS) {
                 if (!measurementdbS.containsKey(structureIdx)) {
                     try {
+                        //logger.debug("opening measurement DB for structure: {}: file {} readONly: {}",structureIdx, getMeasurementDBFile(structureIdx), readOnly);
                         DB db = DBMapUtils.createFileDB(getMeasurementDBFile(structureIdx), readOnly);
+                        //logger.debug("opening measurement DB for structure: {}: file {} readONly: {}: {}",structureIdx, getMeasurementDBFile(structureIdx), readOnly, db);
                         HTreeMap<String, String> dbMap = DBMapUtils.createHTreeMap(db, "measurements");
                         res = new Pair(db, dbMap);
                         measurementdbS.put(structureIdx, res);
@@ -690,6 +694,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     private synchronized void closeAllMeasurementFiles(boolean commit) {
         for (Pair<DB, HTreeMap<String, String>> p : this.measurementdbS.values()) {
             if (!readOnly&&commit&&!p.key.isClosed()) p.key.commit();
+            //logger.debug("closing measurement DB: {} ({})",p.key, Utils.toStringList(Utils.getKeys(measurementdbS, p), i->getMeasurementDBFile(i)));
             p.key.close();
         }
         measurementdbS.clear();

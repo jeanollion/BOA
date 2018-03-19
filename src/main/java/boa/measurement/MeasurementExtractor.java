@@ -103,18 +103,18 @@ public class MeasurementExtractor {
         return header.toString();
     }
     protected static ArrayList<String> getAllMeasurements(Map<Integer, String[]> measurements) {
-        ArrayList<String> l = new ArrayList<String>();
+        ArrayList<String> l = new ArrayList<>();
         for (String[] s : measurements.values()) l.addAll(Arrays.asList(s));
         return l;
     }
     public static void extractMeasurementObjects(MasterDAO db, String outputFile, int structureIdx,  List<String> positions, String... measurements) {
-        Map<Integer, String[]> map = new HashMap<Integer, String[]>(1);
+        Map<Integer, String[]> map = new HashMap<>(1);
         map.put(structureIdx, measurements);
         MeasurementExtractor de= new MeasurementExtractor(db, structureIdx);
         de.extractMeasurementObjects(outputFile, positions, map);
     }
     public static void extractMeasurementObjects(MasterDAO db, String outputFile, List<String> positions, Map<Integer, String[]> allMeasurements) {
-        TreeMap<Integer, String[]> allMeasurementsSort = new TreeMap<Integer, String[]>(allMeasurements);
+        TreeMap<Integer, String[]> allMeasurementsSort = new TreeMap<>(allMeasurements);
         if (allMeasurementsSort.isEmpty()) return;
         MeasurementExtractor de= new MeasurementExtractor(db, allMeasurementsSort.lastKey());
         de.extractMeasurementObjects(outputFile, positions, allMeasurementsSort);
