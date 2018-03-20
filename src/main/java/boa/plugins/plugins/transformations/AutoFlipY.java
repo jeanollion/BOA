@@ -112,21 +112,17 @@ public class AutoFlipY implements Transformation, ToolTip {
             }
             // rough segmentation and get side where cells are better aligned
             List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 5);
-            int countFlip = 0;
-            int countNoFlip = 0;
-            for (int f: frames) {
+            List<Boolean> flips = frames.stream().parallel().map(f->{
                 Image<? extends Image> image = inputImages.getImage(channelIdx, f);
                 if (image.sizeZ()>1) {
                     int plane = inputImages.getBestFocusPlane(f);
                     if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
                     image = image.splitZPlanes().get(plane);
                 }
-                Boolean flip = isFlipFluo(image);
-                if (flip!=null) {
-                    if (flip) ++countFlip;
-                    else ++countNoFlip;
-                }
-            }
+                return isFlipFluo(image);
+            }).collect(Collectors.toList());
+            long countFlip = flips.stream().filter(b->b!=null && b).count();
+            long countNoFlip = flips.stream().filter(b->b!=null && !b).count();
             if (testMode) {
                 ImageWindowManagerFactory.showImage(Image.mergeZPlanes(upperObjectsTest).setName("Upper Objects"));
                 ImageWindowManagerFactory.showImage(Image.mergeZPlanes(lowerObjectsTest).setName("Lower Objects"));
@@ -138,21 +134,18 @@ public class AutoFlipY implements Transformation, ToolTip {
         } else if (method.getSelectedItem().equals(FLUO_HALF_IMAGE.name)) { 
             // compares signal in upper half & lower half -> signal should be in upper half
             List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 1);
-            int countFlip = 0;
-            int countNoFlip = 0;
-            for (int f: frames) {
+            List<Boolean> flips = frames.stream().parallel().map(f->{
                 Image<? extends Image> image = inputImages.getImage(channelIdx, f);
                 if (image.sizeZ()>1) {
                     int plane = inputImages.getBestFocusPlane(f);
                     if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
                     image = image.splitZPlanes().get(plane);
                 }
-                Boolean flip = isFlipFluoUpperHalf(image);
-                if (flip!=null) {
-                    if (flip) ++countFlip;
-                    else ++countNoFlip;
-                }
-            }
+                return isFlipFluoUpperHalf(image);
+            }).collect(Collectors.toList());
+            long countFlip = flips.stream().filter(b->b!=null && b).count();
+            long countNoFlip = flips.stream().filter(b->b!=null && !b).count();
+            
             flip = countFlip>countNoFlip;
             logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
         } else if (method.getSelectedItem().equals(PHASE.name)) {

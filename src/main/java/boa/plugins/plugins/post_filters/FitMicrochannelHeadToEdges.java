@@ -68,7 +68,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
     BooleanParameter resetBounds = new BooleanParameter("Reset Bounds", true).setToolTipText("Whether bounds should be reset or not. <br />If average mask track-post-filter is set afterwards, bounds should not be reset so that regions can be aligned on their top-left-corner");
     Parameter[] parameters = new Parameter[]{watershedMap, fitMargin, morphoRadius, trimUpperPixels, resetBounds};
     public static boolean debug = false;
-    public static int debugLabel = 12;
+    public static int debugLabel =0;
     public boolean verbose = false;
     public FitMicrochannelHeadToEdges setResetBounds(boolean resetBounds) {
         this.resetBounds.setSelected(resetBounds);
@@ -103,7 +103,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
     
     private static void fitWhole(Image input, Image edgeMap, int margin, Region object, double morphoRadius, int trimUpperPixelRadius, boolean resetMask, boolean verbose) {
         double innerMaskSlope = 0;
-        boolean seedsInMaskAreForeground = true;
+        boolean seedsInMaskAreForeground = false;
         BoundingBox b = object.getBounds();
         int marginL = Math.min(margin, b.xMin());
         int marginR = Math.min(margin , edgeMap.sizeX()-1 - b.xMax());
@@ -184,29 +184,29 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
             allSeeds.stream().forEach(r->r.getVoxels().stream().forEach(v->maxL.setPixel(v.x, v.y, v.z, 3)));
             ImageWindowManagerFactory.showImage(maxL.setName("Seeds 1=bck, 2=fore, 3=?"));
         }
-        RegionPopulation pop = WatershedTransform.watershed(edgeMapLocal, null, seeds, null);
+        RegionPopulation parititon = WatershedTransform.watershed(edgeMapLocal, null, seeds, null);
         if (seedsInMaskAreForeground) {
             Voxel foreVox = foregroundVox.stream().findAny().get();
-            Region fore = pop.getRegions().stream().filter(r->r.getVoxels().contains(foreVox)).findFirst().get();
-            pop.getRegions().removeIf(o->o!=fore);
+            Region fore = parititon.getRegions().stream().filter(r->r.getVoxels().contains(foreVox)).findFirst().get();
+            parititon.getRegions().removeIf(o->o!=fore);
         } else { // merge regions either to foreground either to background
-            Region bck1 = pop.getRegions().stream().filter(r->r.getVoxels().contains(cornerL)).findFirst().get();
-            Region bck2 = pop.getRegions().stream().filter(r->r.getVoxels().contains(cornerR)).findFirst().get();
-            if ((bck1!=bck2 && pop.getRegions().size()>3) || (bck1==bck2 && pop.getRegions().size()>2)) { // some seeds were not merge either with bck or foreground -> decide with merge sort algorithm on edge value
-                if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("beofre merge"));
+            Region bck1 = parititon.getRegions().stream().filter(r->r.getVoxels().contains(cornerL)).findFirst().get();
+            Region bck2 = parititon.getRegions().stream().filter(r->r.getVoxels().contains(cornerR)).findFirst().get();
+            if ((bck1!=bck2 && parititon.getRegions().size()>3) || (bck1==bck2 && parititon.getRegions().size()>2)) { // some seeds were not merge either with bck or foreground -> decide with merge sort algorithm on edge value
+                if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(parititon.getLabelMap().duplicate("beofre merge"));
                 SplitAndMergeRegionCriterion sm  = new SplitAndMergeRegionCriterion(edgeMapLocal, inputLocal, Double.POSITIVE_INFINITY, SplitAndMergeRegionCriterion.InterfaceValue.DIFF_MEDIAN_BTWN_REGIONS);
                 sm.setTestMode(verbose && object.getLabel()==debugLabel);
                 sm.addForbidFusionForegroundBackground(r->r==bck1||r==bck2, r->!Collections.disjoint(r.getVoxels(), foregroundVox));
                 if (bck1!=bck2) sm.addForbidFusion(i->(i.getE1()==bck1&&i.getE2()==bck2) || (i.getE1()==bck1&&i.getE2()==bck2)); // to be able to know how many region we want in the end. somtimes bck1 & bck2 can't merge
-                pop = sm.merge(pop, bck1==bck2 ? 2 :3); // keep 3 regions = background on both sides & foreground
+                parititon = sm.merge(parititon, bck1==bck2 ? 2 :3); // keep 3 regions = background on both sides & foreground
             }
-            if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf"));
-            pop.getRegions().removeIf(o->o.contains(cornerL) || o.contains(cornerR)); // remove background
+            if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(parititon.getLabelMap().duplicate("after ws transf"));
+            parititon.getRegions().removeIf(o->o.contains(cornerL) || o.contains(cornerR)); // remove background
         }
-        pop.relabel(true);
-        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after ws transf & delete"));
-        pop.translate(cut, true);
-        ImageInteger mcMask = pop.getLabelMap();
+        parititon.relabel(true);
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(parititon.getLabelMap().duplicate("after ws transf & delete"));
+        parititon.translate(cut, true);
+        ImageInteger mcMask = parititon.getLabelMap();
         // CLOSE & OPEN 
         if (morphoRadius<marginUp && morphoRadius<marginL && morphoRadius<marginR) Filters.binaryClose(mcMask, mcMask, Filters.getNeighborhood(morphoRadius, mcMask));
         else mcMask=Filters.binaryCloseExtend(mcMask, Filters.getNeighborhood(morphoRadius,mcMask));
@@ -218,7 +218,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         double[] xLMean = new double[2];
         double[] xRMean = new double[2];
         final ImageInteger regionMask =mcMask;
-        ImageMask.loop(pop.getLabelMap(), (x, y, z)-> {
+        ImageMask.loop(parititon.getLabelMap(), (x, y, z)-> {
             if (y<=regionMask.sizeX()) return; // do not take into acount head
             if (x==0 || !regionMask.insideMask(x-1, y, z)) {
                 xLMean[0]+=x;
@@ -232,7 +232,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         xLMean[0]/=xLMean[1];
         xRMean[0]/=xRMean[1];
         ImageMask.loop(mcMask, (x, y, z)-> {if (x<xLMean[0] || x>xRMean[0]) regionMask.setPixel(x, y, z, 0);});
-        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after trim L&R"));
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(mcMask.duplicate("after trim L&R"));
         if (resetMask) { // If average mask filter is used: no reset so that all image have same upper-left-corner
             object.setMask(mcMask);
             object.clearVoxels();

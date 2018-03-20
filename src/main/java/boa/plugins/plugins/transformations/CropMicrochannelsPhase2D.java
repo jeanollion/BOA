@@ -24,9 +24,14 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
+import boa.image.SimpleBoundingBox;
+import boa.image.processing.ImageFeatures;
+import boa.image.processing.ImageOperations;
 import static boa.plugins.plugins.segmenters.MicrochannelPhase2D.segmentMicroChannels;
 import boa.plugins.MicrochannelSegmenter.Result;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
+import static boa.plugins.plugins.segmenters.MicrochannelPhase2D.searchYLimWithOpticalAberration;
+import boa.utils.ArrayUtil;
 
 /**
  *
@@ -34,61 +39,40 @@ import boa.plugins.plugins.pre_filters.IJSubtractBackground;
  */
 public class CropMicrochannelsPhase2D extends CropMicroChannels {
     public static boolean debug = false;
-    NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Typical Width (pixels)", 0, 20, 5, null);
-    NumberParameter microChannelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
-    NumberParameter microChannelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
-    NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 30, 0, null);
-    NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 3, 10, 0, null).setToolTipText("Threshold for Microchannel border detection (peaks of 1st derivative in X-axis)");;
+    NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 30, 0, null).setToolTipText("Additional margin added between open-end of microchannels and optical aberration in Y direction");
     FilterSequence filters = new FilterSequence("Pre-Filters").add(new IJSubtractBackground(10, true, false, true, false));
-    Parameter[] parameters = new Parameter[]{filters, channelHeight, cropMarginY, microChannelWidth, microChannelWidthMin, microChannelWidthMax, localDerExtremaThld, yEndMargin, xStart, xStop, yStart, yStop, number};
+    Parameter[] parameters = new Parameter[]{filters, channelHeight, cropMarginY, yEndMargin, boundGroup};
     
-    public CropMicrochannelsPhase2D(int cropMarginY, int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax, int timePointNumber) {
+    public CropMicrochannelsPhase2D(int cropMarginY) {
+        this();
         this.cropMarginY.setValue(cropMarginY);
-        this.microChannelWidth.setValue(microChannelWidth);
-        this.microChannelWidthMin.setValue(microChannelWidthMin);
-        this.microChannelWidthMax.setValue(microChannelWidthMax);
-        
-        this.number.setValue(timePointNumber);
     }
     public CropMicrochannelsPhase2D() {
-        
+        this.referencePoint.setSelectedIndex(1);
+        this.frameNumber.setValue(0);
     }
     
-    public CropMicrochannelsPhase2D setTimePointNumber(int timePointNumber) {
-        this.number.setValue(timePointNumber);
-        return this;
-    }
-    public CropMicrochannelsPhase2D setChannelWidth(int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax) {
-        this.microChannelWidth.setValue(microChannelWidth);
-        this.microChannelWidthMin.setValue(microChannelWidthMin);
-        this.microChannelWidthMax.setValue(microChannelWidthMax);
-        return this;
-    }
-    public CropMicrochannelsPhase2D setLocalDerivateXThld(double thld) {
-        this.localDerExtremaThld.setValue(thld);
-        return this;
-    }
     @Override public MutableBoundingBox getBoundingBox(Image image) {
         image = filters.filter(image);
-        return getBoundingBox(image, cropMarginY.getValue().intValue(), channelHeight.getValue().intValue(),xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), 0, yEndMargin.getValue().intValue());
+        return getBoundingBox(image, cropMarginY.getValue().intValue(), channelHeight.getValue().intValue(),xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), yEndMargin.getValue().intValue());
     }
     
-    public MutableBoundingBox getBoundingBox(Image image, int cropMargin, int channelHeight,  int xStart, int xStop, int yStart, int yStop, int yStartAdjustWindow, int yMarginEndChannel) {
+    public MutableBoundingBox getBoundingBox(Image image, int cropMargin, int channelHeight,  int xStart, int xStop, int yStart, int yStop, int yMarginEndChannel) {
         if (debug) testMode = true;
-        Result r = segmentMicroChannels(image, true, yStartAdjustWindow, yMarginEndChannel, microChannelWidth.getValue().intValue(), microChannelWidthMin.getValue().intValue(), microChannelWidthMax.getValue().intValue(), localDerExtremaThld.getValue().doubleValue(), debug);
-        if (r==null || r.xMax.length==0) return null;
-        int yMin = r.getYMin();
-        int yMax = r.getYMax();
+        int yMax =  searchYLimWithOpticalAberration(image, 0.25, yMarginEndChannel, testMode) ;
+        Image imCrop = image.crop(new SimpleBoundingBox(0, image.sizeX()-1, 0, yMax>0 ? yMax : image.sizeY()-1, 0, image.sizeZ()-1));
+        Image imDerY = ImageFeatures.getDerivative(imCrop, 2, 0, 1, 0, true);
+        float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
+        int yMin = ArrayUtil.max(yProj, 0, yProj.length-1-channelHeight/2);
+        if (yMax<=0) yMax = yMin + channelHeight;
+        
         if (yStop==0) yStop = image.sizeY()-1;
         if (xStop==0) xStop = image.sizeX()-1;
-        yMax = Math.min(yMin+channelHeight, yMax);
+        //yMax = Math.min(yMin+channelHeight, yMax);
         yMin = Math.max(yStart,yMin);
         yStop = Math.min(yStop, yMax);
         yStart = Math.max(yMin-cropMargin, yStart);
         
-        //xStart = Math.max(xStart, r.getXMin()-cropMargin);
-        //xStop = Math.min(xStop, r.getXMax() + cropMargin);
-        if (testMode) logger.debug("Xmin: {}, Xmax: {}", r.getXMin(), r.getXMax());
         return new MutableBoundingBox(xStart, xStop, yStart, yStop, 0, image.sizeZ()-1);
         
     }
@@ -97,7 +81,5 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels {
     public Parameter[] getParameters() {
         return parameters;
     }
-    boolean testMode;
-    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 
 }

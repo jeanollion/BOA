@@ -47,6 +47,7 @@ import static boa.image.processing.RadonProjection.radonProject;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -65,7 +66,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     FilterSequence prefilters = new FilterSequence("Pre-Filters");
     BooleanParameter maintainMaximum = new BooleanParameter("Maintain Maximum Value", true).setToolTipText("In case of saturated value & interpolation with polynomes of degree>1, higher values than maximal value can be created, which can be an issue in case of a saturated image. This option will saturate the rotated image to the old maximal value");
     Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, removeIncompleteRowsAndColumns, maintainMaximum, prefilters}; //  
-    ArrayList<Double> internalParams=new ArrayList<Double>(1);
+    double rotationAngle = Double.NaN;
     public boolean testMode = false;
     public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation, SearchMethod method) {
         this.minAngle.setValue(minAngle);
@@ -93,11 +94,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     public boolean isTimeDependent() {
         return false;
     }
-
-    public ArrayList<Double> getConfigurationData() {
-        return internalParams;
-    }
-
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
@@ -105,7 +102,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     public boolean does3D() {
         return true;
     }
-
+    @Override
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }
@@ -122,6 +119,8 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), getAngle(image), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
     }
     List<Image> sinogram1Test, sinogram2Test;
+    
+    @Override 
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {     
         if (testMode) {
             sinogram1Test = new ArrayList<>();
@@ -133,8 +132,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         if (fn<=1) frames = new ArrayList<Integer>(1){{add(inputImages.getDefaultTimePoint());}};
         else frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, fn);
         
-        List<Double> angles = new ArrayList<>(fn);
-        for (int f : frames) {
+        List<Double> angles = frames.stream().parallel().map(f -> {
             Image<? extends Image> image = inputImages.getImage(channelIdx, f);
             image = prefilters.filter(image);
             if (image.sizeZ()>1) {
@@ -142,33 +140,30 @@ public class AutoRotationXY implements TransformationTimeIndependent {
                 if (plane<0) throw new RuntimeException("Autorotation can only be run on 2D images AND no autofocus algorithm was set");
                 image = image.splitZPlanes().get(plane);
             }
-            double angle=getAngle(image);
-            angles.add(angle);
-        }
+            return getAngle(image);
+        }).collect(Collectors.toList());
         if (testMode) {
             ImageWindowManagerFactory.showImage(Image.mergeZPlanes(sinogram1Test).setName("Sinogram: first search"));
             ImageWindowManagerFactory.showImage(Image.mergeZPlanes(sinogram2Test).setName("Sinogram: second search"));
             sinogram1Test.clear();
             sinogram2Test.clear();
         }
-        double medianAngle = ArrayUtil.median(angles);
-        logger.debug("autorotation: median angle: {} among: {}", medianAngle, Utils.toStringList(Utils.toList(ArrayUtil.generateIntegerArray(fn)), i->"f:"+frames.get(i)+"->"+angles.get(i)));
-        internalParams = new ArrayList<Double>(1);
-        internalParams.add(medianAngle);
+        rotationAngle = ArrayUtil.median(angles);
+        logger.debug("autorotation: median angle: {} among: {}", rotationAngle, Utils.toStringList(Utils.toList(ArrayUtil.generateIntegerArray(fn)), i->"f:"+frames.get(i)+"->"+angles.get(i)));
     }
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (internalParams==null || internalParams.isEmpty()) throw new RuntimeException("Autorotation not configured");
-        Image res = ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
+        if (Double.isNaN(rotationAngle)) throw new RuntimeException("Autorotation not configured");
+        Image res = ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), rotationAngle, ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
         if (maintainMaximum.getSelected() && interpolation.getSelectedIndex()>1) {
             double oldMax = image.getMinAndMax(null)[1];
             SaturateHistogram.saturate(oldMax, oldMax, res);
         }
         return res;
     }
-    
+    @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return internalParams!=null && !internalParams.isEmpty();
+        return !Double.isNaN(rotationAngle);
     }
     
     public double[] computeRotationAngleXY(Image image, int z, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {

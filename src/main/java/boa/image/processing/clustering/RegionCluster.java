@@ -174,7 +174,9 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     }
     @Override public List<Region> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
         int nInit = population.getRegions().size();
+        if (backgroundRegion!=null) allElements.add(backgroundRegion); // so that is it taken into acount in counts
         super.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
+        if (backgroundRegion!=null) allElements.remove(backgroundRegion); // part of it is out-of-bound
         if (nInit > population.getRegions().size()) population.relabel(true);
         return population.getRegions();
     }

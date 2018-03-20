@@ -18,10 +18,13 @@
  */
 package boa.image.processing;
 
+import boa.core.Context;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.data_structure.Voxel;
 import boa.image.BlankMask;
+import boa.image.BoundingBox;
+import boa.image.BoundingBox.LoopFunction;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import static boa.image.Image.logger;
@@ -178,13 +181,10 @@ public class Filters {
         else res = (T)output.setName(name);
         float round=res instanceof ImageFloat ? 0: 0.5f;
         filter.setUp(image, neighborhood);
-        for (int z = 0; z < res.sizeZ(); ++z) {
-            for (int y = 0; y < res.sizeY(); ++y) {
-                for (int x = 0; x < res.sizeX(); ++x) {
-                    res.setPixel(x, y, z, filter.applyFilter(x, y, z)+round);
-                }
-            }
-        }
+        LoopFunction loopFunc = (x, y, z)->res.setPixel(x, y, z, filter.applyFilter(x, y, z)+round);
+        //if (Context.getThreadNumber(true)>1) BoundingBox.loopParallele(res.getBoundingBox().resetOffset(), loopFunc); // neiborhood is not thread safe. Todo: use reusable queue with copies of neighborhood
+        //else BoundingBox.loop(res.getBoundingBox().resetOffset(), loopFunc);
+        BoundingBox.loop(res.getBoundingBox().resetOffset(), loopFunc);
         res.resetOffset().translate(image);
         res.setCalibration(image);
         return res;

@@ -120,8 +120,7 @@ import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
  */
 public class GenerateXP {
     public static final Logger logger = LoggerFactory.getLogger(GenerateXP.class);
-    static boolean subTransPre = false;
-    static Experiment.ImportImageMethod importMethod;
+     static Experiment.ImportImageMethod importMethod;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
@@ -463,10 +462,9 @@ public class GenerateXP {
     public static void setPreprocessingPhase(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.setFrameDuration(4);
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
-        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, true)));
+        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(10, true, false, true, true)).setRemoveIncompleteRowsAndColumns(true));
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.PHASE));
         ps.addTransformation(0, null, new CropMicrochannelsPhase2D());
-        if (subTransPre) ps.addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, false)); // subtract after crop because subtract alter optical aberation detection. Optimization: paraboloid = true / range=03-05 best = 0.3 
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
     }
     public static void setPreprocessingTransAndMut(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
@@ -563,7 +561,7 @@ public class GenerateXP {
         Structure bacteria = xp.getStructure(1);
         if (processing) {
             SegmentAndTrack mcpc = new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D()).setAllowGaps(false));
-            if (!subTransPre) mcpc.addPreFilters(new IJSubtractBackground(10, true, false, true, false));
+            mcpc.addPreFilters(new IJSubtractBackground(10, true, false, true, false));
             mcpc.addTrackPostFilters(
                 new TrackLengthFilter().setMinSize(10),  
                 new RemoveTracksStartingAfterFrame(),

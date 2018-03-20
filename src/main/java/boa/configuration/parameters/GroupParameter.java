@@ -41,7 +41,7 @@ public class GroupParameter extends SimpleContainerParameter {
     }
     public GroupParameter(String name, Collection<Parameter> parameters) {
         super(name);
-        this.parameters = new ArrayList<Parameter>(parameters);
+        this.parameters = new ArrayList<>(parameters);
         initChildList();
     }
     

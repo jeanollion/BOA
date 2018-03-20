@@ -135,7 +135,20 @@ public class ImageOperations {
         return minAndMax;
     }
     
-    public static enum Axis {X, Y, Z;}
+    public static enum Axis {X, Y, Z;
+        public static Axis get(int dim) {
+            switch(dim) {
+                case 0: 
+                    return X;
+                case 1:
+                    return Y;
+                case 2:
+                    return Z;
+                default: 
+                    return null;
+            }
+        }
+    }
     
     public static ImageByte threshold(Image image, double threshold, boolean foregroundOverThreshold, boolean strict) {
         return (ImageByte)threshold(image, threshold, foregroundOverThreshold, strict, false, null);

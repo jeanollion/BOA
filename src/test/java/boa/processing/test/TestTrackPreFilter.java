@@ -26,6 +26,7 @@ import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.ObjectDAO;
 import boa.gui.GUI;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.imageInteraction.TrackMaskX;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
@@ -44,7 +45,8 @@ public class TestTrackPreFilter {
     public static void main(String[] args) {
         
         //String dbName = "170919_thomas";
-        String dbName = "AyaWT_mmglu";
+        //String dbName = "AyaWT_mmglu";
+        String dbName = "WT_150609";
         int pIdx =0;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -60,9 +62,11 @@ public class TestTrackPreFilter {
         ObjectDAO dao = db.getDao(db.getExperiment().getPosition(pIdx).getName());
         
         int mcCount = StructureObjectUtils.getAllTracks(Processor.getOrCreateRootTrack(dao), 0).size();
+        mcCount = 1;
         for (int i =0; i<mcCount; ++i) {
             logger.debug("testing mc: {}", i);
             test(dao, ps, structureIdx, i, frames);
+            
         }
         
     }
@@ -78,6 +82,9 @@ public class TestTrackPreFilter {
             parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, 0), o->o.getIdx()==mcIdx&& o.getFrame()<=frames[1]);
             parentTrack.removeIf(o -> o.getFrame()<frames[0] || o.getFrame()>frames[1]);
             ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+            TrackMaskX tm = new TrackMaskX(parentTrack, structureIdx, false);
+            tm.setDisplayPreFilteredImages(true);
+            ImageWindowManagerFactory.showImage(tm.generatemage(structureIdx, false).setName("track:"+parentTrack.get(0)));
         }
         TrackParametrizer  tp = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, ps.getSegmenter(), null);
         

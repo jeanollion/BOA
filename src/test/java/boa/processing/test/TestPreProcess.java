@@ -120,7 +120,7 @@ public class TestPreProcess {
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         /*f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
         CropMicroChannels2D.debug=true;*/
-        f.getPreProcessingChain().addTransformation(0, null, new CropMicrochannelsFluo2D().setTimePointNumber(5));
+        f.getPreProcessingChain().addTransformation(0, null, new CropMicrochannelsFluo2D());
         CropMicrochannelsFluo2D.debug=true;
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);

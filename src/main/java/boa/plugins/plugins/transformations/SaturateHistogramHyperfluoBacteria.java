@@ -57,6 +57,7 @@ import boa.utils.ReusableQueue;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -68,8 +69,8 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
     NumberParameter foregroundProportion = new BoundedNumberParameter("Hyperfluorecent cells foreground proportion threshold", 2, 0.45, 0, 1); 
     NumberParameter minimumVolume = new BoundedNumberParameter("Minimum volume of signal (pixels)", 0, 10000, 1, null);
     Parameter[] parameters = new Parameter[]{thresholdBck, thresholdHyper, foregroundProportion, minimumVolume};
-    ArrayList<Double> configData = new ArrayList<>(2);
-    
+    double saturateValue= Double.NaN;
+    boolean configured = false;
     public SaturateHistogramHyperfluoBacteria setForegroundProportion(double proportion) {
         this.foregroundProportion.setValue(proportion);
         return this;
@@ -77,7 +78,6 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
     
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        configData.clear();
         List<Image> allImages = new ArrayList<>();
         //List<Image> imageTemp = new ArrayList<>();
         int tpMax = inputImages.getFrameNumber();
@@ -99,46 +99,40 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
             } else ++count;*/
         }
         if (allImages.isEmpty()) {
-            configData.add(Double.NaN);
             logger.error("No image");
             return;
-        }
+        } else logger.debug("saturate histo: images: {}", allImages.size());
         double pThld = foregroundProportion.getValue().doubleValue();
         long t0 = System.currentTimeMillis();
         int minimumCount = minimumVolume.getValue().intValue();
-        Double[] thlds = new Double[allImages.size()];
-        ReusableQueue.Reset<ImageByte> r = im -> {ImageOperations.fill(im, 0, null); return im;};
-        ReusableQueue<ImageByte> masks = new ReusableQueue<>(()->new ImageByte("", allImages.get(0)), r);
-        ThreadRunner.execute(allImages, false, (Image image, int idx) -> {
-            ImageByte mask = masks.pull();
-            thlds[idx] = getThld(image, pThld, thresholdBck.instanciatePlugin(), thresholdHyper.instanciatePlugin() , mask, minimumCount, idx);
-            masks.push(mask);
-        });
-        List<Double> thldsList = new ArrayList<>(Arrays.asList(thlds));
+        List<Double> thldsList = allImages.stream().parallel().map(image -> getThld(image, pThld, thresholdBck.instanciatePlugin(), thresholdHyper.instanciatePlugin(), minimumCount)).collect(Collectors.toList());
         thldsList.removeIf(d -> Double.isInfinite(d) || Double.isNaN(d));
-        if (testMode) logger.debug("SaturateHisto: #satu: {},, list: {}", thldsList.size(), thldsList);
+        if (testMode) logger.debug("SaturateHisto: #satu: {},list: {}", thldsList.size(), thldsList);
         double thld = ArrayUtil.median(thldsList);
         //double thld = Arrays.stream(thlds).min((d1, d2)->Double.compare(d1, d2)).get();
         long t1 = System.currentTimeMillis();
-        if (Double.isFinite(thld)) configData.add(thld);
-        else configData.add(Double.NaN);
-        logger.debug("SaturateHistoAuto: {} ({}ms)", Utils.toStringList(configData), t1-t0);
+        if (Double.isFinite(thld)) saturateValue = thld;
+        configured = true;
+        logger.debug("SaturateHistoAuto: {} ({}ms)",saturateValue, t1-t0);
     }
     public void saturateHistogram(Image im) {
-        double thld = getThld(im, this.foregroundProportion.getValue().doubleValue(), this.thresholdBck.instanciatePlugin(), this.thresholdHyper.instanciatePlugin(), null, this.minimumVolume.getValue().intValue(), 0);
+        double thld = getThld(im, this.foregroundProportion.getValue().doubleValue(), this.thresholdBck.instanciatePlugin(), this.thresholdHyper.instanciatePlugin(), this.minimumVolume.getValue().intValue() );
         if (!Double.isNaN(thld) && Double.isFinite(thld)) SaturateHistogram.saturate(thld, thld, im);
     }
-    private double getThld(Image im, double proportionThld, SimpleThresholder thlderBack, SimpleThresholder thlderHyper, ImageInteger backThld, int minimumCount, int idx) {
+    private double getThld(Image im, double proportionThld, SimpleThresholder thlderBack, SimpleThresholder thlderHyper, int minimumCount) {
         double thldBack = thlderBack.runSimpleThresholder(im, null);
         double thldHyper = thlderHyper.runSimpleThresholder(im, null);
-        backThld=ImageOperations.threshold(im, thldBack, true, true, false, backThld);
+        //backThld=ImageOperations.threshold(im, thldBack, true, true, false, backThld);
+        //ImageOperations.filterObjects(backThld, backThld, o->o.size()<=1);
+        //double count = backThld.count();
         ImageMask hyperThld = new ThresholdMask(im, thldHyper, true, true);
+        ImageMask backThld = new ThresholdMask(im, thldBack, true, true);
         // remove small obejcts (if background is too low isolated pixels)
-        ImageOperations.filterObjects(backThld, backThld, o->o.size()<=1);
-        double count = backThld.count();
+        double count = ImageLabeller.labelImageList(backThld).stream().mapToInt(o->o.size()).filter(i->i>1).sum();
+        
         if (count<minimumCount) return Double.POSITIVE_INFINITY;
         double countHyper = hyperThld.count();
-        if (testMode) logger.debug("idx:{} thldBack:{} hyper: {}, count back: {}, hyper: {}, prop: {}", idx, thldBack, thldHyper, count, countHyper, countHyper / count);
+        if (testMode) logger.debug(" thldBack:{} hyper: {}, count back: {}, hyper: {}, prop: {}", thldBack, thldHyper, count, countHyper, countHyper / count);
         double proportion = countHyper / count;
         if (proportion<proportionThld && count-countHyper>minimumCount) { // recompute hyper thld within seg bact
             ImageMask thldMask = new ThresholdMask(im, thldBack, true, true);
@@ -148,7 +142,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
             List<Double> maxValues = Utils.transform(objects, o->BasicMeasurements.getMaxValue(o, im));
             maxValues.removeIf(v->v>=thldHyper2);
             double thldHyper3 = maxValues.isEmpty() ? thldHyper2 : Math.min(Collections.max(maxValues)*1.15, thldHyper2);
-            if (testMode) logger.debug("SaturateHisto: {} proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {}), max values of non-saturated objects: {}", idx, proportion, count/im.sizeXYZ(), thldBack, thldHyper2, thldHyper,thldHyper3);
+            if (testMode) logger.debug("SaturateHisto: proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {}), max values of non-saturated objects: {}", proportion, count/im.sizeXYZ(), thldBack, thldHyper2, thldHyper,thldHyper3);
             return thldHyper3;
         }
         else return Double.POSITIVE_INFINITY;
@@ -156,14 +150,14 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
 
     @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return configData.size()==1;
+        return configured;
     }
     
 
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (Double.isNaN(configData.get(0))) return image;
-        SaturateHistogram.saturate(configData.get(0), configData.get(0), image);
+        if (Double.isNaN(saturateValue)) return image;
+        SaturateHistogram.saturate(saturateValue, saturateValue, image);
         return image;
     }
 

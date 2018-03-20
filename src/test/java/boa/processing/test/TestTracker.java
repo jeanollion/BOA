@@ -69,7 +69,7 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        String dbName = "MutT_150402";
+        //String dbName = "MutT_150402";
         //String dbName = "170919_thomas";
         //String dbName = "Aya2";
         //String dbName = "AyaWT_mmglu";
@@ -79,8 +79,9 @@ public class TestTracker {
         //String dbName = "170919_glyc_lac";
         //String dbName = "MutH_140115";
         //String dbName = "MutD5_141202";
+        String dbName = "WT_150609";
         int pIdx =0;
-        int mcIdx =2;
+        int mcIdx =0;
         int structureIdx =1;
         int[] frames = new int[]{0, 1000}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;

@@ -30,6 +30,8 @@ import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -63,14 +65,14 @@ public interface InputImages {
         if (n>=images.size()) return Utils.toList(ArrayUtil.generateIntegerArray(images.size()));
         // signal is measured with BackgroundThresholder
         long t0 = System.currentTimeMillis();
-        List<Pair<Integer, Double>> signal = new ArrayList<>();
-        double[] count = new double[3];
         double sTot = images.get(0).sizeXYZ();
-        for (int t = 0; t<images.size(); ++t) {
-            BackgroundThresholder.runThresholder(images.get(t), null, 2.5, 4, 2, Double.MAX_VALUE, count);
-            signal.add(new Pair(t, (sTot - count[2]) /  sTot ));
-        }
-        Collections.sort(signal, (p1, p2)->Double.compare(p1.value, p2.value));
+        List<Pair<Integer, Double>> signal = IntStream.range(0, images.size()).parallel().mapToObj((int i) -> {
+            double[] count = new double[3];
+            BackgroundThresholder.runThresholder(images.get(i), null, 2.5, 4, 2, Double.MAX_VALUE, count);
+            return new Pair<>(i, (sTot - count[2]) /  sTot );
+        }).collect(Collectors.toList());
+        Collections.sort(signal, (p1, p2)->Double.compare(p1.value, p2.value));       
+        
         if (n==1) return Arrays.asList(new Integer[]{signal.get(0).key});
         // choose n frames among the X frames with most signal
         int candidateNumber = Math.max(images.size()/4, n);

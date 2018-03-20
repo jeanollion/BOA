@@ -25,6 +25,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.Voxel;
 import boa.image.BlankMask;
+import static boa.image.BoundingBox.loopParallele;
 import static boa.image.BoundingBox.loop;
 import boa.image.Image;
 import boa.image.ImageFloat;
@@ -39,11 +40,13 @@ import boa.plugins.Transformation;
 import boa.image.processing.Filters;
 import boa.image.processing.Filters.Median;
 import boa.image.processing.ImageFeatures;
+import boa.image.processing.ImageOperations.Axis;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.SlidingOperator;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -52,7 +55,6 @@ import boa.utils.SlidingOperator;
 public class RemoveDeadPixels implements Transformation {
     NumberParameter threshold = new BoundedNumberParameter("Local Threshold", 5, 30, 0, null).setToolTipText("Difference between pixels and median transform (radius 1 pix.) is computed. If difference is higer than this threshold pixel is considered as dead and will be replaced by the median value");
     NumberParameter frameRadius = new BoundedNumberParameter("Frame Radius", 0, 4, 1, null).setToolTipText("Number of frame to average");
-    List<List<Double>> configDataFXYZV=new ArrayList<>();
     HashMapGetCreate<Integer, Set<Voxel>> configMapF;
     public RemoveDeadPixels(){}
     public RemoveDeadPixels(double threshold, int frameRadius) {
@@ -60,19 +62,10 @@ public class RemoveDeadPixels implements Transformation {
         this.frameRadius.setValue(frameRadius);
     }
     public Map<Integer, Set<Voxel>> getDeadVoxels() {
-        if (configMapF==null) {
-            synchronized(this) {
-                if (configMapF==null) {
-                    configMapF=new HashMapGetCreate<>(new HashMapGetCreate.SetFactory<>());
-                    for (List<Double> v : configDataFXYZV) configMapF.getAndCreateIfNecessary(v.get(0).intValue()).add(new Voxel(v.get(1).intValue(), v.get(2).intValue(), v.get(3).intValue(), v.get(4).floatValue()));
-                }
-            }
-        }
         return configMapF;
     }
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages)   { 
-        configDataFXYZV.clear();
         configMapF = new HashMapGetCreate<>(new HashMapGetCreate.SetFactory<>());
         Image median = new ImageFloat("", inputImages.getImage(channelIdx, 0));
         Neighborhood n =  new EllipsoidalNeighborhood(1.5, true); // excludes center pixel // only on same plane
@@ -117,7 +110,11 @@ public class RemoveDeadPixels implements Transformation {
                     float med = median.getPixel(x, y, z);
                     if (accumulator.value.getPixel(x, y, z)-med>= thld) {
                         Voxel v =new Voxel(x, y, z, med);
-                        for (int f = Math.max(0, accumulator.key-frameRadius); f<=accumulator.key; ++f) configMapF.getAndCreateIfNecessary(f).add(v);
+                        for (int f = Math.max(0, accumulator.key-frameRadius); f<=accumulator.key; ++f) {
+                            configMapF.getAndCreateIfNecessary(f).add(v);
+                            //Set<Voxel> set = configMapF.getAndCreateIfNecessarySync(f);
+                            //synchronized (set) {set.add(v);}
+                        }
                     }
                 });
                 return null;
@@ -125,8 +122,8 @@ public class RemoveDeadPixels implements Transformation {
         };
         List<Image> imList = new ArrayList<>(inputImages.getFrameNumber());
         for (int f = 0; f<inputImages.getFrameNumber(); ++f) imList.add(inputImages.getImage(channelIdx, f));
-        SlidingOperator.performSlideLeft(imList, frameRadius, operator);
-        
+        if (frameRadius>=1) SlidingOperator.performSlideLeft(imList, frameRadius, operator);
+        else IntStream.range(0, imList.size()).parallel().forEach(i-> operator.compute(new Pair<>(i, imList.get(i))));
         if (testMode) {
             // first frames are not computed
             for (int f = 0; f<frameRadius-1; ++f) testMeanTC[f][0] = testMeanTC[frameRadius-1][0];
@@ -139,7 +136,7 @@ public class RemoveDeadPixels implements Transformation {
 
     @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return (configMapF!=null) || !configDataFXYZV.isEmpty(); // when config is computed put 1 vox and frame -1 to set config. 
+        return (configMapF!=null); // when config is computed put 1 vox and frame -1 to set config. 
     }
 
     @Override
@@ -167,26 +164,7 @@ public class RemoveDeadPixels implements Transformation {
         }
         return image;
     }
-    /*
-    @Override
-    public List getConfigurationData() {
-        if (configMapF!=null && !configMapF.isEmpty() && configMapF.size()!=configDataFXYZV.size()) {
-            configDataFXYZV.clear();
-            for (Entry<Integer, Set<Voxel>> e : configMapF.entrySet()) {
-                for (Voxel v : e.getValue()) {
-                    List<Double> l = new ArrayList<>(5);
-                    l.add(e.getKey().doubleValue());
-                    l.add((double)v.x);
-                    l.add((double)v.y);
-                    l.add((double)v.z);
-                    l.add((double)v.value);
-                    configDataFXYZV.add(l);
-                }
-            }
-        }
-        if (configDataFXYZV.isEmpty()) configDataFXYZV.add(Arrays.asList(new Double[]{-1d, 0d, 0d, 0d, 0d})); // to say its been configured
-        return configDataFXYZV;
-    }*/
+    
 
     @Override
     public SelectionMode getOutputChannelSelectionMode() {

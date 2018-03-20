@@ -243,10 +243,12 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             int cUp = contactUp.getContact(r); // consider only objects in contact with the top of the parent mask
             if (cUp<=2) return 1;
             cUp = contactUpLR.getContact(r);
-            if (cUp<r.getVoxels().size()/5) return 1;
+            if (verbose) logger.debug("R: {} upper artefact: contact: {}/{}", r.getLabel(), cUp, r.getVoxels().size());
+            if (cUp<r.getVoxels().size()/12) return 1;
             double thickness = GeometricalMeasurements.getDistanceMapWidth(r);
-            if (verbose) logger.debug("upper artefact: contact: {}/{} thickness: {}", cUp, r.getVoxels().size(), thickness, thicknessLimitRemove);
-            if (thickness>thicknessLimitRemove) return 1;
+            if (verbose) logger.debug("R: {} upper artefact: thickness: {}/{}", r.getLabel(), thickness, thicknessLimitRemove);
+            if (thickness<thicknessLimitRemove) return -1;
+            if (thickness>=thicknessLimitKeep) return 1;
             return 0;
         };
         return r->{
@@ -317,7 +319,8 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         // get sigma in the middle line of each MC
         Function<StructureObject, float[]> getSigma = p->{
             Image im = p.getPreFilteredImage(structureIdx);
-            MutableBoundingBox bb= new MutableBoundingBox(im).resetOffset().extend(new SimpleBoundingBox(im.sizeX()/3, -im.sizeX()/3, im.sizeX()/3, -im.sizeX()/3, 0, 0)); // only central line to avoid border effects
+            int xMargin = im.sizeX()/3;
+            MutableBoundingBox bb= new MutableBoundingBox(im).resetOffset().extend(new SimpleBoundingBox(xMargin, -xMargin, im.sizeX()*2, -im.sizeY()/4, 0, 0)); // only central line to avoid border effects + remove open end -> sometimes optical aberration
             double[] sum = new double[3];
             BoundingBox.loop(bb, (x, y, z)-> {
                 if (p.getMask().insideMask(x, y, z)) {

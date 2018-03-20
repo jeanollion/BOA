@@ -59,14 +59,16 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.5, 0.05, 1);
     PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new BackgroundThresholder(3, 6, 3), false);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number};
+    
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, minObjectSize, threshold, fillingProportion, frameNumber, boundGroup};
     
     public CropMicrochannelsFluo2D(int channelHeight, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
         this.channelHeight.setValue(channelHeight);
         this.cropMarginY.setValue(cropMargin);
         this.minObjectSize.setValue(minObjectSize);
         this.fillingProportion.setValue(fillingProportion);
-        this.number.setValue(timePointNumber);
+        this.referencePoint.setSelectedIndex(0);
+        frameNumber.setValue(timePointNumber);
     }
     
     public CropMicrochannelsFluo2D() {
@@ -74,10 +76,6 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
     }
     public CropMicrochannelsFluo2D setThresholder(SimpleThresholder instance) {
         this.threshold.setPlugin(instance);
-        return this;
-    }
-    public CropMicrochannelsFluo2D setTimePointNumber(int timePointNumber) {
-        this.number.setValue(timePointNumber);
         return this;
     }
     public CropMicrochannelsFluo2D setChannelDim(int channelHeight, double fillingProportion) {
@@ -124,6 +122,5 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
         return parameters;
     }
     
-    boolean testMode;
-    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
+    
 }
