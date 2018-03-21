@@ -386,8 +386,8 @@ public class ImageReader {
         try {
             info = td.getTiffInfo();
             ImagePlus imp = null;
-            //System.out.println("opening file: depth:"+info.length+ " info0:"+info[0].toString());
-            if (info.length > 1) { // try to open as stack
+            if (info==null) throw new RuntimeException("could not open tif image: "+ filePath+" corrupted file ? ");
+            if (info!=null && info.length > 1) { // try to open as stack
                 Opener o = new Opener();
                 o.setSilentMode(true);
                 imp = o.openTiffStack(info);
