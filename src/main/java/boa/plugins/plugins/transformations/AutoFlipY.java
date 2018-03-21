@@ -157,21 +157,20 @@ public class AutoFlipY implements Transformation, ToolTip {
             while (start<yProj.length && Float.isNaN(yProj[start])) ++start;
             int end = yProj.length;
             while (end>0 && Float.isNaN(yProj[end-1])) --end;
-            if (start>=end)  throw new RuntimeException("Autoflip error @ Frame: "+inputImages.getDefaultTimePoint()+", channel "+channelIdx);
+            if (start>=end)  throw new RuntimeException("Autoflip error: no values>0 @ Frame: "+inputImages.getDefaultTimePoint()+", channel "+channelIdx);
             int peakIdx = ArrayUtil.max(yProj, start, end);           
             double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end-start));
             double peakHeight = yProj[peakIdx] - median;
             float thld = (float)(peakHeight * 0.25 + median  ); //
-            int startOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true); // is there enough space above the peak ? 
-            if (startOfPeakIdx-start<length) {
+            int startOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true); // is there enough space above the aberration ? 
+            if (startOfPeakIdx-start<length*0.75) {
                 flip = true;
-                //return;
+                return;
             }
-            int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, end, thld, true, true); // is there enough space under the peak ? 
-            if (end - endOfPeakIdx<=length) {
+            int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, end, thld, true, true); // is there enough space under the aberration ? 
+            if (end - endOfPeakIdx<=length*0.75) {
                 flip = false;
-                
-                //return;
+                return;
             }
             //logger.debug("would flip: {} values: [{};{}], peak: [{}-{}-{}] height: {} [{}-{}]", flip, start, end, startOfPeakIdx, peakIdx, endOfPeakIdx,yProj[peakIdx]-median, yProj[peakIdx], median );
                 
@@ -181,7 +180,7 @@ public class AutoFlipY implements Transformation, ToolTip {
             double varUpper = ArrayUtil.meanSigma(xProjUpper, 0, xProjUpper.length, null)[1];
             double varLower = ArrayUtil.meanSigma(xProjLower, 0, xProjLower.length, null)[1];
             flip = varLower>varUpper;
-            logger.debug("AutoFlipY: {} (var upper: {}, var lower: {} aberration: [{};{}]", flip, varLower, varUpper,startOfPeakIdx, endOfPeakIdx );
+            logger.debug("AutoFlipY: {} (var upper: {}, var lower: {} aberration: [{};{};{}]", flip, varLower, varUpper,startOfPeakIdx, peakIdx, endOfPeakIdx );
             
         }
     }

@@ -140,6 +140,7 @@ import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
 import static boa.utils.Utils.addHorizontalScrollBar;
+import ij.IJ;
 import javax.swing.ToolTipManager;
 
 
@@ -2660,8 +2661,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             setDBConnection(dbName, getCurrentHostNameOrDir());
             PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, outputFile.getAbsolutePath());
         }*/
-        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        File f = Utils.chooseFile("Select exported file", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_CONFIG_DIR, IJ.getDir("plugins")+File.separator+"BOA");
+        File f = Utils.chooseFile("Select configuration file or exported zip containing configuration file", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
         if (!Utils.promptBoolean("This will erase configutation on current xp", this)) return;
         PreProcessingChain oldppTemplate = db.getExperiment().getPreProcessingTemplate().duplicate();
@@ -2673,7 +2674,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
         db.updateExperiment();
         updateConfigurationTree();
-        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
+        PropertyUtils.set(PropertyUtils.LAST_IO_CONFIG_DIR, f.getAbsolutePath());
     }//GEN-LAST:event_importConfigToCurrentExperimentMenuItemActionPerformed
     private Task getCurrentJob(String dbName) {
         
@@ -3253,7 +3254,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }//GEN-LAST:event_hostNameMousePressed
 
     private void newXPFromTemplateMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPFromTemplateMenuItemActionPerformed
-        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_CONFIG_DIR, IJ.getDir("plugins")+File.separator+"BOA");
+        logger.debug("defDir: {}", defDir);
         String config = promptDir("Select configuration file (or zip containing config file)", defDir, false);
         if (config==null) return;
         if (!new File(config).isFile()) {
@@ -3287,7 +3289,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         ImportExportJSON.importFromFile(config, mDAO, true, false, false, false, false, ProgressCallback.get(instance));
         
         populateExperimentList();
-        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, config);
+        PropertyUtils.set(PropertyUtils.LAST_IO_CONFIG_DIR, config);
     }//GEN-LAST:event_newXPFromTemplateMenuItemActionPerformed
 
     private void pruneTrackButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pruneTrackButtonActionPerformed
