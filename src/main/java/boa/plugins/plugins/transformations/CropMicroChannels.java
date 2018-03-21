@@ -23,18 +23,16 @@ import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.GroupParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.data_structure.input_image.InputImages;
-import static boa.data_structure.input_image.InputImages.getAverageFrame;
-import boa.data_structure.Region;
-import boa.data_structure.RegionPopulation;
-import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageProperties;
+import boa.plugins.ConfigurableTransformation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import boa.plugins.Cropper;
+import boa.plugins.MultichannelTransformation;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.Transformation;
 import boa.utils.ArrayUtil;
@@ -48,7 +46,7 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public abstract class CropMicroChannels implements Transformation {
+public abstract class CropMicroChannels implements ConfigurableTransformation, MultichannelTransformation {
     public static boolean debug = false;
     
     protected NumberParameter xStart = new BoundedNumberParameter("X start", 0, 0, 0, null);

@@ -61,8 +61,6 @@ import boa.plugins.plugins.measurements.objectFeatures.Size;
 import boa.plugins.plugins.post_filters.FeatureFilter;
 import boa.plugins.plugins.pre_filters.BandPass;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
-import boa.plugins.plugins.pre_filters.Median;
-import boa.plugins.legacy.SubtractBackgroundMicrochannel;
 import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
@@ -81,15 +79,12 @@ import boa.plugins.plugins.transformations.AutoRotationXY;
 import boa.plugins.plugins.transformations.CropMicrochannelsPhase2D;
 import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 import boa.plugins.plugins.transformations.CropMicroChannels;
-import boa.plugins.legacy.CropMicroChannels2D;
 import boa.plugins.plugins.transformations.Flip;
 import boa.plugins.plugins.transformations.ImageStabilizerXY;
 import boa.plugins.plugins.transformations.RemoveStripesSignalExclusion;
 import boa.plugins.plugins.transformations.SaturateHistogram;
 import boa.plugins.plugins.transformations.SaturateHistogramHyperfluoBacteria;
 import boa.plugins.plugins.transformations.SimpleCrop;
-import boa.plugins.plugins.transformations.SimpleTranslation;
-import boa.plugins.legacy.SuppressCentralHorizontalLine;
 import boa.plugins.plugins.measurements.Focus;
 import boa.plugins.plugins.measurements.objectFeatures.MeanAtBorder;
 import boa.plugins.plugins.post_filters.RemoveEndofChannelBacteria;
@@ -413,7 +408,7 @@ public class GenerateXP {
         deletePositions(xp, deletePositions);
         if (performProcessing) {
             try {
-                Processor.preProcessImages(mDAO, true);
+                Processor.preProcessImages(mDAO);
             } catch (Exception ex) {
                 logger.error("Error while preprocessing", ex);
             }

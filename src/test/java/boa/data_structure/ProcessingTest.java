@@ -162,7 +162,7 @@ public class ProcessingTest {
         //pre-process
         BasicMasterDAO masterDAO = new BasicMasterDAO(xp);
         try {
-            Processor.preProcessImages(masterDAO, true);
+            Processor.preProcessImages(masterDAO);
         } catch (Exception ex) {
             assertTrue("Failed to preprocess images", false);
         }

@@ -36,6 +36,7 @@ import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.image.ThresholdMask;
 import boa.image.TypeConverter;
+import boa.plugins.ConfigurableTransformation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class RemoveStripesSignalExclusion implements Transformation {
+public class RemoveStripesSignalExclusion implements ConfigurableTransformation {
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new BackgroundThresholder(2.5, 3, 3), false); //new ConstantValue(150)
     BooleanParameter signalExclusionBool2 = new BooleanParameter("Second Signal Exclusion", false);
@@ -239,11 +240,6 @@ public class RemoveStripesSignalExclusion implements Transformation {
         return res;
     }
     
-    @Override
-    public Transformation.SelectionMode getOutputChannelSelectionMode() {
-        return Transformation.SelectionMode.SAME;
-    }
-
     @Override
     public Parameter[] getParameters() {
         return parameters;

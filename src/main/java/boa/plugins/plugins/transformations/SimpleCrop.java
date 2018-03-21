@@ -26,13 +26,14 @@ import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import java.util.ArrayList;
 import boa.plugins.Cropper;
+import boa.plugins.MultichannelTransformation;
 import boa.plugins.Transformation;
 
 /**
  *
  * @author jollion
  */
-public class SimpleCrop implements Transformation {
+public class SimpleCrop implements MultichannelTransformation {
     NumberParameter xMin = new NumberParameter("X-Min", 0, 0);
     NumberParameter yMin = new NumberParameter("Y-Min", 0, 0);
     NumberParameter zMin = new NumberParameter("Z-Min", 0, 0);
@@ -88,32 +89,17 @@ public class SimpleCrop implements Transformation {
         configurationData[4]=bounds.zMin();
         configurationData[5]=bounds.zMax();
     }
-
+    @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (bounds==null) bounds= new MutableBoundingBox(configurationData[0], configurationData[1], configurationData[2], configurationData[3], configurationData[4], configurationData[5]);
         return image.crop(bounds);
     }
 
-    public boolean isTimeDependent() {
-        return false;
-    }
-
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
-    
-    public ArrayList getConfigurationData() {
-        return null;
-    }
-    
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return true;
-    }
-
-    public boolean does3D() {
-        return true;
-    }
-
+    @Override
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }

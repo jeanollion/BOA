@@ -37,15 +37,14 @@ import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.plugins.plugins.transformations.AutoRotationXY;
 import boa.plugins.plugins.transformations.CropMicrochannelsPhase2D;
 import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
-import boa.plugins.legacy.CropMicroChannels2D;
 import boa.plugins.plugins.transformations.Flip;
 import boa.plugins.plugins.transformations.ImageStabilizerCore;
 import boa.plugins.plugins.transformations.ImageStabilizerXY;
-import static boa.plugins.plugins.transformations.ImageStabilizerXY.testTranslate;
 import boa.plugins.plugins.transformations.SaturateHistogram;
 import boa.plugins.plugins.transformations.SaturateHistogramHyperfluoBacteria;
 import boa.plugins.plugins.transformations.SimpleRotationXY;
 import boa.image.processing.ImageTransformation;
+import boa.plugins.ConfigurableTransformation;
 
 /**
  *
@@ -91,7 +90,7 @@ public class TestPreProcess {
         
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(f.getInputImages().getImage(0, time).duplicate("input: f="+posIdx));
-        Processor.setTransformations(f, true);
+        Processor.setTransformations(f);
         disp.showImage(f.getInputImages().getImage(0, time).duplicate("output: f="+posIdx));
     
     }
@@ -102,8 +101,8 @@ public class TestPreProcess {
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
         Transformation t = new IJSubtractBackground(0.5, true, false, true, false);
-        //AutoRotationXY t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0);
-        t.computeConfigurationData(channelIdx, images);
+        //AutoRotationXY stabilizer = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0);
+        if (t instanceof ConfigurableTransformation) ((ConfigurableTransformation)t).computeConfigurationData(channelIdx, images);
         Image res = t.applyTransformation(channelIdx, time, im);
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(im.setName("input"));
@@ -123,11 +122,11 @@ public class TestPreProcess {
         f.getPreProcessingChain().addTransformation(0, null, new CropMicrochannelsFluo2D());
         CropMicrochannelsFluo2D.debug=true;
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
-        //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
+        //for (int stabilizer = 0; stabilizer<imageInputTC.length; ++stabilizer) imageInputTC[stabilizer][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, stabilizer);
         
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(f.getInputImages().getImage(0, time).duplicate("input: f="+fieldIdx));
-        Processor.setTransformations(f, true);
+        Processor.setTransformations(f);
         disp.showImage(f.getInputImages().getImage(0, time).duplicate("output: f="+fieldIdx));
     }
     
@@ -141,14 +140,14 @@ public class TestPreProcess {
         IJImageDisplayer disp = new IJImageDisplayer();
         if (time>=0) {
             Image input = images.getImage(channelIdx, time).duplicate("input");
-            Processor.setTransformations(f, true);
+            Processor.setTransformations(f);
             Image output = images.getImage(channelIdx, time).setName("output");
             disp.showImage(input);
             disp.showImage(output);
         } else { // display all
             List<Image> input = new ArrayList<Image>(tEnd-tStart+1);
             for (int t = 0; t<=(tEnd-tStart); ++t) input.add(images.getImage(channelIdx, t).duplicate("input"+t));
-            Processor.setTransformations(f, true);
+            Processor.setTransformations(f);
             List<Image> output = new ArrayList<Image>(tEnd-tStart+1);
             for (int t = 0; t<=(tEnd-tStart); ++t) output.add(images.getImage(channelIdx, t).duplicate("output"+t));
             disp.showImage(Image.mergeZPlanes(input).setName("input"));
@@ -174,11 +173,11 @@ public class TestPreProcess {
         InputImagesImpl images = f.getInputImages();
         images.subSetTimePoints(tStart, tEnd);
         IJImageDisplayer disp = new IJImageDisplayer();
-        Processor.setTransformations(f, true);
+        Processor.setTransformations(f);
         List<Image> input = new ArrayList<Image>(tEnd-tStart+1);
         for (int t = 0; t<=(tEnd-tStart); ++t) input.add(images.getImage(channelIdx, t).duplicate("input"+t));
         Transformation stabilizer = stab.instanciatePlugin();
-        stabilizer.computeConfigurationData(stab.getInputChannel(), images);
+        if (stabilizer instanceof ConfigurableTransformation) ((ConfigurableTransformation)stabilizer).computeConfigurationData(stab.getInputChannel(), images);
         images.addTransformation(stab.getInputChannel(), stab.getOutputChannels(), stabilizer);
         List<Image> output = new ArrayList<Image>(tEnd-tStart+1);
         for (int t = 0; t<=(tEnd-tStart); ++t) output.add(images.getImage(channelIdx, t).duplicate("output"+t));
@@ -215,7 +214,7 @@ public class TestPreProcess {
         f.getPreProcessingChain().addTransformation(bactChann, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
         if (flip) f.getPreProcessingChain().addTransformation(bactChann, null, new Flip(ImageTransformation.Axis.Y));
         //f.getPreProcessingChain().addTransformation(bactChann, null, new CropMicroChannels2D());
-        setTransformations(f, true);
+        setTransformations(f);
         
         InputImagesImpl images = f.getInputImages();
         Image ref = images.getImage(channelIdx, tRef).setName("tRef");

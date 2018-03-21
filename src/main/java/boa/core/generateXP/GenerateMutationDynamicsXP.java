@@ -142,7 +142,7 @@ public class GenerateMutationDynamicsXP {
             GenerateXP.setFlip(xp, flipArray);
             if (performProcessing) {
                 try {
-                    Processor.preProcessImages(mDAO, true);
+                    Processor.preProcessImages(mDAO);
                 } catch (Exception ex) {
                     logger.debug("Error while preprocessing", ex);
                 }

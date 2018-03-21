@@ -28,15 +28,15 @@ import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
-import boa.plugins.TransformationTimeIndependent;
 import boa.image.processing.ImageTransformation;
+import boa.plugins.MultichannelTransformation;
 import boa.utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class SimpleRotationXY implements TransformationTimeIndependent {
+public class SimpleRotationXY implements MultichannelTransformation {
     NumberParameter angle = new BoundedNumberParameter("Angle (degree)", 4, 0, -180, 180);
     ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
     BooleanParameter removeIncomplete = new BooleanParameter("Remove incomplete rows and columns", false);
@@ -52,38 +52,21 @@ public class SimpleRotationXY implements TransformationTimeIndependent {
         this.angle.setValue(angle);
     }
     
-
+    @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), angle.getValue().floatValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncomplete.getSelected());
     }
-
-    public boolean isTimeDependent() {
-        return false;
-    }
-
+    
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
-
-    public ArrayList getConfigurationData() {
-        return null;
-    }
     
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return true;
-    }
-
-    public boolean does3D() {
-        return true;
-    }
-
+    @Override
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }
 
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        
-    }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

@@ -41,7 +41,7 @@ import java.util.Arrays;
  */
 public class CropMicrochannelsPhase2D extends CropMicroChannels {
     public static boolean debug = false;
-    NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 30, 0, null).setToolTipText("Additional margin added between open-end of microchannels and optical aberration in Y direction");
+    NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 60, 0, null).setToolTipText("Additional margin added between open-end of microchannels and optical aberration in Y direction");
     Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, yEndMargin, boundGroup};
     
     public CropMicrochannelsPhase2D(int cropMarginY) {
@@ -87,7 +87,7 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels {
         if (xMinMaxDown[0]==0 && xMinMaxDown[1]==image.sizeX()-1) return  image.getBoundingBox().setyMax(yMax); // no null values 
         int[] yMinMaxLeft = getYMinAndMax(image, xMinMaxDown[0]);
         int[] yMinMaxRigth = getYMinAndMax(image, xMinMaxDown[1]);
-        int yMin = Math.min(yMinMaxLeft[0], yMinMaxRigth[1]);
+        int yMin = Math.min(yMinMaxLeft[0], yMinMaxRigth[0]);
         int[] xMinMaxUp = getXMinAndMax(image, yMin);
         return new SimpleBoundingBox(Math.max(xMinMaxDown[0], xMinMaxUp[0]), Math.min(xMinMaxDown[1], xMinMaxUp[1]), yMin, yMax, image.zMin(), image.zMax());
     }

@@ -35,6 +35,7 @@ import boa.configuration.parameters.TimePointParameter;
 import boa.configuration.parameters.TransformationPluginParameter;
 import boa.configuration.parameters.ui.MultipleChoiceParameterUI;
 import boa.configuration.parameters.ui.ParameterUI;
+import boa.plugins.MultichannelTransformation;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -52,8 +53,6 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.plaf.basic.BasicMenuItemUI;
 import org.json.simple.JSONObject;
 import boa.plugins.Transformation;
-import boa.plugins.TransformationTimeIndependent;
-import boa.utils.Utils;
 
 /**
  *
@@ -161,8 +160,11 @@ public class PreProcessingChain extends SimpleContainerParameter {
         transformations.insert(tpp, idx);
         tpp.setPlugin(transformation);
         tpp.setInputChannel(inputChannel);
-        if (outputChannel==null && (transformation.getOutputChannelSelectionMode()==Transformation.SelectionMode.MULTIPLE || transformation.getOutputChannelSelectionMode()==Transformation.SelectionMode.SINGLE) ) outputChannel = new int[]{inputChannel};
-        tpp.setOutputChannel(outputChannel);
+        if (transformation instanceof MultichannelTransformation) {
+            MultichannelTransformation mct = (MultichannelTransformation)transformation;
+            if (outputChannel==null && (mct.getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.MULTIPLE || mct.getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.SINGLE) ) outputChannel = new int[]{inputChannel};
+            tpp.setOutputChannel(outputChannel);
+        }
         return tpp;
     }
     public TransformationPluginParameter<Transformation> addTransformation(int inputChannel, int[] outputChannel, Transformation transformation) {

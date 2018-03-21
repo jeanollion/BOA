@@ -31,10 +31,8 @@ import boa.image.ImageMask;
 import java.util.ArrayList;
 import boa.plugins.Filter;
 import boa.plugins.PreFilter;
-import boa.plugins.TransformationTimeIndependent;
 import boa.image.processing.Filters;
 import static boa.image.processing.Filters.applyFilter;
-import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 
 /**
  *
@@ -80,19 +78,6 @@ public class Sigma implements PreFilter, Filter {
         return parameters;
     }
 
-    public boolean does3D() {
-        return true;
-    }
-    @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.SAME;
-    }
-    @Override
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) { }
-    @Override
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return true;
-    }
     @Override 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         return runPreFilter(image, null);

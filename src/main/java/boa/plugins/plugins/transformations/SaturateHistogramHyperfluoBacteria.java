@@ -51,6 +51,7 @@ import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.thresholders.ConstantValue;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.Filters;
+import boa.plugins.ConfigurableTransformation;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.ReusableQueue;
@@ -63,7 +64,7 @@ import java.util.stream.Collectors;
  *
  * @author jollion
  */
-public class SaturateHistogramHyperfluoBacteria implements Transformation {
+public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransformation {
     PluginParameter<SimpleThresholder> thresholdBck = new PluginParameter<>("Background Threshold", SimpleThresholder.class, new BackgroundThresholder(3, 6, 3), false); //new ConstantValue(50)
     PluginParameter<SimpleThresholder> thresholdHyper = new PluginParameter<>("HyperFluo Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(50)
     NumberParameter foregroundProportion = new BoundedNumberParameter("Hyperfluorecent cells foreground proportion threshold", 2, 0.45, 0, 1); 
@@ -159,11 +160,6 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         if (Double.isNaN(saturateValue)) return image;
         SaturateHistogram.saturate(saturateValue, saturateValue, image);
         return image;
-    }
-
-    @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.SAME;
     }
 
     @Override

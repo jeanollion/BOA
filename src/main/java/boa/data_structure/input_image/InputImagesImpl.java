@@ -21,13 +21,12 @@ package boa.data_structure.input_image;
 import boa.image.Image;
 import static boa.image.Image.logger;
 import boa.plugins.Autofocus;
+import boa.plugins.MultichannelTransformation;
 import boa.plugins.Transformation;
-import boa.plugins.TransformationTimeIndependent;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
-
 /**
  *
  * @author jollion
@@ -98,9 +97,11 @@ public class InputImagesImpl implements InputImages {
     }
     public void addTransformation(int inputChannel, int[] channelIndicies, Transformation transfo) {
         if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);
-        else {
-            if (transfo.getOutputChannelSelectionMode()==Transformation.SelectionMode.SAME) addTransformation(inputChannel, transfo);
-            else for (int c = 0; c<getChannelNumber(); ++c) addTransformation(c, transfo);
+        else { // null channel indices either same or all
+            if (transfo instanceof MultichannelTransformation) {
+                if (((MultichannelTransformation)transfo).getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.SAME) addTransformation(inputChannel, transfo);
+                else for (int c = 0; c<getChannelNumber(); ++c) addTransformation(c, transfo); 
+            } else addTransformation(inputChannel, transfo);
         }
     }
     

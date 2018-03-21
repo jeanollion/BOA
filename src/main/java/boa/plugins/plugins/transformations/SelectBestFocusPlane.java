@@ -30,18 +30,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Transformation;
-import boa.plugins.TransformationTimeIndependent;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.image.processing.ImageFeatures;
 import boa.utils.ThreadRunner;
 import boa.image.ThresholdMask;
 import java.util.List;
 import boa.plugins.Autofocus;
+import boa.plugins.ConfigurableTransformation;
 /**
  *
  * @author jollion
  */
-public class SelectBestFocusPlane implements Transformation, Autofocus {
+public class SelectBestFocusPlane implements ConfigurableTransformation, Autofocus {
     ArrayList<Integer> bestFocusPlaneIdxT = new ArrayList<Integer>();
     NumberParameter gradientScale = new BoundedNumberParameter("Gradient Scale", 0, 3, 1, 10);
     PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new BackgroundThresholder(2.5, 3, 3), true); //new ConstantValue(150)    Parameter[] parameters = new Parameter[]{gradientScale};
@@ -50,10 +50,7 @@ public class SelectBestFocusPlane implements Transformation, Autofocus {
     public SelectBestFocusPlane(double gradientScale) {
         this.gradientScale.setValue(gradientScale);
     }
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.SAME;
-    }
-
+    
     @Override
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages)  {
         final double scale = gradientScale.getValue().doubleValue();
@@ -81,7 +78,6 @@ public class SelectBestFocusPlane implements Transformation, Autofocus {
         }
         bestFocusPlaneIdxT.addAll(Arrays.asList(conf));
     }
-    
     
     @Override
     public int getBestFocusPlane(Image image, ImageMask mask) {

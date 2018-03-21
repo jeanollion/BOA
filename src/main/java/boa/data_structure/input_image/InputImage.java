@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import boa.plugins.Transformation;
-import boa.plugins.TransformationTimeIndependent;
 
 /**
  *
@@ -56,7 +55,7 @@ public class InputImage {
         this.timePoint = timePoint;
         this.inputTimePoint=inputTimePoint;
         this.microscopyFieldName = microscopyFieldName;
-        transformationsToApply=new ArrayList<Transformation>();
+        transformationsToApply=new ArrayList<>();
     }
     
     public InputImage duplicate() {
@@ -75,20 +74,6 @@ public class InputImage {
     public MultipleImageContainer duplicateContainer() {
         return imageSources.duplicate();
     }
-    
-    
-    
-    /*public Image getImage(MultipleImageContainer container) {
-        if (image == null) {
-            if (intermediateImageSavedToDAO) image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
-            if (image==null) {
-                image = container.getImage(inputTimePoint, channelIdx);
-                originalImageType = Image.createEmptyImage("source Type", image, new BlankMask( 0, 0, 0));
-            }
-        }
-        applyTransformations();
-        return image;
-    } */
     
     public Image getImage() {
         if (image == null) {
@@ -117,38 +102,16 @@ public class InputImage {
                 //new IJImageDisplayer().showImage(image);
                 while(it.hasNext()) {
                     Transformation t = it.next();
-                    
-                    try {
-                        image =t.applyTransformation(channelIdx, timePoint, image);
-                    } catch (Exception ex) {
-                        logger.debug("Transformation error: ", ex);
-                        image= null;
-                        return;
-                    }
-                    //if (this.timePoint==0) logger.debug("after trans: {}, scale: {}", t.getClass().getSimpleName(), image.getScaleXY());
+                    image =t.applyTransformation(channelIdx, timePoint, image);
                     it.remove();
-                    //new IJImageDisplayer().showImage(image.setName("after: "+t.getClass().getSimpleName()));
                 }
             }
         }
-        
     }
     
     public void closeImage() { // si modification du bitDepth -> faire la même pour toutes les images. Parfois seulement bruit négatif -> pas besoin
         // cast to initial type
         if (originalImageType!=null && originalImageType.getBitDepth()!=image.getBitDepth()) {
-            /*double[] mm = image.getMinAndMax(null);
-            if (mm[0]<0) {
-                logger.warn("PreprocessedImage Pos:{}/Fr:{}, original bitDepth:{}, has negative values ({}) -> will be trimmed", microscopyFieldName, this.timePoint, originalImageType.getBitDepth(), mm[0]);
-                //originalImageType = new ImageFloat("", 0, 0 ,0);
-            }
-            else if (mm[1]>255 && originalImageType.getBitDepth()==8) {
-                logger.warn("PreprocessedImage Pos:{}/Fr:{}, original bitDepth:{}, has high values ({}) -> will be trimmed", microscopyFieldName, this.timePoint, originalImageType.getBitDepth(), mm[1]);
-                //if (mm[1]<65535) originalImageType = new ImageShort("", 0, 0 ,0);
-                //else originalImageType = new ImageFloat("", 0, 0 ,0);
-            } else if (mm[1]<=1) {
-                //originalImageType = new ImageFloat("", 0, 0 ,0);
-            }*/
             image = TypeConverter.cast(image, originalImageType);
         }
         dao.writePreProcessedImage(image, channelIdx, timePoint, microscopyFieldName);

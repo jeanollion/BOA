@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2018 Jean Ollion
  *
  * This File is part of BOA
@@ -18,14 +18,18 @@
  */
 package boa.plugins;
 
+import boa.data_structure.input_image.InputImages;
+
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
-/**
- * Transformation applied on one single image at single frame (not need to configure)
- * @author jollion
- */
-public interface Filter extends Transformation {
-    
+public interface ConfigurableTransformation extends Transformation {
+    /**
+     * This method compute configuration data necessary for {@link Transformation#applyTransformation(image.Image)} method; data is retrieved by the {@link Transformation#getConfigurationData() } method; in this metohd the objects should not be modified but created de novo.
+     * @param channelIdx
+     * @param inputImages 
+     */
+    public void computeConfigurationData(int channelIdx, InputImages inputImages);
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber);
 }

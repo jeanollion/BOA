@@ -64,7 +64,7 @@ public class ImageTransformation {
             if (angle<0) angle = 360+angle;
             return turn(image, (int)angle/90, 0, 0);
         } else {
-            Image im =  rotate(image, angle, 0, 0, interpolation, !removeIncompleteRowsAndColumns, true);
+            Image im =  rotate(image, angle, 0, 0, interpolation, !removeIncompleteRowsAndColumns, false);
             if (removeIncompleteRowsAndColumns) {
                 //int delta = (int)(Math.abs(Math.sin(angle*Math.PI/180d))*Math.max(im.getSizeX(), im.getSizeY()))+1; // cf Geages Debregas 
                 double[] deltas = new double[2];

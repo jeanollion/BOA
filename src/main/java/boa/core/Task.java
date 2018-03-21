@@ -413,13 +413,13 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (exportData) exportData();
             db.clearCache();
         }
-    private void process(String position, boolean deleteAllField) throws Exception {
+    private void process(String position, boolean deleteAllField) {
         publish("Position: "+position);
         if (deleteAllField) db.getDao(position).deleteAllObjects();
         if (preProcess) {
             publish("Pre-Processing: DB: "+dbName+", Position: "+position);
             logger.info("Pre-Processing: DB: {}, Position: {}", dbName, position);
-            Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, preProcess, this);
+            Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, this);
             db.getExperiment().getPosition(position).flushImages(true, true); // pre-processed images are open once again by root objects.
             System.gc();
             incrementProgress();

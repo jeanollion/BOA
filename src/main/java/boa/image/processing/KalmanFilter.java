@@ -32,6 +32,7 @@ import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
 import boa.image.ImageShort;
+import boa.plugins.Filter;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -59,7 +60,7 @@ producing a new filtered stack.
 													Christopher Philip Mauer 
 	cpmauer@northwestern.edu
 */
-public class KalmanFilter implements Transformation {
+public class KalmanFilter implements Filter {
    private static double defpercentvar = 0.05;
    private static double defgain = 0.8;;
    public static final Logger logger = LoggerFactory.getLogger(KalmanFilter.class);
@@ -173,23 +174,8 @@ public class KalmanFilter implements Transformation {
     }
 
     @Override
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        
-    }
-
-    @Override
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return true;
-    }
-
-    @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.SAME;
     }
 
     @Override

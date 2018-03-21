@@ -37,6 +37,8 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
+import boa.plugins.ConfigurableTransformation;
+import boa.plugins.MultichannelTransformation;
 import boa.plugins.ParameterSetup;
 import boa.plugins.ParameterSetupTracker;
 import boa.plugins.ProcessingScheme;
@@ -46,8 +48,6 @@ import boa.plugins.TrackParametrizable;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.Transformation;
-import static boa.plugins.Transformation.SelectionMode.ALL;
-import static boa.plugins.Transformation.SelectionMode.SAME;
 import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
@@ -223,13 +223,8 @@ public class PluginConfigurationUtils {
                         }
                         Transformation transfo = tpp.instanciatePlugin();
                         transfo.setTestMode(i==transfoIdx);
-                        logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
-                        try {
-                            transfo.computeConfigurationData(tpp.getInputChannel(), images);
-                        } catch (Exception ex) {
-                            logger.debug("Error computing tranfo configuration", ex);
-                        }
-                        //tpp.setConfigurationData(transfo.getConfigurationData());
+                        logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
+                        if (transfo instanceof ConfigurableTransformation) ((ConfigurableTransformation)transfo).computeConfigurationData(tpp.getInputChannel(), images);
                         images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
                         
                         if (showAllSteps || i==transfoIdx) {
@@ -237,8 +232,8 @@ public class PluginConfigurationUtils {
                             if (!showAllSteps) {
                                 outputChannels = tpp.getOutputChannels();
                                 if (outputChannels==null) {
-                                    if (transfo.getOutputChannelSelectionMode()==SAME) outputChannels = new int[]{tpp.getInputChannel()};
-                                    else outputChannels = ArrayUtil.generateIntegerArray(images.getChannelNumber());
+                                    if (transfo instanceof MultichannelTransformation && ((MultichannelTransformation)transfo).getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.ALL) outputChannels = ArrayUtil.generateIntegerArray(images.getChannelNumber());
+                                    else outputChannels = new int[]{tpp.getInputChannel()}; 
                                 }
                             }
                             Image[][] imagesTC = images.getImagesTC(0, position.getTimePointNumber(false), outputChannels);
@@ -287,17 +282,14 @@ public class PluginConfigurationUtils {
                     outputL.removeIf(idx -> idx>=images.getChannelNumber());
                     output = Utils.toArray(outputL, false);
                 } else if (output == null ) {
-                    if (transfo.getOutputChannelSelectionMode()==ALL) output = ArrayUtil.generateIntegerArray(images.getChannelNumber());
+                    if (transfo instanceof MultichannelTransformation && ((MultichannelTransformation)transfo).getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.ALL) output = ArrayUtil.generateIntegerArray(images.getChannelNumber());
                     else output = new int[]{input};
                 }
 
-                logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), input, output, transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
+                logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), input, output);
                 transfo.setTestMode(true);
-                try {
-                    transfo.computeConfigurationData(input, images);
-                } catch (Exception ex) {
-                    logger.debug("Error computing tranfo configuration", ex);
-                }
+                if (transfo instanceof ConfigurableTransformation) ((ConfigurableTransformation)transfo).computeConfigurationData(tpp.getInputChannel(), images);
+                      
                 //tpp.setConfigurationData(transfo.getConfigurationData());
                 images.addTransformation(input, output, transfo);
 

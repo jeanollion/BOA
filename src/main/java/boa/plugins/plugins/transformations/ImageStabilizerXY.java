@@ -60,6 +60,8 @@ import static boa.plugins.plugins.transformations.ImageStabilizerCore.combine;
 import static boa.plugins.plugins.transformations.ImageStabilizerCore.copy;
 import static boa.plugins.plugins.transformations.ImageStabilizerCore.gradient;
 import boa.image.processing.ImageTransformation;
+import boa.plugins.ConfigurableTransformation;
+import boa.plugins.MultichannelTransformation;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.ReusableQueue;
@@ -72,7 +74,7 @@ import boa.utils.Utils;
  *
  * @author nasique
  */
-public class ImageStabilizerXY implements Transformation {
+public class ImageStabilizerXY implements ConfigurableTransformation, MultichannelTransformation {
     public final static Logger logger = LoggerFactory.getLogger(ImageStabilizerXY.class);
     ChoiceParameter transformationType = new ChoiceParameter("Transformation", new String[]{"Translation"}, "Translation", false); //, "Affine"
     ChoiceParameter pyramidLevel = new ChoiceParameter("Pyramid Level", new String[]{"0", "1", "2", "3", "4"}, "1", false);

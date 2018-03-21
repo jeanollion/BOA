@@ -29,6 +29,8 @@ import boa.data_structure.dao.MasterDAO;
 import ij.ImageJ;
 import boa.image.Image;
 import boa.image.ImageInteger;
+import boa.plugins.ConfigurableTransformation;
+import boa.plugins.MultichannelTransformation;
 import java.util.ArrayList;
 import java.util.List;
 import boa.plugins.PluginFactory;
@@ -37,14 +39,6 @@ import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.plugins.plugins.pre_filters.TopHat;
 import boa.plugins.plugins.transformations.AutoRotationXY;
 import boa.plugins.plugins.transformations.CropMicrochannelsPhase2D;
-import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
-import boa.plugins.legacy.CropMicroChannels2D;
-import boa.plugins.plugins.transformations.Flip;
-import boa.plugins.plugins.transformations.ImageStabilizerCore;
-import static boa.plugins.plugins.transformations.ImageStabilizerXY.testTranslate;
-import boa.plugins.plugins.transformations.SaturateHistogram;
-import boa.plugins.plugins.transformations.SimpleRotationXY;
-import boa.image.processing.ImageTransformation;
 
 /**
  *
@@ -78,7 +72,7 @@ public class TestPreProcessPhase {
         Transformation t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false));
         //Transformation t = new TopHat(12, Double.NaN, true, true);
         //Transformation t = new IJSubtractBackground(0.3, true, false, true, false);
-        t.computeConfigurationData(channelIdx, images);
+        if (t instanceof ConfigurableTransformation) ((ConfigurableTransformation)t).computeConfigurationData(channelIdx, images);
         Image res = t.applyTransformation(channelIdx, time, im);
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(im.setName("input"));
@@ -125,7 +119,7 @@ public class TestPreProcessPhase {
         
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(f.getInputImages().getImage(0, time).duplicate("input: f="+fieldIdx));
-        Processor.setTransformations(f, true);
+        Processor.setTransformations(f);
         disp.showImage(f.getInputImages().getImage(0, time).duplicate("output: f="+fieldIdx));
     }
     
@@ -139,14 +133,14 @@ public class TestPreProcessPhase {
         IJImageDisplayer disp = new IJImageDisplayer();
         if (time>=0) {
             Image input = images.getImage(channelIdx, time).duplicate("input");
-            Processor.setTransformations(f, true);
+            Processor.setTransformations(f);
             Image output = images.getImage(channelIdx, time).setName("output");
             disp.showImage(input);
             disp.showImage(output);
         } else { // display all
             List<Image> input = new ArrayList<Image>(tEnd-tStart+1);
             for (int t = 0; t<=(tEnd-tStart); ++t) input.add(images.getImage(channelIdx, t).duplicate("input"+t));
-            Processor.setTransformations(f, true);
+            Processor.setTransformations(f);
             List<Image> output = new ArrayList<Image>(tEnd-tStart+1);
             for (int t = 0; t<=(tEnd-tStart); ++t) output.add(images.getImage(channelIdx, t).duplicate("output"+t));
             disp.showImage(Image.mergeZPlanes(input).setName("input"));

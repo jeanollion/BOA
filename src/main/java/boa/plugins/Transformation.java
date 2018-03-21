@@ -28,15 +28,6 @@ import java.util.List;
  * @author jollion
  */
 public interface Transformation extends ImageProcessingPlugin {
-    public static enum SelectionMode{SAME, SINGLE, MULTIPLE, ALL};
-    /**
-     * This method compute configuration data necessary for {@link Transformation#applyTransformation(image.Image)} method; data is retrieved by the {@link Transformation#getConfigurationData() } method; in this metohd the objects should not be modified but created de novo.
-     * @param channelIdx
-     * @param inputImages 
-     */
-    public void computeConfigurationData(int channelIdx, InputImages inputImages);
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber);
     public Image applyTransformation(int channelIdx, int timePoint, Image image);
-    public SelectionMode getOutputChannelSelectionMode();
     public void setTestMode(boolean testMode);
 }

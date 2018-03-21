@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2018 Jean Ollion
  *
  * This File is part of BOA
@@ -18,12 +18,11 @@
  */
 package boa.plugins;
 
-
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
-public interface TransformationTimeIndependent extends Transformation {
-    //public SelectionMode getConfigurationTimePointSelectionMode();
-    
+public interface MultichannelTransformation extends Transformation {
+    public static enum SelectionMode{SAME, SINGLE, MULTIPLE, ALL};
+    public SelectionMode getOutputChannelSelectionMode();
 }

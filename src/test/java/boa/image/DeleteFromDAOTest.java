@@ -117,7 +117,7 @@ public class DeleteFromDAOTest {
         // process
         assertEquals("number of files before preProcess", 0, countFiles(new File(xp.getOutputImageDirectory())));
         try {
-            Processor.preProcessImages(masterDAO, true);
+            Processor.preProcessImages(masterDAO);
         } catch (Exception ex) {
             assertTrue("failed to preProcess images", false);
         }

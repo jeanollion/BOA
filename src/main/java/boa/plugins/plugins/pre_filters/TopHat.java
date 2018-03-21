@@ -37,7 +37,6 @@ import boa.image.TypeConverter;
 import java.util.ArrayList;
 import boa.plugins.Filter;
 import boa.plugins.PreFilter;
-import boa.plugins.TransformationTimeIndependent;
 import boa.image.processing.Filters;
 import static boa.image.processing.Filters.open;
 import static boa.image.processing.Filters.close;
@@ -62,7 +61,7 @@ public class TopHat implements PreFilter, Filter {
         this.smooth.setSelected(smooth);
     }
     public TopHat() { }
-    
+    @Override
     public Image runPreFilter(Image input, ImageMask mask) {
         return filter(input, radius.getScaleXY(), radius.getScaleZ(mask.getScaleXY(), mask.getScaleZ()), darkBackground.getSelected(), smooth.getSelected());
     }
@@ -75,21 +74,11 @@ public class TopHat implements PreFilter, Filter {
         bck.resetOffset().translate(input);
         return bck;
     }
-
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
-
-    public boolean does3D() {
-        return true;
-    }
-
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.SAME;
-    }
-
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {}
-
+    @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         return filter(image, radius.getScaleXY(), radius.getScaleZ(image.getScaleXY(), image.getScaleZ()), darkBackground.getSelected(), smooth.getSelected()); 
     }

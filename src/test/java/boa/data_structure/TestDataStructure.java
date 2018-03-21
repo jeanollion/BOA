@@ -133,7 +133,7 @@ public class TestDataStructure {
         ObjectDAO dao = db.getDao(fieldName);
         
         try {
-            Processor.preProcessImages(db, true);
+            Processor.preProcessImages(db);
         } catch (Exception ex) {
             logger.debug("", ex);
         }

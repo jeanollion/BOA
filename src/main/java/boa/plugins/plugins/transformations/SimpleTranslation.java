@@ -26,15 +26,15 @@ import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
-import boa.plugins.TransformationTimeIndependent;
 import boa.image.processing.ImageTransformation;
+import boa.plugins.MultichannelTransformation;
 import boa.utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class SimpleTranslation implements TransformationTimeIndependent {
+public class SimpleTranslation implements MultichannelTransformation {
     NumberParameter X = new NumberParameter("dX", 3, 0);
     NumberParameter Y = new NumberParameter("dY", 3, 0);
     NumberParameter Z = new NumberParameter("dZ", 3, 0);
@@ -53,39 +53,21 @@ public class SimpleTranslation implements TransformationTimeIndependent {
         this.interpolation.setSelectedItem(scheme.toString());
         return this;
     }
-
+    @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (!X.hasIntegerValue() || !Y.hasIntegerValue() || !Z.hasIntegerValue()) image = TypeConverter.toFloat(image, null);
         return ImageTransformation.translate(image, X.getValue().doubleValue(), Y.getValue().doubleValue(), Z.getValue().doubleValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
     }
-
-    public boolean isTimeDependent() {
-        return false;
-    }
-
+    @Override 
     public Parameter[] getParameters() {
         return parameters;
     }
     
-    public ArrayList getConfigurationData() {
-        return null;
-    }
-    
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return true;
-    }
-
-    public boolean does3D() {
-        return true;
-    }
-
+    @Override
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.MULTIPLE;
     }
 
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        
-    }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

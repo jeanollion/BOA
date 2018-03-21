@@ -37,7 +37,6 @@ import boa.image.ImageFloat;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
 import java.util.List;
-import boa.plugins.TransformationTimeIndependent;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.image.processing.ImageTransformation;
 import boa.image.processing.ImageTransformation.InterpolationScheme;
@@ -45,6 +44,8 @@ import boa.image.processing.RadonProjection;
 import static boa.image.processing.RadonProjection.getAngleArray;
 import static boa.image.processing.RadonProjection.radonProject;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
+import boa.plugins.ConfigurableTransformation;
+import boa.plugins.MultichannelTransformation;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import java.util.stream.Collectors;
@@ -53,7 +54,7 @@ import java.util.stream.Collectors;
  *
  * @author jollion
  */
-public class AutoRotationXY implements TransformationTimeIndependent {
+public class AutoRotationXY implements MultichannelTransformation, ConfigurableTransformation {
     NumberParameter minAngle = new BoundedNumberParameter("Minimal Angle for search", 2, -10, -90, 90);
     NumberParameter maxAngle = new BoundedNumberParameter("Maximal Angle for search", 2, 10, -90, 90);
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);

@@ -22,13 +22,11 @@ import static boa.configuration.parameters.Parameter.logger;
 import boa.configuration.parameters.ui.ChoiceParameterUI;
 import boa.configuration.experiment.MicroscopyField;
 import boa.gui.PluginConfigurationUtils;
+import boa.plugins.MultichannelTransformation;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.simple.JSONObject;
 import boa.plugins.Transformation;
-import boa.plugins.Transformation.SelectionMode;
-import boa.plugins.TransformationTimeIndependent;
-import boa.utils.JSONUtils;
 
 /**
  *
@@ -77,11 +75,19 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     
     @Override 
     public TransformationPluginParameter<T> setPlugin(T pluginInstance) {
-        if (pluginInstance instanceof TransformationTimeIndependent) {  
-            SelectionMode oc = ((TransformationTimeIndependent)pluginInstance).getOutputChannelSelectionMode();
-            if (SelectionMode.MULTIPLE.equals(oc)) outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
-            else if (SelectionMode.SINGLE.equals(oc)) outputChannel = new ChannelImageParameter("Channels on which apply transformation", -1);
-            else outputChannel=null;
+        if (pluginInstance instanceof MultichannelTransformation) {  
+            MultichannelTransformation.SelectionMode oc = ((MultichannelTransformation)pluginInstance).getOutputChannelSelectionMode();
+            switch (oc) {
+                case MULTIPLE:
+                    outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
+                    break;
+                case SINGLE:
+                    outputChannel = new ChannelImageParameter("Channels on which apply transformation", -1);
+                    break;
+                default:
+                    outputChannel=null;
+                    break;
+            }
         }
         super.setPlugin(pluginInstance);
         //configurationData = ParameterUtils.duplicateConfigurationDataList(pluginInstance.getConfigurationData());

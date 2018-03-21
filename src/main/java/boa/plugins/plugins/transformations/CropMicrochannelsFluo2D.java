@@ -45,7 +45,6 @@ import java.util.Iterator;
 import java.util.List;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
-import boa.plugins.TransformationTimeIndependent;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.MicrochannelSegmenter.Result;

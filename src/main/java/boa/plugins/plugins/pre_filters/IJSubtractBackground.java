@@ -35,7 +35,6 @@ import boa.image.TypeConverter;
 import java.util.ArrayList;
 import boa.plugins.Filter;
 import boa.plugins.PreFilter;
-import boa.plugins.TransformationTimeIndependent;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 
@@ -61,6 +60,7 @@ public class IJSubtractBackground implements PreFilter, Filter {
     
     public IJSubtractBackground(){}
     
+    @Override
     public Image runPreFilter(Image input, ImageMask mask) {
         return filter(input, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
     }
@@ -87,21 +87,12 @@ public class IJSubtractBackground implements PreFilter, Filter {
         }
         return (ImageFloat)input;
     }
-
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
-
-    public boolean does3D() {
-        return true;
-    }
-
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.SAME;
-    }
-
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {}
-
+    
+    @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         return filter(image, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
     }

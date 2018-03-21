@@ -43,6 +43,7 @@ import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations.Axis;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.plugins.ConfigurableTransformation;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.SlidingOperator;
@@ -52,7 +53,7 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class RemoveDeadPixels implements Transformation {
+public class RemoveDeadPixels implements ConfigurableTransformation {
     NumberParameter threshold = new BoundedNumberParameter("Local Threshold", 5, 30, 0, null).setToolTipText("Difference between pixels and median transform (radius 1 pix.) is computed. If difference is higer than this threshold pixel is considered as dead and will be replaced by the median value");
     NumberParameter frameRadius = new BoundedNumberParameter("Frame Radius", 0, 4, 1, null).setToolTipText("Number of frame to average");
     HashMapGetCreate<Integer, Set<Voxel>> configMapF;
@@ -165,11 +166,6 @@ public class RemoveDeadPixels implements Transformation {
         return image;
     }
     
-
-    @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.SAME;
-    }
     boolean testMode;
     @Override
     public void setTestMode(boolean testMode) {

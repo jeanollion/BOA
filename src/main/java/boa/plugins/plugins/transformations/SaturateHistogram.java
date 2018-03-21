@@ -23,6 +23,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import static boa.image.BoundingBox.loop;
 import boa.image.Image;
+import boa.plugins.Filter;
 import java.util.ArrayList;
 import boa.plugins.Transformation;
 
@@ -30,7 +31,7 @@ import boa.plugins.Transformation;
  *
  * @author jollion
  */
-public class SaturateHistogram implements Transformation {
+public class SaturateHistogram implements Filter {
     NumberParameter threshold = new NumberParameter("Saturation initiation value", 4, 400);
     NumberParameter maxValue = new NumberParameter("Maximum value", 3, 500);
     Parameter[] parameters = new Parameter[]{threshold, maxValue};
@@ -70,18 +71,7 @@ public class SaturateHistogram implements Transformation {
         }
     }
 
-    public ArrayList getConfigurationData() {
-        return null;
-    }
-    
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return true;
-    }
-
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.SAME;
-    }
-
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }

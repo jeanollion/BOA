@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import boa.measurement.MeasurementKey;
+import boa.plugins.ConfigurableTransformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.plugins.Measurement;
@@ -98,14 +99,14 @@ public class Processor {
     
     // preProcessing-related methods
     
-    public static void preProcessImages(MasterDAO db, boolean computeConfigurationData)  throws Exception {
+    public static void preProcessImages(MasterDAO db)  throws Exception {
         Experiment xp = db.getExperiment();
         for (int i = 0; i<xp.getPositionCount(); ++i) {
-            preProcessImages(xp.getPosition(i), db.getDao(xp.getPosition(i).getName()), false, computeConfigurationData, null);
+            preProcessImages(xp.getPosition(i), db.getDao(xp.getPosition(i).getName()), false, null);
         }
     }
     
-    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData, ProgressCallback pcb)  throws Exception {
+    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, ProgressCallback pcb)  {
         if (!dao.getPositionName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
         InputImagesImpl images = field.getInputImages();
         if (images==null || images.getImage(0, images.getDefaultTimePoint())==null) {
@@ -114,22 +115,22 @@ public class Processor {
         }
         images.deleteFromDAO(); // eraseAll images if existing in imageDAO
         for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(field.getName(), s);
-        setTransformations(field, computeConfigurationData);
+        setTransformations(field);
         images.applyTranformationsSaveAndClose();
         if (deleteObjects) dao.deleteAllObjects();
     }
     
-    public static void setTransformations(MicroscopyField field, boolean computeConfigurationData)  throws Exception {
+    public static void setTransformations(MicroscopyField field)  {
         InputImagesImpl images = field.getInputImages();
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations(true)) {
             Transformation transfo = tpp.instanciatePlugin();
-            logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
-            if (computeConfigurationData || !transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber())) {
-                transfo.computeConfigurationData(tpp.getInputChannel(), images);
-                //tpp.setConfigurationData(transfo.getConfigurationData());
+            if (transfo instanceof ConfigurableTransformation) {
+                ConfigurableTransformation ct = (ConfigurableTransformation)transfo;
+                logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), ct.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
+                if (!ct.isConfigured(images.getChannelNumber(), images.getFrameNumber()))  ct.computeConfigurationData(tpp.getInputChannel(), images);
+                images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
             }
-            images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }
     }
     // processing-related methods

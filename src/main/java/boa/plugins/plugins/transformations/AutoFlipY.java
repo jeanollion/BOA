@@ -50,6 +50,8 @@ import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import static boa.plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.FLUO;
 import static boa.plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE;
 import boa.image.processing.ImageTransformation;
+import boa.plugins.ConfigurableTransformation;
+import boa.plugins.MultichannelTransformation;
 import boa.plugins.ToolTip;
 import static boa.plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.PHASE;
 import boa.utils.ArrayUtil;
@@ -61,7 +63,7 @@ import java.util.Arrays;
  *
  * @author jollion
  */
-public class AutoFlipY implements Transformation, ToolTip {
+public class AutoFlipY implements ConfigurableTransformation, MultichannelTransformation, ToolTip {
 
     
     public static enum AutoFlipMethod {
