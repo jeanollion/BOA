@@ -147,11 +147,6 @@ public class InputImagesImpl implements InputImages {
     public void applyTranformationsSaveAndClose() {
         long tStart = System.currentTimeMillis();
         final int cCount = getChannelNumber();
-        /*ThreadAction<InputImage> ta = (InputImage image, int idx, int threadIdx) -> {
-            image.getImage();
-            image.closeImage();
-            logger.debug("apply transfo: frame {}", idx);
-        };*/
         ThreadAction<InputImage> ta = (InputImage image, int idx) -> {
             image.getImage();
             image.closeImage();

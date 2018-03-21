@@ -54,6 +54,7 @@ import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.utils.ArrayUtil;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -123,37 +124,28 @@ public class RemoveStripesSignalExclusion implements ConfigurableTransformation 
         final double[] exclThld = chExcl>=0?(chExcl2>=0? new double[]{thld1, thld2} : new double[]{thld1} ) : new double[0];*/
         final boolean addGlobalMean = this.addGlobalMean.getSelected();
         //logger.debug("remove stripes thld: {}", exclThld);
-        final ThreadRunner tr = new ThreadRunner(0, inputImages.getFrameNumber());
         meanFZY = new float[inputImages.getFrameNumber()][][];
-        for (int i = 0; i<tr.threads.length; i++) {
-            tr.threads[i] = new Thread(
-                    new Runnable() {  
-                    public void run() {
-                        for (int frame = tr.ai.getAndIncrement(); frame<tr.end; frame = tr.ai.getAndIncrement()) {
-                            Image currentImage = inputImages.getImage(channelIdx, frame);
-                            ImageMask m;
-                            if (chExcl>=0) {
-                                Image se1 = inputImages.getImage(chExcl, frame);
-                                double thld1 = signalExclusionThreshold.instanciatePlugin().runSimpleThresholder(se1, null);
-                                ThresholdMask mask = currentImage.sizeZ()>1 && se1.sizeZ()==1 ? new ThresholdMask(se1, thld1, true, true, 0):new ThresholdMask(se1, thld1, true, true);
-                                if (testMode) testMasks.put(frame, TypeConverter.toByteMask(mask, null, 1));
-                                if (chExcl2>=0) {
-                                    Image se2 = inputImages.getImage(chExcl2, frame);
-                                    double thld2 = signalExclusionThreshold2.instanciatePlugin().runSimpleThresholder(se2, null);
-                                    ThresholdMask mask2 = currentImage.sizeZ()>1 && se2.sizeZ()==1 ? new ThresholdMask(se2, thld2, true, true, 0):new ThresholdMask(se2, thld2, true, true);
-                                    if (testMode) testMasks2.put(frame, TypeConverter.toByteMask(mask2, null, 1));
-                                    mask = ThresholdMask.or(mask, mask2);
-                                }
-                                m = mask;
-                            } else m = new BlankMask(currentImage);
-                            meanFZY[frame] = computeMeanX(currentImage, m, addGlobalMean);
-                            if (frame%100==0) logger.debug("tp: {} {}", frame, Utils.getMemoryUsage());
-                        }
+        IntStream.range(0, inputImages.getFrameNumber()).parallel().forEach(frame -> {
+                Image currentImage = inputImages.getImage(channelIdx, frame);
+                ImageMask m;
+                if (chExcl>=0) {
+                    Image se1 = inputImages.getImage(chExcl, frame);
+                    double thld1 = signalExclusionThreshold.instanciatePlugin().runSimpleThresholder(se1, null);
+                    ThresholdMask mask = currentImage.sizeZ()>1 && se1.sizeZ()==1 ? new ThresholdMask(se1, thld1, true, true, 0):new ThresholdMask(se1, thld1, true, true);
+                    if (testMode) testMasks.put(frame, TypeConverter.toByteMask(mask, null, 1));
+                    if (chExcl2>=0) {
+                        Image se2 = inputImages.getImage(chExcl2, frame);
+                        double thld2 = signalExclusionThreshold2.instanciatePlugin().runSimpleThresholder(se2, null);
+                        ThresholdMask mask2 = currentImage.sizeZ()>1 && se2.sizeZ()==1 ? new ThresholdMask(se2, thld2, true, true, 0):new ThresholdMask(se2, thld2, true, true);
+                        if (testMode) testMasks2.put(frame, TypeConverter.toByteMask(mask2, null, 1));
+                        mask = ThresholdMask.or(mask, mask2);
                     }
-                }
-            );
-        }
-        tr.startAndJoin();
+                    m = mask;
+                } else m = new BlankMask(currentImage);
+                meanFZY[frame] = computeMeanX(currentImage, m, addGlobalMean);
+                if (frame%100==0) logger.debug("tp: {} {}", frame, Utils.getMemoryUsage());      
+            }
+        );
         if (testMode) { // make stripes images
             Image[][] stripesTC = new Image[meanFZY.length][1];
             for (int f = 0; f<meanFZY.length; ++f) {

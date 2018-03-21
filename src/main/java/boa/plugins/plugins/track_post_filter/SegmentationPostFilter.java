@@ -86,7 +86,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
                     objectsToRemove.addAll(toRemove);
                 }
             }
-            parent.getChildObjects(structureIdx).stream().forEachOrdered((o) -> { o.objectHasBeenModified(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
+            if (parent.getChildren(structureIdx)!=null) parent.getChildren(structureIdx).stream().forEachOrdered((o) -> { o.objectHasBeenModified(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
             
         }, executor, null);
         if (!objectsToRemove.isEmpty()) { 

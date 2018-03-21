@@ -88,7 +88,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         return new Parameter[]{watershedMap, thresholdMethod, splitThreshold , minSize, hessianScale, filterBorderArtefacts, localThresholdFactor, cond, smoothScale};
     }
     public BacteriaIntensityPhase() {
-        this.splitThreshold.setValue(0.1);
+        this.splitThreshold.setValue(0.15);
         this.minSize.setValue(100);
         this.hessianScale.setValue(3);
         this.watershedMap.removeAll().add(new Sigma(3).setMedianRadius(2));

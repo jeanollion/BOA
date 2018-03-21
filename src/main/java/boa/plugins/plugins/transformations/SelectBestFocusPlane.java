@@ -37,6 +37,7 @@ import boa.image.ThresholdMask;
 import java.util.List;
 import boa.plugins.Autofocus;
 import boa.plugins.ConfigurableTransformation;
+import java.util.stream.IntStream;
 /**
  *
  * @author jollion
@@ -56,25 +57,15 @@ public class SelectBestFocusPlane implements ConfigurableTransformation, Autofoc
         final double scale = gradientScale.getValue().doubleValue();
         final Integer[] conf = new Integer[inputImages.getFrameNumber()];
         if (inputImages.getSizeZ(channelIdx)>1) {
-            final ThreadRunner tr = new ThreadRunner(0, conf.length, 0);
-            for (int i = 0; i<tr.threads.length; i++) {
-                tr.threads[i] = new Thread(
-                    new Runnable() {
-                        public void run() { 
-                            for (int t = tr.ai.getAndIncrement(); t<tr.end; t = tr.ai.getAndIncrement()) {
-                                Image image = inputImages.getImage(channelIdx, t);
-                                if (image.sizeZ()>1) {
-                                    List<Image> planes = image.splitZPlanes();
-                                    SimpleThresholder thlder = signalExclusionThreshold.instanciatePlugin();
-                                    conf[t] = getBestFocusPlane(planes, scale, thlder, null);
-                                    logger.debug("select best focus plane: time:{}, plane: {}", t, conf[t]);
-                                }
-                            }
-                        }
-                    }
-                );
-            }
-            tr.startAndJoin();
+            IntStream.range(0, inputImages.getFrameNumber()).parallel().forEach(t -> { 
+                Image image = inputImages.getImage(channelIdx, t);
+                if (image.sizeZ()>1) {
+                    List<Image> planes = image.splitZPlanes();
+                    SimpleThresholder thlder = signalExclusionThreshold.instanciatePlugin();
+                    conf[t] = getBestFocusPlane(planes, scale, thlder, null);
+                    logger.debug("select best focus plane: time:{}, plane: {}", t, conf[t]);
+                }
+            });
         }
         bestFocusPlaneIdxT.addAll(Arrays.asList(conf));
     }

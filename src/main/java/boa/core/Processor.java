@@ -116,6 +116,7 @@ public class Processor {
         images.deleteFromDAO(); // eraseAll images if existing in imageDAO
         for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(field.getName(), s);
         setTransformations(field);
+        logger.debug("applying all transformation, save & close. {} ", Utils.getMemoryUsage());
         images.applyTranformationsSaveAndClose();
         if (deleteObjects) dao.deleteAllObjects();
     }
@@ -125,9 +126,9 @@ public class Processor {
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations(true)) {
             Transformation transfo = tpp.instanciatePlugin();
+            logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
             if (transfo instanceof ConfigurableTransformation) {
                 ConfigurableTransformation ct = (ConfigurableTransformation)transfo;
-                logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), ct.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
                 if (!ct.isConfigured(images.getChannelNumber(), images.getFrameNumber()))  ct.computeConfigurationData(tpp.getInputChannel(), images);
                 images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
             }

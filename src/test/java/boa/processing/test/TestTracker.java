@@ -79,11 +79,12 @@ public class TestTracker {
         //String dbName = "170919_glyc_lac";
         //String dbName = "MutH_140115";
         //String dbName = "MutD5_141202";
-        String dbName = "Aya_180315";
+        //String dbName = "MutT_150402";
+        String dbName = "MutH_151220";
         int pIdx =0;
-        int mcIdx =0;
-        int structureIdx =0;
-        int[] frames = new int[]{0, 10}; //{215, 237};
+        int mcIdx =6;
+        int structureIdx =1;
+        int[] frames = new int[]{0,1000}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
