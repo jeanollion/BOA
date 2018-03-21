@@ -249,12 +249,12 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importPositionsToCurrentExperimentMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="importConfigToCurrentExperimentMenuItem">
+                <MenuItem class="javax.swing.JMenuItem" name="importConfigurationMenuItem">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Configuration to Current Experiment"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importConfigToCurrentExperimentMenuItemActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importConfigurationMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="importConfigurationForSelectedPositionsMenuItem">

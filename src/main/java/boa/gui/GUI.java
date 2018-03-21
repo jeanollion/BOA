@@ -215,7 +215,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
-        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importPositionsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
+        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
         relatedToReadOnly = new ArrayList<Component>() {{add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
         
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -731,6 +731,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             boolean rw = !db.isReadOnly();
             for (Component c : relatedToReadOnly) c.setEnabled(rw);
         }
+        importConfigurationMenuItem.setText(enable ? "Configuration to current Experiment" : (getSelectedExperiments().isEmpty()? "--" : "Configuration to selected Experiment(s)") );
     }
     
     
@@ -1116,7 +1117,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         importSubMenu = new javax.swing.JMenu();
         importDataMenuItem = new javax.swing.JMenuItem();
         importPositionsToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
-        importConfigToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
+        importConfigurationMenuItem = new javax.swing.JMenuItem();
         importConfigurationForSelectedPositionsMenuItem = new javax.swing.JMenuItem();
         importConfigurationForSelectedStructuresMenuItem = new javax.swing.JMenuItem();
         importNewExperimentMenuItem = new javax.swing.JMenuItem();
@@ -1829,13 +1830,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         importSubMenu.add(importPositionsToCurrentExperimentMenuItem);
 
-        importConfigToCurrentExperimentMenuItem.setText("Configuration to Current Experiment");
-        importConfigToCurrentExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
+        importConfigurationMenuItem.setText("Configuration to Current Experiment");
+        importConfigurationMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                importConfigToCurrentExperimentMenuItemActionPerformed(evt);
+                importConfigurationMenuItemActionPerformed(evt);
             }
         });
-        importSubMenu.add(importConfigToCurrentExperimentMenuItem);
+        importSubMenu.add(importConfigurationMenuItem);
 
         importConfigurationForSelectedPositionsMenuItem.setText("Configuration for Selected Positions");
         importConfigurationForSelectedPositionsMenuItem.setEnabled(false);
@@ -2650,8 +2651,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_importNewExperimentMenuItemActionPerformed
 
-    private void importConfigToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigToCurrentExperimentMenuItemActionPerformed
-        if (!checkConnection()) return;
+    private void importConfigurationMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationMenuItemActionPerformed
         /*String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File outputFile = Utils.chooseFile("Select Experiment.bson of Experiment.json file (WARNING: current configuration will be lost)", defDir, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
         if (outputFile!=null && outputFile.getName().equals("Experiment.bson") || outputFile.getName().equals("Experiment.json")) {
@@ -2664,18 +2664,39 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_CONFIG_DIR, IJ.getDir("plugins")+File.separator+"BOA");
         File f = Utils.chooseFile("Select configuration file or exported zip containing configuration file", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
-        if (!Utils.promptBoolean("This will erase configutation on current xp", this)) return;
-        PreProcessingChain oldppTemplate = db.getExperiment().getPreProcessingTemplate().duplicate();
-        ImportExportJSON.importConfigurationFromFile(f.getAbsolutePath(), db, true, true);
-        if (db.getExperiment().getPositionCount()>0 && !db.getExperiment().getPreProcessingTemplate().sameContent(oldppTemplate)) {
-            if (Utils.promptBoolean("Also copy pre-processing chain to all positions?", this)) {
-                for (MicroscopyField p : db.getExperiment().getPositions()) p.getPreProcessingChain().setContentFrom(db.getExperiment().getPreProcessingTemplate());
+        if (!Utils.promptBoolean("This will erase configutation on "+(db==null ? "all selected" : "current ")+" xp", this)) return;
+        if (db!=null) {
+            PreProcessingChain oldppTemplate = db.getExperiment().getPreProcessingTemplate().duplicate();
+            ImportExportJSON.importConfigurationFromFile(f.getAbsolutePath(), db, true, true);
+            if (db.getExperiment().getPositionCount()>0 && !db.getExperiment().getPreProcessingTemplate().sameContent(oldppTemplate)) {
+                if (Utils.promptBoolean("Also copy pre-processing chain to all positions?", this)) {
+                    for (MicroscopyField p : db.getExperiment().getPositions()) p.getPreProcessingChain().setContentFrom(db.getExperiment().getPreProcessingTemplate());
+                }
+            }
+            db.updateExperiment();
+            updateConfigurationTree();
+        } else {
+            boolean overwritePos= Utils.promptBoolean("Also copy pre-processing chain to all positions?", this);
+            for (String xp : this.getSelectedExperiments()) {
+                MasterDAO mDAO = new Task(xp).getDB();
+                if (mDAO==null) {
+                    this.setMessage("Could not open experiment: "+xp);
+                    continue;
+                }
+                PreProcessingChain oldppTemplate = mDAO.getExperiment().getPreProcessingTemplate().duplicate();
+                ImportExportJSON.importConfigurationFromFile(f.getAbsolutePath(), mDAO, true, true);
+                if (mDAO.getExperiment().getPositionCount()>0 && !mDAO.getExperiment().getPreProcessingTemplate().sameContent(oldppTemplate)) {
+                    if (overwritePos) {
+                        for (MicroscopyField p : mDAO.getExperiment().getPositions()) p.getPreProcessingChain().setContentFrom(mDAO.getExperiment().getPreProcessingTemplate());
+                    }
+                }
+                mDAO.updateExperiment();
+                mDAO.clearCache();
             }
         }
-        db.updateExperiment();
-        updateConfigurationTree();
         PropertyUtils.set(PropertyUtils.LAST_IO_CONFIG_DIR, f.getAbsolutePath());
-    }//GEN-LAST:event_importConfigToCurrentExperimentMenuItemActionPerformed
+    }//GEN-LAST:event_importConfigurationMenuItemActionPerformed
+    
     private Task getCurrentJob(String dbName) {
         
         boolean preProcess=false;
@@ -2737,8 +2758,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (!checkConnection()) return;
         String defDir = db.getDir();
         if (!new File(defDir).exists()) defDir = PropertyUtils.get(PropertyUtils.LAST_IMPORT_IMAGE_DIR);
-        File[] selectedFiles = Utils.chooseFiles("Choose images/directories to import", defDir, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
+        File[] selectedFiles = Utils.chooseFiles("Choose images/directories to import (selected import method="+db.getExperiment().getImportImageMethod()+")", defDir, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
         if (selectedFiles!=null) {
+            if (Experiment.ImportImageMethod.SINGLE_FILE.equals(db.getExperiment().getImportImageMethod())) { // warning if a lot of files 
+                for (File f : selectedFiles) {
+                    File[] sub = f.listFiles();
+                    if (sub!=null && sub.length>200) {
+                        if (!Utils.promptBoolean("Selected import method is Single-file and there are "+sub.length+" file in one selected folder. This will create as many position as images. Are you sure to proceed ?", this)) return;
+                    }
+                }
+            }
             Processor.importFiles(this.db.getExperiment(), true, ProgressCallback.get(this), Utils.convertFilesToString(selectedFiles));
             File dir = Utils.getOneDir(selectedFiles);
             if (dir!=null) PropertyUtils.set(PropertyUtils.LAST_IMPORT_IMAGE_DIR, dir.getAbsolutePath());
@@ -3721,9 +3750,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JMenuItem extractSelectionMenuItem;
     private javax.swing.JTextField hostName;
     private javax.swing.JCheckBoxMenuItem importConfigMenuItem;
-    private javax.swing.JMenuItem importConfigToCurrentExperimentMenuItem;
     private javax.swing.JMenuItem importConfigurationForSelectedPositionsMenuItem;
     private javax.swing.JMenuItem importConfigurationForSelectedStructuresMenuItem;
+    private javax.swing.JMenuItem importConfigurationMenuItem;
     private javax.swing.JMenuItem importDataMenuItem;
     private javax.swing.JMenu importExportMenu;
     private javax.swing.JMenuItem importImagesMenuItem;
