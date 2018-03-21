@@ -451,7 +451,7 @@ public class GenerateXP {
         ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false).setTrimNegativeValues(true)); // TODO test trim negative values. make background thresholder more sensitive because sd of background is rediced -> modify otsu thld. advantage: after transformations, convertion to 16 bit trim values so same behavior of further transformation & segmentation.
         ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0).setSecondSignalExclusion(1, new BackgroundThresholder(4, 5, 2))); // add secondary mask in case of non-bacteria "contaminents" -> high fluo in mutation and no fluo in bacteria
         ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
-        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR).setRemoveIncompleteRowsAndColumns(false));
+        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR).setRemoveIncompleteRowsAndColumns(false).setMaintainMaximum(true));
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE));
         //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
         //ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
@@ -462,7 +462,7 @@ public class GenerateXP {
     public static void setPreprocessingPhase(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.setFrameDuration(4);
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
-        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(10, true, false, true, true)).setRemoveIncompleteRowsAndColumns(true));
+        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(10, true, false, true, true)).setRemoveIncompleteRowsAndColumns(false).setMaintainMaximum(false));
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.PHASE));
         ps.addTransformation(0, null, new CropMicrochannelsPhase2D());
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);

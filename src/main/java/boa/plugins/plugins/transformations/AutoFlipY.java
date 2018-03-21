@@ -162,12 +162,12 @@ public class AutoFlipY implements Transformation, ToolTip {
             double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end-start));
             double peakHeight = yProj[peakIdx] - median;
             float thld = (float)(peakHeight * 0.25 + median  ); //
-            int startOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true); // is there enough space above the aberration ? 
+            int startOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true)-length/6; // is there enough space above the aberration ? 
             if (startOfPeakIdx-start<length*0.75) {
                 flip = true;
                 return;
             }
-            int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, end, thld, true, true); // is there enough space under the aberration ? 
+            int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, end, thld, true, true)+length/6; // is there enough space under the aberration ? 
             if (end - endOfPeakIdx<=length*0.75) {
                 flip = false;
                 return;

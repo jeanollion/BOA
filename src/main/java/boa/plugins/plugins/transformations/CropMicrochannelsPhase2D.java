@@ -22,6 +22,7 @@ import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.FilterSequence;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
+import boa.image.BoundingBox;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.SimpleBoundingBox;
@@ -32,6 +33,7 @@ import boa.plugins.MicrochannelSegmenter.Result;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import static boa.plugins.plugins.segmenters.MicrochannelPhase2D.searchYLimWithOpticalAberration;
 import boa.utils.ArrayUtil;
+import java.util.Arrays;
 
 /**
  *
@@ -40,8 +42,7 @@ import boa.utils.ArrayUtil;
 public class CropMicrochannelsPhase2D extends CropMicroChannels {
     public static boolean debug = false;
     NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 30, 0, null).setToolTipText("Additional margin added between open-end of microchannels and optical aberration in Y direction");
-    FilterSequence filters = new FilterSequence("Pre-Filters").add(new IJSubtractBackground(10, true, false, true, false));
-    Parameter[] parameters = new Parameter[]{filters, channelHeight, cropMarginY, yEndMargin, boundGroup};
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, yEndMargin, boundGroup};
     
     public CropMicrochannelsPhase2D(int cropMarginY) {
         this();
@@ -53,18 +54,21 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels {
     }
     
     @Override public MutableBoundingBox getBoundingBox(Image image) {
-        image = filters.filter(image);
         return getBoundingBox(image, cropMarginY.getValue().intValue(), channelHeight.getValue().intValue(),xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), yEndMargin.getValue().intValue());
     }
     
     public MutableBoundingBox getBoundingBox(Image image, int cropMargin, int channelHeight,  int xStart, int xStop, int yStart, int yStop, int yMarginEndChannel) {
         if (debug) testMode = true;
         int yMax =  searchYLimWithOpticalAberration(image, 0.25, yMarginEndChannel, testMode) ;
-        Image imCrop = image.crop(new SimpleBoundingBox(0, image.sizeX()-1, 0, yMax>0 ? yMax : image.sizeY()-1, 0, image.sizeZ()-1));
+        if (yMax<0) throw new RuntimeException("No optical aberration found");
+        // in case image was rotated and 0 were added, search for xMin & xMax so that no 0's are in the image
+        BoundingBox nonNullBound = getNonNullBound(image, yMax);
+        if (testMode) logger.debug("non null bounds: {}", nonNullBound);
+        Image imCrop = image.crop(nonNullBound);
         Image imDerY = ImageFeatures.getDerivative(imCrop, 2, 0, 1, 0, true);
         float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
-        int yMin = ArrayUtil.max(yProj, 0, yProj.length-1-channelHeight/2);
-        if (yMax<=0) yMax = yMin + channelHeight;
+        int yMin = ArrayUtil.max(yProj, 0, yProj.length-1-channelHeight/2) + nonNullBound.yMin();
+        //if (yMax<=0) yMax = yMin + channelHeight;
         
         if (yStop==0) yStop = image.sizeY()-1;
         if (xStop==0) xStop = image.sizeX()-1;
@@ -73,8 +77,19 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels {
         yStop = Math.min(yStop, yMax);
         yStart = Math.max(yMin-cropMargin, yStart);
         
+        xStart = Math.max(nonNullBound.xMin(), xStart);
+        xStop = Math.min(xStop, nonNullBound.xMax());
         return new MutableBoundingBox(xStart, xStop, yStart, yStop, 0, image.sizeZ()-1);
         
+    }
+    private static BoundingBox getNonNullBound(Image image, int yMax) {
+        int[] xMinMaxDown = getXMinAndMax(image, yMax);
+        if (xMinMaxDown[0]==0 && xMinMaxDown[1]==image.sizeX()-1) return  image.getBoundingBox().setyMax(yMax); // no null values 
+        int[] yMinMaxLeft = getYMinAndMax(image, xMinMaxDown[0]);
+        int[] yMinMaxRigth = getYMinAndMax(image, xMinMaxDown[1]);
+        int yMin = Math.min(yMinMaxLeft[0], yMinMaxRigth[1]);
+        int[] xMinMaxUp = getXMinAndMax(image, yMin);
+        return new SimpleBoundingBox(Math.max(xMinMaxDown[0], xMinMaxUp[0]), Math.min(xMinMaxDown[1], xMinMaxUp[1]), yMin, yMax, image.zMin(), image.zMax());
     }
     
     @Override

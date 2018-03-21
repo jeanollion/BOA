@@ -129,14 +129,51 @@ public abstract class CropMicroChannels implements Transformation {
             for (MutableBoundingBox bb : bounds.values()) bb.setyMin(bb.yMax()-(sY-1));
         }
         
-        if (framesN !=0) { // merge all bounds
+        if (framesN !=0) { // merge all bounds by expanding
             Iterator<MutableBoundingBox> it = bounds.values().iterator();
             MutableBoundingBox bds = it.next();
             while (it.hasNext()) bds.expand(it.next());
             this.bounds = bds;
-        } else this.cropBounds = bounds;
+        } else {
+            // uniformize X if necessary -> min X size + ref point = middle point
+            int sizeX = bounds.values().stream().mapToInt(b->b.sizeX()).min().getAsInt();
+            bounds.values().stream().filter(bb->bb.sizeX()>sizeX).forEach(bb-> {
+                int diff = bb.sizeX() - sizeX;
+                int addLeft=diff/2;
+                int remRight = diff - addLeft;
+                bb.setxMin(bb.xMin()+addLeft);
+                bb.setxMax(bb.xMax()-remRight);
+            });
+            this.cropBounds = bounds;
+        }
     }
-    
+    /**
+     * 
+     * @param image
+     * @param y
+     * @return array containing xMin, xMax such that {@param image} has non null values @ y={@param y} in range [xMin, xMax] and that is range is maxmimal
+     */
+    protected static int[] getXMinAndMax(Image image, int y) {
+        int start = 0;
+        while (start<image.sizeX() && image.getPixel(start, y, 0)==0) ++start;
+        int end = image.sizeX()-1;
+        while (end>=0 && image.getPixel(end, y, 0)==0) --end;
+        return new int[]{start, end};
+    }
+    /**
+     *  
+     
+     * @param image
+     * @param x
+     * @return array containing yMin and yMax such that the whole {@param x} line strictly before yMin and aftery yMax of {@param image} have null values
+     */
+    protected static int[] getYMinAndMax(Image image, int x) {
+        int start = 0;
+        while (start<image.sizeY() && image.getPixel(x, start, 0)==0) ++start;
+        int end = image.sizeY()-1;
+        while (end>=0 && image.getPixel(x, end, 0)==0) --end;
+        return new int[]{start, end};
+    }
     
     @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {

@@ -64,7 +64,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     NumberParameter frameNumber = new BoundedNumberParameter("Number of frame", 0, 10, 0, null);
     BooleanParameter removeIncompleteRowsAndColumns = new BooleanParameter("Remove Incomplete rows and columns", true);
     FilterSequence prefilters = new FilterSequence("Pre-Filters");
-    BooleanParameter maintainMaximum = new BooleanParameter("Maintain Maximum Value", true).setToolTipText("In case of saturated value & interpolation with polynomes of degree>1, higher values than maximal value can be created, which can be an issue in case of a saturated image. This option will saturate the rotated image to the old maximal value");
+    BooleanParameter maintainMaximum = new BooleanParameter("Maintain Maximum Value", false).setToolTipText("When interpolation with polynomes of degree>1, higher values than maximal value can be created, which can be an issue in case of a saturated image if the saturated value should be preserved. <br />This option will saturate the rotated image to the old maximal value");
     Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, removeIncompleteRowsAndColumns, maintainMaximum, prefilters}; //  
     double rotationAngle = Double.NaN;
     public boolean testMode = false;
@@ -87,6 +87,10 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     }
     public AutoRotationXY setRemoveIncompleteRowsAndColumns(boolean remove) {
         this.removeIncompleteRowsAndColumns.setSelected(remove);
+        return this;
+    }
+    public AutoRotationXY setMaintainMaximum(boolean maintain) {
+        this.maintainMaximum.setSelected(maintain);
         return this;
     }
     public AutoRotationXY() {}

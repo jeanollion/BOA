@@ -158,18 +158,27 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         
         double derScale = 2;
         // get aberration
+        int[] yStartStop = opticalAberration ? new int[2] : new int[]{0, image.sizeY()-1};
         int aberrationStart = opticalAberration ? searchYLimWithOpticalAberration(image, 0.25, yMarginEndChannel, testMode) : image.sizeY()-1;
         if (aberrationStart<=0) return null;
-        Image imCrop = image.crop(new MutableBoundingBox(0, image.sizeX()-1, 0, aberrationStart, 0, image.sizeZ()-1));
+        Image imCrop = opticalAberration? image.crop(new MutableBoundingBox(0, image.sizeX()-1, yStartStop[0], aberrationStart, 0, image.sizeZ()-1)) : (image instanceof ImageFloat ? image.duplicate() : image);
         
         // get global closed-end Y coordinate
         Image imDerY = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
         float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
-        int closedEndY = ArrayUtil.max(yProj, 0, (int)(yProj.length*0.75)); 
+        int closedEndY = ArrayUtil.max(yProj, 0, (int)(yProj.length*0.75)) + yStartStop[0]; 
 
         // get X coordinates of each microchannel
         imCrop = image.crop(new MutableBoundingBox(0, image.sizeX()-1, closedEndY, aberrationStart, 0, image.sizeZ()-1));
-        float[] xProj = ImageOperations.meanProjection(imCrop, ImageOperations.Axis.X, null); 
+        float[] xProj = ImageOperations.meanProjection(imCrop, ImageOperations.Axis.X, null);
+        // check for null values @ start & end that could be introduces by rotation and replace by first non-null value
+        int start = 0;
+        while (start<xProj.length && xProj[start]==0) ++start;
+        if (start>0) Arrays.fill(xProj, 0, start, xProj[start]);
+        int end = xProj.length-1;
+        while (end>0 && xProj[end]==0) --end;
+        if (end<xProj.length-1) Arrays.fill(xProj, end+1, xProj.length, xProj[end]);
+        //derivate
         ArrayUtil.gaussianSmooth(xProj, 1); // derScale
         Image imDerX = ImageFeatures.getDerivative(imCrop, derScale, 1, 0, 0, true);
         float[] xProjDer = ImageOperations.meanProjection(imDerX, ImageOperations.Axis.X, null);
@@ -315,10 +324,10 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null, v->v>0); // when image was rotated by a high angle zeros are introduced
         int start = 0;
         while (Float.isNaN(yProj[start])) ++start;
-        int end = yProj.length;
-        while (Float.isNaN(yProj[end-1])) --end;
-        int peakIdx = ArrayUtil.max(yProj, start, end);
-        double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end-start));
+        int end = yProj.length-1;
+        while (Float.isNaN(yProj[end])) --end;
+        int peakIdx = ArrayUtil.max(yProj, start, end+1);
+        double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end+1-start));
         double peakHeight = yProj[peakIdx] - median;
         float thld = (float)(peakHeight * peakProportion + median );
         int endOfPeakYIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true);
