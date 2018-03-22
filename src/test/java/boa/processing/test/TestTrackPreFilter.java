@@ -30,9 +30,12 @@ import boa.gui.imageInteraction.TrackMaskX;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
+import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
 import static boa.test_utils.TestUtils.logger;
 import boa.utils.Utils;
+import ij.ImageJ;
 import java.util.List;
+import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,10 +46,11 @@ import org.slf4j.LoggerFactory;
 public class TestTrackPreFilter {
     public static final Logger logger = LoggerFactory.getLogger(TestTrackPreFilter.class);
     public static void main(String[] args) {
-        
+        new ImageJ();
         //String dbName = "170919_thomas";
         //String dbName = "AyaWT_mmglu";
-        String dbName = "WT_150609";
+        //String dbName = "WT_150616";
+        String dbName = "MutH_151220";
         int pIdx =0;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -60,14 +64,14 @@ public class TestTrackPreFilter {
         ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(1000);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         ObjectDAO dao = db.getDao(db.getExperiment().getPosition(pIdx).getName());
-        
+        //SubtractBackgroundMicrochannels.debug=true;
         int mcCount = StructureObjectUtils.getAllTracks(Processor.getOrCreateRootTrack(dao), 0).size();
-        mcCount = 1;
-        for (int i =0; i<mcCount; ++i) {
+        //mcCount = 1;
+        int mcIdx = 9;
+        IntStream.range(mcIdx, mcIdx+1).forEachOrdered(i-> {
             logger.debug("testing mc: {}", i);
             test(dao, ps, structureIdx, i, frames);
-            
-        }
+        });
         
     }
     public static void test(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int[] frames) {
@@ -84,7 +88,7 @@ public class TestTrackPreFilter {
             ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
             TrackMaskX tm = new TrackMaskX(parentTrack, structureIdx, false);
             tm.setDisplayPreFilteredImages(true);
-            ImageWindowManagerFactory.showImage(tm.generatemage(structureIdx, false).setName("track:"+parentTrack.get(0)));
+            //ImageWindowManagerFactory.showImage(tm.generatemage(structureIdx, false).setName("track:"+parentTrack.get(0)));
         }
         TrackParametrizer  tp = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, ps.getSegmenter(), null);
         

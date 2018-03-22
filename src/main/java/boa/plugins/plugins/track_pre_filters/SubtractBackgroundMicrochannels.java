@@ -40,9 +40,11 @@ import boa.image.processing.ImageOperations;
 import boa.image.processing.ImageTransformation;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
+import boa.plugins.plugins.pre_filters.IJSubtractBackground.FILTER_DIRECTION;
 import boa.utils.ThreadRunner;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -50,9 +52,10 @@ import java.util.TreeMap;
  * @author jollion
  */
 public class SubtractBackgroundMicrochannels implements TrackPreFilter{
+    public static boolean debug = false;
     BooleanParameter isDarkBck = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
-    NumberParameter radius = new BoundedNumberParameter("Radius", 0, 10000, 1, null).setToolTipText("Lower value -> less homogeneity/faster. <br />Radius of the paraboloïd will be this value * mean Y size of microchannels");
+    NumberParameter radius = new BoundedNumberParameter("Radius", 0, 1000, 1, null).setToolTipText("Lower value -> less homogeneity/faster. <br />Radius of the paraboloïd will be this value * sum Y size of microchannels");
     Parameter[] parameters = new Parameter[]{radius, isDarkBck, smooth};
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
@@ -67,20 +70,23 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
                 im = TypeConverter.toFloat(im, null);
                 preFilteredImages.replace(o, im);
             }
-            fillBorders(o.getRegion(), im);
+            //fillBorders(o.getRegion(), im);
             tm.pasteMirror(im, allImagesY, idx++);
         }
-        //ImageWindowManagerFactory.showImage(allImagesY);
+        //if (debug) ImageWindowManagerFactory.showImage(allImagesY);
         int sizeY = allImagesY.sizeY();
-        double mirrorProportion = radius.getValue().doubleValue()<preFilteredImages.size()*0.75 ? 0.5 : 1;
+        //double mirrorProportion = radius.getValue().doubleValue()<preFilteredImages.size()*0.75 ? 0.5 : 1;
+        double mirrorProportion = 1;
         int offsetY = (int)(allImagesY.sizeY()*mirrorProportion);
-        ImageFloat[] allImagesYArray = new ImageFloat[]{allImagesY};
-        allImagesY = ThreadRunner.executeUntilFreeMemory(()-> {return mirrorY(allImagesYArray[0], offsetY);}, 200); // mirrorY image on both Y ends
-        allImagesYArray[0] = allImagesY;
+        ImageFloat[] allImagesYStore = new ImageFloat[]{allImagesY};
+        allImagesY = ThreadRunner.executeUntilFreeMemory(()-> {return mirrorY(allImagesYStore[0], offsetY);}, 10); // mirrorY image on both Y ends
+        allImagesYStore[0] = allImagesY;
         // apply filter
-        double radius = (sizeY/(double)preFilteredImages.size())*(this.radius.getValue().doubleValue());
+        double radius = sizeY*(this.radius.getValue().doubleValue());
         //logger.debug("necessary memory: {}MB", allImagesY.getSizeXY()*32/8000000);
-        ThreadRunner.executeUntilFreeMemory(()-> {IJSubtractBackground.filter(allImagesYArray[0], radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);});
+        //ThreadRunner.executeUntilFreeMemory(()-> {IJSubtractBackground.filter(allImagesYStore[0], radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);}, 10);
+        ThreadRunner.executeUntilFreeMemory(()-> {IJSubtractBackground.filterCustomSlidingParaboloid(allImagesYStore[0], radius, !isDarkBck.getSelected(), smooth.getSelected(), false, FILTER_DIRECTION.X_DIRECTION, FILTER_DIRECTION.Y_DIRECTION, FILTER_DIRECTION.X_DIRECTION, FILTER_DIRECTION.Y_DIRECTION);}, 10);
+        
         allImagesY = allImagesY.crop(allImagesY.getBoundingBox().setyMin(offsetY).setyMax(offsetY+sizeY-1)); // crop
         // recover data
         idx = 0;
@@ -101,9 +107,10 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
     private static void fillBorders(Region o, Image input) {
         if (!(o.getMask() instanceof BlankMask)) {
             ImageMask mask = o.getMask();
+            Set<Voxel> contour = o.getContour();
             BoundingBox.loop(mask, (x, y, z)-> {
                 if (mask.insideMaskWithOffset(x, y, z)) return;
-                Voxel closest = o.getContour().stream().min((v1, v2)->Double.compare(v1.getDistanceSquare(x, y, z), v2.getDistanceSquare(x, y, z))).get();
+                Voxel closest = contour.stream().min((v1, v2)->Double.compare(v1.getDistanceSquare(x, y, z), v2.getDistanceSquare(x, y, z))).get();
                 input.setPixelWithOffset(x, y, z, input.getPixelWithOffset(closest.x, closest.y, closest.z));
             });
             

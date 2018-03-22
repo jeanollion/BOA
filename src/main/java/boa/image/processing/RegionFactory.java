@@ -66,13 +66,13 @@ public class RegionFactory {
         HashMapGetCreate<Integer, MutableBoundingBox> bounds = new HashMapGetCreate<>(i->new MutableBoundingBox());
         loop(labelImage.getBoundingBox().resetOffset(), (x, y, z)-> {
             int label = labelImage.getPixelInt(x, y, z);
-            if (label>0) bounds.getAndCreateIfNecessary(label).expand(x, y, z);
+            if (label>0) bounds.getAndCreateIfNecessary(label).union(x, y, z);
         });
         return new TreeMap<>(bounds);
     }
     public static BoundingBox getBounds(ImageMask mask) {
         MutableBoundingBox bounds = new MutableBoundingBox();
-        ImageMask.loop(mask, (x, y, z)->{bounds.expand(x, y, z);});
+        ImageMask.loop(mask, (x, y, z)->{bounds.union(x, y, z);});
         return bounds;
     }
     

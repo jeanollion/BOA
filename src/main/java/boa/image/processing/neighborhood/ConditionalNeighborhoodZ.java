@@ -57,7 +57,7 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
         MutableBoundingBox res=null;
         for (Neighborhood n : neighborhoodZ.values()) {
             if (res == null) res = n.getBoundingBox();
-            else res.expand(n.getBoundingBox());
+            else res.union(n.getBoundingBox());
         }
         return res;
     }

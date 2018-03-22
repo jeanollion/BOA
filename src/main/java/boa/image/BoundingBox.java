@@ -135,7 +135,7 @@ public interface BoundingBox<T> extends Offset<T> {
     
     public static MutableBoundingBox getMergedBoundingBox(Stream<BoundingBox> bounds) {
         MutableBoundingBox res = new MutableBoundingBox();
-        bounds.forEach(b->res.expand(b));
+        bounds.forEach(b->res.union(b));
         return res;
     }
     public static void loopParallele(BoundingBox bb, LoopFunction function) {

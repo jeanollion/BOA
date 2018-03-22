@@ -54,7 +54,7 @@ public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeReg
     Function<Interface, Double> interfaceValue;
     InterfaceValue method;
     
-    public static enum InterfaceValue {MEAN_INTENSITY_IN_REGIONS, DIFF_INTENSITY_BTWN_REGIONS, DIFF_MEDIAN_BTWN_REGIONS, ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS};
+    public static enum InterfaceValue {MEAN_INTENSITY_IN_REGIONS, DIFF_INTENSITY_BTWN_REGIONS, DIFF_MEDIAN_BTWN_REGIONS, ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS, ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS_INV};
     public SplitAndMergeRegionCriterion(Image edgeMap, Image intensityMap, double splitThreshold, InterfaceValue method) {
         super(intensityMap);
         this.method=method;
@@ -84,11 +84,18 @@ public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeReg
                     return Math.abs(v1-getMedianValues().getAndCreateIfNecessarySync(i.getE2()));
                 };
                 break;
-            case ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS:
+            case ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS: // supposing : foreground values are higher. trying to merge region that can be foreground or background with foreground regions of lesser label. 
                 interfaceValue = i -> {
                     double v1 = getMedianValues().getAndCreateIfNecessarySync(i.getE1());
-                    if (Double.isNaN(v1)) return Double.NEGATIVE_INFINITY; // background
+                    if (Double.isNaN(v1)) return Double.POSITIVE_INFINITY; // background
                     return v1-getMedianValues().getAndCreateIfNecessarySync(i.getE2()); // highest difference of higher label region will be negative
+                };
+                break;
+            case ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS_INV: //supposing : background values are higher trying to merge region that can be foreground or background with foreground regions of lesser label
+                interfaceValue = i -> {
+                    double v1 = getMedianValues().getAndCreateIfNecessarySync(i.getE1());
+                    if (Double.isNaN(v1)) return Double.POSITIVE_INFINITY; // background
+                    return getMedianValues().getAndCreateIfNecessarySync(i.getE2())-v1; // highest difference of higher label region will be negative
                 };
                 break;
         }

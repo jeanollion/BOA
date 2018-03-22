@@ -24,6 +24,7 @@ import boa.data_structure.input_image.InputImages;
 import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
+import boa.plugins.ConfigurableTransformation;
 import java.util.ArrayList;
 import boa.plugins.Cropper;
 import boa.plugins.MultichannelTransformation;
@@ -33,7 +34,7 @@ import boa.plugins.Transformation;
  *
  * @author jollion
  */
-public class SimpleCrop implements MultichannelTransformation {
+public class SimpleCrop implements MultichannelTransformation, ConfigurableTransformation {
     NumberParameter xMin = new NumberParameter("X-Min", 0, 0);
     NumberParameter yMin = new NumberParameter("Y-Min", 0, 0);
     NumberParameter zMin = new NumberParameter("Z-Min", 0, 0);
@@ -72,6 +73,11 @@ public class SimpleCrop implements MultichannelTransformation {
         if (bounds.length>4) zMin.setValue(bounds[4]);
         if (bounds.length>5) zLength.setValue(bounds[5]);
     }
+    @Override
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+       return configurationData!=null && configurationData.length==6;
+    }
+    @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         Image input = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
         if (xLength.getValue().intValue()==0) xLength.setValue(input.sizeX()-xMin.getValue().intValue());
@@ -105,4 +111,6 @@ public class SimpleCrop implements MultichannelTransformation {
     }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
+
+    
 }

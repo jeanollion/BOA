@@ -300,7 +300,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             if (correctionStep) snapshot("End of Correction", false);
         }
-        debug = true;
         // 3) final assignement without correction, noticing all errors
         for (int t = minF+1; t<maxFExcluded; ++t)  setAssignmentToTrackAttributes(t, true);
         List<StructureObject> parents = new ArrayList<>(parentsByF.values());

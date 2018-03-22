@@ -157,7 +157,7 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
         if (planes==null || planes.isEmpty()) return null;
         Iterator<T> it = planes.iterator();
         MutableBoundingBox bds  = it.next().getBoundingBox().resetOffset();
-        if (expand) while (it.hasNext()) bds.expand(it.next().getBoundingBox().resetOffset());
+        if (expand) while (it.hasNext()) bds.union(it.next().getBoundingBox().resetOffset());
         else while(it.hasNext()) bds.contract(it.next().getBoundingBox().resetOffset());
         bds.resetOffset();
         logger.debug("after contract: {}", bds);

@@ -89,9 +89,9 @@ public abstract class ImageInteger<I extends ImageInteger<I>> extends Image<I> i
                     if (value != 0) {
                         MutableBoundingBox bds = bounds.get(value);
                         if (bds != null) {
-                            bds.expandX(x);
-                            bds.expandY(y);
-                            bds.expandZ(z);
+                            bds.unionX(x);
+                            bds.unionY(y);
+                            bds.unionZ(z);
                         } else {
                             bds= new MutableBoundingBox(x, y, z);
                             bounds.put(value, bds);

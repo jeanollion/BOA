@@ -76,7 +76,7 @@ public class MutableBoundingBox extends SimpleBoundingBox<MutableBoundingBox>  {
      * Modify the bounds so that is contains the {@param x} coordinate
      * @param x coordinate in the X-Axis
      */
-    public MutableBoundingBox expandX(int x) {
+    public MutableBoundingBox unionX(int x) {
         if (x < xMin) {
             xMin = x;
         } 
@@ -89,7 +89,7 @@ public class MutableBoundingBox extends SimpleBoundingBox<MutableBoundingBox>  {
      * Modify the bounds so that is contains the {@param y} coordinate
      * @param y coordinate in the X-Axis
      */
-    public MutableBoundingBox expandY(int y) {
+    public MutableBoundingBox unionY(int y) {
         if (y < yMin) {
             yMin = y;
         } 
@@ -102,7 +102,7 @@ public class MutableBoundingBox extends SimpleBoundingBox<MutableBoundingBox>  {
      * Modify the bounds so that is contains the {@param z} coordinate
      * @param z coordinate in the X-Axis
      */
-    public MutableBoundingBox expandZ(int z) {
+    public MutableBoundingBox unionZ(int z) {
         if (z < zMin) {
             zMin = z;
         } 
@@ -149,27 +149,27 @@ public class MutableBoundingBox extends SimpleBoundingBox<MutableBoundingBox>  {
         return this;
     }
     
-    public MutableBoundingBox expand(int x, int y, int z) {
-        expandX(x);
-        expandY(y);
-        expandZ(z);
+    public MutableBoundingBox union(int x, int y, int z) {
+        unionX(x);
+        unionY(y);
+        unionZ(z);
         return this;
     }
     
-    public MutableBoundingBox expand(Voxel v) {
-        expandX(v.x);
-        expandY(v.y);
-        expandZ(v.z);
+    public MutableBoundingBox union(Voxel v) {
+        unionX(v.x);
+        unionY(v.y);
+        unionZ(v.z);
         return this;
     }
     
-    public MutableBoundingBox expand(BoundingBox other) {
-        expandX(other.xMin());
-        expandX(other.xMax());
-        expandY(other.yMin());
-        expandY(other.yMax());
-        expandZ(other.zMin());
-        expandZ(other.zMax());
+    public MutableBoundingBox union(BoundingBox other) {
+        unionX(other.xMin());
+        unionX(other.xMax());
+        unionY(other.yMin());
+        unionY(other.yMax());
+        unionZ(other.zMin());
+        unionZ(other.zMax());
         return this;
     }
     public MutableBoundingBox contract(BoundingBox other) {

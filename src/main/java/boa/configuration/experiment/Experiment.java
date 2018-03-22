@@ -246,7 +246,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     public HashMap<Integer, List<Integer>> getChannelToStructureCorrespondance() {
         HashMapGetCreate<Integer, List<Integer>> res = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());
-        for (int s = 0; s<structures.getChildCount(); s++) res.getAndCreateIfNecessary(getStructure(s).getChannelImage()).add(s);
+        for (int s = 0; s<getStructureCount(); s++) res.getAndCreateIfNecessary(getStructure(s).getChannelImage()).add(s);
         return res;
     }
     

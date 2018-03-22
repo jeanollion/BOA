@@ -904,8 +904,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             int sizeZ = getExperiment().getPosition(getPositionName()).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
             if (sizeZ>1) {
                 //logger.debug("extends bounds Z: is2D: {}, bounds: {}, sizeZ of image to open: {}, new bounds: {}", is2D(), bounds, getExperiment().getPosition(getPositionName()).getSizeZ(channelIdx), new MutableBoundingBox(bounds).expandZ(sizeZ-1));
-                if (bounds instanceof MutableBoundingBox) ((MutableBoundingBox)bounds).expandZ(sizeZ-1);
-                else return new MutableBoundingBox(bounds).expandZ(sizeZ-1);
+                if (bounds instanceof MutableBoundingBox) ((MutableBoundingBox)bounds).unionZ(sizeZ-1);
+                else return new MutableBoundingBox(bounds).unionZ(sizeZ-1);
             }
         }
         return bounds;

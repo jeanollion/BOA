@@ -420,7 +420,7 @@ public class ImageOperations {
     public static ImageInteger orWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("or", source1);
         final ImageInteger out = output;
-        BoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
+        BoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).union(source2));
         BoundingBox.loop(loopBound,(x, y, z) -> {
             if ((!source1.containsWithOffset(x, y, z) || !source1.insideMaskWithOffset(x, y, z)) 
                     && (!source2.containsWithOffset(x, y, z) || !source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 0);
@@ -433,7 +433,7 @@ public class ImageOperations {
         if (output==null) output = new ImageByte("or", source1);
         final ImageInteger out = output;
         //logger.debug("output: {}, trimmed: {}", output.getBoundingBox(), output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox())));
-        BoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
+        BoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).union(source2));
         BoundingBox.loop(loopBound,(x, y, z) -> {
             if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))!=(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
             else out.setPixelWithOffset(x, y, z, 0);
@@ -444,7 +444,7 @@ public class ImageOperations {
     public static ImageInteger andWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("and", source1);
         final ImageInteger out = output;
-        BoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).expand(source2));
+        BoundingBox loopBound = output.getBoundingBox().trim(new MutableBoundingBox(source1).union(source2));
         BoundingBox.loop(loopBound,(x, y, z) -> {
             if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))&&(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
             else out.setPixelWithOffset(x, y, z, 0);

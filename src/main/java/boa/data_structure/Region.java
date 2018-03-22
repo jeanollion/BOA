@@ -611,7 +611,7 @@ public class Region {
     
     protected void createBoundsFromVoxels() {
         MutableBoundingBox bounds_  = new MutableBoundingBox();
-        for (Voxel v : voxels) bounds_.expand(v);
+        for (Voxel v : voxels) bounds_.union(v);
         bounds= bounds_;
     }
 
@@ -739,7 +739,7 @@ public class Region {
         Iterator<Region> it = regions.iterator();
         Region ref = it.next();
         MutableBoundingBox bounds = new MutableBoundingBox(ref.getBounds());
-        while (it.hasNext()) bounds.expand(it.next().getBounds());
+        while (it.hasNext()) bounds.union(it.next().getBounds());
         ImageByte mask = new ImageByte("", new SimpleImageProperties(bounds, ref.getScaleXY(), ref.getScaleZ()));
         for (Region r : regions) {
             ImageMask.loopWithOffset(r.getMask(), (x, y, z)-> mask.setPixelWithOffset(x, y, z, 1));

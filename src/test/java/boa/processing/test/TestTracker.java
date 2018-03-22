@@ -80,9 +80,10 @@ public class TestTracker {
         //String dbName = "MutH_140115";
         //String dbName = "MutD5_141202";
         //String dbName = "MutT_150402";
-        String dbName = "MutH_151220";
+        //String dbName = "MutH_151220";
+        String dbName = "WT_150616";
         int pIdx =0;
-        int mcIdx =6;
+        int mcIdx =8;
         int structureIdx =1;
         int[] frames = new int[]{0,1000}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;

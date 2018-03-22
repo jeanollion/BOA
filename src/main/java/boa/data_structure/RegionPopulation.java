@@ -236,7 +236,7 @@ public class RegionPopulation {
             } else if (objects!=null && !objects.isEmpty()) { //unscaled, no offset for label image..
                 MutableBoundingBox box = new MutableBoundingBox();
                 for (Region o : objects) {
-                    box.expand(o.getBounds());
+                    box.union(o.getBounds());
                 }
                 properties = box.getBlankMask();                
             }

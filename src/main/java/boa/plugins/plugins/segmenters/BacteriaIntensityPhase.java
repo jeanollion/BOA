@@ -57,6 +57,7 @@ import static boa.plugins.plugins.segmenters.EdgeDetector.valueFunction;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.utils.ArrayUtil;
 import boa.utils.DoubleStatistics;
+import boa.utils.Utils;
 import ij.process.AutoThresholder;
 import java.util.Arrays;
 import java.util.Collection;
@@ -68,6 +69,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
@@ -84,9 +86,11 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     NumberParameter maxYCoordinate = new BoundedNumberParameter("Max yMin coordinate of upper cell", 0, 5, 0, null);
     ConditionalParameter cond = new ConditionalParameter(upperCellCorrection).setActionParameters("true", upperCellLocalThresholdFactor, maxYCoordinate);
     ChoiceParameter thresholdMethod=  new ChoiceParameter("Threshold Method", new String[]{"Local Threshold", "Global Threshold"}, "Global Threshold", false);
+    NumberParameter sigmaThldForVoidMC = new BoundedNumberParameter("Sigma/Mu thld for void channels", 3, 0.085, 0, null).setToolTipText("Parameter to look for void microchannels, at track pre-filter step: <br /> To assess if whole microchannel track is void: sigma / mu of raw images is computed on whole track, in the central line of each microchannel (1/3 of the width). If sigma / mu < this value, the whole track is considered to be void. <br />If the track is not void, a global otsu threshold is computed on the prefiltered signal. A channel is considered as void if its value of sigma / mu of raw signal is inferior to this threshold and is its mean value of prefiltered signal is superior to the global threshold");
+    
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{watershedMap, thresholdMethod, splitThreshold , minSize, hessianScale, filterBorderArtefacts, localThresholdFactor, cond, smoothScale};
+        return new Parameter[]{watershedMap, thresholdMethod, splitThreshold , minSize, hessianScale, filterBorderArtefacts, localThresholdFactor, cond, smoothScale, sigmaThldForVoidMC};
     }
     public BacteriaIntensityPhase() {
         this.splitThreshold.setValue(0.15);
@@ -181,6 +185,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             pop.getRegions().addAll(0, foregroundL);
             pop.relabel(true);
             SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS);
+            //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getRawImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS_INV); // TODO TRY WITH RAW INTENSITIES
             sm.addForbidFusion(i->foregroundL.contains(i.getE1())==foregroundL.contains(i.getE2()));
             sm.merge(pop, -1);
         }
@@ -331,51 +336,66 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         };
     }
     /**
-     * Detected whether all microchannels are void, only part of it or none.
+     * Detected whether all microchannels are void, only part of it or none
+     * All microchannels are void if sigma/mu of raw sigal is inferior to the corresponding parameter value (~0.08)
+     * If not global otsu threshold is computed on all prefiltered images, if mean prefiltered value < thld microchannel is considered void
      * @param structureIdx
      * @param parentTrack
      * @param outputVoidMicrochannels will add the void microchannels inside this set
      * @return [the minimal threshold if some channels are void or positive infinity if all channels are void ; the global threshold in non-empty microchannels]
      */
     private double[] getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, Set<StructureObject> outputVoidMicrochannels) {
-        double voidThldSigma = 0.1; 
-        //double bimodalThld = 0.55d;
+        double globalVoidThldSigma = sigmaThldForVoidMC.getValue().doubleValue();
         // get sigma in the middle line of each MC
-        Function<StructureObject, float[]> getSigma = p->{
+        double[] globalSum = new double[3];
+        Function<StructureObject, float[]> compute = p->{
+            Image imR = p.getRawImage(structureIdx);
             Image im = p.getPreFilteredImage(structureIdx);
             int xMargin = im.sizeX()/3;
-            MutableBoundingBox bb= new MutableBoundingBox(im).resetOffset().extend(new SimpleBoundingBox(xMargin, -xMargin, im.sizeX()*2, -im.sizeY()/4, 0, 0)); // only central line to avoid border effects + remove open end -> sometimes optical aberration
+            MutableBoundingBox bb= new MutableBoundingBox(im).resetOffset().extend(new SimpleBoundingBox(xMargin, -xMargin, im.sizeX(), -im.sizeY()/6, 0, 0)); // only central line to avoid border effects + remove open end -> sometimes optical aberration
             double[] sum = new double[3];
+            double[] sumR = new double[3];
             BoundingBox.loop(bb, (x, y, z)-> {
                 if (p.getMask().insideMask(x, y, z)) {
                     double v = im.getPixel(x, y, z);
                     sum[0]+=v;
                     sum[1]+=v*v;
                     sum[2]++;
+                    v = imR.getPixel(x, y, z);
+                    sumR[0]+=v;
+                    sumR[1]+=v*v;
+                    sumR[2]++;
                 }
             });
-            double mean = sum[0]/sum[2];
-            double mean2 = sum[1]/sum[2];
-            return new float[]{(float)mean, (float)Math.sqrt(mean2 - mean * mean)};
+            synchronized(globalSum) {
+                globalSum[0]+=sumR[0];
+                globalSum[1]+=sumR[1];
+                globalSum[2]+=sumR[2];
+            }
+            double meanR = sumR[0]/sumR[2];
+            double meanR2 = sumR[1]/sumR[2];
+            return new float[]{(float)(sum[0]/sum[2]), (float)meanR, (float)Math.sqrt(meanR2 - meanR * meanR)};
         };
-        float[][] musigmas = new float[parentTrack.size()][];
-        for ( int idx = 0; idx<musigmas.length; ++idx) musigmas[idx] = getSigma.apply(parentTrack.get(idx));
+        List<float[]> mcMean = parentTrack.stream().parallel().map(p->compute.apply(p)).collect(Collectors.toList());
         // 1) criterion for void microchannel track
-        double maxSigma = Arrays.stream(musigmas).mapToDouble(f->f[1]).max().getAsDouble(); //ArrayUtil.quantiles(Arrays.stream(musigmas).mapToDouble(f->f[1]).toArray(), 0.99)[0];
-        if (maxSigma<voidThldSigma) {
-            logger.debug("parent: {} max sigma: {} all channels considered void: {}", parentTrack.get(0), maxSigma);
+        double globalMean = globalSum[0]/globalSum[2];
+        double globalMean2 = globalSum[1]/globalSum[2];
+        double globalSigma = Math.sqrt(globalMean2 - globalMean * globalMean);
+        if (globalSigma/globalMean<globalVoidThldSigma) {
+            logger.debug("parent: {} sigma: {}/{}={} all channels considered void: {}", parentTrack.get(0), globalSigma, globalMean, globalSigma/globalMean);
             outputVoidMicrochannels.addAll(parentTrack);
             return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         }
-        // 2) criterion for void microchannels : low sigma & low intensity value (to avoid removing them when they are full)
+        // 2) criterion for void microchannels : low intensity value
         // intensity criterion based on global otsu threshold
         double globalThld = getGlobalOtsuThreshold(parentTrack.stream(), structureIdx);
-        for ( int idx = 0; idx<musigmas.length; ++idx) if (musigmas[idx][1]<voidThldSigma && musigmas[idx][0]<globalThld) outputVoidMicrochannels.add(parentTrack.get(idx)); //
-        logger.debug("parent: {} max sigma: {} global thld: {} void mc {}/{}", parentTrack.get(0), maxSigma, globalThld,outputVoidMicrochannels.size(), parentTrack.size() );
+        for ( int idx = 0; idx<mcMean.size(); ++idx) if (mcMean.get(idx)[0]<globalThld && mcMean.get(idx)[2]/mcMean.get(idx)[1]<globalVoidThldSigma) outputVoidMicrochannels.add(parentTrack.get(idx)); // sigma test is because when mc is nearly void, mean can be low engough // mean test is because when mc is very full, sigma can be low enough
+        logger.debug("parent: {} global sigma: {}/{}={} global thld: {} void mc {}/{}", parentTrack.get(0), globalSigma,globalMean, globalSigma/globalMean, globalThld,outputVoidMicrochannels.size(), parentTrack.size() );
+        //logger.debug("s/mu : {}", Utils.toStringList(mcMean.subList(10, 15), f->"mu="+f[0]+" muR="+f[1]+"sR="+f[2]+ " sR/muR="+f[2]/f[1]));
         if (outputVoidMicrochannels.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
+        
         // 3) get global otsu thld for images with foreground
         globalThld = getGlobalOtsuThreshold(parentTrack.stream().filter(p->!outputVoidMicrochannels.contains(p)), structureIdx);
-        
         // 4) estimate a minimal threshold : middle point between mean value under global threshold and global threshold
         double[] sum = new double[3];
         double thld = globalThld;

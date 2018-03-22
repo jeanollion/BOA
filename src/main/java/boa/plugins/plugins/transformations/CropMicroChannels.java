@@ -130,7 +130,7 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
         if (framesN !=0) { // merge all bounds by expanding
             Iterator<MutableBoundingBox> it = bounds.values().iterator();
             MutableBoundingBox bds = it.next();
-            while (it.hasNext()) bds.expand(it.next());
+            while (it.hasNext()) bds.union(it.next());
             this.bounds = bds;
         } else {
             // uniformize X if necessary -> min X size + ref point = middle point

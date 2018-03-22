@@ -57,7 +57,7 @@ public class GenerateXPConfig {
         /*
         preProcessing -> crop numbers + rotation 90
         microchannels -> der ~50. open/close <2 ? 
-        bacteria -> correct head
+        bacteria -> correct head + feature filter on thickness + binary open & close
         Experiment xpJulou = GenerateXP.generateXPTrans("MotherMachinePhaseContrastJULOU", null, true, 0, 0, Double.NaN);
         xpJulou.getChannelImages().insert(xpJulou.getChannelImages().createChildInstance("Fluo"));
         xpJulou.getPreProcessingTemplate().addTransformation(0, 0, null, new SimpleRotationXY(90));

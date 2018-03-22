@@ -245,7 +245,7 @@ public class GenerateFilms {
         for (int i = 0; i<image.length; ++i) {
             for (int j = 0; j<image[0].length; ++j) {
                 MutableBoundingBox otherBB = image[i][j].getBoundingBox();
-                bb = bb.expand(otherBB.sizeX(), otherBB.sizeY(), otherBB.sizeZ());
+                bb = bb.union(otherBB.sizeX(), otherBB.sizeY(), otherBB.sizeZ());
             }
         }
         for (int i = 0; i<image.length; ++i) {
