@@ -54,7 +54,8 @@ public class SimpleRotationXY implements MultichannelTransformation {
     
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), angle.getValue().floatValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncomplete.getSelected());
+        if (angle.getValue().doubleValue()%90!=0) image = TypeConverter.toFloat(image, null);
+        return ImageTransformation.rotateXY(image, angle.getValue().floatValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncomplete.getSelected());
     }
     
     @Override

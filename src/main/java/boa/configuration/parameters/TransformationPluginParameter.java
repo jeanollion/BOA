@@ -36,6 +36,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     //List configurationData;
     ChannelImageParameter inputChannel = new ChannelImageParameter("Configuration Channel", -1);
     ChannelImageParameter outputChannel = null;
+    boolean allChannels = false;
     //Parameter inputTimePoints;
     
     @Override
@@ -84,6 +85,8 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
                 case SINGLE:
                     outputChannel = new ChannelImageParameter("Channels on which apply transformation", -1);
                     break;
+                case ALL:
+                    allChannels=true;
                 default:
                     outputChannel=null;
                     break;
@@ -107,7 +110,10 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     }
     
     public int[] getOutputChannels() { // if null -> all selected or same as input...
-        if (outputChannel==null) return null;
+        if (outputChannel==null) {
+            if (allChannels) return null;
+            else return inputChannel.getSelectedItems();
+        }
         else return outputChannel.getSelectedItems();
     }
     

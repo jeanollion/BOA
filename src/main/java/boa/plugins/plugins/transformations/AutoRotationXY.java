@@ -135,7 +135,7 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         int fn = Math.min(frameNumber.getValue().intValue(), inputImages.getFrameNumber());
         List<Integer> frames;
         if (fn<=1) frames = new ArrayList<Integer>(1){{add(inputImages.getDefaultTimePoint());}};
-        else frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, fn);
+        else frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, fn); // TODO not necessary for phase contrast
         
         List<Double> angles = frames.stream().parallel().map(f -> {
             Image<? extends Image> image = inputImages.getImage(channelIdx, f);

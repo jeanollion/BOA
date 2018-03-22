@@ -78,7 +78,7 @@ public interface InputImages {
         if (n==1) return Arrays.asList(new Integer[]{signal.get(0).key});
         // choose n frames among the X frames with most signal
         int candidateNumber = Math.max(images.size()/4, n);
-        double delta = (double)candidateNumber / (double)(n+1);
+        double delta = Math.max((double)candidateNumber / (double)(n+1), 1);
         signal = signal.subList(0, candidateNumber);
         List<Pair<Integer, Double>> res = new ArrayList<>(n);
         for (int i =0; i<n; ++i) {

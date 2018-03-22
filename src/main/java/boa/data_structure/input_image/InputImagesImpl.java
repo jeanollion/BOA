@@ -148,7 +148,7 @@ public class InputImagesImpl implements InputImages {
         }
         return imagesTC;
     }
-    public void applyTranformationsSaveAndClose(boolean close) {
+    public void applyTranformationsAndSave(boolean close) {
         long tStart = System.currentTimeMillis();
         final int cCount = getChannelNumber();
         ThreadAction<InputImage> ta = (InputImage image, int idx) -> {

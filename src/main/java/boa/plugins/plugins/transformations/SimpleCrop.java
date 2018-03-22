@@ -43,7 +43,6 @@ public class SimpleCrop implements MultichannelTransformation, ConfigurableTrans
     NumberParameter zLength = new NumberParameter("Z-Length", 0, 0);
     Parameter[] parameters = new Parameter[]{xMin, xLength, yMin, yLength, zMin, zLength};
     MutableBoundingBox bounds;
-    int[] configurationData;
     public SimpleCrop(){}
     public SimpleCrop(int x, int xL, int y, int yL, int z, int zL){
         xMin.setValue(x);
@@ -75,7 +74,7 @@ public class SimpleCrop implements MultichannelTransformation, ConfigurableTrans
     }
     @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-       return configurationData!=null && configurationData.length==6;
+       return bounds!=null;
     }
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
@@ -87,17 +86,10 @@ public class SimpleCrop implements MultichannelTransformation, ConfigurableTrans
         yMin.getValue().intValue(), yMin.getValue().intValue()+yLength.getValue().intValue()-1, 
         zMin.getValue().intValue(), zMin.getValue().intValue()+zLength.getValue().intValue()-1);
         bounds.trim(input.getBoundingBox());
-        configurationData = new int[6];
-        configurationData[0]=bounds.xMin();
-        configurationData[1]=bounds.xMax();
-        configurationData[2]=bounds.yMin();
-        configurationData[3]=bounds.yMax();
-        configurationData[4]=bounds.zMin();
-        configurationData[5]=bounds.zMax();
+        
     }
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (bounds==null) bounds= new MutableBoundingBox(configurationData[0], configurationData[1], configurationData[2], configurationData[3], configurationData[4], configurationData[5]);
         return image.crop(bounds);
     }
 

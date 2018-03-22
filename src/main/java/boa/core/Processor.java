@@ -117,7 +117,7 @@ public class Processor {
         for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(field.getName(), s);
         setTransformations(field);
         logger.debug("applying all transformation, save & close. {} ", Utils.getMemoryUsage());
-        images.applyTranformationsSaveAndClose(false);
+        images.applyTranformationsAndSave(false);
         if (deleteObjects) dao.deleteAllObjects();
     }
     
@@ -129,9 +129,9 @@ public class Processor {
             logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
             if (transfo instanceof ConfigurableTransformation) {
                 ConfigurableTransformation ct = (ConfigurableTransformation)transfo;
-                if (!ct.isConfigured(images.getChannelNumber(), images.getFrameNumber()))  ct.computeConfigurationData(tpp.getInputChannel(), images);
-                images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
+                ct.computeConfigurationData(tpp.getInputChannel(), images);
             }
+            images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }
     }
     // processing-related methods
