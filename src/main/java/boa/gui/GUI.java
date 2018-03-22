@@ -44,7 +44,7 @@ import boa.core.Processor;
 import boa.core.ProgressCallback;
 import boa.core.PythonGateway;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.configuration.experiment.PreProcessingChain;
 import boa.configuration.experiment.Structure;
 import boa.data_structure.dao.ImageDAO;
@@ -2558,7 +2558,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (xp==null) return;
         if (!Utils.promptBoolean("This will erase configutation on current xp. Continue?", this)) return;
         for (String p : getSelectedPositions(true)) {
-            MicroscopyField m = xp.getPosition(p);
+            Position m = xp.getPosition(p);
             if (m!=null) {
                 db.getExperiment().getPosition(p).setPreProcessingChains(m.getPreProcessingChain());
             }
@@ -2670,7 +2670,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             ImportExportJSON.importConfigurationFromFile(f.getAbsolutePath(), db, true, true);
             if (db.getExperiment().getPositionCount()>0 && !db.getExperiment().getPreProcessingTemplate().sameContent(oldppTemplate)) {
                 if (Utils.promptBoolean("Also copy pre-processing chain to all positions?", this)) {
-                    for (MicroscopyField p : db.getExperiment().getPositions()) p.getPreProcessingChain().setContentFrom(db.getExperiment().getPreProcessingTemplate());
+                    for (Position p : db.getExperiment().getPositions()) p.getPreProcessingChain().setContentFrom(db.getExperiment().getPreProcessingTemplate());
                 }
             }
             db.updateExperiment();
@@ -2687,7 +2687,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 ImportExportJSON.importConfigurationFromFile(f.getAbsolutePath(), mDAO, true, true);
                 if (mDAO.getExperiment().getPositionCount()>0 && !mDAO.getExperiment().getPreProcessingTemplate().sameContent(oldppTemplate)) {
                     if (overwritePos) {
-                        for (MicroscopyField p : mDAO.getExperiment().getPositions()) p.getPreProcessingChain().setContentFrom(mDAO.getExperiment().getPreProcessingTemplate());
+                        for (Position p : mDAO.getExperiment().getPositions()) p.getPreProcessingChain().setContentFrom(mDAO.getExperiment().getPreProcessingTemplate());
                     }
                 }
                 mDAO.updateExperiment();
@@ -2866,7 +2866,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (!checkConnection()) return;
         if (!Utils.promptBoolean("Delete All Pre-processed Images ? (Irreversible)", this)) return;
         for (String p : getSelectedPositions(true)) {
-            MicroscopyField f = db.getExperiment().getPosition(p);
+            Position f = db.getExperiment().getPosition(p);
             if (f.getInputImages()!=null) f.getInputImages().deleteFromDAO();
         }
     }//GEN-LAST:event_clearPPImageMenuItemActionPerformed

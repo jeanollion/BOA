@@ -22,7 +22,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.core.Processor;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.dao.MasterDAO;
@@ -190,7 +190,7 @@ public class GenerateFilms {
         int count = 0;
         
         for (int fieldNumber : fieldIndices) {
-            MicroscopyField f = db.getExperiment().getPosition(fieldNumber);
+            Position f = db.getExperiment().getPosition(fieldNumber);
             ObjectDAO dao = db.getDao(f.getName());
             List<StructureObject> roots = Processor.getOrCreateRootTrack(dao);
             for (int t = tStart; t<tEnd; ++t) {
@@ -210,7 +210,7 @@ public class GenerateFilms {
         Image[][] resTF = new Image[tEnd-tStart][fieldIndices.length];
         int count = 0;
         for (int fieldNumber : fieldIndices) {
-            MicroscopyField f = db.getExperiment().getPosition(fieldNumber);
+            Position f = db.getExperiment().getPosition(fieldNumber);
             InputImages images = f.getInputImages();
             for (int t = tStart; t<tEnd; ++t) {
                 resTF[t-tStart][count] = images.getImage(channelIdx, t);

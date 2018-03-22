@@ -116,6 +116,10 @@ public class InputImagesImpl implements InputImages {
         if (imageCT[channelIdx].length==1) timePoint = 0;
         return imageCT[channelIdx][timePoint].getImage();
     }
+    public boolean imageOpened(int channelIdx, int timePoint) {
+        if (imageCT[channelIdx].length==1) timePoint = 0;
+        return imageCT[channelIdx][timePoint].imageOpened();
+    }
     public Image[][] getImagesTC() {
         return getImagesTC(0, this.getFrameNumber());
     }
@@ -144,12 +148,13 @@ public class InputImagesImpl implements InputImages {
         }
         return imagesTC;
     }
-    public void applyTranformationsSaveAndClose() {
+    public void applyTranformationsSaveAndClose(boolean close) {
         long tStart = System.currentTimeMillis();
         final int cCount = getChannelNumber();
         ThreadAction<InputImage> ta = (InputImage image, int idx) -> {
             image.getImage();
-            image.closeImage();
+            image.saveImage();
+            if (close) image.flush();
             //logger.debug("apply transfo: frame {}", idx);
         };
         for (int c = 0; c<getChannelNumber(); ++c) {

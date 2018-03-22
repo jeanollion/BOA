@@ -22,7 +22,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.TrackPostFilterSequence;
 import boa.data_structure.dao.MasterDAO;
@@ -69,7 +69,7 @@ public class TestProcessMicrochannelsPhase {
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
         MasterDAO mDAO =new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
+        Position f = mDAO.getExperiment().getPosition(fieldNumber);
         
         StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
         if (root==null) root = f.createRootObjects(mDAO.getDao(f.getName())).get(timePoint);
@@ -104,7 +104,7 @@ public class TestProcessMicrochannelsPhase {
     
     public static void testPostProcessTracking(String dbName, int fieldNumber, int timePoint) {
         MasterDAO mDAO =new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
+        Position f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
         if (root==null) root = f.createRootObjects(mDAO.getDao(f.getName())).get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);

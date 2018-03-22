@@ -23,7 +23,7 @@ import boa.configuration.parameters.TransformationPluginParameter;
 import boa.core.Processor;
 import static boa.core.Processor.setTransformations;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.input_image.InputImagesImpl;
 import boa.data_structure.dao.MasterDAO;
 import ij.ImageJ;
@@ -65,7 +65,7 @@ public class TestPreProcessPhase {
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         //Processor.setTransformations(f, true);
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
@@ -81,7 +81,7 @@ public class TestPreProcessPhase {
     
     public static void testRotation(String dbName, int fieldIdx, int channelIdx, int time) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
         AutoRotationXY t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false));
@@ -95,7 +95,7 @@ public class TestPreProcessPhase {
     
     public static void testCrop(String dbName, int fieldIdx, String positionName, int time, boolean flip) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = positionName ==null ? db.getExperiment().getPosition(fieldIdx): db.getExperiment().getPosition(positionName);
+        Position f = positionName ==null ? db.getExperiment().getPosition(fieldIdx): db.getExperiment().getPosition(positionName);
         //f.getPreProcessingChain().removeAllTransformations();
         //f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false)));
         //if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
@@ -126,7 +126,7 @@ public class TestPreProcessPhase {
     
     public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         if (time>=tStart) time -=tStart;
         if (time<0) images.subSetTimePoints(tStart, tEnd);

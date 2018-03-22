@@ -21,7 +21,7 @@ import static boa.test_utils.TestUtils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -52,7 +52,7 @@ public class TestProcessBacteria {
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int timePoint, int microChannel) {
         MasterDAO mDAO = new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
+        Position f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);

@@ -18,7 +18,7 @@
  */
 package boa.gui;
 
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.configuration.experiment.PreProcessingChain;
 import boa.configuration.parameters.Parameter;
 import static boa.configuration.parameters.Parameter.logger;
@@ -199,7 +199,7 @@ public class PluginConfigurationUtils {
         return subMenu;
     }
 
-    public static JMenuItem getTransformationTest(String name, MicroscopyField position, int transfoIdx, boolean showAllSteps) {
+    public static JMenuItem getTransformationTest(String name, Position position, int transfoIdx, boolean showAllSteps) {
         JMenuItem item = new JMenuItem(name);
         item.setAction(new AbstractAction(item.getActionCommand()) {
             @Override
@@ -247,7 +247,7 @@ public class PluginConfigurationUtils {
         });
         return item;
     }
-    public static JMenuItem getTransformationTestOnCurrentImage(String name, MicroscopyField position, int transfoIdx) {
+    public static JMenuItem getTransformationTestOnCurrentImage(String name, Position position, int transfoIdx) {
         JMenuItem item = new JMenuItem(name);
         item.setAction(new AbstractAction(item.getActionCommand()) {
             @Override

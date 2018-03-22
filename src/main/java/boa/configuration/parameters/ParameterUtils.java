@@ -27,7 +27,7 @@ import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static boa.configuration.parameters.Parameter.logger;
 import boa.core.Processor;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.configuration.experiment.PreProcessingChain;
 import boa.configuration.experiment.Structure;
 import boa.data_structure.input_image.InputImage;
@@ -87,24 +87,24 @@ public class ParameterUtils {
         return null;
     }
     
-    public static MicroscopyField getMicroscopyField(Parameter p) {
+    public static Position getMicroscopyField(Parameter p) {
         //logger.debug("get microscopy field from tree... {}", p.getName());
-        if (p instanceof MicroscopyField) {
-            return (MicroscopyField) p;
+        if (p instanceof Position) {
+            return (Position) p;
         }
         Parameter parent = p;
         while (parent.getParent() != null) {
             parent = (Parameter) parent.getParent();
             //logger.debug("get microscopy field from tree... {}", parent.getName());
-            if (parent instanceof MicroscopyField) {
-                return (MicroscopyField) parent;
+            if (parent instanceof Position) {
+                return (Position) parent;
             }
         }
         return null;
     }
     
     public static int getTimePointNumber(Parameter p, boolean useRawInputFrames) {
-        MicroscopyField f = getMicroscopyField(p);
+        Position f = getMicroscopyField(p);
         if (f!=null) {
             return f.getTimePointNumber(useRawInputFrames);
         } else {

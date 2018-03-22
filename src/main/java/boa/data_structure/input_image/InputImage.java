@@ -74,7 +74,9 @@ public class InputImage {
     public MultipleImageContainer duplicateContainer() {
         return imageSources.duplicate();
     }
-    
+    public boolean imageOpened() {
+        return image!=null;
+    }
     public Image getImage() {
         if (image == null) {
             if (intermediateImageSavedToDAO) image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
@@ -109,13 +111,12 @@ public class InputImage {
         }
     }
     
-    public void closeImage() { // si modification du bitDepth -> faire la même pour toutes les images. Parfois seulement bruit négatif -> pas besoin
+    public void saveImage() { // si modification du bitDepth -> faire la même pour toutes les images. Parfois seulement bruit négatif -> pas besoin
         // cast to initial type
         if (originalImageType!=null && originalImageType.getBitDepth()!=image.getBitDepth()) {
             image = TypeConverter.cast(image, originalImageType);
         }
         dao.writePreProcessedImage(image, channelIdx, timePoint, microscopyFieldName);
-        image=null;
     }
     
     void setTimePoint(int timePoint) {

@@ -20,7 +20,7 @@ package boa.gaussian_fit;
 import static boa.test_utils.TestUtils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -50,7 +50,7 @@ public class GaussianFitTestOnMutations {
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
     public void testGaussFit(int fieldIdx, int mcIdx, int tp) {
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         StructureObject root = db.getDao(f.getName()).getRoot(tp);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);

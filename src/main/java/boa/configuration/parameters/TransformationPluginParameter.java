@@ -20,7 +20,7 @@ package boa.configuration.parameters;
 
 import static boa.configuration.parameters.Parameter.logger;
 import boa.configuration.parameters.ui.ChoiceParameterUI;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.gui.PluginConfigurationUtils;
 import boa.plugins.MultichannelTransformation;
 import java.util.ArrayList;
@@ -185,7 +185,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     public ChoiceParameterUI getUI() {
         ChoiceParameterUI ui = super.getUI();
         if (super.isOnePluginSet()) {
-            MicroscopyField f = ParameterUtils.getFirstParameterFromParents(MicroscopyField.class, this, false);
+            Position f = ParameterUtils.getFirstParameterFromParents(Position.class, this, false);
             if (f!=null) {
                 int idx = this.getParent().getIndex(this);
                 ui.addActions(PluginConfigurationUtils.getTransformationTest("Test Transformation", f, idx, false), true);

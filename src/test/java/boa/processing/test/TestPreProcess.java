@@ -23,7 +23,7 @@ import boa.configuration.parameters.TransformationPluginParameter;
 import boa.core.Processor;
 import static boa.core.Processor.setTransformations;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.input_image.InputImagesImpl;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.StructureObject;
@@ -71,7 +71,7 @@ public class TestPreProcess {
     }
     public static void test(String dbName, int posIdx, String positionName, int time) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = positionName ==null ? db.getExperiment().getPosition(posIdx): db.getExperiment().getPosition(positionName);
+        Position f = positionName ==null ? db.getExperiment().getPosition(posIdx): db.getExperiment().getPosition(positionName);
         List<TransformationPluginParameter<Transformation>> list = new ArrayList<>(f.getPreProcessingChain().getTransformations(false));
         int cropIdx = -1;
         int i = 0;
@@ -96,7 +96,7 @@ public class TestPreProcess {
     }
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) throws Exception {
        MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         //Processor.setTransformations(f, true);
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
@@ -111,7 +111,7 @@ public class TestPreProcess {
     
     public static void testCrop(String dbName, int fieldIdx, int time, boolean flip) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
         f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
         f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
@@ -133,7 +133,7 @@ public class TestPreProcess {
     
     public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         if (time>=tStart) time -=tStart;
         images.subSetTimePoints(tStart, tEnd);
@@ -157,7 +157,7 @@ public class TestPreProcess {
     
     public static void testStabFromXP(String dbName, int fieldIdx, int channelIdx,int tStart, int tEnd) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         List<TransformationPluginParameter<Transformation>> tr = new ArrayList<>(f.getPreProcessingChain().getTransformations(false));
         TransformationPluginParameter<Transformation> stab=null;
         for (int i = 0; i<tr.size(); ++i) {
@@ -188,7 +188,7 @@ public class TestPreProcess {
     
     public static void displayPreProcessed(String dbName, int fieldIdx, int structureIdx, int tStart, int tEnd) {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         IJImageDisplayer disp = new IJImageDisplayer();
         int channelIdx = db.getExperiment().getStructure(structureIdx).getChannelImage();
@@ -206,7 +206,7 @@ public class TestPreProcess {
     
     public static void testStabilizer(String dbName, int fieldIdx, int channelIdx, int tRef, int t, boolean flip) throws Exception {
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
         int bactChann = 1;
         f.getPreProcessingChain().addTransformation(bactChann, null, new SaturateHistogramHyperfluoBacteria());

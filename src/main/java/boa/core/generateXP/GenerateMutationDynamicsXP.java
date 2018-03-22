@@ -29,7 +29,7 @@ import static boa.core.generateXP.GenerateXP.getBooleanArray;
 import static boa.core.generateXP.GenerateXP.logger;
 import boa.configuration.experiment.ChannelImage;
 import boa.configuration.experiment.Experiment;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.configuration.experiment.Structure;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.MasterDAOFactory;
@@ -138,7 +138,7 @@ public class GenerateMutationDynamicsXP {
             Experiment xp = generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, cropXYdXdY);
             mDAO.setExperiment(xp);
             Processor.importFiles(xp, true, null, inputDir);
-            for (MicroscopyField f : xp.getPositions()) f.setDefaultFrame(0);
+            for (Position f : xp.getPositions()) f.setDefaultFrame(0);
             GenerateXP.setFlip(xp, flipArray);
             if (performProcessing) {
                 try {

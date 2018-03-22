@@ -26,7 +26,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.core.DefaultWorker;
 import boa.core.Processor;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.Selection;
 import boa.data_structure.dao.SelectionDAO;

@@ -25,7 +25,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -58,7 +58,7 @@ public class TestProcessMicrochannels {
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
         MasterDAO mDAO = new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
+        Position f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
         logger.debug("field name: {}, root==null? {} frame: {}", f.getName(), root==null, root.getFrame());
         Image input = root.getRawImage(0);

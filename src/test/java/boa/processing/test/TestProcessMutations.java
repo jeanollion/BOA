@@ -22,7 +22,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -113,7 +113,7 @@ public class TestProcessMutations {
         testSegMutationsFromXP(fieldIdx, mcIdx, true, time, null, null, null, null, null);
     }
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, boolean parentMC, int time, ArrayList<ImageInteger> mcMask_, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        Position f = db.getExperiment().getPosition(fieldIdx);
         StructureObject root = db.getDao(f.getName()).getRoot(time);
         if (root==null) return;
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);

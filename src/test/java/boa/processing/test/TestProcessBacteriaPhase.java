@@ -25,7 +25,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
@@ -94,7 +94,7 @@ public class TestProcessBacteriaPhase {
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int microChannel, int timePointMin, int timePointMax) {
         MasterDAO mDAO = new Task(dbName).getDB();
         mDAO.setReadOnly(true);
-        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
+        Position f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
         List<StructureObject> parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(rootTrack, 0), o->o.getIdx()==microChannel);
         

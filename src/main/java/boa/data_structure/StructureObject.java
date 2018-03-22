@@ -23,7 +23,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.PostLoadable;
 import boa.configuration.experiment.Experiment;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.BasicObjectDAO;
 import boa.data_structure.region_container.RegionContainer;
 import boa.image.BlankMask;
@@ -157,7 +157,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public double getCalibratedTimePoint() {
         if (getExperiment()==null) return Double.NaN;
-        MicroscopyField f = getExperiment().getPosition(getPositionName());
+        Position f = getExperiment().getPosition(getPositionName());
         int z = (int)Math.round((getRegion().getBounds().zMin()+getRegion().getBounds().zMax())/2);
         double res  = f.getInputImages()==null || isRoot() ? Double.NaN : f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
         //double res = Double.NaN; // for old xp TODO change
@@ -187,7 +187,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return dao.getExperiment();
     }
-    public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getPosition(getPositionName()):null;}
+    public Position getMicroscopyField() {return getExperiment()!=null?getExperiment().getPosition(getPositionName()):null;}
     public float getScaleXY() {return getMicroscopyField()!=null?getMicroscopyField().getScaleXY():1;}
     public float getScaleZ() {return getMicroscopyField()!=null?getMicroscopyField().getScaleZ():1;}
     @Override public StructureObject getParent() {

@@ -19,7 +19,7 @@ package boa.test_utils;
 
 import static boa.test_utils.TestUtils.logger;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.StructureObject;
 
@@ -32,7 +32,7 @@ public class DirectBytBufferMemoryLeak {
         String dbName = "MutH_150324";
         Task t = new Task(dbName);
         MasterDAO db = t.getDB();
-        MicroscopyField m =db.getExperiment().getPosition(1);
+        Position m =db.getExperiment().getPosition(1);
         for (int l = 0; l<1000; ++l) {
             logger.debug("loop: {}", l);
             long t0 = System.currentTimeMillis();

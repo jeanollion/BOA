@@ -100,7 +100,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
         PreProcessingChain pp = this;
         ParameterListener pl = (Parameter sourceParameter) -> {
             if (sourceParameter.getName().equals(trimFramesStart.getName()) || sourceParameter.getName().equals(trimFramesEnd.getName())) {
-                MicroscopyField pos = ParameterUtils.getMicroscopyField(pp);
+                Position pos = ParameterUtils.getMicroscopyField(pp);
                 if (pos!=null) {
                     pos.flushImages(true, true);
                     logger.debug("flush images on position: {}", pos.getName());
@@ -212,7 +212,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
                     public void actionPerformed(ActionEvent ae) {
                         for (int f : fields.getSelectedItems()) {
                             //logger.debug("override pp on field: {}", f);
-                            MicroscopyField field = xp.fields.getChildAt(f);
+                            Position field = xp.fields.getChildAt(f);
                             if (field.getPreProcessingChain()!=ppc) {
                                 field.setPreProcessingChains(ppc);
                                 ConfigurationTreeModel model = ParameterUtils.getModel(xp);

@@ -27,7 +27,7 @@ import boa.configuration.parameters.ui.ListParameterUI;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.configuration.parameters.ListElementErasable;
 import static boa.configuration.parameters.Parameter.logger;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;

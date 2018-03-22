@@ -50,12 +50,13 @@ import javax.swing.JSeparator;
 import org.json.simple.JSONObject;
 import boa.plugins.PreFilter;
 import boa.utils.Utils;
+import java.util.Map;
 
 /**
  *
  * @author jollion
  */
-public class MicroscopyField extends SimpleContainerParameter implements ListElementErasable {
+public class Position extends SimpleContainerParameter implements ListElementErasable {
     
     private MultipleImageContainer sourceImages;
     PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
@@ -83,7 +84,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         defaultTimePoint.initFromJSONEntry(jsonO.get("defaultFrame"));
     }
     
-    public MicroscopyField(String name) {
+    public Position(String name) {
         super(name);
         initChildList();
     }
@@ -176,11 +177,22 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             logger.warn("Could not initiate root objects, perform preProcessing first");
             return null;
         }
-        for (int t = 0; t<getTimePointNumber(false); ++t) {
-            res.add(new StructureObject(t, getMask(), dao));
-        }
+        for (int t = 0; t<getTimePointNumber(false); ++t) res.add(new StructureObject(t, getMask(), dao));
+        setOpenedImageToRootTrack(res);
         setTrackLinks(res);
         return res;
+    }
+    public void setOpenedImageToRootTrack(List<StructureObject> rootTrack) {
+        if (preProcessedImages==null) return;
+        Map<Integer, List<Integer>> c2s = getExperiment().getChannelToStructureCorrespondance();
+        for (int channelIdx = 0; channelIdx<getExperiment().getChannelImageCount(); ++channelIdx) {
+            List<Integer> structureIndices =c2s.get(channelIdx);
+            for (StructureObject root : rootTrack) {    
+                if (preProcessedImages.imageOpened(channelIdx, root.getFrame())) {
+                    for (int s : structureIndices) root.setRawImage(s, preProcessedImages.getImage(channelIdx, root.getFrame()));
+                }
+            }
+        }
     }
     
     protected Experiment getExperiment() {
@@ -215,7 +227,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     public int getDefaultTimePoint() {
         return defaultTimePoint.getSelectedTimePoint();
     }
-    public MicroscopyField setDefaultFrame(int frame) {
+    public Position setDefaultFrame(int frame) {
         this.defaultTimePoint.setTimePoint(frame);
         return this;
     }
@@ -229,8 +241,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         this.sourceImages=images;
     }
     
-    @Override public MicroscopyField duplicate() {
-        MicroscopyField mf = super.duplicate();
+    @Override public Position duplicate() {
+        Position mf = super.duplicate();
         if (sourceImages!=null) mf.setImages(sourceImages.duplicate());
         return mf;
     }
@@ -250,16 +262,16 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     @Override 
     public void setContentFrom(Parameter other) {
         super.setContentFrom(other);
-        if (other instanceof MicroscopyField) {
-            MicroscopyField otherP = (MicroscopyField) other;
+        if (other instanceof Position) {
+            Position otherP = (Position) other;
             if (otherP.sourceImages!=null) sourceImages = otherP.sourceImages.duplicate();
         }
     }
     @Override 
     public boolean sameContent(Parameter other) {
         if (!super.sameContent(other)) return false;
-        if (other instanceof MicroscopyField) {
-            MicroscopyField otherP = (MicroscopyField) other;
+        if (other instanceof Position) {
+            Position otherP = (Position) other;
             if (otherP.sourceImages!=null && sourceImages!=null) {
                 if (!sourceImages.sameContent(otherP.sourceImages)) {
                     logger.debug("Position: {}!={} content differs at images");

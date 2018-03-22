@@ -420,7 +420,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             publish("Pre-Processing: DB: "+dbName+", Position: "+position);
             logger.info("Pre-Processing: DB: {}, Position: {}", dbName, position);
             Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, this);
-            db.getExperiment().getPosition(position).flushImages(true, true); // pre-processed images are open once again by root objects.
+            boolean createRoot = segmentAndTrack || trackOnly || generateTrackImages;
+            if (createRoot) Processor.getOrCreateRootTrack(db.getDao(position)); // will set opened pre-processed images to root -> no need to open them once again in further steps
+            db.getExperiment().getPosition(position).flushImages(true, true); 
             System.gc();
             incrementProgress();
             publishMemoryUsage("After PreProcessing:");

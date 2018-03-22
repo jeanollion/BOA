@@ -20,7 +20,7 @@ package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
 import boa.configuration.experiment.Experiment;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.ImageDAO;
 import ij.ImagePlus;
 import ij.VirtualStack;
@@ -70,7 +70,7 @@ public class IJVirtualStack extends VirtualStack {
         return IJImageWrapper.getImagePlus(imageCT[fcz[1]][fcz[0]].getZPlane(fcz[2])).getProcessor();
     }
     public static void openVirtual(Experiment xp, String position, boolean output) {
-        MicroscopyField f = xp.getPosition(position);
+        Position f = xp.getPosition(position);
         int channels = xp.getChannelImageCount();
         int frames = f.getTimePointNumber(false);
         Image[] bdsC = new Image[xp.getChannelImageCount()];

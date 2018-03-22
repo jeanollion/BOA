@@ -19,7 +19,7 @@ package boa.data_structure;
 
 import static boa.test_utils.TestUtils.logger;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.ObjectDAO;
 import boa.data_structure.StructureObject;
@@ -35,7 +35,7 @@ public class NoMeasurementError {
         int fIdx = 0;
         int structureIdx = 2;
         MasterDAO db = new Task(dbName).getDB();
-        MicroscopyField f = db.getExperiment().getPosition(fIdx);
+        Position f = db.getExperiment().getPosition(fIdx);
         ObjectDAO dao = db.getDao(f.getName());
         checkMeasurements(dao, structureIdx);
     }

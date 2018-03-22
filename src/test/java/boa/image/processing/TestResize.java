@@ -18,7 +18,7 @@
  */
 package boa.image.processing;
 
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.core.Task;
 import boa.data_structure.StructureObject;
 import boa.data_structure.dao.MasterDAO;
@@ -37,7 +37,7 @@ public class TestResize {
         String dbName = "fluo171113_WT_15s";
         int postition= 0, frame=27, mcIdx=2;// F=2 B=1
         MasterDAO mDAO = new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(postition);
+        Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject mc = root.getChildren(0).get(mcIdx);
         Image image = mc.getRawImage(2);

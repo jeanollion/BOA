@@ -19,7 +19,7 @@ package boa.image.processing;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.core.Task;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
@@ -56,7 +56,7 @@ public class TestSpine {
         String dbName = "fluo171113_WT_15s";
         int postition= 0, frame=0, mc=0, b=0; // F=2 B=1
         MasterDAO mDAO = new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(postition);
+        Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
         StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);

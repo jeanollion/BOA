@@ -23,7 +23,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.TransformationPluginParameter;
 import boa.configuration.experiment.Experiment;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.configuration.experiment.PreProcessingChain;
 import boa.data_structure.dao.ImageDAO;
 import boa.data_structure.input_image.InputImagesImpl;
@@ -77,7 +77,7 @@ public class Processor {
         List<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp, pcb);
         int count=0, relinkCount=0;
         for (MultipleImageContainer c : images) {
-            MicroscopyField f = xp.createPosition(c.getName());
+            Position f = xp.createPosition(c.getName());
             if (c.getScaleXY()==1 || c.getScaleXY()==0) {
                 if (pcb!=null) pcb.log("Warning: no scale set for position: "+f.getName());
                 logger.info("no scale set for positon: "+f.getName());
@@ -106,7 +106,7 @@ public class Processor {
         }
     }
     
-    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, ProgressCallback pcb)  {
+    public static void preProcessImages(Position field, ObjectDAO dao, boolean deleteObjects, ProgressCallback pcb)  {
         if (!dao.getPositionName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
         InputImagesImpl images = field.getInputImages();
         if (images==null || images.getImage(0, images.getDefaultTimePoint())==null) {
@@ -117,11 +117,11 @@ public class Processor {
         for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(field.getName(), s);
         setTransformations(field);
         logger.debug("applying all transformation, save & close. {} ", Utils.getMemoryUsage());
-        images.applyTranformationsSaveAndClose();
+        images.applyTranformationsSaveAndClose(false);
         if (deleteObjects) dao.deleteAllObjects();
     }
     
-    public static void setTransformations(MicroscopyField field)  {
+    public static void setTransformations(Position field)  {
         InputImagesImpl images = field.getInputImages();
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations(true)) {
@@ -144,7 +144,7 @@ public class Processor {
                 dao.store(res);
                 dao.setRoots(res);
             }
-        }
+        } else dao.getExperiment().getPosition(dao.getPositionName()).setOpenedImageToRootTrack(res);
         if (res==null || res.isEmpty()) throw new RuntimeException("ERROR db: "+dao.getMasterDAO().getDBName()+" pos: "+dao.getPositionName()+ " no pre-processed image found");
         return res;
     }

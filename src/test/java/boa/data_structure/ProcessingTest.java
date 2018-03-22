@@ -21,7 +21,7 @@ import boa.test_utils.TestUtils;
 import boa.core.Processor;
 import boa.configuration.experiment.ChannelImage;
 import boa.configuration.experiment.Experiment;
-import boa.configuration.experiment.MicroscopyField;
+import boa.configuration.experiment.Position;
 import boa.configuration.experiment.Structure;
 import boa.data_structure.dao.ImageDAO;
 import boa.data_structure.dao.BasicMasterDAO;
@@ -149,7 +149,7 @@ public class ProcessingTest {
         File folder = testFolder.newFolder("TestImagesPreProcessing");
         ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
         Processor.importFiles(xp, true, null, folder.getAbsolutePath());
-        MicroscopyField f = xp.getPosition(0);
+        Position f = xp.getPosition(0);
         assertEquals("number of fields detected", 1, xp.getPositionCount());
         
         //set-up pre-processing chains

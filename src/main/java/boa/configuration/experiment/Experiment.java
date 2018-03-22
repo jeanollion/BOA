@@ -71,7 +71,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<>("Channel Images", 0 , ChannelImage.class);
     SimpleListParameter<Structure> structures= new SimpleListParameter<>("Structures", -1 , Structure.class);
     SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<>("Measurements", -1 , new PluginParameter<Measurement>("Measurements", Measurement.class, true));
-    SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<>("Positions", -1 , MicroscopyField.class);
+    SimpleListParameter<Position> fields= new SimpleListParameter<>("Positions", -1 , Position.class);
     PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
     TextParameter positionSeparator = new TextParameter("Position Separator", "xy", true);
@@ -160,23 +160,23 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @param fieldName name of the MicroscopyField
      * @return a new MicroscopyField if no MicroscopyField named {@param fieldName} are already existing, null if not. 
      */
-    public MicroscopyField createPosition(String fieldName) {
+    public Position createPosition(String fieldName) {
         if (getPosition(fieldName)!=null) return null;
-        MicroscopyField res =fields.createChildInstance(fieldName);
+        Position res =fields.createChildInstance(fieldName);
         fields.insert(res);
         res.setPreProcessingChains(template);
         return res;
     }
     
-    public MicroscopyField getPosition(String fieldName) {
+    public Position getPosition(String fieldName) {
         return fields.getChildByName(fieldName);
     }
     
-    public MicroscopyField getPosition(int fieldIdx) {
+    public Position getPosition(int fieldIdx) {
         return fields.getChildAt(fieldIdx);
     }
     
-    public List<MicroscopyField> getPositions() {
+    public List<Position> getPositions() {
         return fields.getChildren();
     }
     
@@ -242,6 +242,11 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public int[] getStructureToChannelCorrespondance() {
         int[] res = new int[structures.getChildCount()];
         for (int i = 0; i<res.length; i++) res[i] = getStructure(i).getChannelImage();
+        return res;
+    }
+    public HashMap<Integer, List<Integer>> getChannelToStructureCorrespondance() {
+        HashMapGetCreate<Integer, List<Integer>> res = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());
+        for (int s = 0; s<structures.getChildCount(); s++) res.getAndCreateIfNecessary(getStructure(s).getChannelImage()).add(s);
         return res;
     }
     
