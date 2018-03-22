@@ -46,6 +46,7 @@ import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations;
 import boa.image.processing.split_merge.SplitAndMergeEdge;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
+import boa.image.processing.split_merge.SplitAndMergeRegionCriterion;
 import boa.measurement.BasicMeasurements;
 import boa.measurement.GeometricalMeasurements;
 import static boa.plugins.Plugin.logger;
@@ -138,14 +139,15 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     @Override
     protected EdgeDetector initEdgeDetector(StructureObjectProcessing parent, int structureIdx) {
         EdgeDetector seg = super.initEdgeDetector(parent, structureIdx);
+        seg.minSizePropagation.setValue(1);
         seg.seedRadius.setValue(1.5);
         seg.setThrehsoldingMethod(EdgeDetector.THLD_METHOD.NO_THRESHOLDING);
         return seg;
     }
     @Override 
     protected RegionPopulation filterRegionAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        //return pop;
-        return filterBorderArtefacts(parent, structureIdx, pop);
+        return pop;
+        //return filterBorderArtefacts(parent, structureIdx, pop);
     }
     @Override
     protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
@@ -174,19 +176,41 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             return pop;
         }
         pop.getRegions().removeAll(backgroundL);
-        pop.getRegions().removeAll(foregroundL);
-        Region background = Region.merge(backgroundL);
-        Region foreground = Region.merge(foregroundL);
-        pop.getRegions().add(0, background); // fixed index so that same instance when merged
-        pop.getRegions().add(1, foreground); // fixed index so that same instance when merged
-        pop.relabel(false);
-        if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back fusion"));
-        SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false);
-        sm.allowMergeWithBackground(parent.getMask());
-        sm.addForbidFusionForegroundBackground(r->r==background, r->r==foreground);
-        sm.merge(pop, 2); // merge intertermined until 2 categories in the image
-        pop.getRegions().remove(background);
-        pop.relabel(true);
+        if (true) { // merge indetermined regions if their intensity is higher than foreground neighbord
+            pop.getRegions().removeAll(foregroundL);
+            pop.getRegions().addAll(0, foregroundL);
+            pop.relabel(true);
+            SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS);
+            sm.addForbidFusion(i->foregroundL.contains(i.getE1())==foregroundL.contains(i.getE2()));
+            sm.merge(pop, -1);
+        }
+        if (pop.getRegions().size()>foregroundL.size()) {
+            Region background = Region.merge(backgroundL);
+            Region foreground = Region.merge(foregroundL);
+            pop.getRegions().add(0, background); // fixed index so that same instance is conserved when merged
+            pop.getRegions().add(1, foreground); // fixed index so that same instance is conserved when merged
+            pop.relabel(false);
+            if (testMode) {
+                /*pop.getRegions().removeAll(backgroundL);
+                pop.getRegions().addAll(0, backgroundL);
+                pop.getRegions().removeAll(foregroundL);
+                pop.getRegions().addAll(backgroundL.size(), foregroundL);
+                pop.relabel(false);*/
+                ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back fusion. forground=["+backgroundL.size()+";"+(backgroundL.size()+foregroundL.size()-1)+"]"));
+            }
+            SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false);
+            sm.setInterfaceValue(0.1, false);
+            //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), Double.POSITIVE_INFINITY, SplitAndMergeRegionCriterion.InterfaceValue.DIFF_MEDIAN_BTWN_REGIONS);
+            //sm.allowMergeWithBackground(parent.getMask());
+            sm.addForbidFusionForegroundBackground(r->r==background, r->r==foreground);
+            //sm.addForbidFusionForegroundBackground(r->backgroundL.contains(r), r->foregroundL.contains(r));
+            sm.setTestMode(testMode);
+            sm.merge(pop, 2); // merge intertermined until 2 categories in the image
+            pop.getRegions().remove(background);
+            //pop.getRegions().removeAll(backgroundL);
+            pop.relabel(true);
+        }
+        
         if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back & intertermined fusion"));
         return pop;
     }
@@ -228,9 +252,9 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             if (cUp>c) return 1;
             double thick = GeometricalMeasurements.maxThicknessX(r);
             if (thick>thicknessLimitKeep) return 1;
-            double thickY = GeometricalMeasurements.meanThicknessY(r);
+            double thickY = GeometricalMeasurements.maxThicknessY(r);
             if (verbose) logger.debug("R: {} artefact: thick: {}/{} (mean: {}) contact: {}/{} ", r.getLabel(), thick, thicknessLimitRemove, GeometricalMeasurements.meanThicknessX(r), c, thickY);
-            if (c < thickY*0.25) return 1; // contact with either L or right should be enough
+            if (c < thickY*0.5) return 1; // contact with either L or right should be enough
             if (thick<=thicknessLimitRemove && c>thickY*0.9) return -1; // thin objects stuck to the border 
             return 0;
             //return false;

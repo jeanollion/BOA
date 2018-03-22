@@ -153,7 +153,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
     public RegionPopulation splitAndMerge(ImageMask segmentationMask, int minSizePropagation, int objectMergeLimit) {
         setDistanceMap(segmentationMask);
         WatershedConfiguration config = new WatershedConfiguration().lowConectivity(true);
-        if (minSizePropagation>1) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+        if (minSizePropagation>0) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         config.propagation(WatershedTransform.PropagationType.DIRECT).decreasingPropagation(true);
         ImageByte seeds = Filters.localExtrema(getSeedCreationMap(), null, true, segmentationMask, Filters.getNeighborhood(3, 3, getSeedCreationMap())); // TODO seed radius -> parameter ? 
         ImageOperations.jitterIntegerValues(distanceMap, segmentationMask, 3);

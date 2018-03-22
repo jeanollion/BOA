@@ -59,12 +59,20 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
         super(intensityMap);
         this.edge = edgeMap;
         splitThresholdValue=splitThreshold;
+        setInterfaceValue(0.5, normalizeEdgeValues);
+    }
+
+    public BiFunction<? super Interface, ? super Interface, Integer> compareMethod=null;
+    public Image drawInterfaceValues(RegionPopulation pop) {
+        return RegionCluster.drawInterfaceValues(new RegionCluster<>(pop, true, getFactory()), i->{i.updateInterface(); return i.value;});
+    }
+    public SplitAndMergeEdge setInterfaceValue(double quantile, boolean normalizeEdgeValues) {
         interfaceValue = i->{
             if (i.getVoxels().isEmpty()) {
                 return Double.NaN;
             } else {
-                double[] values = Stream.concat(i.voxels.stream(), i.duplicatedVoxels.stream()).mapToDouble(v->edge.getPixel(v.x, v.y, v.z)).toArray();
-                double val= ArrayUtil.quantile(values, 0.5);
+                int size = i.voxels.size()+i.duplicatedVoxels.size();
+                double val= ArrayUtil.quantile(Stream.concat(i.voxels.stream(), i.duplicatedVoxels.stream()).mapToDouble(v->edge.getPixel(v.x, v.y, v.z)).sorted(), size, quantile);
                 if (normalizeEdgeValues) {// normalize by intensity (mean better than median, better than mean @ edge)
                     double sum = BasicMeasurements.getSum(i.getE1(), intensityMap)+BasicMeasurements.getSum(i.getE2(), intensityMap);
                     val= val/(sum/(double)(i.getE1().size()+i.getE2().size()));
@@ -72,11 +80,7 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
                 return val;
             }
         };
-    }
-
-    public BiFunction<? super Interface, ? super Interface, Integer> compareMethod=null;
-    public Image drawInterfaceValues(RegionPopulation pop) {
-        return RegionCluster.drawInterfaceValues(new RegionCluster<>(pop, true, getFactory()), i->{i.updateInterface(); return i.value;});
+        return this;
     }
     public SplitAndMergeEdge setInterfaceValue(Function<Interface, Double> interfaceValue) {
         this.interfaceValue=interfaceValue;

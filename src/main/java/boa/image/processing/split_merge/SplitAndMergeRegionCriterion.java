@@ -41,6 +41,7 @@ import boa.measurement.BasicMeasurements;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -51,27 +52,44 @@ public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeReg
     final Image wsMap;
     public final double splitThresholdValue;
     Function<Interface, Double> interfaceValue;
-
+    InterfaceValue method;
     
-    public static enum InterfaceValue {MEAN_INTENSITY_IN_REGIONS, DIFF_INTENSITY_BTWN_REGIONS, DIFF_MEDIAN_BTWN_REGIONS};
+    public static enum InterfaceValue {MEAN_INTENSITY_IN_REGIONS, DIFF_INTENSITY_BTWN_REGIONS, DIFF_MEDIAN_BTWN_REGIONS, ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS};
     public SplitAndMergeRegionCriterion(Image edgeMap, Image intensityMap, double splitThreshold, InterfaceValue method) {
         super(intensityMap);
+        this.method=method;
         this.wsMap = edgeMap;
         splitThresholdValue=splitThreshold;
         switch (method) {
             case MEAN_INTENSITY_IN_REGIONS:
             default:
-                interfaceValue = i-> -Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->intensityMap.getPixel(v.x, v.y, v.z)).average().getAsDouble(); // maximal intensity first
+                interfaceValue = i-> {
+                    Predicate<Voxel> filter = i.getE1().getLabel()==0 ? (v-> intensityMap.contains(v.x, v.y, v.z)) : (v->true);
+                    return - Stream.concat(i.getE1().getVoxels().stream().filter(filter), i.getE2().getVoxels().stream()).mapToDouble(v->intensityMap.getPixel(v.x, v.y, v.z)).average().orElse(Double.NEGATIVE_INFINITY); // maximal intensity first
+                };
                 break;
             case DIFF_INTENSITY_BTWN_REGIONS:
                 interfaceValue = i -> {
-                    double m1 = i.getE1().getVoxels().stream().mapToDouble(v->intensityMap.getPixel(v.x, v.y, v.z)).average().getAsDouble();
+                    Predicate<Voxel> filter = i.getE1().getLabel()==0 ? (v-> intensityMap.contains(v.x, v.y, v.z)) : (v->true);
+                    double m1 = i.getE1().getVoxels().stream().filter(filter).mapToDouble(v->intensityMap.getPixel(v.x, v.y, v.z)).average().orElse(Double.NaN);
+                    if (Double.isNaN(m1)) return Double.NEGATIVE_INFINITY;
                     double m2 = i.getE2().getVoxels().stream().mapToDouble(v->intensityMap.getPixel(v.x, v.y, v.z)).average().getAsDouble();
                     return Math.abs(m1-m2); // minimal difference first
                 };
                 break;
             case DIFF_MEDIAN_BTWN_REGIONS:
-                interfaceValue = i -> Math.abs(getMedianValues().getAndCreateIfNecessarySync(i.getE1())-getMedianValues().getAndCreateIfNecessarySync(i.getE2()));
+                interfaceValue = i -> {
+                    double v1 = getMedianValues().getAndCreateIfNecessarySync(i.getE1());
+                    if (Double.isNaN(v1)) return Double.NEGATIVE_INFINITY; // background
+                    return Math.abs(v1-getMedianValues().getAndCreateIfNecessarySync(i.getE2()));
+                };
+                break;
+            case ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS:
+                interfaceValue = i -> {
+                    double v1 = getMedianValues().getAndCreateIfNecessarySync(i.getE1());
+                    if (Double.isNaN(v1)) return Double.NEGATIVE_INFINITY; // background
+                    return v1-getMedianValues().getAndCreateIfNecessarySync(i.getE2()); // highest difference of higher label region will be negative
+                };
                 break;
         }
         

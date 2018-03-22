@@ -38,8 +38,8 @@ import boa.utils.Utils;
  */
 public class GenerateXPConfig {
     public static void main(String[] args) {
-        //String path = "/home/jollion/Fiji.app/plugins/BOA"; // portable
-        String path = "/data/Images/Fiji.app/plugins/BOA"; // LJP
+        String path = "/home/jollion/Fiji.app/plugins/BOA"; // portable
+        //String path = "/data/Images/Fiji.app/plugins/BOA"; // LJP
         Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, 0, 0, Double.NaN, null);
         exportXP(path, xpFluo, false);
         
@@ -54,7 +54,11 @@ public class GenerateXPConfig {
         exportXP(path, xpTransFluo, false);*/
         
         // XP THOMAS
-        /*Experiment xpJulou = GenerateXP.generateXPTrans("MotherMachinePhaseContrastJULOU", null, true, 0, 0, Double.NaN);
+        /*
+        preProcessing -> crop numbers + rotation 90
+        microchannels -> der ~50. open/close <2 ? 
+        bacteria -> correct head
+        Experiment xpJulou = GenerateXP.generateXPTrans("MotherMachinePhaseContrastJULOU", null, true, 0, 0, Double.NaN);
         xpJulou.getChannelImages().insert(xpJulou.getChannelImages().createChildInstance("Fluo"));
         xpJulou.getPreProcessingTemplate().addTransformation(0, 0, null, new SimpleRotationXY(90));
         xpJulou.getPreProcessingTemplate().addTransformation(1, 0, null, new SimpleCrop().yMin(340));

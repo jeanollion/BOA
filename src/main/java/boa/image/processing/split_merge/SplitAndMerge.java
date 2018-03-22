@@ -35,6 +35,7 @@ import boa.image.processing.neighborhood.Neighborhood;
 import boa.measurement.BasicMeasurements;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
+import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import java.util.Collections;
 import java.util.Iterator;
@@ -60,7 +61,10 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
     }
     public SplitAndMerge(Image intensityMap) {
         this.intensityMap=intensityMap;
-        medianValues= new HashMapGetCreate<>(r -> BasicMeasurements.getQuantileValue(r, intensityMap, 0.5)[0]);
+        medianValues= new HashMapGetCreate<>(r -> {
+            if (r.getLabel()==0) return ArrayUtil.quantile(r.getVoxels().stream().filter(v->intensityMap.contains(v.x, v.y, v.z)).mapToDouble(v->intensityMap.getPixel(v.x, v.y, v.z)).toArray(), 0.5);
+            else return BasicMeasurements.getQuantileValue(r, intensityMap, 0.5)[0];
+        });
     }
     /**
      * 
@@ -131,7 +135,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
         c.mergeSort(numberOfObjectsToKeep<=1, 0, numberOfObjectsToKeep);
         //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
         popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-        if (testMode) ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map"));
+        if (testMode) ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("Split&Merge: regions after merge"));
         return popWS;
     }
     /**
@@ -145,14 +149,14 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
         RegionPopulation popWS = split(segmentationMask, minSizePropagation);
         if (testMode) {
             ImageWindowManagerFactory.showImage(getWatershedMap());
-            ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("seg map after split by hessian before merge"));
+            ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("Split&Merge: seg map after split before merge"));
         }
         return merge(popWS, objectMergeLimit);
     }
     public RegionPopulation split(ImageMask segmentationMask, int minSizePropagation) {
         ImageByte seeds = Filters.localExtrema(getSeedCreationMap(), null, !localMinOnSeedMap, segmentationMask, Filters.getNeighborhood(1.5, 1.5, getSeedCreationMap()));
         WatershedTransform.WatershedConfiguration config = new WatershedTransform.WatershedConfiguration().decreasingPropagation(!wsMapIsEdgeMap);
-        if (minSizePropagation>1) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+        if (minSizePropagation>0) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         RegionPopulation popWS = WatershedTransform.watershed(getWatershedMap(), segmentationMask, seeds, config);
         if (testMode) popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         return popWS;

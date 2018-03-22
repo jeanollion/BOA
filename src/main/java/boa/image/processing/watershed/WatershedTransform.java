@@ -612,7 +612,7 @@ public class WatershedTransform {
         }
         @Override public void setUp(WatershedTransform instance) {}
         @Override public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
-            return s1.voxels.size()<minimumSize || s2.voxels.size()<minimumSize;
+            return s1.voxels.size()<=minimumSize || s2.voxels.size()<=minimumSize;
         }
     }
     public static class ThresholdFusionOnWatershedMap implements FusionCriterion {

@@ -511,6 +511,30 @@ public class ArrayUtil {
         }
         return res;
     }
+    public static double quantile(DoubleStream sortedStream, int size, double quantile) {
+        if (quantile<=0) return sortedStream.min().orElse(Double.NaN);
+        if (quantile>=1) return sortedStream.max().orElse(Double.NaN);
+        if (size<0) { // count is terminating stream
+            double[] values = sortedStream.toArray();
+            return quantile(values, quantile);
+        }
+        double idxD = quantile * (size-1);
+        int idx = (int) idxD;
+        double delta = idxD - idx;
+        if (delta==0) return sortedStream.skip(idx).limit(1).findFirst().orElse(Double.NaN);
+        if (delta==0.5) return sortedStream.skip(idx).limit(2).average().orElse(Double.NaN);
+        double[] values = sortedStream.skip(idx).limit(2).toArray();
+        if (values.length==2) return (1 - delta) * values[0]  + (delta) * values[1];
+        else return Double.NaN;
+    }
+    public static double[] quantiles(DoubleStream sortedStream, int size, double... quantiles) {
+        if (size<0 || quantiles.length>1) { // need to convert to array as 
+            double[] values = sortedStream.toArray();
+            return quantiles(values, quantiles);
+        }
+        if (quantiles.length==0) return new double[0];
+        return new double[]{quantile(sortedStream, size, quantiles[0])};
+    }
     public static double[] quantiles(int[] values, double... quantile) {
         if (quantile.length==0) return new double[0];
         Arrays.sort(values);

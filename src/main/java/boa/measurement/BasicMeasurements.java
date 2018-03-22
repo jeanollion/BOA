@@ -168,15 +168,13 @@ public class BasicMeasurements {
         if (quantiles.length==0 || object.getVoxels().isEmpty()) return new double[0];
         if (quantiles.length==1 && quantiles[0]<=0) return new double[]{getMinValue(object, image)};
         if (quantiles.length==1 && quantiles[0]>=1) return new double[]{getMaxValue(object, image)};
+        DoubleStream stream;
         if (object.voxelsCreated()) {
-            float[] values = new float[object.getVoxels().size()];
-            int i = 0;
-            if (object.isAbsoluteLandMark()) for (Voxel v : object.getVoxels()) values[i++] = image.getPixelWithOffset(v.x, v.y, v.z);
-            else  for (Voxel v : object.getVoxels()) values[i++] = image.getPixel(v.x, v.y, v.z);
-            return ArrayUtil.quantiles(values, quantiles);
-        } else {
-            DoubleStream stream = image.stream(object.getMask(), object.isAbsoluteLandMark()).sorted();
-            return ArrayUtil.quantiles(stream.toArray(), quantiles);
-        }
+            if (object.isAbsoluteLandMark()) stream = object.getVoxels().stream().mapToDouble(v->image.getPixelWithOffset(v.x, v.y, v.z));
+            else stream = object.getVoxels().stream().mapToDouble(v->image.getPixel(v.x, v.y, v.z));
+        } else stream = image.stream(object.getMask(), object.isAbsoluteLandMark()).sorted();
+        stream = stream.sorted();
+        return ArrayUtil.quantiles(stream.toArray(), quantiles);
     }
+    
 }
