@@ -133,11 +133,13 @@ public abstract class ImageWindowManager<I, U, V> {
             if (displayedInteractiveImages.contains((Image)image)) return RegisteredImageType.Interactive;
             else return null;
         }
-        try {
-            if (displayedInteractiveImages.contains(getDisplayer().getImage((I)image))) return RegisteredImageType.Interactive;
-        } catch(Exception e) {}
         if (this.displayedRawInputFrames.values().contains(image)) return RegisteredImageType.RawInput;
         if (this.displayedPrePocessedFrames.values().contains(image)) return RegisteredImageType.PreProcessed;
+        try {
+            I im = (I) image;
+            if (displayedInteractiveImages.contains(getDisplayer().getImage(im))) return RegisteredImageType.Interactive;
+        } catch(Exception e) {}
+        
         return null;
     }
     void addLocalZoom(Component parent) {
