@@ -44,6 +44,7 @@ import boa.image.TypeConverter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations;
+import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.split_merge.SplitAndMergeEdge;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.image.processing.split_merge.SplitAndMergeRegionCriterion;
@@ -93,9 +94,9 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         return new Parameter[]{watershedMap, thresholdMethod, splitThreshold , minSize, hessianScale, filterBorderArtefacts, localThresholdFactor, cond, smoothScale, sigmaThldForVoidMC};
     }
     public BacteriaIntensityPhase() {
-        this.splitThreshold.setValue(0.15);
+        this.splitThreshold.setValue(0.10); // 0.15 for scale = 3
         this.minSize.setValue(100);
-        this.hessianScale.setValue(3);
+        this.hessianScale.setValue(2);
         this.watershedMap.removeAll().add(new Sigma(3).setMedianRadius(2));
         localThresholdFactor.setToolTipText("Factor defining the local threshold. <br />Lower value of this factor will yield in smaller cells. <br />Threshold = mean_w - sigma_w * (this factor), <br />with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
         localThresholdFactor.setValue(1);
@@ -121,22 +122,22 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
     @Override public SplitAndMergeHessian initializeSplitAndMerge(StructureObjectProcessing parent, int structureIdx, ImageMask foregroundMask) {
         SplitAndMergeHessian sam = super.initializeSplitAndMerge(parent, structureIdx, foregroundMask);
         Image input = parent.getPreFilteredImage(structureIdx);
-        
+        setInterfaceValue(input, sam);
+        return sam;
+    }
+    private void setInterfaceValue(Image input, SplitAndMergeHessian sam) {
         sam.setInterfaceValue(i-> {
             Collection<Voxel> voxels = i.getVoxels();
             if (voxels.isEmpty()) return Double.NaN;
             else {
                 Image hessian = sam.getHessian();
-                double hessSum = 0;
-                for (Voxel v : voxels) hessSum+=hessian.getPixel(v.x, v.y, v.z);
-                double val = hessSum/voxels.size();
+                double val  =  voxels.stream().mapToDouble(v->hessian.getPixel(v.x, v.y, v.z)).average().getAsDouble();
                 // normalize using mean value (compare with max of mean or max of median
                 double mean = Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->(double)input.getPixel(v.x, v.y, v.z)).average().getAsDouble();
                 val/=mean;
                 return val;
             }
         });
-        return sam;
     }
     
     
@@ -317,6 +318,24 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         if (testMode || (callFromSplit && splitVerbose)) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after localThreshold"));
         pop.smoothRegions(2, true, mask);
         return pop;
+    }
+    
+    @Override public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
+        Image input = parent.getPreFilteredImage(structureIdx);
+        if (input==null) throw new IllegalArgumentException("No prefiltered image set");
+        ImageInteger mask = object.isAbsoluteLandMark() ? object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox()) :object.getMaskAsImageInteger().cropWithOffset(input.getBoundingBox().resetOffset()); // extend mask to get the same size as the image
+        if (splitAndMerge==null || !parent.equals(currentParent)) {
+            currentParent = parent;
+            splitAndMerge = initializeSplitAndMerge(parent, structureIdx,parent.getMask());
+        }
+        splitAndMerge.setTestMode(splitVerbose);
+        splitAndMerge.setInterfaceValue(i->-(double)i.getVoxels().size()); // split @ smallest interface ? 
+        RegionPopulation res = splitAndMerge.splitAndMerge(mask, object.size()/4, 2);
+        setInterfaceValue(input, splitAndMerge); // for interface value computation
+        //res =  localThreshold(input, res, parent, structureIdx, true); 
+        if (object.isAbsoluteLandMark()) res.translate(parent.getBounds(), true);
+        if (res.getRegions().size()>2) RegionCluster.mergeUntil(res, 2, 0); // merge most connected until 2 objects remain
+        return res;
     }
     
     

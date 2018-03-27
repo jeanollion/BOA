@@ -49,10 +49,10 @@ public abstract class CorrectionScenario {
             CorrectionScenario cur = this;
             if (cur instanceof MergeScenario && ((MergeScenario)cur).listO.isEmpty()) return new MultipleScenario(tracker, Collections.emptyList());
             double sum = 0;
-            while(cur!=null && (!Double.isNaN(cur.cost)) && Double.isFinite(cur.cost)) {
+            while(cur!=null && (!Double.isNaN(cur.cost)) && Double.isFinite(cur.cost) && cur.cost<costLimit) {
                 res.add(cur);
                 sum+=cur.cost;
-                if (cur.cost > costLimit) return new MultipleScenario(tracker, Collections.emptyList());
+                //if (cur.cost > costLimit) return new MultipleScenario(tracker, Collections.emptyList());
                 if (cumulativeCostLimit>0 && sum>cumulativeCostLimit) return new MultipleScenario(tracker, Collections.emptyList());
                 if (lengthLimit>0 && res.size()>=lengthLimit) return new MultipleScenario(tracker, Collections.emptyList());
                 cur = cur.getNextScenario();

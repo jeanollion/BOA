@@ -92,7 +92,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
     BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum Size Increment", 2, 1.5, 1, null).setToolTipText("Typical maximum ratio of size between two frames");
     BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum size increment", 2, 0.7, 0.01, null).setToolTipText("Typical minimum ratio of size between two frames");
-    ChoiceParameter sizeFeature = new ChoiceParameter("Feature used for Size", new String[]{"Size", "Length"}, "Length", false).setToolTipText("Object feature used to compute the size ratio. <ul><li><em>Size</em> : number of pixels</li><li><em>Length</em> : Feret distance (max distance between two points of contour)</li><li><em>Spine Length</em>Length of the spine (taking into acount curvatures). More precise and much slower than other methods</li></ul>");
+    ChoiceParameter sizeFeature = new ChoiceParameter("Feature used for Size", new String[]{"Size", "Length"}, "Size", false).setToolTipText("Object feature used to compute the size ratio. <ul><li><em>Size</em> : number of pixels</li><li><em>Length</em> : Feret distance (max distance between two points of contour)</li></ul>"); 
     
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1.5, 0, null).setToolTipText("Limits the cost of each single correction operation (merge/split). Value depends on the segmenter and the threshold for splitting set in the segmenter");
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null).setToolTipText("Limits the sum of costs for a correction over multiple frames");
@@ -204,6 +204,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     public BacteriaClosedMicrochannelTrackerLocalCorrections setCostParameters(double operationCostLimit, double cumulativeCostLimit) {
         this.costLimit.setValue(operationCostLimit);
         this.cumCostLimit.setValue(cumulativeCostLimit);
+        return this;
+    }
+    
+    public BacteriaClosedMicrochannelTrackerLocalCorrections setSizeFeature(int sizeFeature) {
+        this.sizeFeature.setSelectedIndex(sizeFeature);
         return this;
     }
     
@@ -980,10 +985,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     */
     public FrameRange performCorrection(Assignment a, int frame) {
         if (debugCorr && a.ta.verboseLevel<verboseLevelLimit) logger.debug("t: {}: performing correction, {}", frame, a.toString(true));
-        if (a.prevObjects.size()>1) return performCorrectionSplitAfterOrMergeBeforeOverMultipleTime(a, frame); //if (a.objectCountNext()==1 || (a.objectCountNext()==2 && a.objectCountPrev()==2))
-        // TODO create scenarios for split before
-        //else return performCorrectionMultipleObjects(a, frame);
+        if (a.prevObjects.size()>1) return performCorrectionSplitAfterOrMergeBefore(a, frame); //if (a.objectCountNext()==1 || (a.objectCountNext()==2 && a.objectCountPrev()==2))
+        else if (a.prevObjects.size()==1 && a.nextObjects.size()>2) return performCorrectionSplitBeforeOverMultipleFrames(a, frame);
         else return null;
+    }
+    private FrameRange performCorrectionSplitBeforeOverMultipleFrames(Assignment a, int frame) {
+        List<CorrectionScenario> allScenarios = new ArrayList<>(1);
+        SplitScenario split = new SplitScenario(this, a.prevObjects.get(0), frame-1);
+        allScenarios.add(split);
+        return getBestScenario(allScenarios, a.ta.verboseLevel);
     }
     /**
      * Compares two correction scenarios: split at following frames or merge at previous frames
@@ -991,7 +1001,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
      * @param frame frame where error is detected
      * @return frame range (minimal/maximal+1 ) where correction has been performed
      */
-    private FrameRange performCorrectionSplitAfterOrMergeBeforeOverMultipleTime(Assignment a, int frame) {
+    private FrameRange performCorrectionSplitAfterOrMergeBefore(Assignment a, int frame) {
         List<CorrectionScenario> allScenarios = new ArrayList<>();
         
         MergeScenario m = new MergeScenario(this, a.idxPrev, a.prevObjects, frame-1);

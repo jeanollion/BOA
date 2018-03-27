@@ -37,7 +37,7 @@ public class TestSaveExperimentJSON {
     public void testSaveXP() {
         PluginFactory.findPlugins("boa.plugins.plugins");
         //Experiment xp = generateXPFluo("MotherMachineMutation", null, true, true, 0, 0, Double.NaN, null);
-        Experiment xp = GenerateXP.generateXPTrans("MotherMachinePhaseContrast", null, true, 0, 0, Double.NaN);
+        Experiment xp = GenerateXP.generateXPPhase("MotherMachinePhaseContrast", null, true, 0, 0, Double.NaN);
         JSONObject ser = xp.toJSONEntry();
         Experiment xpFluoUnSer = new Experiment();
         xpFluoUnSer.initFromJSONEntry(ser);

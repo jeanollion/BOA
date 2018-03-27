@@ -43,7 +43,7 @@ public class GenerateXPConfig {
         Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, 0, 0, Double.NaN, null);
         exportXP(path, xpFluo, false);
         
-        Experiment xpTrans = GenerateXP.generateXPTrans("MotherMachinePhaseContrast", null, true, 0, 0, Double.NaN);
+        Experiment xpTrans = GenerateXP.generateXPPhase("MotherMachinePhaseContrast", null, true, 0, 0, Double.NaN);
         exportXP(path, xpTrans, false);
         
         /*Experiment xpTransFluo = GenerateXP.generateXPFluo("MotherMachinePhaseContrastAndMutations", null, true, 0, 0, Double.NaN, null);

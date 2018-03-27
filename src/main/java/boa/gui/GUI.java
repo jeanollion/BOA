@@ -2360,7 +2360,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void setSelectedExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setSelectedExperimentMenuItemActionPerformed
         String host = getCurrentHostNameOrDir();
         String dbName = getSelectedExperiment();
-        if (dbName==null || (this.db!=null && db.getDBName().equals(dbName))) unsetXP();
+        if (dbName==null || (this.db!=null && db.getDBName().equals(dbName)) || getSelectedExperiments().size()>1) unsetXP();
         else {
             setDBConnection(dbName, host, false);
             if (db!=null) PropertyUtils.set(PropertyUtils.LAST_SELECTED_EXPERIMENT, dbName);
@@ -3523,7 +3523,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         } else {
             if (sel.size()==1 && !sel.get(0).equals(db.getDBName())) setSelectedExperimentMenuItem.setText("Open Experiment: "+sel.get(0));
             else setSelectedExperimentMenuItem.setText("Close Experiment: "+db.getDBName());
-            
         }
     }//GEN-LAST:event_experimentListValueChanged
 

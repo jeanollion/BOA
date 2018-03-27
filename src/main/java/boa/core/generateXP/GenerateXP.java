@@ -100,6 +100,8 @@ import boa.plugins.plugins.transformations.RemoveDeadPixels;
 import boa.image.processing.ImageTransformation;
 import boa.image.processing.ImageTransformation.MainAxis;
 import boa.plugins.plugins.measurements.objectFeatures.ThicknessAxis;
+import boa.plugins.plugins.post_filters.BinaryClose;
+import boa.plugins.plugins.post_filters.FillHoles2D;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.plugins.plugins.segmenters.BacteriaIntensityPhase;
 import boa.plugins.plugins.track_post_filter.AverageMask;
@@ -400,7 +402,7 @@ public class GenerateXP {
         if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) DBUtil.removePrefix(dbName, GUI.DBprefix);
         MasterDAO mDAO = MasterDAOFactory.createDAO(dbName, configDir);
         MasterDAO.deleteObjectsAndSelectionAndXP(mDAO);
-        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY); 
+        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPPhase(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, null, inputDir);
@@ -511,10 +513,10 @@ public class GenerateXP {
         }
     }
     
-    public static Experiment generateXPTrans(String name, String outputDir, boolean setUpPreProcessing, int trimFramesStart, int trimFramesEnd, double scaleXY) {
+    public static Experiment generateXPPhase(String name, String outputDir, boolean setUpPreProcessing, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         Experiment xp = new Experiment(name);
         xp.setImportImageMethod(importMethod==null ? Experiment.ImportImageMethod.SINGLE_FILE : importMethod);
-        xp.getChannelImages().insert(new ChannelImage("BF", ""));
+        xp.getChannelImages().insert(new ChannelImage("PhaseContrast", ""));
         xp.setOutputDirectory(outputDir);
         Structure mc = new Structure("Microchannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
@@ -570,11 +572,14 @@ public class GenerateXP {
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
                             .setSegmenter(new BacteriaIntensityPhase())
                             .setCostParameters(0.2, 2)
+                            .setSizeFeature(0)
                     ).addTrackPreFilters(
                         new SubtractBackgroundMicrochannels(),
                         new NormalizeTrack(1, true)
                     ).addPostFilters(
-                            new FeatureFilter(new ThicknessAxis().setAxis(MainAxis.X), 5, true, true)
+                            new FeatureFilter(new ThicknessAxis().setAxis(MainAxis.X), 5, true, true), 
+                            new BinaryClose(5),
+                            new FillHoles2D()
                     ).addTrackPostFilters(
                             new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria().setContactSidesProportion(0)), 
                             new RemoveTrackByFeature().setFeature(new Size(), 10, true).setStatistics(2)

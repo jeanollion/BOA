@@ -107,83 +107,97 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         flip=null;
-        if (method.getSelectedItem().equals(FLUO.name)) { 
-            if (testMode) {
-                upperObjectsTest=new ArrayList<>();
-                lowerObjectsTest=new ArrayList<>();
-            }
-            // rough segmentation and get side where cells are better aligned
-            List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 5);
-            List<Boolean> flips = frames.stream().parallel().map(f->{
-                Image<? extends Image> image = inputImages.getImage(channelIdx, f);
-                if (image.sizeZ()>1) {
-                    int plane = inputImages.getBestFocusPlane(f);
-                    if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
-                    image = image.splitZPlanes().get(plane);
+        AutoFlipMethod m = AutoFlipMethod.getMethod(method.getSelectedItem());
+        switch(m) {
+            case FLUO: {
+                if (testMode) {
+                    upperObjectsTest=new ArrayList<>();
+                    lowerObjectsTest=new ArrayList<>();
                 }
-                return isFlipFluo(image);
-            }).collect(Collectors.toList());
-            long countFlip = flips.stream().filter(b->b!=null && b).count();
-            long countNoFlip = flips.stream().filter(b->b!=null && !b).count();
-            if (testMode) {
-                ImageWindowManagerFactory.showImage(Image.mergeZPlanes(upperObjectsTest).setName("Upper Objects"));
-                ImageWindowManagerFactory.showImage(Image.mergeZPlanes(lowerObjectsTest).setName("Lower Objects"));
-                upperObjectsTest.clear();
-                lowerObjectsTest.clear();
-            }
-            flip = countFlip>countNoFlip;
-            logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
-        } else if (method.getSelectedItem().equals(FLUO_HALF_IMAGE.name)) { 
-            // compares signal in upper half & lower half -> signal should be in upper half
-            List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 1);
-            List<Boolean> flips = frames.stream().parallel().map(f->{
-                Image<? extends Image> image = inputImages.getImage(channelIdx, f);
-                if (image.sizeZ()>1) {
-                    int plane = inputImages.getBestFocusPlane(f);
-                    if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
-                    image = image.splitZPlanes().get(plane);
+                // rough segmentation and get side where cells are better aligned
+                List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 5);
+                List<Boolean> flips = frames.stream().parallel().map(f->{
+                    Image<? extends Image> image = inputImages.getImage(channelIdx, f);
+                    if (image.sizeZ()>1) {
+                        int plane = inputImages.getBestFocusPlane(f);
+                        if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
+                        image = image.splitZPlanes().get(plane);
+                    }
+                    return isFlipFluo(image);
+                }).collect(Collectors.toList());
+                long countFlip = flips.stream().filter(b->b!=null && b).count();
+                long countNoFlip = flips.stream().filter(b->b!=null && !b).count();
+                if (testMode) {
+                    ImageWindowManagerFactory.showImage(Image.mergeZPlanes(upperObjectsTest).setName("Upper Objects"));
+                    ImageWindowManagerFactory.showImage(Image.mergeZPlanes(lowerObjectsTest).setName("Lower Objects"));
+                    upperObjectsTest.clear();
+                    lowerObjectsTest.clear();
                 }
-                return isFlipFluoUpperHalf(image);
-            }).collect(Collectors.toList());
-            long countFlip = flips.stream().filter(b->b!=null && b).count();
-            long countNoFlip = flips.stream().filter(b->b!=null && !b).count();
-            
-            flip = countFlip>countNoFlip;
-            logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
-        } else if (method.getSelectedItem().equals(PHASE.name)) {
-            int length = microchannelLength.getValue().intValue();
-            Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
-            // if rotation before -> top & bottom of image can contain zeros -> mean proj would return NaN
-            float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null, v->v>0);
+                flip = countFlip>countNoFlip;
+                logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
+                break;
+            }
+            case FLUO_HALF_IMAGE: {
+                // compares signal in upper half & lower half -> signal should be in upper half
+                List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 1);
+                List<Boolean> flips = frames.stream().parallel().map(f->{
+                    Image<? extends Image> image = inputImages.getImage(channelIdx, f);
+                    if (image.sizeZ()>1) {
+                        int plane = inputImages.getBestFocusPlane(f);
+                        if (plane<0) throw new RuntimeException("AutoFlip can only be run on 2D images AND no autofocus algorithm was set");
+                        image = image.splitZPlanes().get(plane);
+                    }
+                    return isFlipFluoUpperHalf(image);
+                }).collect(Collectors.toList());
+                long countFlip = flips.stream().filter(b->b!=null && b).count();
+                long countNoFlip = flips.stream().filter(b->b!=null && !b).count();
+
+                flip = countFlip>countNoFlip;
+                logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
+                break;
+            } case PHASE: {
+                int length = microchannelLength.getValue().intValue();
+                Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
+                float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null, v->v>0); // if rotation before -> top & bottom of image can contain zeros -> mean proj then return NaN
+                int startY = getFirstNonNanIdx(yProj, true);
+                int stopY = getFirstNonNanIdx(yProj, false);
+                if (startY>=stopY)  throw new RuntimeException("Autoflip error: no values>0 @ Frame: "+inputImages.getDefaultTimePoint()+", channel "+channelIdx);
+                int peakIdx = ArrayUtil.max(yProj, startY, stopY+1);           
+                double median = ArrayUtil.median(Arrays.copyOfRange(yProj, startY, stopY+1-startY));
+                double peakHeight = yProj[peakIdx] - median;
+                float thld = (float)(peakHeight * 0.25 + median  ); //
+                int startOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, startY, thld, true, true)-length/6; // is there enough space above the aberration ? 
+                if (startOfPeakIdx-startY<length*0.75) {
+                    flip = true;
+                    return;
+                }
+                int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, stopY+1, thld, true, true)+length/6; // is there enough space under the aberration ? 
+                if (stopY+1 - endOfPeakIdx<=length*0.75) {
+                    flip = false;
+                    return;
+                }
+                //logger.debug("would flip: {} values: [{};{}], peak: [{}-{}-{}] height: {} [{}-{}]", flip, start, end, startOfPeakIdx, peakIdx, endOfPeakIdx,yProj[peakIdx]-median, yProj[peakIdx], median );
+
+                // compare upper and lower side X-variances withing frame of microchannel length
+                float[] xProjUpper = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new SimpleBoundingBox(0, image.sizeX()-1, Math.max(startY, startOfPeakIdx-length), startOfPeakIdx, 0, image.sizeZ()-1), v->v>0); 
+                float[] xProjLower = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new SimpleBoundingBox(0, image.sizeX()-1, endOfPeakIdx, Math.min(stopY, endOfPeakIdx+length), 0, image.sizeZ()-1), v->v>0);
+                double varUpper = ArrayUtil.meanSigma(xProjUpper, getFirstNonNanIdx(xProjUpper, true), getFirstNonNanIdx(xProjUpper, false)+1, null)[1];
+                double varLower = ArrayUtil.meanSigma(xProjLower, getFirstNonNanIdx(xProjLower, true), getFirstNonNanIdx(xProjLower, false)+1, null)[1];
+                flip = varLower>varUpper;
+                logger.debug("AutoFlipY: {} (var upper: {}, var lower: {} aberration: [{};{};{}]", flip, varLower, varUpper,startOfPeakIdx, peakIdx, endOfPeakIdx );
+                break;
+            }
+        }
+    }
+    private static int getFirstNonNanIdx(float[] array, boolean fromStart) {
+        if (fromStart) {
             int start = 0;
-            while (start<yProj.length && Float.isNaN(yProj[start])) ++start;
-            int end = yProj.length;
-            while (end>0 && Float.isNaN(yProj[end-1])) --end;
-            if (start>=end)  throw new RuntimeException("Autoflip error: no values>0 @ Frame: "+inputImages.getDefaultTimePoint()+", channel "+channelIdx);
-            int peakIdx = ArrayUtil.max(yProj, start, end);           
-            double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end-start));
-            double peakHeight = yProj[peakIdx] - median;
-            float thld = (float)(peakHeight * 0.25 + median  ); //
-            int startOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true)-length/6; // is there enough space above the aberration ? 
-            if (startOfPeakIdx-start<length*0.75) {
-                flip = true;
-                return;
-            }
-            int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, end, thld, true, true)+length/6; // is there enough space under the aberration ? 
-            if (end - endOfPeakIdx<=length*0.75) {
-                flip = false;
-                return;
-            }
-            //logger.debug("would flip: {} values: [{};{}], peak: [{}-{}-{}] height: {} [{}-{}]", flip, start, end, startOfPeakIdx, peakIdx, endOfPeakIdx,yProj[peakIdx]-median, yProj[peakIdx], median );
-                
-            // compare upper and lower side X-variances withing frame of microchannel length
-            float[] xProjUpper = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new SimpleBoundingBox(0, image.sizeX()-1, Math.max(start, startOfPeakIdx-length), startOfPeakIdx, 0, image.sizeZ()-1), v->v>0); 
-            float[] xProjLower = ImageOperations.meanProjection(image, ImageOperations.Axis.X, new SimpleBoundingBox(0, image.sizeX()-1, endOfPeakIdx, Math.min(end-1, endOfPeakIdx+length), 0, image.sizeZ()-1), v->v>0);
-            double varUpper = ArrayUtil.meanSigma(xProjUpper, 0, xProjUpper.length, null)[1];
-            double varLower = ArrayUtil.meanSigma(xProjLower, 0, xProjLower.length, null)[1];
-            flip = varLower>varUpper;
-            logger.debug("AutoFlipY: {} (var upper: {}, var lower: {} aberration: [{};{};{}]", flip, varLower, varUpper,startOfPeakIdx, peakIdx, endOfPeakIdx );
-            
+            while (start<array.length && Float.isNaN(array[start])) ++start;
+            return start;
+        } else {
+            int end = array.length-1;
+            while (end>0 && Float.isNaN(array[end])) --end;
+            return end;
         }
     }
     private Boolean isFlipPhaseOpticalAberration(Image image) {

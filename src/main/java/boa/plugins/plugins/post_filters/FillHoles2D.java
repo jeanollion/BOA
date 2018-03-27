@@ -19,38 +19,25 @@
 package boa.plugins.plugins.post_filters;
 
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.ScaleXYZParameter;
-import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
-import boa.image.ImageInteger;
 import boa.plugins.PostFilter;
-import boa.image.processing.Filters;
-import boa.image.processing.neighborhood.Neighborhood;
 
 /**
  *
  * @author jollion
  */
-public class BinaryClose implements PostFilter {
-    ScaleXYZParameter scale = new ScaleXYZParameter("Closing Radius", 5, 1, true);
-    public BinaryClose() {}
-    public BinaryClose(double radius) {
-        this.scale.setScaleXY(radius);
-    }
+public class FillHoles2D implements PostFilter {
+    public FillHoles2D() {}
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
-        Neighborhood n = Filters.getNeighborhood(scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parent.getMask());
-        for (Region o : childPopulation.getRegions()) {
-            ImageInteger closed = Filters.binaryCloseExtend(o.getMaskAsImageInteger(), n);
-            o.setMask(closed);
-        }
+        boa.image.processing.FillHoles2D.fillHoles(childPopulation);
         return childPopulation;
     }
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{scale};
+        return new Parameter[0];
     }
     
 }

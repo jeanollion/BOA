@@ -24,7 +24,6 @@ import boa.configuration.parameters.TransformationPluginParameter;
 import boa.core.Processor;
 import static boa.core.generateXP.GenerateXP.fillRange;
 import static boa.core.generateXP.GenerateXP.generateXPFluo;
-import static boa.core.generateXP.GenerateXP.generateXPTrans;
 import static boa.core.generateXP.GenerateXP.getBooleanArray;
 import static boa.core.generateXP.GenerateXP.logger;
 import boa.configuration.experiment.ChannelImage;
@@ -75,6 +74,7 @@ import boa.plugins.plugins.transformations.SaturateHistogramHyperfluoBacteria;
 import boa.plugins.plugins.transformations.SimpleCrop;
 import boa.plugins.plugins.transformations.SimpleTranslation;
 import boa.image.processing.ImageTransformation;
+import static boa.core.generateXP.GenerateXP.generateXPPhase;
 
 /**
  *

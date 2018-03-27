@@ -139,8 +139,8 @@ public class Region {
         else if (this.voxels!=null) {
             Set<Voxel> vox = new HashSet<> (voxels.size());
             for (Voxel v : voxels) vox.add(v.duplicate());
-            if (bounds==null) return new Region(vox, label, is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(center.duplicate());
-            else return new Region(vox, label, new SimpleBoundingBox(bounds), is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(center.duplicate());
+            if (bounds==null) return new Region(vox, label, is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(center==null ? null: center.duplicate());
+            else return new Region(vox, label, new SimpleBoundingBox(bounds), is2D, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(center==null ? null: center.duplicate());
         }
         return null;
     }

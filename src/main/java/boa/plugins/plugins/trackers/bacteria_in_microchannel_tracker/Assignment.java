@@ -355,7 +355,7 @@ public class Assignment {
                     (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE && !Double.isNaN(getPreviousSizeIncrement()) ? getPreviousSizeIncrement()-sizeNext/sizePrev>significativeSIErrorThld : sizePrev * ta.baseSizeIncrement[0] > sizeNext) ); //&& idxEnd-idx==1 // && idxPrevEnd-idxPrev==1
         }
         public boolean needCorrection() {
-            return (idxPrevEnd()-idxPrev)>1; //|| (sizePrev * maxGR < size); et supprimer @ increment.. 
+            return prevObjects.size()>1 || nextObjects.size()>2; 
         }
         public boolean canBeCorrected() {
             return needCorrection();// && (idxEnd-idx==1) ;
