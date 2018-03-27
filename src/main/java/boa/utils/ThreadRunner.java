@@ -83,7 +83,7 @@ public class ThreadRunner {
     public final int start, end;
     public final Thread[] threads;
     public final AtomicInteger ai;
-    public final List<Pair<String, Exception>> errors = new ArrayList<>();
+    public final List<Pair<String, Throwable>> errors = new ArrayList<>();
     public ThreadRunner(int start, int end) {
         this(start, end, 0);
     }
@@ -172,15 +172,15 @@ public class ThreadRunner {
             return;
         }
         if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        CompletionService<Pair<String, Exception>> completion = new ExecutorCompletionService<>(executor);
-        final List<Pair<String, Exception>> errors = new ArrayList<>();
+        CompletionService<Pair<String, Throwable>> completion = new ExecutorCompletionService<>(executor);
+        final List<Pair<String, Throwable>> errors = new ArrayList<>();
         int idx=0;
         for (T e : array) {
             final int i = idx;
             completion.submit(()->{
                 try {
                     action.run(e, i);
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                     return new Pair(e.toString(), ex);
                 }
                 return null;
@@ -191,7 +191,7 @@ public class ThreadRunner {
         if (pcb!=null) pcb.incrementTaskNumber(idx);
         for (int i = 0; i<idx; ++i) {
             try {
-                Pair<String, Exception> e = completion.take().get();
+                Pair<String, Throwable> e = completion.take().get();
                 if (e!=null) {
                     if (e.value instanceof MultipleException) errors.addAll(((MultipleException)e.value).getExceptions());
                     else errors.add(e);
@@ -217,8 +217,8 @@ public class ThreadRunner {
             return;
         }
         if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        CompletionService<Pair<String, Exception>> completion = new ExecutorCompletionService<>(executor);
-        final List<Pair<String, Exception>> errors = new ArrayList<>();
+        CompletionService<Pair<String, Throwable>> completion = new ExecutorCompletionService<>(executor);
+        final List<Pair<String, Throwable>> errors = new ArrayList<>();
         int count=0;
         Iterator<T> it = array.iterator();
         while(it.hasNext()) {
@@ -229,7 +229,7 @@ public class ThreadRunner {
                     //if (pcb!=null) pcb.log("will run process: "+i+" -> "+e);
                     action.run(e, i);
                     //if (pcb!=null) pcb.log("has run process: "+i+" -> "+e);
-                } catch (Exception ex) {
+                } catch (Throwable ex) {
                     //logger.debug("error on: "+e, ex);
                     return new Pair(e.toString(), ex);
                 } 
@@ -241,7 +241,7 @@ public class ThreadRunner {
         if (pcb!=null) pcb.incrementTaskNumber(count);
         for (int i = 0; i<count; ++i) {
             try {
-                Pair<String, Exception> e = completion.take().get();
+                Pair<String, Throwable> e = completion.take().get();
                 if (e!=null) {
                     if (e.value instanceof MultipleException) errors.addAll(((MultipleException)e.value).getExceptions());
                     else errors.add(e);

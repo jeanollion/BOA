@@ -27,6 +27,7 @@ import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
+import java.util.stream.IntStream;
 /**
  *
  * @author jollion
@@ -151,27 +152,16 @@ public class InputImagesImpl implements InputImages {
     public void applyTranformationsAndSave(boolean close) {
         long tStart = System.currentTimeMillis();
         final int cCount = getChannelNumber();
-        ThreadAction<InputImage> ta = (InputImage image, int idx) -> {
-            image.getImage();
-            image.saveImage();
-            if (close) image.flush();
-            //logger.debug("apply transfo: frame {}", idx);
-        };
+        
         for (int c = 0; c<getChannelNumber(); ++c) {
-            //logger.debug("apply transfo: channel {}", c);
-            ThreadRunner.execute(imageCT[c], false, ta);
+            InputImage[] imageF = imageCT[c];
+            IntStream.range(0, imageF.length).parallel().forEach(f-> {
+                imageF[f].getImage();
+                imageF[f].saveImage();
+                if (close) imageF[f].flush();
+            });
         }
         
-        /*
-        int tCount = getTimePointNumber();
-        for (int t = 0; t<tCount; ++t) {
-            for (int c = 0; c<cCount; ++c) {
-                imageTC[t][c].getImage();
-                imageTC[t][c].saveToDAO=true;
-                imageTC[t][c].closeImage();
-            }
-        }
-        */
         long tEnd = System.currentTimeMillis();
         logger.debug("apply transformation & save: total time: {}, for {} time points and {} channels", tEnd-tStart, getFrameNumber(), cCount );
     }

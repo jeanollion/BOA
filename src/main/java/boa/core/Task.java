@@ -87,7 +87,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         List<Integer> positions;
         int[] structures;
         List<Pair<String, int[]>> extractMeasurementDir = new ArrayList<>();
-        List<Pair<String, Exception>> errors = new ArrayList<>();
+        List<Pair<String, Throwable>> errors = new ArrayList<>();
         MasterDAO db;
         int[] taskCounter;
         UserInterface ui;
@@ -200,7 +200,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             return this;
         }
         
-        public List<Pair<String, Exception>> getErrors() {return errors;}
+        public List<Pair<String, Throwable>> getErrors() {return errors;}
         public MasterDAO getDB() {
             initDB();
             return db;
@@ -345,7 +345,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         public void printErrors() {
             if (!errors.isEmpty()) logger.error("Errors for Task: {}", toString());
-            for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
+            for (Pair<String, ? extends Throwable> e : errors) logger.error(e.key, e.value);
         }
         public int countSubtasks() {
             initDB();
@@ -397,7 +397,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     process(position, deleteAllField);
                 } catch (MultipleException e) {
                     errors.addAll(e.getExceptions());
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     errors.add(new Pair("Error while processing: db"+db.getDBName()+" pos:"+position, e));
                 } finally {
                     db.getExperiment().getPosition(position).flushImages(true, true);
@@ -555,10 +555,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
     private void unrollMultipleExceptions() {
         // check for multiple exceptions and unroll them
-        List<Pair<String, Exception>> errorsToAdd = new ArrayList<>();
-        Iterator<Pair<String, Exception>> it = errors.iterator();
+        List<Pair<String, Throwable>> errorsToAdd = new ArrayList<>();
+        Iterator<Pair<String, Throwable>> it = errors.iterator();
         while(it.hasNext()) {
-            Pair<String, Exception> e = it.next();
+            Pair<String, ? extends Throwable> e = it.next();
             if (e.value instanceof MultipleException) {
                 it.remove();
                 errorsToAdd.addAll(((MultipleException)e.value).getExceptions());
@@ -569,7 +569,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     public void publishErrors() {
         
         this.publish("Errors: "+this.errors.size()+ " For JOB: "+this.toString());
-        for (Pair<String, Exception> e : errors) {
+        for (Pair<String, ? extends Throwable> e : errors) {
             publish("Error @"+e.key+(e.value==null?"null":e.value.toString()));
             for (StackTraceElement s : e.value.getStackTrace()) {
                 String ss = s.toString();

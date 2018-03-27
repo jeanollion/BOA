@@ -102,7 +102,7 @@ public class BacteriaLineageMeasurements implements Measurement {
                     else {
                         if (sib.size()>2 || sib.isEmpty()) {
                             o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError);
-                            if (sib.isEmpty()) ex.addExceptions(new Pair<String, Exception>(o.toString(), new RuntimeException("Invalid bacteria lineage")));
+                            if (sib.isEmpty()) ex.addExceptions(new Pair<>(o.toString(), new RuntimeException("Invalid bacteria lineage")));
                         }
                         else if (sib.get(0).equals(o)) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
                         else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);

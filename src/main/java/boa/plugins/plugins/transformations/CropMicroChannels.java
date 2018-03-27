@@ -33,14 +33,18 @@ import java.util.Arrays;
 import java.util.List;
 import boa.plugins.Cropper;
 import boa.plugins.MultichannelTransformation;
-import static boa.plugins.Plugin.logger;
+import boa.plugins.Plugin;
 import boa.plugins.Transformation;
 import boa.utils.ArrayUtil;
+import boa.utils.Utils;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -48,7 +52,7 @@ import java.util.stream.IntStream;
  */
 public abstract class CropMicroChannels implements ConfigurableTransformation, MultichannelTransformation {
     public static boolean debug = false;
-    
+    public final static Logger logger = LoggerFactory.getLogger(CropMicroChannels.class);
     protected NumberParameter xStart = new BoundedNumberParameter("X start", 0, 0, 0, null);
     protected NumberParameter xStop = new BoundedNumberParameter("X stop (0 for image width)", 0, 0, 0, null);
     protected NumberParameter yStart = new BoundedNumberParameter("Y start", 0, 0, 0, null);

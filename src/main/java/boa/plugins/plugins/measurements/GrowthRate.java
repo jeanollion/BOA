@@ -90,7 +90,6 @@ public class GrowthRate implements Measurement {
         String suffix = this.suffix.getValue();
         boolean res = residuals.getSelected();
         boolean inter = intersection.getSelected();
-        MultipleException ex = new MultipleException();
         final ArrayList<ObjectFeatureCore> cores = new ArrayList<>();
         HashMapGetCreate<StructureObject, ObjectFeature> ofMap = new HashMapGetCreate<>(p -> {
             ObjectFeature of = feature.instanciatePlugin().setUp(p, bIdx, p.getObjectPopulation(bIdx));
@@ -122,7 +121,6 @@ public class GrowthRate implements Measurement {
         }
         long t4 = System.currentTimeMillis();
         logger.debug("GR: process: {}", t4-t3);
-        if (!ex.isEmpty()) throw ex;
     }
     
     @Override 

@@ -60,7 +60,8 @@ public class TestProcessMicrochannelsPhase {
         //String dbName = "MutH_150324";
         //String dbName = "MutH_140115";
         //String dbName = "WT_150616";
-        String dbName = "Aya_180315";
+        //String dbName = "Aya_180315";
+        String dbName = "WT_180318_Fluo";
         FitMicrochannelHeadToEdges.debugLabel=4;
         MicrochannelPhase2D.debugIdx=3;
         testSegMicrochannelsFromXP(dbName, field, time);

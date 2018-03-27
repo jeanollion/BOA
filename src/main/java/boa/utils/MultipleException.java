@@ -28,20 +28,20 @@ import java.util.List;
  * @author jollion
  */
 public class MultipleException extends RuntimeException {
-    final private List<Pair<String, Exception>> exceptions;
-    public MultipleException(List<Pair<String, Exception>> exceptions) {
+    final private List<Pair<String, Throwable>> exceptions;
+    public MultipleException(List<Pair<String, Throwable>> exceptions) {
         this.exceptions=exceptions;
     }
     public MultipleException() {
         this.exceptions=new ArrayList<>();
     }
-    public void addExceptions(Pair<String, Exception>... ex) {
+    public void addExceptions(Pair<String, Throwable>... ex) {
         exceptions.addAll(Arrays.asList(ex));
     }
-    public void addExceptions(Collection<Pair<String, Exception>> ex) {
+    public void addExceptions(Collection<Pair<String, Throwable>> ex) {
         exceptions.addAll(ex);
     }
-    public List<Pair<String, Exception>> getExceptions() {
+    public List<Pair<String, Throwable>> getExceptions() {
         return exceptions;
     }
     public boolean isEmpty() {

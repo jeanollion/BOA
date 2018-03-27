@@ -129,7 +129,9 @@ public class Processor {
             logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
             if (transfo instanceof ConfigurableTransformation) {
                 ConfigurableTransformation ct = (ConfigurableTransformation)transfo;
+                logger.debug("before configuring: {}", Utils.getMemoryUsage());
                 ct.computeConfigurationData(tpp.getInputChannel(), images);
+                logger.debug("after configuring: {}", Utils.getMemoryUsage());
             }
             images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }
@@ -159,7 +161,7 @@ public class Processor {
             try {
             processAndTrackStructures(db.getDao(fieldName), deleteObjects, false, structures);
             } catch (MultipleException e) {
-                  for (Pair<String, Exception> p : e.getExceptions()) logger.error(p.key, p.value);
+                  for (Pair<String, Throwable> p : e.getExceptions()) logger.error(p.key, p.value);
             } catch (Exception e) {
                 logger.error("error while processing", e);
             }

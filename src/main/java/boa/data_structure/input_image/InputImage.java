@@ -79,11 +79,15 @@ public class InputImage {
     }
     public Image getImage() {
         if (image == null) {
-            if (intermediateImageSavedToDAO) image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
-            if (image==null) {
-                image = imageSources.getImage(inputTimePoint, channelIdx);
-                if (image==null) throw new RuntimeException("Image not found: position:"+microscopyFieldName+" channel:"+channelIdx+" frame:"+timePoint);
-                originalImageType = Image.createEmptyImage("source Type", image, new BlankMask( 0, 0, 0));
+            synchronized (this) {
+                if (image==null) {
+                    if (intermediateImageSavedToDAO) image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
+                    if (image==null) {
+                        image = imageSources.getImage(inputTimePoint, channelIdx);
+                        if (image==null) throw new RuntimeException("Image not found: position:"+microscopyFieldName+" channel:"+channelIdx+" frame:"+timePoint);
+                        originalImageType = Image.createEmptyImage("source Type", image, new BlankMask( 0, 0, 0));
+                    }
+                }
             }
         }
         applyTransformations();
@@ -100,6 +104,7 @@ public class InputImage {
     private void applyTransformations() {
         if (transformationsToApply!=null && !transformationsToApply.isEmpty()) {
             synchronized(transformationsToApply) {
+                if (transformationsToApply.isEmpty()) return;
                 Iterator<Transformation> it = transformationsToApply.iterator();
                 //new IJImageDisplayer().showImage(image);
                 while(it.hasNext()) {
