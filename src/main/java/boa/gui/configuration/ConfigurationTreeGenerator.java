@@ -35,10 +35,13 @@ import static boa.plugins.ToolTip.formatToolTip;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Rectangle;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.Action;
+import javax.swing.DropMode;
 import javax.swing.Icon;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -49,8 +52,10 @@ import javax.swing.JSeparator;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
+import javax.swing.TransferHandler;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
@@ -120,6 +125,7 @@ public class ConfigurationTreeGenerator {
         renderer.setClosedIcon(personIcon);
         renderer.setOpenIcon(personIcon);
         tree.setCellRenderer(renderer);
+        
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -171,6 +177,14 @@ public class ConfigurationTreeGenerator {
                 }
             }
         });
+        // drag and drop for lists
+        tree.setDragEnabled(true);
+        tree.setDropMode(DropMode.ON_OR_INSERT);
+        tree.setTransferHandler(new TreeTransferHandler( 
+                (TreeNode n) -> ((Parameter)n).duplicate(), 
+                (TreePath p)-> (p.getLastPathComponent() instanceof ListParameter && ((ListParameter)p.getLastPathComponent()).allowMoveChildren())
+        ));
+        
         ToolTipManager.sharedInstance().registerComponent(tree);
     }
     

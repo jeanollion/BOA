@@ -54,7 +54,15 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     protected ListParameterUI ui;
     protected ContainerParameter parent;
     protected Function<Integer, String> newInstanceNameFunction;
-    
+    boolean allowMoveChildren = true;
+    public <L extends SimpleListParameter> L setAllowMoveChildren(boolean allow) {
+        this.allowMoveChildren=allow;
+        return (L)this;
+    }
+    @Override 
+    public boolean allowMoveChildren() {
+        return allowMoveChildren;
+    }
     @Override
     public JSONAware toJSONEntry() {
         JSONObject res= new JSONObject();

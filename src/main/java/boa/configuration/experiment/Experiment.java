@@ -71,7 +71,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<>("Channel Images", 0 , ChannelImage.class);
     SimpleListParameter<Structure> structures= new SimpleListParameter<>("Structures", -1 , Structure.class);
     SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<>("Measurements", -1 , new PluginParameter<Measurement>("Measurements", Measurement.class, true));
-    SimpleListParameter<Position> fields= new SimpleListParameter<>("Positions", -1 , Position.class);
+    SimpleListParameter<Position> positions= new SimpleListParameter<>("Positions", -1 , Position.class).setAllowMoveChildren(false);
     PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
     TextParameter positionSeparator = new TextParameter("Position Separator", "xy", true);
@@ -92,7 +92,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         res.put("channelImages", channelImages.toJSONEntry());
         res.put("structures", structures.toJSONEntry());
         res.put("measurements", measurements.toJSONEntry());
-        res.put("positions", fields.toJSONEntry());
+        res.put("positions", positions.toJSONEntry());
         res.put("template", template.toJSONEntry());
         res.put("importMethod", importCond.toJSONEntry());
         res.put("bestFocusPlane", bestFocusPlane.toJSONEntry());
@@ -107,7 +107,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         channelImages.initFromJSONEntry(jsonO.get("channelImages"));
         structures.initFromJSONEntry(jsonO.get("structures"));
         measurements.initFromJSONEntry(jsonO.get("measurements"));
-        fields.initFromJSONEntry(jsonO.get("positions"));
+        positions.initFromJSONEntry(jsonO.get("positions"));
         template.initFromJSONEntry(jsonO.get("template"));
         if (jsonO.get("importMethod") instanceof JSONObject) importCond.initFromJSONEntry(jsonO.get("importMethod"));
         else importMethod.initFromJSONEntry(jsonO.get("importMethod")); // RETRO COMPATIBILITY
@@ -148,7 +148,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     protected void initChildList() {
-        super.initChildren(importCond, template, fields, channelImages, structures, measurements, outputPath, imagePath, bestFocusPlane);
+        super.initChildren(importCond, template, positions, channelImages, structures, measurements, outputPath, imagePath, bestFocusPlane);
     }
     
     public PreProcessingChain getPreProcessingTemplate() {
@@ -162,22 +162,22 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      */
     public Position createPosition(String fieldName) {
         if (getPosition(fieldName)!=null) return null;
-        Position res =fields.createChildInstance(fieldName);
-        fields.insert(res);
+        Position res =positions.createChildInstance(fieldName);
+        positions.insert(res);
         res.setPreProcessingChains(template);
         return res;
     }
     
     public Position getPosition(String fieldName) {
-        return fields.getChildByName(fieldName);
+        return positions.getChildByName(fieldName);
     }
     
     public Position getPosition(int fieldIdx) {
-        return fields.getChildAt(fieldIdx);
+        return positions.getChildAt(fieldIdx);
     }
     
     public List<Position> getPositions() {
-        return fields.getChildren();
+        return positions.getChildren();
     }
     
     public Pair<Integer, Autofocus> getFocusChannelAndAlgorithm() {
@@ -230,7 +230,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     
     public void clearPositions() {
-        this.fields.removeAllElements();
+        this.positions.removeAllElements();
     }
     public void clearMeasurements() {
         this.measurements.removeAllElements();
@@ -276,18 +276,18 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public int getPositionCount() {
-        return fields.getChildCount();
+        return positions.getChildCount();
     }
     
     public int getPositionIdx(String positionName) {
-        return fields.getIndex(positionName);
+        return positions.getIndex(positionName);
     }
     
     public String[] getStructuresAsString() {return structures.getChildrenString();}
     
     public String[] getChannelImagesAsString() {return channelImages.getChildrenString();}
     
-    public String[] getPositionsAsString() {return fields.getChildrenString();}
+    public String[] getPositionsAsString() {return positions.getChildrenString();}
     
     public String[] getChildStructuresAsString(int structureIdx) {
         int[] childIdx = getAllChildStructures(structureIdx);

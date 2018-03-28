@@ -165,6 +165,9 @@ public class SimpleListParameterUI implements ListParameterUI{
             childActions[1].setEnabled(false);
             childActions[2].setEnabled(false);
             childActions[3].setEnabled(false);
+        } else if (!list.allowMoveChildren()) {
+            childActions[2].setEnabled(false);
+            childActions[3].setEnabled(false);
         }
         if (idx==unMutableIdx+1) childActions[2].setEnabled(false);
         if (idx==0) childActions[2].setEnabled(false);

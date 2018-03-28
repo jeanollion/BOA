@@ -40,4 +40,5 @@ public interface ListParameter<T extends Parameter> extends ContainerParameter {
     public void setActivatedAll(boolean activated);
     public List<T> getActivatedChildren();
     public T getChildByName(String name);
+    public boolean allowMoveChildren();
 }
