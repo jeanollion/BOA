@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import boa.plugins.Segmenter;
 import boa.plugins.ToolTip;
+import boa.plugins.plugins.transformations.CropMicrochannelsPhase2D;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import static boa.utils.Utils.plotProfile;
@@ -159,7 +160,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         double derScale = 2;
         // get aberration
         int[] yStartStop = opticalAberration ? new int[2] : new int[]{0, image.sizeY()-1};
-        int aberrationStart = opticalAberration ? searchYLimWithOpticalAberration(image, 0.25, yMarginEndChannel, testMode) : image.sizeY()-1;
+        int aberrationStart = opticalAberration ? CropMicrochannelsPhase2D.searchYLimWithOpticalAberration(image, 0.25, yMarginEndChannel, testMode) : image.sizeY()-1;
         if (aberrationStart<=0) return null;
         Image imCrop = opticalAberration? image.crop(new MutableBoundingBox(0, image.sizeX()-1, yStartStop[0], aberrationStart, 0, image.sizeZ()-1)) : (image instanceof ImageFloat ? image.duplicate() : image);
         
@@ -305,55 +306,6 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
             minIdx++;
         }
         return -1;
-    }
-    /**
-     * Search of Optical Aberration (shadow produced by the microfluidic device at the opened-end of microchannels
-     * The closed-end should be towards top of image
-     * All the following steps are performed on the mean projection of {@param image} along Y axis
-     * 1) search for global max yMax
-     * 2) search for min value after yMax (yMin>yMax) -> define aberration peak height: h = I(yMax) - I(yMin)
-     * 3) search for first occurrence of the value h * {@param peakProportion} before yMax -> endOfPeakYIdx<yMax
-     * @param image
-     * @param peakProportion
-     * @param margin removed to the endOfPeakYIdx value in order to remove long range over-illumination 
-     * @param testMode
-     * @return the y coordinate over the optical aberration
-     */
-    public static int searchYLimWithOpticalAberration(Image image, double peakProportion, int margin, boolean testMode) {
-
-        float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null, v->v>0); // when image was rotated by a high angle zeros are introduced
-        int start = 0;
-        while (Float.isNaN(yProj[start])) ++start;
-        int end = yProj.length-1;
-        while (Float.isNaN(yProj[end])) --end;
-        int peakIdx = ArrayUtil.max(yProj, start, end+1);
-        double median = ArrayUtil.median(Arrays.copyOfRange(yProj, start, end+1-start));
-        double peakHeight = yProj[peakIdx] - median;
-        float thld = (float)(peakHeight * peakProportion + median );
-        int endOfPeakYIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true);
-        
-        /*float[] slidingSigma = new float[debug ? yProj.length : endOfPeakIdx]; // endOfPeakIdx
-        double[] meanSigma = new double[2];
-        for (int i = slidingSigmaWindow; i<slidingSigma.length; ++i) {
-            ArrayUtil.meanSigma(yProj, i-slidingSigmaWindow, i, meanSigma);
-            slidingSigma[i-1] = (float)(meanSigma[1] / meanSigma[0] );
-        }*/
-        // première valeur de sigma : 
-        //int startOfMicroChannel = ArrayUtil.getFirstOccurence(slidingSigma, endOfPeakIdx-1, slidingSigmaWindow-1, (float)sigmaThreshold, true, true);
-        // autre strategie: premier peak de sigma après
-        //List<Integer> peaks = ArrayUtil.getRegionalExtrema(slidingSigma, 3, true);
-        //peaks.removeIf(i -> i>endOfPeakIdx-slidingSigmaWindow);
-        //int startOfMicroChannel = peaks.get(peaks.size()-1);
-        // autre stratégie: valeur constante
-        int startOfMicroChannel = endOfPeakYIdx - margin;
-        
-        if (testMode) {
-            new IJImageDisplayer().showImage(image);
-            Utils.plotProfile("yProj", yProj);
-            //Utils.plotProfile("Sliding sigma", slidingSigma);
-            logger.debug("Optical Aberration detection: minIdx: {}, baseLineValue: {}, peakHeightThld: {}, enfOfPeak: {}, low limit of Mc: {}", median, peakIdx, thld, endOfPeakYIdx, startOfMicroChannel);
-        }
-        return startOfMicroChannel;
     }
     // tooltip interface
     @Override

@@ -196,7 +196,7 @@ public class Filters {
         public void setUp(Image image, Neighborhood neighborhood) {this.image=image; this.neighborhood=neighborhood;}
         public abstract float applyFilter(int x, int y, int z);
     }
-    private static class Mean extends Filter {
+    public static class Mean extends Filter {
         public Mean() {}
         ImageMask mask;
         public Mean(ImageMask mask) {

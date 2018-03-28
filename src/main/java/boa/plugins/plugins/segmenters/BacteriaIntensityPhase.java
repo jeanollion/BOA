@@ -181,16 +181,21 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             return pop;
         }
         pop.getRegions().removeAll(backgroundL);
-        if (true) { // merge indetermined regions if their intensity is higher than foreground neighbord
+        boolean relabeled = false;
+        if (pop.getRegions().size()>foregroundL.size()) { // merge indetermined regions if their intensity is higher than foreground neighbord
             pop.getRegions().removeAll(foregroundL);
             pop.getRegions().addAll(0, foregroundL);
             pop.relabel(true);
+            if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("before merge undetermined regions with foregorund foreground<="+foregroundL.size()));
             SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS);
             //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getRawImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS_INV); // TODO TRY WITH RAW INTENSITIES
             sm.addForbidFusion(i->foregroundL.contains(i.getE1())==foregroundL.contains(i.getE2()));
             sm.merge(pop, -1);
+            if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after merge undetermined regions with foregorund foreground<="+foregroundL.size()));
+            relabeled= true;
         }
-        if (pop.getRegions().size()>foregroundL.size()) {
+        if (pop.getRegions().size()>foregroundL.size()) { // there are still undetermined regions
+            pop.getRegions().removeAll(foregroundL);
             Region background = Region.merge(backgroundL);
             Region foreground = Region.merge(foregroundL);
             pop.getRegions().add(0, background); // fixed index so that same instance is conserved when merged
@@ -202,12 +207,12 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
                 pop.getRegions().removeAll(foregroundL);
                 pop.getRegions().addAll(backgroundL.size(), foregroundL);
                 pop.relabel(false);*/
-                ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back fusion. forground=["+backgroundL.size()+";"+(backgroundL.size()+foregroundL.size()-1)+"]"));
+                ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back fusion. foreground=["+backgroundL.size()+";"+(backgroundL.size()+foregroundL.size()-1)+"]"));
             }
             SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false);
             sm.setInterfaceValue(0.1, false);
             //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), Double.POSITIVE_INFINITY, SplitAndMergeRegionCriterion.InterfaceValue.DIFF_MEDIAN_BTWN_REGIONS);
-            //sm.allowMergeWithBackground(parent.getMask());
+            sm.allowMergeWithBackground(parent.getMask()); // helps to remove artefacts on the side but can remove head of mother cell
             sm.addForbidFusionForegroundBackground(r->r==background, r->r==foreground);
             //sm.addForbidFusionForegroundBackground(r->backgroundL.contains(r), r->foregroundL.contains(r));
             sm.setTestMode(testMode);
@@ -215,7 +220,9 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             pop.getRegions().remove(background);
             //pop.getRegions().removeAll(backgroundL);
             pop.relabel(true);
+            relabeled = true;
         }
+        if (!relabeled) pop.relabel(true);
         
         if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back & intertermined fusion"));
         return pop;

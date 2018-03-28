@@ -36,6 +36,8 @@ import boa.image.ImageMask;
 import boa.image.SimpleBoundingBox;
 import boa.image.SimpleOffset;
 import boa.image.TypeConverter;
+import boa.image.processing.Filters;
+import boa.image.processing.Filters.Mean;
 import boa.image.processing.ImageOperations;
 import boa.image.processing.ImageTransformation;
 import boa.plugins.TrackPreFilter;
@@ -70,7 +72,7 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
                 im = TypeConverter.toFloat(im, null);
                 preFilteredImages.replace(o, im);
             }
-            //fillBorders(o.getRegion(), im);
+            //fillOutsideMask(o.getRegion(), im);
             tm.pasteMirror(im, allImagesY, idx++);
         }
         //if (debug) ImageWindowManagerFactory.showImage(allImagesY);
@@ -90,7 +92,10 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
         allImagesY = allImagesY.crop(allImagesY.getBoundingBox().setyMin(offsetY).setyMax(offsetY+sizeY-1)); // crop
         // recover data
         idx = 0;
-        for (StructureObject o : tm.parents) Image.pasteImage(allImagesY, preFilteredImages.get(o), null, tm.getObjectOffset(idx++, 1));
+        for (StructureObject o : tm.parents) {
+            Image.pasteImage(allImagesY, preFilteredImages.get(o), null, tm.getObjectOffset(idx++, 1));
+            //fillOutsideMask(o.getRegion(), preFilteredImages.get(o));
+        }
         logger.debug("subtrack backgroun microchannel done");
     }
     
@@ -104,14 +109,17 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
         Image.pasteImage(imageFlip, res, new SimpleOffset(0, size+input.sizeY(), 0), input.getBoundingBox().resetOffset().setyMax(size-1));
         return res;
     }
-    private static void fillBorders(Region o, Image input) {
+    private static void fillOutsideMask(Region o, Image input) {
         if (!(o.getMask() instanceof BlankMask)) {
             ImageMask mask = o.getMask();
             Set<Voxel> contour = o.getContour();
+            Mean mean = new Filters.Mean(mask);
+            mean.setUp(input, Filters.getNeighborhood(2.5, mask));
             BoundingBox.loop(mask, (x, y, z)-> {
                 if (mask.insideMaskWithOffset(x, y, z)) return;
                 Voxel closest = contour.stream().min((v1, v2)->Double.compare(v1.getDistanceSquare(x, y, z), v2.getDistanceSquare(x, y, z))).get();
-                input.setPixelWithOffset(x, y, z, input.getPixelWithOffset(closest.x, closest.y, closest.z));
+                //input.setPixelWithOffset(x, y, z, input.getPixelWithOffset(closest.x, closest.y, closest.z));
+                input.setPixelWithOffset(x, y, z, mean.applyFilter(closest.x-input.xMin(), closest.y-input.yMin(), closest.z-input.zMin()));
             });
             
         }
@@ -186,32 +194,33 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
             }
         }
         
-        public void pasteMirror(Image source, Image dest, int idx) {
+        public void pasteMirror(Image source, Image dest, int idx) { // will modify image
             BoundingBox bds1_0 = getObjectOffset(idx, 1);
             Image.pasteImage(source, dest, bds1_0); // center
             if (mirrorX==3) {
-                Image imageFlipX = ImageTransformation.flip(source, ImageTransformation.Axis.X);
+                ImageTransformation.flip(source, ImageTransformation.Axis.X);
                 BoundingBox bds = getObjectOffset(idx, 1, 0);
-                Image.pasteImage(imageFlipX, dest, bds);
+                Image.pasteImage(source, dest, bds);
                 correctSides(dest, bds, true, false); 
                 bds = getObjectOffset(idx, 1, 2);
-                Image.pasteImage(imageFlipX, dest, bds);
+                Image.pasteImage(source, dest, bds);
                 correctSides(dest, bds, false, true); 
+                ImageTransformation.flip(source, ImageTransformation.Axis.X);
             } else correctSides(dest, bds1_0, true, true);
             if (mirrorY==1) return;
-            Image imageFlip = ImageTransformation.flip(source, ImageTransformation.Axis.Y);
+            ImageTransformation.flip(source, ImageTransformation.Axis.Y);
             BoundingBox bds0_0 = getObjectOffset(idx, 0);
-            Image.pasteImage(imageFlip, dest, bds0_0);
+            Image.pasteImage(source, dest, bds0_0);
             if (mirrorX==1) correctSides(dest, bds0_0, true, true);
             BoundingBox bds2_0 = getObjectOffset(idx, 2);
-            Image.pasteImage(imageFlip, dest, bds2_0);
+            Image.pasteImage(source, dest, bds2_0);
             if (mirrorX==1)  correctSides(dest, bds2_0, true , true);
             if (mirrorX==3) {
-                Image imageFlipXY = ImageTransformation.flip(imageFlip, ImageTransformation.Axis.X);
+                ImageTransformation.flip(source, ImageTransformation.Axis.X);
                 for (int posX = 0; posX<=2; posX+=2) {
                     for (int posY = 0; posY<=2; posY+=2) {
                         BoundingBox bds = getObjectOffset(idx, posY, posX);
-                        Image.pasteImage(imageFlipXY, dest, bds);
+                        Image.pasteImage(source, dest, bds);
                         correctSides(dest, bds, posX==0, posX==2); 
                     }
                 }
