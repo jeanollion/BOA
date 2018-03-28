@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -150,6 +151,7 @@ public class SegmentOnly implements ProcessingScheme {
         //if (useMaps) errors.addAll(ThreadRunner.execute(parentTrack, false, (p, idx) -> subMaps.getAndCreateIfNecessarySyncOnKey(p), executor, null));
         long t2 = System.currentTimeMillis();
         RegionPopulation[] pops = new RegionPopulation[allParents.size()];
+        //List<RegionPopulation> pops = allParents.stream().parallel().map(subParent -> {
         ThreadRunner.execute(allParents, false, (subParent, idx) -> {
             StructureObject globalParent = subParent.getParent(parentStructureIdx);
             Segmenter seg = segmenter.instanciatePlugin();
@@ -161,6 +163,8 @@ public class SegmentOnly implements ProcessingScheme {
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);
             pops[idx] = pop;
         }, executor, null);
+        //}).collect(Collectors.toList());
+        
         long t3 = System.currentTimeMillis();
         if (subSegmentation) { // collect if necessary and set to parent
             HashMapGetCreate<StructureObject, List<Region>> parentObjectMap = new HashMapGetCreate<>(parentTrack.size(), new HashMapGetCreate.ListFactory());

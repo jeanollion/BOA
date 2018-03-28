@@ -106,6 +106,7 @@ import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.plugins.plugins.segmenters.BacteriaIntensityPhase;
 import boa.plugins.plugins.track_post_filter.AverageMask;
 import boa.plugins.plugins.track_pre_filters.NormalizeTrack;
+import boa.plugins.plugins.track_pre_filters.PreFilter;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.plugins.plugins.track_pre_filters.Saturate;
 import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
@@ -574,10 +575,11 @@ public class GenerateXP {
                             .setCostParameters(0.2, 2)
                             .setSizeFeature(0)
                     ).addTrackPreFilters(
+                        //new PreFilter(new BandPass(0, 150, 2, 1)),
                         new SubtractBackgroundMicrochannels(),
                         new NormalizeTrack(1, true)
                     ).addPostFilters(
-                            new FeatureFilter(new ThicknessAxis().setAxis(MainAxis.X), 5, true, true), 
+                            new FeatureFilter(new ThicknessAxis().setAxis(MainAxis.X), 6, true, true), 
                             new BinaryClose(5),
                             new FillHoles2D()
                     ).addTrackPostFilters(

@@ -197,30 +197,32 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
         if (pop.getRegions().size()>foregroundL.size()) { // there are still undetermined regions
             pop.getRegions().removeAll(foregroundL);
             Region background = Region.merge(backgroundL);
-            Region foreground = Region.merge(foregroundL);
-            pop.getRegions().add(0, background); // fixed index so that same instance is conserved when merged
-            pop.getRegions().add(1, foreground); // fixed index so that same instance is conserved when merged
-            pop.relabel(false);
-            if (testMode) {
-                /*pop.getRegions().removeAll(backgroundL);
-                pop.getRegions().addAll(0, backgroundL);
-                pop.getRegions().removeAll(foregroundL);
-                pop.getRegions().addAll(backgroundL.size(), foregroundL);
-                pop.relabel(false);*/
-                ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back fusion. foreground=["+backgroundL.size()+";"+(backgroundL.size()+foregroundL.size()-1)+"]"));
+            if (background!=null) {
+                Region foreground = Region.merge(foregroundL);
+                pop.getRegions().add(0, background); // fixed index so that same instance is conserved when merged
+                pop.getRegions().add(1, foreground); // fixed index so that same instance is conserved when merged
+                pop.relabel(false);
+                if (testMode) {
+                    /*pop.getRegions().removeAll(backgroundL);
+                    pop.getRegions().addAll(0, backgroundL);
+                    pop.getRegions().removeAll(foregroundL);
+                    pop.getRegions().addAll(backgroundL.size(), foregroundL);
+                    pop.relabel(false);*/
+                    ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back fusion. foreground=["+backgroundL.size()+";"+(backgroundL.size()+foregroundL.size()-1)+"]"));
+                }
+                SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false);
+                sm.setInterfaceValue(0.1, false);
+                //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), Double.POSITIVE_INFINITY, SplitAndMergeRegionCriterion.InterfaceValue.DIFF_MEDIAN_BTWN_REGIONS);
+                sm.allowMergeWithBackground(parent.getMask()); // helps to remove artefacts on the side but can remove head of mother cell
+                sm.addForbidFusionForegroundBackground(r->r==background, r->r==foreground);
+                //sm.addForbidFusionForegroundBackground(r->backgroundL.contains(r), r->foregroundL.contains(r));
+                sm.setTestMode(testMode);
+                sm.merge(pop, 2); // merge intertermined until 2 categories in the image
+                pop.getRegions().remove(background);
+                //pop.getRegions().removeAll(backgroundL);
+                pop.relabel(true);
+                relabeled = true;
             }
-            SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false);
-            sm.setInterfaceValue(0.1, false);
-            //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), Double.POSITIVE_INFINITY, SplitAndMergeRegionCriterion.InterfaceValue.DIFF_MEDIAN_BTWN_REGIONS);
-            sm.allowMergeWithBackground(parent.getMask()); // helps to remove artefacts on the side but can remove head of mother cell
-            sm.addForbidFusionForegroundBackground(r->r==background, r->r==foreground);
-            //sm.addForbidFusionForegroundBackground(r->backgroundL.contains(r), r->foregroundL.contains(r));
-            sm.setTestMode(testMode);
-            sm.merge(pop, 2); // merge intertermined until 2 categories in the image
-            pop.getRegions().remove(background);
-            //pop.getRegions().removeAll(backgroundL);
-            pop.relabel(true);
-            relabeled = true;
         }
         if (!relabeled) pop.relabel(true);
         

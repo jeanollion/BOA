@@ -64,7 +64,7 @@ public class TestProcessBacteriaPhase {
     static double thld = Double.NaN;
     static boolean setMask = false;
     static boolean normalize = false;
-    static int trackPrefilterRange = 1000;
+    static int trackPrefilterRange = 100;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
@@ -83,9 +83,9 @@ public class TestProcessBacteriaPhase {
         //String dbName = "WT_150616";
         //String dbName = "MutT_150402";
         //String dbName = "TestThomasRawStacks";
-        int field = 2;
+        int field = 0;
         int microChannel =0;
-        int[] time =new int[]{11, 11}; //22
+        int[] time =new int[]{0, 0}; //22
         //setMask=true;
         //thld = 776;
         

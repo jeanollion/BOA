@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2018 Jean Ollion
  *
  * This File is part of BOA
@@ -19,63 +19,44 @@
 package boa.plugins.plugins.track_pre_filters;
 
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.PreFilterSequence;
+import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.StructureObject;
 import boa.image.Image;
 import boa.plugins.MultiThreaded;
-import boa.plugins.PreFilter;
 import boa.plugins.TrackPreFilter;
-import boa.utils.MultipleException;
-import boa.utils.Pair;
-import boa.utils.ThreadRunner;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
-public class PreFilters implements TrackPreFilter, MultiThreaded {
-    PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
+public class PreFilter implements TrackPreFilter, MultiThreaded {
     
+    PluginParameter<boa.plugins.PreFilter> filter = new PluginParameter<>("Filter",boa.plugins.PreFilter.class, false);
     ExecutorService executor;
+    
+    public PreFilter() {}
+    public PreFilter(boa.plugins.PreFilter preFilter) {
+        this.filter.setPlugin(preFilter);
+    }
+    
     @Override public void setExecutor(ExecutorService executor) {
         this.executor=executor;
     }
-    
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
-        if (preFilters.isEmpty()) return;
         boolean parallele = executor ==null;
-        Consumer<Entry<StructureObject, Image>> c  = e->e.setValue(preFilters.filter(e.getValue(), e.getKey().getMask()));
+        Consumer<Map.Entry<StructureObject, Image>> c  = e->e.setValue(filter.instanciatePlugin().runPreFilter(e.getValue(), e.getKey().getMask()));
         if (parallele) preFilteredImages.entrySet().stream().parallel().forEach(c);
         else preFilteredImages.entrySet().stream().sequential().forEach(c);
     }
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{preFilters};
-    }
-    public PreFilters removeAll() {
-        preFilters.removeAllElements();
-        return this;
-    }
-    public PreFilters add(PreFilterSequence sequence) {     
-        preFilters.add(sequence.get());
-        return this;
-    }
-    public PreFilters add(PreFilter... instances) {
-        preFilters.add(instances);
-        return this;
+        return new Parameter[]{filter};
     }
     
-    public PreFilters add(Collection<PreFilter> instances) {
-        preFilters.add(instances);
-        return this;
-    }
 }
