@@ -24,9 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import static boa.plugins.Plugin.logger;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SIErrorValue;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
 import boa.utils.Utils;
 import java.util.Collection;
@@ -37,6 +35,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSRErrorThld;
+import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SRErrorValue;
 
 /**
  * Class holding objects at a given frame linked to objects at the next frame
@@ -50,7 +50,7 @@ public class Assignment {
         List<Region> nextObjects;
         int idxPrev, idxNext;
         double sizePrev, sizeNext;
-        double previousSizeIncrement = Double.NaN;
+        double previousSizeRatio = Double.NaN;
         double[] currentScore;
         Map<Double, Assignment> deltaSizeMapAssignmentCandidate = new HashMap<>(3);
         TrackAssigner ta;
@@ -76,7 +76,7 @@ public class Assignment {
             this.idxPrev=other.idxPrev;
             this.sizePrev=other.sizePrev;
             this.sizeNext=other.sizeNext;
-            this.previousSizeIncrement=other.previousSizeIncrement;
+            this.previousSizeRatio=other.previousSizeRatio;
             this.currentScore=other.currentScore;
         }
         public Assignment(List<Region> prev, List<Region> next, double sizePrev, double sizeNext, int idxPrev, int idxNext) {
@@ -152,7 +152,7 @@ public class Assignment {
                 Region o = ta.prev.get(idxPrevEnd());
                 prevObjects.add(o);
                 sizePrev=ta.sizeFunction.apply(prevObjects);
-                previousSizeIncrement = Double.NaN;
+                previousSizeRatio = Double.NaN;
                 currentScore=null;
                 return true;
             } else return false;
@@ -172,7 +172,7 @@ public class Assignment {
                     prevObjects.remove(removeFirst ? 0 : prevObjects.size()-1);
                     sizePrev=ta.sizeFunction.apply(prevObjects);
                     if (removeFirst) idxPrev++;
-                    previousSizeIncrement = Double.NaN;
+                    previousSizeRatio = Double.NaN;
                     currentScore=null;
                     return true;
                 } else return false;
@@ -189,7 +189,7 @@ public class Assignment {
             List<Region> l = prev ? prevObjects : nextObjects;
             if (l.size()<=n) return false;
             currentScore=null;
-            if (prev) previousSizeIncrement = Double.NaN;
+            if (prev) previousSizeRatio = Double.NaN;
             if (removeFirst) {
                 Iterator<Region> it = l.iterator();
                 while(l.size()>n) {
@@ -210,73 +210,56 @@ public class Assignment {
             return true;
         }
         
-        /*protected void incrementIfNecessary() {
-            if (prevObjects.isEmpty()) incrementPrev();
-            boolean cellDeathScenario=false; // testing only
-            if (nextObjects.isEmpty()) {
-                if (false && ta.allowCellDeathScenario() && idxNextEnd()<ta.idxNextLim) cellDeathScenario=true;
-                else incrementNext();
-            }
-            boolean change = true;
-            if (!cellDeathScenario) {
-                incrementUntilVerifyInequality();
-                if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} start increment: {}", ta.verboseLevel, this);
-                adjustAssignmentToFitPreviousSizeIncrement();
-                //if (!verifyInequality()) return;
-            } else change = ta.checkNextIncrement();
-            if (ta.currentAssignment!=this) throw new RuntimeException("TA's currentAssignment should be calling assignment");
-            //while (ta.allowRecurstiveNextIncrementCheck() && change && this.idxPrev<=cellNumberLimitForAssignment) change = ta.checkNextIncrement();
-        }*/
         protected void incrementIfNecessary() {
             if (prevObjects.isEmpty()) if (!incrementPrev()) return;
             if (nextObjects.isEmpty()) if (!incrementNext()) return;
             incrementUntilVerifyInequality();
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} start: {}", ta.verboseLevel, this);
-            adjustAssignmentToFitPreviousSizeIncrement();
+            adjustAssignmentToFitPreviousSizeRatio();
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{} after fit to SI: {}", ta.verboseLevel, this);
         }
                 
         protected void incrementUntilVerifyInequality() {
             while(!verifyInequality()) {
-                if (sizePrev * ta.baseSizeIncrement[1] < sizeNext) {
+                if (sizePrev * ta.baseSizeRatio[1] < sizeNext) {
                     if (!incrementPrev()) return;
-                } else if (sizePrev * ta.baseSizeIncrement[0] > sizeNext) {
+                } else if (sizePrev * ta.baseSizeRatio[0] > sizeNext) {
                     if (!incrementNext()) return;
                 } 
             }
         }
-        protected void adjustAssignmentToFitPreviousSizeIncrement() {
-            if (Double.isNaN(getPreviousSizeIncrement())) return;
-            double currentDelta = previousSizeIncrement * sizePrev - sizeNext;
+        protected void adjustAssignmentToFitPreviousSizeRatio() {
+            if (Double.isNaN(getPreviousSizeRatio())) return;
+            double currentDelta = previousSizeRatio * sizePrev - sizeNext;
             deltaSizeMapAssignmentCandidate.clear();
             while(true) {
-                //logger.debug("Fit previous size increment: prevSI: {}, curSI: {} deltaSI: {} error: {} ass: {}", previousSizeIncrement, sizeNext/sizePrev, previousSizeIncrement-sizeNext/sizePrev, currentDelta, this);
+                //logger.debug("Fit previous size increment: prevSI: {}, curSI: {} deltaSI: {} error: {} ass: {}", previousSizeRatio, sizeNext/sizePrev, previousSizeRatio-sizeNext/sizePrev, currentDelta, this);
                 if (currentDelta>0) { // missing @ next OR too much at prev
                     if (this.prevObjects.size()>1) { // remove prev
                         Assignment other = this.duplicate(ta);
                         other.remove(true, false);
-                        double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                        double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                         if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                     }
                     if (this.nextObjects.size()>1 && this.prevObjects.size()>1) { // remove prev & next
                         Assignment other = this.duplicate(ta);
                         other.remove(true, false);
                         other.remove(false, false);
-                        double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                        double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                         if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                     }
-                    if (Math.abs(currentDelta/sizePrev) > significativeSIErrorThld/2.0) { // add to next
+                    if (Math.abs(currentDelta/sizePrev) > significativeSRErrorThld/2.0) { // add to next. This limit is used to avoid the cases where 
                         Assignment other = this.duplicate(ta);
                         if (other.incrementNext()) {
-                            double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                            double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                             if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                             else if (other.incrementPrev() && other.prevFromPrevObject()){ // also try to add prev & next. This scenario need to be limited, if not it can grow easily because 
-                                otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                                otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                                 //if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                                 Assignment other2 = new Assignment(ta, idxPrevEnd(), idxNextEnd());
                                 other2.incrementNext();
                                 other2.incrementPrev();
-                                double otherDelta2 = other2.getPreviousSizeIncrement() * other2.sizePrev - other2.sizeNext;
+                                double otherDelta2 = other2.getPreviousSizeRatio() * other2.sizePrev - other2.sizeNext;
                                 //if (Math.abs(otherDelta)<(Math.abs(currentDelta)+Math.abs(otherDelta2))/2d) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                                 if (debug) logger.debug("d<0: assignment: add p&n: current {}({}), other: {}({}) other2: {}({})", this, currentDelta, other, otherDelta, other2, otherDelta2);
                                 if (Math.abs(otherDelta)<Math.abs(currentDelta) && Math.abs(otherDelta)<Math.abs(otherDelta2)) {
@@ -289,28 +272,28 @@ public class Assignment {
                     if (this.nextObjects.size()>1) { // remove next
                         Assignment other = this.duplicate(ta);
                         other.remove(false, false);
-                        double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                        double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                         if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                     }
                     if (this.nextObjects.size()>1 && this.prevObjects.size()>1) { // remove prev & next
                         Assignment other = this.duplicate(ta);
                         other.remove(true, false);
                         other.remove(false, false);
-                        double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                        double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                         if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                     }
-                    if (Math.abs(currentDelta/sizePrev) > significativeSIErrorThld/2.0 ) { // add to prev
+                    if (Math.abs(currentDelta/sizePrev) > significativeSRErrorThld/2.0 ) { // add to prev
                         Assignment other = this.duplicate(ta);
                         if (other.incrementPrev()) {
-                            double otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                            double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                             if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                             else if (other.incrementNext() && other.prevFromPrevObject()) { // also try to add next && prev
-                                otherDelta = other.getPreviousSizeIncrement() * other.sizePrev - other.sizeNext;
+                                otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                                 //if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                                 Assignment other2 = new Assignment(ta, idxPrevEnd(), idxNextEnd());
                                 other2.incrementNext();
                                 other2.incrementPrev();
-                                double otherDelta2 = other2.getPreviousSizeIncrement() * other2.sizePrev - other2.sizeNext;
+                                double otherDelta2 = other2.getPreviousSizeRatio() * other2.sizePrev - other2.sizeNext;
                                 if (debug) logger.debug("d>0 assignment: add p&n: current {}({}), other: {}({}) other2: {}({})", this, currentDelta, other, otherDelta, other2, otherDelta2);
                                 if (Math.abs(otherDelta)<Math.abs(currentDelta) && Math.abs(otherDelta)<Math.abs(otherDelta2)) {
                                     deltaSizeMapAssignmentCandidate.put(otherDelta, other);
@@ -327,24 +310,24 @@ public class Assignment {
             }
         }
         
-        public double getPreviousSizeIncrement() {
-            if (Double.isNaN(previousSizeIncrement) && !prevObjects.isEmpty()) {
-                previousSizeIncrement = ta.sizeIncrements.getAndCreateIfNecessary(prevObjects.get(0));
+        public double getPreviousSizeRatio() {
+            if (Double.isNaN(previousSizeRatio) && !prevObjects.isEmpty()) {
+                previousSizeRatio = ta.sizeRatios.getAndCreateIfNecessary(prevObjects.get(0));
                 if (!prevFromPrevObject()) {  // compute size-weighted barycenter of size increment from lineage
                     double totalSize= prevObjects.get(0).size();
-                    previousSizeIncrement *= totalSize;
+                    previousSizeRatio *= totalSize;
                     for (int i = 1; i<prevObjects.size(); ++i) { 
-                        double curSI = ta.sizeIncrements.getAndCreateIfNecessary(prevObjects.get(i));
+                        double curSI = ta.sizeRatios.getAndCreateIfNecessary(prevObjects.get(i));
                         if (!Double.isNaN(curSI)) {
                             double size = prevObjects.get(i).size();
-                            previousSizeIncrement+= curSI * size;
+                            previousSizeRatio+= curSI * size;
                             totalSize += size;
                         }
                     }
-                    previousSizeIncrement/=totalSize;
+                    previousSizeRatio/=totalSize;
                 }
             }
-            return previousSizeIncrement;
+            return previousSizeRatio;
         }
         
         public boolean verifyInequality() {
@@ -352,7 +335,7 @@ public class Assignment {
         }
         public boolean truncatedEndOfChannel() {
             return (ta.truncatedChannel && idxNextEnd()==ta.idxNextLim   && 
-                    (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE && !Double.isNaN(getPreviousSizeIncrement()) ? getPreviousSizeIncrement()-sizeNext/sizePrev>significativeSIErrorThld : sizePrev * ta.baseSizeIncrement[0] > sizeNext) ); //&& idxEnd-idx==1 // && idxPrevEnd-idxPrev==1
+                    (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE && !Double.isNaN(getPreviousSizeRatio()) ? getPreviousSizeRatio()-sizeNext/sizePrev>significativeSRErrorThld : sizePrev * ta.baseSizeRatio[0] > sizeNext) ); //&& idxEnd-idx==1 // && idxPrevEnd-idxPrev==1
         }
         public boolean needCorrection() {
             return prevObjects.size()>1 || nextObjects.size()>2; 
@@ -366,10 +349,10 @@ public class Assignment {
          */
         protected double[] getScore() {
             if (this.nextObjects.isEmpty() && idxNextEnd()<ta.idxNextLim) return new double[]{getErrorCount(), 0}; // cell death scenario
-            double prevSizeIncrement = ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE ? getPreviousSizeIncrement() : Double.NaN;
-            if (Double.isNaN(prevSizeIncrement)) return new double[]{getErrorCount(), Double.NaN};
-            if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignement score: prevSI: {}, SI: {}", ta.verboseLevel, prevSizeIncrement, sizeNext/sizePrev);
-            return new double[]{getErrorCount(), Math.abs(prevSizeIncrement - sizeNext/sizePrev)};
+            double prevSizeRatio = ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE ? getPreviousSizeRatio() : Double.NaN;
+            if (Double.isNaN(prevSizeRatio)) return new double[]{getErrorCount(), Double.NaN};
+            if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignement score: prevSI: {}, SI: {}", ta.verboseLevel, prevSizeRatio, sizeNext/sizePrev);
+            return new double[]{getErrorCount(), Math.abs(prevSizeRatio - sizeNext/sizePrev)};
         }
         
         public int getTrackingErrorCount() {
@@ -377,16 +360,16 @@ public class Assignment {
             //return Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1); // max erro @ prev OU @ next
         }
         /**
-         * Error number is the sum of (1) the number of sur-numerous objects in assignment: more than 2 objects at next frame or more than one object at previous frame, and the number of errors due to size increment (See {@link #getSizeIncrementErrors() }
+         * Error number is the sum of (1) the number of sur-numerous objects in assignment: more than 2 objects at next frame or more than one object at previous frame, and the number of errors due to size increment (See {@link #getSizeRatioErrors() }
          * No errors is counted is the assignment involve object at the opened-end of the microchannel to take into account missing bacteria
          * @return number of errors in this assignment
          */
         public double getErrorCount() {
             int res = getTrackingErrorCount();
-            //if ((!verifyInequality() || significantSizeIncrementError()) && !truncatedEndOfChannel()) ++res; // bad size increment
+            //if ((!verifyInequality() || significantSizeRatioError()) && !truncatedEndOfChannel()) ++res; // bad size increment
             if (!truncatedEndOfChannel()) {
-                double sig = getSizeIncrementErrors();
-                res+=sig*SIErrorValue;
+                double sig = getSizeRatioErrors();
+                res+=sig*SRErrorValue;
             }
             if (notSameLineIsError && !prevFromSameLine()) ++res;
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, getError count: {}, errors: {}, truncated: {}", ta.verboseLevel, this, res, truncatedEndOfChannel());
@@ -397,22 +380,22 @@ public class Assignment {
          * If the difference is close enough to 0 no errors are returned
          * @return number of errors due to size increment
          */
-        public double getSizeIncrementErrors() {
+        public double getSizeRatioErrors() {
             if (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE) {
-            double prevSizeIncrement = getPreviousSizeIncrement();
-            if (Double.isNaN(prevSizeIncrement)) {
+            double prevSizeRatio = getPreviousSizeRatio();
+            if (Double.isNaN(prevSizeRatio)) {
                 return verifyInequality() ? 0 : 1;
             } else {
-                double sizeIncrement = sizeNext/sizePrev;
-                if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}: {}, sizeIncrementError check: SI:{} lineage SI: {}, error: {}", ta.verboseLevel, this, sizeIncrement, prevSizeIncrement, Math.abs(prevSizeIncrement-sizeIncrement));
-                double err =  (Math.abs(prevSizeIncrement-sizeIncrement)/significativeSIErrorThld);
+                double sizeRatio = sizeNext/sizePrev;
+                if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}: {}, sizeRatioError check: SI:{} lineage SI: {}, error: {}", ta.verboseLevel, this, sizeRatio, prevSizeRatio, Math.abs(prevSizeRatio-sizeRatio));
+                double err =  (Math.abs(prevSizeRatio-sizeRatio)/significativeSRErrorThld);
                 return err>1 ? err:0;
             }
             } else return verifyInequality() ? 0:1;
         }
         public String toString(boolean size) {
             String res = "["+idxPrev+";"+(idxPrevEnd()-1)+"]->[" + idxNext+";"+(idxNextEnd()-1)+"]";
-            if (size) res +="/Sizes:"+String.format("%.2f", sizePrev)+ "->"+String.format("%.2f", sizeNext)+ "/Ineq:"+verifyInequality()+"/Errors:"+getErrorCount()+"/SI:"+sizeNext/sizePrev+"/SIPrev:"+getPreviousSizeIncrement();
+            if (size) res +="/Sizes:"+String.format("%.2f", sizePrev)+ "->"+String.format("%.2f", sizeNext)+ "/Ineq:"+verifyInequality()+"/Errors:"+getErrorCount()+"/SI:"+sizeNext/sizePrev+"/SIPrev:"+getPreviousSizeRatio();
             return res;
         }
         @Override public String toString() {

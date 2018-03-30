@@ -37,12 +37,12 @@ import static boa.plugins.Plugin.logger;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import static boa.plugins.plugins.trackers.ObjectIdxTracker.getComparatorRegion;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.ObjectModifier.Split;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSRErrorThld;
 
 /**
  *
@@ -60,14 +60,14 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         this.assignment=assignment;
         for (Region o : assignment.prevObjects) {
             double[] sizeRange = new double[2];
-            double si = tracker.sizeIncrementFunction.apply(o);
+            double si = tracker.sizeRatioFunction.apply(o);
             double size = o.size();
             if (Double.isNaN(si)) {
                 sizeRange[0] = tracker.minGR * size;
                 sizeRange[1] = tracker.maxGR * size;
             } else {
-                sizeRange[0] = (si-significativeSIErrorThld/2) * size;
-                sizeRange[1] = (si+significativeSIErrorThld/2) * size;
+                sizeRange[0] = (si-significativeSRErrorThld/2) * size;
+                sizeRange[1] = (si+significativeSRErrorThld/2) * size;
             }
             assignements.add(new RearrangeAssignment(o, sizeRange));
         }
@@ -92,7 +92,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
                     Function<Region, Double> sizeIncrementFunction = o -> { 
                         RearrangeAssignment ra = getAssignement(o, false, false);
                         if (ra==null) return Double.NaN;
-                        else return tracker.sizeIncrementFunction.apply(ra.prevObject);
+                        else return tracker.sizeRatioFunction.apply(ra.prevObject);
                     };
                     BiFunction<Region, Region, Boolean> areFromSameLine = (o1, o2) -> {
                         RearrangeAssignment ra1 = getAssignement(o1, false, false);

@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SIIncreaseThld;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
 import boa.utils.HashMapGetCreate;
@@ -35,6 +34,7 @@ import boa.utils.Utils;
 import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SRIncreaseThld;
 
 /**
  *
@@ -48,27 +48,27 @@ public class TrackAssigner {
     protected int verboseLevel = 0;
     AssignerMode mode = AssignerMode.ADAPTATIVE;
     final Function<Collection<Region>, Double> sizeFunction;
-    private Function<Region, Double> sizeIncrementFunction;
+    private Function<Region, Double> sizeRatioFunction;
     final BiFunction<Region, Region, Boolean> areFromSameLine, haveSamePreviousObjects;
     final List<Region> prev, next;
     final int idxPrevLim, idxNextLim;
     final protected List<Assignment> assignments = new ArrayList();
     protected Assignment currentAssignment;
-    double[] baseSizeIncrement;
+    double[] baseSizeRatio;
     protected boolean truncatedChannel;
     int nextIncrementCheckRecursiveLevel = -1; 
-    HashMapGetCreate<Region, Double> sizeIncrements = new HashMapGetCreate<>(o -> sizeIncrementFunction.apply(o));
-    protected TrackAssigner(List<Region> prev, List<Region> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Collection<Region>, Double> sizeFunction, Function<Region, Double> sizeIncrementFunction, BiFunction<Region, Region, Boolean> areFromSameLine, BiFunction<Region, Region, Boolean> haveSamePreviousObjects) {
+    HashMapGetCreate<Region, Double> sizeRatios = new HashMapGetCreate<>(o -> sizeRatioFunction.apply(o));
+    protected TrackAssigner(List<Region> prev, List<Region> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Collection<Region>, Double> sizeFunction, Function<Region, Double> sizeRatioFunction, BiFunction<Region, Region, Boolean> areFromSameLine, BiFunction<Region, Region, Boolean> haveSamePreviousObjects) {
         this.prev= prev!=null ? prev : Collections.EMPTY_LIST;
         this.next= next!=null ? next : Collections.EMPTY_LIST;
         idxPrevLim = this.prev.size();
         idxNextLim = this.next.size();
         this.sizeFunction = sizeFunction;
-        this.sizeIncrementFunction=sizeIncrementFunction;
-        if (sizeIncrementFunction==null) mode = AssignerMode.RANGE;
+        this.sizeRatioFunction=sizeRatioFunction;
+        if (sizeRatioFunction==null) mode = AssignerMode.RANGE;
         this.areFromSameLine=areFromSameLine;
         this.haveSamePreviousObjects=haveSamePreviousObjects;
-        this.baseSizeIncrement=baseGrowthRate;
+        this.baseSizeRatio=baseGrowthRate;
         this.truncatedChannel=truncatedChannel;
     }
     public TrackAssigner setVerboseLevel(int verboseLevel) {
@@ -96,8 +96,8 @@ public class TrackAssigner {
     }
     
     protected TrackAssigner duplicate(boolean duplicateCurrentAssignment) {
-        TrackAssigner res = new TrackAssigner(prev, next, baseSizeIncrement, truncatedChannel, sizeFunction, sizeIncrementFunction, areFromSameLine, haveSamePreviousObjects);
-        res.sizeIncrements=sizeIncrements;
+        TrackAssigner res = new TrackAssigner(prev, next, baseSizeRatio, truncatedChannel, sizeFunction, sizeRatioFunction, areFromSameLine, haveSamePreviousObjects);
+        res.sizeRatios=sizeRatios;
         res.assignments.addAll(assignments);
         if (duplicateCurrentAssignment && currentAssignment!=null) {
             res.currentAssignment = currentAssignment.duplicate(res);
@@ -107,7 +107,7 @@ public class TrackAssigner {
         res.mode=mode;
         res.verboseLevel=verboseLevel;
         //res.currentScore=currentScore; // do not duplicate scores & previous SI because duplicated objects are subect to modifications..
-        //res.previousSizeIncrement=previousSizeIncrement;
+        //res.previousSizeRatio=previousSizeRatio;
         return res;
     }
     
@@ -177,7 +177,7 @@ public class TrackAssigner {
         TrackAssigner nextSolution = duplicate(true).setVerboseLevel(verboseLevel+1).setNextIncrementCheckRecursiveLevel(this.nextIncrementCheckRecursiveLevel<0 ? 1: (nextIncrementCheckRecursiveLevel==0 ? 0:this.nextIncrementCheckRecursiveLevel-1));
         // get another solution that verifies inequality
         boolean incrementPrev;
-        if (mode==AssignerMode.ADAPTATIVE && !Double.isNaN(currentAssignment.getPreviousSizeIncrement())) incrementPrev = currentAssignment.sizeNext/currentAssignment.sizePrev>currentAssignment.getPreviousSizeIncrement();
+        if (mode==AssignerMode.ADAPTATIVE && !Double.isNaN(currentAssignment.getPreviousSizeRatio())) incrementPrev = currentAssignment.sizeNext/currentAssignment.sizePrev>currentAssignment.getPreviousSizeRatio();
         else incrementPrev = currentAssignment.sizePrev<currentAssignment.sizeNext;
         if (incrementPrev) {
             if (!nextSolution.currentAssignment.incrementPrev()) return false;
@@ -190,7 +190,7 @@ public class TrackAssigner {
         //if (debug && verboseLevel<verboseLevelLimit) logger.debug("current: {}, next: {}", this, nextSolution);
         // compare the current & new solution
         double[] newScore = nextSolution.getCurrentScore();
-        double curSIIncreaseThld = SIIncreaseThld; // increment only if significative improvement
+        double curSIIncreaseThld = SRIncreaseThld; // increment only if significative improvement
         if (nextSolution.currentAssignment.prevFromSameLine()) curSIIncreaseThld=0;  // if all prev object the same line, no penalty, only absolute improvement is requiered
         newScore[1]+=curSIIncreaseThld; 
         if (compareScores(getCurrentScore(), newScore, mode!=AssignerMode.RANGE)<=0) return false;
@@ -254,7 +254,7 @@ public class TrackAssigner {
     }
     
     protected boolean verifyInequality(double sizePrev, double sizeNext) {
-        return sizePrev * baseSizeIncrement[0] <= sizeNext && sizeNext <= sizePrev * baseSizeIncrement[1];
+        return sizePrev * baseSizeRatio[0] <= sizeNext && sizeNext <= sizePrev * baseSizeRatio[1];
     }
     
 
