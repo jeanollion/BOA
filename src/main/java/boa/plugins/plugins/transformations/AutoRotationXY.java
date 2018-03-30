@@ -59,11 +59,10 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
     NumberParameter maxAngle = new BoundedNumberParameter("Maximal Angle for search", 2, 10, -90, 90);
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);
     NumberParameter precision2 = new BoundedNumberParameter("Angular Precision", 2, 0.1, 0, 1);
-    //NumberParameter filterScale = new BoundedNumberParameter("Object Scale", 0, 15, 2, null); //TODO: conditional parameter
     ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false); 
-    ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false);
-    NumberParameter frameNumber = new BoundedNumberParameter("Number of frame", 0, 10, 0, null);
-    BooleanParameter removeIncompleteRowsAndColumns = new BooleanParameter("Remove Incomplete rows and columns", true);
+    ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false).setToolTipText("<ul><li><b>"+SearchMethod.MAXVAR.getName()+"</b>: Search for the angle that yields in maximal dispersion of projected values</li><li><b>"+SearchMethod.MAXARTEFACT.getName()+": Search for the angle that yields in the maximal value, reached when optical aberration in phase-contrast images is perpendicular to the axis</b></li></ul>");
+    NumberParameter frameNumber = new BoundedNumberParameter("Number of frame", 0, 10, 0, null).setToolTipText("Number of frames on which the angle should be computed. Resulting angle is the median value of all the angles");
+    BooleanParameter removeIncompleteRowsAndColumns = new BooleanParameter("Remove Incomplete rows and columns", true).setToolTipText("If this option is not selected the frame of the image will be enlarged to fit the whole rotated image and filled with zeros");
     FilterSequence prefilters = new FilterSequence("Pre-Filters");
     BooleanParameter maintainMaximum = new BooleanParameter("Maintain Maximum Value", false).setToolTipText("When interpolation with polynomes of degree>1, higher values than maximal value can be created, which can be an issue in case of a saturated image if the saturated value should be preserved. <br />This option will saturate the rotated image to the old maximal value");
     Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, removeIncompleteRowsAndColumns, maintainMaximum, prefilters}; //  
