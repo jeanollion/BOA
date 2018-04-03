@@ -62,10 +62,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sc.fiji.analyzeSkeleton.AnalyzeSkeleton_;
-import sc.fiji.analyzeSkeleton.Graph;
-import sc.fiji.analyzeSkeleton.SkeletonResult;
-import sc.fiji.analyzeSkeleton.Vertex;
 
 /**
  *
