@@ -21,6 +21,7 @@ package boa.image.processing.bacteria_spine;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.image.Image;
+import static boa.image.processing.bacteria_spine.CleanContour.cleanContour;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
@@ -80,7 +81,7 @@ public class BacteriaSpineLocalizer {
         return length;
     }
     public Image draw(int zoomFactor) {
-        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, BacteriaSpineFactory.getCircularContour(bacteria.getContour(), bacteria.getGeomCenter(false)), zoomFactor);
+        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, BacteriaSpineFactory.getCircularContour(cleanContour(bacteria.getContour()), bacteria.getGeomCenter(false)), zoomFactor);
     }
 
     /**

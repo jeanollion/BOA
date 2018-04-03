@@ -18,6 +18,7 @@
  */
 package boa.plugins.plugins.measurements.objectFeatures;
 
+import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
@@ -30,12 +31,15 @@ import boa.plugins.ObjectFeature;
  * @author jollion
  */
 public class SpineWidth implements ObjectFeature {
-
+    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false);
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[0];
+        return new Parameter[]{scaled};
     }
-
+    public SpineWidth setScaled(boolean scaled) {
+        this.scaled.setSelected(scaled);
+        return this;
+    }
     @Override
     public ObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         return this;
@@ -43,7 +47,9 @@ public class SpineWidth implements ObjectFeature {
 
     @Override
     public double performMeasurement(Region region) {
-        return GeometricalMeasurements.getSpineLengthAndWidth(region, true)[1];
+        double w= GeometricalMeasurements.getSpineLengthAndWidth(region, true)[1];
+        if (scaled.getSelected()) w *= region.getScaleXY();
+        return w;
     }
 
     @Override

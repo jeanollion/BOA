@@ -22,7 +22,9 @@ import boa.core.Task;
 import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
+import boa.data_structure.dao.ObjectDAO;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.SimpleOffset;
@@ -32,6 +34,7 @@ import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL;
 import boa.image.processing.bacteria_spine.CircularNode;
+import static boa.image.processing.bacteria_spine.CleanContour.cleanContour;
 import boa.plugins.PluginFactory;
 import static boa.test_utils.TestUtils.logger;
 import boa.utils.HashMapGetCreate;
@@ -40,8 +43,10 @@ import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
 import boa.utils.geom.Vector;
 import ij.ImageJ;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  *
@@ -53,16 +58,29 @@ public class TestSpine {
         new ImageJ();
         //String dbName = "AyaWT_mmglu";
         //String dbName = "MutH_150324";
-        String dbName = "fluo171113_WT_15s";
-        int postition= 0, frame=0, mc=0, b=0; // F=2 B=1
+        String dbName = "MutH_140115";
+        int postition= 0, frame=225, mc=11, b=2; // F=2 B=1
         MasterDAO mDAO = new Task(dbName).getDB();
         Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
         StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         StructureObject bact2 = root2.getChildren(0).get(mc).getChildren(1).get(1);
+        testContourCreation(StructureObjectUtils.getAllChildrenAsStream(mDAO.getDao(f.getName()).getRoots().stream(), 0));
         //testLocalization(bact);
-        testProjection(bact, bact2);
+        //testProjection(bact, bact2);
+    }
+    public static void testContourCreation(Stream<StructureObject> parentTrack) {
+        BacteriaSpineFactory.verbose=true;
+        StructureObjectUtils.getAllChildrenAsStream(parentTrack, 1).forEach(b -> {
+            try {
+                CircularNode<Voxel> circContour = BacteriaSpineFactory.getCircularContour(cleanContour(b.getRegion().getContour()), b.getRegion().getGeomCenter(false));
+                //logger.debug("contour ok for : {}", b);
+            } catch (Exception e) {
+                logger.debug("failed create contour: for bact: "+b, e);
+                throw e;
+            }
+        });
     }
     public static void testProjection(StructureObject bact1, StructureObject bact2) {
         int zoomFactor = 7;
@@ -91,7 +109,8 @@ public class TestSpine {
     
     public static void testLocalization(StructureObject bact) {
         Point center = bact.getRegion().getGeomCenter(false);
-        Set<Voxel> contour = bact.getRegion().getContour();
+        BacteriaSpineFactory.verbose=true;
+        Set<Voxel> contour = cleanContour(bact.getRegion().getContour());
         CircularNode<Voxel> circContour = BacteriaSpineFactory.getCircularContour(contour, center);
         PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(bact.getMask(), contour, circContour, center);
         logger.debug("bounds: {}, spine: {}", bact.getBounds(), spine[0]);

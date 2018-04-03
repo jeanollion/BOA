@@ -40,7 +40,9 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
+import boa.utils.StreamConcatenation;
 import boa.utils.Utils;
+import java.util.stream.Stream;
 
 /**
  *
@@ -286,6 +288,10 @@ public class StructureObjectUtils {
         List<StructureObject> res = new ArrayList<>();
         for (StructureObject p : parentTrack) res.addAll(p.getChildren(structureIdx));
         return res;
+    }
+    public static Stream<StructureObject> getAllChildrenAsStream(Stream<StructureObject> parentTrack, int structureIdx) {
+        Stream<StructureObject>[] allChildrenStream = parentTrack.map(p->p.getChildren(structureIdx).stream()).toArray(l->new Stream[l]);
+        return StreamConcatenation.concat(allChildrenStream);
     }
     public static Map<StructureObject, List<StructureObject>> getAllTracks(Collection<StructureObject> objects, boolean extend) {
         HashMapGetCreate<StructureObject, List<StructureObject>> allTracks = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());

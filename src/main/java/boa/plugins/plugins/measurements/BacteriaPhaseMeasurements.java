@@ -52,15 +52,15 @@ public class BacteriaPhaseMeasurements implements Measurement {
     public BacteriaPhaseMeasurements(int bacteriaStructureIdx){
         this.bacteria.setSelectedIndex(bacteriaStructureIdx);
     }
-    
+    @Override
     public int getCallStructure() {
         return bacteria.getSelectedStructureIdx();
     }
-
+    @Override
     public boolean callOnlyOnTrackHeads() {
         return false;
     }
-
+    @Override
     public List<MeasurementKey> getMeasurementKeys() {
         int structureIdx = bacteria.getSelectedStructureIdx();
         ArrayList<MeasurementKey> res = new ArrayList<>();
@@ -93,14 +93,15 @@ public class BacteriaPhaseMeasurements implements Measurement {
         Measurements m = object.getMeasurements();
         m.setValue("BacteriaCenterX", center.get(0));
         m.setValue("BacteriaCenterY", center.get(1));
-        m.setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));
-        m.setValue("BacteriaArea", GeometricalMeasurements.getVolume(bactObject));
-        m.setValue("BacteriaWidth", GeometricalMeasurements.getThickness(bactObject));
+        double scale = object.getScaleXY();
+        m.setValue("BacteriaLength", scale*GeometricalMeasurements.getFeretMax(bactObject));
+        m.setValue("BacteriaArea", scale*GeometricalMeasurements.getVolume(bactObject));
+        m.setValue("BacteriaWidth", scale*GeometricalMeasurements.getThickness(bactObject));
         if (computeSpine.getSelected()) {
             double[] lw = GeometricalMeasurements.getSpineLengthAndWidth(bactObject, true);
             if (lw!=null) {
-                m.setValue("BacteriaSpineLength", lw[0]);
-                m.setValue("BacteriaSpineWidth", lw[1]);
+                m.setValue("BacteriaSpineLength", scale*lw[0]);
+                m.setValue("BacteriaSpineWidth", scale*lw[1]);
             }
         }
         m.setValue(StructureObject.trackErrorNext, object.hasTrackLinkError(false, true));
