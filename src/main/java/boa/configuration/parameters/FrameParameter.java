@@ -24,54 +24,52 @@ import boa.configuration.parameters.ui.ParameterUI;
  *
  * @author jollion
  */
-public class TimePointParameter extends BoundedNumberParameter {
-    private int timePointNumber=-1;
+public class FrameParameter extends BoundedNumberParameter {
+    private int frameNumber=-1;
     boolean useRawInputFrames;
     
-    public TimePointParameter(String name, int defaultTimePoint, boolean useRawInputFrames) {
+    public FrameParameter(String name, int defaultTimePoint, boolean useRawInputFrames) {
         super(name, 0, defaultTimePoint, 0, null);
         this.useRawInputFrames=useRawInputFrames;
     }
-    public TimePointParameter(String name, int defaultTimePoint) {
+    public FrameParameter(String name, int defaultTimePoint) {
         this(name, defaultTimePoint, false);
     }
-    public TimePointParameter(String name) {
+    public FrameParameter(String name) {
         this(name, 0, false);
     }
-    public TimePointParameter() {this("");}
+    public FrameParameter() {this("");}
     
-    
-    public int getMaxTimePoint() {
-        if (timePointNumber==-1) {
-            timePointNumber = ParameterUtils.getTimePointNumber(this, useRawInputFrames);
-            //logger.debug("tp param: {} after trim: {} tpnb: {}", name, useRawInputFrames, timePointNumber);
-            if (timePointNumber>0) super.upperBound=timePointNumber-1;
-        }
-        return Math.max(0, timePointNumber-1);
+    public void setMaxFrame(int maxFrame) {
+        super.upperBound = maxFrame;
+        frameNumber = maxFrame+1;
+    }
+    public int getMaxFrame() {
+        return Math.max(0, frameNumber-1);
     }
 
     public void setUseRawInputFrames(boolean useRawInputFrames) {
         this.useRawInputFrames = useRawInputFrames;
     }
     
-    public void setTimePoint(int timePoint) {
+    public void setFrame(int timePoint) {
         super.setValue(timePoint);
     }
     
     private int checkWithBounds(int timePoint) {
-        int max = getMaxTimePoint();
+        int max = getMaxFrame();
         if (max>=0) {
             if (timePoint>max) return Math.max(0, max);
             else return Math.max(0, timePoint);
         } else return 0;
     }
     
-    public int getSelectedTimePoint() {
+    public int getSelectedFrame() {
         return checkWithBounds(super.getValue().intValue());
     }
     
     @Override public ParameterUI getUI() {
-        getMaxTimePoint(); // sets the upper bound
+        getMaxFrame(); // sets the upper bound
         return super.getUI();
     }
     

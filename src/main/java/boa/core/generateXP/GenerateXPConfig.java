@@ -66,7 +66,14 @@ public class GenerateXPConfig {
         crop.setLocalDerivateXThld(50);
         
         exportXP(path, xpJulou, false);*/
+        /*
+        MICROSCOPE GE:
+        ajouter channel + bacteria proc
+        crop -> peak pro = 0.5
+        ajouter transfo remove bck + saturate
+        ajouter bandpass en premier trackPreFilter bacteria, avec  remove stripes vertical 0.1% + max filt = 150 ? 
         
+        */
         
     }
     private static void exportXP(String dir, Experiment xp, boolean zip) {

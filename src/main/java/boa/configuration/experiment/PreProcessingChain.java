@@ -31,7 +31,7 @@ import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.ScaleXYZParameter;
 import boa.configuration.parameters.SimpleContainerParameter;
 import boa.configuration.parameters.SimpleListParameter;
-import boa.configuration.parameters.TimePointParameter;
+import boa.configuration.parameters.FrameParameter;
 import boa.configuration.parameters.TransformationPluginParameter;
 import boa.configuration.parameters.ui.MultipleChoiceParameterUI;
 import boa.configuration.parameters.ui.ParameterUI;
@@ -64,8 +64,8 @@ public class PreProcessingChain extends SimpleContainerParameter {
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("Scale Z", 5, 1, 0.00001, null);
     ConditionalParameter imageScaleCond = new ConditionalParameter(useImageScale).setActionParameters("Custom Calibration", new Parameter[]{scaleXY, scaleZ});
     BoundedNumberParameter frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null);
-    TimePointParameter trimFramesStart = new TimePointParameter("Trim Frames Start Position", 0, true);
-    TimePointParameter trimFramesEnd = new TimePointParameter("Trim Frames Stop Position (0=no trimming)", 0, true);
+    FrameParameter trimFramesStart = new FrameParameter("Trim Frames Start Position", 0, true);
+    FrameParameter trimFramesEnd = new FrameParameter("Trim Frames Stop Position (0=no trimming)", 0, true);
     SimpleListParameter<TransformationPluginParameter<Transformation>> transformations = new SimpleListParameter<>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
     
     @Override
@@ -103,7 +103,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
                 Position pos = ParameterUtils.getMicroscopyField(pp);
                 if (pos!=null) {
                     pos.flushImages(true, true);
-                    logger.debug("flush images on position: {}", pos.getName());
+                    //logger.debug("flush images on position: {}", pos.getName());
                 }
             }
         };
@@ -142,8 +142,8 @@ public class PreProcessingChain extends SimpleContainerParameter {
     }
     
     public void setTrimFrames(int startFrame, int endFrame) {
-        this.trimFramesStart.setTimePoint(startFrame);
-        this.trimFramesEnd.setTimePoint(endFrame);
+        this.trimFramesStart.setFrame(startFrame);
+        this.trimFramesEnd.setFrame(endFrame);
     }
     
     /**

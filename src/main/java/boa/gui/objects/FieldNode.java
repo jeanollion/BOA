@@ -43,7 +43,7 @@ public class FieldNode implements TreeNode, UIContainer {
         if (children==null) {
             int timePointNb;
             Position f = getGenerator().getExperiment().getPosition(fieldName);
-            if (f!=null) timePointNb = f.getTimePointNumber(false);
+            if (f!=null) timePointNb = f.getFrameNumber(false);
             else {
                 timePointNb=0;
                 logger.error("MF not found : {}", fieldName);

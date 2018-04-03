@@ -72,7 +72,7 @@ public class IJVirtualStack extends VirtualStack {
     public static void openVirtual(Experiment xp, String position, boolean output) {
         Position f = xp.getPosition(position);
         int channels = xp.getChannelImageCount();
-        int frames = f.getTimePointNumber(false);
+        int frames = f.getFrameNumber(false);
         Image[] bdsC = new Image[xp.getChannelImageCount()];
         for (int c = 0; c<bdsC.length; ++c) bdsC[c]= output ? xp.getImageDAO().openPreProcessedImage(c, 0, position) : f.getInputImages().getImage(c, 0);
         if (bdsC[0]==null) {

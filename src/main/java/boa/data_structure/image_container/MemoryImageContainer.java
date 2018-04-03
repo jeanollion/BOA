@@ -75,7 +75,7 @@ public class MemoryImageContainer extends MultipleImageContainer {
     }
 
     @Override
-    public void close() {
+    public void flush() {
         imageCT = null;
     }
 

@@ -25,7 +25,7 @@ import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.SimpleContainerParameter;
 import boa.configuration.parameters.SimpleListParameter;
 import boa.configuration.parameters.StructureParameter;
-import boa.configuration.parameters.TimePointParameter;
+import boa.configuration.parameters.FrameParameter;
 import boa.configuration.parameters.ui.ParameterUI;
 import boa.core.Processor;
 import boa.data_structure.dao.ImageDAO;
@@ -60,7 +60,7 @@ public class Position extends SimpleContainerParameter implements ListElementEra
     
     private MultipleImageContainer sourceImages;
     PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
-    TimePointParameter defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP, false);
+    FrameParameter defaultTimePoint = new FrameParameter("Default TimePoint", defaultTP, false);
     InputImagesImpl preProcessedImages;
     public static final int defaultTP = 50;
     //ui: bouton droit = selectionner un champ?
@@ -79,7 +79,10 @@ public class Position extends SimpleContainerParameter implements ListElementEra
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jsonO = (JSONObject)jsonEntry;
         name = (String)jsonO.get("name");
-        if (jsonO.containsKey("images")) sourceImages = MultipleImageContainer.createImageContainerFromJSON((JSONObject)jsonO.get("images"));
+        if (jsonO.containsKey("images")) {
+            sourceImages = MultipleImageContainer.createImageContainerFromJSON((JSONObject)jsonO.get("images"));
+            initFrameParameters();
+        }
         preProcessingChain.initFromJSONEntry(jsonO.get("preProcessingChain"));
         defaultTimePoint.initFromJSONEntry(jsonO.get("defaultFrame"));
     }
@@ -108,13 +111,12 @@ public class Position extends SimpleContainerParameter implements ListElementEra
         return preProcessingChain;
     }
     private int getEndTrimFrame() {
-        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(sourceImages.getFrameNumber()-1);
-        return preProcessingChain.trimFramesEnd.getSelectedTimePoint();
+        if (preProcessingChain.trimFramesEnd.getSelectedFrame()==0) return sourceImages.getFrameNumber()-1;
+        return preProcessingChain.trimFramesEnd.getSelectedFrame();
     }
     public int getStartTrimFrame() {
-        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(sourceImages.getFrameNumber()-1);
-        if (preProcessingChain.trimFramesStart.getSelectedTimePoint()>preProcessingChain.trimFramesEnd.getSelectedTimePoint()) preProcessingChain.trimFramesStart.setTimePoint(preProcessingChain.trimFramesEnd.getSelectedTimePoint());
-        return preProcessingChain.trimFramesStart.getSelectedTimePoint();
+        if (preProcessingChain.trimFramesStart.getSelectedFrame()>preProcessingChain.trimFramesEnd.getSelectedFrame()) preProcessingChain.trimFramesStart.setFrame(preProcessingChain.trimFramesEnd.getSelectedFrame());
+        return preProcessingChain.trimFramesStart.getSelectedFrame();
     }
     public boolean singleFrame(int structureIdx) {
         if (sourceImages==null) return false;
@@ -126,13 +128,13 @@ public class Position extends SimpleContainerParameter implements ListElementEra
         return sourceImages.singleFrame(channelIdx);
     }
     public InputImagesImpl getInputImages() {
-        if (preProcessedImages!=null && preProcessedImages.getFrameNumber()!=getTimePointNumber(false)) {  
-            logger.warn("current inputImages has: {} frames while there are {} input images", preProcessedImages.getFrameNumber(), getTimePointNumber(false));
+        if (preProcessedImages!=null && preProcessedImages.getFrameNumber()!=getFrameNumber(false)) {  
+            logger.warn("current inputImages has: {} frames while there are {} input images", preProcessedImages.getFrameNumber(), getFrameNumber(false));
         }
         if (preProcessedImages==null) { // || inputImages.getFrameNumber()!=getTimePointNumber(false) // should be flushed when modified from gui
             synchronized(this) {
                 if (preProcessedImages==null) { //inputImages.getFrameNumber()!=getTimePointNumber(false)
-                    logger.debug("generate input images with {} frames (old: {}) ", getTimePointNumber(false), preProcessedImages!=null?preProcessedImages.getFrameNumber() : "null");
+                    logger.debug("generate input images with {} frames (old: {}) ", getFrameNumber(false), preProcessedImages!=null?preProcessedImages.getFrameNumber() : "null");
                     ImageDAO dao = getExperiment().getImageDAO();
                     if (dao==null || sourceImages==null) return null;
                     int tpOff = getStartTrimFrame();
@@ -144,7 +146,7 @@ public class Position extends SimpleContainerParameter implements ListElementEra
                             res[c][t] = new InputImage(c, t+tpOff, t, name, sourceImages, dao);
                         } 
                     }
-                    int defTp = defaultTimePoint.getSelectedTimePoint()-tpOff;
+                    int defTp = defaultTimePoint.getSelectedFrame()-tpOff;
                     if (defTp<0) defTp=0;
                     if (defTp>=tpNp) defTp=tpNp-1;   
                     preProcessedImages = new InputImagesImpl(res, defTp, getExperiment().getFocusChannelAndAlgorithm());
@@ -160,7 +162,7 @@ public class Position extends SimpleContainerParameter implements ListElementEra
             preProcessedImages.flush();
             preProcessedImages = null;
         }
-        if (raw && sourceImages!=null) sourceImages.close();
+        if (raw && sourceImages!=null) sourceImages.flush();
     }
     
     public BlankMask getMask() {
@@ -172,12 +174,12 @@ public class Position extends SimpleContainerParameter implements ListElementEra
     }
     
     public ArrayList<StructureObject> createRootObjects(ObjectDAO dao) {
-        ArrayList<StructureObject> res = new ArrayList<>(getTimePointNumber(false));
+        ArrayList<StructureObject> res = new ArrayList<>(getFrameNumber(false));
         if (getMask()==null) {
             logger.warn("Could not initiate root objects, perform preProcessing first");
             return null;
         }
-        for (int t = 0; t<getTimePointNumber(false); ++t) res.add(new StructureObject(t, getMask(), dao));
+        for (int t = 0; t<getFrameNumber(false); ++t) res.add(new StructureObject(t, getMask(), dao));
         setOpenedImageToRootTrack(res);
         setTrackLinks(res);
         return res;
@@ -217,19 +219,19 @@ public class Position extends SimpleContainerParameter implements ListElementEra
         return preProcessingChain.getFrameDuration();
     }
     
-    public int getTimePointNumber(boolean useRawInputFrames) {
+    public int getFrameNumber(boolean raw) {
         if (sourceImages!=null) {
-            if (useRawInputFrames) return sourceImages.getFrameNumber();
+            if (raw) return sourceImages.getFrameNumber();
             else return getEndTrimFrame() - getStartTrimFrame()+1;
         }
         else return 0;
     }
     
     public int getDefaultTimePoint() {
-        return defaultTimePoint.getSelectedTimePoint();
+        return defaultTimePoint.getSelectedFrame();
     }
     public Position setDefaultFrame(int frame) {
-        this.defaultTimePoint.setTimePoint(frame);
+        this.defaultTimePoint.setFrame(frame);
         return this;
     }
     
@@ -240,6 +242,15 @@ public class Position extends SimpleContainerParameter implements ListElementEra
     
     public void setImages(MultipleImageContainer images) {
         this.sourceImages=images;
+        initFrameParameters();
+    }
+    private void initFrameParameters() {
+        if (sourceImages!=null) {
+            int frameNb = sourceImages.getFrameNumber();
+            preProcessingChain.trimFramesEnd.setMaxFrame(frameNb-1);
+            preProcessingChain.trimFramesStart.setMaxFrame(frameNb-1);
+            if (preProcessingChain.trimFramesEnd.getSelectedFrame()<=0 || preProcessingChain.trimFramesEnd.getSelectedFrame()>=frameNb) preProcessingChain.trimFramesEnd.setFrame(frameNb-1);
+        }
     }
     
     @Override public Position duplicate() {

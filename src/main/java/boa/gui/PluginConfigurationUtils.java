@@ -217,7 +217,7 @@ public class PluginConfigurationUtils {
                                 channels = tpp.getOutputChannels();
                                 if (channels==null) channels = new int[]{tpp.getInputChannel()};
                             }
-                            Image[][] imagesTC = images.getImagesTC(0, position.getTimePointNumber(false), channels);
+                            Image[][] imagesTC = images.getImagesTC(0, position.getFrameNumber(false), channels);
                             ArrayUtil.apply(imagesTC, a -> ArrayUtil.apply(a, im -> im.duplicate()));
                             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("before: "+tpp.getPluginName(), imagesTC);
                         }
@@ -236,7 +236,7 @@ public class PluginConfigurationUtils {
                                     else outputChannels = new int[]{tpp.getInputChannel()}; 
                                 }
                             }
-                            Image[][] imagesTC = images.getImagesTC(0, position.getTimePointNumber(false), outputChannels);
+                            Image[][] imagesTC = images.getImagesTC(0, position.getFrameNumber(false), outputChannels);
                             if (i!=transfoIdx) ArrayUtil.apply(imagesTC, a -> ArrayUtil.apply(a, im -> im.duplicate()));
                             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("after: "+tpp.getPluginName(), imagesTC);
                         }

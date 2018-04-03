@@ -29,7 +29,7 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.SimpleListParameter;
-import boa.configuration.parameters.TimePointParameter;
+import boa.configuration.parameters.FrameParameter;
 import boa.data_structure.input_image.InputImages;
 import ij.ImagePlus;
 import ij.ImageStack;

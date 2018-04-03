@@ -103,22 +103,6 @@ public class ParameterUtils {
         return null;
     }
     
-    public static int getTimePointNumber(Parameter p, boolean useRawInputFrames) {
-        Position f = getMicroscopyField(p);
-        if (f!=null) {
-            return f.getTimePointNumber(useRawInputFrames);
-        } else {
-            logger.warn("parameter: {}, no microscopy Field found in tree to get timePoint number", p.getName());
-            /*Experiment xp = getExperiment(p);
-            if (xp==null) {
-                logger.warn("parameter: {}, no experiment found in tree to get timePoint number", p.getName());
-                return 0;
-            }
-            else return xp.getTimePointNumber(afterTrim);*/
-            return -1;
-        }
-    }
-
     public static boolean setContent(Parameter[] recieve, Parameter[] give) {
         if (recieve==null || give== null || recieve.length!=give.length) return false;
         boolean ok = true;

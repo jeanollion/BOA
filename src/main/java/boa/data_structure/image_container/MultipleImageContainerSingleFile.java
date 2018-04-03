@@ -144,12 +144,15 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     
     public String getFilePath(){return filePath;}
     
+    @Override 
     public String getName(){return name;}
 
+    @Override 
     public int getFrameNumber() {
         return timePointNumber;
     }
 
+    @Override 
     public int getChannelNumber() {
         return channelNumber;
     }
@@ -206,7 +209,8 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
         }*/
         return image;
     }
-    public void close() {
+    @Override 
+    public void flush() {
         if (reader!=null) reader.closeReader();
         reader = null;
     }

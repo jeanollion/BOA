@@ -74,7 +74,7 @@ public class ImportExportJSON {
     }
     public static void exportPreProcessedImages(ZipWriter writer, ObjectDAO dao) {
         int ch = dao.getExperiment().getChannelImageCount();
-        int fr = dao.getExperiment().getPosition(dao.getPositionName()).getTimePointNumber(false);
+        int fr = dao.getExperiment().getPosition(dao.getPositionName()).getFrameNumber(false);
         String dir = dao.getPositionName()+"/Images/";
         ImageDAO iDao = dao.getExperiment().getImageDAO();
         for (int c = 0; c<ch; ++c) {

@@ -77,14 +77,14 @@ public class Processor {
         List<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp, pcb);
         int count=0, relinkCount=0;
         for (MultipleImageContainer c : images) {
-            Position f = xp.createPosition(c.getName());
+            Position position = xp.createPosition(c.getName());
             if (c.getScaleXY()==1 || c.getScaleXY()==0) {
-                if (pcb!=null) pcb.log("Warning: no scale set for position: "+f.getName());
-                logger.info("no scale set for positon: "+f.getName());
+                if (pcb!=null) pcb.log("Warning: no scale set for position: "+position.getName());
+                logger.info("no scale set for positon: "+position.getName());
             }
             logger.debug("image: {} scale: {}, scaleZ: {} frame: {}", c.getName(), c.getScaleXY(), c.getScaleZ(), c.getCalibratedTimePoint(1, 0, 0));
-            if (f!=null) {
-                f.setImages(c); // TODO: bug when eraseAll from gui just after creation
+            if (position!=null) {
+                position.setImages(c);
                 count++;
             } else if (relink) {
                 xp.getPosition(c.getName()).setImages(c);

@@ -154,12 +154,13 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     
     public String[] getFilePath(){return filePathC;}
     
-    public String getName(){return name;}
+    @Override public String getName(){return name;}
 
+    @Override 
     public int getFrameNumber() {
         return timePointNumber;
     }
-
+    @Override 
     public int getChannelNumber() {
         return filePathC!=null?filePathC.length:0;
     }
@@ -243,7 +244,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     }
     
     @Override
-    public void close() {
+    public void flush() {
         for (int i = 0; i<this.getChannelNumber(); ++i) {
             if (getImageReaders()[i]!=null) reader[i].closeReader();
             reader [i] = null;

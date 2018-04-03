@@ -35,7 +35,7 @@ public abstract class MultipleImageContainer implements JSONSerializable{
     public abstract int getSizeZ(int channel);
     public abstract Image getImage(int timePoint, int channel);
     public abstract Image getImage(int timePoint, int channel, MutableBoundingBox bounds);
-    public abstract void close();
+    public abstract void flush();
     public abstract String getName();
     public float getScaleXY() {return (float)scaleXY;}
     public float getScaleZ() {return (float)scaleZ;}
