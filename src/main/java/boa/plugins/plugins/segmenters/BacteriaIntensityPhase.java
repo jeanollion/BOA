@@ -284,7 +284,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity implements TrackPa
             cUp = contactUpLR.getContact(r);
             if (verbose) logger.debug("R: {} upper artefact: contact: {}/{}", r.getLabel(), cUp, r.getVoxels().size());
             if (cUp<r.getVoxels().size()/12) return 1;
-            double thickness = GeometricalMeasurements.getDistanceMapWidth(r);
+            double thickness = GeometricalMeasurements.getThickness(r);
             if (verbose) logger.debug("R: {} upper artefact: thickness: {}/{}", r.getLabel(), thickness, thicknessLimitRemove);
             if (thickness<thicknessLimitRemove) return -1;
             if (thickness>=thicknessLimitKeep) return 1;

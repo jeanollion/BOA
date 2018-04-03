@@ -64,7 +64,7 @@ public class GeometricalMeasurements {
         }
         return Math.sqrt(d2Max);
     }
-    public static double getDistanceMapWidth(Region r) {
+    public static double getThickness(Region r) {
         ImageFloat edt = EDT.transform(r.getMask(), true, 1, r.getScaleZ()/r.getScaleXY(), 1);
         Filters.LocalMax lm = new Filters.LocalMax(r.getMask());
         lm.setUp(edt, Filters.getNeighborhood(1.5, edt));
@@ -82,7 +82,7 @@ public class GeometricalMeasurements {
     public static double[] getSpineLengthAndWidth(Region r, boolean tryToFillHoles) {
         PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(r, tryToFillHoles);
         if (spine==null) return new double[]{Double.NaN, Double.NaN};
-        double width = ArrayUtil.median(Arrays.stream(spine).mapToDouble(s->s.getContent1().norm()).toArray());
+        double width = ArrayUtil.quantile(Arrays.stream(spine).mapToDouble(s->s.getContent1().norm()).sorted(), spine.length, 0.5);
         double length = spine[spine.length-1].getContent2();
         return new double[]{length, width};
     }

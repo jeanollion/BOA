@@ -36,9 +36,9 @@ public class DirectBytBufferMemoryLeak {
         for (int l = 0; l<1000; ++l) {
             logger.debug("loop: {}", l);
             long t0 = System.currentTimeMillis();
-            for (int i = 0; i<m.getTimePointNumber(false); ++i) m.getInputImages().getImage(0, i);
+            for (int i = 0; i<m.getFrameNumber(false); ++i) m.getInputImages().getImage(0, i);
             long t1 = System.currentTimeMillis();
-            logger.debug("perImage time: {}", (t1-t0)/m.getTimePointNumber(false));
+            logger.debug("perImage time: {}", (t1-t0)/m.getFrameNumber(false));
             //for (StructureObject o) db.getDao(m.getName()).getRoots();
             m.flushImages(true, true);
             System.gc();

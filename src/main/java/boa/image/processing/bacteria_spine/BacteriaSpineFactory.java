@@ -130,7 +130,11 @@ public class BacteriaSpineFactory {
             bacteria = new Region(newMask, bacteria.getLabel(), bacteria.is2D());
             center = bacteria.getGeomCenter(false);
             contour = bacteria.getContour();
-            circContour = getCircularContour(contour, center);
+            try {
+                circContour = getCircularContour(contour, center);
+            } catch (RuntimeException e2) {
+                return null;
+            }
         }
         if (circContour!=null) return createSpine(bacteria.getMask(), contour, circContour, center);
         return null;

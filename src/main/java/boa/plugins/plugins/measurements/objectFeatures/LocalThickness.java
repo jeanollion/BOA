@@ -31,9 +31,9 @@ import boa.plugins.ObjectFeature;
  *
  * @author jollion
  */
-public class Thickness implements ObjectFeature {
+public class LocalThickness implements ObjectFeature {
     ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false);
-    public Thickness setScale(boolean unit) {
+    public LocalThickness setScale(boolean unit) {
         this.scaled.setSelectedIndex(unit?1:0);
         return this;
     }
@@ -49,14 +49,14 @@ public class Thickness implements ObjectFeature {
 
     @Override
     public double performMeasurement(Region object) {
-        double res = GeometricalMeasurements.getThickness(object);
+        double res = GeometricalMeasurements.localThickness(object);
         if (scaled.getSelectedIndex()==1) res*=object.getScaleXY();
         return res;
     }
 
     @Override
     public String getDefaultName() {
-        return "Thickness";
+        return "LocalThickness";
     }
     
 }

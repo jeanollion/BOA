@@ -45,7 +45,7 @@ import boa.plugins.Transformation;
 import boa.plugins.plugins.measurements.BacteriaFluoMeasurements;
 import boa.plugins.plugins.measurements.BacteriaLineageMeasurements;
 import boa.plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
-import boa.plugins.plugins.measurements.BacteriaTransMeasurements;
+import boa.plugins.plugins.measurements.BacteriaPhaseMeasurements;
 import boa.plugins.plugins.measurements.GrowthRate;
 import boa.plugins.plugins.measurements.ObjectFeatures;
 import boa.plugins.plugins.measurements.MutationMeasurements;
@@ -99,6 +99,7 @@ import boa.plugins.plugins.transformations.AutoFlipY;
 import boa.plugins.plugins.transformations.RemoveDeadPixels;
 import boa.image.processing.ImageTransformation;
 import boa.image.processing.ImageTransformation.MainAxis;
+import boa.plugins.plugins.measurements.objectFeatures.SpineLength;
 import boa.plugins.plugins.measurements.objectFeatures.ThicknessAxis;
 import boa.plugins.plugins.post_filters.BinaryClose;
 import boa.plugins.plugins.post_filters.FillHoles2D;
@@ -599,10 +600,11 @@ public class GenerateXP {
         if (measurements) {
             xp.clearMeasurements();
             xp.addMeasurement(new BacteriaLineageMeasurements(1));
-            xp.addMeasurement(new BacteriaTransMeasurements(1));
+            xp.addMeasurement(new BacteriaPhaseMeasurements(1));
             xp.addMeasurement(new TrackLength(0));
             xp.addMeasurement(new GrowthRate().setFeature(new Size()).setSuffix("Area"));
             xp.addMeasurement(new GrowthRate().setFeature(new FeretMax()).setSuffix("Length"));
+            xp.addMeasurement(new GrowthRate().setFeature(new SpineLength()).setSuffix("SpineLength"));
         }
     }
     

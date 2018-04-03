@@ -18,6 +18,7 @@
  */
 package boa.plugins.plugins.measurements;
 
+import boa.configuration.parameters.BooleanParameter;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.StructureParameter;
@@ -41,13 +42,14 @@ import boa.utils.geom.Point;
  *
  * @author jollion
  */
-public class BacteriaTransMeasurements implements Measurement {
+public class BacteriaPhaseMeasurements implements Measurement {
     protected StructureParameter bacteria = new StructureParameter("Bacteria Structure", 1, false, false);
-    protected Parameter[] parameters = new Parameter[]{bacteria};
+    BooleanParameter computeSpine = new BooleanParameter("Compute Spine Length & Width", true);
+    protected Parameter[] parameters = new Parameter[]{bacteria, computeSpine};
     
-    public BacteriaTransMeasurements(){}
+    public BacteriaPhaseMeasurements(){}
     
-    public BacteriaTransMeasurements(int bacteriaStructureIdx){
+    public BacteriaPhaseMeasurements(int bacteriaStructureIdx){
         this.bacteria.setSelectedIndex(bacteriaStructureIdx);
     }
     
@@ -61,17 +63,21 @@ public class BacteriaTransMeasurements implements Measurement {
 
     public List<MeasurementKey> getMeasurementKeys() {
         int structureIdx = bacteria.getSelectedStructureIdx();
-        ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>();
+        ArrayList<MeasurementKey> res = new ArrayList<>();
         res.add(new MeasurementKeyObject("BacteriaCenterX", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaCenterY", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaLength", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaArea", structureIdx));
-        
+        res.add(new MeasurementKeyObject("BacteriaWidth", structureIdx));
+        if (computeSpine.getSelected()) {
+            res.add(new MeasurementKeyObject("BacteriaSpineLength", structureIdx));
+            res.add(new MeasurementKeyObject("BacteriaSpineWidth", structureIdx));
+        }
         // from tracking
         res.add(new MeasurementKeyObject(StructureObject.trackErrorPrev, structureIdx));
         res.add(new MeasurementKeyObject(StructureObject.trackErrorNext, structureIdx));
-        res.add(new MeasurementKeyObject("SizeIncrement", structureIdx));
-        res.add(new MeasurementKeyObject("TrackErrorSizeIncrement", structureIdx));
+        res.add(new MeasurementKeyObject("SizeRatio", structureIdx));
+        res.add(new MeasurementKeyObject("TrackErrorSizeRatio", structureIdx));
         
         return res;
     }
@@ -89,16 +95,23 @@ public class BacteriaTransMeasurements implements Measurement {
         m.setValue("BacteriaCenterY", center.get(1));
         m.setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));
         m.setValue("BacteriaArea", GeometricalMeasurements.getVolume(bactObject));
-        
+        m.setValue("BacteriaWidth", GeometricalMeasurements.getThickness(bactObject));
+        if (computeSpine.getSelected()) {
+            double[] lw = GeometricalMeasurements.getSpineLengthAndWidth(bactObject, true);
+            if (lw!=null) {
+                m.setValue("BacteriaSpineLength", lw[0]);
+                m.setValue("BacteriaSpineWidth", lw[1]);
+            }
+        }
         m.setValue(StructureObject.trackErrorNext, object.hasTrackLinkError(false, true));
         m.setValue(StructureObject.trackErrorPrev, object.hasTrackLinkError(true, false));
-        Object si = object.getAttribute("SizeIncrement");
-        if (si instanceof Number) m.setValue("SizeIncrement", (Number)si);
-        Object tesi = object.getAttribute("TrackErrorSizeIncrement");
-        m.setValue("TrackErrorSizeIncrement", Boolean.TRUE.equals(tesi));
-        
+        Object si = object.getAttribute("SizeRatio");
+        if (si instanceof Number) m.setValue("SizeRatio", (Number)si);
+        Object tesi = object.getAttribute("TrackErrorSizeRatio");
+        m.setValue("TrackErrorSizeRatio", Boolean.TRUE.equals(tesi));
     }
-
+    
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
