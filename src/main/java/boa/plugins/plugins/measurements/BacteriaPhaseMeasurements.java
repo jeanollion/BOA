@@ -98,7 +98,7 @@ public class BacteriaPhaseMeasurements implements Measurement {
         m.setValue("BacteriaArea", scale*GeometricalMeasurements.getVolume(bactObject));
         m.setValue("BacteriaWidth", scale*GeometricalMeasurements.getThickness(bactObject));
         if (computeSpine.getSelected()) {
-            double[] lw = GeometricalMeasurements.getSpineLengthAndWidth(bactObject, true);
+            double[] lw = GeometricalMeasurements.getSpineLengthAndWidth(bactObject);
             if (lw!=null) {
                 m.setValue("BacteriaSpineLength", scale*lw[0]);
                 m.setValue("BacteriaSpineWidth", scale*lw[1]);

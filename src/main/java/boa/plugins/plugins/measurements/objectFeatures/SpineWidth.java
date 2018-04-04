@@ -47,7 +47,7 @@ public class SpineWidth implements ObjectFeature {
 
     @Override
     public double performMeasurement(Region region) {
-        double w= GeometricalMeasurements.getSpineLengthAndWidth(region, true)[1];
+        double w= GeometricalMeasurements.getSpineLengthAndWidth(region)[1];
         if (scaled.getSelected()) w *= region.getScaleXY();
         return w;
     }

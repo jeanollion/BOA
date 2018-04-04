@@ -35,6 +35,7 @@ import boa.image.SimpleBoundingBox;
 import boa.image.SimpleImageProperties;
 import boa.image.SimpleOffset;
 import boa.image.TypeConverter;
+import boa.image.processing.EDT;
 import boa.image.processing.FillHoles2D;
 import static boa.image.processing.bacteria_spine.CleanContour.cleanContour;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
@@ -124,7 +125,7 @@ public class BacteriaSpineFactory {
         return spineImage;
     }
     
-    public static PointContainer2<Vector, Double>[] createSpine(Region bacteria, boolean tryToFillHolesIfNecessary) {
+    public static PointContainer2<Vector, Double>[] createSpine(Region bacteria) {
         if (!bacteria.is2D()) throw new IllegalArgumentException("Only works on 2D regions");
         Point center = bacteria.getGeomCenter(false);
         Set<Voxel> contour = bacteria.getContour();
@@ -134,21 +135,22 @@ public class BacteriaSpineFactory {
             circContour = getCircularContour(contour, center);
         } catch (RuntimeException e) {
             logger.error("error creating spine: ", e);
-            if (!tryToFillHolesIfNecessary) return null;
-            
-            // retry after filling holes
-            ImageByte newMask = TypeConverter.toByteMask(bacteria.getMask(), null, 1);
-            FillHoles2D.fillHoles(newMask, 2);
-            bacteria = new Region(newMask, bacteria.getLabel(), bacteria.is2D());
-            center = bacteria.getGeomCenter(false);
-            contour = bacteria.getContour();
-            try {
-                circContour = getCircularContour(contour, center);
-            } catch (RuntimeException e2) {
-                return null;
-            }
+            return null;
         }
-        if (circContour!=null) return createSpine(bacteria.getMask(), contour, circContour, center);
+        if (circContour!=null) {
+            PointContainer2<Vector, Double>[] spine = createSpine(bacteria.getMask(), contour, circContour, center);
+            if (spine.length == 1) { // maybe center was too close from contour. Try with other center : furtherst point from contour // IT can alsobe that no poles can be defined ie bacteria has a too rond shape
+                Image edt = EDT.transform(bacteria.getMask(), true, 1, 1, 1);
+                Voxel[] max = new Voxel[1];
+                ImageMask.loopWithOffset(bacteria.getMask(), (x, y, z)-> {
+                    float edtV = edt.getPixelWithOffset(x, y, z);
+                    if (max[0]==null || edtV>max[0].value) max[0] = new Voxel(x, y, z, edtV);
+                });
+                spine = createSpine(bacteria.getMask(), contour, circContour, Point.asPoint(max[0]));
+                if (spine.length==1) return null;
+            }
+            return spine;
+        }
         return null;
     }
     
@@ -203,7 +205,7 @@ public class BacteriaSpineFactory {
                     if (currentNext==null) {
                         currentNext = n.duplicate();
                         ++count;
-                    } else { // a non visited neighbor was already added . Rare event.  put in a list to compare all solutions
+                    } else { // a non visited neighbor was already added . Rare event because contour should have been cleaned before.  put in a list to compare all solutions
                         if (alternativeNext.isEmpty()) alternativeNext.put(currentNext, getUnvisitedNeighborCount(contour, contourVisited, neigh, currentNext, circContour.prev.element));
                         alternativeNext.put(n.duplicate(), getUnvisitedNeighborCount(contour, contourVisited, neigh, n, circContour.prev.element));
                     }
@@ -227,9 +229,7 @@ public class BacteriaSpineFactory {
                 contourVisited.add(currentNext);
                 currentNext = null;
             } else if (count<contourSize && lastIntersection!=null) { // got stuck by weird contour structure -> go back to previous voxel with several solutions? 
-                if (verbose) logger.debug("dead-end: {} go back to: {}", current.element, lastIntersection.element);
-                current = lastIntersection;
-                current.next=null;
+                throw new RuntimeException("dead-end: unable to close contour");
             } else break;
         }
         /*if (count<contourSize) {
@@ -272,6 +272,7 @@ public class BacteriaSpineFactory {
         CircularNode<Voxel> startSpine1 = circContour.getInNext(startSpineVox1);
         // 2) getFollowing opposed circularContour point: point of the contour in direction of nearest point - center, with local min distance to circContour point
         Vector spDir = new Vector((float)(center.get(0)-startSpineVox1.x), (float)(center.get(1)-startSpineVox1.y)).normalize();
+        if (Double.isInfinite(spDir.get(0))) return new PointContainer2[0];
         Point curSP2 = center.duplicate().translate(spDir);
         while(mask.containsWithOffset(curSP2.xMin(), curSP2.yMin(), mask.zMin()) && mask.insideMaskWithOffset(curSP2.xMin(), curSP2.yMin(), mask.zMin())) curSP2.translate(spDir);
         Voxel startSpineVox2 = contour.stream().min((v1, v2)->Double.compare(v1.getDistanceSquareXY(curSP2.get(0), curSP2.get(1)), v2.getDistanceSquareXY(curSP2.get(0), curSP2.get(1)))).get();

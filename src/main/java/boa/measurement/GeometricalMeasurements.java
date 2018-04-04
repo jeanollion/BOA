@@ -75,12 +75,12 @@ public class GeometricalMeasurements {
         return ArrayUtil.median(localMax) * 2;
     }
     
-    public static double getSpineLength(Region r, boolean tryToFillHoles) {
-        PointContainer2<?, Double>[] spine = BacteriaSpineFactory.createSpine(r, tryToFillHoles);
+    public static double getSpineLength(Region r) {
+        PointContainer2<?, Double>[] spine = BacteriaSpineFactory.createSpine(r);
         return spine[spine.length-1].getContent2();
     }
-    public static double[] getSpineLengthAndWidth(Region r, boolean tryToFillHoles) {
-        PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(r, tryToFillHoles);
+    public static double[] getSpineLengthAndWidth(Region r) {
+        PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(r);
         if (spine==null) return new double[]{Double.NaN, Double.NaN};
         double width = ArrayUtil.quantile(Arrays.stream(spine).mapToDouble(s->s.getContent1().norm()).sorted(), spine.length, 0.5);
         double length = spine[spine.length-1].getContent2();

@@ -52,17 +52,12 @@ public class BacteriaSpineLocalizer {
     public boolean testMode;
     final Region bacteria;
     PointContainer2<Vector, Double>[] spine;
-    //KDTree<PointContainer2<Vector, Double>> spineKDTree;
-    //NearestNeighborSearchOnKDTree<PointContainer2<Vector, Double>> search;
     double length;
     public BacteriaSpineLocalizer(Region bacteria) {
         this.bacteria=bacteria;
         long t0 = System.currentTimeMillis();
-        spine = BacteriaSpineFactory.createSpine(bacteria, true);
+        spine = BacteriaSpineFactory.createSpine(bacteria);
         long t1 = System.currentTimeMillis();
-        //List<PointContainer2<Vector, Double>> spList = new ArrayList<>(Arrays.asList(spine)); // KD tree shuffles elements -> new list
-        //this.spineKDTree = new KDTree<>(spList, spList);
-        //search = new NearestNeighborSearchOnKDTree(spineKDTree);
         long t2 = System.currentTimeMillis();
         length = spine[spine.length-1].getContent2();
         //logger.debug("spine creation: {} ms KDTree: {} ms", t1-t0, t2-t1);
