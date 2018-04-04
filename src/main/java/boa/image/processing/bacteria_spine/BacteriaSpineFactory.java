@@ -40,6 +40,7 @@ import boa.image.processing.FillHoles2D;
 import static boa.image.processing.bacteria_spine.CleanContour.cleanContour;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.measurement.GeometricalMeasurements;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.Utils;
@@ -135,23 +136,29 @@ public class BacteriaSpineFactory {
             circContour = getCircularContour(contour, center);
         } catch (RuntimeException e) {
             logger.error("error creating spine: ", e);
+            // try with edt center ? 
             return null;
         }
         if (circContour!=null) {
-            PointContainer2<Vector, Double>[] spine = createSpine(bacteria.getMask(), contour, circContour, center);
-            if (spine.length == 1) { // maybe center was too close from contour. Try with other center : furtherst point from contour // IT can alsobe that no poles can be defined ie bacteria has a too rond shape
-                Image edt = EDT.transform(bacteria.getMask(), true, 1, 1, 1);
-                Voxel[] max = new Voxel[1];
-                ImageMask.loopWithOffset(bacteria.getMask(), (x, y, z)-> {
-                    float edtV = edt.getPixelWithOffset(x, y, z);
-                    if (max[0]==null || edtV>max[0].value) max[0] = new Voxel(x, y, z, edtV);
-                });
-                spine = createSpine(bacteria.getMask(), contour, circContour, Point.asPoint(max[0]));
+            PointContainer2<Vector, Double>[] spine = createSpine(bacteria.getMask(), contour, circContour);
+            /*if (spine.length == 1) { // maybe center was too close from contour. Try with other center : furtherst point from contour // IT can alsobe that no poles can be defined ie bacteria has a too rond shape
+                
+                spine = createSpine(bacteria.getMask(), contour, circContour, Point.asPoint(getEdtCenter(mask));
                 if (spine.length==1) return null;
-            }
+            }*/
             return spine;
         }
         return null;
+    }
+    
+    private Voxel getEdtCenter(ImageMask mask) {
+        Image edt = EDT.transform(mask, true, 1, 1, 1);
+        Voxel[] max = new Voxel[1];
+        ImageMask.loopWithOffset(mask, (x, y, z)-> {
+            float edtV = edt.getPixelWithOffset(x, y, z);
+            if (max[0]==null || edtV>max[0].value) max[0] = new Voxel(x, y, z, edtV);
+        });
+        return max[0];
     }
     
     /**
@@ -265,41 +272,14 @@ public class BacteriaSpineFactory {
         }
         return count;
     }
-    public static PointContainer2<Vector, Double>[] createSpine(ImageMask mask, Set<Voxel> contour, CircularNode<Voxel> circContour, Point center) {
-        
-        // 1) getFollowing initial spList point: contour point closest to the center 
-        Voxel startSpineVox1 = contour.stream().min((v1, v2)-> Double.compare(v1.getDistanceSquareXY(center.get(0), center.get(1)), v2.getDistanceSquareXY(center.get(0), center.get(1)))).get();
-        CircularNode<Voxel> startSpine1 = circContour.getInNext(startSpineVox1);
-        // 2) getFollowing opposed circularContour point: point of the contour in direction of nearest point - center, with local min distance to circContour point
-        Vector spDir = new Vector((float)(center.get(0)-startSpineVox1.x), (float)(center.get(1)-startSpineVox1.y)).normalize();
-        if (Double.isInfinite(spDir.get(0))) return new PointContainer2[0];
-        Point curSP2 = center.duplicate().translate(spDir);
-        while(mask.containsWithOffset(curSP2.xMin(), curSP2.yMin(), mask.zMin()) && mask.insideMaskWithOffset(curSP2.xMin(), curSP2.yMin(), mask.zMin())) curSP2.translate(spDir);
-        Voxel startSpineVox2 = contour.stream().min((v1, v2)->Double.compare(v1.getDistanceSquareXY(curSP2.get(0), curSP2.get(1)), v2.getDistanceSquareXY(curSP2.get(0), curSP2.get(1)))).get();
-        CircularNode<Voxel> startSpine2 = circContour.getInNext(startSpineVox2);
-        if (startSpine2==null) {
-            if (verbose) ImageWindowManagerFactory.showImage(TypeConverter.toCommonImageType(mask));
-            if (verbose) ImageWindowManagerFactory.showImage(BacteriaSpineFactory.drawSpine(mask, null, circContour, 1));
-            throw new RuntimeException("oposite voxel ("+startSpineVox2.duplicate().translate(new SimpleOffset(mask).reverseOffset())+") from center ("+center.duplicate().translate(new SimpleOffset(mask).reverseOffset())+") not found in circular contour (nearst voxel: "+startSpineVox1.duplicate().translate(new SimpleOffset(mask).reverseOffset())+")");
-        }
-        // get local minimum around startSpine2
-        double minDist = startSpine2.element.getDistanceSquareXY(startSpineVox1);
-        CircularNode<Voxel> start2L = startSpine2; // search in next direction
-        while(start2L.next.element.getDistanceSquareXY(startSpineVox1)<minDist) {
-            start2L = start2L.next;
-            minDist = start2L.element.getDistanceSquareXY(startSpineVox1);
-        }
-        CircularNode<Voxel> start2R = startSpine2; // search in prev direction
-        while(start2R.prev.element.getDistanceSquareXY(startSpineVox1)<minDist) {
-            start2R = start2R.prev;
-            minDist = start2R.element.getDistanceSquareXY(startSpineVox1);
-        }
-        startSpine2 = start2R.equals(startSpine2) ? start2L : start2R; // if start2R was modified, a closer vox was found in this direction than in the other one
-        if (verbose) logger.debug("center: {}, startSpine1: {} startSpine2: {}", center, startSpineVox1, startSpineVox2);
+    public static PointContainer2<Vector, Double>[] createSpine(ImageMask mask, Set<Voxel> contour, CircularNode<Voxel> circContour) {
+        //CircularNode<Voxel>[] startSpine = getStartSpine(mask, contour, circContour, center);
+        CircularNode<Voxel>[] startSpine = getStartSpine2(mask, contour, circContour);
+        if (startSpine==null) return new PointContainer2[0];
         // 3) start getting the spList in one direction and the other
-        List<PointContainer2<Vector, Double>> spList = getHalfSpine(mask, startSpine1, startSpine2, true, contour);
+        List<PointContainer2<Vector, Double>> spList = getHalfSpine(mask, startSpine[0], startSpine[1], true, contour);
         spList = Utils.reverseOrder(spList);
-        spList.addAll(getHalfSpine(mask, startSpine1, startSpine2, false, contour));
+        spList.addAll(getHalfSpine(mask, startSpine[0], startSpine[1], false, contour));
         if (verbose) logger.debug("spine: total points: {}", spList.size());
         
         // make shure first point is closer to the upper-leftmost point
@@ -315,6 +295,80 @@ public class BacteriaSpineFactory {
         return spine;
     }
     
+    private static CircularNode<Voxel>[] getStartSpine(ImageMask mask, Set<Voxel> contour, CircularNode<Voxel> circContour, Point center) {
+        
+        // 1) getFollowing initial spList point: contour point closest to the center 
+        Voxel startSpineVox1 = contour.stream().min((v1, v2)-> Double.compare(v1.getDistanceSquareXY(center.get(0), center.get(1)), v2.getDistanceSquareXY(center.get(0), center.get(1)))).get();
+        CircularNode<Voxel> startSpine1 = circContour.getInNext(startSpineVox1);
+        // 2) getFollowing opposed circularContour point: point of the contour in direction of nearest point - center, with local min distance to circContour point
+        Vector spDir = new Vector((float)(center.get(0)-startSpineVox1.x), (float)(center.get(1)-startSpineVox1.y)).normalize();
+        if (Double.isInfinite(spDir.get(0))) return null;
+        Point curSP2 = center.duplicate().translate(spDir);
+        while(mask.containsWithOffset(curSP2.xMin(), curSP2.yMin(), mask.zMin()) && mask.insideMaskWithOffset(curSP2.xMin(), curSP2.yMin(), mask.zMin())) curSP2.translate(spDir);
+        Voxel startSpineVox2 = contour.stream().min((v1, v2)->Double.compare(v1.getDistanceSquareXY(curSP2.get(0), curSP2.get(1)), v2.getDistanceSquareXY(curSP2.get(0), curSP2.get(1)))).get();
+        CircularNode<Voxel> startSpine2 = circContour.getInNext(startSpineVox2);
+        if (startSpine2==null) {
+            if (verbose) ImageWindowManagerFactory.showImage(TypeConverter.toCommonImageType(mask));
+            if (verbose) ImageWindowManagerFactory.showImage(BacteriaSpineFactory.drawSpine(mask, null, circContour, 1));
+            throw new RuntimeException("oposite voxel ("+startSpineVox2.duplicate().translate(new SimpleOffset(mask).reverseOffset())+") from center ("+center.duplicate().translate(new SimpleOffset(mask).reverseOffset())+") not found in circular contour (nearst voxel: "+startSpineVox1.duplicate().translate(new SimpleOffset(mask).reverseOffset())+")");
+        }
+        // get local minimum around startSpine2
+        double minDist = startSpine2.element.getDistanceSquareXY(startSpineVox1);
+        CircularNode<Voxel> start2L = startSpine2; // search in next direction
+        while(center.distSq(start2L.next.element)<minDist) {
+            start2L = start2L.next;
+            minDist = center.distSq(start2L.element);
+        }
+        CircularNode<Voxel> start2R = startSpine2; // search in prev direction
+        while(center.distSq(start2R.prev.element)<minDist) {
+            start2R = start2R.prev;
+            minDist = center.distSq(start2R.element);
+        }
+        startSpine2 = start2R.equals(startSpine2) ? start2L : start2R; // if start2R was modified, a closer vox was found in this direction than in the other one
+        if (verbose) logger.debug("center: {}, startSpine1: {} startSpine2: {}", center, startSpineVox1, startSpineVox2);
+        return new CircularNode[]{startSpine1, startSpine2};
+    }
+    private static CircularNode<Voxel>[] getStartSpine2(ImageMask mask, Set<Voxel> contour, CircularNode<Voxel> circContour) {
+        // 1) get 2 points more distant in contour = "poles"
+        double d2Max = 0;
+        List<Voxel> list = new ArrayList<>(contour);
+        Voxel[] max = new Voxel[2];
+        int voxCount = list.size();
+        for (int i = 0; i<voxCount-1; ++i) {
+            for (int j = i+1; j<voxCount; ++j) {
+                double d2Temp = list.get(i).getDistanceSquareXY(list.get(j));
+                if (d2Temp>d2Max) {
+                    d2Max = d2Temp;
+                    max[0] = list.get(i);
+                    max[1] = list.get(j);
+                }
+            }
+        }
+        // 2) get furthest point from both
+        Function<Voxel, Double> dist = v->max[0].getDistanceSquareXY(v)+max[1].getDistanceSquareXY(v);
+        Voxel side1V = contour.stream().min((v1, v2)->Double.compare(dist.apply(v1), dist.apply(v2))).get();
+        // 3) get voxel closest to start but on the other side of 2 poles
+        CircularNode<Voxel> pole1 = circContour.getInFollowing(max[0], true);
+        CircularNode<Voxel> pole2 = circContour.getInFollowing(max[1], true);
+        CircularNode<Voxel> side1 = pole1.getInFollowing(side1V, true);
+        boolean startBeforeSide1 = side1.compareTo(pole1)<0;
+        CircularNode<Voxel> side2=null;
+        CircularNode<Voxel> cn = pole1;
+        double dMin = Double.POSITIVE_INFINITY;
+        while(cn!=pole2) {
+            cn=cn.getFollowing(startBeforeSide1);
+            double d = side1V.getDistanceSquareXY(cn.element);
+            if (d<dMin) {
+                side2 = cn;
+                dMin = d;
+            }
+        }
+        if (verbose) {
+            Offset off = new SimpleOffset(mask).reverseOffset();
+            logger.debug("start points: {}-{} poles: {}-{}", side1.element.duplicate().translate(off), side2.element.duplicate().translate(off), pole1.element.duplicate().translate(off), pole2.element.duplicate().translate(off));
+        }
+        return new CircularNode[]{side1, side2};
+    }
     private static List<PointContainer2<Vector, Double>> getHalfSpine(ImageMask mask, CircularNode<Voxel> s1, CircularNode<Voxel> s2, boolean firstNext, Set<Voxel> contour) {
         List<PointContainer2<Vector, Double>> sp = new ArrayList<>();
         Point lastPoint = Point.middle2D(s1.element, s2.element);

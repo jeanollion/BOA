@@ -33,7 +33,19 @@ public class SimpleOffset implements Offset<SimpleOffset> {
     public SimpleOffset(Offset other) {
         this(other.xMin(), other.yMin(), other.zMin());
     }
-    
+    @Override 
+    public int getIntPosition(int dim) {
+        switch(dim) {
+            case 0:
+                return xMin;
+            case 1:
+                return yMin;
+            case 2:
+                return zMin;
+            default:
+                return 0;
+        }
+    }
     @Override
     public int xMin() {
         return xMin;

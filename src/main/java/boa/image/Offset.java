@@ -26,6 +26,7 @@ public interface Offset<T> {
     public int xMin();
     public int yMin();
     public int zMin();
+    public int getIntPosition(int dim);
     public T resetOffset();
     public T reverseOffset();
     public T translate(Offset other);

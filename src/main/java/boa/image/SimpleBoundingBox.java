@@ -57,6 +57,19 @@ public class SimpleBoundingBox<T extends SimpleBoundingBox<T>> implements Boundi
     @Override public int sizeX() { return xMax-xMin+1; }
     @Override public int sizeY() { return yMax-yMin+1; }
     @Override public int sizeZ() { return zMax-zMin+1; }
+    @Override 
+    public int getIntPosition(int dim) {
+        switch(dim) {
+            case 0:
+                return xMin;
+            case 1:
+                return yMin;
+            case 2:
+                return zMin;
+            default:
+                return 0;
+        }
+    }
     
     @Override public boolean sameBounds(BoundingBox boundingBox) {
         return xMin==boundingBox.xMin() && yMin==boundingBox.yMin() && zMin==boundingBox.zMin() && xMax==boundingBox.xMax() && yMax==boundingBox.yMax() && zMax==boundingBox.zMax();

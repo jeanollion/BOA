@@ -168,6 +168,9 @@ public class Voxel implements Comparable<Voxel>, Offset<Voxel> {
     public double getDistanceSquareXY(Voxel other) {
         return (x-other.x)*(x-other.x) + (y-other.y)*(y-other.y);
     }
+    public double getDistanceXY(Voxel other) {
+        return Math.sqrt(getDistanceSquareXY(other));
+    }
     public double getDistanceSquare(double xx, double yy, double zz) {
         return (x-xx)*(x-xx) + (y-yy)*(y-yy) + (z-zz)*(z-zz);
     }
@@ -187,6 +190,20 @@ public class Voxel implements Comparable<Voxel>, Offset<Voxel> {
         return collection.stream().min((v1, v2)->Double.compare(v.getDistanceSquare(v1), v.getDistanceSquare(v2))).get();
     }
 
+    @Override 
+    public int getIntPosition(int dim) {
+        switch(dim) {
+            case 0:
+                return x;
+            case 1:
+                return y;
+            case 2:
+                return z;
+            default:
+                return 0;
+        }
+    }
+    
     @Override
     public int xMin() {
         return x;    

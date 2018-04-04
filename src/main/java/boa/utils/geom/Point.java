@@ -110,15 +110,21 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
         for (int i = 0; i<coords.length; ++i) coords[i]/=2f;
         return (T)this;
     }
+    public double distSq(Offset other) {
+        double d = 0;
+        for (int i = 0; i<Math.min(3, coords.length); ++i) d+=Math.pow(coords[i]-other.getIntPosition(i), 2);
+        return d;
+    }
     public double distSq(Point other) {
         double d = 0;
         for (int i = 0; i<coords.length; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
         return d;
     }
     public double dist(Point other) {
-        double d = 0;
-        for (int i = 0; i<coords.length; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
-        return Math.sqrt(d);
+        return Math.sqrt(distSq(other));
+    }
+    public double dist(Offset other) {
+        return Math.sqrt(distSq(other));
     }
     public Point multiply(double factor, int dim) {
         if (coords.length>dim) coords[dim]*=factor;
