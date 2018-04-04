@@ -59,15 +59,15 @@ public class TestSpine {
         //String dbName = "AyaWT_mmglu";
         //String dbName = "MutH_150324";
         String dbName = "MutH_140115";
-        int postition= 5, frame=422, mc=10, b=0; // F=2 B=1
+        int postition= 0, frame=712, mc=9, b=0; // F=2 B=1
         MasterDAO mDAO = new Task(dbName).getDB();
         Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
         StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         StructureObject bact2 = root2.getChildren(0).get(mc).getChildren(1).get(1);
-        for (int pos = 0; pos<mDAO.getExperiment().getPositionCount(); ++pos) testContourCreation(StructureObjectUtils.getAllChildrenAsStream(mDAO.getDao(mDAO.getExperiment().getPosition(pos).getName()).getRoots().stream(), 0));
-        //testLocalization(bact);
+        //for (int pos = 0; pos<mDAO.getExperiment().getPositionCount(); ++pos) testContourCreation(StructureObjectUtils.getAllChildrenAsStream(mDAO.getDao(mDAO.getExperiment().getPosition(pos).getName()).getRoots().stream(), 0));
+        testLocalization(bact);
         //testProjection(bact, bact2);
     }
     public static void testContourCreation(Stream<StructureObject> parentTrack) {

@@ -212,15 +212,10 @@ public class CleanContour {
                 if (bEnds1.length==1 && bEnds2.length==1) {
                     branchEnds = new Voxel[]{bEnds1[0], bEnds2[0]};
                     break; // there are only 2 connected ends go to the proper clean branch section 
-                } else { // one branche has 2 voxel on the junction the other only one -> erase the one with only one
-                    if (bEnds1.length==1) {
-                        b1.remove(true, true);
-                        if (b1.connectedSegments.size()==2) b1.connectedSegments.stream().filter(b->!b.equals(junction)).findAny().get().relabel();
-                    }
-                    else {
-                        b2.remove(true, true);
-                        if (b2.connectedSegments.size()==2) b2.connectedSegments.stream().filter(b->!b.equals(junction)).findAny().get().relabel();
-                    }
+                } else { // EITHER one branche has 2 voxel on the junction the other only one -> erase the one with only one OR the 2 branches have 2 -> remove the smallest
+                    Segment remove = bEnds1.length==1 || (bEnds2.length==2 && b1.voxels.size()<b2.voxels.size()) ? b1 : b2;
+                    remove.remove(true, true);
+                    if (remove.connectedSegments.size()==2) remove.connectedSegments.stream().filter(b->!b.equals(junction)).findAny().get().relabel();
                     junction.relabel();
                     return true;
                 }
