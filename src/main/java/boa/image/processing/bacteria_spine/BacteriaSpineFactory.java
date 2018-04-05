@@ -37,7 +37,8 @@ import boa.image.SimpleOffset;
 import boa.image.TypeConverter;
 import boa.image.processing.EDT;
 import boa.image.processing.FillHoles2D;
-import static boa.image.processing.bacteria_spine.CleanContour.cleanContour;
+import boa.image.processing.Filters;
+import static boa.image.processing.bacteria_spine.CleanVoxelLine.cleanContour;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.measurement.GeometricalMeasurements;
@@ -72,59 +73,9 @@ import org.slf4j.LoggerFactory;
 public class BacteriaSpineFactory {
     public static final Logger logger = LoggerFactory.getLogger(BacteriaSpineFactory.class);
     public static boolean verbose = false;
-
-    public static Image drawSpine(BoundingBox bounds, PointContainer2<Vector, Double>[] spine, CircularNode<Voxel> circularContour, int zoomFactor) { 
-        if (zoomFactor%2==0) throw new IllegalArgumentException("Zoom Factory should be uneven");
-        int add = zoomFactor > 1 ? 1 : 0;
-        ImageFloat spineImage = new ImageFloat("", new SimpleImageProperties(new SimpleBoundingBox(0, bounds.sizeX()*zoomFactor-1, 0, bounds.sizeY()*zoomFactor-1, 0, 0), 1, 1));
-        Offset off = bounds;
-        Voxel vox = new Voxel(0, 0, 0);
-        // draw contour of bacteria
-        int startLabel = spine==null ? 1: Math.max(spine[spine.length-1].getContent2().intValue(), spine.length) +10;
-        if (circularContour!=null) {
-            CircularNode<Voxel> current = circularContour;
-            EllipsoidalNeighborhood neigh = new EllipsoidalNeighborhood(zoomFactor/2d, false);
-            boolean start  = true;
-            while(current!=null && (start || !current.equals(circularContour))) {
-                for (int i = 0; i<neigh.getSize(); ++i) {
-                    vox.x = (current.element.x-off.xMin())*zoomFactor+add+neigh.dx[i];
-                    vox.y = (current.element.y-off.yMin())*zoomFactor+add+neigh.dy[i];
-                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, startLabel);
-                }
-                current = current.next();
-                start = false;
-                startLabel++;
-            }
-        }
-        if (spine!=null) {
-            int spineVectLabel = 1;
-            for (PointContainer2<Vector, Double> p : spine) {
-                double norm = p.getContent1().norm();
-                int vectSize= (int) (norm/2.0+0.5);
-                Vector dir = p.getContent1().duplicate().normalize();
-                Point cur = p.duplicate().translateRev(off).translateRev(dir.duplicate().multiply(norm/4d));
-                dir.multiply(1d/zoomFactor);
-                for (int i = 0; i<vectSize*zoomFactor; ++i) {
-                    cur.translate(dir);
-                    vox.x = (int)(cur.get(0)*zoomFactor+add);
-                    vox.y = (int)(cur.get(1)*zoomFactor+add);
-                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, spineVectLabel);
-                }
-                spineVectLabel++;
-            }
-            // draw spine
-            for (PointContainer2<Vector, Double> p : spine) {
-                vox.x = (int)((p.get(0)-off.xMin())*zoomFactor+add);
-                vox.y = (int)((p.get(1)-off.yMin())*zoomFactor+add);
-                if (!spineImage.contains(vox.x, vox.y, 0)) {
-                    logger.debug("out of bounds: {}, p: {}", vox, p);
-                    continue;
-                }
-                spineImage.setPixel(vox.x, vox.y, 0, p.getContent2()==0?Float.MIN_VALUE:p.getContent2());
-            }
-        }
-        return spineImage;
-    }
+    private static int maxSearchRadius = 2;
+    private static boolean algorithmWithRadius = false; // using radius -> less able to find poles
+    
     
     public static PointContainer2<Vector, Double>[] createSpine(Region bacteria) {
         if (!bacteria.is2D()) throw new IllegalArgumentException("Only works on 2D regions");
@@ -161,11 +112,22 @@ public class BacteriaSpineFactory {
         return max[0];
     }
     
+    public List<Voxel> getSkeleton(ImageMask mask) {
+        Image edt = EDT.transform(mask, true, 1, 1, 1);
+        Filters.LocalMax lm = new Filters.LocalMax(mask);
+        lm.setUp(edt, Filters.getNeighborhood(1.5, 1.5, mask));
+        List<Voxel> res = new ArrayList<>();
+        ImageMask.loopWithOffset(mask, (x, y, z)-> {
+            if (lm.applyFilter(x, y, z)>0) res.add(new Voxel(x, y, z));
+        });
+        return res;
+    }
+    
     /**
      * Requires that each point of the contour has exactly 2 neighbours
      * @param contour
      * @param center
-     * @return positively XY-oriented  contou
+     * @return positively XY-oriented  contour
      */
     public static CircularNode<Voxel> getCircularContour(Set<Voxel> contour, Point center) {
         Set<Voxel> contourVisited = new HashSet<>(contour.size());
@@ -274,7 +236,7 @@ public class BacteriaSpineFactory {
     }
     public static PointContainer2<Vector, Double>[] createSpine(ImageMask mask, Set<Voxel> contour, CircularNode<Voxel> circContour) {
         //CircularNode<Voxel>[] startSpine = getStartSpine(mask, contour, circContour, center);
-        CircularNode<Voxel>[] startSpine = getStartSpine2(mask, contour, circContour);
+        CircularNode<Voxel>[] startSpine = getStartSpine(mask, contour, circContour);
         if (startSpine==null) return new PointContainer2[0];
         // 3) start getting the spList in one direction and the other
         List<PointContainer2<Vector, Double>> spList = getHalfSpine(mask, startSpine[0], startSpine[1], true, contour);
@@ -294,7 +256,7 @@ public class BacteriaSpineFactory {
         if (verbose) ImageWindowManagerFactory.showImage(drawSpine(mask, spine, circContour, 5));
         return spine;
     }
-    
+    @Deprecated
     private static CircularNode<Voxel>[] getStartSpine(ImageMask mask, Set<Voxel> contour, CircularNode<Voxel> circContour, Point center) {
         
         // 1) getFollowing initial spList point: contour point closest to the center 
@@ -328,7 +290,7 @@ public class BacteriaSpineFactory {
         if (verbose) logger.debug("center: {}, startSpine1: {} startSpine2: {}", center, startSpineVox1, startSpineVox2);
         return new CircularNode[]{startSpine1, startSpine2};
     }
-    private static CircularNode<Voxel>[] getStartSpine2(ImageMask mask, Set<Voxel> contour, CircularNode<Voxel> circContour) {
+    private static CircularNode<Voxel>[] getStartSpine(ImageMask mask, Set<Voxel> contour, CircularNode<Voxel> circContour) {
         // 1) get 2 points more distant in contour = "poles"
         double d2Max = 0;
         List<Voxel> list = new ArrayList<>(contour);
@@ -392,11 +354,11 @@ public class BacteriaSpineFactory {
                 s1 = next.key;
                 s2 = next.value;
             } else {
-                Point other1  =getNearestPoint(next.key, next.value, bucketSecond);
+                Point other1  = getNearestPoint(next.key, next.value, bucketSecond, !firstNext);
                 dir = new Vector(other1.get(0)-next.key.element.x, other1.get(1)-next.key.element.y);
                 newPoint = new Point((other1.get(0)+next.key.element.x)/2f, (other1.get(1)+next.key.element.y)/2f);
 
-                Point other2  =getNearestPoint(next.value, next.key, bucketFirst);
+                Point other2  =getNearestPoint(next.value, next.key, bucketFirst, firstNext);
                 Vector dir2 = new Vector(next.value.element.x-other2.get(0), next.value.element.y-other2.get(1));
                 Point newPoint2 = new Point((other2.get(0)+next.value.element.x)/2f, (other2.get(1)+next.value.element.y)/2f);
                 boolean push1 = true;
@@ -419,16 +381,17 @@ public class BacteriaSpineFactory {
                     bucketFirst.add(next.key);
                     Collections.sort(bucketFirst);
                     s1 = firstNext ? bucketFirst.get(bucketFirst.size()-1) : bucketFirst.get(0);
-                } else s1 = next.key; // stabilizes
+                } else if (!algorithmWithRadius) s1 = next.key;
                 if (push1) {
                     bucketSecond.add(next.value);
                     Collections.sort(bucketSecond);
                     s2 = firstNext ? bucketSecond.get(0) : bucketSecond.get(bucketSecond.size()-1);
-                } else s2 = next.value; // stabilizes
+                } else if (!algorithmWithRadius) s2 = next.value;
             }
             
             lastDir.push(dir);
             sp.add(PointContainer2.fromPoint(newPoint, dir, 0d));
+            
             // STOP CONDITIONS
             Vector spineDir = lastDir.get().duplicate().normalize().rotateXY90();
             if (!firstNext) spineDir.reverseOffset();
@@ -477,12 +440,20 @@ public class BacteriaSpineFactory {
         } else mid2  = new Point(p2.element.x, p2.element.y);
         return PointContainer2.fromPoint(mid1.duplicate().averageWith(mid2), Vector.vector(mid1, mid2), 0d);
     }
-    private static Point getNearestPoint(CircularNode<Voxel> reference, CircularNode<Voxel> firstSearchPoint, List<CircularNode<Voxel>> bucket) {
+    private static Point getNearestPoint(CircularNode<Voxel> reference, CircularNode<Voxel> firstSearchPoint, List<CircularNode<Voxel>> bucket, boolean searchNext) {
         Function<CircularNode<Voxel>, Double> dist = other->reference.element.getDistanceSquareXY(other.element);
         bucket.clear();
         bucket.add(firstSearchPoint);
-        bucket.add(firstSearchPoint.next);
-        bucket.add(firstSearchPoint.prev);
+        if (algorithmWithRadius) {
+            int d = 0;
+            while(d++<maxSearchRadius) {
+                firstSearchPoint = firstSearchPoint.getFollowing(searchNext);
+                bucket.add(firstSearchPoint);
+            }
+        } else {
+            bucket.add(firstSearchPoint.next);
+            bucket.add(firstSearchPoint.prev);
+        }
         bucket.sort((c1, c2)->Double.compare(dist.apply(c1), dist.apply(c2)));
         if (bucket.size()>=2) {
             while(bucket.size()>2) bucket.remove(bucket.size()-1);
@@ -491,7 +462,7 @@ public class BacteriaSpineFactory {
             }
         } 
         while(bucket.size()>1) bucket.remove(bucket.size()-1);
-        return new Point(bucket.get(0).element.x, bucket.get(0).element.y);        
+        return Point.asPoint2D(bucket.get(0).element);
     }
     
     /**
@@ -601,6 +572,58 @@ public class BacteriaSpineFactory {
             if (dMinP<dMinN) bucket.add(p);
             else if (dMinP>dMinN) bucket.add(n);
         }
+    }
+    public static Image drawSpine(BoundingBox bounds, PointContainer2<Vector, Double>[] spine, CircularNode<Voxel> circularContour, int zoomFactor) { 
+        if (zoomFactor%2==0) throw new IllegalArgumentException("Zoom Factory should be uneven");
+        int add = zoomFactor > 1 ? 1 : 0;
+        ImageFloat spineImage = new ImageFloat("", new SimpleImageProperties(new SimpleBoundingBox(0, bounds.sizeX()*zoomFactor-1, 0, bounds.sizeY()*zoomFactor-1, 0, 0), 1, 1));
+        Offset off = bounds;
+        Voxel vox = new Voxel(0, 0, 0);
+        // draw contour of bacteria
+        int startLabel = spine==null ? 1: Math.max(spine[spine.length-1].getContent2().intValue(), spine.length) +10;
+        if (circularContour!=null) {
+            CircularNode<Voxel> current = circularContour;
+            EllipsoidalNeighborhood neigh = new EllipsoidalNeighborhood(zoomFactor/2d, false);
+            boolean start  = true;
+            while(current!=null && (start || !current.equals(circularContour))) {
+                for (int i = 0; i<neigh.getSize(); ++i) {
+                    vox.x = (current.element.x-off.xMin())*zoomFactor+add+neigh.dx[i];
+                    vox.y = (current.element.y-off.yMin())*zoomFactor+add+neigh.dy[i];
+                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, startLabel);
+                }
+                current = current.next();
+                start = false;
+                startLabel++;
+            }
+        }
+        if (spine!=null) {
+            int spineVectLabel = 1;
+            for (PointContainer2<Vector, Double> p : spine) {
+                double norm = p.getContent1().norm();
+                int vectSize= (int) (norm/2.0+0.5);
+                Vector dir = p.getContent1().duplicate().normalize();
+                Point cur = p.duplicate().translateRev(off).translateRev(dir.duplicate().multiply(norm/4d));
+                dir.multiply(1d/zoomFactor);
+                for (int i = 0; i<vectSize*zoomFactor; ++i) {
+                    cur.translate(dir);
+                    vox.x = (int)(cur.get(0)*zoomFactor+add);
+                    vox.y = (int)(cur.get(1)*zoomFactor+add);
+                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, spineVectLabel);
+                }
+                spineVectLabel++;
+            }
+            // draw spine
+            for (PointContainer2<Vector, Double> p : spine) {
+                vox.x = (int)((p.get(0)-off.xMin())*zoomFactor+add);
+                vox.y = (int)((p.get(1)-off.yMin())*zoomFactor+add);
+                if (!spineImage.contains(vox.x, vox.y, 0)) {
+                    logger.debug("out of bounds: {}, p: {}", vox, p);
+                    continue;
+                }
+                spineImage.setPixel(vox.x, vox.y, 0, p.getContent2()==0?Float.MIN_VALUE:p.getContent2());
+            }
+        }
+        return spineImage;
     }
     private static class SlidingVector  {
         final int n;

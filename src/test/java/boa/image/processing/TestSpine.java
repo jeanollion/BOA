@@ -34,7 +34,7 @@ import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL;
 import boa.image.processing.bacteria_spine.CircularNode;
-import static boa.image.processing.bacteria_spine.CleanContour.cleanContour;
+import static boa.image.processing.bacteria_spine.CleanVoxelLine.cleanContour;
 import boa.plugins.PluginFactory;
 import static boa.test_utils.TestUtils.logger;
 import boa.utils.HashMapGetCreate;
@@ -59,24 +59,25 @@ public class TestSpine {
         //String dbName = "AyaWT_mmglu";
         //String dbName = "MutH_150324";
         String dbName = "MutH_140115";
-        int postition= 0, frame=2, mc=0, b=0; // F=2 B=1
+        int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
         MasterDAO mDAO = new Task(dbName).getDB();
         Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
         StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         StructureObject bact2 = root2.getChildren(0).get(mc).getChildren(1).get(1);
-        for (int pos = 2; pos<mDAO.getExperiment().getPositionCount(); ++pos) {
+        /*for (int pos = 24; pos<mDAO.getExperiment().getPositionCount(); ++pos) {
             logger.debug("testing postition: {}", pos);
             testContourCreation(StructureObjectUtils.getAllChildrenAsStream(mDAO.getDao(mDAO.getExperiment().getPosition(pos).getName()).getRoots().stream(), 0));
-        }
-        //testLocalization(bact);
+        }*/
+        testLocalization(bact);
         //testProjection(bact, bact2);
     }
     public static void testContourCreation(Stream<StructureObject> parentTrack) {
         StructureObjectUtils.getAllChildrenAsStream(parentTrack, 1).forEach(b -> {
             Set<Voxel> contour;
             try {
+                logger.debug("clean contour for: {}", b);
                 contour = cleanContour(b.getRegion().getContour());
             } catch (Exception e) {
                 logger.debug("failed to clean contour: for bact: "+b, e);

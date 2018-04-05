@@ -117,7 +117,7 @@ public class CircularNode<T> implements Comparable<CircularNode> {
         if (this.next.equals(o)) return -1;
         CircularNode p = o.prev;
         CircularNode n = o.next;
-        while(!p.equals(n)) {
+        while(!p.equals(n) || this.equals(p)) { // second condition if searched value is at the exaxt opposite of the contour
             if (this.equals(p)) return -1;
             if (this.equals(n)) return 1;
             p = p.prev;

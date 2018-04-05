@@ -21,7 +21,7 @@ package boa.image.processing.bacteria_spine;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.image.Image;
-import static boa.image.processing.bacteria_spine.CleanContour.cleanContour;
+import static boa.image.processing.bacteria_spine.CleanVoxelLine.cleanContour;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
@@ -59,7 +59,8 @@ public class BacteriaSpineLocalizer {
         spine = BacteriaSpineFactory.createSpine(bacteria);
         long t1 = System.currentTimeMillis();
         long t2 = System.currentTimeMillis();
-        length = spine[spine.length-1].getContent2();
+        if (spine==null || spine.length==1) length = Double.NaN;
+        else length = spine[spine.length-1].getContent2();
         //logger.debug("spine creation: {} ms KDTree: {} ms", t1-t0, t2-t1);
     }
 
@@ -118,6 +119,7 @@ public class BacteriaSpineLocalizer {
         if (c1==null && c2!=null) return c2;
         if (c2==null && c1!=null) return c1;
         if (testMode && vPrev!=null && vNext!=null) logger.debug("compare two coords");
+        if (c1==null && c2==null) return null; // unable to locate point -> concave contour ? 
         return Math.abs(c1.distFromSpine(false))<Math.abs(c2.distFromSpine(false)) ? c1 : c2;
     }
     /**
