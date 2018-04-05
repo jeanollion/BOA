@@ -184,7 +184,7 @@ public class CleanVoxelLine {
         Set<Vertex> path = new HashSet<>(getLargestShortestPath());
         segments.values().stream().filter(e->!e.isJunction()).map(e->(Edge)e).filter(e->!e.isContainedInPath(path)).collect(Collectors.toList()).forEach(e->{
             e.remove(true, true);
-            
+            // also remove end && relabel junction
             Iterator<Vertex> vIt = e.connectedSegments.iterator();
             Vertex n1 = vIt.next();
             Vertex n2 = vIt.next();
@@ -195,11 +195,16 @@ public class CleanVoxelLine {
                 n2.remove(true, true);
                 n1.relabel();
             }
-            
-            // remove end
-            // relabel junction
         });
-        
+        // last cleaning of right angles if necessary
+        while (segments.size()>1) {
+            Edge endBranch = segments.values().stream().filter(s->s.isEndBranch()).filter(s->s.voxels.size()==1).map(s->(Edge)s).findAny().orElse(null);
+            if (endBranch!=null) {
+                endBranch.remove(true, true);
+                Vertex junction  = (endBranch).connectedSegments.stream().findAny().orElse(null); // end branch has only one junction
+                junction.relabel();
+            } else break;
+        }
         return lines;
     }
     private void label(Voxel v) {
