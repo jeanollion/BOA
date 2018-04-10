@@ -58,6 +58,7 @@ import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
 import static boa.utils.Utils.toArray;
+import java.util.stream.Stream;
 
 /**
  *
@@ -487,7 +488,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public Map<Integer, List<Measurement>> getMeasurementsByCallStructureIdx(int... structureIdx) {
         if (this.measurements.getChildCount()==0) return Collections.emptyMap();
         else {
-            HashMapGetCreate<Integer, List<Measurement>> res = new HashMapGetCreate<Integer, List<Measurement>>(structureIdx.length>0?structureIdx.length : this.getStructureCount(), new HashMapGetCreate.ListFactory<Integer, Measurement>());
+            HashMapGetCreate<Integer, List<Measurement>> res = new HashMapGetCreate<>(structureIdx.length>0?structureIdx.length : this.getStructureCount(), new HashMapGetCreate.ListFactory<Integer, Measurement>());
             for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
                 Measurement m = p.instanciatePlugin();
                 if (m!=null) {
@@ -499,7 +500,9 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
             return res;
         }
     }
-    
+    public Stream<Measurement> getMeasurements(int structureIdx) {
+        return measurements.getChildren().stream().filter(pp->pp.isActivated() && pp.isOnePluginSet()).map(pp->pp.instanciatePlugin()).filter(m->m.getCallStructure()==structureIdx);
+    }
     
     private static boolean contains(int[] structures, int structureIdx) {
         for (int s: structures) if (s==structureIdx) return true;

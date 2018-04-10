@@ -63,6 +63,7 @@ import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
+import java.util.stream.Stream;
 
 /**
  *
@@ -302,7 +303,12 @@ public class Processor {
             }
             if (pcb!=null) pcb.log("Executing: #"+actionPool.size()+" measurements");
             if (!actionPool.isEmpty()) containsObjects=true;
-            ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
+            //actionPool.parallelStream().forEach(p->p.key.performMeasurement(p.value));
+            ThreadRunner.exexcuteAndThrowErrors(actionPool.parallelStream(), p->p.key.performMeasurement(p.value));
+            //ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
+            
+            //Stream<Pair<Measurement, StructureObject>> actions = allParentTracks.values().stream().flatMap(t-> dao.getExperiment().getMeasurements(e.getKey()).flatMap( m->m.callOnlyOnTrackHeads() ? Stream.generate(()-> new Pair<>(m, t.get(0)) ) : t.stream().map(o -> new Pair<>(m, o))) );
+            //actions.parallel().forEach(p->p.key.performMeasurement(p.value));
         }
         long t1 = System.currentTimeMillis();
         final Set<StructureObject> allModifiedObjects = new HashSet<>();

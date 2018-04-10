@@ -97,6 +97,12 @@ public class BacteriaPhaseMeasurements implements Measurement {
         m.setValue("BacteriaLength", scale*GeometricalMeasurements.getFeretMax(bactObject));
         m.setValue("BacteriaArea", scale*GeometricalMeasurements.getVolume(bactObject));
         m.setValue("BacteriaWidth", scale*GeometricalMeasurements.getThickness(bactObject));
+        m.setValue(StructureObject.trackErrorNext, object.hasTrackLinkError(false, true));
+        m.setValue(StructureObject.trackErrorPrev, object.hasTrackLinkError(true, false));
+        Object si = object.getAttribute("SizeRatio");
+        if (si instanceof Number) m.setValue("SizeRatio", (Number)si);
+        Object tesi = object.getAttribute("TrackErrorSizeRatio");
+        m.setValue("TrackErrorSizeRatio", Boolean.TRUE.equals(tesi));
         if (computeSpine.getSelected()) {
             double[] lw = GeometricalMeasurements.getSpineLengthAndWidth(bactObject);
             if (lw!=null) {
@@ -104,12 +110,6 @@ public class BacteriaPhaseMeasurements implements Measurement {
                 m.setValue("BacteriaSpineWidth", scale*lw[1]);
             }
         }
-        m.setValue(StructureObject.trackErrorNext, object.hasTrackLinkError(false, true));
-        m.setValue(StructureObject.trackErrorPrev, object.hasTrackLinkError(true, false));
-        Object si = object.getAttribute("SizeRatio");
-        if (si instanceof Number) m.setValue("SizeRatio", (Number)si);
-        Object tesi = object.getAttribute("TrackErrorSizeRatio");
-        m.setValue("TrackErrorSizeRatio", Boolean.TRUE.equals(tesi));
     }
     
     @Override

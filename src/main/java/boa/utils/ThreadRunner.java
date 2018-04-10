@@ -35,9 +35,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 /**
 Copyright (C) Jean Ollion
 
@@ -257,7 +259,19 @@ public class ThreadRunner {
             throw new MultipleException(errors);
         }
     }
-    
+    public static <T> void exexcuteAndThrowErrors(Stream<T> stream, Consumer<T> action) {
+        MultipleException e = new MultipleException();
+        stream.parallel().forEach(t -> {
+            try {
+                action.accept(t);
+            } catch (MultipleException me) {
+                synchronized(e) {e.addExceptions(me.getExceptions());}
+            } catch(Throwable ex) {
+                synchronized(e) {e.addExceptions(new Pair<>(t.toString(), ex));}
+            }
+        });
+        if (!e.isEmpty()) throw e;
+    }
     public static interface ThreadAction<T> {
         public void run(T object, int idx);
     }

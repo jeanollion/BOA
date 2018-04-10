@@ -163,7 +163,7 @@ public class SegmentOnly implements ProcessingScheme {
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);
             pops[idx] = pop;
         }, executor, null);
-        //}).collect(Collectors.toList());
+        //}).collect(Collectors.toList()); // no better perfs
         
         long t3 = System.currentTimeMillis();
         if (subSegmentation) { // collect if necessary and set to parent
