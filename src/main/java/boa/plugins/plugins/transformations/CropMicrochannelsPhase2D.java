@@ -72,6 +72,7 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
         Image imCrop = image.crop(nonNullBound);
         Image imDerY = ImageFeatures.getDerivative(imCrop, 2, 0, 1, 0, true);
         float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
+        if (yProj.length-1-channelHeight/2<0) throw new RuntimeException("No microchannels found in image. Out-of-Focus image ?");
         int yMin = ArrayUtil.max(yProj, 0, yProj.length-1-channelHeight/2) + nonNullBound.yMin();
         //if (yMax<=0) yMax = yMin + channelHeight;
         

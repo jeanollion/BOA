@@ -134,7 +134,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         int innerMargin = 0;
         if (innerMargin*4>=b.sizeX()-2) innerMargin = Math.max(1, b.sizeX()/8);
         BoundingBox innerRegion = new SimpleBoundingBox(innerMargin+marginL, cut.sizeX()-1-innerMargin-marginR,marginUp, cut.sizeY()-1, 0, cut.sizeZ()-1);
-        
+        if (debug) logger.debug("crop inner-margin: {}, inner region: {} mask: {}", innerMargin, innerRegion, edgeMapLocal.getBoundingBox() );
         ImageByte mask = new ImageByte("", edgeMapLocal); 
         ImageOperations.fill(mask, 1, innerRegion);
         // roughly remove upper l&r angle from inner mask

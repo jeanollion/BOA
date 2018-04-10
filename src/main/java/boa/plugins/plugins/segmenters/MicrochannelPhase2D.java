@@ -167,7 +167,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         // get global closed-end Y coordinate
         Image imDerY = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
         float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
-        int closedEndY = ArrayUtil.max(yProj, 0, (int)(yProj.length*0.75)) + yStartStop[0]; 
+        int closedEndY = ArrayUtil.max(yProj, 0, yProj.length) + yStartStop[0]; 
 
         // get X coordinates of each microchannel
         imCrop = image.crop(new MutableBoundingBox(0, image.sizeX()-1, closedEndY, aberrationStart, 0, image.sizeZ()-1));
@@ -263,7 +263,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
                 List<Integer> localMaxY = ArrayUtil.getRegionalExtrema(proj, 2, true);
                 //peak[2] = ArrayUtil.max(proj)-yStartAdjustWindow;
                 if (localMaxY.isEmpty()) continue;
-                peak[2] = localMaxY.get(0)-yClosedEndAdjustWindow;
+                peak[2] = localMaxY.get(0)- (closedEndY>=yClosedEndAdjustWindow ? yClosedEndAdjustWindow : 0);
                 if (debug && debugIdx==idx) {
                     new Plot("Y start adjustment", "y", "Y-der", ArrayUtil.generateFloatArray(win.yMin(), win.yMin()+win.sizeY()), proj).show();
                 }

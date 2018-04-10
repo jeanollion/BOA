@@ -209,10 +209,10 @@ public class SimpleBoundingBox<T extends SimpleBoundingBox<T>> implements Boundi
     
     @Override
     public String toString() {
-        return "[x:["+xMin+";"+xMax+"], y:["+yMin+";"+yMax+"], z:["+zMin+";"+zMax+"]]";
+        return "[["+xMin+";"+xMax+"]x["+yMin+";"+yMax+"]x["+zMin+";"+zMax+"]]";
     }
     public String toStringOffset() {
-        return "[x:"+xMin+";y:"+yMin+";z:"+zMin+"]";
+        return "["+xMin+";"+yMin+";"+zMin+"]";
     }
 
 }

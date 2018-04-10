@@ -120,14 +120,14 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
         }
         if (bounds.isEmpty()) throw new RuntimeException("Bounds could not be computed");
         // uniformize y + reduce sizeY if necessary
-        int sizeY = bounds.values().stream().mapToInt(b->b.sizeY()).max().getAsInt();
+        int maxSizeY = bounds.values().stream().mapToInt(b->b.sizeY()).max().getAsInt();
         if (referencePoint.getSelectedIndex()==0) { // ref = top
-            int yMax = bounds.values().stream().mapToInt(b->b.yMin()+sizeY-1).max().getAsInt();
-            int sY = yMax>=image.sizeY() ? sizeY -(yMax-image.sizeY()+1) : sizeY;
+            int yMax = bounds.values().stream().mapToInt(b->b.yMin()+maxSizeY-1).max().getAsInt();
+            int sY = yMax>=image.sizeY() ? maxSizeY -(yMax-image.sizeY()+1) : maxSizeY;
             for (MutableBoundingBox bb : bounds.values()) bb.setyMax(bb.yMin()+sY-1);
-        } else { //ref = bottom
-            int yMin = bounds.values().stream().mapToInt(b->b.yMax()-(sizeY-1)).max().getAsInt();
-            int sY = yMin<0 ? sizeY-1 + yMin : sizeY;
+        } else { //ref = bottom (eg optical aberration)
+            // limit sizeY so that no null pixels is present in the image & not negative
+            int sY = bounds.entrySet().stream().mapToInt(b-> b.getValue().yMax() - Math.max(b.getValue().yMax()-(maxSizeY-1), getYmin(inputImages.getImage(channelIdx, b.getKey()), b.getValue().xMin(), b.getValue().xMax()))+1).min().getAsInt();
             for (MutableBoundingBox bb : bounds.values()) bb.setyMin(bb.yMax()-(sY-1));
         }
         
@@ -175,6 +175,13 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
         int end = image.sizeY()-1;
         while (end>=0 && image.getPixel(x, end, 0)==0) --end;
         return new int[]{start, end};
+    }
+    protected static int getYmin(Image image, int xL, int xR) {
+        int startL = 0;
+        while (startL<image.sizeY() && image.getPixel(xL, startL, 0)==0) ++startL;
+        int startR = 0;
+        while (startR<image.sizeY() && image.getPixel(xR, startR, 0)==0) ++startR;
+        return Math.max(startR, startL);
     }
     
     @Override
