@@ -547,7 +547,6 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     public void done() {
         //logger.debug("EXECUTING DONE FOR : {}", this.toJSON().toJSONString());
         this.publish("Job done.");
-        unrollMultipleExceptions();
         publishErrors();
         this.printErrors();
         this.publish("------------------");
@@ -567,7 +566,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         this.errors.addAll(errorsToAdd);
     }
     public void publishErrors() {
-        
+        unrollMultipleExceptions();
         this.publish("Errors: "+this.errors.size()+ " For JOB: "+this.toString());
         for (Pair<String, ? extends Throwable> e : errors) {
             publish("Error @"+e.key+(e.value==null?"null":e.value.toString()));
@@ -611,6 +610,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             else if (ui instanceof LogUserInterface) setLF.accept((LogUserInterface)ui);
             tasks.get(i).runTask();
             if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
+            tasks.get(i).publish("Job done");
+            tasks.get(i).publishErrors();
             tasks.get(i).db=null;
             if (ui instanceof MultiUserInterface) ((MultiUserInterface)ui).applyToLogUserInterfaces(unsetLF);
             else if (ui instanceof LogUserInterface) unsetLF.accept((LogUserInterface)ui);
