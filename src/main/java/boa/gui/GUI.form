@@ -898,6 +898,9 @@
                       <Events>
                         <EventHandler event="mousePressed" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="actionPoolListMousePressed"/>
                       </Events>
+                      <AuxValues>
+                        <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="setTransferHandler(new ListTransferHandler());"/>
+                      </AuxValues>
                     </Component>
                   </SubComponents>
                 </Container>

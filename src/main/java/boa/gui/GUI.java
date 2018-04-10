@@ -136,11 +136,13 @@ import boa.utils.FileIO.ZipReader;
 import boa.utils.FileIO.ZipWriter;
 import boa.utils.ImportExportJSON;
 import boa.utils.JSONUtils;
+import boa.utils.ListTransferHandler;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
 import static boa.utils.Utils.addHorizontalScrollBar;
 import ij.IJ;
+import java.awt.dnd.DropTarget;
 import javax.swing.ToolTipManager;
 
 
@@ -1234,6 +1236,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         actionPoolJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Job Pool"));
 
+        setTransferHandler(new ListTransferHandler());
         actionPoolList.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
                 actionPoolListMousePressed(evt);
