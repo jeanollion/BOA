@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2018 Jean Ollion
  *
  * This File is part of BOA
@@ -18,28 +18,30 @@
  */
 package boa.utils.geom;
 
-
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
-public class PointContainer<T> extends Point {
-    public T content1;
-    public PointContainer(T o, float... coords) {
-        super(coords);
-        this.content1= o;
+public class PointContainer4<T, U, V, W> extends PointContainer3<T, U, V> {
+    protected W content4;
+    public PointContainer4(T o1, U o2, V o3, W o4, float... coords) {
+        super(o1, o2, o3, coords);
+        this.content4= o4;
     }
-    public T getContent1() {
-        return content1;
+    public PointContainer3<T, U, V> toPointContainer3() {
+        return new PointContainer3(content1, content2, content3, this.coords);
     }
-    public <P extends PointContainer<T>> P setContent1(T o) {
-        this.content1 = o;
+    public W getContent4() {
+        return content4;
+    }
+    public <P extends PointContainer4<T, U, V, W>> P setContent4(W o) {
+        this.content4 = o;
         return (P)this;
     }
-    public static <I>  PointContainer<I> fromPoint(Point p, I o) {
-        return new PointContainer(o, p.coords);
+    public static <T, U, V, W>  PointContainer4<T, U, V, W> fromPoint(Point p, T o, U o2, V o3, W o4) {
+        return new PointContainer4(o, o2, o3, o4, p.coords);
     }
     @Override public String toString() {
-        return super.toString() + "["+content1.toString()+"]";
+        return super.toString() + "["+content4.toString()+"]";
     }
 }

@@ -29,12 +29,15 @@ public class PointContainer2<T, U> extends PointContainer<T> {
         super(o1, coords);
         this.content2= o2;
     }
+    public PointContainer<T> toPointContainer() {
+        return new PointContainer(content1, this.coords);
+    }
     public U getContent2() {
         return content2;
     }
-    public PointContainer2<T, U> setContent2(U o) {
+    public <P extends PointContainer2<T, U>> P setContent2(U o) {
         this.content2 = o;
-        return this;
+        return (P)this;
     }
     public static <T, U>  PointContainer2<T, U> fromPoint(Point p, T o, U o2) {
         return new PointContainer2(o, o2, p.coords);

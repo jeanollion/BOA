@@ -45,6 +45,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.eclipse.collections.impl.factory.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +79,15 @@ public class CleanVoxelLine {
     public static Set<Voxel> cleanContour(Set<Voxel> contour, boolean verbose) {
         return new CleanVoxelLine(contour, verbose).cleanContour();
     }
+    public static List<Voxel> cleanSkeleton(Set<Voxel> skeleton, boolean verbose) {
+        CleanVoxelLine cl = new CleanVoxelLine(skeleton, verbose);
+        skeleton = cl.cleanSkeleton();
+        // order from upper-left end point
+        Voxel endPoint = cl.voxMapNeighAndLabels.entrySet().stream().filter(e->e.getValue()[0]==1).map(e->e.getKey()).min((v1,v2)->Integer.compare(v1.x+v1.y, v2.x+v2.y)).orElseThrow(()->new RuntimeException("No end point in skeleton"));
+        List<Voxel> res = new ArrayList<>(skeleton);
+        res.sort((v1, v2)->Double.compare(endPoint.getDistanceSquareXY(v1), endPoint.getDistanceSquareXY(v2)));
+        return res;
+    }
     private CleanVoxelLine(Set<Voxel> contour, boolean verbose) {
         this.verbose=verbose;
         this.lines=contour;
@@ -99,6 +109,7 @@ public class CleanVoxelLine {
         return map;
     }
     private void keepOnlyLargestCluster() {
+        if (segments.size()<=1) return;
         List<Set<Segment>> clusters = getAllSegmentClusters();
         if (clusters.size()>1) { 
             if (verbose) logger.debug("clean contour: {} independent contours found! ", clusters.size()); 
@@ -156,8 +167,11 @@ public class CleanVoxelLine {
         return lines;
     }
     public Set<Voxel> cleanSkeleton() {
+        if (verbose) {
+            ImageWindowManagerFactory.showImage(draw(true).setName("clean skeleton start"));
+            ImageWindowManagerFactory.showImage(draw(false).setName("clean skeleton start"));
+        }
         keepOnlyLargestCluster(); 
-        if (segments.values().stream().filter(s->s.isJunction()).findAny().orElse(null)==null) return lines;
         // remove all end branch of size 1
         while (segments.size()>1) {
             Edge endBranch = segments.values().stream().filter(s->s.isEndBranch()).filter(s->s.voxels.size()==1).map(s->(Edge)s).findAny().orElse(null);
@@ -167,7 +181,7 @@ public class CleanVoxelLine {
                 junction.relabel();
             } else break;
         }
-        // trim cycles
+        // trim redondent junctions
         while (segments.size()>1) {
             Vertex junction = segments.values().stream().filter(v->v.isJunction()).map(v->(Vertex)v).filter(v->v.countNonEndEdges()>1).findAny().orElse(null);
             Map<Edge, Vertex> connectedVertices = junction.connectedSegments.stream().filter(e->!e.isEndBranch()).collect(Collectors.toMap(e->e, e->e.getOtherJunction(junction)));
@@ -178,10 +192,19 @@ public class CleanVoxelLine {
                 junction.relabel();
             } else break;
         }
+        if (segments.size()==1) return lines;
+        // keep only largest shortest path
         // set end-points as vertices
         segments.values().stream().filter(v->v.isEndBranch()).map(e->(Edge)e).collect(Collectors.toList()).forEach(e ->e.setEndPointsAsVertex());
-        // keep only largest shortest path
-        Set<Vertex> path = new HashSet<>(getLargestShortestPath());
+        if (verbose) {
+            ImageWindowManagerFactory.showImage(draw(true).setName("before largest shortest path"));
+            ImageWindowManagerFactory.showImage(draw(false).setName("before largest shortest path"));
+        }
+        List<Vertex> lsPath = getLargestShortestPath();
+        if (verbose) {
+            for (int i = 0; i<lsPath.size()-1; ++i) logger.debug("largest shortest path: {}->{} w={}", lsPath.get(i).label, lsPath.get(i+1).label, Sets.intersect(lsPath.get(i).connectedSegments, lsPath.get(i+1).connectedSegments).iterator().next().voxels.size());
+        }
+        Set<Vertex> path = new HashSet<>(lsPath);
         segments.values().stream().filter(e->!e.isJunction()).map(e->(Edge)e).filter(e->!e.isContainedInPath(path)).collect(Collectors.toList()).forEach(e->{
             e.remove(true, true);
             // also remove end && relabel junction
@@ -196,6 +219,7 @@ public class CleanVoxelLine {
                 n1.relabel();
             }
         });
+        
         // last cleaning of right angles if necessary
         while (segments.size()>1) {
             Edge endBranch = segments.values().stream().filter(s->s.isEndBranch()).filter(s->s.voxels.size()==1).map(s->(Edge)s).findAny().orElse(null);
@@ -204,6 +228,10 @@ public class CleanVoxelLine {
                 Vertex junction  = (endBranch).connectedSegments.stream().findAny().orElse(null); // end branch has only one junction
                 junction.relabel();
             } else break;
+        }
+        if (verbose) {
+            ImageWindowManagerFactory.showImage(draw(true).setName("end of clean skeleton"));
+            ImageWindowManagerFactory.showImage(draw(false).setName("end of clean skeleton"));
         }
         return lines;
     }
@@ -384,11 +412,11 @@ public class CleanVoxelLine {
         List<Set<Segment>> res = new ArrayList<>();
         Set<Segment> remaniningSegments = new HashSet<>(segments.values());
         while(!remaniningSegments.isEmpty()) {
-            if (verbose) logger.debug("get all clusters: {}/{}, cluster nb : {}", remaniningSegments.size(), segments.size(), res.size());
             Segment seed = remaniningSegments.stream().findAny().get();
             Set<Segment> cluster = getAllConnectedSegments(seed);
             remaniningSegments.removeAll(cluster);
             res.add(cluster);
+            if (verbose) logger.debug("get all clusters: remaining segments {}/{}, cluster nb : {}", remaniningSegments.size(), segments.size(), res.size());
         }
         return res;
     }
@@ -473,7 +501,7 @@ public class CleanVoxelLine {
             return voxels.stream().filter(v->isTouching(v, other.voxels));
         }
         public boolean isEndBranch() {
-            return !isJunction() && connectedSegments.size()==1 ;//&& getTouchingVoxels(connectedSegments.iterator().next()).count()==1;
+            return !isJunction() && connectedSegments.size()<=1 ;//&& getTouchingVoxels(connectedSegments.iterator().next()).count()==1;
         }
         public boolean isJunction() {
             return this instanceof Vertex;
@@ -569,7 +597,8 @@ public class CleanVoxelLine {
             Edge e = v.getEdge(u);
             v.connectedSegments.remove(e); // temporarily remove the edge between u & v to get the other path
             u.connectedSegments.remove(e);
-            List<Vertex> path = getShortestPath(v, u, vertices, next, dist); // compute shortest path between u & v without e 
+            floydWarshall(vertices, next, dist);
+            List<Vertex> path = path(v, u, next); // compute shortest path between u & v without e 
             int length = (int)dist[v.idx][u.idx] + e.voxels.size();
             shortestPaths.add(new Pair(path, length));
             v.connectedSegments.add(e);
@@ -595,12 +624,9 @@ public class CleanVoxelLine {
                 } 
             }
         }
+        if (verbose) logger.debug("largest shortest path: dist: {}, {} -> {}", max, vertices[u].label, vertices[v].label);
         if (u<0) return Collections.EMPTY_LIST;
-        return getShortestPath(vertices[u], vertices[v], vertices, next, dist);
-    }
-    private static List<Vertex> getShortestPath(Vertex u, Vertex v, Vertex[] allVertices, Vertex[][] next, float[][] dist) {
-        floydWarshall(allVertices, next, dist);
-        return path(u, v, next);
+        return path(vertices[u], vertices[v], next);
     }
     private static List<Vertex> path(Vertex u, Vertex v, Vertex[][] next) {
         if (next[u.idx][v.idx]==null) return Collections.EMPTY_LIST;
@@ -641,7 +667,7 @@ public class CleanVoxelLine {
                 next[u.idx][v.idx] = v;
                 dist[u.idx][v.idx] = e.voxels.size();
             }
-            //dist[u.vertextIndex][u.vertextIndex] = 0; //?
+            dist[u.idx][u.idx] = 0;
         }
     }
 }

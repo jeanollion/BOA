@@ -75,7 +75,7 @@ public class Voxel implements Comparable<Voxel>, Offset<Voxel> {
 
     @Override
     public String toString() {
-        return "Voxel3D{" + "x=" + x + ", y=" + y + ", z=" + z + ", value=" + value + '}';
+        return "{" + x + ";" + y + ";" + z + ";V=" + value + '}';
     }
 
     public Voxel duplicate() {

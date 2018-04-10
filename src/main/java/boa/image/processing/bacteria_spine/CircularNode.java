@@ -125,5 +125,8 @@ public class CircularNode<T> implements Comparable<CircularNode> {
         }
         throw new IllegalArgumentException("Circular Node not from the same list");
     }
-    
+    @Override
+    public String toString() {
+        return element.toString();
+    }
 }
