@@ -56,7 +56,7 @@ public class BacteriaSpineLocalizer {
     public BacteriaSpineLocalizer(Region bacteria) {
         this.bacteria=bacteria;
         long t0 = System.currentTimeMillis();
-        spine = BacteriaSpineFactory.createSpine(bacteria);
+        spine = BacteriaSpineFactory.createSpine(bacteria, true).spine;
         long t1 = System.currentTimeMillis();
         long t2 = System.currentTimeMillis();
         if (spine==null || spine.length==1) length = Double.NaN;

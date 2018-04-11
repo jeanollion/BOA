@@ -33,6 +33,7 @@ import boa.utils.Utils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -80,13 +81,20 @@ public class CleanVoxelLine {
         return new CleanVoxelLine(contour, verbose).cleanContour();
     }
     public static List<Voxel> cleanSkeleton(Set<Voxel> skeleton, boolean verbose) {
-        CleanVoxelLine cl = new CleanVoxelLine(skeleton, verbose);
-        skeleton = cl.cleanSkeleton();
-        // order from upper-left end point
-        Voxel endPoint = cl.voxMapNeighAndLabels.entrySet().stream().filter(e->e.getValue()[0]==1).map(e->e.getKey()).min((v1,v2)->Integer.compare(v1.x+v1.y, v2.x+v2.y)).orElseThrow(()->new RuntimeException("No end point in skeleton"));
-        List<Voxel> res = new ArrayList<>(skeleton);
-        res.sort((v1, v2)->Double.compare(endPoint.getDistanceSquareXY(v1), endPoint.getDistanceSquareXY(v2)));
-        return res;
+        Comparator<Voxel> comp = (v1,v2)->Integer.compare(v1.x+v1.y, v2.x+v2.y);
+        if (skeleton.size()>2) {
+            CleanVoxelLine cl = new CleanVoxelLine(skeleton, verbose);
+            skeleton = cl.cleanSkeleton();
+            // order from upper-left end point
+            Voxel endPoint = cl.voxMapNeighAndLabels.entrySet().stream().filter(e->e.getValue()[0]==1).map(e->e.getKey()).min(comp).orElseThrow(()->new RuntimeException("No end point in skeleton"));
+            List<Voxel> res = new ArrayList<>(skeleton);
+            res.sort((v1, v2)->Double.compare(endPoint.getDistanceSquareXY(v1), endPoint.getDistanceSquareXY(v2)));
+            return res;
+        } else {
+            List<Voxel> res = new ArrayList<>(skeleton);
+            res.sort(comp);
+            return res;
+        }
     }
     private CleanVoxelLine(Set<Voxel> contour, boolean verbose) {
         this.verbose=verbose;

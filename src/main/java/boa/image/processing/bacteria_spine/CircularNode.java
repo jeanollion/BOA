@@ -31,6 +31,15 @@ public class CircularNode<T> implements Comparable<CircularNode> {
     public CircularNode(T element) {
         this.element = element;
     }
+
+    public T getElement() {
+        return element;
+    }
+
+    public void setElement(T element) {
+        this.element = element;
+    }
+    
     public void setPrev(CircularNode<T> prev) {
         this.prev = prev;
         prev.next= this;

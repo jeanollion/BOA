@@ -27,9 +27,11 @@ import boa.data_structure.Voxel;
 import boa.data_structure.dao.ObjectDAO;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
+import boa.image.ImageByte;
 import boa.image.SimpleOffset;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import boa.image.processing.bacteria_spine.BacteriaSpineCoord;
+import boa.image.processing.bacteria_spine.BacteriaSpineFactory.SpineResult;
 import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL;
@@ -39,6 +41,7 @@ import boa.plugins.PluginFactory;
 import static boa.test_utils.TestUtils.logger;
 import boa.utils.HashMapGetCreate;
 import boa.utils.HashMapGetCreate.Syncronization;
+import boa.utils.Pair;
 import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
 import boa.utils.geom.Vector;
@@ -46,6 +49,7 @@ import ij.ImageJ;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -57,61 +61,82 @@ public class TestSpine {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
         //String dbName = "AyaWT_mmglu";
-        //String dbName = "MutH_150324";
-        String dbName = "MutH_140115";
-        int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
+        String dbName = "MutH_150324";
+        int postition= 0, frame=3, mc=14, b=4;
+        //String dbName = "MutH_140115";
+        //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
+        
         MasterDAO mDAO = new Task(dbName).getDB();
         Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
         StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         StructureObject bact2 = root2.getChildren(0).get(mc).getChildren(1).get(1);
-        /*for (int pos = 24; pos<mDAO.getExperiment().getPositionCount(); ++pos) {
+        /*for (int pos = 0; pos<mDAO.getExperiment().getPositionCount(); ++pos) {
             logger.debug("testing postition: {}", pos);
-            testContourCreation(StructureObjectUtils.getAllChildrenAsStream(mDAO.getDao(mDAO.getExperiment().getPosition(pos).getName()).getRoots().stream(), 0));
+            Stream<StructureObject> parentTrack = StructureObjectUtils.getAllChildrenAsStream(mDAO.getDao(mDAO.getExperiment().getPosition(pos).getName()).getRoots().stream(), 0);
+            StructureObjectUtils.getAllChildrenAsStream(parentTrack, 1).forEach(bo -> testAllSteps(bo));
         }*/
-        testLocalization(bact);
+        //testContourCleaning(bact);
+        //testAllSteps(bact);
+        //testLocalization(bact, true);
+        //testLocalization(bact, false);
         //testProjection(bact, bact2);
+        testSpineCreation(bact);
+        //testSkeleton(bact);
     }
-    public static void testContourCreation(Stream<StructureObject> parentTrack) {
-        StructureObjectUtils.getAllChildrenAsStream(parentTrack, 1).forEach(b -> {
-            Set<Voxel> contour;
-            try {
-                logger.debug("clean contour for: {}", b);
-                contour = cleanContour(b.getRegion().getContour());
-            } catch (Exception e) {
-                logger.debug("failed to clean contour: for bact: "+b, e);
-                contour = cleanContour(b.getRegion().getContour(), true); // run in verbose mode
-            }
-            CircularNode<Voxel> circContour;
-            Point center = b.getRegion().getGeomCenter(false);
-            try {
-                //logger.debug("contour for: {}", b);
-                circContour = BacteriaSpineFactory.getCircularContour(contour, center);
-                //logger.debug("contour ok for : {}", b);
-            } catch (Exception e) {
-                logger.debug("failed to create circular contour: for bact: "+b, e);
-                contour = cleanContour(b.getRegion().getContour(), true); // run in verbose mode
-                BacteriaSpineFactory.verbose=true;
-                circContour = BacteriaSpineFactory.getCircularContour(contour, center); // will throw exception
-            }
-            try {
-                PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(b.getMask(), contour, circContour);
-                if (spine.length==1) {
-                    spine = BacteriaSpineFactory.createSpine(b.getRegion()); // will try with other center also
-                }
-                if (spine==null) {
-                    BacteriaSpineFactory.verbose=true;
-                    circContour = BacteriaSpineFactory.getCircularContour(contour, center);
-                    BacteriaSpineFactory.verbose=false;
-                    logger.debug("unable to create spine for: {}, either circular shape or center too close to contour", b);
-                }
-            } catch (Exception e) {
-                logger.debug("failed to create spine for bact: "+b, e);
-                throw e;
-            }
+    public static void testContourCleaning(StructureObject b) {
+        cleanContour(b.getRegion().getContour(), true);
+    }
+    public static void testSkeleton(StructureObject b) {
+        Set<Voxel> contour =cleanContour(b.getRegion().getContour(), true);
+        BacteriaSpineFactory.verbose = true;
+        ImageWindowManagerFactory.showImage(BacteriaSpineFactory.getMaskFromContour(contour).setName("mask after clean contour"));
+        List<Voxel> skeleton = BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(contour));
+    }
+    public static void testAllSteps(StructureObject b) {
+        Set<Voxel> contour;
+        try {
+            logger.debug("clean contour for: {}", b);
+            contour = cleanContour(b.getRegion().getContour());
+        } catch (Exception e) {
+            logger.debug("failed to clean contour: for bact: "+b, e);
+            contour = cleanContour(b.getRegion().getContour(), true); // run in verbose mode
+        }
+        List<Voxel> skeleton;
+        try {
+            logger.debug("get skeleton for: {}", b);
             
-        });
+            skeleton = BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(contour));
+        } catch (Exception e) {
+            logger.debug("failed to create skeleton for bact: "+b, e);
+            BacteriaSpineFactory.verbose = true;
+            skeleton = BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(contour));
+        }
+        CircularNode<Voxel> circContour;
+        Point center = Point.asPoint(skeleton.get(skeleton.size()/2));
+        try {
+             logger.debug("get circular contour for: {}", b);
+            circContour = BacteriaSpineFactory.getCircularContour(contour, center);
+            //logger.debug("contour ok for : {}", b);
+        } catch (Exception e) {
+            logger.debug("failed to create circular contour: for bact: "+b, e);
+            contour = cleanContour(b.getRegion().getContour(), true); // run in verbose mode
+            BacteriaSpineFactory.verbose=true;
+            circContour = BacteriaSpineFactory.getCircularContour(contour, center); // will throw exception
+        }
+
+        try {
+            logger.debug("get spine for: {}", b);
+            PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpineFromSkeleton(b.getMask(), skeleton, contour, circContour);
+            if (spine==null || spine.length==1) throw new RuntimeException("could not create spine");
+            
+        } catch (Exception e) {
+            logger.debug("failed to create spine for bact: "+b, e);
+            BacteriaSpineFactory.verbose=true;
+            PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpineFromSkeleton(b.getMask(), skeleton, contour, circContour);
+            throw e;
+        }
     }
     public static void testProjection(StructureObject bact1, StructureObject bact2) {
         int zoomFactor = 7;
@@ -138,17 +163,12 @@ public class TestSpine {
         ImageWindowManagerFactory.showImage(im2);*/
     }
     
-    public static void testLocalization(StructureObject bact) {
-        Point center = bact.getRegion().getGeomCenter(false);
-        BacteriaSpineFactory.verbose=true;
-        Set<Voxel> contour = cleanContour(bact.getRegion().getContour(), true);
-        CircularNode<Voxel> circContour = BacteriaSpineFactory.getCircularContour(contour, center);
-        PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(bact.getMask(), contour, circContour);
-        logger.debug("bounds: {}, spine: {}", bact.getBounds(), spine[0]);
-        Image test = BacteriaSpineFactory.drawSpine(bact.getBounds(), spine, circContour, 7);
+    public static void testLocalization(StructureObject bact, boolean skeleton) {
+        SpineResult spine = BacteriaSpineFactory.createSpine(bact.getRegion(), skeleton);
+        Image test = spine.drawSpine(7);
         // test localization
         
-        Point p = center.duplicate().translate(new Vector(-3, 0.7f));
+        Point p = spine.center.duplicate().translate(new Vector(-3, 0.7f));
         Point pT = p.duplicate().translateRev(bact.getBounds());
         test.setPixel((int)(pT.get(0)*5+0.5)+1, (int)(pT.get(1)*5+0.5)+1, 0, 1000);
         BacteriaSpineLocalizer loc = new BacteriaSpineLocalizer(bact.getRegion());
@@ -157,8 +177,16 @@ public class TestSpine {
         Point p2 = loc.project(coord, NEAREST_POLE);
         Point p2T = p2.duplicate().translateRev(bact.getBounds());
         test.setPixel((int)(p2T.get(0)*5+0.5)+1, (int)(p2T.get(1)*5+0.5)+1, 0, 1001);
-        logger.debug("coords: {}", coord);
-        logger.debug("testDistance: {}", p2.dist(p));
+        logger.debug("coords: {} (skeleton: {})", coord, skeleton);
+        logger.debug("testDistance: {} (skeleton: {})", p2.dist(p), skeleton);
         ImageWindowManagerFactory.showImage(test);
+    }
+    public static void testSpineCreation(StructureObject bact) {
+        ImageWindowManagerFactory.showImage(bact.getRegion().getMaskAsImageInteger().setName("original mask"));
+        BacteriaSpineFactory.verbose=true;
+        SpineResult spineSk = BacteriaSpineFactory.createSpine(bact.getRegion(), true);
+        //SpineResult spine = BacteriaSpineFactory.createSpine(bact.getRegion(), false);
+        logger.debug("bounds: {}, spine sk: {}", bact.getBounds(), spineSk.spine[spineSk.spine.length-1].getContent2());
+        //logger.debug("bounds: {}, spine: {}", bact.getBounds(), spine.spine[spine.spine.length-1].getContent2());
     }
 }

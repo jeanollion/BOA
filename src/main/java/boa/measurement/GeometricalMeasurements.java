@@ -76,15 +76,25 @@ public class GeometricalMeasurements {
     }
     
     public static double getSpineLength(Region r) {
-        PointContainer2<?, Double>[] spine = BacteriaSpineFactory.createSpine(r);
-        return spine[spine.length-1].getContent2();
+        try {
+            PointContainer2<?, Double>[] spine = BacteriaSpineFactory.createSpine(r, true).spine;
+            if (spine==null || spine.length == 1) return Double.NaN;
+            return spine[spine.length-1].getContent2();
+        } catch (Throwable t) {
+            return Double.NaN;
+        }
     }
     public static double[] getSpineLengthAndWidth(Region r) {
-        PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(r);
-        if (spine==null) return new double[]{Double.NaN, Double.NaN};
-        double width = ArrayUtil.quantile(Arrays.stream(spine).mapToDouble(s->s.getContent1().norm()).sorted(), spine.length, 0.5);
-        double length = spine[spine.length-1].getContent2();
-        return new double[]{length, width};
+        try {
+            PointContainer2<Vector, Double>[] spine = BacteriaSpineFactory.createSpine(r, true).spine;
+            if (spine==null || spine.length==1) return new double[]{Double.NaN, Double.NaN};
+            double width = ArrayUtil.quantile(Arrays.stream(spine).mapToDouble(s->s.getContent1().norm()).sorted(), spine.length, 0.5);
+            double length = spine[spine.length-1].getContent2();
+            return new double[]{length, width};
+        } catch (Throwable t) {
+            return new double[]{Double.NaN, Double.NaN};
+        }
+        
     }
     public static double getDistance(Region o1, Region o2) {
         return getDistance(o1.getGeomCenter(false), o2.getGeomCenter(false), o1.getScaleXY(), o1.getScaleZ());
