@@ -87,8 +87,9 @@ public class CleanVoxelLine {
             skeleton = cl.cleanSkeleton();
             // order from upper-left end point
             Voxel endPoint = cl.voxMapNeighAndLabels.entrySet().stream().filter(e->e.getValue()[0]==1).map(e->e.getKey()).min(comp).orElseThrow(()->new RuntimeException("No end point in skeleton"));
-            List<Voxel> res = new ArrayList<>(skeleton);
-            res.sort((v1, v2)->Double.compare(endPoint.getDistanceSquareXY(v1), endPoint.getDistanceSquareXY(v2)));
+            List<Voxel> res = cl.segments.values().stream().map(s->(Edge)s).max(Edge::compareTo).get().getOrderdVoxelList(endPoint);
+            //res.sort((v1, v2)->Double.compare(endPoint.getDistanceSquareXY(v1), endPoint.getDistanceSquareXY(v2))); // distance to end point mayu not work for curved lines. 
+             
             return res;
         } else {
             List<Voxel> res = new ArrayList<>(skeleton);
@@ -215,7 +216,7 @@ public class CleanVoxelLine {
         Set<Vertex> path = new HashSet<>(lsPath);
         segments.values().stream().filter(e->!e.isJunction()).map(e->(Edge)e).filter(e->!e.isContainedInPath(path)).collect(Collectors.toList()).forEach(e->{
             e.remove(true, true);
-            // also remove end && relabel junction
+            // also remove end-branches && relabel junction
             Iterator<Vertex> vIt = e.connectedSegments.iterator();
             Vertex n1 = vIt.next();
             Vertex n2 = vIt.next();
@@ -227,7 +228,6 @@ public class CleanVoxelLine {
                 n1.relabel();
             }
         });
-        
         // last cleaning of right angles if necessary
         while (segments.size()>1) {
             Edge endBranch = segments.values().stream().filter(s->s.isEndBranch()).filter(s->s.voxels.size()==1).map(s->(Edge)s).findAny().orElse(null);
@@ -236,6 +236,18 @@ public class CleanVoxelLine {
                 Vertex junction  = (endBranch).connectedSegments.stream().findAny().orElse(null); // end branch has only one junction
                 junction.relabel();
             } else break;
+        }
+        // put end points back to branch
+        if (segments.size()>1) {
+            Iterator<Segment> it = segments.values().iterator();
+            while (it.hasNext()) {
+                Segment<? extends Segment> n = it.next();
+                if (n instanceof Vertex && n.voxels.size()==1) {
+                    Segment connected = n.connectedSegments.iterator().next();
+                    n.remove(false, true);
+                    connected.addVoxel(n.voxels.iterator().next());
+                }
+            }
         }
         if (verbose) {
             ImageWindowManagerFactory.showImage(draw(true).setName("end of clean skeleton"));
@@ -415,6 +427,7 @@ public class CleanVoxelLine {
         }
         return count;
     }
+    
     private List<Set<Segment>> getAllSegmentClusters() {
         if (segments.isEmpty()) return Collections.EMPTY_LIST;
         List<Set<Segment>> res = new ArrayList<>();
@@ -577,6 +590,29 @@ public class CleanVoxelLine {
             Vertex n1 = vIt.next();
             Vertex n2 = vIt.next();
             return path.contains(n1) && path.contains(n2);
+        }
+        public List<Voxel> getOrderdVoxelList(Voxel start) {
+            List<Voxel> res = new ArrayList<>(voxels.size());
+            res.add(start);
+            Voxel prev=null;
+            Voxel temp = new Voxel(0, 0, start.z);
+            boolean change = true;
+            while(change) {
+                change = false;
+                for (int i = 0; i<neigh.getSize(); ++i) {
+                    temp.x = start.x + neigh.dx[i];
+                    temp.y = start.y + neigh.dy[i];
+                    if (prev!=null && prev.equals(temp)) continue;
+                    if (voxels.contains(temp)) {
+                        prev = start;
+                        start = temp.duplicate();
+                        res.add(start);
+                        change = true;
+                        break; // maximum 2 neighbors in edge
+                    }
+                }
+            }
+            return res;
         }
         @Override
         public int compareTo(Edge o) {

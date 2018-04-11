@@ -61,10 +61,10 @@ public class TestSpine {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
         //String dbName = "AyaWT_mmglu";
-        String dbName = "MutH_150324";
-        int postition= 0, frame=3, mc=14, b=4;
-        //String dbName = "MutH_140115";
-        //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
+        //String dbName = "MutH_150324";
+        //int postition= 0, frame=3, mc=14, b=4;
+        String dbName = "MutH_140115";
+        int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
         
         MasterDAO mDAO = new Task(dbName).getDB();
         Position f = mDAO.getExperiment().getPosition(postition);

@@ -69,6 +69,7 @@ import java.util.function.Function;
 import java.util.function.ToDoubleBiFunction;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sc.fiji.skeletonize3D.Skeletonize3D_;
@@ -95,7 +96,7 @@ public class BacteriaSpineFactory {
         }
         public Image drawSkeleton(int zoomFactor) {
             if (skeleton == null) throw new RuntimeException("Skeleton not initialized");
-            return BacteriaSpineFactory.drawSpine(bounds, skeleton.stream().map(v->new PointContainer2(new Vector(0, 0), 1d, v.x, v.y)).toArray(l->new PointContainer2[l]), circContour, zoomFactor).setName("skeleton");
+            return BacteriaSpineFactory.drawSpine(bounds, IntStream.range(0, skeleton.size()).mapToObj(i->new PointContainer2(new Vector(0, 0), i+1d, skeleton.get(i).x, skeleton.get(i).y)).toArray(l->new PointContainer2[l]), circContour, 1).setName("skeleton");
         }
     }
     public static SpineResult createSpine(Region bacteria, boolean fromSkeleton) {
@@ -266,7 +267,7 @@ public class BacteriaSpineFactory {
         return count;
     }
     public static PointContainer2<Vector, Double>[] createSpineFromSkeleton(ImageMask mask, List<Voxel> skeleton, Set<Voxel> contour, CircularNode<Voxel> circContour) {
-        if (verbose) ImageWindowManagerFactory.showImage(drawSpine(mask, skeleton.stream().map(v->new PointContainer2(new Vector(0, 0), 1d, v.x, v.y)).toArray(l->new PointContainer2[l]), circContour, 1).setName("skeleton"));
+        if (verbose) ImageWindowManagerFactory.showImage(drawSpine(mask, IntStream.range(0, skeleton.size()).mapToObj(i->new PointContainer2(new Vector(0, 0), i+1d, skeleton.get(i).x, skeleton.get(i).y)).toArray(l->new PointContainer2[l]), circContour, 1).setName("skeleton"));
         // 1) get contour pair for each skeleton point
         List<Pair<CircularNode<Voxel>, CircularNode<Voxel>>> contourPairs = mapToContourPair(skeleton, contour, circContour, new SimpleOffset(mask).reverseOffset());
         List<PointContainer2<Vector, Double>> spListSk = contourPairs.stream().map(v -> PointContainer2.fromPoint(Point.middle2D(v.key.element, v.value.element), Vector.vector2D(v.key.element, v.value.element), 0d)).collect(Collectors.toList());
@@ -385,9 +386,15 @@ public class BacteriaSpineFactory {
     }
     
     public static List<Pair<CircularNode<Voxel>, CircularNode<Voxel>>> mapToContourPair(List<Voxel> skeleton, Set<Voxel> contour, CircularNode<Voxel> circContour, Offset logOff) {
-        if (skeleton.size()<2) throw new IllegalArgumentException("Can't initialize from singleton skeleton");
+        if (skeleton.size()<=2) { // circular shape : convention: axis = X
+            return skeleton.stream().map(vertebra -> {
+                Voxel left  = contour.stream().filter(v->v.x<vertebra.x).min((v1, v2) -> Double.compare(Math.abs(vertebra.y-v1.y), Math.abs(vertebra.y-v2.y))).get();
+                Voxel right  = contour.stream().filter(v->v.x>vertebra.x).min((v1, v2) -> Double.compare(Math.abs(vertebra.y-v1.y), Math.abs(vertebra.y-v2.y))).get();
+                return new Pair<>(circContour.getInFollowing(left, false), circContour.getInFollowing(right, true));
+            }).collect(Collectors.toList());
+        } 
         // start from center and go to each direction
-        int centerIdx = skeleton.size()<=2 ? 0 : skeleton.size()/2;
+        int centerIdx = skeleton.size()/2;
         // first contour point is closest point
         Voxel ver1 = skeleton.get(centerIdx);
         Voxel closest = contour.stream().min((v1, v2)->Double.compare(ver1.getDistanceSquareXY(v1), ver1.getDistanceSquareXY(v2))).get();
@@ -395,21 +402,23 @@ public class BacteriaSpineFactory {
         Point p = Vector.vector2D(closest, ver1).translate(ver1);
         Voxel closest2 = contour.stream().min((v1, v2)->Double.compare(p.distSq(v1), p.distSq(v2))).get();
         //if (verbose) logger.debug("sk->contour: init {}->{}->{} (dir: {}, 2nd point: {})", closest, ver1, closest2, Vector.vector2D(closest, ver1), p);
-        // ensure that closest is on the left side compared to skeleton orientation
-        if (Vector.crossProduct2D(Vector.vector2D(closest, ver1), Vector.vector2D(closest, skeleton.get(centerIdx+1)))<0) { // swap
-            Voxel temp = closest;
+        if (Vector.crossProduct2D(Vector.vector2D(closest, ver1), Vector.vector2D(closest, skeleton.get(centerIdx+1)))<0) { // ensure that closest is on the left side compared to skeleton orientation
+            Voxel temp = closest; //swap
             closest = closest2;
             closest2 = temp;
         }
+        if (verbose) logger.debug("sk->contour: middle of skeleton: {} first point start {}-{}", ver1.duplicate().translate(logOff), translateDuplicate(new Pair<>(circContour.getInFollowing(closest, true), circContour.getInFollowing(closest2, true)), logOff));
         List<Pair<CircularNode<Voxel>, CircularNode<Voxel>>> res = new ArrayList<>(skeleton.size());
         List<Pair<CircularNode<Voxel>, CircularNode<Voxel>>> bucket = new ArrayList<>();
         Pair<CircularNode<Voxel>, CircularNode<Voxel>> centerV = toContourPair(ver1, circContour.getInFollowing(closest, true), circContour.getInFollowing(closest2, true), bucket, logOff);
-        //if (verbose) logger.debug("sk->contour: first point {}->{}->{}", lastV.key, ver1, lastV.value);
+        if (verbose) logger.debug("sk->contour: first point {}-{}", translateDuplicate(centerV, logOff));
         Pair<CircularNode<Voxel>, CircularNode<Voxel>> lastV = centerV;
         for (int i = centerIdx-1; i>=0; --i) {
             lastV = toContourPair(skeleton.get(i), lastV.key.next, lastV.value.prev, bucket, logOff);
             res.add(lastV);
         }
+        if (res.size()>3) smoothLastContourPair(res, 2);
+        
         if (!res.isEmpty()) res = Utils.reverseOrder(res);
         res.add(centerV);
         lastV =centerV;
@@ -417,25 +426,67 @@ public class BacteriaSpineFactory {
             lastV = toContourPair(skeleton.get(i), lastV.key.prev, lastV.value.next, bucket, logOff);
             res.add(lastV);
         }
+        if (res.size()>3) smoothLastContourPair(res, 2);
         return res;
+    }
+    /**
+     * Spine creation is highly sentitive on last contour pair
+     * This method will smooth the direction of the last vector and update the contour pair acording to the smoothed direction
+     * @param res 
+     */
+    private static void smoothLastContourPair(List<Pair<CircularNode<Voxel>, CircularNode<Voxel>>> contourPairs, double sigma) {
+        List<PointContainer2<Vector, Double>> lastPairs = IntStream.range(Math.max(0, contourPairs.size()-((int)(sigma*2.5)+1)), contourPairs.size()-1).mapToObj(i -> {
+            Pair<CircularNode<Voxel>, CircularNode<Voxel>> v = contourPairs.get(i);
+            return PointContainer2.fromPoint(Point.middle2D(v.key.element, v.value.element), Vector.vector2D(v.key.element, v.value.element), 0d);
+        }).collect(Collectors.toList());
+        for (int i = lastPairs.size()-2; i>=0; --i) lastPairs.get(i).setContent2((lastPairs.get(i+1).getContent2() + lastPairs.get(i).dist(lastPairs.get(i+1))));
+        VectorSmoother smoother = new VectorSmoother(sigma);
+        smoother.init(lastPairs.get(lastPairs.size()-1).getContent1());
+        for (int i = lastPairs.size()-2; i>=0; --i) {
+            if (!smoother.addVector(lastPairs.get(i).getContent1(), lastPairs.get(i).getContent2())) break;
+        }
+        Vector newVect = smoother.getSmoothedVector();
+        // now update contour points to fit vector
+        Pair<CircularNode<Voxel>, CircularNode<Voxel>> lastP = contourPairs.get(contourPairs.size()-1);
+        Point left = lastPairs.get(lastPairs.size()-1).duplicate().translate(newVect.duplicate().multiply(-0.5));
+        lastP.key = getClosest(lastP.key, left);
+        Point right = lastPairs.get(lastPairs.size()-1).duplicate().translate(newVect.duplicate().multiply(0.5));
+        lastP.value = getClosest(lastP.value, right);
+    }
+    private static CircularNode<Voxel> getClosest(CircularNode<Voxel> start, Point ref) {
+        double min = ref.distSq(start.element);
+        CircularNode<Voxel> minN = start;
+        CircularNode<Voxel> prev = start.prev;
+        while(ref.distSq(prev.element)<min) {
+            min = ref.distSq(prev.element);
+            minN = prev;
+            prev = prev.prev;
+        }
+        CircularNode<Voxel> next = start.next;
+        while(ref.distSq(next.element)<min) {
+            min = ref.distSq(next.element);
+            minN = next;
+            next = next.next;
+        }
+        return minN;
     }
     private static Pair<CircularNode<Voxel>, CircularNode<Voxel>> toContourPair(Voxel vertebra, CircularNode<Voxel> start1, CircularNode<Voxel> start2, List<Pair<CircularNode<Voxel>, CircularNode<Voxel>>> bucket, Offset logOff) {
         ContourPairComparator comp = new ContourPairComparator(vertebra, start1, start2, bucket);
-        //if (verbose) logger.debug("to CP start: {} (d={}, a={}/{})", dupToLog(comp.min, logOff), comp.minDist, comp.minAlign, ContourPairComparator.alignTolerance);
+        //if (verbose) logger.debug("to CP start: {} (d={}, a={}/{})", translateDuplicate(comp.min, logOff), comp.minDist, comp.minAlign, ContourPairComparator.alignTolerance);
         // first search: BEST alignement while sliding along contour
         boolean change = true;
         while(change) {
             change = false;
             if (comp.compareToNext(true, true, true, ContourPairComparator.INCREMENT.DOWN)) change = true;
             else if (comp.compareToNext(true, true, true, ContourPairComparator.INCREMENT.UP)) change = true;
-            //if (verbose) logger.debug("to CP slide: {} (d={}, a={}/{}), direct: {}, bucket: {}", dupToLog(comp.min, logOff), comp.minDist, comp.minAlign, ContourPairComparator.alignTolerance, dupToLog(comp.direct, logOff), bucket.size());
+            //if (verbose) logger.debug("to CP slide: {} (d={}, a={}/{}), direct: {}, bucket: {}", translateDuplicate(comp.min, logOff), comp.minDist, comp.minAlign, ContourPairComparator.alignTolerance, translateDuplicate(comp.direct, logOff), bucket.size());
         }
-        //if (verbose) logger.debug("to CP after slide: {} (d={}, a={}/{})", dupToLog(comp.min, logOff), comp.minDist, comp.minAlign, ContourPairComparator.alignTolerance);
+        //if (verbose) logger.debug("to CP after slide: {} (d={}, a={}/{})", translateDuplicate(comp.min, logOff), comp.minDist, comp.minAlign, ContourPairComparator.alignTolerance);
         comp.indirect = new Pair(comp.min.key, comp.min.value);
         comp.direct = new Pair(comp.min.key, comp.min.value);
         // second search: rotation alignTest & minimize distance
-        change = true;
-        while(change || comp.minAlign>ContourPairComparator.alignTolerance) {
+        int pushWihtoutChangeCounter = 0; // allow to explore a little bit more the contour space
+        while(pushWihtoutChangeCounter<=4 || comp.minAlign>ContourPairComparator.alignTolerance) {
             change = false;
             boolean push = false;
             // look in direct direction
@@ -449,8 +500,11 @@ public class BacteriaSpineFactory {
             else if (comp.compareToNext(false, true, true, ContourPairComparator.INCREMENT.OPPOSITE)) changeI = true;
             if (!changeI) if (comp.push(false)) push = true;
             else change = true;
-            //if (verbose) logger.debug("to CP: {} (d={}, a={}/{}), bucket:{}, direct:{}, indirect: {}", dupToLog(comp.min, logOff), comp.minDist, comp.minAlign, ContourPairComparator.alignTolerance, bucket.size(), dupToLog(comp.direct, logOff), dupToLog(comp.indirect, logOff) );
-            if (!change && !push) break;
+            //if (verbose) logger.debug("to CP: {} (d={}, a={}/{}), bucket:{}, direct:{}, indirect: {}", translateDuplicate(comp.min, logOff), comp.minDist, comp.minAlign, ContourPairComparator.alignTolerance, bucket.size(), translateDuplicate(comp.direct, logOff), translateDuplicate(comp.indirect, logOff) );
+            if (!change) {
+                if (!push) break;
+                ++pushWihtoutChangeCounter;
+            } else pushWihtoutChangeCounter=0;
         }
         Pair<CircularNode<Voxel>, CircularNode<Voxel>> min;
         if (bucket.size()>1) { // choose most parallele with previous 
@@ -533,7 +587,7 @@ public class BacteriaSpineFactory {
                 this.indirect.value = c2;
                 minAlignNI = Double.POSITIVE_INFINITY;
             }
-            if (align<minAlign || dist<minDist) { // update min values
+            if ((minAlign>=alignTolerance && (align<minAlign || align==minAlign && dist<minDist)) || (dist<minDist || (dist==minDist && align<minAlign))) { // update min values
                 min.key = c1;
                 min.value = c2;
                 bucket.clear();
@@ -560,7 +614,7 @@ public class BacteriaSpineFactory {
         }
         
     }
-    private static Pair<Voxel, Voxel> dupToLog(Pair<CircularNode<Voxel>, CircularNode<Voxel>> p , Offset off) {
+    private static Pair<Voxel, Voxel> translateDuplicate(Pair<CircularNode<Voxel>, CircularNode<Voxel>> p , Offset off) {
         return new Pair<>(p.key.element.duplicate().translate(off), p.value.element.duplicate().translate(off));
     }
     
