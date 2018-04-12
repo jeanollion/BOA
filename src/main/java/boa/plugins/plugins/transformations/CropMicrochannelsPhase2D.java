@@ -23,6 +23,7 @@ import boa.configuration.parameters.FilterSequence;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.BoundingBox;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
@@ -72,8 +73,10 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
         Image imCrop = image.crop(nonNullBound);
         Image imDerY = ImageFeatures.getDerivative(imCrop, 2, 0, 1, 0, true);
         float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
-        if (yProj.length-1-channelHeight/2<0) throw new RuntimeException("No microchannels found in image. Out-of-Focus image ?");
-        int yMin = ArrayUtil.max(yProj, 0, yProj.length-1-channelHeight/2) + nonNullBound.yMin();
+        if (testMode) Utils.plotProfile("y - derivative Proj", yProj, nonNullBound.yMin());
+        // when optical aberration is very extended, actual length of micro-channels can be way smaller than the parameter -> no check
+        //if (yProj.length-1<channelHeight/10) throw new RuntimeException("No microchannels found in image. Out-of-Focus image ?");
+        int yMin = ArrayUtil.max(yProj, 0, yProj.length-1) + nonNullBound.yMin();
         //if (yMax<=0) yMax = yMin + channelHeight;
         
         if (yStop==0) yStop = image.sizeY()-1;
@@ -115,7 +118,7 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
         
         int startOfMicroChannel = endOfPeakYIdx - margin;
         if (testMode) {
-            new IJImageDisplayer().showImage(image);
+            ImageWindowManagerFactory.showImage(image);
             Utils.plotProfile("yProj", yProj);
             //Utils.plotProfile("Sliding sigma", slidingSigma);
             Plugin.logger.debug("Optical Aberration detection: start mc / end peak/ peak: idx: [{};{};{}], values: [{};{};{}]", startOfMicroChannel, endOfPeakYIdx, peakIdx, median, thld, yProj[peakIdx]);

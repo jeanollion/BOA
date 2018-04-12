@@ -536,15 +536,17 @@ public class Utils {
         for (int i = 0; i<x.length; ++i) x[i]=i;
         new Plot(title, "coord", "value", x, doubleValues).show();
     }
-    
     public static void plotProfile(String title, float[] values) {
+        plotProfile(title, values, 0);
+    }
+    public static void plotProfile(String title, float[] values, int xOffset) {
         if (values.length<=1) return;
         float v = values[0];
         int idx = 0; 
         while (idx<values.length && values[idx]==v) ++idx;
         if (idx==values.length) return;
         float[] x=new float[values.length];
-        for (int i = 0; i<x.length; ++i) x[i]=i;
+        for (int i = 0; i<x.length; ++i) x[i]=i+xOffset;
         new Plot(title, "coord", "value", x, values).show();
     }
     

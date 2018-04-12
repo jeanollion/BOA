@@ -102,8 +102,7 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
             default :
                 frames =  InputImages.chooseNImagesWithSignal(inputImages, channelIdx, framesN);
         }
-        boolean test = testMode;
-        if (framesN!=1) this.setTestMode(false);
+        
         Function<Integer, MutableBoundingBox> getBds = i -> {
             Image<? extends Image> im = inputImages.getImage(channelIdx, i);
             if (im.sizeZ()>1) {
@@ -113,11 +112,14 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
             }
             return getBoundingBox(im);
         };
-        Map<Integer, MutableBoundingBox> bounds = frames.stream().parallel().collect(Collectors.toMap(i->i, i->getBds.apply(i)));
+        boolean test = testMode;
         if (framesN!=1 && test) { // only test for one frame
             this.setTestMode(true);
             getBds.apply(inputImages.getDefaultTimePoint());
         }
+        if (framesN!=1) this.setTestMode(false);
+        Map<Integer, MutableBoundingBox> bounds = frames.stream().parallel().collect(Collectors.toMap(i->i, i->getBds.apply(i)));
+        
         if (bounds.isEmpty()) throw new RuntimeException("Bounds could not be computed");
         // uniformize y + reduce sizeY if necessary
         int maxSizeY = bounds.values().stream().mapToInt(b->b.sizeY()).max().getAsInt();
