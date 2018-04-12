@@ -114,9 +114,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.dao=dao;
     }
     public StructureObject duplicate() {
-        return duplicate(false, false);
+        return duplicate(false, false, false);
     }
-    public StructureObject duplicate(boolean generateNewID, boolean duplicateObject) {
+    public StructureObject duplicate(boolean generateNewID, boolean duplicateObject, boolean duplicateImages) {
         StructureObject res;
         if (isRoot()) res = new StructureObject(timePoint, (BlankMask)(duplicateObject?getMask().duplicateMask():getMask()), dao);
         else res= new StructureObject(timePoint, structureIdx, idx, duplicateObject?getRegion().duplicate():getRegion(), getParent());
@@ -124,15 +124,18 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         res.previousId=previousId;
         res.nextId=nextId;
         res.parentTrackHeadId=parentTrackHeadId;
+        res.parentId=parentId;
         res.trackHeadId=trackHeadId;
         res.isTrackHead=isTrackHead;
         res.previous=previous;
         res.next=next;
         res.trackHead=trackHead;
-        res.rawImagesC=rawImagesC.duplicate();
-        res.trackImagesC=trackImagesC.duplicate();
-        res.preFilteredImagesS=preFilteredImagesS.duplicate();
-        res.offsetInTrackImage=offsetInTrackImage;
+        if (duplicateImages) {
+            res.rawImagesC=rawImagesC.duplicate();
+            res.trackImagesC=trackImagesC.duplicate();
+            res.preFilteredImagesS=preFilteredImagesS.duplicate();
+            res.offsetInTrackImage=offsetInTrackImage==null ? null : new SimpleBoundingBox(offsetInTrackImage);
+        }
         if (attributes!=null && !attributes.isEmpty()) { // deep copy of attributes
             res.attributes=new HashMap<>(attributes.size());
             for (Entry<String, Object> e : attributes.entrySet()) {
@@ -219,6 +222,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void setParent(StructureObject parent) {
         this.parent=parent;
         this.parentId=parent.getId();
+        this.parentTrackHeadId=parent.getTrackHeadId();
     }
     public StructureObject getRoot() {
         if (isRoot()) return this;
@@ -293,7 +297,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
 
     public void setChildren(List<StructureObject> children, int structureIdx) {
         this.childrenSM.set(children, structureIdx);
-        if (children!=null) for (StructureObject o : children) o.setParent(this);
+        if (children!=null) children.forEach(o -> o.setParent(this));
     }
     
     @Override public List<StructureObject> setChildrenObjects(RegionPopulation population, int structureIdx) {

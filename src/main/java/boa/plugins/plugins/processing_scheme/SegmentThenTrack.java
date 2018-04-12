@@ -140,7 +140,7 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
         }
         segmentOnly(structureIdx, parentTrack, executor);
         trackOnly(structureIdx, parentTrack, executor);
-        trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
+        trackPostFilters.filter(structureIdx, parentTrack, executor);
     }
     public void segmentOnly(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
         if (!segmenter.isOnePluginSet()) {

@@ -63,7 +63,7 @@ public class StructureParameter extends IndexChoiceParameter {
     
     @Override public int getSelectedIndex() {
         int idx = super.getSelectedIndex();
-        if (idx==-1 && getChoiceList().length==1 && getXP()!=null) {
+        if (idx==-1 && !allowNoSelection &&  getChoiceList().length==1 && getXP()!=null) {
            this.setSelectedStructureIdx(0);
            return 0;
         }
@@ -104,11 +104,4 @@ public class StructureParameter extends IndexChoiceParameter {
         else return getXP().getFirstCommonParentStructureIdx(getSelectedIndex(), otherStructureIdx);
     }
     
-    /*@Override public void setContentFrom(Parameter other) {
-        super.setContentFrom(other);
-        if (other instanceof StructureParameter) {
-            StructureParameter otherP = (StructureParameter) other;
-            autoConfiguration = otherP.autoConfiguration; //TODO remove? 
-        } else throw new IllegalArgumentException("wrong parameter type");
-    }*/
 }

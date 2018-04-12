@@ -68,6 +68,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
             IndexChoiceParameter otherP = (IndexChoiceParameter) other;
             if (otherP.selectedIndicies!=null) this.setSelectedIndicies(Utils.copyArray(otherP.selectedIndicies));
             else this.setSelectedIndex(-1);
+            //logger.debug("ICP: {} recieve from: {} -> {} ({})", name, otherP.getSelectedItems(), this.getSelectedItems(), this.getSelectedIndex());
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     @Override
@@ -111,7 +112,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
             //return ui;
         }
         else {
-            return  new ChoiceParameterUI(this, true);
+            return  new ChoiceParameterUI(this);
             //else ((ChoiceParameterUI)ui).updateUIFromParameter();
             //return ui;
         }
@@ -126,12 +127,13 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
             if (selectedIndex<0) this.selectedIndicies=new int[]{0};
             else this.selectedIndicies = new int[]{selectedIndex};
         }
+        fireListeners();
     }
     
     // choosable parameter
     @Override
     public void setSelectedItem(String item) {
-        setSelectedIndex(Utils.getIndex(this.getChoiceList(), item));
+        setSelectedIndex(Utils.getIndex(getChoiceList(), item));
     }
     @Override
     public abstract String[] getChoiceList();
@@ -140,6 +142,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     @Override
     public void setSelectedIndicies(int[] selectedItems) {
         this.selectedIndicies=selectedItems;
+        fireListeners();
     }
     @Override
     public int[] getSelectedItems() {

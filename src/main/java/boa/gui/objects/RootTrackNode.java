@@ -133,7 +133,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
             //List<StructureObject> trackHeads = new ArrayList<StructureObject> (StructureObjectUtils.getAllTracks(getParentTrack(), structureIdx).keySet());
             //Collections.sort(trackHeads);
             if (trackHeads.isEmpty()) {
-                remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>();
+                remainingTrackHeadsTM = new TreeMap<>();
                 logger.debug("structure: {} no trackHeads found", structureIdx);
             } else {
                 logger.debug("structure: {} nb trackHeads found: {} in {}ms", structureIdx, trackHeads.size(), t1-t0);

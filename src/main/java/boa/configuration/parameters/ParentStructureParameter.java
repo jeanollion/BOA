@@ -27,7 +27,7 @@ public class ParentStructureParameter extends StructureParameter {
     int maxStructure;
     
     public ParentStructureParameter(String name) {
-        this(name, -1, 0);
+        this(name, -1, -1);
     }
     
     public ParentStructureParameter(String name, int selectedStructure, int maxStructure) {
@@ -35,17 +35,13 @@ public class ParentStructureParameter extends StructureParameter {
         this.maxStructure=maxStructure;
     }
 
-    public void setMaxStructureIdx(int maxStructure) {
-        this.maxStructure = maxStructure;
-        
+    public void setMaxStructureIdx(int maxStructureExcl) {
+        this.maxStructure = maxStructureExcl;
     }
     @Override public int getSelectedIndex() {
         int idx = super.getSelectedIndex();
-        if (idx>=maxStructure) {
-            idx = maxStructure>=0?maxStructure-1:-1;
-            this.setSelectedIndex(idx);
-            //Logger.getLogger(getClass().getName()).log(Level.WARNING, "parentStructureParameter:{0}set max structure ({1}) <current selected structure ({2}) -> selected structure set to -1", new Object[]{toString(), maxStructure, this.getSelectedIndex()});
-        }
+        //logger.debug("parent structure parameter:{}. sel idx: {} max idx : {}", name, idx, maxStructure);
+        if (maxStructure>=0 && idx>=maxStructure) throw new IllegalArgumentException("ParentStructureParameter "+name+"sel structure:"+idx+" superior to max structure: "+maxStructure);
         return idx;
     }
     
@@ -69,7 +65,7 @@ public class ParentStructureParameter extends StructureParameter {
     
     @Override
     public void setSelectedIndex(int structureIdx) {
-        if (maxStructure>=0 && structureIdx>maxStructure) throw new IllegalArgumentException("Parent Structure ("+structureIdx+") cannot be superior to max structure ("+maxStructure+")");
+        if (maxStructure>=0 && structureIdx>=maxStructure) throw new IllegalArgumentException("Parent Structure ("+structureIdx+") cannot be superior to max structure ("+maxStructure+")");
         super.setSelectedIndex(structureIdx);
     }
 }

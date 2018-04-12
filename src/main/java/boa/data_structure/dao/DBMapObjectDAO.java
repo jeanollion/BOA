@@ -519,13 +519,18 @@ public class DBMapObjectDAO implements ObjectDAO {
             //logger.debug("storing: {} objects under key: {}", toStore.size(), key.toString());
             Map<String, StructureObject> cacheMap = cache.getAndCreateIfNecessary(key);
             HTreeMap<String, String> dbMap = getDBMap(key);
-            for (StructureObject object : toStore) {
-                object.updateObjectContainer();
-                // get parent/pTh/next/prev ids ? 
+            long t0 = System.currentTimeMillis();
+            Map<String, String> toStoreMap = toStore.parallelStream().map(o->{o.updateObjectContainer(); return o;}).collect(Collectors.toMap(o->o.getId(), o->JSONUtils.serialize(o)));
+            long t1 = System.currentTimeMillis();
+            dbMap.putAll(toStoreMap);
+            long t2 = System.currentTimeMillis();
+            logger.debug("storing: #{} objects of structure: {} to: {} in {}ms ({}ms+{}ms)",toStoreMap.size(), key.value, objects.iterator().next().getParent().getTrackHead(), t2-t0, t1-t0, t2-t1);
+            toStore.stream().map((object) -> {
                 if (object.hasMeasurementModifications()) upserMeas.add(object);
+                return object;
+            }).forEachOrdered((object) -> {
                 cacheMap.put(object.getId(), object);
-                dbMap.put(object.getId(),JSONUtils.serialize(object));
-            }
+            });
             if (commit) this.getDB(key.value).commit();            
         }
         upsertMeasurements(upserMeas);
@@ -579,10 +584,8 @@ public class DBMapObjectDAO implements ObjectDAO {
         long t0 = System.currentTimeMillis();
         Map<String, StructureObject> allObjects = getChildren(new Pair(parentTrack.getId(), structureIdx));
         long t1 = System.currentTimeMillis();
-        logger.debug("parent: {}, structure: {}, {}# objects in {}", parentTrack, structureIdx, allObjects.size(), t1-t0);
-        List<StructureObject> list = new ArrayList<>();
-        for (StructureObject o : allObjects.values()) if (o.isTrackHead()) list.add(o);
-        Collections.sort(list); //, (o1, o2)-> Integer.compare(o1.getFrame(), o2.getFrame())
+        logger.debug("parent: {}, structure: {}, #{} objects retrieved in {}ms", parentTrack, structureIdx, allObjects.size(), t1-t0);
+        List<StructureObject> list = allObjects.values().stream().filter(o->o.isTrackHead()).sorted().collect(Collectors.toList());
         setParents(list, new Pair(parentTrack.getParentTrackHeadId(), parentTrack.getStructureIdx()));
         return list;
     }

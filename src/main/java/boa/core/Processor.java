@@ -248,7 +248,7 @@ public class Processor {
         else {
             try {
                 ps.segmentAndTrack(structureIdx, parentTrack, executor);
-                logger.debug("ps executed on track: {}, structure: {}", parentTrack.get(0), structureIdx);
+                logger.debug("ps {} executed on track: {}, structure: {}", ps.getClass(), parentTrack.get(0), structureIdx);
             } catch(Exception e) {
                 throw e;
             } finally {

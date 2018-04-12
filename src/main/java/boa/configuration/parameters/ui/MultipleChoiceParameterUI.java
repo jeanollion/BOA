@@ -94,7 +94,7 @@ public class MultipleChoiceParameterUI implements ParameterUI {
     
     public void updateSelectedItemsToParameter() {
         choice.setSelectedIndicies(getSelectedItems() );
-        choice.fireListeners();
+        //choice.fireListeners();
         if (model!=null) model.nodeChanged(choice);
     }
     

@@ -44,6 +44,7 @@ import boa.plugins.Tracker;
 import boa.plugins.plugins.manual_segmentation.WatershedManualSegmenter;
 import boa.plugins.plugins.manual_segmentation.WatershedObjectSplitter;
 import boa.plugins.plugins.pre_filters.ImageFeature;
+import boa.plugins.plugins.processing_scheme.Duplicate;
 import boa.utils.Utils;
 
 /**
@@ -108,37 +109,36 @@ public class Structure extends SimpleContainerParameter {
         objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true);
         processingScheme = new PluginParameter<>("Processing Scheme", ProcessingScheme.class, true);
         manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true);
+        this.parentStructure.addListener((Parameter source) -> {
+            int parentIdx = this.parentStructure.getSelectedIndex();
+            setParentStructure(parentIdx);
+            logger.debug("parent structure listener fired: parent: {}, seg parent: {}", this.parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
+            //update tree
+            ConfigurationTreeModel model = ParameterUtils.getModel(segmentationParent);
+            if (model!=null) model.nodeChanged(segmentationParent);
+            else logger.debug("no model found..");
+        });
+        segmentationParent.addListener((Parameter source) -> {
+            logger.debug("segmentation parent structure listener fired: parent: {}, seg parent: {}", this.parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
+            setSegmentationParentStructure(segmentationParent.getSelectedIndex());
+            //update tree
+            ConfigurationTreeModel model = ParameterUtils.getModel(segmentationParent);
+            if (model!=null) model.nodeChanged(segmentationParent);
+            else logger.debug("no model found..");
+        });
+        processingScheme.addListener((Parameter source) -> setMaxStructureIdx());
         initChildList();
     }
-    
+    public Structure() {
+        this("");
+    }
     public Structure(String name) {
         this(name, -1, -1);
     }
     
     @Override
     protected void initChildList() {
-        parentStructure.addListener(new ParameterListener() {
-            @Override public void fire(Parameter source) {
-                
-                int parentIdx = parentStructure.getSelectedIndex();
-                setParentStructure(parentIdx);
-                logger.debug("parent structure listener fired: parent: {}, seg parent: {}", parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
-                //update tree
-                ConfigurationTreeModel model = ParameterUtils.getModel(segmentationParent);
-                if (model!=null) model.nodeChanged(segmentationParent);
-                else logger.debug("no model found..");
-            }
-        });
-        segmentationParent.addListener(new ParameterListener() {
-            @Override public void fire(Parameter source) {
-                logger.debug("segmentation parent structure listener fired: parent: {}, seg parent: {}", parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
-                setSegmentationParentStructure(segmentationParent.getSelectedIndex());
-                //update tree
-                ConfigurationTreeModel model = ParameterUtils.getModel(segmentationParent);
-                if (model!=null) model.nodeChanged(segmentationParent);
-                else logger.debug("no model found..");
-            }
-        });
+        
         initChildren(parentStructure, segmentationParent, channelImage, processingScheme, objectSplitter, manualSegmenter, allowMerge, allowSplit, brightObject, manualObjectStrechThreshold); 
     }
     public Structure setBrightObject(boolean bright) {
@@ -222,6 +222,7 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public void setParentStructure(int parentIdx) {
+        if (this.parentStructure.getSelectedIndex()==parentIdx) return; // avoid loop with listeners
         parentStructure.setSelectedIndex(parentIdx);
         segmentationParent.setMaxStructureIdx(parentIdx+1);
         int segParent = segmentationParent.getSelectedIndex();
@@ -229,6 +230,7 @@ public class Structure extends SimpleContainerParameter {
     }
     public void setSegmentationParentStructure(int segmentationParentStructureIdx) {
         if (segmentationParentStructureIdx<parentStructure.getSelectedStructureIdx()) segmentationParentStructureIdx = parentStructure.getSelectedStructureIdx();
+        if (segmentationParentStructureIdx == segmentationParent.getSelectedStructureIdx()) return;
         segmentationParent.setSelectedIndex(segmentationParentStructureIdx);
     }
     
@@ -244,10 +246,16 @@ public class Structure extends SimpleContainerParameter {
     @Override 
     public void setParent(MutableTreeNode newParent) {
         super.setParent(newParent);
-        parentStructure.setMaxStructureIdx(parent.getIndex(this));
-        //retro compatibility: //TO BE REMOVED LATER
-        if (segmentationParent==null) segmentationParent =  new ParentStructureParameter("Segmentation Parent", parentStructure.getSelectedIndex(), -1);
-        segmentationParent.setMaxStructureIdx(parent.getIndex(this));
+        setMaxStructureIdx();
+    }
+    
+    private void setMaxStructureIdx() {
+        int idx = parent.getIndex(this);
+        parentStructure.setMaxStructureIdx(idx);
+        segmentationParent.setMaxStructureIdx(idx);
+        if (processingScheme.isOnePluginSet() && processingScheme.instanciatePlugin() instanceof Duplicate) {
+            processingScheme.getParameters().stream().filter(p->p instanceof ParentStructureParameter).map(p->(ParentStructureParameter)p).forEach(p->p.setMaxStructureIdx(idx));
+        }
     }
     
     @Override

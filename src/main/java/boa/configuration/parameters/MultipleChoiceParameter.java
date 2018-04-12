@@ -58,16 +58,19 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     }
     
     // multiple choice parameter implementation
+    @Override
     public void setSelectedIndicies(int[] selectedItems) {
         if (selectedItems==null) this.selectedItems=new int[0];
         else this.selectedItems = selectedItems;
+        fireListeners();
     }
     
     public void setAllSelectedItems() {
         this.selectedItems=new int[listChoice.length];
         for (int i = 0; i<selectedItems.length; ++i) selectedItems[i]=i;
+        fireListeners();
     }
-
+    @Override
     public int[] getSelectedItems() {
         if (selectedItems==null) selectedItems = new int[0];
         return selectedItems;

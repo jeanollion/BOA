@@ -52,17 +52,14 @@ public class ChoiceParameterUI implements ArmableUI {
     JMenuItem[] actionChoice;
     List allActions;
     int inc;
-    boolean limitChoice;
     public static String NO_SELECTION="no selection";
-    public ChoiceParameterUI(ChoosableParameter choice_, boolean limitChoice) {
-        this(choice_, limitChoice, null);
+    public ChoiceParameterUI(ChoosableParameter choice_) {
+        this(choice_, null);
     } 
     
-    public ChoiceParameterUI(ChoosableParameter choice_, boolean limitChoice, String subMenuTitle) {
+    public ChoiceParameterUI(ChoosableParameter choice_, String subMenuTitle) {
         this.choice = choice_;
-        this.limitChoice=limitChoice;
-        if (choice.isAllowNoSelection()) inc=1;
-        else inc=0;
+        inc = choice.isAllowNoSelection() ? 1 : 0;
         if (choice instanceof ActionableParameter) cond = ((ActionableParameter)choice).getConditionalParameter();
         if (cond!=null) this.model= ParameterUtils.getModel(cond);
         else this.model= ParameterUtils.getModel(choice);
@@ -82,9 +79,9 @@ public class ChoiceParameterUI implements ArmableUI {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         //if (ae.getActionCommand().equals("no selection"))
-                        choice.setSelectedItem(ae.getActionCommand());
-                        choice.fireListeners();
                         logger.debug("choice modif: {}, cond null? {}, model null?: {}, cond children: {}", ae.getActionCommand(), cond==null, model==null, cond==null?"0":cond.getChildCount());
+                        choice.setSelectedItem(ae.getActionCommand());
+                        //choice.fireListeners(); //fired by setSelectedItem
                         if (cond!=null) {
                             model.nodeStructureChanged(cond);
                             logger.debug("path: {}", Utils.toStringArray(model.getPathToRoot(cond), s->s.toString()));

@@ -25,44 +25,67 @@ import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import ij.ImageJ;
 import boa.image.Image;
 import boa.image.ImageMask;
 import boa.plugins.PluginFactory;
+import boa.plugins.ProcessingScheme;
+import boa.plugins.Segmenter;
+import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
+import static boa.processing.test.TestProcessBacteriaPhase.trackPrefilterRange;
+import boa.utils.Utils;
+import java.util.List;
 
 /**
  *
  * @author jollion
  */
 public class TestProcessBacteria {
+    static int bacteriaStructureIdx = 2;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
         int field = 0;
-        int microChannel =1;
+        int microChannel =0;
         int time =0;
         
         
         //String dbName = "fluo171219_WT_750ms";
         //String dbName = "fluo170512_WT";
-        String dbName = "MutH_150324";
+        String dbName = "WT_180318_Fluo";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int timePoint, int microChannel) {
         MasterDAO mDAO = new Task(dbName).getDB();
+        mDAO.setReadOnly(true);
         Position f = mDAO.getExperiment().getPosition(fieldNumber);
+        
+        List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
+        List<StructureObject> parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(rootTrack, 0), o->o.getIdx()==microChannel);
+        
+        ProcessingScheme psc = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme();
+        parentTrack.removeIf(o -> o.getFrame()<timePoint-trackPrefilterRange || o.getFrame()>timePoint+trackPrefilterRange);
+        psc.getTrackPreFilters(true).filter(bacteriaStructureIdx, parentTrack, null);
+        TrackParametrizable.TrackParametrizer<Segmenter> apply = TrackParametrizable.getTrackParametrizer(bacteriaStructureIdx, parentTrack, psc.getSegmenter(), null);
+        parentTrack.removeIf(o -> o.getFrame()<timePoint || o.getFrame()>timePoint);
+        
+        
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);
-        Image input = mc.getRawImage(1);
-        BacteriaIntensity seg = new BacteriaIntensity();
-        seg.testMode= true;
-        RegionPopulation pop = seg.runSegmenter(input, 1, mc);
-        ImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(input);
-        disp.showImage(pop.getLabelMap());
+        Image input = mc.getPreFilteredImage(bacteriaStructureIdx);
+        BacteriaIntensity.verbose=true;
+        Segmenter seg = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme().getSegmenter();
+        if (apply !=null) apply.apply(mc, seg);
+        
+        ImageWindowManagerFactory.showImage(input);
+        RegionPopulation pop = seg.runSegmenter(input, bacteriaStructureIdx, mc);
+        ImageWindowManagerFactory.showImage(input);
+        ImageWindowManagerFactory.showImage(pop.getLabelMap());
         
         // test split
         //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));

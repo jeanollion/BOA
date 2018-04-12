@@ -23,6 +23,11 @@ package boa.configuration.parameters;
  * @author jollion
  */
 public interface ChoosableParameter extends Parameter, Listenable {
+    /**
+     * Set {@param item} as selected
+     * Should also fire listeners
+     * @param item 
+     */
     public void setSelectedItem(String item);
     public String[] getChoiceList();
     public int getSelectedIndex();

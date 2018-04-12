@@ -50,6 +50,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
         return selectedIndex;
     }
     
+    @Override 
     public void setSelectedItem(String selectedItem) {
         this.selectedIndex=Utils.getIndex(listChoice, selectedItem);
         if (selectedIndex==-1) this.selectedItem = "no item selected";
@@ -75,7 +76,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
 
     @Override
     public ParameterUI getUI() {
-        return new ChoiceParameterUI(this, true);
+        return new ChoiceParameterUI(this);
     }
     @Override
     public boolean sameContent(Parameter other) {

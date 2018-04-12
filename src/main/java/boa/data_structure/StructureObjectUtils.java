@@ -589,7 +589,7 @@ public class StructureObjectUtils {
     // duplicate objects 
     private static StructureObject duplicateWithChildrenAndParents(StructureObject o, ObjectDAO newDAO, Map<String, StructureObject> sourceToDupMap, boolean children, boolean parents) {
         o.loadAllChildren(false);
-        StructureObject res=o.duplicate(false, true);
+        StructureObject res=o.duplicate(false, true, true);
         if (sourceToDupMap!=null) sourceToDupMap.put(o.getId(), res);
         if (children) {
             for (int cIdx : o.getExperiment().getAllDirectChildStructures(o.structureIdx)) {
@@ -601,7 +601,7 @@ public class StructureObjectUtils {
             StructureObject current = o;
             StructureObject currentDup = res;
             while (!current.isRoot() && current.getParent()!=null) {
-                StructureObject pDup = current.getParent().duplicate(false, true);
+                StructureObject pDup = current.getParent().duplicate(false, true, true);
                 if (sourceToDupMap!=null) sourceToDupMap.put(current.getParent().getId(), pDup);
                 pDup.dao=newDAO;
                 currentDup.setParent(pDup);

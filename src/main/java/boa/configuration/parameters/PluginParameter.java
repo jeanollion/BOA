@@ -176,9 +176,10 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         //Parameter.logger.debug("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
-        if (params ==null) params = new Parameter[0];
-        ParameterUtils.setContent(Arrays.asList(params), pluginParameters);
-        for (Parameter p : params) p.setParent(this);
+        if (params !=null) {
+            ParameterUtils.setContent(Arrays.asList(params), pluginParameters);
+            for (Parameter p : params) p.setParent(this);
+        }
         return instance;
     }
     
@@ -256,7 +257,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     @Override
     public ChoiceParameterUI getUI(){
-        ChoiceParameterUI ui =  new ChoiceParameterUI(this, false, "Plugins");
+        ChoiceParameterUI ui =  new ChoiceParameterUI(this, "Plugins");
         if (this.isOnePluginSet()) {
             // get structureIdx
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
@@ -287,8 +288,10 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
     
     // choosable parameter interface
+    @Override
     public void setSelectedItem(String item) {
         this.setPlugin(item);
+        fireListeners();
     }
     
     public ArrayList<String> getPluginNames() {
