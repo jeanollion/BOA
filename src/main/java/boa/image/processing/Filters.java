@@ -407,7 +407,7 @@ public class Filters {
             return neighborhood.hasNullValue(x, y, z, image, outOfBoundIsNull) ? 0 :1;
         }
     }
-    private static class BinaryMax extends Filter {
+    public static class BinaryMax extends Filter {
         final boolean outOfBoundIsNonNull;
         public BinaryMax(boolean outOfBoundIsNonNull) {
             this.outOfBoundIsNonNull=outOfBoundIsNonNull;

@@ -70,11 +70,18 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
             pop=filter.instanciatePlugin().runPostFilter(parent, structureIdx, pop);
             List<StructureObject> toRemove=null;
             if (parent.getChildren(structureIdx)!=null) {
-                for (StructureObject o : parent.getChildren(structureIdx)) {
-                    if (!pop.getRegions().contains(o.getRegion())) {
-                        if (toRemove==null) toRemove= new ArrayList<>();
-                        toRemove.add(o);
-                    } 
+                List<StructureObject> children = parent.getChildren(structureIdx);
+                if (pop.getRegions().size()==children.size()) { // map each object by index
+                    for (int i = 0; i<pop.getRegions().size(); ++i) {
+                        children.get(i).setRegion(pop.getRegions().get(i));
+                    }
+                } else { // map object by hashcode -> preFilter should only modify or 
+                    for (StructureObject o : parent.getChildren(structureIdx)) {
+                        if (!pop.getRegions().contains(o.getRegion())) {
+                            if (toRemove==null) toRemove= new ArrayList<>();
+                            toRemove.add(o);
+                        } 
+                    }
                 }
             }
             if (!rootParent) pop.translate(parent.getBounds(), true); // go back to absolute landmark

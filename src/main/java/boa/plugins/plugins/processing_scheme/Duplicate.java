@@ -55,7 +55,14 @@ public class Duplicate extends SegmentThenTrack {
     ParentStructureParameter dup = new ParentStructureParameter("Duplicate From");
     public Duplicate() {
         super();
-        parameters= new Parameter[]{dup, preFilters, trackPreFilters, postFilters, tracker, trackPostFilters};
+        parameters= new Parameter[]{dup, preFilters, trackPreFilters, tracker, trackPostFilters};
+    }
+    @Override
+    public Duplicate addPostFilters(PostFilter... postFilter) {
+        throw new IllegalArgumentException("No post filters allowed for duplicate processing scheme");
+    }
+    @Override public Duplicate addPostFilters(Collection<PostFilter> postFilter){
+        throw new IllegalArgumentException("No post filters allowed for duplicate processing scheme");
     }
     @Override
     public Segmenter getSegmenter() {
@@ -107,10 +114,6 @@ public class Duplicate extends SegmentThenTrack {
             });
         }
         getTrackPreFilters(true).filter(structureIdx, parentTrack, executor);
-        // execute post filters
-        if (!postFilters.isEmpty()) { // todo : use executor ??
-            parentTrack.stream().parallel().forEach(p-> p.setChildrenObjects(postFilters.filter(p.getObjectPopulation(structureIdx), structureIdx, p), structureIdx));
-        }
     }
     
 }

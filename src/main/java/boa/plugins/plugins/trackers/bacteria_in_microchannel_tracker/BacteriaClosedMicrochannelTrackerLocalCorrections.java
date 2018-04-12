@@ -1162,7 +1162,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             else name = "Step: "+snapshotIdx;
         }
         List<StructureObject> newParents = new ArrayList<>(parentsByF.size());
-        for (StructureObject p : parentsByF.values()) newParents.add(p.duplicate(true, false));
+        for (StructureObject p : parentsByF.values()) newParents.add(p.duplicate(true, false, true));
         Collections.sort(newParents);
         StructureObjectUtils.setTrackLinks(newParents);
         stepParents.put(name, newParents);

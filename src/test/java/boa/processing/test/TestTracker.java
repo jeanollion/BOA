@@ -80,12 +80,12 @@ public class TestTracker {
         //String dbName = "MutH_140115";
         //String dbName = "MutD5_141202";
         //String dbName = "MutT_150402";
-        String dbName = "MutH_151220";
+        //String dbName = "MutH_151220";
         //String dbName = "WT_150616";
-        //String dbName = "WT_180318_Fluo";
-        int pIdx =20;
-        int mcIdx =7;
-        int structureIdx =1;
+        String dbName = "WT_180318_Fluo";
+        int pIdx =0;
+        int mcIdx =0;
+        int structureIdx =3;
         int[] frames = new int[]{0,1000}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
@@ -118,15 +118,16 @@ public class TestTracker {
     
     public static void test(ObjectDAO dao, ProcessingScheme ps, boolean trackOnly, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = Processor.getOrCreateRootTrack(dao);
+        int parentSIdx = dao.getExperiment().getStructure(structureIdx).getParentStructure();
         List<StructureObject> parentTrack=null;
-        if (structureIdx==0) {
+        if (parentSIdx==-1) {
             parentTrack = roots;
             roots.removeIf(o -> o.getFrame()<tStart-trackPrefilterRange || o.getFrame()>tEnd+trackPrefilterRange);
             ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
             roots.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }
         else {
-            parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, 0), o->o.getIdx()==mcIdx&& o.getFrame()<=tEnd);
+            parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, parentSIdx), o->o.getIdx()==mcIdx&& o.getFrame()<=tEnd);
             parentTrack.removeIf(o -> o.getFrame()<tStart-trackPrefilterRange || o.getFrame()>tEnd+trackPrefilterRange);
             ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
             parentTrack.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
@@ -184,14 +185,15 @@ public class TestTracker {
     
     public static void testBCMTLCStep(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = Processor.getOrCreateRootTrack(dao);
+        int parentSIdx = dao.getExperiment().getStructure(structureIdx).getParentStructure();
         List<StructureObject> parentTrack=null;
-        if (structureIdx==0) {
+        if (parentSIdx==-1) {
             parentTrack = roots;
             ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
             roots.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }
         else {
-            parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, 0), o->o.getIdx()==mcIdx&& o.getFrame()<=tEnd);
+            parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, parentSIdx), o->o.getIdx()==mcIdx&& o.getFrame()<=tEnd);
             ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
             parentTrack.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }

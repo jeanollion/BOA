@@ -23,6 +23,7 @@ import boa.configuration.parameters.ScaleXYZParameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.ImageInteger;
 import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
@@ -32,20 +33,19 @@ import boa.image.processing.neighborhood.Neighborhood;
  *
  * @author jollion
  */
-public class BinaryClose implements PostFilter {
+public class BinaryMax implements PostFilter {
     ScaleXYZParameter scale = new ScaleXYZParameter("Radius", 5, 1, true);
-    public BinaryClose() {}
-    public BinaryClose(double radius) {
+    public BinaryMax() {}
+    public BinaryMax(double radius) {
         this.scale.setScaleXY(radius);
     }
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Neighborhood n = Filters.getNeighborhood(scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parent.getMask());
-        for (Region o : childPopulation.getRegions()) {
-            ImageInteger closed = Filters.binaryCloseExtend(o.getMaskAsImageInteger(), n);
-            o.setMask(closed);
-        }
-        return childPopulation;
+        childPopulation.relabel(false); // ensure label are ordered
+        ImageInteger labelMap =  (ImageInteger)Filters.applyFilter(childPopulation.getLabelMap(), null, new Filters.BinaryMaxLabelWise(), n);
+        RegionPopulation res = new RegionPopulation(labelMap, true);
+        return res;
     }
 
     @Override

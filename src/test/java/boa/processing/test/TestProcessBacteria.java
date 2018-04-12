@@ -44,7 +44,7 @@ import java.util.List;
  * @author jollion
  */
 public class TestProcessBacteria {
-    static int bacteriaStructureIdx = 2;
+    static int bacteriaStructureIdx = 3;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
@@ -63,9 +63,9 @@ public class TestProcessBacteria {
         MasterDAO mDAO = new Task(dbName).getDB();
         mDAO.setReadOnly(true);
         Position f = mDAO.getExperiment().getPosition(fieldNumber);
-        
+        int parentSIdx = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getParentStructure();
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
-        List<StructureObject> parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(rootTrack, 0), o->o.getIdx()==microChannel);
+        List<StructureObject> parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(rootTrack, parentSIdx), o->o.getIdx()==microChannel);
         
         ProcessingScheme psc = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme();
         parentTrack.removeIf(o -> o.getFrame()<timePoint-trackPrefilterRange || o.getFrame()>timePoint+trackPrefilterRange);
@@ -76,7 +76,7 @@ public class TestProcessBacteria {
         
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
-        StructureObject mc = root.getChildren(0).get(microChannel);
+        StructureObject mc = root.getChildren(parentSIdx).get(microChannel);
         Image input = mc.getPreFilteredImage(bacteriaStructureIdx);
         BacteriaIntensity.verbose=true;
         Segmenter seg = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme().getSegmenter();

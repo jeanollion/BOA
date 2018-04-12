@@ -65,6 +65,7 @@ public class TestProcessBacteriaPhase {
     static boolean setMask = false;
     static boolean normalize = false;
     static int trackPrefilterRange = 100;
+    static int bacteriaStructureIdx = 2;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
@@ -73,7 +74,8 @@ public class TestProcessBacteriaPhase {
         //String dbName = "MutD5_141209";
         //String dbName = "MutH_150324";
         //String dbName = "MutH_151220";
-        String dbName = "MutH_140115";
+        //String dbName = "MutH_140115";
+        String dbName = "WT_180318_Fluo";
         //String dbName = "WT_150616";
         //String dbName = "WT_180318_Fluo";
         //String dbName = "Aya2";
@@ -83,9 +85,9 @@ public class TestProcessBacteriaPhase {
         //String dbName = "WT_150616";
         //String dbName = "MutT_150402";
         //String dbName = "TestThomasRawStacks";
-        int field = 20;
-        int microChannel =7;
-        int[] time =new int[]{0, 1000}; //22
+        int field = 0;
+        int microChannel =0;
+        int[] time =new int[]{0, 0}; //22
         //setMask=true;
         //thld = 776;
         
@@ -97,38 +99,39 @@ public class TestProcessBacteriaPhase {
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int microChannel, int timePointMin, int timePointMax) {
         MasterDAO mDAO = new Task(dbName).getDB();
         mDAO.setReadOnly(true);
+        int parentSIdx = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getParentStructure();
         Position f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
-        List<StructureObject> parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(rootTrack, 0), o->o.getIdx()==microChannel);
+        List<StructureObject> parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(rootTrack, parentSIdx), o->o.getIdx()==microChannel);
         
-        ProcessingScheme psc = mDAO.getExperiment().getStructure(1).getProcessingScheme();
+        ProcessingScheme psc = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme();
         parentTrack.removeIf(o -> o.getFrame()<timePointMin-trackPrefilterRange || o.getFrame()>timePointMax+trackPrefilterRange);
-        psc.getTrackPreFilters(true).filter(1, parentTrack, null);
-        TrackParametrizer apply = TrackParametrizable.getTrackParametrizer(1, parentTrack, psc.getSegmenter(), null);
+        psc.getTrackPreFilters(true).filter(bacteriaStructureIdx, parentTrack, null);
+        TrackParametrizer apply = TrackParametrizable.getTrackParametrizer(bacteriaStructureIdx, parentTrack, psc.getSegmenter(), null);
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {
-            Image input = mc.getPreFilteredImage(1);
+            Image input = mc.getPreFilteredImage(bacteriaStructureIdx);
             if (input==null) throw new RuntimeException("no preFIltered image!!");
             Segmenter seg = psc.getSegmenter();
             if (apply!=null) apply.apply(mc, seg);
             if (parentTrack.size()==1) {
                 if (seg instanceof BacteriaIntensity) ((BacteriaIntensity)seg).testMode=true;
             }
-            mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
+            mc.setChildrenObjects(seg.runSegmenter(input, bacteriaStructureIdx, mc), bacteriaStructureIdx);
            
-            logger.debug("seg: tp {}, #objects: {}", mc.getFrame(), mc.getChildren(1).size());
+            logger.debug("seg: tp {}, #objects: {}", mc.getFrame(), mc.getChildren(bacteriaStructureIdx).size());
         }
         //if (true) return;
         GUI.getInstance(); // for hotkeys...
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, 1);
-        Image im = i.generatemage(1, true);
-        iwm.addImage(im, i, 1, true);
+        Image im = i.generatemage(bacteriaStructureIdx, true);
+        iwm.addImage(im, i, bacteriaStructureIdx, true);
         for (StructureObject mc : parentTrack)  mc.setRawImage(1, mc.getPreFilteredImage(1));
-        im = i.generatemage(1, true);
-        iwm.addImage(im, i, 1, true);
-        iwm.setInteractiveStructure(1);
+        im = i.generatemage(bacteriaStructureIdx, true);
+        iwm.addImage(im, i, bacteriaStructureIdx, true);
+        iwm.setInteractiveStructure(bacteriaStructureIdx);
         iwm.displayAllObjects(im);
     }
 }
