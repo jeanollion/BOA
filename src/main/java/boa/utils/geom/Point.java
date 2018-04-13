@@ -37,6 +37,7 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     public Point(float... coords) {
         this.coords=coords;
     }
+    
     public float getWithDimCheck(int dim) {
         if (dim>=coords.length) return 0;
         return coords[dim];
@@ -90,12 +91,23 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     public static Point middle2D(Offset o1, Offset o2) {
         return new Point((o1.xMin()+o2.xMin())/2f, (o1.yMin()+o2.yMin())/2f);
     }
+    public static Point middle2D(RealLocalizable start, RealLocalizable end) {
+        return new Vector((float)((end.getDoublePosition(0)+start.getDoublePosition(0))/2d), (float)((end.getDoublePosition(1)+start.getDoublePosition(1))/2d));
+    }
     public T weightedSum(Point other, double weight, double weightOther) {
         for (int i = 0; i<coords.length; ++i) coords[i] = (float)(coords[i] * weight + other.coords[i]*weightOther);
         return (T) this;
     }
     public static Point asPoint2D(Offset off) {
         return new Point(off.xMin(), off.yMin());
+    }
+    public static Point asPoint2D(RealLocalizable loc) {
+        return new Point(loc.getFloatPosition(0), loc.getFloatPosition(1));
+    }
+    public static Point asPoint(RealLocalizable loc) {
+        float[] coords = new float[loc.numDimensions()];
+        loc.localize(coords);
+        return new Point(coords);
     }
     public static Point asPoint(Offset off) {
         return new Point(off.xMin(), off.yMin(), off.zMin());
@@ -118,6 +130,16 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     public double distSq(Point other) {
         double d = 0;
         for (int i = 0; i<coords.length; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
+        return d;
+    }
+    public double distSq(RealLocalizable other) {
+        double d = 0;
+        for (int i = 0; i<coords.length; ++i) d+=Math.pow(coords[i]-other.getDoublePosition(i), 2);
+        return d;
+    }
+    public double distSqXY(RealLocalizable other) {
+        double d = 0;
+        for (int i = 0; i<2; ++i) d+=Math.pow(coords[i]-other.getDoublePosition(i), 2);
         return d;
     }
     public double dist(Point other) {

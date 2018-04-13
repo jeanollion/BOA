@@ -37,8 +37,11 @@ public class Vector extends Point<Vector>  {
     public Vector(Voxel start, Voxel end) {
         this(end.x-start.x, end.y-start.y, end.z-start.z);
     }
-    public static Vector vector2D(Offset start, Offset end) {
+    public static Vector vector2DFromOffset(Offset start, Offset end) {
         return new Vector(end.xMin()-start.xMin(), end.yMin()-start.yMin());
+    }
+    public static Vector vector2D(RealLocalizable start, RealLocalizable end) {
+        return new Vector((float)(end.getDoublePosition(0)-start.getDoublePosition(0)), (float)(end.getDoublePosition(1)-start.getDoublePosition(1)));
     }
     public static Vector vector(Point start, Point end) {
         float[] coords = new float[start.numDimensions()];

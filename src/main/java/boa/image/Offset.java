@@ -18,6 +18,7 @@
  */
 package boa.image;
 
+
 /**
  *
  * @author jollion

@@ -28,6 +28,7 @@ import boa.data_structure.dao.ObjectDAO;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageByte;
+import boa.image.Offset;
 import boa.image.SimpleOffset;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import boa.image.processing.bacteria_spine.BacteriaSpineCoord;
@@ -35,6 +36,7 @@ import boa.image.processing.bacteria_spine.BacteriaSpineFactory.SpineResult;
 import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL;
+import boa.image.processing.bacteria_spine.CircularContourFactory;
 import boa.image.processing.bacteria_spine.CircularNode;
 import static boa.image.processing.bacteria_spine.CleanVoxelLine.cleanContour;
 import boa.plugins.PluginFactory;
@@ -61,10 +63,10 @@ public class TestSpine {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
         //String dbName = "AyaWT_mmglu";
-        //String dbName = "MutH_150324";
-        //int postition= 0, frame=3, mc=14, b=4;
-        String dbName = "MutH_140115";
-        int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
+        String dbName = "MutH_150324";
+        int postition= 0, frame=1, mc=0, b=0;
+        //String dbName = "MutH_140115";
+        //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
         
         MasterDAO mDAO = new Task(dbName).getDB();
         Position f = mDAO.getExperiment().getPosition(postition);
@@ -114,16 +116,16 @@ public class TestSpine {
             skeleton = BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(contour));
         }
         CircularNode<Voxel> circContour;
-        Point center = Point.asPoint(skeleton.get(skeleton.size()/2));
+        Point center = Point.asPoint((Offset)skeleton.get(skeleton.size()/2));
         try {
              logger.debug("get circular contour for: {}", b);
-            circContour = BacteriaSpineFactory.getCircularContour(contour, center);
+            circContour = CircularContourFactory.getCircularContour(contour, center);
             //logger.debug("contour ok for : {}", b);
         } catch (Exception e) {
             logger.debug("failed to create circular contour: for bact: "+b, e);
             contour = cleanContour(b.getRegion().getContour(), true); // run in verbose mode
             BacteriaSpineFactory.verbose=true;
-            circContour = BacteriaSpineFactory.getCircularContour(contour, center); // will throw exception
+            circContour = CircularContourFactory.getCircularContour(contour, center); // will throw exception
         }
 
         try {

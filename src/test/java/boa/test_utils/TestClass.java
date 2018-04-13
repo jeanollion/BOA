@@ -44,6 +44,8 @@ import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.SymetricalPair;
 import static boa.utils.Utils.removeFromMap;
+import boa.utils.geom.Point;
+import net.imglib2.Localizable;
 
 /**
  *
@@ -51,7 +53,16 @@ import static boa.utils.Utils.removeFromMap;
  */
 public class TestClass {
     public static void main(String[] args) {
-        logger.debug("1+NaN: {}", (float)0d/0d);
+        List<Voxel> l = new ArrayList<>(5);
+        l.add( new Voxel(1, 2, 3));
+        List<Localizable> lll = (List<Localizable>)(List)l;
+        Localizable vox = lll.get(0);
+        lll.add(new Point(0, 1));
+        logger.debug("vox: {}", vox);
+        toString(lll);
+    }
+    private static <T extends Localizable> void toString(List<T> loc) {
+        for (T t: loc) logger.debug("elem: {}", t);
     }
     //@Test
     public void testSymetricalPair() {

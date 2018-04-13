@@ -23,9 +23,11 @@ import boa.image.Offset;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import net.imglib2.Localizable;
+import net.imglib2.RealLocalizable;
 
 
-public class Voxel implements Comparable<Voxel>, Offset<Voxel> {
+public class Voxel implements Comparable<Voxel>, Offset<Voxel>, Localizable {
     public int x, y;
     public float value;
     public int z;
@@ -64,13 +66,8 @@ public class Voxel implements Comparable<Voxel>, Offset<Voxel> {
     }
 
     @Override
-    public int hashCode() {
-        //return Arrays.hashCode(new int[]{x, y, z});
-        int hash = 7;
-        hash = 97 * hash + this.x;
-        hash = 97 * hash + this.y;
-        hash = 97 * hash + this.z;
-        return hash;
+    public int hashCode() { // compatible with Arrays.hashCode()
+        return 31 * (31 * (31 + x) + y ) + z;
     }
 
     @Override
@@ -231,5 +228,80 @@ public class Voxel implements Comparable<Voxel>, Offset<Voxel> {
         y=-y;
         z=-z;
         return this;
+    }
+    // real localizale
+    @Override
+    public void localize(float[] position) {
+        position[0] = x;
+        position[1] = y;
+        if (position.length>2) position[2] = z;
+    }
+
+    @Override
+    public void localize(double[] position) {
+        position[0] = x;
+        position[1] = y;
+        if (position.length>2) position[2] = z;
+    }
+
+    @Override
+    public float getFloatPosition(int d) {
+        switch(d) {
+            case 0:
+                return x;
+            case 1:
+                return y;
+            case 2: 
+                return z;
+            default:
+                return 0;
+        }
+    }
+
+    @Override
+    public double getDoublePosition(int d) {
+        switch(d) {
+            case 0:
+                return x;
+            case 1:
+                return y;
+            case 2: 
+                return z;
+            default:
+                return 0;
+        }
+    }
+
+    @Override
+    public int numDimensions() {
+        return 3;
+    }
+    
+    // localizable implementation 
+    @Override
+    public void localize(int[] position) {
+        position[0] = x;
+        position[1] = y;
+        if (position.length>2) position[2] = z;    }
+
+    @Override
+    public void localize(long[] position) {
+        position[0] = x;
+        position[1] = y;
+        if (position.length>2) position[2] = z;
+    }
+
+    @Override
+    public long getLongPosition(int d) {
+        switch(d) {
+            case 0:
+                return x;
+            case 1:
+                return y;
+            case 2: 
+                return z;
+            default:
+                return 0;
+        }
     }
 }

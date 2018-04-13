@@ -77,7 +77,7 @@ public class BacteriaSpineLocalizer {
         return length;
     }
     public Image draw(int zoomFactor) {
-        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, BacteriaSpineFactory.getCircularContour(cleanContour(bacteria.getContour()), bacteria.getGeomCenter(false)), zoomFactor);
+        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, CircularContourFactory.getCircularContour(cleanContour(bacteria.getContour()), bacteria.getGeomCenter(false)), zoomFactor);
     }
 
     /**

@@ -18,14 +18,22 @@
  */
 package boa.image.processing.bacteria_spine;
 
+import boa.utils.geom.GeomUtils;
+import boa.utils.geom.Point;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
+import net.imglib2.Localizable;
+import net.imglib2.RealLocalizable;
 
 /**
  *
  * @author jollion
  */
 public class CircularNode<T> implements Comparable<CircularNode> {
+
+    
     CircularNode<T> prev, next;
     T element;
     public CircularNode(T element) {
@@ -137,5 +145,92 @@ public class CircularNode<T> implements Comparable<CircularNode> {
     @Override
     public String toString() {
         return element.toString();
+    }
+    
+    // HELPER METHOD WITH LOCALIZABLE ELEMENTS
+    /**
+     * Local min distance search from {@param ref} starting from {@param firstSearchPoint}
+     * @param ref
+     * @param firstSearchPoint
+     * @param bucket recieve 2 closest point or only one if the 2 other neighbors have same distance
+     */
+    static <T extends RealLocalizable> void addTwoLocalNearestPoints(Point ref, CircularNode<T> firstSearchPoint, List<CircularNode<T>> bucket) {
+        bucket.clear();
+        Function<RealLocalizable, Double> dist = (RealLocalizable v) -> ref.distSq(v);
+        double dMin = dist.apply(firstSearchPoint.element);
+        CircularNode<T> p = firstSearchPoint.prev();
+        CircularNode<T> n = firstSearchPoint.next();
+        double dMinP = dist.apply(p.element);
+        double dMinN = dist.apply(n.element);
+        // if both are inferior -> put both points.
+        if (dMinP < dMin && dMinN < dMin) {
+            bucket.add(p);
+            bucket.add(n);
+        } else if (dMinP < dMin) {
+            // search in prev direction
+            while (dMinP < dMin) {
+                dMin = dMinP;
+                p = p.prev();
+                dMinP = dist.apply(p.element);
+            }
+            p = p.next(); // local min
+            bucket.add(p);
+            dMinN = dist.apply(p.next().element);
+            if (dMinN < dMinP) {
+                bucket.add(p.next());
+            } else if (dMinP < dMinN) {
+                bucket.add(p.prev());
+            }
+        } else if (dMinN < dMin) {
+            // search in next direction
+            while (dMinN < dMin) {
+                dMin = dMinN;
+                n = n.next();
+                dMinN = dist.apply(n.element);
+            }
+            n = n.prev(); // local min
+            bucket.add(n);
+            dMinP = dist.apply(n.prev().element);
+            if (dMinP < dMinN) {
+                bucket.add(n.prev());
+            } else if (dMinN < dMinP) {
+                bucket.add(n.next());
+            }
+        } else {
+            bucket.add(firstSearchPoint);
+            if (dMinP < dMinN) {
+                bucket.add(p);
+            } else if (dMinP > dMinN) {
+                bucket.add(n);
+            }
+        }
+    }
+    public static <T extends RealLocalizable> CircularNode<T> searchForFirstCloseElement(RealLocalizable ref, double distanceSqThld, CircularNode<T> start, boolean searchInNext, boolean searchInPrev) {
+        if (!searchInPrev && !searchInNext) throw new IllegalArgumentException("Search either in next or in prev");
+        ToDoubleFunction<T> dist = (T elem) -> GeomUtils.distSq(ref, elem);
+        if (dist.applyAsDouble(start.element)<distanceSqThld) return start;
+        if (searchInPrev && searchInNext) {
+            CircularNode<T> n = start.next;
+            CircularNode<T> p = start.prev;
+            while(n!=start) {
+                if (dist.applyAsDouble(n.element)<distanceSqThld) return n;
+                if (dist.applyAsDouble(p.element)<distanceSqThld) return p;
+                n = n.next;
+                p = p.prev;
+            }
+        } else if (searchInNext) {
+            CircularNode<T> n = start.next;
+            while(n!=start) {
+                if (dist.applyAsDouble(n.element)<distanceSqThld) return n;
+                n = n.next;
+            }
+        } else if (searchInPrev) {
+            CircularNode<T> p = start.prev;
+            while(p!=start) {
+                if (dist.applyAsDouble(p.element)<distanceSqThld) return p;
+                p = p.prev;
+            }
+        }
+        return null; // not found
     }
 }
