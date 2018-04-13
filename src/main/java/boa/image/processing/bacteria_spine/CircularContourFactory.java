@@ -22,7 +22,9 @@ import boa.data_structure.Region;
 import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
+import boa.utils.geom.GeomUtils;
 import boa.utils.geom.Point;
+import boa.utils.geom.PointSmoother;
 import boa.utils.geom.Vector;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -191,5 +193,69 @@ public class CircularContourFactory {
         }
         return count;
     }
-    
+    public static <T extends RealLocalizable> CircularNode<Point> smoothContour2D(CircularNode<T> circContour, double sigma) {
+        PointSmoother smoother = new PointSmoother(sigma);
+        CircularNode<Point> res = new CircularNode<>(smooth2D(circContour, smoother));
+        CircularNode<Point> currentRes = res;
+        CircularNode<T> current = circContour.next;
+        while(current!=circContour) {
+            currentRes = currentRes.setNext(smooth2D(current, smoother));
+            current = current.next;
+        }
+        currentRes.setNext(res); // close loop
+        return res;
+    }
+    private static <T extends RealLocalizable> Point smooth2D(CircularNode<T> point, PointSmoother smoother) {
+        smoother.init(Point.asPoint2D(point.element), false);
+        CircularNode<T> n = point.next;
+        double cumDist = GeomUtils.distXY(point.element, n.element);
+        while(n!=point && smoother.addRealLocalizable(n.element, cumDist)) {
+            cumDist += GeomUtils.distXY(n.element, n.next.element);
+            n = n.next;
+        }
+        CircularNode<T> p = point.prev;
+        cumDist = GeomUtils.distXY(point.element, p.element);
+        while(p!=point && smoother.addRealLocalizable(p.element, cumDist)) {
+            cumDist += GeomUtils.distXY(p.element, p.prev.element);
+            p = p.prev;
+        }
+        return smoother.getSmoothed();
+    }
+    public static <T> Set<T> getSet(CircularNode<T> circContour) {
+        HashSet<T> res = new HashSet<>();
+        CircularNode.apply(circContour, c->res.add(c.element), true);
+        return res;
+    }
+    public static void ressampleContour(CircularNode<Point> circContour, double d) {
+        CircularNode<Point> current = circContour;
+        while (current!=circContour.prev) current = moveNextPoint(current, d);
+        // check last point
+        double dN = circContour.element.distXY(circContour.prev.element);
+        if (dN>d) { // simply add a point in between
+            CircularNode<Point> p = circContour.prev;
+            circContour.setPrev(Point.middle2D(circContour.element, p.element));
+            circContour.prev.setPrev(p);
+        }
+    }
+    private static CircularNode<Point> moveNextPoint(CircularNode<Point> circContour, double d) {
+        double dN = circContour.element.distXY(circContour.next.element);
+        if (dN>=2d) { // creates a point between the two
+            CircularNode<Point> n = circContour.next;
+            circContour.setNext(Point.middle2D(circContour.element, n.element));
+            circContour.next.setNext(n);
+            return circContour.next;
+        }
+        if (dN>d) { // next point moves closer
+            circContour.next.element.translate(Vector.vector(circContour.next.element, circContour.element).normalize().multiply(dN-d));
+            return circContour.next;
+        }
+        d-=dN;
+        double dNN = circContour.next.element.dist(circContour.next.next.element);
+        if (dNN<d) { // simply remove next element
+            circContour.setNext(circContour.next.next);
+            return circContour;
+        }
+        circContour.next.element.translate(Vector.vector(circContour.next.element, circContour.next.next.element).normalize().multiply(d));
+        return circContour.next;
+    }  
 }

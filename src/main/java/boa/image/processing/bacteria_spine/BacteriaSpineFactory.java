@@ -50,7 +50,7 @@ import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
 import boa.utils.geom.PointContainer4;
 import boa.utils.geom.Vector;
-import boa.utils.geom.VectorSmoother;
+import boa.utils.geom.PointSmoother;
 import ij.ImagePlus;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -106,16 +106,21 @@ public class BacteriaSpineFactory {
         if (!bacteria.is2D()) throw new IllegalArgumentException("Only works on 2D regions");
         SpineResult res = new SpineResult();
         res.bounds = new SimpleBoundingBox(bacteria.getBounds());
-        Set<Voxel> contour = bacteria.getContour();
-        cleanContour(contour);
+        Set<Localizable> contour = (Set)bacteria.getContour();
+        cleanContour((Set)contour);
         res.contour = (Set)contour;
         CircularNode<Localizable> circContour;
-        List<Voxel> skeleton = fromSkeleton ? getSkeleton(getMaskFromContour(contour)) : null;
+        List<Voxel> skeleton = fromSkeleton ? getSkeleton(getMaskFromContour((Set)contour)) : null;
         Point center = fromSkeleton ? Point.asPoint((Offset)skeleton.get(skeleton.size()/2)) : bacteria.getGeomCenter(false) ; 
         res.center = center;
         try {
-            circContour = (CircularNode)CircularContourFactory.getCircularContour(contour, center);
+            circContour = (CircularNode)CircularContourFactory.getCircularContour((Set)contour, center);
+            circContour = (CircularNode)CircularContourFactory.smoothContour2D(circContour,1);
+            CircularContourFactory.ressampleContour((CircularNode)circContour, 1);
+            //CircularNode.apply(circContour, c->logger.debug("{} after smooth {}", count[0]++, c.element), true);
+            contour = (Set)CircularContourFactory.getSet(circContour);
             res.circContour=circContour;
+            res.contour = contour;
         } catch (RuntimeException e) {
             logger.error("error creating spine: ", e);
             return null;
@@ -162,8 +167,7 @@ public class BacteriaSpineFactory {
     public static <T extends Localizable> PointContainer2<Vector, Double>[] createSpineFromSkeleton(ImageMask mask, List<Voxel> skeleton, Set<T> contour, CircularNode<T> circContour) {
         if (verbose) ImageWindowManagerFactory.showImage(drawSpine(mask, IntStream.range(0, skeleton.size()).mapToObj(i->new PointContainer2(new Vector(0, 0), i+1d, skeleton.get(i).x, skeleton.get(i).y)).toArray(l->new PointContainer2[l]), circContour, 1).setName("skeleton"));
         // 1) get contour pair for each skeleton point
-        Offset logOff =  new SimpleOffset(mask).reverseOffset();
-        List<Pair<CircularNode<T>, CircularNode<T>>> contourPairs = mapToContourPair(skeleton, contour, circContour,logOff);
+        List<Pair<CircularNode<T>, CircularNode<T>>> contourPairs = mapToContourPair(skeleton, contour, circContour,new SimpleOffset(mask).reverseOffset());
         List<PointContainer2<Vector, Double>> spListSk = contourPairs.stream().map(v -> PointContainer2.fromPoint(Point.middle2D(v.key.element, v.value.element), Vector.vector2D(v.key.element, v.value.element), 0d)).collect(Collectors.toList());
         if (verbose) ImageWindowManagerFactory.showImage(drawSpine(mask, spListSk.toArray(new PointContainer2[spListSk.size()]), circContour, 5).setName("skeleton init spine"));
         // 2) start getting the spList in one direction and the other
@@ -311,7 +315,7 @@ public class BacteriaSpineFactory {
             lastV = toContourPair(skeleton.get(i), lastV.key.next, lastV.value.prev, bucket, logOff);
             res.add(lastV);
         }
-        if (res.size()>3) smoothLastContourPair(res, 2);
+        //if (res.size()>3) smoothLastContourPair(res, 2);
         
         if (!res.isEmpty()) res = Utils.reverseOrder(res);
         res.add(centerV);
@@ -320,9 +324,10 @@ public class BacteriaSpineFactory {
             lastV = toContourPair(skeleton.get(i), lastV.key.prev, lastV.value.next, bucket, logOff);
             res.add(lastV);
         }
-        if (res.size()>3) smoothLastContourPair(res, 2);
+        //if (res.size()>3) smoothLastContourPair(res, 2);
         return res;
     }
+    // TODO FIX: sometimes moves the point. Should be the 2 contour points that yield in the closest point & closest direction to smoothed vector....
     /**
      * Spine creation is highly sentitive on last contour pair
      * This method will smooth the direction of the last vector and update the contour pair acording to the smoothed direction
@@ -335,12 +340,12 @@ public class BacteriaSpineFactory {
         }).collect(Collectors.toList());
         for (int i = lastPairs.size()-2; i>=0; --i) lastPairs.get(i).setContent2((lastPairs.get(i+1).getContent2() + lastPairs.get(i).dist(lastPairs.get(i+1))));
         //logger.debug("smooth last contour pair: distance to last: {}", Utils.toStringList(lastPairs, p->p.getContent2()));
-        VectorSmoother smoother = new VectorSmoother(sigma);
-        smoother.init(lastPairs.get(lastPairs.size()-1).getContent1());
+        PointSmoother<Vector> smoother = new PointSmoother(sigma);
+        smoother.init(lastPairs.get(lastPairs.size()-1).getContent1(), true);
         for (int i = lastPairs.size()-2; i>=0; --i) {
-            if (!smoother.addVector(lastPairs.get(i).getContent1(), lastPairs.get(i).getContent2())) break;
+            if (!smoother.add(lastPairs.get(i).getContent1(), lastPairs.get(i).getContent2())) break;
         }
-        Vector newVect = smoother.getSmoothedVector();
+        Vector newVect = smoother.getSmoothed();
         // now update contour points to fit vector
         Pair<CircularNode<T>, CircularNode<T>> lastP = contourPairs.get(contourPairs.size()-1);
         Point left = lastPairs.get(lastPairs.size()-1).duplicate().translate(newVect.duplicate().multiply(-0.5));
@@ -568,7 +573,7 @@ public class BacteriaSpineFactory {
             } else { // other stop condition: out of mask in direction of spine
                 Point nextPoint = newPoint.duplicate().translate(spineDir);
                 Point nextPoint2 = nextPoint.duplicate().translate(spineDir);
-                if (!mask.insideMaskWithOffset(nextPoint2.getIntPosition(0), nextPoint2.getIntPosition(1), mask.zMin())) {
+                if (!mask.containsWithOffset(nextPoint2.getIntPosition(0), nextPoint2.getIntPosition(1), mask.zMin()) || !mask.insideMaskWithOffset(nextPoint2.getIntPosition(0), nextPoint2.getIntPosition(1), mask.zMin())) {
                     CircularNode<T> searchStart = CircularNode.searchForFirstCloseElement(nextPoint, 1, s1, firstNext, !firstNext);
                     if (searchStart == null) return sp;
                     sp.add(PointContainer2.fromPoint(nextPoint, dir.duplicate(), 0d));
@@ -704,19 +709,16 @@ public class BacteriaSpineFactory {
         // draw contour of bacteria
         int startLabel = spine==null ? 1: Math.max(spine[spine.length-1].getContent2().intValue(), spine.length) +10;
         if (circularContour!=null) {
-            CircularNode<T> current = circularContour;
             EllipsoidalNeighborhood neigh = new EllipsoidalNeighborhood(zoomFactor/2d, false);
-            boolean start  = true;
-            while(current!=null && (start || !current.equals(circularContour))) {
+            int[] lab = new int[]{startLabel};
+            CircularNode.apply(circularContour, c->{
                 for (int i = 0; i<neigh.getSize(); ++i) {
-                    vox.x = (int)Math.round((current.element.getDoublePosition(0)-off.xMin())*zoomFactor+add+neigh.dx[i]);
-                    vox.y = (int)Math.round(current.element.getDoublePosition(1)-off.yMin())*zoomFactor+add+neigh.dy[i];
-                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, startLabel);
+                    vox.x = (int)Math.round((c.element.getDoublePosition(0)-off.xMin())*zoomFactor+add+neigh.dx[i]);
+                    vox.y = (int)Math.round((c.element.getDoublePosition(1)-off.yMin())*zoomFactor+add+neigh.dy[i]);
+                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, lab[0]);
                 }
-                current = current.next();
-                start = false;
-                startLabel++;
-            }
+                ++lab[0];
+            }, true);
         }
         if (spine!=null) {
             int spineVectLabel = 1;
@@ -778,16 +780,16 @@ public class BacteriaSpineFactory {
         }
     }
     private static void smoothDirections(List<PointContainer2<Vector, Double>> spine, double sigma) {
-        VectorSmoother v = new VectorSmoother(sigma);
+        PointSmoother<Vector> v = new PointSmoother(sigma);
         List<Vector> newVectors = new ArrayList<>(spine.size());
         for (int i = 0; i<spine.size(); ++i) {
-            v.init(spine.get(i).getContent1());
+            v.init(spine.get(i).getContent1(), true);
             double currentPos = spine.get(i).getContent2();
             int j = i-1;
-            while (j>0 && v.addVector(spine.get(j).getContent1(), Math.abs(currentPos-spine.get(j).getContent2()))) {--j;}
+            while (j>0 && v.add(spine.get(j).getContent1(), Math.abs(currentPos-spine.get(j).getContent2()))) {--j;}
             j = i+1;
-            while (j<spine.size() && v.addVector(spine.get(j).getContent1(), Math.abs(currentPos-spine.get(j).getContent2()))) {++j;}
-            newVectors.add(v.getSmoothedVector());
+            while (j<spine.size() && v.add(spine.get(j).getContent1(), Math.abs(currentPos-spine.get(j).getContent2()))) {++j;}
+            newVectors.add(v.getSmoothed());
         }
         for (int i = 0; i<spine.size(); ++i) spine.get(i).setContent1(newVectors.get(i));
     }

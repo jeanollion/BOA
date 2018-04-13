@@ -22,6 +22,7 @@ import boa.utils.geom.GeomUtils;
 import boa.utils.geom.Point;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 import net.imglib2.Localizable;
@@ -146,7 +147,25 @@ public class CircularNode<T> implements Comparable<CircularNode> {
     public String toString() {
         return element.toString();
     }
-    
+    // HELPER METHOD
+    public static <T> void apply(CircularNode<T> circContour, Consumer<CircularNode<T>> func, boolean next) {
+        func.accept(circContour);
+        if (next) {
+            CircularNode<T> n = circContour.next;
+            while(circContour!=n) {
+                func.accept(n);
+                n = n.next;
+                if (n==null) return;
+            }
+        } else {
+            CircularNode<T> p = circContour.prev;
+            while(circContour!=p) {
+                func.accept(p);
+                p = p.prev;
+                if (p==null) return;
+            }
+        }
+    }
     // HELPER METHOD WITH LOCALIZABLE ELEMENTS
     /**
      * Local min distance search from {@param ref} starting from {@param firstSearchPoint}

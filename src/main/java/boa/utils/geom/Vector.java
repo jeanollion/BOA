@@ -53,10 +53,7 @@ public class Vector extends Point<Vector>  {
         for (int i = 0; i<coords.length; ++i) coords[i] =(float)(end.getDoublePosition(i) - start.getDoublePosition(i));
         return new Vector(coords);
     }
-    public Vector add(Vector other, double w) {
-        for (int i = 0; i<coords.length; ++i) coords[i]+=other.coords[i]*w;
-        return this;
-    }
+    
     public double norm() {
         double norm = 0;
         for (float c : coords) norm+=c*c;
@@ -67,10 +64,7 @@ public class Vector extends Point<Vector>  {
         for (int i = 0; i<coords.length; ++i) coords[i]/=norm;
         return this;
     }
-    public Vector multiply(double factor) {
-        for (int i = 0; i<coords.length; ++i) coords[i]*=factor;
-        return this;
-    }
+    
     public double dotProduct(Vector v) {
         double sum = 0;
         for (int i = 0; i<coords.length; ++i) sum+=coords[i]*v.coords[i];

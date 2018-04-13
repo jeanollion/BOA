@@ -22,40 +22,54 @@ import boa.utils.Pair;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.ToDoubleFunction;
+import net.imglib2.RealLocalizable;
 
 /**
  *
  * @author Jean Ollion
  */
-public class VectorSmoother {
+public class PointSmoother<T extends Point<T>> {
     @FunctionalInterface  private interface GaussFunction {public double getCoeff(double distSq);}
     final GaussFunction gaussCoeff;
     final double limit, coeff0;
     double sum;
-    Vector currentVector;
-    public VectorSmoother(double sigma) {
+    int numDim;
+    T currentVector;
+    public PointSmoother(double sigma) {
         double sig2 = sigma * sigma * 2;
         double coeff = 1/Math.sqrt(sig2 * Math.PI);
         gaussCoeff = x2 -> coeff * Math.exp(-x2/sig2);
         limit = gaussCoeff.getCoeff(9*sigma*sigma);
         coeff0 = gaussCoeff.getCoeff(0);
     }
-    public void init(Vector start) {
-        currentVector = start.duplicate();
+    public void init(T start, boolean duplicate) {
+        if (duplicate) currentVector = start.duplicate();
+        else currentVector = start;
         currentVector.multiply(coeff0);
         sum = coeff0;
+        numDim = currentVector.numDimensions();
     }
-    public boolean addVector(Vector v, double dist) {
-        return addVectorDistSq(v, dist*dist);
+    public boolean add(T v, double dist) {
+        return addDistSq(v, dist*dist);
     }
-    public boolean addVectorDistSq(Vector v, double distSq) {
+    public boolean addDistSq(T v, double distSq) {
         double c = gaussCoeff.getCoeff(distSq);
         if (c<=limit) return false;
         sum+=c;
         currentVector.add(v, c);
         return true;
     }
-    public Vector getSmoothedVector() {
+    public boolean addRealLocalizable(RealLocalizable loc, double dist) {
+        return addRealLocalizableDistSq(loc, dist*dist);
+    }
+    public boolean addRealLocalizableDistSq(RealLocalizable loc, double distSq) {
+        double c = gaussCoeff.getCoeff(distSq);
+        if (c<=limit) return false;
+        sum+=c;
+        for (int i = 0; i<numDim; ++i) currentVector.addDim(loc.getDoublePosition(i)*c, i);
+        return true;
+    }
+    public T getSmoothed() {
         currentVector.multiply(1d/sum);
         return currentVector;
     }

@@ -175,9 +175,9 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
                 Point center = o.getCenter();
                 if (center==null) center = o.getGeomCenter(false);
                 else center =center.duplicate(); // in order to avoid modifying original array
-                center.multiply(o.getScaleXY(), 0);
-                center.multiply(o.getScaleXY(), 1);
-                center.multiply(o.getScaleZ(), 2);
+                center.multiplyDim(o.getScaleXY(), 0);
+                center.multiplyDim(o.getScaleXY(), 1);
+                center.multiplyDim(o.getScaleZ(), 2);
                 return new SpotWithinCompartment(o, frame, compartiment, center, distParams);
             }
 

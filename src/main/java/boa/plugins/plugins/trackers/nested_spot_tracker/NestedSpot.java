@@ -41,7 +41,7 @@ public class NestedSpot extends SpotWithQuality {
         this(region, parent, localizerMap, distanceParameters, localizerMap.get(parent).getSpineCoord(region.getCenter()));
     }
     private NestedSpot(Region region, StructureObject parent, Map<StructureObject, BacteriaSpineLocalizer> localizerMap, DistanceComputationParameters distanceParameters,  BacteriaSpineCoord spineCoord) {
-        super(region.getCenter().duplicate().multiply(region.getScaleXY(), 0).multiply(region.getScaleXY(), 1).multiply(region.getScaleZ(), 2), 1, 1);
+        super(region.getCenter().duplicate().multiplyDim(region.getScaleXY(), 0).multiplyDim(region.getScaleXY(), 1).multiplyDim(region.getScaleZ(), 2), 1, 1);
         this.localizerMap = localizerMap;
         this.region = region;
         this.parent = parent;

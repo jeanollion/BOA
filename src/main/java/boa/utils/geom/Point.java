@@ -72,8 +72,8 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
         for (int i = 0; i<coords.length; ++i) coords[i] = (coords[i]+other.coords[i])/2f;
         return (T)this;
     }
-    public Point duplicate() {
-        return new Point(Arrays.copyOf(coords, coords.length));
+    public T duplicate() {
+        return (T)new Point(Arrays.copyOf(coords, coords.length));
     }
     /**
      * 
@@ -88,7 +88,7 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     public static Point middle(Offset o1, Offset o2) {
         return new Point((o1.xMin()+o2.xMin())/2f, (o1.yMin()+o2.yMin())/2f, (o1.zMin()+o2.zMin())/2f);
     }
-    public static Point middle2D(Offset o1, Offset o2) {
+    public static Point middle2DOffset(Offset o1, Offset o2) {
         return new Point((o1.xMin()+o2.xMin())/2f, (o1.yMin()+o2.yMin())/2f);
     }
     public static Point middle2D(RealLocalizable start, RealLocalizable end) {
@@ -132,6 +132,16 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
         for (int i = 0; i<coords.length; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
         return d;
     }
+    public double distSqXY(Point other) {
+        double d = 0;
+        for (int i = 0; i<2; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
+        return d;
+    }
+    public double distXY(Point other) {
+        double d = 0;
+        for (int i = 0; i<2; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
+        return Math.sqrt(d);
+    }
     public double distSq(RealLocalizable other) {
         double d = 0;
         for (int i = 0; i<coords.length; ++i) d+=Math.pow(coords[i]-other.getDoublePosition(i), 2);
@@ -148,9 +158,21 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     public double dist(Offset other) {
         return Math.sqrt(distSq(other));
     }
-    public Point multiply(double factor, int dim) {
+    public T multiplyDim(double factor, int dim) {
         if (coords.length>dim) coords[dim]*=factor;
-        return this;
+        return (T)this;
+    }
+    public T multiply(double factor) {
+        for (int i = 0; i<coords.length; ++i) coords[i]*=factor;
+        return (T)this;
+    }
+    public T add(Point other, double w) {
+        for (int i = 0; i<coords.length; ++i) coords[i]+=other.coords[i]*w;
+        return (T)this;
+    }
+    public T addDim(double value, int dim) {
+        if (coords.length>dim) coords[dim]+=value;
+        return (T)this;
     }
     /**
      * Coordinates are not copies any modification on the will impact this instance 

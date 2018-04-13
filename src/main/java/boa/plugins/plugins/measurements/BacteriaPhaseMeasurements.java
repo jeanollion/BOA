@@ -87,8 +87,8 @@ public class BacteriaPhaseMeasurements implements Measurement {
         BoundingBox parentOffset = object.getParent().getBounds();
         Point center=bactObject.getGeomCenter(false);
         center.translateRev(parentOffset);
-        center.multiply(object.getScaleXY(), 0);
-        center.multiply(object.getScaleXY(), 1);
+        center.multiplyDim(object.getScaleXY(), 0);
+        center.multiplyDim(object.getScaleXY(), 1);
         //if (object.getTimePoint()==0) logger.debug("object: {} center: {}, parentOffset: {}, objectoffset: {} bactImageOffset: {}, mutImageOffset: {}", object, center, parentOffset, object.getBounds(), bactImage.getBoundingBox(), mutImage.getBoundingBox());
         Measurements m = object.getMeasurements();
         m.setValue("BacteriaCenterX", center.get(0));

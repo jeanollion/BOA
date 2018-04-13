@@ -116,9 +116,9 @@ public class RelativePosition implements Measurement {
                 break;
         }
         if (objectCenter==null) return;
-        objectCenter.multiply(object.getRegion().getScaleXY(), 0);
-        objectCenter.multiply(object.getRegion().getScaleXY(), 1);
-        objectCenter.multiply(object.getRegion().getScaleZ(), 2);
+        objectCenter.multiplyDim(object.getRegion().getScaleXY(), 0);
+        objectCenter.multiplyDim(object.getRegion().getScaleXY(), 1);
+        objectCenter.multiplyDim(object.getRegion().getScaleZ(), 2);
         Point refPoint=null;
         if (refObject!=null) {
             switch (this.refPoint.getSelectedIndex()) {
@@ -134,9 +134,9 @@ public class RelativePosition implements Measurement {
                     break;
             }
         } else refPoint = new Point(0, 0, 0); // absolute
-        refPoint.multiply(object.getRegion().getScaleXY(), 0);
-        refPoint.multiply(object.getRegion().getScaleXY(), 1);
-        refPoint.multiply(object.getRegion().getScaleZ(), 2);
+        refPoint.multiplyDim(object.getRegion().getScaleXY(), 0);
+        refPoint.multiplyDim(object.getRegion().getScaleXY(), 1);
+        refPoint.multiplyDim(object.getRegion().getScaleZ(), 2);
         object.getMeasurements().setValue(getKey("X"), (objectCenter.get(0)-refPoint.get(0)));
         object.getMeasurements().setValue(getKey("Y"), (objectCenter.get(1)-refPoint.get(1)));
         if (objectCenter.numDimensions()>2) object.getMeasurements().setValue(getKey("Z"), (objectCenter.get(2)-refPoint.getWithDimCheck(2)));

@@ -85,8 +85,8 @@ public class BacteriaFluoMeasurements implements Measurement {
         BoundingBox parentOffset = object.getParent().getBounds();
         Point center=bactObject.getMassCenter(bactImage, false);
         center.translateRev(parentOffset);
-        center.multiply(object.getScaleXY(), 0);
-        center.multiply(object.getScaleXY(), 1);
+        center.multiplyDim(object.getScaleXY(), 0);
+        center.multiplyDim(object.getScaleXY(), 1);
         
         //if (object.getTimePoint()==0) logger.debug("object: {} center: {}, parentOffset: {}, objectoffset: {} bactImageOffset: {}, mutImageOffset: {}", object, center, parentOffset, object.getBounds(), bactImage.getBoundingBox(), mutImage.getBoundingBox());
         object.getMeasurements().setValue("BacteriaCenterX", center.get(0));
