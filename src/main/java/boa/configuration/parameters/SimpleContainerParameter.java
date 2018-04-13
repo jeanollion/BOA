@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import boa.utils.Utils;
+import java.util.function.Consumer;
 
 /**
  *
@@ -95,6 +96,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         try {
             T p = (T) this.getClass().getDeclaredConstructor(String.class).newInstance(name);
             p.setContentFrom(this);
+            ((SimpleContainerParameter)p).setListeners(listeners);
             return p;
         } catch (NoSuchMethodException ex) {
             logger.error("duplicate error:", ex);
@@ -165,7 +167,8 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
 
     @Override
     public void setParent(MutableTreeNode newParent) {
-        this.parent=(ContainerParameter)newParent;
+        if (newParent==null) parent = null;
+        else parent=(ContainerParameter)newParent;
     }
 
     @Override
@@ -220,18 +223,18 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     // listenable
-    List<ParameterListener> listeners;
-    public void addListener(ParameterListener listener) {
-        if (listeners == null) listeners = new ArrayList<ParameterListener>();
+    protected List<Consumer<Parameter>> listeners;
+    public void addListener(Consumer<Parameter> listener) {
+        if (listeners == null) listeners = new ArrayList<>();
         listeners.add(listener);
     }
-    public void removeListener(ParameterListener listener) {
+    public void removeListener(Consumer<Parameter> listener) {
         if (listeners != null) listeners.remove(listener);
     }
     public void fireListeners() {
-        if (listeners != null) for (ParameterListener pl : listeners) pl.fire(this);
+        if (listeners != null) for (Consumer<Parameter> pl : listeners) pl.accept(this);
     }
-    public void setListeners(List<ParameterListener> listeners) {
+    public void setListeners(List<Consumer<Parameter>> listeners) {
         if (listeners==null) this.listeners=null;
         else this.listeners=new ArrayList<>(listeners);
     }

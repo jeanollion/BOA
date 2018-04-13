@@ -34,16 +34,24 @@ public class ArrayNumberParameter extends SimpleListParameter<BoundedNumberParam
                 this.insert(createChildInstance());
             }
         }
+        addListener(o->{
+            ArrayNumberParameter a = (ArrayNumberParameter)o;
+            if (a.sorted) a.sort();
+        });
     }
     public ArrayNumberParameter setSorted(boolean sorted) {
         this.sorted=sorted;
         return this;
     }
-    @Override 
+    @Override
     public BoundedNumberParameter createChildInstance() {
-        BoundedNumberParameter p = super.createChildInstance();
-        p.addListener(o->{if (sorted) sort();});
-        return p;
+        BoundedNumberParameter res = super.createChildInstance();
+        res.addListener(num -> {
+            ArrayNumberParameter a = ParameterUtils.getFirstParameterFromParents(ArrayNumberParameter.class, num, false);
+            if (a==null) return;
+            a.fireListeners();
+        });
+        return res;
     }
     public void sort() {
         Collections.sort(children, (n1, n2)->Double.compare(n1.getValue().doubleValue(), n2.getValue().doubleValue()));

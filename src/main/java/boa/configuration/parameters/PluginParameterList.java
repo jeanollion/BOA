@@ -23,6 +23,8 @@ import java.util.Collection;
 import java.util.List;
 import boa.plugins.Plugin;
 import boa.plugins.PreFilter;
+import boa.utils.Utils;
+import java.util.function.Consumer;
 
 /**
  *
@@ -37,6 +39,7 @@ public class PluginParameterList<T extends Plugin> extends SimpleListParameter<P
     public PluginParameterList duplicate() {
         PluginParameterList res = new PluginParameterList(name, childLabel, getChildClass());
         res.setContentFrom(this);
+        res.setListeners(listeners);
         return res;
     }
     private void add(T instance) {

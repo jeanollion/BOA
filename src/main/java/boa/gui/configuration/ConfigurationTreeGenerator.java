@@ -182,7 +182,7 @@ public class ConfigurationTreeGenerator {
         tree.setDropMode(DropMode.ON_OR_INSERT);
         tree.setTransferHandler(new TreeTransferHandler( 
                 (TreeNode n) -> ((Parameter)n).duplicate(), 
-                (TreePath p)-> (p.getLastPathComponent() instanceof ListParameter && ((ListParameter)p.getLastPathComponent()).allowMoveChildren())
+                (TreePath p)-> (p!=null && p.getLastPathComponent() instanceof ListParameter && ((ListParameter)p.getLastPathComponent()).allowMoveChildren())
         ));
         
         ToolTipManager.sharedInstance().registerComponent(tree);

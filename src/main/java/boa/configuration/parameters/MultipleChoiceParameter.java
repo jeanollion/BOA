@@ -22,6 +22,7 @@ import boa.configuration.parameters.ui.MultipleChoiceParameterUI;
 import boa.configuration.parameters.ui.ParameterUI;
 import org.json.simple.JSONArray;
 import boa.utils.Utils;
+import java.util.function.Consumer;
 
 /**
  *
@@ -114,7 +115,9 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     
     @Override
     public MultipleChoiceParameter duplicate() {
-        return new MultipleChoiceParameter(name, listChoice, selectedItems);
+        MultipleChoiceParameter res= new MultipleChoiceParameter(name, listChoice, selectedItems);
+        res.setListeners(listeners);
+        return res;
     }
     
     @Override

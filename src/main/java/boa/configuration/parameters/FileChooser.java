@@ -26,6 +26,7 @@ import javax.swing.JFileChooser;
 import org.json.simple.JSONArray;
 import boa.utils.JSONUtils;
 import boa.utils.Utils;
+import java.util.function.Consumer;
 
 /**
  *
@@ -97,7 +98,9 @@ public class FileChooser extends SimpleParameter implements Listenable {
     public FileChooserOption getOption() {return option;}
     
     @Override public FileChooser duplicate() {
-        return new FileChooser(name, option);
+        FileChooser res = new FileChooser(name, option);
+        res.setListeners(listeners);
+        return res;
     }
 
     @Override

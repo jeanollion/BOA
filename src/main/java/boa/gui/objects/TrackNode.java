@@ -217,7 +217,8 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     }
 
     public void setParent(MutableTreeNode newParent) {
-        this.parent=(TrackNodeInterface)newParent;
+        if (newParent==null) parent = null;
+        else parent=(TrackNodeInterface)newParent;
     }
 
     class TrackNodeUI {

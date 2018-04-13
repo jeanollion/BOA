@@ -23,6 +23,7 @@ import boa.configuration.parameters.ui.DocumentFilterIllegalCharacters;
 import boa.configuration.parameters.ui.ParameterUI;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.util.function.Consumer;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -67,7 +68,9 @@ public class TextParameter extends SimpleParameter {
     }
     
     @Override public TextParameter duplicate() {
-        return new TextParameter(name, value, allowSpecialCharacters);
+        TextParameter res =  new TextParameter(name, value, allowSpecialCharacters);
+        res.setListeners(listeners);
+        return res;
     }
     
     public void setValue(String value) {this.value=value;}

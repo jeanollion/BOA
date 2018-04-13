@@ -22,6 +22,7 @@ import boa.configuration.parameters.ui.NumberParameterUI;
 import boa.configuration.parameters.ui.ParameterUI;
 import boa.plugins.ops.OpParameter;
 import boa.plugins.ops.ParameterWithValue;
+import java.util.function.Consumer;
 
 /**
  *
@@ -84,7 +85,9 @@ public class NumberParameter extends SimpleParameter implements Listenable, OpPa
     }
     
     @Override public NumberParameter duplicate() {
-        return new NumberParameter(name, decimalPlaces, value);
+        NumberParameter res =  new NumberParameter(name, decimalPlaces, value);
+        res.setListeners(listeners);
+        return res;
     }
 
     @Override

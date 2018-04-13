@@ -680,7 +680,10 @@ public class Utils {
         for (int i = 0; i<files.length; ++i) res[i] = files[i].getAbsolutePath();
         return res;
     }
-    
+    public static <T> List<T> shallowCopyList(List<T> src) {
+        if (src==null) return null;
+        return new ArrayList<>(src);
+    }
     public static int[] copyArray(int[] source) {
         int[] res = new int[source.length];
         System.arraycopy(source, 0, res, 0, source.length);

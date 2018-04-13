@@ -51,6 +51,7 @@ import org.json.simple.JSONObject;
 import boa.plugins.PreFilter;
 import boa.utils.Utils;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  *
@@ -256,6 +257,7 @@ public class Position extends SimpleContainerParameter implements ListElementEra
     @Override public Position duplicate() {
         Position mf = super.duplicate();
         if (sourceImages!=null) mf.setImages(sourceImages.duplicate());
+        mf.setListeners(listeners);
         return mf;
     }
     

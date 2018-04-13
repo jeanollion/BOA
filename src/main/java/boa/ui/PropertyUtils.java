@@ -199,7 +199,7 @@ public class PropertyUtils {
             logger.debug("persit number: {} = {} -> {}", np.getName(), ((NumberParameter) parameter).getValue().doubleValue(), np.toString());
             parameter.addListener(p->{
                 //logger.debug("persist parameter: {}", ((Parameter)parameter).getName());
-                PropertyUtils.set(key, np.getValue().doubleValue());
+                PropertyUtils.set(key, ((NumberParameter)p).getValue().doubleValue());
             });
         } else logger.debug("persistance on parameter not supported yet!");
         

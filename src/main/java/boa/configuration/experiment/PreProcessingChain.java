@@ -25,7 +25,6 @@ import boa.configuration.parameters.ConditionalParameter;
 import boa.configuration.parameters.MultipleChoiceParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.ParameterListener;
 import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.ScaleXYZParameter;
@@ -53,6 +52,7 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.plaf.basic.BasicMenuItemUI;
 import org.json.simple.JSONObject;
 import boa.plugins.Transformation;
+import java.util.function.Consumer;
 
 /**
  *
@@ -97,14 +97,10 @@ public class PreProcessingChain extends SimpleContainerParameter {
         super(name);
         //logger.debug("new PPC: {}", name);
         initChildList();
-        PreProcessingChain pp = this;
-        ParameterListener pl = (Parameter sourceParameter) -> {
-            if (sourceParameter.getName().equals(trimFramesStart.getName()) || sourceParameter.getName().equals(trimFramesEnd.getName())) {
-                Position pos = ParameterUtils.getMicroscopyField(pp);
-                if (pos!=null) {
-                    pos.flushImages(true, true);
-                    //logger.debug("flush images on position: {}", pos.getName());
-                }
+        Consumer<Parameter> pl = (Parameter sourceParameter) -> {
+            Position pos = ParameterUtils.getMicroscopyField(sourceParameter);
+            if (pos!=null) {
+                pos.flushImages(true, true);
             }
         };
         trimFramesStart.addListener(pl);

@@ -18,12 +18,15 @@
  */
 package boa.configuration.parameters;
 
+import java.util.function.Consumer;
+
 /**
- *
+ * Uses consumer (and not runnable) in order to be able to transfer a listener to a duplicated object
+ * the listener should be relative to the source parameter
  * @author jollion
  */
 public interface Listenable {
-    public void addListener(ParameterListener listener);
-    public void removeListener(ParameterListener listener);
+    public void addListener(Consumer<Parameter> listener);
+    public void removeListener(Consumer<Parameter> listener);
     public void fireListeners();
 }

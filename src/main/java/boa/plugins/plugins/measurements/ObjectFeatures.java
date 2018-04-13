@@ -19,7 +19,6 @@
 package boa.plugins.plugins.measurements;
 
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.ParameterListener;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.parameters.SimpleListParameter;

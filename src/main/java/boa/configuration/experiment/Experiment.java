@@ -34,7 +34,8 @@ import boa.gui.configuration.TreeModelContainer;
 import boa.configuration.parameters.ChannelImageParameter;
 import boa.configuration.parameters.ConditionalParameter;
 import boa.configuration.parameters.GroupParameter;
-import boa.configuration.parameters.ParameterListener;
+import static boa.configuration.parameters.Parameter.logger;
+import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.dao.ImageDAO;
@@ -58,6 +59,7 @@ import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
 import static boa.utils.Utils.toArray;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -121,14 +123,16 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public Experiment(String name) {
         super(name);
-        outputPath.addListener((Parameter sourceParameter) -> {
-            if (outputPath.getFirstSelectedFilePath()==null) return;
-            if (imagePath.getFirstSelectedFilePath()==null) imagePath.setSelectedFilePath(outputPath.getFirstSelectedFilePath());
+        outputPath.addListener((Parameter source) -> {
+            Experiment xp = ((Experiment)source);
+            if (xp.outputPath.getFirstSelectedFilePath()==null) return;
+            if (xp.imagePath.getFirstSelectedFilePath()==null) xp.imagePath.setSelectedFilePath(xp.outputPath.getFirstSelectedFilePath());
             if (GUI.hasInstance()) {
-                logger.debug("new output directory set : {}", outputPath.getFirstSelectedFilePath());
+                logger.debug("new output directory set : {}", xp.outputPath.getFirstSelectedFilePath());
                 GUI.getInstance().outputDirectoryUpdated();
             }
         });
+        structures.addListener((Parameter source) -> ((SimpleListParameter<Structure>)source).getChildren().stream().forEachOrdered((s) -> s.setMaxStructureIdx()));
         initChildList();
     }
     
@@ -359,18 +363,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
             for (int i = 1; i<res.length; ++i) res[i] = i;
             return res;
         }
-        ArrayList<Integer> allChildrenAL = new ArrayList<Integer>(10);
-        int[][] orders = getStructuresInHierarchicalOrder();
-        int startIdx = this.getHierachicalOrder(structureIdx)+1;
-        for (int i = startIdx; i<orders.length; ++i) {
-            int childrenAtCurrentOrderCount = 0;
-            for (int s : orders[i]) {
-                int p = getStructure(s).getParentStructure();
-                if (p==structureIdx || allChildrenAL.contains(p)) allChildrenAL.add(s); childrenAtCurrentOrderCount++;
-            }
-            if (childrenAtCurrentOrderCount==0) break;
-        }
-        return toArray(allChildrenAL, false);
+        return IntStream.range(structureIdx+1, getStructureCount()).filter(s->isChildOf(structureIdx, s)).toArray();
     }
     
     /**

@@ -24,12 +24,12 @@ import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChannelImageParameter;
 import boa.configuration.parameters.Parameter;
 import static boa.configuration.parameters.Parameter.logger;
-import boa.configuration.parameters.ParameterListener;
 import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.SimpleContainerParameter;
 import boa.configuration.parameters.ParentStructureParameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PreFilterSequence;
+import boa.configuration.parameters.SimpleListParameter;
 import boa.configuration.parameters.ui.NameEditorUI;
 import boa.configuration.parameters.ui.ParameterUI;
 import javax.swing.tree.MutableTreeNode;
@@ -110,23 +110,28 @@ public class Structure extends SimpleContainerParameter {
         processingScheme = new PluginParameter<>("Processing Scheme", ProcessingScheme.class, true);
         manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true);
         this.parentStructure.addListener((Parameter source) -> {
-            int parentIdx = this.parentStructure.getSelectedIndex();
-            setParentStructure(parentIdx);
-            logger.debug("parent structure listener fired: parent: {}, seg parent: {}", this.parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
+            Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
+            int parentIdx = s.parentStructure.getSelectedIndex();
+            s.setParentStructure(parentIdx);
+            logger.debug("parent structure listener fired: parent: {}, seg parent: {}", s.parentStructure.getSelectedIndex(), s.segmentationParent.getSelectedIndex());
             //update tree
-            ConfigurationTreeModel model = ParameterUtils.getModel(segmentationParent);
-            if (model!=null) model.nodeChanged(segmentationParent);
+            ConfigurationTreeModel model = ParameterUtils.getModel(s.segmentationParent);
+            if (model!=null) model.nodeChanged(s.segmentationParent);
             else logger.debug("no model found..");
         });
         segmentationParent.addListener((Parameter source) -> {
+            Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             logger.debug("segmentation parent structure listener fired: parent: {}, seg parent: {}", this.parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
-            setSegmentationParentStructure(segmentationParent.getSelectedIndex());
+            s.setSegmentationParentStructure(s.segmentationParent.getSelectedIndex());
             //update tree
-            ConfigurationTreeModel model = ParameterUtils.getModel(segmentationParent);
-            if (model!=null) model.nodeChanged(segmentationParent);
+            ConfigurationTreeModel model = ParameterUtils.getModel(s.segmentationParent);
+            if (model!=null) model.nodeChanged(s.segmentationParent);
             else logger.debug("no model found..");
         });
-        processingScheme.addListener((Parameter source) -> setMaxStructureIdx());
+        processingScheme.addListener((Parameter source) -> {
+            Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
+            s.setMaxStructureIdx();
+        });
         initChildList();
     }
     public Structure() {
@@ -222,16 +227,14 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public void setParentStructure(int parentIdx) {
-        if (this.parentStructure.getSelectedIndex()==parentIdx) return; // avoid loop with listeners
-        parentStructure.setSelectedIndex(parentIdx);
+        if (parentStructure.getSelectedIndex()!=parentIdx) parentStructure.setSelectedIndex(parentIdx); // avoid loop with listeners
         segmentationParent.setMaxStructureIdx(parentIdx+1);
         int segParent = segmentationParent.getSelectedIndex();
         if (segParent<parentIdx) segmentationParent.setSelectedIndex(parentIdx);
     }
     public void setSegmentationParentStructure(int segmentationParentStructureIdx) {
         if (segmentationParentStructureIdx<parentStructure.getSelectedStructureIdx()) segmentationParentStructureIdx = parentStructure.getSelectedStructureIdx();
-        if (segmentationParentStructureIdx == segmentationParent.getSelectedStructureIdx()) return;
-        segmentationParent.setSelectedIndex(segmentationParentStructureIdx);
+        if (segmentationParentStructureIdx != segmentationParent.getSelectedStructureIdx()) segmentationParent.setSelectedIndex(segmentationParentStructureIdx);
     }
     
     
@@ -249,7 +252,8 @@ public class Structure extends SimpleContainerParameter {
         setMaxStructureIdx();
     }
     
-    private void setMaxStructureIdx() {
+    protected void setMaxStructureIdx() {
+        if (parent ==null) return;
         int idx = parent.getIndex(this);
         parentStructure.setMaxStructureIdx(idx);
         segmentationParent.setMaxStructureIdx(idx);

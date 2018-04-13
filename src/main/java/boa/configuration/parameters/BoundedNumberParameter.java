@@ -18,6 +18,8 @@
  */
 package boa.configuration.parameters;
 
+import java.util.function.Consumer;
+
 
 /**
  *
@@ -41,6 +43,8 @@ public class BoundedNumberParameter extends NumberParameter {
     }
     
     @Override public BoundedNumberParameter duplicate() {
-        return new BoundedNumberParameter(name, decimalPlaces, value, lowerBound, upperBound);
+        BoundedNumberParameter res = new BoundedNumberParameter(name, decimalPlaces, value, lowerBound, upperBound);
+        res.setListeners(listeners);
+        return res;
     }
 }

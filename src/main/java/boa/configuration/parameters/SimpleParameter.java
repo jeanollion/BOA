@@ -18,9 +18,12 @@
  */
 package boa.configuration.parameters;
 
+import boa.utils.Utils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.function.Consumer;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import org.scijava.module.ModuleItem;
@@ -65,14 +68,16 @@ public abstract class SimpleParameter implements Parameter {
     @Override
     public <T extends Parameter> T duplicate() {
         try {
-                Parameter p = this.getClass().getDeclaredConstructor(String.class).newInstance(name);
+                SimpleParameter p = this.getClass().getDeclaredConstructor(String.class).newInstance(name);
                 p.setContentFrom(this);
+                p.setListeners(listeners);
                 return (T)p;
             } catch (Exception ex) {
                 try {
                     SimpleParameter p = (SimpleParameter)this.getClass().newInstance();
                     p.setName(name);
                     p.setContentFrom(this);
+                    p.setListeners(listeners);
                 return (T)p;
                 } catch (Exception ex2) {
                     logger.error("duplicate Simple Parameter", ex2);
@@ -138,7 +143,8 @@ public abstract class SimpleParameter implements Parameter {
 
     @Override
     public void setParent(MutableTreeNode newParent) {
-        this.parent=(ContainerParameter)newParent;
+        if (newParent==null) parent=null;
+        else this.parent=(ContainerParameter)newParent;
     }
 
     @Override
@@ -165,16 +171,20 @@ public abstract class SimpleParameter implements Parameter {
     }
     
     // listenable
-    ArrayList<ParameterListener> listeners;
-    public void addListener(ParameterListener listener) {
+    ArrayList<Consumer<Parameter>> listeners;
+    public void addListener(Consumer<Parameter> listener) {
         if (listeners == null) listeners = new ArrayList<>();
         listeners.add(listener);
     }
-    public void removeListener(ParameterListener listener) {
+    public void removeListener(Consumer<Parameter> listener) {
         if (listeners != null) listeners.remove(listener);
     }
+    public void setListeners(List<Consumer<Parameter>> listeners) {
+        if (listeners ==null ) this.listeners=null;
+        else this.listeners = new ArrayList<>(listeners);
+    }
     public void fireListeners() {
-        if (listeners != null) for (ParameterListener pl : listeners) pl.fire(this);
+        if (listeners != null) for (Consumer<Parameter> pl : listeners) pl.accept(this);
     }
     // op
     ModuleItem<?> param;

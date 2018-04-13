@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -51,6 +52,7 @@ public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter> 
     public TrackPreFilterSequence duplicate() {
         TrackPreFilterSequence res = new TrackPreFilterSequence(name);
         res.setContentFrom(this);
+        res.setListeners(listeners);
         return res;
     }
     private static boolean allPFImagesAreSet(List<StructureObject> parentTrack, int structureIdx) {

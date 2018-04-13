@@ -36,13 +36,15 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONAware;
 import org.json.simple.JSONObject;
 import boa.utils.Utils;
+import java.util.Arrays;
+import java.util.function.Consumer;
 
 /**
  * 
  * @author jollion
  */
 
-public class SimpleListParameter<T extends Parameter> implements ListParameter<T> {
+public class SimpleListParameter<T extends Parameter> implements ListParameter<T>, Listenable {
 
     protected String name;
     protected ArrayList<T> children;
@@ -220,6 +222,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     public SimpleListParameter<T> duplicate() {
         SimpleListParameter<T> res = new SimpleListParameter<>(name, unMutableIndex, getChildClass());
         res.setContentFrom(this);
+        res.setListeners(listeners);
         return res;
     }
     
@@ -327,6 +330,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         if (index>=getChildren().size()) children.add((T)child);
         else children.add(index, (T)child);
         child.setParent(this);
+        fireListeners();
     }
 
     @Override
@@ -335,18 +339,30 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
             getChildren().add(c);
             c.setParent(this);
         }
+        fireListeners();
+        Arrays.stream(child).filter(c-> c instanceof Listenable).forEach(c->((Listenable)c).fireListeners());
     }
 
     @Override
     public void remove(int index) {
-        getChildren().remove(index);
+        T e = getChildren().remove(index);
+        if (e!=null) {
+            e.setParent(null);
+            fireListeners();
+        }
+        
     }
 
     @Override
     public void remove(MutableTreeNode node) {
         //System.out.println("removing node:"+((Parameter)node).toString() +" total number: "+children.size());
         logger.info("(list) removing node:"+((Parameter)node).toString() +" total number: "+children.size());
-        getChildren().remove((T)node);
+        boolean rem =  getChildren().remove((T)node);
+        if (rem) {
+            node.setParent(null);
+            fireListeners();
+        }
+        
     }
 
     @Override
@@ -357,7 +373,10 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     @Override
     public void removeFromParent() {
         logger.info("(list) removing node from parent:"+((Parameter)this).toString() +" total number: "+children.size());
-        if (parent!=null) this.parent.remove(this);
+        if (parent!=null) {
+            this.parent.remove(this);
+            parent = null;
+        }
     }
     
     @Override 
@@ -368,7 +387,8 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
 
     @Override
     public void setParent(MutableTreeNode newParent) {
-        this.parent=(ContainerParameter)newParent;
+        if (newParent==null) parent = null;
+        else parent=(ContainerParameter)newParent;
     }
     
     @Override
@@ -442,6 +462,29 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         postLoaded=true;
     }
     */
+    List<Consumer<Parameter>> listeners;
+    @Override
+    public void addListener(Consumer<Parameter> listener) {
+        if (listeners==null) listeners = new ArrayList<>();
+        listeners.add(listener);
+    }
 
+    @Override
+    public void removeListener(Consumer<Parameter> listener) {
+        if (listeners==null) return;
+    }
+
+    @Override
+    public void fireListeners() {
+        if (listeners==null) return;
+        for (Consumer<Parameter> l : listeners) l.accept(this);
+    }
+    public void fireChildrenListeners() {
+        for (T p : children) if (p instanceof Listenable) ((Listenable)p).fireListeners();
+    }
+    public void setListeners(List<Consumer<Parameter>> listeners) {
+        if (listeners==null) this.listeners=null;
+        else this.listeners=new ArrayList<>(listeners);
+    }
     
 }

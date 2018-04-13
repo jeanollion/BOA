@@ -252,7 +252,8 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     }
 
     public void setParent(MutableTreeNode newParent) {
-        this.parent=(TrackExperimentNode)newParent;
+        if (newParent==null) parent = null;
+        else parent=(TrackExperimentNode)newParent;
     }
     
     // UIContainer implementation

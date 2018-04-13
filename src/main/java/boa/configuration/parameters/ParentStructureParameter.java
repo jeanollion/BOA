@@ -37,6 +37,7 @@ public class ParentStructureParameter extends StructureParameter {
 
     public void setMaxStructureIdx(int maxStructureExcl) {
         this.maxStructure = maxStructureExcl;
+        if (maxStructure>=0 && getSelectedIndex()>=maxStructure) setSelectedIndex(-1);
     }
     @Override public int getSelectedIndex() {
         int idx = super.getSelectedIndex();

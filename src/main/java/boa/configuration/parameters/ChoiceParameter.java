@@ -22,6 +22,7 @@ import boa.configuration.parameters.ui.ParameterUI;
 import boa.configuration.parameters.ui.ChoiceParameterUI;
 
 import boa.utils.Utils;
+import java.util.function.Consumer;
 
 /**
  *
@@ -131,7 +132,9 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     }
     
     @Override public ChoiceParameter duplicate() {
-        return new ChoiceParameter(name, selectedItem);
+        ChoiceParameter res = new ChoiceParameter(name, selectedItem);
+        res.setListeners(listeners);
+        return res;
     }
     private ChoiceParameter(String name, String selectedItem) {
         super(name);
