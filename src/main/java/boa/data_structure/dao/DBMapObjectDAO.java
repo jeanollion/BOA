@@ -524,7 +524,7 @@ public class DBMapObjectDAO implements ObjectDAO {
             long t1 = System.currentTimeMillis();
             dbMap.putAll(toStoreMap);
             long t2 = System.currentTimeMillis();
-            logger.debug("storing: #{} objects of structure: {} to: {} in {}ms ({}ms+{}ms)",toStoreMap.size(), key.value, objects.iterator().next().getParent().getTrackHead(), t2-t0, t1-t0, t2-t1);
+            logger.debug("storing: #{} objects of structure: {} to: {} in {}ms ({}ms+{}ms)",toStoreMap.size(), key.value, objects.iterator().next().getParent()==null ? "" : objects.iterator().next().getParent().getTrackHead(), t2-t0, t1-t0, t2-t1);
             toStore.stream().map((object) -> {
                 if (object.hasMeasurementModifications()) upserMeas.add(object);
                 return object;
