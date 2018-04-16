@@ -124,7 +124,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public Experiment(String name) {
         super(name);
         outputPath.addListener((Parameter source) -> {
-            Experiment xp = ((Experiment)source);
+            Experiment xp = ParameterUtils.getExperiment(source);
             if (xp.outputPath.getFirstSelectedFilePath()==null) return;
             if (xp.imagePath.getFirstSelectedFilePath()==null) xp.imagePath.setSelectedFilePath(xp.outputPath.getFirstSelectedFilePath());
             if (GUI.hasInstance()) {

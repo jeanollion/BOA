@@ -242,7 +242,7 @@ public class PluginFactory {
             Class plugClass = plugins.get(className);
             if (plugClass==null && refactoredNamesOldMapNew.containsKey(className)) plugClass = plugins.get(refactoredNamesOldMapNew.get(className));
             if (plugClass==null) {
-                logger.error("plugin :{} of class: {} not found", className, clazz);
+                logger.error("plugin: {} of class: {} not found", className, clazz);
                 return null;
             }
             T instance = (T) plugClass.newInstance();
