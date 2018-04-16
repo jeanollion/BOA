@@ -50,6 +50,7 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -58,7 +59,7 @@ import boa.utils.Utils;
 public class RootTrackNode implements TrackNodeInterface, UIContainer {
     TrackTreeGenerator generator;
     private ArrayList<TrackNode> children;
-    private TreeMap<Integer, List<StructureObject>> remainingTrackHeadsTM;
+    private TreeMap<Integer, List<StructureObject>> remainingTrackHeadsPerFrame;
     private StructureObject parentTrackHead;
     int structureIdx;
     TrackExperimentNode parent;
@@ -88,7 +89,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     
     public void refresh() {
         children = null;
-        remainingTrackHeadsTM=null;
+        remainingTrackHeadsPerFrame=null;
     }
     
     
@@ -123,8 +124,8 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
         return generator.getObjectDAO(position).getRoots();
     }
     
-    public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeads() {
-        if (remainingTrackHeadsTM==null) {
+    public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeadsPerFrame() {
+        if (remainingTrackHeadsPerFrame==null) {
             if (getParentTrackHead()==null) return new TreeMap<>();
             long t0 = System.currentTimeMillis();
             List<StructureObject> trackHeads = generator.getObjectDAO(position).getTrackHeads(getParentTrackHead(), structureIdx);
@@ -133,11 +134,11 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
             //List<StructureObject> trackHeads = new ArrayList<StructureObject> (StructureObjectUtils.getAllTracks(getParentTrack(), structureIdx).keySet());
             //Collections.sort(trackHeads);
             if (trackHeads.isEmpty()) {
-                remainingTrackHeadsTM = new TreeMap<>();
+                remainingTrackHeadsPerFrame = new TreeMap<>();
                 logger.debug("structure: {} no trackHeads found", structureIdx);
             } else {
                 logger.debug("structure: {} nb trackHeads found: {} in {}ms", structureIdx, trackHeads.size(), t1-t0);
-                HashMap<Integer, List<StructureObject>> map  = new HashMap<Integer, List<StructureObject>> (trackHeads.get(trackHeads.size()-1).getFrame()-trackHeads.get(0).getFrame()+1);
+                /*HashMap<Integer, List<StructureObject>> map  = new HashMap<> (trackHeads.get(trackHeads.size()-1).getFrame()-trackHeads.get(0).getFrame()+1);
                 int currentTimePoint = trackHeads.get(0).getFrame();
                 int lastIdx = 0;
                 int currentIdx = 1;
@@ -145,7 +146,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                     if (trackHeads.get(currentIdx).getFrame()>currentTimePoint) {
                         //ArrayList<StructureObject> currentHeads = new ArrayList<StructureObject>(currentIdx-lastIdx);
                         //for (int i = lastIdx; i<currentIdx; ++i) currentHeads.add(trackHeads.get(i));
-                        map.put(currentTimePoint, new ArrayList<StructureObject>(trackHeads.subList(lastIdx, currentIdx)));
+                        map.put(currentTimePoint, new ArrayList<>(trackHeads.subList(lastIdx, currentIdx)));
                         lastIdx=currentIdx;
                         currentTimePoint = trackHeads.get(currentIdx).getFrame();
                     }
@@ -153,24 +154,25 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                 }
                 // put last portion in map:
                 map.put(currentTimePoint, trackHeads.subList(lastIdx, currentIdx));
-
-                remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>(map);
+                
+                remainingTrackHeadsPerFrame = new TreeMap<>(map);*/
+                remainingTrackHeadsPerFrame = new TreeMap<>(trackHeads.stream().collect(Collectors.groupingBy(tm->tm.getFrame())));
                 /*if (logger.isTraceEnabled()) {
                     logger.trace("number of trackHeads found: {} number of distinct timePoints: {}", trackHeads.size(), map.size());
-                    for (Entry<Integer, List<StructureObject>> e : remainingTrackHeadsTM.entrySet()) logger.trace("time point: {}, number of trackHeads {}, first: {}, last: {}", e.getKey(), e.getValue().size(), e.getValue().get(0).getTimePoint(), e.getValue().get(e.getValue().size()-1).getTimePoint());
+                    for (Entry<Integer, List<StructureObject>> e : remainingTrackHeadsPerFrame.entrySet()) logger.trace("time point: {}, number of trackHeads {}, first: {}, last: {}", e.getKey(), e.getValue().size(), e.getValue().get(0).getTimePoint(), e.getValue().get(e.getValue().size()-1).getTimePoint());
                 }*/
                 
             }
         }
-        return remainingTrackHeadsTM;
+        return remainingTrackHeadsPerFrame;
     }
     
     public List<TrackNode> getChildren() {
         if (children==null) {
             children = new ArrayList<TrackNode>();
             
-            Iterator<Entry<Integer, List<StructureObject>>> it = getRemainingTrackHeads().entrySet().iterator();
-            //logger.debug("get track nodes from root: remaining: {}",remainingTrackHeadsTM.size());
+            Iterator<Entry<Integer, List<StructureObject>>> it = getRemainingTrackHeadsPerFrame().entrySet().iterator();
+            //logger.debug("get track nodes from root: remaining: {}",remainingTrackHeadsPerFrame.size());
             while (it.hasNext()) {
                 Entry<Integer, List<StructureObject>> entry = it.next();
                 Iterator<StructureObject> subIt = entry.getValue().iterator();
@@ -185,7 +187,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                     it.remove();
                 }
             }
-            //logger.debug("get track nodes from root: {}, remaining: {}", children.size(), remainingTrackHeadsTM.size());
+            //logger.debug("get track nodes from root: {}, remaining: {}", children.size(), remainingTrackHeadsPerFrame.size());
         }
         return children;
     }

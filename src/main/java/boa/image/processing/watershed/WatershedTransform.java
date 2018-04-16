@@ -142,7 +142,7 @@ public class WatershedTransform {
         this.decreasingPropagation = config.decreasingPropagation;
         this.lowConnectivity = config.lowConnectivity;
         this.prop = config.prop;
-        heap = decreasingPropagation ? new TreeSet<>(Voxel.getInvertedComparator()) : new TreeSet<>();
+        heap = decreasingPropagation ? new TreeSet<>(Voxel.getInvertedComparator()) : new TreeSet<>(Voxel.getComparator());
         //heap = decreasingPropagation ? new PriorityQueue<>(Voxel.getInvertedComparator()) : new PriorityQueue<>();
         this.mask=mask;
         this.watershedMap=watershedMap;

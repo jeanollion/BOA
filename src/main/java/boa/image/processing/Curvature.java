@@ -103,7 +103,7 @@ public class Curvature {
     public static ImageFloat getCurvatureWatershedMap(final Image edm, final ImageInteger mask, KDTree<Double> curvature) {
         final ImageFloat res = new ImageFloat("CurvatureWatershedMap", edm);
         final NearestNeighborSearchOnKDTree<Double> search = new NearestNeighborSearchOnKDTree(curvature);
-        final TreeSet<Voxel> heap = new TreeSet<Voxel>();
+        final TreeSet<Voxel> heap = new TreeSet<>(Voxel.getComparator());
         final EllipsoidalNeighborhood neigh = new EllipsoidalNeighborhood(1.5, true);
         // initialize with the border of objects
         loop(mask.getBoundingBox().resetOffset(), (int x, int y, int z) -> {

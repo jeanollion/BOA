@@ -55,14 +55,6 @@ public class Voxel2D extends Voxel {
         } else return false;
     }
     
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 97 * hash + this.x;
-        hash = 97 * hash + this.y;
-        //hash = 97 * hash + 0; 
-        return hash;
-    }
     
     @Override
     public String toString() {

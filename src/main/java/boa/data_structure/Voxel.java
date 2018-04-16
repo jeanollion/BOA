@@ -26,8 +26,11 @@ import java.util.Comparator;
 import net.imglib2.Localizable;
 import net.imglib2.RealLocalizable;
 
-
-public class Voxel implements Comparable<Voxel>, Offset<Voxel>, Localizable {
+/**
+ * 
+ * @author Jean Ollion
+ */
+public class Voxel implements Offset<Voxel>, Localizable {
     public int x, y;
     public float value;
     public int z;
@@ -66,10 +69,10 @@ public class Voxel implements Comparable<Voxel>, Offset<Voxel>, Localizable {
     }
 
     @Override
-    public int hashCode() { // compatible with Arrays.hashCode()
-        return 31 * (31 * (31 + x) + y ) + z;
+    public int hashCode() {
+        return 97 * (97 * (679 + this.x) + this.y) + this.z;
     }
-
+    
     @Override
     public String toString() {
         return "{" + x + ";" + y + ";" + z + ";V=" + value + '}';
@@ -98,61 +101,38 @@ public class Voxel implements Comparable<Voxel>, Offset<Voxel>, Localizable {
     }
     
     public static Comparator<Voxel> getInvertedComparator() {
-        return new Comparator<Voxel>() {
-            @Override
-            public int compare(Voxel voxel, Voxel other) {
-                if (voxel.value < other.value) {
-                    return 1;
-                } else if (voxel.value > other.value) {
-                    return -1;
-                } else { // consistancy with equals method
-                    if (voxel.x<other.x) return 1;
-                    else if (voxel.x>other.x) return -1;
-                    else if (voxel.y<other.y) return 1;
-                    else if (voxel.y>other.y) return -1;
-                    else if (voxel.z<other.z) return 1;
-                    else if (voxel.z>other.z) return -1;
-                    else return 0;
-                }
+        return (Voxel voxel, Voxel other) -> {
+            if (voxel.value < other.value) {
+                return 1;
+            } else if (voxel.value > other.value) {
+                return -1;
+            } else { // consistancy with equals method
+                if (voxel.x<other.x) return 1;
+                else if (voxel.x>other.x) return -1;
+                else if (voxel.y<other.y) return 1;
+                else if (voxel.y>other.y) return -1;
+                else if (voxel.z<other.z) return 1;
+                else if (voxel.z>other.z) return -1;
+                else return 0;
             }
         };
     }
     public static Comparator<Voxel> getComparator() {
-        return new Comparator<Voxel>() {
-            @Override
-            public int compare(Voxel voxel, Voxel other) {
-                if (voxel.value < other.value) {
-                    return -1;
-                } else if (voxel.value > other.value) {
-                    return 1;
-                } else {// consistancy with equals method
-                    if (voxel.x<other.x) return -1;
-                    else if (voxel.x>other.x) return 1;
-                    else if (voxel.y<other.y) return -1;
-                    else if (voxel.y>other.y) return 1;
-                    else if (voxel.z<other.z) return -1;
-                    else if (voxel.z>other.z) return 1;
-                    else return 0;
-                }
+        return (Voxel voxel, Voxel other) -> {
+            if (voxel.value < other.value) {
+                return -1;
+            } else if (voxel.value > other.value) {
+                return 1;
+            } else {// consistancy with equals method
+                if (voxel.x<other.x) return -1;
+                else if (voxel.x>other.x) return 1;
+                else if (voxel.y<other.y) return -1;
+                else if (voxel.y>other.y) return 1;
+                else if (voxel.z<other.z) return -1;
+                else if (voxel.z>other.z) return 1;
+                else return 0;
             }
         };
-    }
-
-    @Override
-    public int compareTo(Voxel other) {
-        if (value < other.value) {
-            return -1;
-        } else if (value > other.value) {
-            return 1;
-        } else {// consistancy with equals method
-            if (x<other.x) return -1;
-            else if (x>other.x) return 1;
-            else if (y<other.y) return -1;
-            else if (y>other.y) return 1;
-            else if (z<other.z) return -1;
-            else if (z>other.z) return 1;
-            else return 0;
-        }
     }
     
     public double getDistanceSquare(Voxel other, double scaleXY, double scaleZ) {

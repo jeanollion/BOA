@@ -103,9 +103,9 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         if (children==null) {
             if (getTrack()==null || getTrack().size()<=1) children=new ArrayList<TrackNode>(0);
             else {
-                children=new ArrayList<TrackNode>();
-                //Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeads().subMap(track.get(1).getTimePoint(), true, track.get(track.size()-1).getTimePoint(), true).entrySet().iterator();
-                Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeads().entrySet().iterator();
+                children=new ArrayList<>();
+                //Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeadsPerFrame().subMap(track.get(1).getTimePoint(), true, track.get(track.size()-1).getTimePoint(), true).entrySet().iterator();
+                Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeadsPerFrame().entrySet().iterator();
                 //logger.trace("looking for children for node: {} timePoint left: {} timePoint right:{}", toString(), track.get(1).getTimePoint(), track.get(track.size()-1).getTimePoint());
                 int leftLimit = track.get(1).getFrame();
                 int rightLimit = track.get(track.size()-1).getFrame();
@@ -128,7 +128,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                     }
                 }
             }
-            //logger.trace("get children: {} number of children: {} remaining distinct timePoint in root: {}", toString(),  children.size(), root.getRemainingTrackHeads().size());
+            //logger.trace("get children: {} number of children: {} remaining distinct timePoint in root: {}", toString(),  children.size(), root.getRemainingTrackHeadsPerFrame().size());
         } 
         return children;
     }

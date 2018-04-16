@@ -517,7 +517,8 @@ public class Region {
      */
     public boolean erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, boolean keepOnlyBiggestObject, Collection<Voxel> contour, Predicate<Voxel> stopPropagation) {
         boolean changes = false;
-        TreeSet<Voxel> heap = contour==null ? new TreeSet<>(getContour()) : new TreeSet<>(contour);
+        TreeSet<Voxel> heap = new TreeSet<>(Voxel.getComparator());
+        heap.addAll( contour==null ? getContour() : contour);
         EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
         ensureMaskIsImageInteger();
         ImageInteger mask = getMaskAsImageInteger();
@@ -549,7 +550,8 @@ public class Region {
     }
     public boolean erodeContoursEdge(Image image, boolean keepOnlyBiggestObject) {
         boolean changes = false;
-        TreeSet<Voxel> heap = new TreeSet<>(getContour());
+        TreeSet<Voxel> heap = new TreeSet<>(Voxel.getComparator());
+        heap.addAll(getContour());
         EllipsoidalNeighborhood neigh = !this.is2D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
         ensureMaskIsImageInteger();
         ImageInteger mask = getMaskAsImageInteger();
@@ -584,7 +586,8 @@ public class Region {
     
     public void dilateContours(Image image, double threshold, boolean addIfHigherThanThreshold, Collection<Voxel> contour, ImageInteger labelMap) {
         //if (labelMap==null) labelMap = Collections.EMPTY_SET;
-        TreeSet<Voxel> heap = contour==null? new TreeSet<>(getContour()) : new TreeSet<>(contour);
+        TreeSet<Voxel> heap = new TreeSet<>(Voxel.getComparator());
+        heap.addAll( contour==null ? getContour() : contour);
         heap.removeIf(v->{
             int l = labelMap.getPixelInt(v.x, v.y, v.z);
             return l>0 && l!=label;

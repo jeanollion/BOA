@@ -121,11 +121,15 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         // seeds that are background: corners and if possible L&R sides
         Voxel cornerL = new Voxel(0, 0, 0);
         Voxel cornerR = new Voxel(edgeMapLocal.sizeX()-1, 0, 0);
+        
         Set<Voxel> leftBck = new HashSet<>();
         Set<Voxel> rightBck = new HashSet<>();
         for (int y = 0;y<edgeMapLocal.sizeY(); ++y) {
             if (y==0 || marginL>0) leftBck.add(new Voxel(0, y, 0));
             if (y==0 || marginR>0) rightBck.add(new Voxel(edgeMapLocal.sizeX()-1, y, 0));
+        }
+        if (verbose && object.getLabel()==debugLabel) {
+            logger.debug("cornerL: {}(hash:{}), contained: {}, R: {}(hash:{}) contained: {}", cornerL, cornerL.hashCode(), leftBck.contains(cornerL), cornerR, cornerR.hashCode(), rightBck.contains(cornerR));
         }
         seeds.add(new Region(leftBck, 1, object.is2D(), edgeMap.getScaleXY(), edgeMap.getScaleZ()));
         seeds.add(new Region(rightBck, 1, object.is2D(), edgeMap.getScaleXY(), edgeMap.getScaleZ()));
@@ -184,29 +188,31 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
             allSeeds.stream().forEach(r->r.getVoxels().stream().forEach(v->maxL.setPixel(v.x, v.y, v.z, 3)));
             ImageWindowManagerFactory.showImage(maxL.setName("Seeds 1=bck, 2=fore, 3=?"));
         }
-        RegionPopulation parititon = WatershedTransform.watershed(edgeMapLocal, null, seeds, null);
+        RegionPopulation partition = WatershedTransform.watershed(edgeMapLocal, null, seeds, null);
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(partition.getLabelMap().setName("partition"));
+        
         if (seedsInMaskAreForeground) {
             Voxel foreVox = foregroundVox.stream().findAny().get();
-            Region fore = parititon.getRegions().stream().filter(r->r.getVoxels().contains(foreVox)).findFirst().get();
-            parititon.getRegions().removeIf(o->o!=fore);
+            Region fore = partition.getRegions().stream().filter(r->r.getVoxels().contains(foreVox)).findAny().get();
+            partition.getRegions().removeIf(o->o!=fore);
         } else { // merge regions either to foreground either to background
-            Region bck1 = parititon.getRegions().stream().filter(r->r.getVoxels().contains(cornerL)).findFirst().get();
-            Region bck2 = parititon.getRegions().stream().filter(r->r.getVoxels().contains(cornerR)).findFirst().get();
-            if ((bck1!=bck2 && parititon.getRegions().size()>3) || (bck1==bck2 && parititon.getRegions().size()>2)) { // some seeds were not merge either with bck or foreground -> decide with merge sort algorithm on edge value
-                if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(parititon.getLabelMap().duplicate("beofre merge"));
+            Region bck1 = partition.getRegions().stream().filter(r->r.getVoxels().contains(cornerL)).findAny().get();
+            Region bck2 = partition.getRegions().stream().filter(r->r.getVoxels().contains(cornerR)).findAny().orElseThrow(()->new RuntimeException("No background 2 object found for region: "+object.getLabel()));
+            if ((bck1!=bck2 && partition.getRegions().size()>3) || (bck1==bck2 && partition.getRegions().size()>2)) { // some seeds were not merge either with bck or foreground -> decide with merge sort algorithm on edge value
+                if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(partition.getLabelMap().duplicate("beofre merge"));
                 SplitAndMergeRegionCriterion sm  = new SplitAndMergeRegionCriterion(edgeMapLocal, inputLocal, Double.POSITIVE_INFINITY, SplitAndMergeRegionCriterion.InterfaceValue.DIFF_MEDIAN_BTWN_REGIONS);
                 sm.setTestMode(verbose && object.getLabel()==debugLabel);
                 sm.addForbidFusionForegroundBackground(r->r==bck1||r==bck2, r->!Collections.disjoint(r.getVoxels(), foregroundVox));
                 if (bck1!=bck2) sm.addForbidFusion(i->(i.getE1()==bck1&&i.getE2()==bck2) || (i.getE1()==bck1&&i.getE2()==bck2)); // to be able to know how many region we want in the end. somtimes bck1 & bck2 can't merge
-                parititon = sm.merge(parititon, bck1==bck2 ? 2 :3); // keep 3 regions = background on both sides & foreground
+                partition = sm.merge(partition, bck1==bck2 ? 2 :3); // keep 3 regions = background on both sides & foreground
             }
-            if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(parititon.getLabelMap().duplicate("after ws transf"));
-            parititon.getRegions().removeIf(o->o.contains(cornerL) || o.contains(cornerR)); // remove background
+            if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(partition.getLabelMap().duplicate("after ws transf"));
+            partition.getRegions().removeIf(o->o.contains(cornerL) || o.contains(cornerR)); // remove background
         }
-        parititon.relabel(true);
-        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(parititon.getLabelMap().duplicate("after ws transf & delete"));
-        parititon.translate(cut, true);
-        ImageInteger mcMask = parititon.getLabelMap();
+        partition.relabel(true);
+        if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(partition.getLabelMap().duplicate("after ws transf & delete"));
+        partition.translate(cut, true);
+        ImageInteger mcMask = partition.getLabelMap();
         // CLOSE & OPEN 
         if (morphoRadius<marginUp && morphoRadius<marginL && morphoRadius<marginR) Filters.binaryClose(mcMask, mcMask, Filters.getNeighborhood(morphoRadius, mcMask));
         else mcMask=Filters.binaryCloseExtend(mcMask, Filters.getNeighborhood(morphoRadius,mcMask));
@@ -218,7 +224,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         double[] xLMean = new double[2];
         double[] xRMean = new double[2];
         final ImageInteger regionMask =mcMask;
-        ImageMask.loop(parititon.getLabelMap(), (x, y, z)-> {
+        ImageMask.loop(partition.getLabelMap(), (x, y, z)-> {
             if (y<=regionMask.sizeX()) return; // do not take into acount head
             if (x==0 || !regionMask.insideMask(x-1, y, z)) {
                 xLMean[0]+=x;

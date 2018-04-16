@@ -82,7 +82,7 @@ public class MultiScaleWatershedTransform {
         if (!Image.sameSize(Arrays.asList(watershedMaps))) throw new IllegalArgumentException("WatershedMaps should be of same dimensions");
         if (mask==null) mask=new BlankMask( watershedMaps[0]);
         this.decreasingPropagation = decreasingPropagation;
-        heap = decreasingPropagation ? new TreeSet<Voxel>(Voxel.getInvertedComparator()) : new TreeSet<Voxel>();
+        heap = decreasingPropagation ? new TreeSet<>(Voxel.getInvertedComparator()) : new TreeSet<>(Voxel.getComparator());
         this.mask=mask;
         this.watershedMaps=watershedMaps;
         spotNumber = 0;
