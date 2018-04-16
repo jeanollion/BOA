@@ -355,11 +355,13 @@ public abstract class ImageWindowManager<I, U, V> {
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true));
         logger.debug("getIOI: hash: {} ({}), exists: {}, trackHeadTrackMap: {}", parentTrack.hashCode(), new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true).hashCode(), i!=null, trackHeadTrackMap.containsKey(parentTrack.get(0)));
         if (i==null) {
+            long t0 = System.currentTimeMillis();
             i = generateTrackMask(parentTrack, childStructureIdx);
+            long t1 = System.currentTimeMillis();
             imageObjectInterfaces.put(i.getKey(), i);
             trackHeadTrackMap.getAndCreateIfNecessary(parentTrack.get(0)).add(parentTrack);
             i.setGUIMode(GUI.hasInstance());
-            logger.debug("create IOI: {} key: {}", i.hashCode(), i.getKey().hashCode());
+            logger.debug("create IOI: {} key: {}, time:{}ms", i.hashCode(), i.getKey().hashCode(), t1-t0);
         } 
         return i;
     }
@@ -459,7 +461,7 @@ public abstract class ImageWindowManager<I, U, V> {
         }
         ImageObjectInterfaceKey key = imageObjectInterfaceMap.get(image);
         if (key==null) return null;
-        if (key.parent.get(0).getStructureIdx()>structureIdx) return null;
+        //if (key.parent.get(0).getStructureIdx()>structureIdx) return null;
         ImageObjectInterface i = this.imageObjectInterfaces.get(key.getKey(structureIdx));
         
         if (i==null) {
@@ -611,6 +613,7 @@ public abstract class ImageWindowManager<I, U, V> {
         if (dispImage==null || image==null) return;
         Set<U> labiles = labileObjects ? this.displayedLabileObjectRois.getAndCreateIfNecessary(image) : null;
         Map<Pair<StructureObject, BoundingBox>, U> map = labileObjects ? this.labileObjectRoiMap : objectRoiMap;
+        long t0 = System.currentTimeMillis();
         for (Pair<StructureObject, BoundingBox> p : objectsToDisplay) {
             if (p==null || p.key==null) continue;
             //logger.debug("getting mask of object: {}", o);
@@ -642,8 +645,10 @@ public abstract class ImageWindowManager<I, U, V> {
                 }
             } else displayObject(dispImage, roi);
         }
-        
+        long t1 = System.currentTimeMillis();
         displayer.updateImageRoiDisplay(image);
+        long t2 = System.currentTimeMillis();
+        logger.debug("display {} objects: create roi & add to overlay: {}, update display: {}", objectsToDisplay.size(), t1-t0, t2-t1);
     }
     
     public void hideObjects(Image image, Collection<Pair<StructureObject, BoundingBox>> objects, boolean labileObjects) {

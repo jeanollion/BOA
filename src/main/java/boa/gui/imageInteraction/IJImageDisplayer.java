@@ -91,9 +91,9 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ip.setDisplayRange(displayRange[0], displayRange[1]);
         //logger.debug("show image:w={}, h={}, disp: {}", ip.getWidth(), ip.getHeight(), displayRange);
         if (!ip.isVisible()) ip.show();
-        addMouseWheelListener(image, null);
         if (displayRange.length>=3) zoom(ip, displayRange[2]);
         else zoom(ip, ImageDisplayer.zoomMagnitude);
+        addMouseWheelListener(image, null); // after zoom is set so that call back is not called on whole image
         ImageWindowManagerFactory.getImageManager().addLocalZoom(ip.getCanvas());
         return ip;
     }
@@ -155,7 +155,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 return "";
             }
         };
-        DefaultWorker w = DefaultWorker.execute(t, 1, null);
+        t.run(0);
+        //DefaultWorker w = DefaultWorker.execute(t, 1, null);
     }
     
     @Override public void addMouseWheelListener(final Image image, Predicate<BoundingBox> callBack) {
@@ -223,7 +224,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 if (srcRect.x!=xstart || srcRect.y!=ystart) {
                     boolean update = false;
                     if (callBack !=null )  update = callBack.test(new SimpleBoundingBox(srcRect.x, srcRect.x+srcRect.width-1, srcRect.y, srcRect.y+srcRect.height-1, 0, 0));
-                    if (update) imp.updateAndRepaintWindow();
+                    if (update) imp.updateAndRepaintWindow();//ic.repaint();
                     else  ic.repaint();
                 }
             }    
@@ -309,7 +310,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             synchronized(ip) {
                 if (displayRange[0]<displayRange[1]) ip.setDisplayRange(displayRange[0], displayRange[1]);
                 ip.updateAndRepaintWindow();
-                ip.updateAndDraw();
+                //ip.draw();
             }
             
         }
@@ -318,7 +319,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         if (this.displayedImages.containsKey(image)) {
             ImagePlus ip = displayedImages.get(image);
             synchronized(ip) {
-                ip.updateAndDraw();
+                ip.draw(); // draw is sufficient, no need to call upadate that doest a snapshot...
             }
         }
     }

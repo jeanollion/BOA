@@ -627,7 +627,7 @@ public class Region {
         return bounds;
     }
     
-    public void setMask(ImageInteger mask) {
+    public void setMask(ImageMask mask) {
         synchronized(this) {
             this.mask= mask;
             this.bounds=null;

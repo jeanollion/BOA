@@ -45,8 +45,8 @@ public abstract class ImageObjectInterface {
     public ImageObjectInterface(List<StructureObject> parents, int childStructureIdx) {
         if (parents.isEmpty()) throw new IllegalArgumentException("Empty parent list");
         parentStructureIdx = parents.get(0).getStructureIdx();
-        if (parents.size()>1) for (StructureObject p : parents) if (p.getStructureIdx()!=parentStructureIdx) throw new IllegalArgumentException("Parents must be of same structure");
-        if (parentStructureIdx>childStructureIdx) throw new IllegalArgumentException("Structure: "+childStructureIdx +" cannot be child of structure: "+parents.get(0).getStructureIdx());
+        //if (parents.size()>1) for (StructureObject p : parents) if (p.getStructureIdx()!=parentStructureIdx) throw new IllegalArgumentException("Parents must be of same structure");
+        //if (parentStructureIdx>childStructureIdx) throw new IllegalArgumentException("Structure: "+childStructureIdx +" cannot be child of structure: "+parents.get(0).getStructureIdx());
         this.parents = parents;
         this.childStructureIdx = childStructureIdx;
     }

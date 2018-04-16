@@ -260,7 +260,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (indirect) for (StructureObject o : allChildren) o.loadAllChildren(true);
     }
     public List<StructureObject> getChildren(int structureIdx) {
-        if (structureIdx<this.structureIdx) throw new IllegalArgumentException("Structure: "+structureIdx+" cannot be child of structure: "+this.structureIdx);
+        //if (structureIdx<this.structureIdx) throw new IllegalArgumentException("Structure: "+structureIdx+" cannot be child of structure: "+this.structureIdx);
         if (structureIdx == this.structureIdx) {
             final StructureObject o = this;
             return new ArrayList<StructureObject>(){{add(o);}};

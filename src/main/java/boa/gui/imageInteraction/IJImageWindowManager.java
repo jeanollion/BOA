@@ -195,19 +195,23 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         if (rect.height==0 || rect.width==0) removeAfterwards=false;
                         MutableBoundingBox selection = new MutableBoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
                         if (selection.sizeX()==0 && selection.sizeY()==0) selection=null;
+                        long t0 = System.currentTimeMillis();
                         i.addClickedObjects(selection, selectedObjects);
+                        long t1 = System.currentTimeMillis();
                         //logger.debug("before remove, contained: {}, rect: {}, selection: {}", selectedObjects.size(), rect, selection);
                         if (removeAfterwards) {
                             Polygon poly = r.getPolygon();
-                                Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
-                                while (it.hasNext()) {
-                                    Pair<StructureObject, BoundingBox> p= it.next();
-                                    //logger.debug("poly {}, nPoints: {}, x:{}, y:{}", poly, poly.npoints, poly.xpoints, poly.ypoints);
-                                    Rectangle oRect = new Rectangle(p.value.xMin(), p.value.yMin(), p.key.getBounds().sizeX(), p.key.getBounds().sizeY());
-                                    if ((poly.npoints>1 && !poly.intersects(oRect)) || !insideMask(p.key.getMask(), p.value, poly)) it.remove();
-                                }
-                                //logger.debug("interactive selection after remove, contained: {}", selectedObjects.size());
+                            Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
+                            while (it.hasNext()) {
+                                Pair<StructureObject, BoundingBox> p= it.next();
+                                //logger.debug("poly {}, nPoints: {}, x:{}, y:{}", poly, poly.npoints, poly.xpoints, poly.ypoints);
+                                Rectangle oRect = new Rectangle(p.value.xMin(), p.value.yMin(), p.key.getBounds().sizeX(), p.key.getBounds().sizeY());
+                                if ((poly.npoints>1 && !poly.intersects(oRect)) || !insideMask(p.key.getMask(), p.value, poly)) it.remove();
                             }
+                            //logger.debug("interactive selection after remove, contained: {}", selectedObjects.size());
+                        }
+                        long t2 = System.currentTimeMillis();
+                        logger.debug("select objects: find indices: {} remove afterwards: {}", t1-t0, t2-t1);
                         if (!freeHandSplit || !strechObjects) ip.deleteRoi();
                     }
                 }

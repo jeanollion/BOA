@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import boa.utils.Pair;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -75,7 +77,7 @@ public class StructureObjectMask extends ImageObjectInterface {
             objects = this.parents;
             offsets = new BoundingBox[1];
             offsets[0] = parent.getRelativeBoundingBox(parent).translate(additionalOffset);
-        } else {
+        } else  {
             objects = parents.get(0).getChildren(childStructureIdx);
             if (objects==null) {
                 //logger.error("no objects for parent: {}, structure: {}", parents.get(0), childStructureIdx);
@@ -92,11 +94,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         if (objects == null) reloadObjects();
         if (objects==null) return Collections.EMPTY_LIST;
         getOffsets();
-        ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<>(objects.size());
-        for (int i = 0; i < offsets.length; ++i) {
-            res.add(new Pair(objects.get(i), offsets[i]));
-        }
-        return res;
+        return IntStream.range(0, offsets.length).mapToObj(i->new Pair<>(objects.get(i), offsets[i])).collect(Collectors.toList());
     }
 
     @Override
