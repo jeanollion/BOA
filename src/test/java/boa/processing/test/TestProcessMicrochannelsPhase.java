@@ -81,7 +81,7 @@ public class TestProcessMicrochannelsPhase {
         MicrochannelPhase2D.debug=true;
         //MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
-        mDAO.getExperiment().getStructure(0).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack, null);
+        mDAO.getExperiment().getStructure(0).getProcessingScheme().getTrackPreFilters(true).filter(0, parentTrack);
         ImageWindowManagerFactory.showImage(root.getRawImage(0).duplicate("raw images"));
         ImageWindowManagerFactory.showImage(root.getPreFilteredImage(0).duplicate("pre-Filtered images"));
         RegionPopulation pop = s.runSegmenter(root.getPreFilteredImage(0), 0, root);
@@ -91,7 +91,7 @@ public class TestProcessMicrochannelsPhase {
         if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
             TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters();
             for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) if (pp.instanciatePlugin() instanceof TrackLengthFilter || pp.instanciatePlugin() instanceof AverageMask || pp.instanciatePlugin() instanceof RemoveTracksStartingAfterFrame) pp.setActivated(false);
-            tpf.filter(0, Arrays.asList(new StructureObject[]{root}), null);
+            tpf.filter(0, Arrays.asList(new StructureObject[]{root}));
             pop = root.getObjectPopulation(0);
         }
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
@@ -115,7 +115,7 @@ public class TestProcessMicrochannelsPhase {
         ImageWindowManagerFactory.showImage(pop.getLabelMap());
         FitMicrochannelHeadToEdges.debug=true;
         if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
-            ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters().filter(0, Arrays.asList(new StructureObject[]{root}), null);
+            ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters().filter(0, Arrays.asList(new StructureObject[]{root}));
             pop = root.getObjectPopulation(0);
         } else return;
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);

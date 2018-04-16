@@ -18,12 +18,10 @@
  */
 package boa.plugins;
 
-import java.util.concurrent.ExecutorService;
-
 /**
  *
  * @author jollion
  */
 public interface MultiThreaded {
-    public void setExecutor(ExecutorService executor);
+    public void setMultithread(boolean multithread);
 }

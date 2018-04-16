@@ -261,7 +261,7 @@ public class ThreadRunner {
     }
     public static <T> void exexcuteAndThrowErrors(Stream<T> stream, Consumer<T> action) {
         MultipleException e = new MultipleException();
-        stream.parallel().forEach(t -> {
+        stream.forEach(t -> {
             try {
                 action.accept(t);
             } catch (MultipleException me) {

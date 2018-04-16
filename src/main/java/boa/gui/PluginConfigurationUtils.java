@@ -106,10 +106,10 @@ public class PluginConfigurationUtils {
                             Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut( parentTrack, true);  // don't modify object directly. 
                             parent = dupMap.get(parent.getId()); 
                             parentTrack = parentTrack.stream().map(p->dupMap.get(p.getId())).collect(Collectors.toList());
-                            psc.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+                            psc.getTrackPreFilters(true).filter(structureIdx, parentTrack);
                             
                             if (ps instanceof Segmenter) { // case segmenter -> segment only & call to test method
-                                TrackParametrizer  applyToSeg = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, (Segmenter)ps, null);
+                                TrackParametrizer  applyToSeg = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, (Segmenter)ps);
                                 SegmentOnly so; 
                                 if (psc instanceof SegmentOnly) {
                                     so = (SegmentOnly)psc;
@@ -128,7 +128,7 @@ public class PluginConfigurationUtils {
                                     applyToSeg.apply(p, s); 
                                     ((ParameterSetup)s).setTestParameter(parameters[idx].getName());
                                 };
-                                so.segmentAndTrack(structureIdx, sel, apply, null);
+                                so.segmentAndTrack(structureIdx, sel, apply);
                                 
                             } else if (ps instanceof Tracker) {
                                 boolean segAndTrack = false;
@@ -152,7 +152,7 @@ public class PluginConfigurationUtils {
                                 if (psc instanceof ProcessingSchemeWithTracking) tpf = ((ProcessingSchemeWithTracking)psc).getTrackPostFilters();
                                 if (segAndTrack) ((TrackerSegmenter)ps).segmentAndTrack(structureIdx, parentTrack, psc.getTrackPreFilters(true), psc.getPostFilters());
                                 else ((Tracker)ps).track(structureIdx, parentTrack);
-                                if (tpf!=null) tpf.filter(structureIdx, parentTrack, null);
+                                if (tpf!=null) tpf.filter(structureIdx, parentTrack);
                                 
                                 // dispay track interactively
                                 ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();

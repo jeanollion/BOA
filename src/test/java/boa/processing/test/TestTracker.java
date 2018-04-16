@@ -81,12 +81,12 @@ public class TestTracker {
         //String dbName = "MutD5_141202";
         //String dbName = "MutT_150402";
         //String dbName = "MutH_151220";
-        //String dbName = "WT_150616";
-        String dbName = "WT_180318_Fluo";
+        String dbName = "WT_150616";
+        //String dbName = "WT_180318_Fluo";
         int pIdx =0;
-        int mcIdx =0;
-        int structureIdx =3;
-        int[] frames = new int[]{0,1000}; //{215, 237};
+        int mcIdx =1;
+        int structureIdx =1;
+        int[] frames = new int[]{0,88}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -106,8 +106,8 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStepLimit=40;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
-        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
+        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);
@@ -123,13 +123,13 @@ public class TestTracker {
         if (parentSIdx==-1) {
             parentTrack = roots;
             roots.removeIf(o -> o.getFrame()<tStart-trackPrefilterRange || o.getFrame()>tEnd+trackPrefilterRange);
-            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack);
             roots.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }
         else {
             parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, parentSIdx), o->o.getIdx()==mcIdx&& o.getFrame()<=tEnd);
             parentTrack.removeIf(o -> o.getFrame()<tStart-trackPrefilterRange || o.getFrame()>tEnd+trackPrefilterRange);
-            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack);
             parentTrack.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }
         ps.getPreFilters().removeAll();
@@ -149,8 +149,8 @@ public class TestTracker {
             }
         }
         
-        if (trackOnly) ps.trackOnly(structureIdx, parentTrack, null);
-        else ps.segmentAndTrack(structureIdx, parentTrack, null);
+        if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
+        else ps.segmentAndTrack(structureIdx, parentTrack);
         logger.debug("track: {} ({}) children of {} = ({})", StructureObjectUtils.getAllTracks(parentTrack, structureIdx).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, structureIdx).values(), o->o.size()), parentTrack.get(0), parentTrack.get(0).getChildren(structureIdx));
 
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
@@ -189,12 +189,12 @@ public class TestTracker {
         List<StructureObject> parentTrack=null;
         if (parentSIdx==-1) {
             parentTrack = roots;
-            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack);
             roots.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }
         else {
             parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, parentSIdx), o->o.getIdx()==mcIdx&& o.getFrame()<=tEnd);
-            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack);
             parentTrack.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }
         ps.getPreFilters().removeAll();
@@ -206,7 +206,7 @@ public class TestTracker {
         
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
-        ps.segmentAndTrack(structureIdx, parentTrack, null);
+        ps.segmentAndTrack(structureIdx, parentTrack);
         //ps.trackOnly(structureIdx, parentTrack);
         GUI.getInstance();
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();

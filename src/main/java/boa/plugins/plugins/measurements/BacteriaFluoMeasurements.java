@@ -93,8 +93,8 @@ public class BacteriaFluoMeasurements implements Measurement {
         object.getMeasurements().setValue("BacteriaCenterY", center.get(1));
         object.getMeasurements().setValue("MeanRFPInBacteria", BasicMeasurements.getMeanValue(bactObject, bactImage));
         object.getMeasurements().setValue("MeanYFPInBacteria", BasicMeasurements.getMeanValue(bactObject, mutImage));
-        object.getMeasurements().setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));
-        object.getMeasurements().setValue("BacteriaArea", GeometricalMeasurements.getVolume(bactObject));
+        object.getMeasurements().setValue("BacteriaLength", object.getScaleXY() * GeometricalMeasurements.getFeretMax(bactObject));
+        object.getMeasurements().setValue("BacteriaArea", GeometricalMeasurements.getVolumeUnit(bactObject));
         int includedMutations = ObjectInclusionCount.count(object, mutation.getSelectedIndex(), 0, false);
         object.getMeasurements().setValue("MutationCountInBacteria", includedMutations);
         

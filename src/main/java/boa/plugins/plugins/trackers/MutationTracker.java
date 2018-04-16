@@ -95,10 +95,11 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
             + "<li>Bacteria lineage is honoured: two spots can only be linked if they are contained in bacteria from the same line</li>"
             + "<li>If segmentation and tracking is run at the same time, a first step of removal of low-quality (LQ) spots (spot that can be either false-negative or true-positive) will be applied: only LQ spots that can be linked (directly or indirectly) to high-quality (HQ) spots (ie spots that are true-positive for sure) are kept, allowing a better selection of true-positives spots of low intensity. HQ/LQ definition depends on the parameter <em>Spot Quality Threshold</em> and depends on the quality defined by the segmenter</li>"
             + "<li>A global linking procedure - allowing gaps (if <em>Maximum frame gap</em> is >0) - is applied among remaining spots</li></ul>";
-    ExecutorService executor;
+    // multithreaded interface
+    boolean multithreaded;
     @Override
-    public void setExecutor(ExecutorService executor) {
-        this.executor=executor;
+    public void setMultithread(boolean multithreaded) {
+        this.multithreaded=multithreaded;
     }
     
     public MutationTracker setCompartimentStructure(int compartimentStructureIdx) {
@@ -128,7 +129,7 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, TrackPreFilterSequence trackPreFilters, PostFilterSequence postFilters) {
         long t0 = System.currentTimeMillis();
         SegmentOnly ps = new SegmentOnly(segmenter.instanciatePlugin()).setTrackPreFilters(trackPreFilters).setPostFilters(postFilters);
-        ps.segmentAndTrack(structureIdx, parentTrack, executor);
+        ps.segmentAndTrack(structureIdx, parentTrack);
         long t1= System.currentTimeMillis();
         track(structureIdx, parentTrack, true);
     }

@@ -88,12 +88,17 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import static jdk.nashorn.internal.objects.ArrayBufferView.buffer;
 import boa.measurement.MeasurementExtractor;
+import java.util.stream.Stream;
 
 /**
  *
  * @author jollion
  */
 public class Utils {
+    public static <T> Stream<T> parallele(Stream<T> stream, boolean parallele) {
+        if (parallele) return stream.parallel();
+        else return stream.sequential();
+    }
     public static <T, P> boolean objectsAllHaveSameProperty(Collection<T> objects, Function<T, P> propertyFunction) {
         if (objects==null || objects.size()<=1) return true;
         P property = null;

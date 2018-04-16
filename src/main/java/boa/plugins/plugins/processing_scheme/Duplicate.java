@@ -69,20 +69,20 @@ public class Duplicate extends SegmentThenTrack {
         return null;
     }
     @Override
-    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
-        segmentOnly(structureIdx, parentTrack, executor);
-        trackOnly(structureIdx, parentTrack, executor);
-        trackPostFilters.filter(structureIdx, parentTrack, executor);
+    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
+        segmentOnly(structureIdx, parentTrack);
+        trackOnly(structureIdx, parentTrack);
+        trackPostFilters.filter(structureIdx, parentTrack);
     }
     @Override
-    public void segmentOnly(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
+    public void segmentOnly(final int structureIdx, final List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         int parentStorage = parentTrack.get(0).getExperiment().getStructure(structureIdx).getParentStructure();
         if (dup.getSelectedStructureIdx()<0) throw new IllegalArgumentException("No selected structure to duplicate");
         logger.debug("dup: {} dup parent: {}, parentTrack: {}", dup.getSelectedStructureIdx(), dup.getParentStructureIdx(), parentTrack.get(0).getStructureIdx());
         //if (dup.getParentStructureIdx()!=parentTrack.get(0).getStructureIdx() && dup.getSelectedStructureIdx()!=parentTrack.get(0).getStructureIdx()) throw new IllegalArgumentException("Parent Structure should be the same as duplicated's parent strucutre");
         Stream<StructureObject> dupStream = dup.getSelectedStructureIdx() == parentTrack.get(0).getStructureIdx() ? parentTrack.stream() : StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), dup.getSelectedStructureIdx());
-        if (executor!=null) dupStream = dupStream.parallel();
+        dupStream = dupStream.parallel();
         Map<StructureObject, StructureObject> dupMap = dupStream.collect(Collectors.toMap(s->s, s->s.duplicate(true, true, false)));
         logger.debug("duplicate for parentTrack: {} structure: {}: #{}objects", parentTrack.get(0), structureIdx, dupMap.size());
         // set trackHead, next & prev ids + structureIdx
@@ -113,7 +113,7 @@ public class Duplicate extends SegmentThenTrack {
                 p.getKey().setChildren(p.getValue().stream().map(e->e.getValue()).collect(Collectors.toList()), structureIdx); 
             });
         }
-        getTrackPreFilters(true).filter(structureIdx, parentTrack, executor);
+        getTrackPreFilters(true).filter(structureIdx, parentTrack);
     }
     
 }

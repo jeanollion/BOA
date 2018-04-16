@@ -39,6 +39,8 @@ import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
+import static boa.utils.Utils.parallele;
+import java.util.function.Consumer;
 
 /**
  *
@@ -48,7 +50,7 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
     PluginParameter<boa.plugins.PostFilter> filter = new PluginParameter<>("Filter",boa.plugins.PostFilter.class, false);
     final static String[] methods = new String[]{"Delete single objects", "Delete whole track", "Prune Track"};
     ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", methods, methods[0], false);
-    ExecutorService executor;
+
     public PostFilter() {}
     public PostFilter(boa.plugins.PostFilter filter) {
         this.filter.setPlugin(filter);
@@ -62,7 +64,7 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
     public void filter(int structureIdx, List<StructureObject> parentTrack) {
         boolean rootParent = parentTrack.stream().findAny().get().isRoot();
         List<StructureObject> objectsToRemove = new ArrayList<>();
-        ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
+        Consumer<StructureObject> exe = parent -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             //logger.debug("seg post-filter: {}", parent);
             if (!rootParent) pop.translate(new SimpleBoundingBox(parent.getBounds()).reverseOffset(), false); // go back to relative landmark
@@ -92,7 +94,8 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
             }
             if (parent.getChildren(structureIdx)!=null) parent.getChildren(structureIdx).stream().forEachOrdered((o) -> { o.objectHasBeenModified(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
             
-        }, executor, null);
+        };
+        ThreadRunner.exexcuteAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
         if (!objectsToRemove.isEmpty()) { 
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
             switch (this.deleteMethod.getSelectedIndex()) {
@@ -118,10 +121,11 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
     public Parameter[] getParameters() {
         return new Parameter[]{filter, deleteMethod};
     }
-
+    // multithreaded interface
+    boolean multithreaded;
     @Override
-    public void setExecutor(ExecutorService executor) {
-        this.executor=executor;
+    public void setMultithread(boolean multithreaded) {
+        this.multithreaded=multithreaded;
     }
     
 }

@@ -69,8 +69,8 @@ public class TestProcessBacteria {
         
         ProcessingScheme psc = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme();
         parentTrack.removeIf(o -> o.getFrame()<timePoint-trackPrefilterRange || o.getFrame()>timePoint+trackPrefilterRange);
-        psc.getTrackPreFilters(true).filter(bacteriaStructureIdx, parentTrack, null);
-        TrackParametrizable.TrackParametrizer<Segmenter> apply = TrackParametrizable.getTrackParametrizer(bacteriaStructureIdx, parentTrack, psc.getSegmenter(), null);
+        psc.getTrackPreFilters(true).filter(bacteriaStructureIdx, parentTrack);
+        TrackParametrizable.TrackParametrizer<Segmenter> apply = TrackParametrizable.getTrackParametrizer(bacteriaStructureIdx, parentTrack, psc.getSegmenter());
         parentTrack.removeIf(o -> o.getFrame()<timePoint || o.getFrame()>timePoint);
         
         

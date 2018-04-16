@@ -80,17 +80,17 @@ public class TestTrackPreFilter {
         if (structureIdx==0) {
             parentTrack = roots;
             roots.removeIf(o -> o.getFrame()<frames[0] || o.getFrame()>frames[1]);
-            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack);
         }
         else {
             parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, 0), o->o.getIdx()==mcIdx&& o.getFrame()<=frames[1]);
             parentTrack.removeIf(o -> o.getFrame()<frames[0] || o.getFrame()>frames[1]);
-            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack, null);
+            ps.getTrackPreFilters(true).filter(structureIdx, parentTrack);
             TrackMaskX tm = new TrackMaskX(parentTrack, structureIdx, false);
             tm.setDisplayPreFilteredImages(true);
             //ImageWindowManagerFactory.showImage(tm.generatemage(structureIdx, false).setName("track:"+parentTrack.get(0)));
         }
-        TrackParametrizer  tp = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, ps.getSegmenter(), null);
+        TrackParametrizer  tp = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, ps.getSegmenter());
         
         //return ps.getSegmenter()
     } 

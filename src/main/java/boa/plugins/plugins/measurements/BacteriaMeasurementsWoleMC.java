@@ -121,9 +121,9 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
             StructureObject mm = bactList.get(0);
             object.getMeasurements().setValue("M_MutationCount", ObjectInclusionCount.count(mm, mutList, 0, true));
             t4 = System.currentTimeMillis();
-            object.getMeasurements().setValue("M_FeretMax", GeometricalMeasurements.getFeretMax(mm.getRegion()));
+            object.getMeasurements().setValue("M_FeretMax", object.getScaleXY()*GeometricalMeasurements.getFeretMax(mm.getRegion()));
             object.getMeasurements().setValue("M_MeanValue", BasicMeasurements.getMeanValue(mm.getRegion(), bactImage));
-            object.getMeasurements().setValue("M_Volume", GeometricalMeasurements.getVolume(mm.getRegion()));
+            object.getMeasurements().setValue("M_Volume", GeometricalMeasurements.getVolumeUnit(mm.getRegion()));
             t5 = System.currentTimeMillis();
             
         }

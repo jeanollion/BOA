@@ -28,6 +28,7 @@ import boa.plugins.TrackPreFilter;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
+import static boa.utils.Utils.parallele;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -43,18 +44,18 @@ import java.util.function.Consumer;
 public class PreFilters implements TrackPreFilter, MultiThreaded {
     PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     
-    ExecutorService executor;
-    @Override public void setExecutor(ExecutorService executor) {
-        this.executor=executor;
+    // multithreaded interface
+    boolean multithreaded;
+    @Override
+    public void setMultithread(boolean multithreaded) {
+        this.multithreaded=multithreaded;
     }
     
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         if (preFilters.isEmpty()) return;
-        boolean parallele = executor ==null;
         Consumer<Entry<StructureObject, Image>> c  = e->e.setValue(preFilters.filter(e.getValue(), e.getKey().getMask()));
-        if (parallele) preFilteredImages.entrySet().stream().parallel().forEach(c);
-        else preFilteredImages.entrySet().stream().sequential().forEach(c);
+        parallele(preFilteredImages.entrySet().stream(), multithreaded).forEach(c);
     }
 
     @Override

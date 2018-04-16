@@ -31,13 +31,15 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import net.imglib2.RealLocalizable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Jean Ollion
  */
 public class CircularContourFactory {
-
+    public static final Logger logger = LoggerFactory.getLogger(CircularContourFactory.class);
     public static <T extends RealLocalizable> CircularNode<T> getClosest(CircularNode<T> start, Point ref) {
         double min = ref.distSq(start.element);
         CircularNode<T> minN = start;
@@ -59,30 +61,22 @@ public class CircularContourFactory {
     /**
      * Requires that each point of the contour has exactly 2 neighbours
      * @param contour
-     * @param center
      * @return positively XY-oriented  contour
      */
-    public static CircularNode<Voxel> getCircularContour(Set<Voxel> contour, Point center) {
+    public static CircularNode<Voxel> getCircularContour(Set<Voxel> contour) {
         Set<Voxel> contourVisited = new HashSet<>(contour.size());
         EllipsoidalNeighborhood neigh = new EllipsoidalNeighborhood(1.5, true);
         CircularNode<Voxel> circContour = new CircularNode(contour.stream().min((Voxel v1, Voxel v2) -> Integer.compare(v1.x + v1.y, v2.x + v2.y)).get()); // circContour with upper-leftmost voxel
         contourVisited.add(circContour.element);
         int count = 1;
         CircularNode<Voxel> current = null;
-        Voxel next = new Voxel(0, 0, 0);
-        Vector refV = new Vector(circContour.element.x - center.get(0), circContour.element.y - center.get(1));
-        Vector otherV = new Vector(0, 0);
+        Voxel next = new Voxel(0, 0, circContour.element.z);
         // 1) get first neighbour with the positive orientation relative to the center
-        Map<Voxel, Double> crossPMap = new HashMap<>(neigh.getSize() - 2);
+        Map<Voxel, Double> crossPMap = new HashMap<>( 2);
         for (int i = 0; i < neigh.getSize(); ++i) {
             next.x = circContour.element.x + neigh.dx[i];
             next.y = circContour.element.y + neigh.dy[i];
-            next.z = circContour.element.z;
-            if (contour.contains(next)) {
-                otherV.set(next.x - center.get(0), 0).set(next.y - center.get(1), 1);
-                double crossP = Vector.crossProduct2D(refV, otherV);
-                crossPMap.put(next.duplicate(), crossP);
-            }
+            if (contour.contains(next)) crossPMap.put(next.duplicate(), (double)(neigh.dx[i]-neigh.dy[i]));
         }
         if (crossPMap.isEmpty()) {
             throw new RuntimeException("circular contour: no first neighbor found");
@@ -226,7 +220,7 @@ public class CircularContourFactory {
         CircularNode.apply(circContour, c->res.add(c.element), true);
         return res;
     }
-    public static void ressampleContour(CircularNode<Point> circContour, double d) {
+    public static void resampleContour(CircularNode<Point> circContour, double d) {
         CircularNode<Point> current = circContour;
         while (current!=circContour.prev) current = moveNextPoint(current, d);
         // check last point

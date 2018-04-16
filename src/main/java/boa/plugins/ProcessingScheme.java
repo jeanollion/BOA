@@ -43,6 +43,6 @@ public interface ProcessingScheme extends Plugin { //Multithreaded
     public PostFilterSequence getPostFilters();
     public Segmenter getSegmenter();
     //public void segmentThenTrack(int structureIdx, List<StructureObject> parentTrack);
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor);
-    public void trackOnly(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor);
+    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack);
+    public void trackOnly(int structureIdx, List<StructureObject> parentTrack);
 }

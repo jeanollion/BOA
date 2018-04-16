@@ -65,7 +65,7 @@ public class TestProcessBacteriaPhase {
     static boolean setMask = false;
     static boolean normalize = false;
     static int trackPrefilterRange = 100;
-    static int bacteriaStructureIdx = 2;
+    static int bacteriaStructureIdx = 1;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
@@ -75,8 +75,8 @@ public class TestProcessBacteriaPhase {
         //String dbName = "MutH_150324";
         //String dbName = "MutH_151220";
         //String dbName = "MutH_140115";
-        String dbName = "WT_180318_Fluo";
-        //String dbName = "WT_150616";
+        //String dbName = "WT_180318_Fluo";
+        String dbName = "WT_150616";
         //String dbName = "WT_180318_Fluo";
         //String dbName = "Aya2";
         //String dbName = "AyaWT_mmglu";
@@ -86,8 +86,8 @@ public class TestProcessBacteriaPhase {
         //String dbName = "MutT_150402";
         //String dbName = "TestThomasRawStacks";
         int field = 0;
-        int microChannel =0;
-        int[] time =new int[]{0, 0}; //22
+        int microChannel =1;
+        int[] time =new int[]{194, 194}; //22
         //setMask=true;
         //thld = 776;
         
@@ -106,8 +106,8 @@ public class TestProcessBacteriaPhase {
         
         ProcessingScheme psc = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme();
         parentTrack.removeIf(o -> o.getFrame()<timePointMin-trackPrefilterRange || o.getFrame()>timePointMax+trackPrefilterRange);
-        psc.getTrackPreFilters(true).filter(bacteriaStructureIdx, parentTrack, null);
-        TrackParametrizer apply = TrackParametrizable.getTrackParametrizer(bacteriaStructureIdx, parentTrack, psc.getSegmenter(), null);
+        psc.getTrackPreFilters(true).filter(bacteriaStructureIdx, parentTrack);
+        TrackParametrizer apply = TrackParametrizable.getTrackParametrizer(bacteriaStructureIdx, parentTrack, psc.getSegmenter());
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {

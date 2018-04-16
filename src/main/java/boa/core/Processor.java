@@ -51,6 +51,7 @@ import boa.plugins.ConfigurableTransformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.plugins.Measurement;
+import boa.plugins.MultiThreaded;
 import boa.plugins.ObjectSplitter;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
@@ -60,6 +61,7 @@ import boa.plugins.Transformation;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
+import boa.utils.StreamConcatenation;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
@@ -208,16 +210,16 @@ public class Processor {
         }
         logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
         // one thread per track + common executor for processing scheme
-        ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs(), ThreadRunner.priorityThreadFactory(Thread.MAX_PRIORITY));
+        //ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs(), ThreadRunner.priorityThreadFactory(Thread.MAX_PRIORITY));
         //ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs());
         //ExecutorService subExecutor = Executors.newSingleThreadExecutor(); // TODO: see what's more efficient!
         ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx) -> {
-            execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao, subExecutor);
+            execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao);
         };
         logger.debug("thread number: {}", GUI.getThreadNumber() );
-        ExecutorService mainExecutor = Executors.newFixedThreadPool(GUI.getThreadNumber(), ThreadRunner.priorityThreadFactory(Thread.NORM_PRIORITY));
-        ThreadRunner.execute(allParentTracks.values(), false, ta, mainExecutor, null);
-        
+        //ExecutorService mainExecutor = Executors.newFixedThreadPool(GUI.getThreadNumber(), ThreadRunner.priorityThreadFactory(Thread.NORM_PRIORITY));
+        //ThreadRunner.execute(allParentTracks.values(), false, ta, mainExecutor, null);
+        allParentTracks.values().forEach(pt -> ta.run(pt, 0));
         // store in DAO
         List<StructureObject> children = new ArrayList<>();
         for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
@@ -242,12 +244,12 @@ public class Processor {
         }
     }
     
-    private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao, ExecutorService executor) {
+    private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {
         if (!trackOnly && deleteChildren) dao.deleteChildren(parentTrack, structureIdx);
-        if (trackOnly) ps.trackOnly(structureIdx, parentTrack, executor);
+        if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
         else {
             try {
-                ps.segmentAndTrack(structureIdx, parentTrack, executor);
+                ps.segmentAndTrack(structureIdx, parentTrack);
                 logger.debug("ps {} executed on track: {}, structure: {}", ps.getClass(), parentTrack.get(0), structureIdx);
             } catch(Exception e) {
                 throw e;
@@ -291,20 +293,35 @@ public class Processor {
             } else {
                 allParentTracks = StructureObjectUtils.getAllTracks(roots, e.getKey());
             }
-            if (pcb!=null) pcb.log("Performing #"+e.getValue().size()+" measurement"+(e.getValue().size()>1?"s":"")+" on Structure: "+e.getKey()+" (#"+allParentTracks.size()+" tracks): "+Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
-            logger.debug("performing: #{} measurements from parent: {} (#{} parentTracks) : {}", e.getValue().size(), e.getKey(), allParentTracks.size(), Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
+            if (pcb!=null) pcb.log("Executing #"+e.getValue().size()+" measurement"+(e.getValue().size()>1?"s":"")+" on Structure: "+e.getKey()+" (#"+allParentTracks.size()+" tracks): "+Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
+            logger.debug("Executing: #{} measurements from parent: {} (#{} parentTracks) : {}", e.getValue().size(), e.getKey(), allParentTracks.size(), Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
             
+            // start with non parallele measurements on tracks
             List<Pair<Measurement, StructureObject>> actionPool = new ArrayList<>();
-            for (List<StructureObject> parentTrack : allParentTracks.values()) {
-                for (Measurement m : dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey())) {
-                    if (m.callOnlyOnTrackHeads()) actionPool.add(new Pair<>(m, parentTrack.get(0)));
-                    else for (StructureObject o : parentTrack) actionPool.add(new Pair<>(m, o));
-                }
-            }
-            if (pcb!=null) pcb.log("Executing: #"+actionPool.size()+" measurements");
+            allParentTracks.keySet().forEach(pt -> {
+                dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->m.callOnlyOnTrackHeads() && !(m instanceof MultiThreaded)).forEach(m-> actionPool.add(new Pair<>(m, pt)));
+            });
+            if (pcb!=null && actionPool.size()>0) pcb.log("Executing: #"+actionPool.size()+" track measurements");
             if (!actionPool.isEmpty()) containsObjects=true;
-            //actionPool.parallelStream().forEach(p->p.key.performMeasurement(p.value));
             ThreadRunner.exexcuteAndThrowErrors(actionPool.parallelStream(), p->p.key.performMeasurement(p.value));
+            
+            // parallele measurement on tracks
+            int paralleleMeasCount = (int)e.getValue().stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded)).count();
+            if (pcb!=null && paralleleMeasCount>0) pcb.log("Executing: #"+ paralleleMeasCount * allParentTracks.size()+" multithreaded track measurements");
+            allParentTracks.keySet().forEach(pt -> {
+                dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded)).forEach(m-> {
+                    ((MultiThreaded)m).setMultithread(true);
+                    m.performMeasurement(pt);
+                });
+            });
+            int allObCount = allParentTracks.values().stream().mapToInt(t->t.size()).sum();
+            // measurements on objects
+            dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->!m.callOnlyOnTrackHeads()).forEach(m-> {
+                if (pcb!=null) pcb.log("Executing Measurement: "+m.getClass().getSimpleName()+"on #"+allObCount+" objects");
+                ThreadRunner.exexcuteAndThrowErrors(StreamConcatenation.concat((Stream<StructureObject>[])allParentTracks.values().stream().map(l->l.parallelStream()).toArray(s->new Stream[s])), o->m.performMeasurement(o));
+            });
+            if (!containsObjects && allObCount>0) containsObjects = e.getValue().stream().filter(m->!m.callOnlyOnTrackHeads()).findAny().orElse(null)!=null;
+            
             //ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
             
             //Stream<Pair<Measurement, StructureObject>> actions = allParentTracks.values().stream().flatMap(t-> dao.getExperiment().getMeasurements(e.getKey()).flatMap( m->m.callOnlyOnTrackHeads() ? Stream.generate(()-> new Pair<>(m, t.get(0)) ) : t.stream().map(o -> new Pair<>(m, o))) );

@@ -45,6 +45,8 @@ import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
+import static boa.utils.Utils.parallele;
+import java.util.function.Consumer;
 
 /**
  *
@@ -57,7 +59,6 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
     ConditionalParameter statCond = new ConditionalParameter(statistics).setActionParameters("Quantile", new Parameter[]{quantile});
     NumberParameter threshold = new NumberParameter("Threshold", 4, 0);
     BooleanParameter keepOverThreshold = new BooleanParameter("Keep over threshold", true);
-    ExecutorService executor;
     
     public RemoveTrackByFeature setFeature(ObjectFeature feature, double thld, boolean keepOverThld) {
         this.feature.setPlugin(feature);
@@ -80,7 +81,7 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
         if (!feature.isOnePluginSet()) return;
         Map<Region, Double> valueMap = new HashMap<>();
         // compute feature for each object, by parent
-        ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
+        Consumer<StructureObject> exe = parent -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             ObjectFeature f = feature.instanciatePlugin();
             f.setUp(parent, structureIdx, pop);
@@ -89,7 +90,8 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
             synchronized(valueMap) {
                 valueMap.putAll(locValueMap);
             }
-        }, executor, null);
+        };
+        ThreadRunner.exexcuteAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
         // compute one value per track
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         List<StructureObject> objectsToRemove = new ArrayList<>();
@@ -112,10 +114,10 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
     public Parameter[] getParameters() {
         return new Parameter[]{feature, statCond, threshold, keepOverThreshold};
     }
-    
+    // multithreaded interface
+    boolean multithreaded;
     @Override
-    public void setExecutor(ExecutorService executor) {
-        this.executor=executor;
+    public void setMultithread(boolean multithreaded) {
+        this.multithreaded=multithreaded;
     }
-    
 }

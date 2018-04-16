@@ -113,7 +113,7 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
     }
     
     @Override
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {
+    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
         if (!tracker.isOnePluginSet()) {
             logger.info("No tracker set for structure: {}", structureIdx);
             return;
@@ -121,16 +121,16 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
         if (parentTrack.isEmpty()) return;
         //logger.debug("segmentAndTrack: # prefilters: {}", preFilters.getChildCount());
         TrackerSegmenter t = tracker.instanciatePlugin();
-        if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
+        if (t instanceof MultiThreaded) ((MultiThreaded)t).setMultithread(true);
         TrackPreFilterSequence tpf = getTrackPreFilters(true);
         t.segmentAndTrack(structureIdx, parentTrack, tpf, postFilters);
         logger.debug("executing #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
-        trackPostFilters.filter(structureIdx, parentTrack, executor); 
+        trackPostFilters.filter(structureIdx, parentTrack); 
         logger.debug("executed #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
     }
 
     @Override
-    public void trackOnly(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {
+    public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {
         if (!tracker.isOnePluginSet()) {
             logger.info("No tracker set for structure: {}", structureIdx);
             return;
@@ -140,9 +140,9 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
             for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks(true, true);
         }
         TrackerSegmenter t = tracker.instanciatePlugin();
-        if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
+        if (t instanceof MultiThreaded) ((MultiThreaded)t).setMultithread(true);
         t.track(structureIdx, parentTrack);
-        trackPostFilters.filter(structureIdx, parentTrack, executor); 
+        trackPostFilters.filter(structureIdx, parentTrack); 
     }
 
     @Override

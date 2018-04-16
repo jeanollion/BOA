@@ -126,12 +126,12 @@ public class SegmentOnly implements ProcessingScheme {
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
-    @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
-        getTrackPreFilters(true).filter(structureIdx, parentTrack, executor); // set preFiltered images to structureObjects
-        TrackParametrizer apply=TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
-        segmentAndTrack(structureIdx, parentTrack, apply, executor);
+    @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
+        getTrackPreFilters(true).filter(structureIdx, parentTrack); // set preFiltered images to structureObjects
+        TrackParametrizer apply=TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin());
+        segmentAndTrack(structureIdx, parentTrack, apply);
     }
-    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, TrackParametrizer applyToSegmenter, ExecutorService executor) {
+    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, TrackParametrizer applyToSegmenter) {
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
             return;
@@ -144,15 +144,15 @@ public class SegmentOnly implements ProcessingScheme {
         
         // segment in direct parents
         List<StructureObject> allParents = singleFrame ? StructureObjectUtils.getAllChildren(parentTrack.subList(0, 1), segParentStructureIdx) : StructureObjectUtils.getAllChildren(parentTrack, segParentStructureIdx);
-        Collections.shuffle(allParents); // reduce thread blocking
+        Collections.shuffle(allParents); // reduce thread blocking // TODO TEST NOW WITH STREAM
         final boolean ref2D= !allParents.isEmpty() && allParents.get(0).is2D() && parentTrack.get(0).getRawImage(structureIdx).sizeZ()>1;
         long t0 = System.currentTimeMillis();
         long t1 = System.currentTimeMillis();
         //if (useMaps) errors.addAll(ThreadRunner.execute(parentTrack, false, (p, idx) -> subMaps.getAndCreateIfNecessarySyncOnKey(p), executor, null));
         long t2 = System.currentTimeMillis();
-        RegionPopulation[] pops = new RegionPopulation[allParents.size()];
-        //List<RegionPopulation> pops = allParents.stream().parallel().map(subParent -> {
-        ThreadRunner.execute(allParents, false, (subParent, idx) -> {
+        //RegionPopulation[] pops = new RegionPopulation[allParents.size()];
+        List<RegionPopulation> pops = allParents.stream().parallel().map(subParent -> {
+        //ThreadRunner.execute(allParents, false, (subParent, idx) -> {
             StructureObject globalParent = subParent.getParent(parentStructureIdx);
             Segmenter seg = segmenter.instanciatePlugin();
             if (applyToSegmenter!=null) applyToSegmenter.apply(globalParent, seg);
@@ -161,24 +161,26 @@ public class SegmentOnly implements ProcessingScheme {
             RegionPopulation pop = seg.runSegmenter(input, structureIdx, subParent);
             pop = postFilters.filter(pop, structureIdx, subParent);
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);
-            pops[idx] = pop;
-        }, executor, null);
-        //}).collect(Collectors.toList()); // no better perfs
+            return pop;
+        //    pops[idx] = pop;
+        //}, executor, null);
+        }).collect(Collectors.toList()); // no better perfs with stream compared to executor fixed  thread pool
         
         long t3 = System.currentTimeMillis();
         if (subSegmentation) { // collect if necessary and set to parent
             HashMapGetCreate<StructureObject, List<Region>> parentObjectMap = new HashMapGetCreate<>(parentTrack.size(), new HashMapGetCreate.ListFactory());
-            HashMap<RegionPopulation, StructureObject> popParentMap = new HashMap<>(pops.length);
-            for (int i = 0; i<pops.length; ++i) popParentMap.put(pops[i], allParents.get(i));
-            Arrays.sort(pops, (p1, p2)->popParentMap.get(p1).compareTo(popParentMap.get(p2)));
-            for (int i = 0; i<pops.length; ++i) {
-                StructureObject subParent = popParentMap.get(pops[i]);
+            //HashMap<RegionPopulation, StructureObject> popParentMap = new HashMap<>(pops.size());
+            //for (int i = 0; i<pops.length; ++i) popParentMap.put(pops[i], allParents.get(i));
+            //Arrays.sort(pops, (p1, p2)->popParentMap.get(p1).compareTo(popParentMap.get(p2)));
+            for (int i = 0; i<pops.size(); ++i) {
+                //StructureObject subParent = popParentMap.get(pops[i]);
+                StructureObject subParent = allParents.get(i);
                 StructureObject parent = subParent.getParent(parentStructureIdx);
-                if (pops[i]!=null) {
+                if (pops.get(i)!=null) {
                     List<Region> objects =  parentObjectMap.getAndCreateIfNecessary(parent);
                     int label = objects.size();
-                    if (label>0) for (Region o : pops[i].getRegions()) o.setLabel(label++);
-                    objects.addAll(pops[i].getRegions());
+                    if (label>0) for (Region o : pops.get(i).getRegions()) o.setLabel(label++);
+                    objects.addAll(pops.get(i).getRegions());
                 }
                 else logger.debug("pop null for subParent: {}", allParents.get(i));
             }
@@ -198,10 +200,10 @@ public class SegmentOnly implements ProcessingScheme {
                 for (StructureObject p : parentsWithNoChildren)  p.setChildrenObjects(null, structureIdx);
             }
         } else {
-           for (int i = 0; i<pops.length; ++i) allParents.get(i).setChildrenObjects(pops[i], structureIdx);
+           for (int i = 0; i<pops.size(); ++i) allParents.get(i).setChildrenObjects(pops.get(i), structureIdx);
            if (singleFrame) {
-               if (pops.length>1) logger.error("Segmentation of structure: {} from track: {}, single frame but several populations", structureIdx, parentTrack.get(0));
-               else for (StructureObject parent : parentTrack.subList(1, parentTrack.size())) parent.setChildrenObjects(pops[0]!=null ? pops[0].duplicate(): null, structureIdx);
+               if (pops.size()>1) logger.error("Segmentation of structure: {} from track: {}, single frame but several populations", structureIdx, parentTrack.get(0));
+               else for (StructureObject parent : parentTrack.subList(1, parentTrack.size())) parent.setChildrenObjects(pops.get(0)!=null ? pops.get(0).duplicate(): null, structureIdx);
            }
         }
         long t4 = System.currentTimeMillis();
@@ -209,7 +211,7 @@ public class SegmentOnly implements ProcessingScheme {
         
     }
     
-    @Override public void trackOnly(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {return;}
+    @Override public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {return;}
 
     @Override
     public Parameter[] getParameters() {

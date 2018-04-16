@@ -76,6 +76,10 @@ import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
 import java.util.TreeMap;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
+import static boa.utils.Utils.parallele;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -178,9 +182,10 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         if (parentTrack.isEmpty()) return;
         // segmentation
         final Result[] boundingBoxes = new Result[parentTrack.size()];
-        trackPreFilters.filter(structureIdx, parentTrack, executor);
-        TrackParametrizer<? super MicrochannelSegmenter> applyToSegmenter = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
-        ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
+        trackPreFilters.filter(structureIdx, parentTrack);
+        TrackParametrizer<? super MicrochannelSegmenter> applyToSegmenter = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin());
+        Consumer<Integer> exe =  idx -> {
+            StructureObject parent = parentTrack.get(idx);
             MicrochannelSegmenter s = segmenter.instanciatePlugin();
             if (applyToSegmenter !=null) applyToSegmenter.apply(parent, s);
             boundingBoxes[idx] = s.segment(parent.getPreFilteredImage(structureIdx));
@@ -189,8 +194,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
             else parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(parent.getPreFilteredImage(structureIdx), false), structureIdx); // no Y - shift here because the mean shift is added afterwards
             //parent.setPreFilteredImage(null, structureIdx); // save memory
         };
-        
-        ThreadRunner.execute(parentTrack, false, ta, executor, null);
+        ThreadRunner.exexcuteAndThrowErrors(parallele(IntStream.range(0, parentTrack.size()).mapToObj(i->(Integer)i), multithreaded), exe);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
         
@@ -475,11 +479,11 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         return parameters;
     }
     
-    //multithreaded interface
-    ExecutorService executor;
+    // multithreaded interface
+    boolean multithreaded;
     @Override
-    public void setExecutor(ExecutorService executor) {
-        this.executor=executor;
+    public void setMultithread(boolean multithreaded) {
+        this.multithreaded=multithreaded;
     }
     // tool tip interface
     @Override

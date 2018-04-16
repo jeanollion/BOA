@@ -95,7 +95,7 @@ public class BacteriaPhaseMeasurements implements Measurement {
         m.setValue("BacteriaCenterY", center.get(1));
         double scale = object.getScaleXY();
         m.setValue("BacteriaLength", scale*GeometricalMeasurements.getFeretMax(bactObject));
-        m.setValue("BacteriaArea", scale*GeometricalMeasurements.getVolume(bactObject));
+        m.setValue("BacteriaArea", GeometricalMeasurements.getVolumeUnit(bactObject));
         m.setValue("BacteriaWidth", scale*GeometricalMeasurements.getThickness(bactObject));
         m.setValue(StructureObject.trackErrorNext, object.hasTrackLinkError(false, true));
         m.setValue(StructureObject.trackErrorPrev, object.hasTrackLinkError(true, false));

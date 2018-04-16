@@ -76,10 +76,10 @@ public interface TrackParametrizable<P extends Plugin> {
     public TrackParametrizer run(int structureIdx, List<StructureObject> parentTrack);
     
     // + static helpers methods
-    public static <P extends Plugin> TrackParametrizer<P> getTrackParametrizer(int structureIdx, List<StructureObject> parentTrack, P plugin, ExecutorService executor) {
+    public static <P extends Plugin> TrackParametrizer<P> getTrackParametrizer(int structureIdx, List<StructureObject> parentTrack, P plugin) {
         if (plugin instanceof TrackParametrizable) {
             TrackParametrizable tp = (TrackParametrizable)plugin;
-            if (executor!=null && tp instanceof MultiThreaded) ((MultiThreaded)tp).setExecutor(executor);
+            if (tp instanceof MultiThreaded) ((MultiThreaded)tp).setMultithread(true);
             return tp.run(structureIdx, parentTrack);
         }
         return null;

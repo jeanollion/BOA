@@ -79,7 +79,7 @@ public class MicrochannelPhaseArtifacts implements PostFilter {
                     return true;
                 }
                 if (minXContactFraction>0) {
-                    double length = GeometricalMeasurements.getFeretMax(object)/object.getScaleXY();
+                    double length = GeometricalMeasurements.getFeretMax(object);
                     int lim = (int)(length * minXContactFraction+0.5);
                     int xl = borderXl.getContact(object);
                     int xr = borderXr.getContact(object);

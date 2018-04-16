@@ -123,12 +123,12 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
     public Tracker getTracker() {return tracker.instanciatePlugin();}
 
     @Override
-    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
-        segmentThenTrack(structureIdx, parentTrack, executor);
+    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
+        segmentThenTrack(structureIdx, parentTrack);
     }
     
     //@Override
-    public void segmentThenTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
+    public void segmentThenTrack(final int structureIdx, final List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
@@ -138,22 +138,22 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
             logger.info("No tracker set for structure: {}", structureIdx);
             return;
         }
-        segmentOnly(structureIdx, parentTrack, executor);
-        trackOnly(structureIdx, parentTrack, executor);
-        trackPostFilters.filter(structureIdx, parentTrack, executor);
+        segmentOnly(structureIdx, parentTrack);
+        trackOnly(structureIdx, parentTrack);
+        trackPostFilters.filter(structureIdx, parentTrack);
     }
-    public void segmentOnly(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
+    public void segmentOnly(final int structureIdx, final List<StructureObject> parentTrack) {
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
             return;
         }
         if (parentTrack.isEmpty()) return;
         SegmentOnly seg = new SegmentOnly(segmenter.instanciatePlugin()).setPreFilters(preFilters).setTrackPreFilters(trackPreFilters).setPostFilters(postFilters);
-        seg.segmentAndTrack(structureIdx, parentTrack, executor);
+        seg.segmentAndTrack(structureIdx, parentTrack);
     }
 
     @Override
-    public void trackOnly(final int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {
+    public void trackOnly(final int structureIdx, List<StructureObject> parentTrack) {
         if (!tracker.isOnePluginSet()) {
             logger.info("No tracker set for structure: {}", structureIdx);
             return;
@@ -163,7 +163,7 @@ public class SegmentThenTrack implements ProcessingSchemeWithTracking {
         }
         
         Tracker t = tracker.instanciatePlugin();
-        if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
+        if (t instanceof MultiThreaded) ((MultiThreaded)t).setMultithread(true);
         t.track(structureIdx, parentTrack);
         
     }

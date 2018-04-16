@@ -41,11 +41,11 @@ public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter
         super(name, "Track Post-Filter", TrackPostFilter.class);
     }
     
-    public void filter(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) throws MultipleException {
+    public void filter(int structureIdx, List<StructureObject> parentTrack) throws MultipleException {
         if (parentTrack.isEmpty()) return;
         int count=0;
         for (TrackPostFilter p : this.get()) {
-            if (p instanceof MultiThreaded) ((MultiThreaded)p).setExecutor(executor);
+            if (p instanceof MultiThreaded) ((MultiThreaded)p).setMultithread(true);
             p.filter(structureIdx, parentTrack);
             logger.debug("track post-filter: {}/{} done", ++count, this.getChildCount());
         }

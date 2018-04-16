@@ -56,7 +56,7 @@ public class BacteriaSpineLocalizer {
     public BacteriaSpineLocalizer(Region bacteria) {
         this.bacteria=bacteria;
         long t0 = System.currentTimeMillis();
-        spine = BacteriaSpineFactory.createSpine(bacteria, true).spine;
+        spine = BacteriaSpineFactory.createSpine(bacteria).spine;
         long t1 = System.currentTimeMillis();
         long t2 = System.currentTimeMillis();
         if (spine==null || spine.length==1) length = Double.NaN;
@@ -77,7 +77,7 @@ public class BacteriaSpineLocalizer {
         return length;
     }
     public Image draw(int zoomFactor) {
-        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, CircularContourFactory.getCircularContour(cleanContour(bacteria.getContour()), bacteria.getGeomCenter(false)), zoomFactor);
+        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine, CircularContourFactory.getCircularContour(cleanContour(bacteria.getContour())), zoomFactor);
     }
 
     /**
@@ -330,6 +330,7 @@ public class BacteriaSpineLocalizer {
         return project(localizerMap.get(source).getSpineCoord(sourcePoint), source, destination, proj, localizerMap);
     }
     public static Point project(BacteriaSpineCoord sourceCoord, StructureObject source, StructureObject destination, PROJECTION proj, Map<StructureObject,BacteriaSpineLocalizer> localizerMap ) {
+        if (source.getFrame()>=destination.getFrame()) throw new IllegalArgumentException("Source should be before destination");
         boolean testMode = true;
         if (destination.getPrevious()==source && destination.getTrackHead()==source.getTrackHead()) return localizerMap.get(destination).project(sourceCoord, proj);
         List<StructureObject> successiveContainers = new ArrayList<>(destination.getFrame()-source.getFrame()+1);

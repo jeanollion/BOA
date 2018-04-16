@@ -39,6 +39,7 @@ import boa.measurement.GeometricalMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
+import boa.plugins.MultiThreaded;
 import boa.plugins.ObjectFeature;
 import boa.plugins.objectFeature.ObjectFeatureCore;
 import boa.plugins.objectFeature.ObjectFeatureWithCore;
@@ -47,12 +48,16 @@ import boa.utils.HashMapGetCreate;
 import boa.utils.LinearRegression;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
+import static boa.utils.Utils.parallele;
+import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author jollion
  */
-public class GrowthRate implements Measurement {
+public class GrowthRate implements Measurement, MultiThreaded {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
     protected PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, new Size(), false).setToolTipText("Object Feature used to compute Growth Rate");
     protected TextParameter suffix = new TextParameter("Suffix", "", false).setToolTipText("Suffix added to measurement keys");
@@ -97,17 +102,22 @@ public class GrowthRate implements Measurement {
             return of;
         });
         List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
-        //Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracksSplitDiv(parentTrack, bIdx);
+        parentTrack.stream().forEach(p->ofMap.getAndCreateIfNecessary(p));
+        long t1 = System.currentTimeMillis();
+        //logger.debug("GR: {} create OF {}, parnet: {}, #children: {}", feature.instanciatePlugin().getDefaultName(), t1-t0, parentTrackHead, StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), bIdx).count());
+        Map<StructureObject, Double> lengthMap = parallele(StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), bIdx), multithread).collect(Collectors.toMap(b->b, b->Math.log(ofMap.get(b.getParent()).performMeasurement(b.getRegion()))));
+        long t2 = System.currentTimeMillis();
+        //logger.debug("GR: {} compute values: {}", feature.instanciatePlugin().getDefaultName(), t2-t1);
         Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
         long t3 = System.currentTimeMillis();
-        for (List<StructureObject> l : bacteriaTracks.values()) {
+        parallele(bacteriaTracks.values().stream(), multithread).forEach(l-> {
             if (l.size()>=2) {
                 double[] frame = new double[l.size()];
                 double[] length = new double[frame.length];
                 int idx = 0;
                 for (StructureObject b : l) {
                     frame[idx] = b.getCalibratedTimePoint();
-                    length[idx++] = Math.log(ofMap.getAndCreateIfNecessary(b.getParent()).performMeasurement(b.getRegion()));
+                    length[idx++] = lengthMap!=null ? lengthMap.get(b) : Math.log(ofMap.getAndCreateIfNecessary(b.getParent()).performMeasurement(b.getRegion()));
                 }
                 double[] beta = LinearRegression.run(frame, length);
                 double[] residuals = res? LinearRegression.getResiduals(frame, length, beta[0], beta[1]) : null;
@@ -118,9 +128,9 @@ public class GrowthRate implements Measurement {
                     if (res) b.getMeasurements().setValue("GrowthRateResidual"+suffix, residuals[idx++] );
                 }
             }
-        }
+        });
         long t4 = System.currentTimeMillis();
-        logger.debug("GR: process: {}", t4-t3);
+        logger.debug("Growth Rate: compute values: {}, process: {}", t2-t1, t4-t3);
     }
     
     @Override 
@@ -158,5 +168,10 @@ public class GrowthRate implements Measurement {
         
         if (mod>0) return String.valueOf(c)+mod;
         else return String.valueOf(c);
+    }
+    boolean multithread;
+    @Override
+    public void setMultithread(boolean multithread) {
+        this.multithread=multithread;
     }
 }

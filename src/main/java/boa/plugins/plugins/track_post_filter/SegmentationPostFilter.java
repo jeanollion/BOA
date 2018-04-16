@@ -40,6 +40,8 @@ import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
+import static boa.utils.Utils.parallele;
+import java.util.function.Consumer;
 
 /**
  *
@@ -49,7 +51,6 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
     final static String[] methods = new String[]{"Delete single objects", "Delete whole track", "Prune Track"};
     ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", methods, methods[0], false);
     PostFilterSequence postFilters = new PostFilterSequence("Filter");
-    ExecutorService executor;
     
     public SegmentationPostFilter setDeleteMethod(int method) {
         this.deleteMethod.setSelectedIndex(method);
@@ -65,7 +66,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
         if (postFilters.getChildCount()==0) return;
         boolean rootParent = parentTrack.stream().findAny().get().isRoot();
         List<StructureObject> objectsToRemove = new ArrayList<>();
-        ThreadRunner.execute(parentTrack, false, (parent, idx) -> {
+        Consumer<StructureObject> exe = parent -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             //logger.debug("seg post-filter: {}", parent);
             if (!rootParent) pop.translate(new SimpleBoundingBox(parent.getBounds()).reverseOffset(), false); // go back to relative landmark
@@ -88,7 +89,8 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
             }
             if (parent.getChildren(structureIdx)!=null) parent.getChildren(structureIdx).stream().forEachOrdered((o) -> { o.objectHasBeenModified(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
             
-        }, executor, null);
+        };
+        ThreadRunner.exexcuteAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
         if (!objectsToRemove.isEmpty()) { 
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
             switch (this.deleteMethod.getSelectedIndex()) {
@@ -114,10 +116,10 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
     public Parameter[] getParameters() {
         return new Parameter[]{deleteMethod, postFilters};
     }
-
+    // multithreaded interface
+    boolean multithreaded;
     @Override
-    public void setExecutor(ExecutorService executor) {
-        this.executor=executor;
+    public void setMultithread(boolean multithreaded) {
+        this.multithreaded=multithreaded;
     }
-    
 }

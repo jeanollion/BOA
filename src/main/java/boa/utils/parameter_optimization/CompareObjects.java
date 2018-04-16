@@ -283,8 +283,8 @@ public class CompareObjects {
         MutationSegmenter seg = (MutationSegmenter)ps.getSegmenter();
         Map<StructureObject, TrackParametrizer> pthMapParametrizer = new HashMap<>();
         for (Entry<StructureObject, List<StructureObject>> e : parentTrackRef.entrySet()) {
-            tpf.filter(structureIdx, e.getValue(), null);
-            pthMapParametrizer.put(e.getKey(), TrackParametrizable.getTrackParametrizer(structureIdx, e.getValue(), ps.getSegmenter(), null));
+            tpf.filter(structureIdx, e.getValue());
+            pthMapParametrizer.put(e.getKey(), TrackParametrizable.getTrackParametrizer(structureIdx, e.getValue(), ps.getSegmenter()));
         }
         pthMapParametrizer.entrySet().removeIf(e->e.getValue()==null);
         for (StructureObject parent : Utils.flattenMap(parentTrackRef)) {

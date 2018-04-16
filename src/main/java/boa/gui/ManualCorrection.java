@@ -415,7 +415,7 @@ public class ManualCorrection {
             ManualSegmenter s = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
             HashMap<StructureObject, TrackParametrizer> parentThMapParam = new HashMap<>();
             if (s instanceof TrackParametrizable) {
-                points.keySet().stream().map(p->p.getTrackHead()).distinct().forEach(p->parentThMapParam.put(p, TrackParametrizable.getTrackParametrizer(structureIdx, db.getDao(positions[0]).getTrack(p), s, null)));
+                points.keySet().stream().map(p->p.getTrackHead()).distinct().forEach(p->parentThMapParam.put(p, TrackParametrizable.getTrackParametrizer(structureIdx, db.getDao(positions[0]).getTrack(p), s)));
                 parentThMapParam.entrySet().removeIf(e->e.getValue()==null);
             }
             
@@ -500,7 +500,7 @@ public class ManualCorrection {
             parents.map(o->o.getTrackHead()).distinct().forEach(p->{
                 logger.debug("tpf for : {}", p);
                 if (p.getPreFilteredImage(structureIdx)==null) {
-                    tpfWithPF.filter(structureIdx, dao.getTrack(p), null);
+                    tpfWithPF.filter(structureIdx, dao.getTrack(p));
                 }
             });
         }

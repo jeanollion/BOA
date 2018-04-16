@@ -59,13 +59,13 @@ public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter> 
         for (StructureObject o : parentTrack) if (o.getPreFilteredImage(structureIdx)==null) return false;
         return true;
     }
-    public void filter(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) throws MultipleException {
+    public void filter(int structureIdx, List<StructureObject> parentTrack) throws MultipleException {
         if (parentTrack.isEmpty()) return;
         if (isEmpty() && allPFImagesAreSet(parentTrack, structureIdx)) return; // if no preFilters &  only add raw images if no prefiltered image is present
         boolean first = true;
         TreeMap<StructureObject, Image> images = new TreeMap<>(parentTrack.stream().collect(Collectors.toMap(o->o, o->o.getRawImage(structureIdx))));
         for (TrackPreFilter p : this.get()) {
-            if (p instanceof MultiThreaded) ((MultiThreaded)p).setExecutor(executor);
+            if (p instanceof MultiThreaded) ((MultiThreaded)p).setMultithread(true);
             p.filter(structureIdx, images, first);
             first = false;
         }

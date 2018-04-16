@@ -50,7 +50,7 @@ public class FeretMax implements ObjectFeature {
     @Override
     public double performMeasurement(Region object) {
         double feret = GeometricalMeasurements.getFeretMax(object);
-        if (scaled.getSelectedIndex()==0) feret/=object.getScaleXY();
+        if (scaled.getSelectedIndex()==1) feret*=object.getScaleXY();
         return feret;
     }
 

@@ -100,10 +100,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     Parameter[] parameters = new Parameter[]{segmenter, sizeFeature, minSR, maxSR, costLimit, cumCostLimit, endOfChannelContactThreshold};
 
     // multithreaded interface
-    ExecutorService executor;
+    boolean multithreaded;
     @Override
-    public void setExecutor(ExecutorService executor) {
-        this.executor=executor;
+    public void setMultithread(boolean multithreaded) {
+        this.multithreaded=multithreaded;
     }
     // tooltip interface
     String toolTip = "<b>Bacteria Tracker in closed-end channel</b> "
@@ -245,13 +245,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         // 1) Segment and keep track of segmenter parametrizer for corrections
         SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters);
         if (correction) { // record prefilters & applyToSegmenter
-            trackPreFilters.filter(structureIdx, parentTrack, executor);
+            trackPreFilters.filter(structureIdx, parentTrack);
             inputImages=parentTrack.stream().collect(Collectors.toMap(p->p.getFrame(), p->p.getPreFilteredImage(structureIdx)));
-            applyToSegmenter = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin(), executor);
-            so.segmentAndTrack(structureIdx, parentTrack, applyToSegmenter, executor);
+            applyToSegmenter = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin());
+            so.segmentAndTrack(structureIdx, parentTrack, applyToSegmenter);
         } else { // no need to record the preFilters images
             so.setTrackPreFilters(trackPreFilters);
-            so.segmentAndTrack(structureIdx, parentTrack, executor);
+            so.segmentAndTrack(structureIdx, parentTrack);
         }
         // trim empty frames @ start & end. Limit to first continuous segment ? 
         while (minF<maxFExcluded && getObjects(minF).isEmpty()) ++minF;
@@ -578,7 +578,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         switch(sizeFeature.getSelectedIndex()) {
             case 0: 
             default :
-                return GeometricalMeasurements.getVolume(o);
+                return GeometricalMeasurements.getVolumeUnit(o);
             case 1:
                 return GeometricalMeasurements.getFeretMax(o);
         }

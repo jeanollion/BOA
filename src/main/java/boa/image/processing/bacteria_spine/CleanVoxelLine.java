@@ -193,6 +193,7 @@ public class CleanVoxelLine {
         // trim redondent junctions
         while (segments.size()>1) {
             Vertex junction = segments.values().stream().filter(v->v.isJunction()).map(v->(Vertex)v).filter(v->v.countNonEndEdges()>1).findAny().orElse(null);
+            if (junction==null) break;
             Map<Edge, Vertex> connectedVertices = junction.connectedSegments.stream().filter(e->!e.isEndBranch()).collect(Collectors.toMap(e->e, e->e.getOtherJunction(junction)));
             Entry<Edge, Vertex> toRemove = connectedVertices.entrySet().stream().filter(e -> Collections.frequency(connectedVertices.values(), e.getValue())>1).min((e1, e2)->e1.getKey().compareTo(e2.getKey())).orElse(null);
             if (toRemove!=null) {
@@ -220,7 +221,7 @@ public class CleanVoxelLine {
             Iterator<Vertex> vIt = e.connectedSegments.iterator();
             Vertex n1 = vIt.next();
             Vertex n2 = vIt.next();
-            if (n1.voxels.size()==1) {
+            if (n1.connectedSegments.size()==1) {
                 n1.remove(true, true);
                 n2.relabel();
             } else {
@@ -228,30 +229,28 @@ public class CleanVoxelLine {
                 n1.relabel();
             }
         });
-        // last cleaning of right angles if necessary
+        
+        if (segments.size()>1) { // put end points back to branch
+            segments.values().stream().filter(s->s.isJunction() && s.connectedSegments.size()==1 && s.voxels.size()==1).map(s->(Vertex)s).collect(Collectors.toList()).forEach(v->{
+                Edge connected = v.connectedSegments.iterator().next(); 
+                v.remove(false, true);
+                Voxel vox = v.voxels.iterator().next();
+                connected.addVoxel(vox);
+                voxMapNeighAndLabels.get(vox)[0] = 1;
+            });
+        }
+        // last cleaning of right angles if necessary -> end breanches with one voxel
         while (segments.size()>1) {
-            Edge endBranch = segments.values().stream().filter(s->s.isEndBranch()).filter(s->s.voxels.size()==1).map(s->(Edge)s).findAny().orElse(null);
-            if (endBranch!=null) {
-                endBranch.remove(true, true);
-                Vertex junction  = (endBranch).connectedSegments.stream().findAny().orElse(null); // end branch has only one junction
-                junction.relabel();
-            } else break;
+            Edge endBranch = segments.values().stream().filter(s->!s.isJunction() && s.connectedSegments.size()==1 && s.voxels.size()==1).map(s->(Edge)s).findAny().orElse(null);
+            if (endBranch==null) break;
+            endBranch.remove(true, true);
+            Vertex junction  = endBranch.connectedSegments.stream().findAny().orElse(null); // end branch has only one junction
+            junction.relabel();
         }
-        // put end points back to branch
-        if (segments.size()>1) {
-            Iterator<Segment> it = segments.values().iterator();
-            while (it.hasNext()) {
-                Segment<? extends Segment> n = it.next();
-                if (n instanceof Vertex && n.voxels.size()==1) {
-                    Segment connected = n.connectedSegments.iterator().next();
-                    n.remove(false, true);
-                    connected.addVoxel(n.voxels.iterator().next());
-                }
-            }
-        }
+        
         if (verbose) {
-            ImageWindowManagerFactory.showImage(draw(true).setName("end of clean skeleton"));
-            ImageWindowManagerFactory.showImage(draw(false).setName("end of clean skeleton"));
+            ImageWindowManagerFactory.showImage(draw(true).setName("end of clean skeleton: neigh"));
+            ImageWindowManagerFactory.showImage(draw(false).setName("end of clean skeleton: labels"));
         }
         return lines;
     }
