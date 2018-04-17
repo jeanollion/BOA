@@ -22,6 +22,7 @@ import static boa.core.generateXP.GenerateXP.generateXPFluo;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.PreProcessingChain;
 import boa.configuration.parameters.TransformationPluginParameter;
+import boa.plugins.PluginFactory;
 import boa.plugins.plugins.transformations.CropMicrochannelsPhase2D;
 import boa.plugins.plugins.transformations.SimpleCrop;
 import boa.plugins.plugins.transformations.SimpleRotationXY;
@@ -38,8 +39,9 @@ import boa.utils.Utils;
  */
 public class GenerateXPConfig {
     public static void main(String[] args) {
-        //String path = "/home/jollion/Fiji.app/plugins/BOA"; // portable
-        String path = "/data/Images/Fiji.app/plugins/BOA"; // LJP
+        PluginFactory.findPlugins("boa.plugins.plugins");
+        String path = "/home/jollion/Fiji.app/plugins/BOA"; // portable
+        //String path = "/data/Images/Fiji.app/plugins/BOA"; // LJP
         Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, 0, 0, Double.NaN, null);
         exportXP(path, xpFluo, false);
         
