@@ -34,7 +34,7 @@ public interface SlidingOperator<E, A, R> {
     public void slide(E removeElement, E addElement, A accumulator);
     public R compute(A accumulator);
     
-    public static SlidingOperator<Double, double[], Double> slidingMean(double defaultValue) {
+    public static SlidingOperator<Double, double[], Double> slidingMean() {
         return new SlidingOperator<Double, double[], Double>() {
             @Override
             public double[] instanciateAccumulator() {
@@ -54,7 +54,7 @@ public interface SlidingOperator<E, A, R> {
 
             @Override
             public Double compute(double[] accumulator) {
-                return accumulator[1]>0?accumulator[0]/accumulator[1]:defaultValue;
+                return accumulator[0]/accumulator[1];
             }
         };
     }

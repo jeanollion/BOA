@@ -18,6 +18,8 @@
  */
 package boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -42,6 +44,9 @@ public class FrameRange implements Comparable<FrameRange>{
         this.max = Math.max(max, other.max);
         return this;
     }
+    public int size() {
+        return max-min+1;
+    }
     public boolean overlap(FrameRange other) {
         return overlap(other, 0);
     }
@@ -52,16 +57,40 @@ public class FrameRange implements Comparable<FrameRange>{
         if (c==1) return other.overlap(this);
         return max+tolerance>=other.min;
     }
+    /**
+     * 
+     * @param frame
+     * @return true if {@param frame} is included in this range
+     */
+    public boolean isIncluded(int frame) {
+        return frame>=min && frame<=max;
+    }
+    /**
+     * 
+     * @param other
+     * @return true if {@param other} is included in this frama range
+     */
+    public boolean isIncluded(FrameRange other) {
+        return other.min>=min && other.max<=other.max;
+    }
     @Override
     public int compareTo(FrameRange o) {
         int c = Integer.compare(min, o.min);
         if (c!=0) return c;
         return Integer.compare(max, o.max);
     }
+    
     @Override
     public String toString() {
         return "["+min+";"+max+"]";
     }
+    
+    public static FrameRange getContainingRange(List<FrameRange> sortedRanges, FrameRange range) {
+        int idx = Collections.binarySearch(sortedRanges, range);
+        if (idx>0) return sortedRanges.get(idx);
+        else return sortedRanges.get(-idx-2);
+    }
+    
     public static void mergeOverlappingRanges(List<FrameRange> ranges) {
         mergeOverlappingRanges(ranges, 0);
     }
@@ -76,6 +105,48 @@ public class FrameRange implements Comparable<FrameRange>{
                 prev.merge(cur);
                 it.remove();
             } else prev = cur;
+        }
+    }
+    
+    public static List<FrameRange> getContinuousRangesFromFrameIndices(int[] frameIndices) {
+        List<FrameRange> res = new ArrayList<>();
+        FrameRange cur = new FrameRange(frameIndices[0], frameIndices[0]);
+        int curIdx = 1;
+        while (true) {
+            while(curIdx<frameIndices.length && frameIndices[curIdx]==frameIndices[curIdx-1]+1) ++curIdx;
+            cur.max = frameIndices[curIdx-1];
+            res.add(cur);
+            if (curIdx==frameIndices.length) break;
+            cur = new FrameRange(frameIndices[curIdx], frameIndices[curIdx]);
+            ++curIdx;
+        }
+        return res;
+    }
+    /**
+     * Ensure ranges have a distance of 2 frames & explore the whole bounds of {@param bounds}
+     * @param sortedRanges
+     * @param bounds 
+     */
+    public static void ensureContinuousRanges(List<FrameRange> sortedRanges, FrameRange bounds) {
+        if (!bounds.isIncluded(sortedRanges.get(sortedRanges.size()-1))) throw new IllegalArgumentException("Last frame range not included in bounds");
+        if (bounds.size()<=sortedRanges.size()*3 || bounds.size()<=5) {
+            sortedRanges.clear();
+            sortedRanges.add(bounds);
+            return;
+        }
+        sortedRanges.get(0).min = bounds.min;
+        
+        sortedRanges.get(sortedRanges.size()-1).max = bounds.max;
+        for (int i = 1; i<sortedRanges.size(); ++i) {
+            FrameRange prev = sortedRanges.get(i-1);
+            FrameRange cur = sortedRanges.get(i);
+            if (cur.min>prev.max+2) { // space between 2 frames range is > 2 -> set to 2
+                cur.min = (cur.min+prev.max)/2+1;
+                prev.max = cur.min-2;
+            } else { // space <2 -> set to 2
+                if (cur.size()>prev.size()) cur.min++;
+                else prev.max--;
+            }
         }
     }
 }

@@ -44,12 +44,12 @@ public abstract class CorrectionScenario {
          * @param cumulativeCostLimit if >0 cost limit for the whole scenario
          * @return 
          */
-        public CorrectionScenario getWholeScenario(int lengthLimit, double costLimit, double cumulativeCostLimit) {
+        public CorrectionScenario getWholeScenario(FrameRange limit, int lengthLimit, double costLimit, double cumulativeCostLimit) {
             ArrayList<CorrectionScenario> res = new ArrayList<>();
             CorrectionScenario cur = this;
             if (cur instanceof MergeScenario && ((MergeScenario)cur).listO.isEmpty()) return new MultipleScenario(tracker, Collections.emptyList());
             double sum = 0;
-            while(cur!=null && (!Double.isNaN(cur.cost)) && Double.isFinite(cur.cost) && cur.cost<costLimit) {
+            while(cur!=null && (!Double.isNaN(cur.cost)) && Double.isFinite(cur.cost) && cur.cost<costLimit && limit.isIncluded(cur.frameMax) && limit.isIncluded(cur.frameMin)) {
                 res.add(cur);
                 sum+=cur.cost;
                 //if (cur.cost > costLimit) return new MultipleScenario(tracker, Collections.emptyList());

@@ -209,17 +209,8 @@ public class Processor {
             allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, directParentStructure);
         }
         logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
-        // one thread per track + common executor for processing scheme
-        //ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs(), ThreadRunner.priorityThreadFactory(Thread.MAX_PRIORITY));
-        //ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs());
-        //ExecutorService subExecutor = Executors.newSingleThreadExecutor(); // TODO: see what's more efficient!
-        ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx) -> {
-            execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao);
-        };
-        logger.debug("thread number: {}", GUI.getThreadNumber() );
-        //ExecutorService mainExecutor = Executors.newFixedThreadPool(GUI.getThreadNumber(), ThreadRunner.priorityThreadFactory(Thread.NORM_PRIORITY));
-        //ThreadRunner.execute(allParentTracks.values(), false, ta, mainExecutor, null);
-        allParentTracks.values().forEach(pt -> ta.run(pt, 0));
+        
+        allParentTracks.values().forEach(pt -> execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao));
         // store in DAO
         List<StructureObject> children = new ArrayList<>();
         for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
