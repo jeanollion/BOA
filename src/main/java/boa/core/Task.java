@@ -434,7 +434,13 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             List<StructureObject> root = getOrCreateRootTrack(db.getDao(position));
             for (int s : structures) { // TODO take code from processor
                 publish("Processing structure: "+s);
-                executeProcessingScheme(root, s, trackOnly, false);
+                try {
+                    executeProcessingScheme(root, s, trackOnly, false);
+                } catch (MultipleException e) {
+                    errors.addAll(e.getExceptions());
+                } catch (Throwable e) {
+                    errors.add(new Pair("Error while processing: db: "+db.getDBName()+" pos: "+position+" structure: "+s, e));
+                }
                 incrementProgress();
                 if (generateTrackImages && !db.getExperiment().getAllDirectChildStructures(s).isEmpty()) {
                     publish("Generating Track Images for Structure: "+s);

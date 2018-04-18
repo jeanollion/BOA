@@ -155,6 +155,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
      */
     protected EdgeDetector initEdgeDetector(StructureObjectProcessing parent, int structureIdx) {
         EdgeDetector seg = new EdgeDetector().setIsDarkBackground(true); // keep defaults parameters ? 
+        seg.minSizePropagation.setValue(0);
         seg.setTestMode(testMode);
         //seg.setPreFilters(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2)); // min = 1.5
         seg.setPreFilters(watershedMap.get());

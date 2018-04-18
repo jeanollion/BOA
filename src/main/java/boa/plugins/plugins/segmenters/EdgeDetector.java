@@ -88,7 +88,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
     protected PreFilterSequence scondaryThresholdMap = new PreFilterSequence("Secondary Threshold Map").add(new ImageFeature().setFeature(ImageFeature.Feature.HessianMax).setScale(2)).setToolTipText("A map used that allows to selected regions in between two foreground objects or directly connected to a foreground object");
     ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod).setDefaultParameters(new Parameter[]{threshold}).setActionParameters("Secondary Map", new Parameter[]{scondaryThresholdMap});
     NumberParameter seedRadius = new BoundedNumberParameter("Seed Radius", 1, 1.5, 1, null);
-    NumberParameter minSizePropagation = new BoundedNumberParameter("Min Size Propagation", 0, 2, 0, null);
+    NumberParameter minSizePropagation = new BoundedNumberParameter("Min Size Propagation", 0, 0, 0, null);
     BooleanParameter darkBackground = new BooleanParameter("Dark Background", true);
     boolean testMode;
     
@@ -187,6 +187,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
         int minSizePropagation = this.minSizePropagation.getValue().intValue();
         WatershedConfiguration config = new WatershedConfiguration().lowConectivity(false);
         if (minSizePropagation>0) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+        //config.propagation(WatershedTransform.PropagationType.DIRECT);
         RegionPopulation res =  WatershedTransform.watershed(getWsMap(input, mask), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, mask))), config);
         if (testMode) {
             ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("EdgeDetector: Segmented Regions"));

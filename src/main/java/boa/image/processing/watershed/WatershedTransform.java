@@ -191,7 +191,6 @@ public class WatershedTransform {
     public void runNormal() {
         double rad = lowConnectivity ? 1 : 1.5;
         EllipsoidalNeighborhood neigh = watershedMap.sizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
-        
         for (Spot s : spots) {
             if (s!=null) {
                 for (Voxel v : s.voxels) {
@@ -209,6 +208,7 @@ public class WatershedTransform {
         Score score = generateScore();
         List<Voxel> nextProp  = new ArrayList<>(neigh.getSize());
         Set<Integer> surroundingLabels = fusionCriterion==null || fusionCriterion instanceof DefaultFusionCriterion ? null : new HashSet<>(neigh.getSize());
+        logger.debug("fusion crit: {} surr. label null ? {}", fusionCriterion==null ? "null" : fusionCriterion.getClass(), surroundingLabels==null);
         while (!heap.isEmpty()) {
             //Voxel v = heap.poll();
             Voxel v = heap.pollFirst();
@@ -238,7 +238,7 @@ public class WatershedTransform {
             nextProp.removeIf(n->!propagationCriterion.continuePropagation(v, n));
             heap.addAll(nextProp);
             nextProp.clear();
-            // check fusion criterion
+            // check fusion criterion for all surrounding labels
             if (surroundingLabels!=null) {
                 surroundingLabels.remove(currentLabel);
                 if (!surroundingLabels.isEmpty()) {

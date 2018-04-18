@@ -148,6 +148,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     // tracking-related attributes
     protected enum Flag {error, correctionMerge, correctionSplit;}
+    final Object lock = new Object();
     Map<Integer, List<Region>> populations;
     Map<Region, TrackAttribute> objectAttributeMap;
     private boolean segment, correction;
@@ -527,16 +528,21 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     protected List<Region> getObjects(int timePoint) {
+        if (timePoint<minF || timePoint>=maxFExcluded) return Collections.EMPTY_LIST;
         if (this.populations.get(timePoint)==null) {
-            StructureObject parent = this.parentsByF.get(timePoint);
-            List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
-            if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
-                if (segment || correction) o.getRegion().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
-                return o.getRegion();
-            }));
-            else populations.put(timePoint, Collections.EMPTY_LIST); 
-            //logger.debug("get object @ {}, size: {}", timePoint, populations.get(timePoint].size());
-            createAttributes(timePoint);
+            //synchronized(lock) {
+            //    if (this.populations.get(timePoint)==null) {
+                    StructureObject parent = this.parentsByF.get(timePoint);
+                    List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
+                    if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
+                        if (segment || correction) o.getRegion().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
+                        return o.getRegion();
+                    }));
+                    else populations.put(timePoint, Collections.EMPTY_LIST); 
+                    //logger.debug("get object @ {}, size: {}", timePoint, populations.get(timePoint].size());
+                    createAttributes(timePoint);
+            //    }
+            //}
         }
         return populations.get(timePoint);
     }
@@ -1160,7 +1166,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         private boolean restore(int f, boolean setLinks, boolean copy) {
             if (f<fMin || f>=fMin+objects.length) return false;
             List<Region> rList = populations.get(f);
-            synchronized(objectAttributeMap) {
+            synchronized(lock) {
                 rList.forEach((o) -> objectAttributeMap.remove(o));
                 rList.clear();
                 rList.addAll(objects[f-fMin]);

@@ -145,7 +145,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
     @Override
     protected EdgeDetector initEdgeDetector(StructureObjectProcessing parent, int structureIdx) {
         EdgeDetector seg = super.initEdgeDetector(parent, structureIdx);
-        seg.minSizePropagation.setValue(1);
+        seg.minSizePropagation.setValue(0);
         seg.seedRadius.setValue(1.5);
         seg.setThrehsoldingMethod(EdgeDetector.THLD_METHOD.NO_THRESHOLDING);
         return seg;
