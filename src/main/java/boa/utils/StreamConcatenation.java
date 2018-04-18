@@ -48,24 +48,36 @@ public final class StreamConcatenation {
   private StreamConcatenation() {
     throw new AssertionError("This class cannot be instantiated");
   }
-  public static <T> Stream<T> concat(Collection<Stream<? extends T>> streams) {
-      int size = streams.size();
-      if (size==0) return null;
-      if (size==1) return (Stream<T>)streams.iterator().next();
-      if (size==2) {
-          Iterator<Stream<? extends T>> it = streams.iterator();
-          return Stream.concat(it.next(), it.next());
-      }
-      if (size==3) {
-          Iterator<Stream<? extends T>> it = streams.iterator();
-          return Stream.concat(Stream.concat(it.next(), it.next()), it.next());
-      }
-      if (size==4) {
-          Iterator<Stream<? extends T>> it = streams.iterator();
-          return Stream.concat(Stream.concat(it.next(), it.next()), Stream.concat(it.next(), it.next()));
-      }
-      return concat(streams.toArray(new Stream[streams.size()]));
-  }
+    public static <T> Stream<T> concatNestedCollections(Collection< ? extends Collection<T>> col) {
+        switch(col.size()) {
+            case 0: return Stream.empty();
+            case 1: return col.iterator().next().stream();
+            case 2: {
+                Iterator<? extends Collection<T>> it = col.iterator();
+                return Stream.concat(it.next().stream(), it.next().stream());
+            }
+            default: return concat((Stream<T>[])col.stream().map(c->c.stream()).toArray(s->new Stream[s]));
+        }
+    }
+    public static <T> Stream<T> concat(Collection<Stream<? extends T>> streams) {
+        switch(streams.size()) {
+            case 0: return Stream.empty();
+            case 1: return (Stream<T>)streams.iterator().next();
+            case 2: {
+                Iterator<Stream<? extends T>> it = streams.iterator();
+                return Stream.concat(it.next(), it.next());
+            }
+            case 3: {
+                Iterator<Stream<? extends T>> it = streams.iterator();
+                return Stream.concat(Stream.concat(it.next(), it.next()), it.next());
+            }
+            case 4: {
+                Iterator<Stream<? extends T>> it = streams.iterator();
+                return Stream.concat(Stream.concat(it.next(), it.next()), Stream.concat(it.next(), it.next()));
+            }
+            default: return concat(streams.toArray(new Stream[streams.size()]));
+        }
+    }
   /**
    * Creates a lazily concatenated stream whose elements are the elements of
    * each of the input streams.  In other words, the returned stream contains

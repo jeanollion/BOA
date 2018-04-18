@@ -76,19 +76,26 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
 
     @Override
     public void initFromJSONEntry(Object json) {
-        removeAllElements();
-        if (json instanceof JSONObject && ((JSONObject)json).containsKey("list")) {
-            JSONObject jsonO = (JSONObject)json;
-            JSONArray list = (JSONArray)jsonO.get("list");
-            for (Object o : list) {
+        synchronized(this) {
+            List<Consumer<Parameter>> lis = listeners;
+            this.listeners = null;
+            removeAllElements();
+            if (json instanceof JSONObject && ((JSONObject)json).containsKey("list")) {
+                JSONObject jsonO = (JSONObject)json;
+                JSONArray list = (JSONArray)jsonO.get("list");
+                for (Object o : list) {
+                    T newI = createChildInstance();
+                    newI.initFromJSONEntry(o);
+                    insert(newI);
+                }
+            } else { // try to init with one single element (if element was replaced by list)
                 T newI = createChildInstance();
-                newI.initFromJSONEntry(o);
+                newI.initFromJSONEntry(json);
                 insert(newI);
             }
-        } else { // try to init with one single element (if element was replaced by list)
-            T newI = createChildInstance();
-            newI.initFromJSONEntry(json);
-            insert(newI);
+            this.listeners = lis;
+            this.fireListeners();
+            this.fireChildrenListeners();
         }
     }
     
@@ -168,17 +175,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
                 T instance;
                 instance = childClass.getDeclaredConstructor(String.class).newInstance(newInstanceNameFunction!=null ? newInstanceNameFunction.apply(getChildCount()) : "new "+childClass.getSimpleName());
                 return instance;
-            } catch (NoSuchMethodException ex) {
-                logger.error("duplicate error", ex);
-            } catch (SecurityException ex) {
-                logger.error("duplicate error", ex);
-            } catch (InstantiationException ex) {
-                logger.error("duplicate error", ex);
-            } catch (IllegalAccessException ex) {
-                logger.error("duplicate error", ex);
-            } catch (IllegalArgumentException ex) {
-                logger.error("duplicate error", ex);
-            } catch (InvocationTargetException ex) {
+            } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
                 logger.error("duplicate error", ex);
             }
         } else if (childInstance != null) {
@@ -381,8 +378,10 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     
     @Override 
     public void removeAllElements() {
-        if (this.unMutableIndex<0) children=new ArrayList<T>(children.size());
-        else for (int i = getChildren().size()-1;i>unMutableIndex;--i) children.remove(i);
+        children.clear();
+        fireListeners();
+        //if (this.unMutableIndex<0) children=new ArrayList<>(children.size());
+        //else for (int i = getChildren().size()-1;i>unMutableIndex;--i) children.remove(i);
     }
 
     @Override

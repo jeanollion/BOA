@@ -18,7 +18,10 @@
  */
 package boa.configuration.parameters;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  *
@@ -34,6 +37,9 @@ public class ArrayNumberParameter extends SimpleListParameter<BoundedNumberParam
                 this.insert(createChildInstance());
             }
         }
+        addListener();
+    }
+    private void addListener() {
         addListener(o->{
             ArrayNumberParameter a = (ArrayNumberParameter)o;
             if (a.sorted) a.sort();
@@ -57,24 +63,29 @@ public class ArrayNumberParameter extends SimpleListParameter<BoundedNumberParam
         Collections.sort(children, (n1, n2)->Double.compare(n1.getValue().doubleValue(), n2.getValue().doubleValue()));
     }
     
-    public double[] getArrayDouble() {
-        double[] res = new double[this.getChildCount()];
-        int idx = 0;
-        for (BoundedNumberParameter p : getChildren()) res[idx++] = p.getValue().doubleValue();
-        return res;
-    }
     public void setValue(double... values) {
         if (unMutableIndex>=0 && values.length<=unMutableIndex) throw new IllegalArgumentException("Min number of values: "+this.unMutableIndex+1);
-        this.setChildrenNumber(values.length);
-        for (int i = 0; i<values.length; ++i) {
-            this.getChildAt(i).setValue(values[i]);
+        synchronized(this) {
+            List<Consumer<Parameter>> lis = this.listeners;
+            this.listeners= null; // do not fire listener
+            setChildrenNumber(values.length);
+            for (int i = 0; i<values.length; ++i) getChildAt(i).setValue(values[i]); 
+            this.listeners = lis;
         }
     }
+    @Override
+    public void setContentFrom(Parameter other) {
+        if (other instanceof ArrayNumberParameter) {
+            setValue(((ArrayNumberParameter)other).getArrayDouble());
+        } else if (other instanceof NumberParameter) {
+            setValue(((NumberParameter) other).getValue().doubleValue());
+        } else throw new IllegalArgumentException("wrong parameter type");
+    }
     public int[] getArrayInt() {
-        int[] res = new int[this.getChildCount()];
-        int idx = 0;
-        for (BoundedNumberParameter p : getChildren()) res[idx++] = p.getValue().intValue();
-        return res;
+        return getChildren().stream().mapToInt(p -> (int)Math.round(p.getValue().doubleValue())).toArray();
+    }
+    public double[] getArrayDouble() {
+        return getChildren().stream().mapToDouble(p -> p.getValue().doubleValue()).toArray();
     }
     public Object getValue() {
         if (this.getChildCount()==1) {

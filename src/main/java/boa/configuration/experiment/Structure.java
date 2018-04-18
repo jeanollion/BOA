@@ -121,8 +121,8 @@ public class Structure extends SimpleContainerParameter {
         });
         segmentationParent.addListener((Parameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
-            logger.debug("segmentation parent structure listener fired: parent: {}, seg parent: {}", this.parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
             s.setSegmentationParentStructure(s.segmentationParent.getSelectedIndex());
+            logger.debug("segmentation parent structure listener fired: parent: {}, seg parent: {}", this.parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
             //update tree
             ConfigurationTreeModel model = ParameterUtils.getModel(s.segmentationParent);
             if (model!=null) model.nodeChanged(s.segmentationParent);

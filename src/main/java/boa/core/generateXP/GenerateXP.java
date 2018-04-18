@@ -111,6 +111,7 @@ import boa.plugins.plugins.track_pre_filters.PreFilter;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.plugins.plugins.track_pre_filters.Saturate;
 import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
+import boa.plugins.plugins.trackers.MutationTrackerSpine;
 
 
 /**
@@ -495,7 +496,7 @@ public class GenerateXP {
             );
             // modification of scaling: lap * 2.5, gauss * scale (=2) quality * 2.23
             mutation.setProcessingScheme(new SegmentAndTrack(
-                    new MutationTracker().setCompartimentStructure(1).setSegmenter(
+                    new MutationTrackerSpine().setCompartimentStructure(1).setSegmenter(
                         new MutationSegmenter(2.25, 1.625, 1.8).setScale(2.5, 3)  // was 0.9, 0.65, 0.9, scale was 2 for mutH
                 ).setSpotQualityThreshold(3.122) // 4.46 for mutH ? 
                             .setLinkingMaxDistance(0.8, 0.82).setGapParameters(0.8, 0.15, 3)

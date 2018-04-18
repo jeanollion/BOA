@@ -57,6 +57,7 @@ import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.LoggerFactory;
 import static boa.plugins.Plugin.logger;
 import boa.utils.Pair;
+import boa.utils.StreamConcatenation;
 import boa.utils.SymetricalPair;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
@@ -98,12 +99,10 @@ public class TrackMateInterface<S extends Spot> {
     }
     
     public void addObjects(Collection<Region> objects, int frame) {
-        objects.stream().forEach((o) -> {
-            addObject(o, frame);
-        });
+        objects.forEach((o) -> addObject(o, frame));
     }
     public void addObjects(Map<Integer, List<StructureObject>> objectsF) {
-        for (StructureObject c : Utils.flattenMap(objectsF)) addObject(c.getRegion(), c.getFrame());
+        StreamConcatenation.concatNestedCollections(objectsF.values()).forEach(o->addObject(o.getRegion(), o.getFrame()));
     }
     
     public boolean processFTF(double distanceThreshold) {

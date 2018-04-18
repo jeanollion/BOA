@@ -66,7 +66,9 @@ public class NumberParameterUI implements ParameterUI {
                         if (editing) return;
                         double d = (slider.getValue()+0.0)/sliderCoeff;
                         number.setNumber(d);
-                        parameter.setValue(d);
+                        if (parameter.getValue().doubleValue()!=d) {
+                            parameter.setValue(d);
+                        }
                         updateNode();
                     }
                 });
@@ -74,17 +76,17 @@ public class NumberParameterUI implements ParameterUI {
         }
         this.number.getDocument().addDocumentListener(new DocumentListener() {
 
-            public void insertUpdate(DocumentEvent e) {
+            @Override public void insertUpdate(DocumentEvent e) {
                 //System.out.println("insert");
                 updateNumber();
             }
 
-            public void removeUpdate(DocumentEvent e) {
+            @Override public void removeUpdate(DocumentEvent e) {
                 //System.out.println("remove");
                 updateNumber();
             }
 
-            public void changedUpdate(DocumentEvent e) {
+            @Override public void changedUpdate(DocumentEvent e) {
                 //System.out.println("change");
                 updateNumber();
             }
@@ -111,13 +113,17 @@ public class NumberParameterUI implements ParameterUI {
                 //number.setNumber(n);
             }
             if (slider!=null) slider.setValue(getSliderValue(n));
-            if (!number.getNumber().equals(n)) modif = true;
-            parameter.setValue(n);
+            if (!parameter.getValue().equals(n)) {
+                modif = true;
+                parameter.setValue(n); // fire listener
+            }
         }
-        number.setPreferredSize(new Dimension(Math.max(componentMinWith, number.getText().length() * 9), number.getPreferredSize().height)); 
-        updateNode();
         editing = false;
-        if (modif) parameter.fireListeners();
+        if (modif) {
+            number.setPreferredSize(new Dimension(Math.max(componentMinWith, number.getText().length() * 9), number.getPreferredSize().height)); 
+            updateNode();
+            //parameter.fireListeners(); // fired when set value
+        }
     }
     
     private void updateNode() {

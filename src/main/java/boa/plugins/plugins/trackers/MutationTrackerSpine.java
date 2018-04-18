@@ -75,7 +75,9 @@ import boa.utils.Pair;
 import boa.utils.SlidingOperator;
 import boa.utils.SymetricalPair;
 import boa.utils.Utils;
+import static boa.utils.Utils.parallele;
 import boa.utils.geom.Point;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -90,7 +92,7 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Pa
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together");
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Maximum Linking Distance", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for theglobal linking step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together. An additional cost proportional to the gap is added to the distance between spots (see <em>gap penalty</em>");
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null).setToolTipText("When two spots are separated by a gap, an additional distance is added to their distance: this value x number of frame of the gap");
-    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance)", 2, 0.8, 0, null).setToolTipText("The algorithm performs a global optimization minimizing the global cost. Cost are the distance between spots. Alternative distance represent the cost of being linked with no other spot. If this value is too low, the algorithm won't link any spot, it should be superior to the linking distance threshold");
+    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance", 2, 0.8, 0, null).setToolTipText("The algorithm performs a global optimization minimizing the global cost. Cost are the distance between spots. Alternative distance represent the cost of being linked with no other spot. If this value is too low, the algorithm won't link any spot, it should be superior to the linking distance threshold");
     ChoiceParameter projectionType = new ChoiceParameter("Projection type", Utils.transform(BacteriaSpineLocalizer.PROJECTION.values(),i->new String[i], p->p.name()), BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE.name(), false );
     Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, projectionType, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
     String toolTip = "<b>Mutation tracking within bacteria</b> using <em>TrackMate (https://imagej.net/TrackMate)</em> <br />"
@@ -169,18 +171,39 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Pa
         
         logger.debug("distanceFTF: {}, distance GC: {}, gapP: {}, atl: {}", maxLinkingDistance, maxLinkingDistanceGC, gapPenalty, alternativeDistance);
         
-        final Map<Integer, StructureObject> parentsByF = StructureObjectUtils.splitByFrame(parentTrack);
-        final HashMapGetCreate<StructureObject, BacteriaSpineLocalizer> localizerMap = HashMapGetCreate.getRedirectedMap((StructureObject s) -> new BacteriaSpineLocalizer(s.getRegion()), HashMapGetCreate.Syncronization.SYNC_ON_KEY);
-        // TODO CREATE SPIN MULTITHREAD & ADD THEM TO THE MAP
+        final Map<Region, StructureObject> mutationMapParentBacteria = StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), structureIdx)
+                .collect(Collectors.toMap(m->m.getRegion(), m->{
+                    List<StructureObject> candidates = m.getParent().getChildren(compartimentStructure);
+                    return StructureObjectUtils.getInclusionParent(m.getRegion(), candidates, null); 
+                }));
+        final Map<StructureObject, List<Region>> bacteriaMapMutation = mutationMapParentBacteria.keySet().stream().collect(Collectors.groupingBy(m->mutationMapParentBacteria.get(m)));
+        // get all potential spine localizer: for each bacteria with mutation look if there are bacteria with mutations in previous bacteria whithin gap range
+        Set<StructureObject> parentWithSpine = new HashSet<>();
+        parentWithSpine.addAll(bacteriaMapMutation.keySet());
+        bacteriaMapMutation.keySet().forEach(b-> {
+            int gap = 1;
+            StructureObject prev =b.getPrevious();
+            while (prev!=null && gap<maxGap && !bacteriaMapMutation.containsKey(prev)) {
+                ++gap;
+                prev = prev.getPrevious();
+            }
+            if (prev!=null && (gap<maxGap || bacteriaMapMutation.containsKey(prev))) { // add all bacteria between b & prev
+                StructureObject p = b.getPrevious();
+                while(p!=prev) {
+                    parentWithSpine.add(p);
+                    p=p.getPrevious();
+                }
+            }
+        });
+        //final HashMapGetCreate<StructureObject, BacteriaSpineLocalizer> localizerMap = HashMapGetCreate.getRedirectedMap((StructureObject s) -> new BacteriaSpineLocalizer(s.getRegion()), HashMapGetCreate.Syncronization.SYNC_ON_KEY);
+        final Map<StructureObject, BacteriaSpineLocalizer> localizerMap = parallele(parentWithSpine.stream(), multithreaded).collect(Collectors.toMap(b->b, b->new BacteriaSpineLocalizer(b.getRegion()))); // spine is long to compute: better performance when computed all at once
         TrackMateInterface<NestedSpot> tmi = new TrackMateInterface<>(new SpotFactory<NestedSpot>() {
             @Override
             public NestedSpot toSpot(Region o, int frame) {
-                StructureObject parent = parentsByF.get(frame);
-                List<StructureObject> candidates = parent.getChildren(compartimentStructure);
-                StructureObject parentComp = StructureObjectUtils.getInclusionParent(o, candidates, null); 
-                
+                StructureObject b = mutationMapParentBacteria.get(o);
+                if (b==null) throw new IllegalArgumentException("Mutation's parent bacteria "+o.getLabel()+ " not found at frame: "+frame);
                 if (o.getCenter()==null) o.setCenter(o.getGeomCenter(false));
-                return new NestedSpot(o, parentComp, localizerMap, distParams);
+                return new NestedSpot(o, b, localizerMap, distParams);
             }
 
             @Override
