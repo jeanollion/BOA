@@ -18,6 +18,7 @@
  */
 package boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker;
 
+import boa.utils.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,8 +71,8 @@ public class FrameRange implements Comparable<FrameRange>{
      * @param other
      * @return true if {@param other} is included in this frama range
      */
-    public boolean isIncluded(FrameRange other) {
-        return other.min>=min && other.max<=other.max;
+    public boolean isIncludedIn(FrameRange other) {
+        return min>=other.min && max<=other.max;
     }
     @Override
     public int compareTo(FrameRange o) {
@@ -86,9 +87,11 @@ public class FrameRange implements Comparable<FrameRange>{
     }
     
     public static FrameRange getContainingRange(List<FrameRange> sortedRanges, FrameRange range) {
-        int idx = Collections.binarySearch(sortedRanges, range);
-        if (idx>0) return sortedRanges.get(idx);
-        else return sortedRanges.get(-idx-2);
+        int idx = Collections.binarySearch(sortedRanges, range, (r1, r2)->Integer.compare(r1.min, r2.min));
+        if (idx>=0) return sortedRanges.get(idx);
+        FrameRange fr = sortedRanges.get(-idx-2);
+        if (!range.isIncludedIn(fr)) throw new RuntimeException("Could not find range:"+range+" in:"+Utils.toStringList(sortedRanges));
+        return fr;
     }
     
     public static void mergeOverlappingRanges(List<FrameRange> ranges) {
@@ -109,6 +112,7 @@ public class FrameRange implements Comparable<FrameRange>{
     }
     
     public static List<FrameRange> getContinuousRangesFromFrameIndices(int[] frameIndices) {
+        if (frameIndices.length==0) return Collections.EMPTY_LIST;
         List<FrameRange> res = new ArrayList<>();
         FrameRange cur = new FrameRange(frameIndices[0], frameIndices[0]);
         int curIdx = 1;
@@ -128,7 +132,7 @@ public class FrameRange implements Comparable<FrameRange>{
      * @param bounds 
      */
     public static void ensureContinuousRanges(List<FrameRange> sortedRanges, FrameRange bounds) {
-        if (!bounds.isIncluded(sortedRanges.get(sortedRanges.size()-1))) throw new IllegalArgumentException("Last frame range not included in bounds");
+        if (!sortedRanges.get(sortedRanges.size()-1).isIncludedIn(bounds)) throw new IllegalArgumentException("Last frame range not included in bounds");
         if (bounds.size()<=sortedRanges.size()*3 || bounds.size()<=5) {
             sortedRanges.clear();
             sortedRanges.add(bounds);

@@ -398,7 +398,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 } catch (MultipleException e) {
                     errors.addAll(e.getExceptions());
                 } catch (Throwable e) {
-                    errors.add(new Pair("Error while processing: db"+db.getDBName()+" pos:"+position, e));
+                    errors.add(new Pair("Error while processing: db: "+db.getDBName()+" pos: "+position, e));
                 } finally {
                     db.getExperiment().getPosition(position).flushImages(true, true);
                     db.clearCache(position);
@@ -540,8 +540,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         
     }
     private static boolean toPrint(String stackTraceElement) {
-        return true;
-        //return !stackTraceElement.startsWith("java.util.concurrent")&&!stackTraceElement.startsWith("utils.ThreadRunner")&&!stackTraceElement.startsWith("java.lang.Thread")&&!stackTraceElement.startsWith("core.Processor.lambda")&&!stackTraceElement.startsWith("plugins.plugins.processingScheme");
+        //return true;
+        return !stackTraceElement.startsWith("java.util.")&&!stackTraceElement.startsWith("java.lang.");
     }
     @Override 
     public void done() {
