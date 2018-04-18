@@ -64,8 +64,8 @@ public class TestProcessBacteriaPhase {
     static double thld = Double.NaN;
     static boolean setMask = false;
     static boolean normalize = false;
-    static int trackPrefilterRange = 100;
-    static int bacteriaStructureIdx = 1;
+    static int trackPrefilterRange = 1000;
+    static int bacteriaStructureIdx = 2;
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
@@ -75,8 +75,8 @@ public class TestProcessBacteriaPhase {
         //String dbName = "MutH_150324";
         //String dbName = "MutH_151220";
         //String dbName = "MutH_140115";
-        //String dbName = "WT_180318_Fluo";
-        String dbName = "WT_150616";
+        String dbName = "WT_180318_Fluo";
+        //String dbName = "WT_150616";
         //String dbName = "WT_180318_Fluo";
         //String dbName = "Aya2";
         //String dbName = "AyaWT_mmglu";
@@ -85,9 +85,9 @@ public class TestProcessBacteriaPhase {
         //String dbName = "WT_150616";
         //String dbName = "MutT_150402";
         //String dbName = "TestThomasRawStacks";
-        int field = 0;
-        int microChannel =1;
-        int[] time =new int[]{194, 194}; //22
+        int field = 13;
+        int microChannel =0;
+        int[] time =new int[]{829, 829}; //22
         //setMask=true;
         //thld = 776;
         
@@ -125,10 +125,10 @@ public class TestProcessBacteriaPhase {
         //if (true) return;
         GUI.getInstance(); // for hotkeys...
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, 1);
+        ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, bacteriaStructureIdx);
         Image im = i.generatemage(bacteriaStructureIdx, true);
         iwm.addImage(im, i, bacteriaStructureIdx, true);
-        for (StructureObject mc : parentTrack)  mc.setRawImage(1, mc.getPreFilteredImage(1));
+        i.setDisplayPreFilteredImages(true);
         im = i.generatemage(bacteriaStructureIdx, true);
         iwm.addImage(im, i, bacteriaStructureIdx, true);
         iwm.setInteractiveStructure(bacteriaStructureIdx);

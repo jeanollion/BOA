@@ -77,38 +77,41 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
             objects.put(0, backgroundRegion);
         }
         ImageInteger inputLabels = population.getLabelMap();
-        Voxel n;
+        Voxel n = new Voxel(0, 0,0);
         int otherLabel;
         int[][] neigh = inputLabels.sizeZ()>1 ? (lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf) : (lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half);
         for (Region o : population.getRegions()) {
             for (Voxel vox : o.getVoxels()) {
-                vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region, because voxel can overlap & voxel can be used to store values interface-wise
-                for (int i = 0; i<neigh.length; ++i) {
-                    n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]); // only forward for interaction with other spots & background
+                for (int i = 0; i<neigh.length; ++i) { // only forward for interaction with other spots & background
+                    n.x = vox.x+neigh[i][0];
+                    n.y=vox.y+neigh[i][1];
+                    n.z=vox.z+neigh[i][2]; 
                     if (inputLabels.contains(n.x, n.y, n.z) && foregroundMask.insideMask(n.x, n.y, n.z)) { 
                         otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
                         if (otherLabel!=o.getLabel()) {
-                            if (background || otherLabel!=0) {
+                            if (background || otherLabel!=0) {  // to avoid having the same instance of voxel as in the region, because voxel can overlap & voxel can be used to store values interface-wise
                                 InterfaceRegion inter = getInterface(o, objects.get(otherLabel), true);
-                                if (otherLabel>o.getLabel()) inter.addPair(vox, n);
-                                else inter.addPair(n, vox);
+                                if (otherLabel>o.getLabel()) inter.addPair(vox.duplicate(), n.duplicate());
+                                else inter.addPair(n.duplicate(), vox.duplicate());
                             }
                         }
                     } else if (background) {
                         InterfaceRegion inter = getInterface(o, objects.get(0), true); 
-                        inter.addPair(n, vox);
+                        inter.addPair(n.duplicate(), vox.duplicate());
                     }
                     if (background) { // backward for background only
-                        n = new Voxel(vox.x-neigh[i][0], vox.y-neigh[i][1], vox.z-neigh[i][2]);
+                        n.x = vox.x-neigh[i][0];
+                        n.y=vox.y-neigh[i][1];
+                        n.z=vox.z-neigh[i][2];
                         if (inputLabels.contains(n.x, n.y, n.z)) {
                             otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);  
                             if (background && otherLabel==0) {
                                 InterfaceRegion inter = getInterface(o, objects.get(otherLabel), true); 
-                                inter.addPair(n, vox);
+                                inter.addPair(n.duplicate(), vox.duplicate());
                             }
                         } else {
                             InterfaceRegion inter = getInterface(o, objects.get(0), true); 
-                            inter.addPair(n, vox);
+                            inter.addPair(n.duplicate(), vox.duplicate());
                         }
                     }
                 }

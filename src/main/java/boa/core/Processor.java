@@ -210,7 +210,13 @@ public class Processor {
         }
         logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
         
-        allParentTracks.values().forEach(pt -> execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao));
+        MultipleException me=null;
+        try { // execute sequentially, store what has been processed, and throw exception in the end
+            ThreadRunner.exexcuteAndThrowErrors(allParentTracks.values().stream(), pt -> execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao));
+        } catch (MultipleException e) {
+            me=e;
+        }
+        
         // store in DAO
         List<StructureObject> children = new ArrayList<>();
         for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
@@ -233,6 +239,7 @@ public class Processor {
                 dao.getMasterDAO().getSelectionDAO().store(errors);
             }
         }
+        if (me!=null) throw me;
     }
     
     private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {

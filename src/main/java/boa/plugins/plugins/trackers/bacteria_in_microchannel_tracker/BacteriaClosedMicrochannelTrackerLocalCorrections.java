@@ -170,16 +170,17 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     public static int bactTestFrame=-1;
     
     // parameters of the algorithm
-    final static double maxErrorRate = 4; // above this number of error per frame (mean on 7 consecutive frame) no correction is intended
     final static int sizeRatioFrameNumber = 20; // number of frames for size ratio computation
     final static double significativeSRErrorThld = 0.25; // size ratio difference > to this value lead to an error
     final static double SRErrorValue=1; //equivalence between a size-ratio difference error and regular error 
     final static double SRIncreaseThld = 0.1; // a cell is added to the assignment only is the error number is same or inferior and if the size ratio difference is less than this value
     final static double SRQuiescentThld = 1.05; // under this value we consider cells are not growing -> if break in lineage no error count (cell dies)
     final static boolean setSRErrorsAsErrors = false; // SI errors are set as tracking errors in object attributes
+    
+    // limits to correction to avoir out-of-memory errors due to big correction scenarios
+    final static double maxErrorRate = 4; // above this number of error per frame (mean on 7 consecutive frame) no correction is intended
+    final static int maxCorrectionLength = 100; // limit lenth of correction scenario
     final static int correctionIndexLimit = 20; // max bacteria idx for correction
-    final static int cellNumberLimitForAssignment = 10; // max bacteria idx for recursive testing in assignment 
-    final static int maxCorrectionLength = 500; // limit lenth of correction scenario
     
     // functions for assigners
     HashMapGetCreate<Collection<Region>, Double> sizeMap = new HashMapGetCreate<>(col -> {

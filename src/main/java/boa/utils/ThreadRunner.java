@@ -267,10 +267,15 @@ public class ThreadRunner {
             } catch (MultipleException me) {
                 synchronized(e) {e.addExceptions(me.getExceptions());}
             } catch(Throwable ex) {
-                synchronized(e) {e.addExceptions(new Pair<>(t.toString(), ex));}
+                synchronized(e) {e.addExceptions(new Pair<>(toString(t), ex));}
             }
         });
         if (!e.isEmpty()) throw e;
+    }
+    private static <T> String toString(T t) {
+        if (t instanceof Collection) return ((Collection)t).iterator().next().toString(); // only one element
+        else if (t instanceof Object[]) return ((Object[])t)[0].toString();
+        else return t.toString();
     }
     public static interface ThreadAction<T> {
         public void run(T object, int idx);
