@@ -934,9 +934,11 @@ public abstract class ImageWindowManager<I, U, V> {
         int minTimePoint = tm.getClosestFrame(currentDisplayRange.xMin(), currentDisplayRange.yMin());
         int maxTimePoint = tm.getClosestFrame(currentDisplayRange.xMax(), currentDisplayRange.yMax());
         if (next) {
+            if (maxTimePoint == i.getParents().get(i.getParents().size()-1).getFrame()) return;
             if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
             else maxTimePoint--;
         } else {
+            if (minTimePoint == i.getParents().get(0).getFrame()) return;
             if (maxTimePoint>minTimePoint+2) minTimePoint+=2;
             else minTimePoint++;
         }
@@ -991,9 +993,11 @@ public abstract class ImageWindowManager<I, U, V> {
         int minTimePoint = tm.getClosestFrame(currentDisplayRange.xMin(), currentDisplayRange.yMin());
         int maxTimePoint = tm.getClosestFrame(currentDisplayRange.xMax(), currentDisplayRange.yMax());
         if (next) {
+            if (maxTimePoint == i.getParents().get(i.getParents().size()-1).getFrame()) return false;
             if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
             else maxTimePoint--;
         } else {
+            if (minTimePoint == i.getParents().get(0).getFrame()) return false;
             if (maxTimePoint>minTimePoint+2) minTimePoint+=2;
             else minTimePoint++;
         }
@@ -1018,16 +1022,16 @@ public abstract class ImageWindowManager<I, U, V> {
                 off = tm.getObjectOffset(nextObject);
             }
             int midX = (off.xMin()+off.xMax())/2;
-            if (midX+currentDisplayRange.sizeX()/2>=trackImage.sizeX()) midX = trackImage.sizeX()-currentDisplayRange.sizeX()/2;
+            if (midX+currentDisplayRange.sizeX()/2>=trackImage.sizeX()) midX = trackImage.sizeX()-currentDisplayRange.sizeX()/2-1;
             if (midX-currentDisplayRange.sizeX()/2<0) midX = currentDisplayRange.sizeX()/2;
             
             int midY = (off.yMin()+off.yMax())/2;
-            if (midY+currentDisplayRange.sizeY()/2>=trackImage.sizeY()) midY = trackImage.sizeY()-currentDisplayRange.sizeY()/2;
+            if (midY+currentDisplayRange.sizeY()/2>=trackImage.sizeY()) midY = trackImage.sizeY()-currentDisplayRange.sizeY()/2-1;
             if (midY-currentDisplayRange.sizeY()/2<0) midY = currentDisplayRange.sizeY()/2;
             
             MutableBoundingBox nextDisplayRange = new MutableBoundingBox(midX-currentDisplayRange.sizeX()/2, midX+currentDisplayRange.sizeX()/2, midY-currentDisplayRange.sizeY()/2, midY+currentDisplayRange.sizeY()/2, currentDisplayRange.zMin(), currentDisplayRange.zMax());
             if (!nextDisplayRange.equals(currentDisplayRange)) {
-                logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getFrame(), midX,  nextDisplayRange);
+                logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {} (current was: {}", nextObject.getFrame(), midX,  nextDisplayRange, currentDisplayRange);
                 displayer.setDisplayRange(nextDisplayRange, trackImage);
                 return true;
             } return false;

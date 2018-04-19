@@ -167,9 +167,11 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         if (iw==null || ic ==null) return;
         MouseWheelListener mwl = e ->  { // code modified from IJ source to better suit needs for LARGE track mask images + call back to display images
             synchronized (iw) {
-                if (e==null && callBack!=null) { // can be called when scroll moved manually
-                    boolean update = callBack.test(new SimpleBoundingBox(ic.getSrcRect().x, ic.getSrcRect().x+ic.getSrcRect().width-1, ic.getSrcRect().y, ic.getSrcRect().y+ic.getSrcRect().height-1, 0, 0));
-                    if (update ) imp.updateAndRepaintWindow();
+                if (e==null) { 
+                    if (callBack!=null) { // can be called when scroll moved manually
+                        boolean update = callBack.test(new SimpleBoundingBox(ic.getSrcRect().x, ic.getSrcRect().x+ic.getSrcRect().width-1, ic.getSrcRect().y, ic.getSrcRect().y+ic.getSrcRect().height-1, 0, 0));
+                        if (update ) imp.updateAndRepaintWindow();
+                    }
                     return;
                 }
                 int rotation =   e.getWheelRotation();
