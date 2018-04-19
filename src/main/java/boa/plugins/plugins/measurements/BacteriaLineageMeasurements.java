@@ -51,7 +51,7 @@ public class BacteriaLineageMeasurements implements Measurement {
     protected TextParameter keyName = new TextParameter("Lineage Index Name", "LineageIndex", false);
     protected Parameter[] parameters = new Parameter[]{structure, keyName};
     public static char[] lineageName = new char[]{'H', 'T'};
-    public static char lineageError = '*';
+    public static char[] lineageError = new char[]{'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S'};
     public BacteriaLineageMeasurements() {}
     
     public BacteriaLineageMeasurements(int structureIdx) {
@@ -100,12 +100,18 @@ public class BacteriaLineageMeasurements implements Measurement {
                     List<StructureObject> sib = siblings.getAndCreateIfNecessary(o.getPrevious());
                     if (sib.size()==1 && Boolean.FALSE.equals(o.getPrevious().getAttribute("TruncatedDivision", false))) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
                     else {
-                        if (sib.size()>2 || sib.isEmpty()) {
-                            o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError);
-                            if (sib.isEmpty()) ex.addExceptions(new Pair<>(o.toString(), new RuntimeException("Invalid bacteria lineage")));
-                        }
+                        if (sib.isEmpty()) ex.addExceptions(new Pair<>(o.toString(), new RuntimeException("Invalid bacteria lineage")));
                         else if (sib.get(0).equals(o)) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
-                        else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
+                        else if (sib.size()==2) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
+                        else { // MORE THAN 2 CELLS
+                            int idx = sib.indexOf(o);
+                            if (idx==sib.size()-1) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]); // tail
+                            else {
+                                if (idx>lineageError.length) idx = lineageError.length; // IF TOO MANY ERRORS: DUPLICATE LINEAGE
+                                o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError[idx-1]);
+                            }
+                            
+                        }
                     }
                 }
                 //if (currentParent.getFrame()<=10 && currentParent.getIdx()==0) logger.debug("o: {}, prev: {}, next: {}, lin: {}", o, o.getPrevious(), siblings.getAndCreateIfNecessary(o.getPrevious()), o.getMeasurements().getValueAsString(key));
