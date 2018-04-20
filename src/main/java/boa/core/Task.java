@@ -617,7 +617,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             tasks.get(i).runTask();
             if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
             tasks.get(i).publish("Job done");
-            tasks.get(i).publishErrors();
+            if (tasks.size()>1) tasks.get(i).publishErrors();
             tasks.get(i).db=null;
             if (ui instanceof MultiUserInterface) ((MultiUserInterface)ui).applyToLogUserInterfaces(unsetLF);
             else if (ui instanceof LogUserInterface) unsetLF.accept((LogUserInterface)ui);

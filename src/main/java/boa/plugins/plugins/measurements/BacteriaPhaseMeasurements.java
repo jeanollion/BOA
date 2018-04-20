@@ -106,8 +106,7 @@ public class BacteriaPhaseMeasurements implements Measurement {
         else m.setValue("EndOfChannelContact", null); // remove
         if (object.getAttribute("TruncatedDivision")!=null) m.setValue("TruncatedDivision", object.getAttribute("TruncatedDivision", false));
         else m.setValue("TruncatedDivision", null); // remove
-        double si = object.getAttribute("SizeRatio", Double.NaN);
-        if (!Double.isNaN(si)) m.setValue("SizeRatio", si);
+        if (object.getAttributes().get("SizeRatio")!=null)  m.setValue("SizeRatio", object.getAttribute("SizeRatio", Double.NaN));
         else m.setValue("SizeRatio", null); // remove
         if (Boolean.TRUE.equals(object.getAttribute("TrackErrorSizeRatio"))) m.setValue("TrackErrorSizeRatio", true);
         else m.setValue("TrackErrorSizeRatio", null); // remove
