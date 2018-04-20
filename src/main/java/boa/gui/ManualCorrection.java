@@ -106,8 +106,8 @@ public class ManualCorrection {
     }
     private static void removeError(StructureObject o, boolean next, boolean prev) {
         String value = null;
-        if (prev) o.getMeasurements().setValue(trackErrorPrev, value);
-        if (next) o.getMeasurements().setValue(trackErrorNext, value);
+        if (prev) o.getMeasurements().setStringValue(trackErrorPrev, value);
+        if (next) o.getMeasurements().setStringValue(trackErrorNext, value);
         
     }
     public static void unlinkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {

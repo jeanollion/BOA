@@ -98,7 +98,7 @@ public class MutationTrackMeasurements implements Measurement {
     public void performMeasurement(StructureObject parent) {
         for (StructureObject object : parent.getChildren(mutation.getSelectedStructureIdx())) {
             object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
-            object.getMeasurements().setValue("TrackHeadIndices", StructureObjectUtils.getIndices(object.getTrackHead()));
+            object.getMeasurements().setStringValue("TrackHeadIndices", StructureObjectUtils.getIndices(object.getTrackHead()));
             if (object.isTrackHead()) {
                 List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
                 int tl = track.get(track.size()-1).getFrame() - object.getFrame()+1;
@@ -117,7 +117,7 @@ public class MutationTrackMeasurements implements Measurement {
             StructureObject parentBacteria = object.getParent(bacteria.getSelectedStructureIdx());
             if (parentBacteria!=null) {
                 object.getMeasurements().setValue("BacteriaIdx", parentBacteria.getIdx());
-                object.getMeasurements().setValue("BacteriaIndices", StructureObjectUtils.getIndices(parentBacteria));
+                object.getMeasurements().setStringValue("BacteriaIndices", StructureObjectUtils.getIndices(parentBacteria));
                 int prevTP = parentBacteria.getPreviousDivisionTimePoint();
                 object.getMeasurements().setValue("PreviousDivisionFrame", prevTP>0 ? prevTP : null);
                 int nextTP = parentBacteria.getNextDivisionTimePoint();

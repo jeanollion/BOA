@@ -87,7 +87,7 @@ public class BacteriaLineageMeasurements implements Measurement {
         List<StructureObject> bacteria = currentParent.getChildren(bIdx);
         int trackHeadIdx = 0;
         for (StructureObject o : bacteria) {
-            o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
+            o.getMeasurements().setStringValue(key, getTrackHeadName(trackHeadIdx++));
             int nextTP = o.getNextDivisionTimePoint();
             o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
         }
@@ -95,20 +95,20 @@ public class BacteriaLineageMeasurements implements Measurement {
             currentParent = currentParent.getNext();
             bacteria = currentParent.getChildren(bIdx);
             for (StructureObject o : bacteria) {
-                if (o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
+                if (o.getPrevious()==null) o.getMeasurements().setStringValue(key, getTrackHeadName(trackHeadIdx++));
                 else {
                     List<StructureObject> sib = siblings.getAndCreateIfNecessary(o.getPrevious());
-                    if (sib.size()==1 && Boolean.FALSE.equals(o.getPrevious().getAttribute("TruncatedDivision", false))) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
+                    if (sib.size()==1 && Boolean.FALSE.equals(o.getPrevious().getAttribute("TruncatedDivision", false))) o.getMeasurements().setStringValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
                     else {
                         if (sib.isEmpty()) ex.addExceptions(new Pair<>(o.toString(), new RuntimeException("Invalid bacteria lineage")));
-                        else if (sib.get(0).equals(o)) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
-                        else if (sib.size()==2) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
+                        else if (sib.get(0).equals(o)) o.getMeasurements().setStringValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
+                        else if (sib.size()==2) o.getMeasurements().setStringValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
                         else { // MORE THAN 2 CELLS
                             int idx = sib.indexOf(o);
-                            if (idx==sib.size()-1) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]); // tail
+                            if (idx==sib.size()-1) o.getMeasurements().setStringValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]); // tail
                             else {
                                 if (idx>lineageError.length) idx = lineageError.length; // IF TOO MANY ERRORS: DUPLICATE LINEAGE
-                                o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError[idx-1]);
+                                o.getMeasurements().setStringValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError[idx-1]);
                             }
                             
                         }

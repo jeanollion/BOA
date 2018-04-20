@@ -99,12 +99,18 @@ public class BacteriaPhaseMeasurements implements Measurement {
         m.setValue("BacteriaArea", GeometricalMeasurements.getVolumeUnit(bactObject));
         m.setValue("BacteriaWidth", scale*GeometricalMeasurements.getThickness(bactObject));
         if (object.hasTrackLinkError(false, true)) m.setValue(StructureObject.trackErrorNext, true);
+        else m.setValue(StructureObject.trackErrorNext, null); // remove
         if (object.hasTrackLinkError(true, false)) m.setValue(StructureObject.trackErrorPrev, true);
+        else m.setValue(StructureObject.trackErrorPrev, null); // remove
         if (object.getAttribute("EndOfChannelContact")!=null) m.setValue("EndOfChannelContact", object.getAttribute("EndOfChannelContact", Double.NaN));
+        else m.setValue("EndOfChannelContact", null); // remove
         if (object.getAttribute("TruncatedDivision")!=null) m.setValue("TruncatedDivision", object.getAttribute("TruncatedDivision", false));
+        else m.setValue("TruncatedDivision", null); // remove
         double si = object.getAttribute("SizeRatio", Double.NaN);
         if (!Double.isNaN(si)) m.setValue("SizeRatio", si);
+        else m.setValue("SizeRatio", null); // remove
         if (Boolean.TRUE.equals(object.getAttribute("TrackErrorSizeRatio"))) m.setValue("TrackErrorSizeRatio", true);
+        else m.setValue("TrackErrorSizeRatio", null); // remove
         if (computeSpine.getSelected()) {
             double[] lw = GeometricalMeasurements.getSpineLengthAndWidth(bactObject);
             if (lw!=null) {

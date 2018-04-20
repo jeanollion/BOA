@@ -112,7 +112,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         }
         long t3 = System.currentTimeMillis();
         /*for (StructureObject m : mutList) {
-              m.getMeasurements().setValue("MutationForegroundSingle", BasicMeasurements.getMeanValue(m.getRegion().getVoxels(), mutImage));
+              m.getMeasurements().setStringValue("MutationForegroundSingle", BasicMeasurements.getMeanValue(m.getRegion().getVoxels(), mutImage));
               modifiedObjects.add(m);
         }*/
         long t4=t3, t5=t3;

@@ -87,15 +87,15 @@ public class GetAttribute implements Measurement {
                     object.getMeasurements().setValue(key+"X", v[0]);
                     if (v.length>1) object.getMeasurements().setValue(key+"Y", v[1]);
                     if (v.length>2) object.getMeasurements().setValue(key+"Z", v[2]);
-                } else object.getMeasurements().setValue(key, v);
+                } else object.getMeasurements().setArrayValue(key, v);
             }
             else if (value instanceof List) {
                 if (((List)value).isEmpty()) continue;
                 if (parseArraysAsCoordinates.getSelected() && ((List)value).size()<=3) {
                     
-                } else object.getMeasurements().setValue(key, (List)value);
+                } else object.getMeasurements().setListValue(key, (List)value);
             }
-            else if (value instanceof String) object.getMeasurements().setValue(key, (String)value);
+            else if (value instanceof String) object.getMeasurements().setStringValue(key, (String)value);
             else if (value instanceof Boolean) object.getMeasurements().setValue(key, (Boolean)value);
         }
     }

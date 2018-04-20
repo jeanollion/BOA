@@ -78,7 +78,7 @@ public class SimpleTrackMeasurements implements Measurement {
         for (StructureObject o : track) {
             o.getMeasurements().setValue("TrackLength", tl);
             o.getMeasurements().setValue("TrackObjectCount", track.size());
-            o.getMeasurements().setValue("TrackHeadIndices", th);
+            o.getMeasurements().setStringValue("TrackHeadIndices", th);
         }
     }
 

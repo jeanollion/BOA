@@ -62,13 +62,13 @@ public class TestSpine {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        int structureIdx = 2;
+        int structureIdx = 1;
         //String dbName = "AyaWT_mmglu";
         //String dbName = "MutH_150324";
+        //String dbName = "WT_180318_Fluo";
         //String dbName = "WT_150609";
-        String dbName = "WT_180318_Fluo";
-        int postition= 3, frame=0, mc=0, b=0;
-        //String dbName = "MutH_140115";
+        int postition= 3, frame=1, mc=0, b=0;
+        String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
         
         MasterDAO mDAO = new Task(dbName).getDB();

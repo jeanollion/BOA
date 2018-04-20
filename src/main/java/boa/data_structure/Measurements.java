@@ -167,7 +167,7 @@ public class Measurements implements Comparable<Measurements>, JSONSerializable{
     private static boolean isNA(Number value) {
         return (value instanceof Double && ((Double)value).isNaN() ||  value instanceof Float && ((Float)value).isNaN());
     }
-    public void setValue(String key, String value) {
+    public void setStringValue(String key, String value) {
         synchronized(values) {
             if (value == null) values.remove(key);
             else values.put(key, value);
@@ -182,16 +182,17 @@ public class Measurements implements Comparable<Measurements>, JSONSerializable{
         }
     }
     
-    public void setValue(String key, double[] value) {
+    public void setArrayValue(String key, double[] value) {
         synchronized(values) {
-            //this.values.put(key, value);
-            this.values.put(key, Arrays.asList(value));
+            if (value == null) values.remove(key);
+            else this.values.put(key, Arrays.asList(value));
             modifications=true;
         }
     }
-    public void setValue(String key, List<Double> value) {
+    public void setListValue(String key, List<Double> value) {
         synchronized(values) {
-            this.values.put(key, value);
+            if (value == null) values.remove(key);
+            else this.values.put(key, value);
             modifications=true;
         }
     }

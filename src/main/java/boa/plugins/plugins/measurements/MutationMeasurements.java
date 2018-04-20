@@ -77,10 +77,10 @@ public class MutationMeasurements implements Measurement {
         double[] center = mutObject.getCenter(mutImage, true);
         center[0]-=parentOffset.getxMin()*object.getScaleXY();
         center[1]-=parentOffset.getyMin()*object.getScaleXY();
-        object.getMeasurements().setValue("MutationCenterX", center[0]);
-        object.getMeasurements().setValue("MutationCenterY", center[1]);
-        object.getMeasurements().setValue("MeanYFPInMutation", BasicMeasurements.getMeanValue(mutObject, mutImage, true));
-        object.getMeasurements().setValue("MutationArea", GeometricalMeasurements.getVolume(mutObject));
+        object.getMeasurements().setStringValue("MutationCenterX", center[0]);
+        object.getMeasurements().setStringValue("MutationCenterY", center[1]);
+        object.getMeasurements().setStringValue("MeanYFPInMutation", BasicMeasurements.getMeanValue(mutObject, mutImage, true));
+        object.getMeasurements().setStringValue("MutationArea", GeometricalMeasurements.getVolume(mutObject));
         */
         StructureObject parentBacteria;
         if (bacteria.getSelectedStructureIdx()==object.getParent().getStructureIdx()) parentBacteria = object.getParent();

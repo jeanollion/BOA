@@ -364,7 +364,7 @@ public class MOPEmptyMicrochannel {
         String[] split = name.split("\\.");
         int[] idx = Selection.parseIndices(split[2]);
         Measurements res = new Measurements(split[1], idx[0], 0, idx).initValues();
-        res.setValue("XP", split[0]);
+        res.setStringValue("XP", split[0]);
         return res;
     }
     final static String separator =";";
