@@ -76,7 +76,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             Object o = jsonO.get("params");
             if (JSONUtils.isJSONArrayMap(o)) paramSet=JSONUtils.fromJSONArrayMap(pluginParameters, (JSONArray)o);
             else paramSet=JSONUtils.fromJSON(pluginParameters, (JSONArray)o);
-            if (!paramSet) logger.warn("Could not initialize plugin-parameter: {} plugin: {} type: {}, #parameters: {}, JSON parameters: {}", name, this.pluginName, this.pluginType, pluginParameters.size(), jsonO.get("params") );
+            if (!paramSet) logger.warn("Could not initialize plugin-parameter: {} plugin: {} type: {}, #parameters: {}, JSON parameters: {}", name, this.pluginName, this.pluginType, pluginParameters, jsonO.get("params") );
         }
     }
     
@@ -209,6 +209,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof PluginParameter && ((PluginParameter)other).getPluginType().equals(getPluginType())) {
+            bypassListeners=true;
             PluginParameter otherPP = (PluginParameter) other;
             //logger.debug("set content PP: type: {} current: {} other: {}",this.pluginTypeName, this.pluginName, otherPP.pluginName);
             this.activated=otherPP.activated;
@@ -233,7 +234,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
                 }
             }
             if (toInit) initChildList();
-            
+            bypassListeners=false;
         } else throw new IllegalArgumentException("wrong parameter type");
     }
 

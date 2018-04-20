@@ -121,7 +121,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
     public boolean sameContent(Parameter other) {
         if (other instanceof ConditionalParameter) {
             if (!((ConditionalParameter)other).getActionableParameter().sameContent(getActionableParameter())) {
-                logger.debug("ConditionalParam: {}!={} action parameter differ", this, other);
+                logger.debug("ConditionalParam: {} != {} action parameter differ", this, other);
                 return false;
             }
             return super.sameContent(other);
@@ -131,6 +131,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof ConditionalParameter) {
+            bypassListeners=true;
             ConditionalParameter otherC = (ConditionalParameter)other;
             action.setConditionalParameter(null);
             action.setContentFrom(otherC.action);
@@ -148,6 +149,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
                 ParameterUtils.setContent(parameters.get(currentAction), currentParameters);
             }
             setActionValue(action.getValue());
+            bypassListeners=false;
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     

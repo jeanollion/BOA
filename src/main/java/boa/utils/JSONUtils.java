@@ -254,7 +254,7 @@ public class JSONUtils {
                         r.initFromJSONEntry(e.getValue());
                         ++count;
                     } catch(Exception ex) {
-                        logger.error("Error While initializing parameter: {} with: {}", r, e);
+                        logger.error("Error While initializing parameter: {} (class: {}) with: {}", r, r.getClass(), e);
                     }
                 }
             }

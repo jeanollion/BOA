@@ -77,8 +77,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     @Override
     public void initFromJSONEntry(Object json) {
         synchronized(this) {
-            List<Consumer<Parameter>> lis = listeners;
-            this.listeners = null;
+            this.bypassListeners = true;
             removeAllElements();
             if (json instanceof JSONObject && ((JSONObject)json).containsKey("list")) {
                 JSONObject jsonO = (JSONObject)json;
@@ -93,9 +92,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
                 newI.initFromJSONEntry(json);
                 insert(newI);
             }
-            this.listeners = lis;
-            this.fireListeners();
-            this.fireChildrenListeners();
+            this.bypassListeners=false;
         }
     }
     
@@ -280,13 +277,13 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
                 //this.name=otherLP.getName();
                 if (children==null) children = new ArrayList<>();
                 this.children.clear();
+                bypassListeners=true;
                 for (Parameter p : otherLP.getChildren()) {
                     T newP = createChildInstance(p.getName());
                     newP.setContentFrom(p);
                     insert(newP);
                 }
-                //for (int i = 0; i<otherLP.getChildCount(); i++) this.children.add((T)((otherLP.getChildAt(i)).duplicate()));
-                //for (Parameter p : children) p.setParent(this);
+                bypassListeners=false;
                 ui=null;
             }
         } else throw new IllegalArgumentException("wrong parameter type");
@@ -337,7 +334,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
             c.setParent(this);
         }
         fireListeners();
-        Arrays.stream(child).filter(c-> c instanceof Listenable).forEach(c->((Listenable)c).fireListeners());
+        if (!bypassListeners) Arrays.stream(child).filter(c-> c instanceof Listenable).forEach(c->((Listenable)c).fireListeners());
     }
 
     @Override
@@ -462,6 +459,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     }
     */
     List<Consumer<Parameter>> listeners;
+    boolean bypassListeners;
     @Override
     public void addListener(Consumer<Parameter> listener) {
         if (listeners==null) listeners = new ArrayList<>();
@@ -475,10 +473,11 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
 
     @Override
     public void fireListeners() {
-        if (listeners==null) return;
+        if (listeners==null || bypassListeners) return;
         for (Consumer<Parameter> l : listeners) l.accept(this);
     }
     public void fireChildrenListeners() {
+        if (bypassListeners) return;
         for (T p : children) if (p instanceof Listenable) ((Listenable)p).fireListeners();
     }
     public void setListeners(List<Consumer<Parameter>> listeners) {

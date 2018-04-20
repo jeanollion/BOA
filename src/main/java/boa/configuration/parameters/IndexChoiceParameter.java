@@ -65,9 +65,11 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof IndexChoiceParameter) {
+            bypassListeners=true;
             IndexChoiceParameter otherP = (IndexChoiceParameter) other;
             if (otherP.selectedIndicies!=null) this.setSelectedIndicies(Utils.copyArray(otherP.selectedIndicies));
             else this.setSelectedIndex(-1);
+            bypassListeners=false;
             //logger.debug("ICP: {} recieve from: {} -> {} ({})", name, otherP.getSelectedItems(), this.getSelectedItems(), this.getSelectedIndex());
         } else throw new IllegalArgumentException("wrong parameter type");
     }

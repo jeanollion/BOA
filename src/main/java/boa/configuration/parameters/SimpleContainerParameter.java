@@ -73,9 +73,9 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     
     protected void initChildren(Parameter... parameters) {
         if (parameters==null || parameters.length==0) {
-            children = new ArrayList<Parameter>(0);
+            children = new ArrayList<>(0);
         } else {
-            initChildren(new ArrayList<Parameter>(Arrays.asList(parameters)));
+            initChildren(new ArrayList<>(Arrays.asList(parameters)));
         }
     }
     
@@ -84,8 +84,10 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof SimpleContainerParameter) {
+            bypassListeners=true;
             SimpleContainerParameter otherP = (SimpleContainerParameter) other;
             if (!ParameterUtils.setContent(getChildren(), otherP.getChildren())) logger.warn("SCP: {}({}): different parameter length, they might not be well set: c:{}/src:{}", name, this.getClass().getSimpleName(), children.size(), otherP.children.size());
+            bypassListeners=false;
         } else {
             throw new IllegalArgumentException("wrong parameter type");
         }
@@ -98,17 +100,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
             p.setContentFrom(this);
             ((SimpleContainerParameter)p).setListeners(listeners);
             return p;
-        } catch (NoSuchMethodException ex) {
-            logger.error("duplicate error:", ex);
-        } catch (SecurityException ex) {
-            logger.error("duplicate error:", ex);
-        } catch (InstantiationException ex) {
-            logger.error("duplicate error:", ex);
-        } catch (IllegalAccessException ex) {
-            logger.error("duplicate error:", ex);
-        } catch (IllegalArgumentException ex) {
-            logger.error("duplicate error:", ex);
-        } catch (InvocationTargetException ex) {
+        } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             logger.error("duplicate error:", ex);
         }
         return null;
@@ -142,7 +134,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
                 }
                 return true;
             } else {
-                logger.debug("{}!={} class {}, child number: {} vs {}", name, other.getName(), getClass().getSimpleName(), getChildCount(), other.getChildCount());
+                logger.debug("{} != {} class {}, child number: {} vs {}", name, other.getName(), getClass().getSimpleName(), getChildCount(), other.getChildCount());
                 return false;
             }
         } else return false;
@@ -224,6 +216,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     
     // listenable
     protected List<Consumer<Parameter>> listeners;
+    boolean bypassListeners;
     public void addListener(Consumer<Parameter> listener) {
         if (listeners == null) listeners = new ArrayList<>();
         listeners.add(listener);
@@ -232,25 +225,11 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         if (listeners != null) listeners.remove(listener);
     }
     public void fireListeners() {
-        if (listeners != null) for (Consumer<Parameter> pl : listeners) pl.accept(this);
+        if (listeners != null && !bypassListeners) for (Consumer<Parameter> pl : listeners) pl.accept(this);
     }
     public void setListeners(List<Consumer<Parameter>> listeners) {
         if (listeners==null) this.listeners=null;
         else this.listeners=new ArrayList<>(listeners);
     }
     
-    // morphium
-    protected SimpleContainerParameter() {}
-    
-    // morphium
-
-    /*public void postLoad() {
-        //logger.debug("post load on : {}, of class: {}, alreadyPostLoaded: {}, parent: {}", name, this.getClass().getSimpleName(), postLoaded, parent!=null? parent.getName():null);
-        if (postLoaded) return;
-        initChildList();
-        for (Parameter p : children) {
-            if (p instanceof PostLoadable) ((PostLoadable)p).postLoad();
-        }
-        postLoaded=true;
-    }*/
 }

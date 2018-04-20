@@ -90,8 +90,10 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof ChoiceParameter) {
+            bypassListeners=true;
             ChoiceParameter otherC = (ChoiceParameter)other;
             setSelectedItem(otherC.getSelectedItem());
+            bypassListeners=false;
             //logger.debug("choice {} set content from: {} current item: {}, current idx {}, other item: {}, other idx : {}", this.hashCode(), otherC.hashCode(), this.getSelectedItem(), this.getSelectedIndex(), otherC.getSelectedItem(), otherC.getSelectedIndex());
         } else throw new IllegalArgumentException("wrong parameter type: "+(other==null? "null":other.getClass()) +" instead of ChoiceParameter");
     }

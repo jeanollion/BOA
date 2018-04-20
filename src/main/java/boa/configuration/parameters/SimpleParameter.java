@@ -172,6 +172,7 @@ public abstract class SimpleParameter implements Parameter {
     
     // listenable
     ArrayList<Consumer<Parameter>> listeners;
+    protected boolean bypassListeners;
     public void addListener(Consumer<Parameter> listener) {
         if (listeners == null) listeners = new ArrayList<>();
         listeners.add(listener);
@@ -184,7 +185,7 @@ public abstract class SimpleParameter implements Parameter {
         else this.listeners = new ArrayList<>(listeners);
     }
     public void fireListeners() {
-        if (listeners != null) for (Consumer<Parameter> pl : listeners) pl.accept(this);
+        if (!bypassListeners && listeners != null) for (Consumer<Parameter> pl : listeners) pl.accept(this);
     }
     // op
     ModuleItem<?> param;

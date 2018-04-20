@@ -95,7 +95,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
     BooleanParameter normalizeWidths = new BooleanParameter("Normalize Widths", false);
     ConditionalParameter widthCond = new ConditionalParameter(normalizeWidths).setActionParameters("true", new Parameter[]{widthQuantile});
     BooleanParameter normalizeYshift = new BooleanParameter("Normalize Y-shifts", false);
-    ConditionalParameter shiftCond = new ConditionalParameter(normalizeWidths).setActionParameters("true", new Parameter[]{yShiftQuantile});
+    ConditionalParameter shiftCond = new ConditionalParameter(normalizeYshift).setActionParameters("true", new Parameter[]{yShiftQuantile});
     Parameter[] parameters = new Parameter[]{segmenter, maxShiftGC, maxDistanceFTFWidthFactor, shiftCond, widthCond, allowGaps};
     public static boolean debug = false;
     

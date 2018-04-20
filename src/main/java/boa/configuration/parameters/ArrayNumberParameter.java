@@ -66,11 +66,11 @@ public class ArrayNumberParameter extends SimpleListParameter<BoundedNumberParam
     public void setValue(double... values) {
         if (unMutableIndex>=0 && values.length<=unMutableIndex) throw new IllegalArgumentException("Min number of values: "+this.unMutableIndex+1);
         synchronized(this) {
-            List<Consumer<Parameter>> lis = this.listeners;
-            this.listeners= null; // do not fire listener
+            bypassListeners=true;
             setChildrenNumber(values.length);
             for (int i = 0; i<values.length; ++i) getChildAt(i).setValue(values[i]); 
-            this.listeners = lis;
+            this.fireListeners();
+            bypassListeners=false;
         }
     }
     @Override

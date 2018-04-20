@@ -104,6 +104,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     }
     @Override
     public void setContentFrom(Parameter other) {
+        bypassListeners=true;
         if (other instanceof ChoosableParameterMultiple) {
             setSelectedIndicies(((ChoosableParameterMultiple)other).getSelectedItems());
         } else if (other instanceof ChoosableParameter) {
@@ -111,6 +112,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
             int i = Utils.getIndex(listChoice, sel);
             if (i>=0) this.selectedItems=new int[]{i};
         } else throw new IllegalArgumentException("wrong parameter type");
+        bypassListeners=false;
     }
     
     @Override

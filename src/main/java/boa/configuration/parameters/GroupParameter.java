@@ -33,7 +33,6 @@ import boa.utils.Utils;
 public class GroupParameter extends SimpleContainerParameter {
     protected List<Parameter> parameters;
     
-    public GroupParameter() {super();}
     public GroupParameter(String name, Parameter... parameters) {
         super(name);
         this.parameters = Arrays.asList(parameters);

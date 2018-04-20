@@ -111,6 +111,7 @@ public class Structure extends SimpleContainerParameter {
         manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true);
         this.parentStructure.addListener((Parameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
+            s.setMaxStructureIdx();
             int parentIdx = s.parentStructure.getSelectedIndex();
             s.setParentStructure(parentIdx);
             logger.debug("parent structure listener fired: parent: {}, seg parent: {}", s.parentStructure.getSelectedIndex(), s.segmentationParent.getSelectedIndex());
@@ -121,6 +122,7 @@ public class Structure extends SimpleContainerParameter {
         });
         segmentationParent.addListener((Parameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
+            s.setMaxStructureIdx();
             s.setSegmentationParentStructure(s.segmentationParent.getSelectedIndex());
             logger.debug("segmentation parent structure listener fired: parent: {}, seg parent: {}", this.parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
             //update tree
