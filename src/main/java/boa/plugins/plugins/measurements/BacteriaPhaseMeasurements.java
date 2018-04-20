@@ -78,7 +78,8 @@ public class BacteriaPhaseMeasurements implements Measurement {
         res.add(new MeasurementKeyObject(StructureObject.trackErrorNext, structureIdx));
         res.add(new MeasurementKeyObject("SizeRatio", structureIdx));
         res.add(new MeasurementKeyObject("TrackErrorSizeRatio", structureIdx));
-        
+        res.add(new MeasurementKeyObject("EndOfChannelContact", structureIdx));
+        res.add(new MeasurementKeyObject("TruncatedDivision", structureIdx));
         return res;
     }
 
@@ -97,12 +98,13 @@ public class BacteriaPhaseMeasurements implements Measurement {
         m.setValue("BacteriaLength", scale*GeometricalMeasurements.getFeretMax(bactObject));
         m.setValue("BacteriaArea", GeometricalMeasurements.getVolumeUnit(bactObject));
         m.setValue("BacteriaWidth", scale*GeometricalMeasurements.getThickness(bactObject));
-        m.setValue(StructureObject.trackErrorNext, object.hasTrackLinkError(false, true));
-        m.setValue(StructureObject.trackErrorPrev, object.hasTrackLinkError(true, false));
-        Object si = object.getAttribute("SizeRatio");
-        if (si instanceof Number) m.setValue("SizeRatio", (Number)si);
-        Object tesi = object.getAttribute("TrackErrorSizeRatio");
-        m.setValue("TrackErrorSizeRatio", Boolean.TRUE.equals(tesi));
+        if (object.hasTrackLinkError(false, true)) m.setValue(StructureObject.trackErrorNext, true);
+        if (object.hasTrackLinkError(true, false)) m.setValue(StructureObject.trackErrorPrev, true);
+        if (object.getAttribute("EndOfChannelContact")!=null) m.setValue("EndOfChannelContact", object.getAttribute("EndOfChannelContact", Double.NaN));
+        if (object.getAttribute("TruncatedDivision")!=null) m.setValue("TruncatedDivision", object.getAttribute("TruncatedDivision", false));
+        double si = object.getAttribute("SizeRatio", Double.NaN);
+        if (!Double.isNaN(si)) m.setValue("SizeRatio", si);
+        if (Boolean.TRUE.equals(object.getAttribute("TrackErrorSizeRatio"))) m.setValue("TrackErrorSizeRatio", true);
         if (computeSpine.getSelected()) {
             double[] lw = GeometricalMeasurements.getSpineLengthAndWidth(bactObject);
             if (lw!=null) {

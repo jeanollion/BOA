@@ -1014,9 +1014,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (attributes==null) return null;
         return attributes.get(key);
     }
-    public Object getAttribute(String key, Object defaultValue) {
+    public <T> T getAttribute(String key, T defaultValue) {
         if (attributes==null) return defaultValue;
-        return attributes.getOrDefault(key, defaultValue);
+        return (T)attributes.getOrDefault(key, defaultValue);
     }
     public Map<String, Object> getAttributes() {
         if (this.attributes==null) attributes = new HashMap<>();

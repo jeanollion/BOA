@@ -69,7 +69,7 @@ public class SpotCompartiment {
     }
     
     public static boolean isTruncated(StructureObject o ) {
-        return (Double)o.getAttribute("EndOfChannelContact", 0d)>0.45; // estimate if attribute not present
+        return o.getAttribute("EndOfChannelContact", 0d)>0.45; // estimate if attribute not present
     }
     
     public static int getNextDivisionFrame(StructureObject o, double sizeProportion) {

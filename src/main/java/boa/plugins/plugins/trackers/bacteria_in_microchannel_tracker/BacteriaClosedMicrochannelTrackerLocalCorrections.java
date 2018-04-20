@@ -660,8 +660,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             this.frame=timePoint;
             int lim = parentsByF.get(timePoint).getBounds().sizeY()-1;
             if (o.getBounds().yMax()==lim) {
-                double count = 0;
-                for (Voxel v : o.getVoxels()) if (v.y==lim) ++count;
+                double count = new RegionPopulation.ContactBorderMask(0, parentsByF.get(timePoint).getMask(), RegionPopulation.Border.YDown).getContact(o);
                 endOfChannelContact = count/getWidth();
                 if (endOfChannelContact>endOfChannelContactThreshold.getValue().doubleValue()) touchEndOfChannel=true;
                 else touchEndOfChannel=false; 
@@ -695,7 +694,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return objectSize;
         }
         private double getWidth() { // unscaled
-            return (double)o.getVoxels().size() * o.getScaleXY() / getLength(); // do not use getSize() if getSize() return area !!
+            return (double)o.getVoxels().size() / getLength(); // do not use getSize() if getSize() return area !!
         }
         private List<Double> getLineageSizeRatioList() {
             List<Double> res=  new ArrayList<>(sizeRatioFrameNumber);
