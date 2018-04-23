@@ -100,7 +100,6 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         if (children==null) {
             if (getTrack()==null || getTrack().size()<=1) children=new ArrayList<>(0);
             else {
-                logger.debug("getChildren for: {}, remaining: {}", track.get(0), root.getRemainingTracksPerFrame().size());
                 children = root.getRemainingTracksPerFrame().stream()
                     .filter(th->th.getFrame()>trackHead.getFrame())
                     .filter(th->getTrack().stream().anyMatch(s->s.getId().equals(th.getPreviousId())))
