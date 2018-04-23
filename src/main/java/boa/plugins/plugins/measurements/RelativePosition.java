@@ -41,8 +41,8 @@ import boa.utils.geom.Point;
 public class RelativePosition implements Measurement {
     protected StructureParameter objects = new StructureParameter("Structure", -1, false, false);
     protected StructureParameter reference = new StructureParameter("Reference Structure", -1, true, false);
-    ChoiceParameter objectCenter= new ChoiceParameter("Object Point", new String[]{"Mass", "Geometrical", "From segmentation", "Upper Left Corner"}, "Mass", false);
-    ChoiceParameter refPoint = new ChoiceParameter("Reference Point", new String[]{"Center of Mass", "Geometrical Center", "Upper Left Corner"}, "Center of Mass", false).setToolTipText("If no reference structure is selected the reference point will automatically be the upper left corner of the image");;
+    ChoiceParameter objectCenter= new ChoiceParameter("Object Point", new String[]{"Mass Center", "Geometrical Center", "From segmentation", "Upper Left Corner"}, "Mass Center", false);
+    ChoiceParameter refPoint = new ChoiceParameter("Reference Point", new String[]{"Mass Center", "Geometrical Center", "Upper Left Corner"}, "Mass Center", false).setToolTipText("If no reference structure is selected the reference point will automatically be the upper left corner of the image");;
     TextParameter key = new TextParameter("Key Name", "RelativeCoord", false);
     //ConditionalParameter refCond = new ConditionalParameter(reference); structure param not actionable...
     protected Parameter[] parameters = new Parameter[]{objects, reference, objectCenter, refPoint, key};
@@ -96,15 +96,14 @@ public class RelativePosition implements Measurement {
                 refObject = StructureObjectUtils.getInclusionParent(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
             }
         }
-        if (refObject == null && reference.getSelectedStructureIdx()>=0) return;
+        if (refObject == null && reference.getSelectedStructureIdx()>=0) return; // no reference object found
         Point objectCenter=null;
-        int ctype= this.objectCenter.getSelectedIndex();
-        switch (ctype) {
-            case 0:
-                objectCenter = object.getRegion().getMassCenter(object.getParent().getRawImage(object.getStructureIdx()), false); // mass center
+        switch (this.objectCenter.getSelectedIndex()) {
+            case 0: // mass center
+                objectCenter = object.getRegion().getMassCenter(object.getParent().getRawImage(object.getStructureIdx()), false); 
                 break;
-            case 1:
-                objectCenter = object.getRegion().getGeomCenter(false); // geom center
+            case 1: // geom center
+                objectCenter = object.getRegion().getGeomCenter(false); 
                 break;
             case 2: // from segmentation
                 objectCenter = object.getRegion().getCenter().duplicate();
@@ -115,25 +114,25 @@ public class RelativePosition implements Measurement {
             default:
                 break;
         }
-        if (objectCenter==null) return;
+        if (objectCenter==null) throw new RuntimeException("No center found for object:" + object.toString());
         objectCenter.multiplyDim(object.getRegion().getScaleXY(), 0);
         objectCenter.multiplyDim(object.getRegion().getScaleXY(), 1);
         objectCenter.multiplyDim(object.getRegion().getScaleZ(), 2);
         Point refPoint=null;
         if (refObject!=null) {
             switch (this.refPoint.getSelectedIndex()) {
-                case 0:
+                case 0: // mass center
                     refPoint = refObject.getRegion().getMassCenter(refObject.isRoot() ? refObject.getRawImage(refObject.getStructureIdx()) : refObject.getParent().getRawImage(refObject.getStructureIdx()), false);
                     break;
-                case 1:
+                case 1: // geom center
                     refPoint = refObject.getRegion().getGeomCenter(false);
                     break;
-                default:
-                    // corner
+                default: // upper-left corner
                     objectCenter = Point.asPoint(refObject.getBounds());
                     break;
             }
         } else refPoint = new Point(0, 0, 0); // absolute
+        if (refPoint==null) throw new RuntimeException("No reference point found for ref object: " + refObject+ " ref type: "+this.refPoint.getSelectedItem()+ " & object: "+object);
         refPoint.multiplyDim(object.getRegion().getScaleXY(), 0);
         refPoint.multiplyDim(object.getRegion().getScaleXY(), 1);
         refPoint.multiplyDim(object.getRegion().getScaleZ(), 2);

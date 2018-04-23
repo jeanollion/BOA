@@ -363,8 +363,8 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
     double globalThreshold = Double.NaN;
     @Override
     public TrackParametrizable.TrackParametrizer<BacteriaIntensity> run(int structureIdx, List<StructureObject> parentTrack) {
-        Set<StructureObject> voidMC = new HashSet<>();
-        double[] minAndGlobalThld = getVoidMicrochannels(structureIdx, parentTrack, voidMC);
+        Set<StructureObject> voidMC = getVoidMicrochannels(structureIdx, parentTrack);
+        double[] minAndGlobalThld = getGlobalMinAndGlobalThld(parentTrack, structureIdx, voidMC);
         return (p, s) -> {
             if (voidMC.contains(p)) s.isVoid=true; 
             s.minThld=minAndGlobalThld[0];
@@ -378,10 +378,10 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
      * If not global otsu threshold is computed on all prefiltered images, if mean prefiltered value < thld microchannel is considered void
      * @param structureIdx
      * @param parentTrack
-     * @param outputVoidMicrochannels will add the void microchannels inside this set
-     * @return [the minimal threshold if some channels are void or positive infinity if all channels are void ; the global threshold in non-empty microchannels]
+     * @return void microchannels
      */
-    protected double[] getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, Set<StructureObject> outputVoidMicrochannels) {
+    protected Set<StructureObject> getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack) {
+        Set<StructureObject> outputVoidMicrochannels = new HashSet<>();
         double globalVoidThldSigmaMu = sigmaThldForVoidMC.getValue().doubleValue();
         // get sigma in the middle line of each MC
         double[] globalSum = new double[3];
@@ -421,7 +421,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         if (globalSigma/globalMean<globalVoidThldSigmaMu) {
             logger.debug("parent: {} sigma: {}/{}={} all channels considered void: {}", parentTrack.get(0), globalSigma, globalMean, globalSigma/globalMean);
             outputVoidMicrochannels.addAll(parentTrack);
-            return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
+            return outputVoidMicrochannels;
         }
         // 2) criterion for void microchannels : low intensity value
         // intensity criterion based on global otsu threshold
@@ -429,28 +429,19 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         for ( int idx = 0; idx<meanF_meanR_sigmaR.size(); ++idx) if (meanF_meanR_sigmaR.get(idx)[0]<globalThld && meanF_meanR_sigmaR.get(idx)[2]/meanF_meanR_sigmaR.get(idx)[1]<globalVoidThldSigmaMu) outputVoidMicrochannels.add(parentTrack.get(idx)); // sigma test is because when mc is nearly void, mean can be low engough // mean test is because when mc is very full, sigma can be low enough
         logger.debug("parent: {} global sigma: {}/{}={} global thld: {} void mc {}/{}", parentTrack.get(0), globalSigma,globalMean, globalSigma/globalMean, globalThld,outputVoidMicrochannels.size(), parentTrack.size() );
         //logger.debug("s/mu : {}", Utils.toStringList(meanF_meanR_sigmaR.subList(10, 15), f->"mu="+f[0]+" muR="+f[1]+"sR="+f[2]+ " sR/muR="+f[2]/f[1]));
-        if (outputVoidMicrochannels.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
+        return outputVoidMicrochannels;
+    }
+    protected double[] getGlobalMinAndGlobalThld(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
+        if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         
-        // 3) get global otsu thld for images with foreground
-        globalThld = getGlobalOtsuThreshold(parentTrack.stream().filter(p->!outputVoidMicrochannels.contains(p)), structureIdx);
-        // 4) estimate a minimal threshold : middle point between mean value under global threshold and global threshold
-        double[] sum = new double[3];
-        double thld = globalThld;
-        for (StructureObject p : parentTrack) {
-            Image im = p.getPreFilteredImage(structureIdx);
-            ImageMask.loop(p.getMask(), (x, y, z)-> {
-                double v = im.getPixel(x, y, z);
-                if (v<thld) {
-                    sum[0]+=v;
-                    sum[1]++;
-                }
-            });
-        }
-        double mean = sum[0]/sum[1];
-        double minThreshold = (mean+globalThld)/2.0;
+        Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!voidMC.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
+        Histogram histo = Histogram.getHisto256(imageMapMask, null);
+        double minThreshold = histo.getQuantiles(0.5)[0];
+        
+        double globalThld =  IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
+        //double minThreshold = BackgroundThresholder.runThresholder(histo, 3, 3, 2, null);
         logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), minThreshold, globalThld);
-
-        return new double[]{minThreshold, globalThld}; //outputVoidMicrochannels.isEmpty() ? Double.NaN : thld // min threshold was otsu of otsu when there are void channels
+        return new double[]{minThreshold, globalThld}; 
     }
     protected static double getGlobalOtsuThreshold(Stream<StructureObject> parent, int structureIdx) {
         Map<Image, ImageMask> imageMapMask = parent.collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 

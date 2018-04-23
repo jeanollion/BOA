@@ -85,9 +85,9 @@ public class TestProcessBacteriaPhase {
         //String dbName = "WT_150616";
         //String dbName = "MutT_150402";
         //String dbName = "TestThomasRawStacks";
-        int field = 15;
-        int microChannel =11;
-        int[] time =new int[]{908, 908}; //22
+        int field = 26;
+        int microChannel =1;
+        int[] time =new int[]{0, 908}; //22
         //setMask=true;
         //thld = 776;
         

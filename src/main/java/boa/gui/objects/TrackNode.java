@@ -101,7 +101,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
             if (getTrack()==null || getTrack().size()<=1) children=new ArrayList<>(0);
             else {
                 children = root.getRemainingTracksPerFrame().stream()
-                    .filter(th->th.getFrame()>trackHead.getFrame())
+                    .filter(th->th.getFrame()>trackHead.getFrame()) 
                     .filter(th->getTrack().stream().anyMatch(s->s.getId().equals(th.getPreviousId())))
                     .map(th-> new TrackNode(this, root, th))
                     .collect(Collectors.toList());

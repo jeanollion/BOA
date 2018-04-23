@@ -250,6 +250,7 @@ public class Processor {
                 ps.segmentAndTrack(structureIdx, parentTrack);
                 logger.debug("ps {} executed on track: {}, structure: {}", ps.getClass(), parentTrack.get(0), structureIdx);
             } catch(Exception e) {
+                parentTrack.forEach(p -> p.setChildren(Collections.EMPTY_LIST, structureIdx)); // remove segmented objects if present to avoid saving them in DAO
                 throw e;
             } finally {
                 parentTrack.stream().map((p) -> {
@@ -315,7 +316,7 @@ public class Processor {
             int allObCount = allParentTracks.values().stream().mapToInt(t->t.size()).sum();
             // measurements on objects
             dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->!m.callOnlyOnTrackHeads()).forEach(m-> {
-                if (pcb!=null) pcb.log("Executing Measurement: "+m.getClass().getSimpleName()+"on #"+allObCount+" objects");
+                if (pcb!=null) pcb.log("Executing Measurement: "+m.getClass().getSimpleName()+" on #"+allObCount+" objects");
                 ThreadRunner.exexcuteAndThrowErrors(StreamConcatenation.concat((Stream<StructureObject>[])allParentTracks.values().stream().map(l->l.parallelStream()).toArray(s->new Stream[s])), o->m.performMeasurement(o));
             });
             if (!containsObjects && allObCount>0) containsObjects = e.getValue().stream().filter(m->!m.callOnlyOnTrackHeads()).findAny().orElse(null)!=null;

@@ -433,6 +433,7 @@ public abstract class ImageWindowManager<I, U, V> {
     public ImageObjectInterface getCurrentImageObjectInterface() {
         I current = getDisplayer().getCurrentImage();
         if (current!=null) {
+            RegisteredImageType type = this.getRegisterType(current);
             Image im = getDisplayer().getImage(current);
             if (im!=null) {
                 return getImageObjectInterface(im);

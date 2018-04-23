@@ -104,7 +104,7 @@ public class TreeTransferHandler extends TransferHandler {
                 return false;
             }
         }
-        logger.debug("drop:  to {}", dest.getLastPathComponent() );
+        //logger.debug("drop:  to {}", dest.getLastPathComponent() );
         return true;
     }
   
@@ -207,7 +207,7 @@ public class TreeTransferHandler extends TransferHandler {
         }
         // Add data to model.
         for(int i = 0; i < nodes.length; i++) {
-            logger.debug("drop: {} to {} @ {}", nodes[i], parent, index);
+            //logger.debug("drop: {} to {} @ {}", nodes[i], parent, index);
             model.insertNodeInto(nodes[i], parent, index++);
         }
         return true;

@@ -72,10 +72,7 @@ public class BackgroundThresholder implements SimpleThresholder {
         //return BackgroundThresholder.runSimpleThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
         return runSimpleThresholder(input , mask);
     }
-    public static double runThresholderHisto(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
-        Histogram histo = input.getHisto256(mask, null);
-        return BackgroundThresholder.runThresholder(histo, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
-    }
+    
     public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double firstValue) {
         return runThresholder(input,mask, sigmaFactor, lastSigmaFactor, iterations, firstValue, null);
     }
@@ -121,10 +118,17 @@ public class BackgroundThresholder implements SimpleThresholder {
         //logger.debug("background thlder: {} ms: {}, first value: {}", Math.min(firstValue, lastThreshold), meanSigma, firstValue);
         return Math.min(firstValue, lastThreshold);
     }
+    /*
+    public static double runThresholderHisto(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
+        Histogram histo = input.getHisto256(mask, null);
+        return BackgroundThresholder.runThresholder(histo, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
+    }
+    
     public static double runThresholder(Histogram histo, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
         double thld = getHistogramIdx(histo.data, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
         return histo.getValueFromIdx(thld);
     }
+    // TODO TEST !!! 
     private static double getHistogramIdx(int[] histogram, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
         int lastThreshold = 255;
@@ -149,12 +153,12 @@ public class BackgroundThresholder implements SimpleThresholder {
                 }
             }
             int newThreshold = i==iterations-1 ? (int)(mean + lastSigmaFactor * sigma+0.5) : (int)(mean + sigmaFactor * sigma+0.5);
-            //logger.debug("Kappa Sigma Thresholder: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);
+            //logger.debug("Kappa Sigma Thresholder HISTO: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);
             if (newThreshold == lastThreshold) break;
             else lastThreshold = newThreshold;
         }
         return mean + lastSigmaFactor * sigma;
-    }
+    }*/
     
     
     public Parameter[] getParameters() {

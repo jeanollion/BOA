@@ -349,6 +349,29 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         return res;
     }
     
-    
+    @Override
+    protected double[] getGlobalMinAndGlobalThld(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
+        if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
+        // 1) get global otsu thld for images with foreground
+        double globalThld = getGlobalOtsuThreshold(parentTrack.stream().filter(p->!voidMC.contains(p)), structureIdx);
+        // 4) estimate a minimal threshold : middle point between mean value under global threshold and global threshold
+        double[] sum = new double[3];
+        double thld = globalThld;
+        for (StructureObject p : parentTrack) {
+            Image im = p.getPreFilteredImage(structureIdx);
+            ImageMask.loop(p.getMask(), (x, y, z)-> {
+                double v = im.getPixel(x, y, z);
+                if (v<thld) {
+                    sum[0]+=v;
+                    sum[1]++;
+                }
+            });
+        }
+        double mean = sum[0]/sum[1];
+        double minThreshold = (mean+globalThld)/2.0;
+        logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), minThreshold, globalThld);
+
+        return new double[]{minThreshold, globalThld}; 
+    }
     
 }

@@ -195,14 +195,14 @@ public class Histogram {
             }
         }
     }
-    public double[] getQuantiles(double... percent) {
+    public double[] getQuantiles(double... quantile) {
         double binSize = getBinSize();
         int gcount = 0;
         for (int i : data) gcount += i;
-        double[] res = new double[percent.length];
+        double[] res = new double[quantile.length];
         for (int i = 0; i<res.length; ++i) {
             int count = gcount;
-            double limit = count * (1-percent[i]); // 1- ?
+            double limit = count * (1-quantile[i]); // 1- ?
             if (limit >= count) {
                 res[i] = minAndMax[0];
                 continue;

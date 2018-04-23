@@ -91,9 +91,9 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ip.setDisplayRange(displayRange[0], displayRange[1]);
         //logger.debug("show image:w={}, h={}, disp: {}", ip.getWidth(), ip.getHeight(), displayRange);
         if (!ip.isVisible()) ip.show();
-        if (displayRange.length>=3) zoom(ip, displayRange[2]);
-        else zoom(ip, ImageDisplayer.zoomMagnitude);
-        addMouseWheelListener(image, null); // after zoom is set so that call back is not called on whole image
+        Runnable afterZoom = () -> addMouseWheelListener(image, null); // after zoom is set so that call back is not called on whole image
+        if (displayRange.length>=3) zoom(ip, displayRange[2], afterZoom);
+        else zoom(ip, ImageDisplayer.zoomMagnitude, afterZoom);
         ImageWindowManagerFactory.getImageManager().addLocalZoom(ip.getCanvas());
         return ip;
     }
@@ -130,7 +130,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         return displayedImages.get(image)!=null && displayedImages.get(image).getCanvas()==null;
     }
     
-    private static void zoom(ImagePlus image, double magnitude) {
+    private static void zoom(ImagePlus image, double magnitude, Runnable runAfterZoom) {
         DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
 
             @Override
@@ -138,7 +138,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 ImageCanvas ic = image.getCanvas();
                 if (ic==null) return "";
                 if (ic.getMagnification()==magnitude) return "";
-                try {Thread.sleep(500);} // TODO method that indicated if displayed ? 
+                try {Thread.sleep(500);} // TODO method that indicated if image is already displayed ? 
                 catch(Exception e) {}
                 ic.zoom100Percent();
                 //IJ.runPlugIn("ij.plugin.Zoom", null);
@@ -152,11 +152,12 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                     }
                 }
                 image.updateAndRepaintWindow();
+                if (runAfterZoom!=null) runAfterZoom.run();
                 return "";
             }
         };
-        t.run(0);
-        //DefaultWorker w = DefaultWorker.execute(t, 1, null);
+        //t.run(0);
+        DefaultWorker w = DefaultWorker.execute(t, 1, null);
     }
     
     @Override public void addMouseWheelListener(final Image image, Predicate<BoundingBox> callBack) {
@@ -254,13 +255,13 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     
     @Override public Image getImage(ImagePlus image) {
         if (image==null) return null;
-        Image im = displayedImagesInv.get(image);
-        if (im==null) {
+        return displayedImagesInv.get(image);
+        /*if (im==null) {
             im= IJImageWrapper.wrap(image);
             displayedImagesInv.put(image, im);
             displayedImages.put(im, image);
         }
-        return im;
+        return im;*/
     }
     
     

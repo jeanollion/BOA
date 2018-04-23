@@ -48,7 +48,7 @@ public class TestProcessBacteria {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        int field = 0;
+        int field = 26;
         int microChannel =0;
         int time =0;
         

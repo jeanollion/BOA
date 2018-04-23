@@ -37,7 +37,7 @@ public class ListTransferHandler extends TransferHandler {
     /**
      * We only support importing strings.
      */
-    public boolean canImport(TransferHandler.TransferSupport info) {
+    @Override public boolean canImport(TransferHandler.TransferSupport info) {
         // Check for String flavor
         if (!info.isDataFlavorSupported(DataFlavor.stringFlavor)) {
             logger.debug("cannot import: {}", info);
@@ -50,7 +50,7 @@ public class ListTransferHandler extends TransferHandler {
      * Bundle up the selected items in a single list for export.
      * Each line is separated by a newline.
      */
-    protected Transferable createTransferable(JComponent c) {
+    @Override protected Transferable createTransferable(JComponent c) {
         JList list = (JList)c;
         indices = list.getSelectedIndices();
         Object[] values = list.getSelectedValues();
@@ -71,16 +71,16 @@ public class ListTransferHandler extends TransferHandler {
     /**
      * We support both copy and move actions.
      */
-    public int getSourceActions(JComponent c) {
+    @Override public int getSourceActions(JComponent c) {
         return TransferHandler.COPY_OR_MOVE;
     }
     
     /**
      * Perform the actual import.  This demo only supports drag and drop.
      */
-    public boolean importData(TransferHandler.TransferSupport info) {
+    @Override public boolean importData(TransferHandler.TransferSupport info) {
         if (!info.isDrop()) {
-            logger.debug("is not drop: {}", info);
+            //logger.debug("is not drop: {}", info);
             return false;
         }
 
@@ -128,7 +128,7 @@ public class ListTransferHandler extends TransferHandler {
     /**
      * Remove the items moved from the list.
      */
-    protected void exportDone(JComponent c, Transferable data, int action) {
+    @Override protected void exportDone(JComponent c, Transferable data, int action) {
         JList source = (JList)c;
         DefaultListModel listModel  = (DefaultListModel)source.getModel();
 

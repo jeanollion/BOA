@@ -592,9 +592,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         Image image=null;
         if (i==null) {
             Object im = iwm.getDisplayer().getCurrentImage();
-            if (im!=null) image = iwm.getDisplayer().getImage(im);
-            if (image==null) return;
-            else i = iwm.getImageObjectInterface(image);
+            if (im!=null) {
+                image = iwm.getDisplayer().getImage(im);
+                if (image==null) return;
+                else i = iwm.getImageObjectInterface(image);
+            }
         }
         if (image==null) {
             return; // todo -> actions on all images?
