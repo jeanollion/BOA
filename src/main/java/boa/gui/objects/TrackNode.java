@@ -45,6 +45,7 @@ import javax.swing.tree.TreeNode;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -57,14 +58,10 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     RootTrackNode root;
     List<TrackNode> children;
     Boolean containsErrors;
-    public TrackNode(TrackNodeInterface parent, RootTrackNode root, StructureObject trackHead) {
+    public TrackNode(TrackNodeInterface parent, RootTrackNode root, StructureObject trackhead) {
         this.parent=parent;
-        this.trackHead=trackHead;
+        this.trackHead=trackhead;
         this.root=root;
-    }
-    public TrackNode(TrackNodeInterface parent, RootTrackNode root, StructureObject trackHead, boolean containsErrors) {
-        this(parent, root, trackHead);
-        this.containsErrors = containsErrors;
     }
 
     public StructureObject getTrackHead() {
@@ -99,50 +96,25 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         return containsErrors;
     }
     
-    public List<TrackNode> getChildren() {
+    @Override public List<TrackNode> getChildren() {
         if (children==null) {
-            if (getTrack()==null || getTrack().size()<=1) children=new ArrayList<TrackNode>(0);
+            if (getTrack()==null || getTrack().size()<=1) children=new ArrayList<>(0);
             else {
-                children=new ArrayList<>();
-                //Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeadsPerFrame().subMap(track.get(1).getTimePoint(), true, track.get(track.size()-1).getTimePoint(), true).entrySet().iterator();
-                Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeadsPerFrame().entrySet().iterator();
-                //logger.trace("looking for children for node: {} timePoint left: {} timePoint right:{}", toString(), track.get(1).getTimePoint(), track.get(track.size()-1).getTimePoint());
-                int leftLimit = track.get(1).getFrame();
-                int rightLimit = track.get(track.size()-1).getFrame();
-                while (it.hasNext()) {
-                    Entry<Integer, List<StructureObject>> entry = it.next();
-                    if (entry.getKey()<leftLimit) continue;
-                    if (entry.getKey()>=rightLimit) break;
-                    Iterator<StructureObject> subIt = entry.getValue().iterator();
-                    while (subIt.hasNext()) {
-                        StructureObject o = subIt.next();
-                        if (trackContainscontainsId(o.getPrevious())) {
-                            children.add(new TrackNode(this, root, o));
-                            subIt.remove();
-                        }
-                        
-                        //logger.trace("looking for structureObject: {} in track of node: {} found? {}", o, toString(), trackContainscontainsId(o.getPrevious()));
-                    }
-                    if (entry.getValue().isEmpty()) {
-                        it.remove();
-                    }
-                }
+                logger.debug("getChildren for: {}, remaining: {}", track.get(0), root.getRemainingTracksPerFrame().size());
+                children = root.getRemainingTracksPerFrame().stream()
+                    .filter(th->th.getFrame()>trackHead.getFrame())
+                    .filter(th->getTrack().stream().anyMatch(s->s.getId().equals(th.getPreviousId())))
+                    .map(th-> new TrackNode(this, root, th))
+                    .collect(Collectors.toList());
+                root.getRemainingTracksPerFrame().removeAll(children.stream().map(tn ->tn.trackHead).collect(Collectors.toSet()));
             }
-            //logger.trace("get children: {} number of children: {} remaining distinct timePoint in root: {}", toString(),  children.size(), root.getRemainingTrackHeadsPerFrame().size());
+            //logger.trace("get children: {} number of children: {} remaining distinct timePoint in root: {}", toString(),  children.size(), root.getRemainingTracksPerFrame().size());
         } 
         return children;
     }
-    private boolean trackContainscontainsId(StructureObject object) {
-        for (StructureObject o : getTrack()) if (o.getId().equals(object.getId())) {
-            //if (!o.equals(object)) logger.error("unique instanciation failed for {} and {} ", o, object);
-            return true;
-        }
-        return false;
-    }
     
     public TrackNode getChild(StructureObject trackHead) {
-        for (TrackNode t : getChildren()) if (t.trackHead==trackHead) return t;
-        return null;
+        return getChildren().stream().filter(t->t.trackHead==trackHead).findFirst().orElse(null);
     }
     
     // UIContainer implementation
@@ -158,32 +130,32 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getFrame()+" length: "+(track!=null?track.size():".........")+(track!=null && tl!=track.size() ? " (gaps: "+(tl-track.size())+")" : ""); 
     }
     
-    public TrackNode getChildAt(int childIndex) {
+    @Override public TrackNode getChildAt(int childIndex) {
         return getChildren().get(childIndex);
     }
 
-    public int getChildCount() {
+    @Override public int getChildCount() {
         return getChildren().size();
     }
 
-    public TrackNodeInterface getParent() {
+    @Override public TrackNodeInterface getParent() {
         return parent;
     }
 
-    public int getIndex(TreeNode node) {
+    @Override public int getIndex(TreeNode node) {
         return getChildren().indexOf(node);
     }
 
-    public boolean getAllowsChildren() {
+    @Override public boolean getAllowsChildren() {
         return true;
     }
 
-    public boolean isLeaf() {
+    @Override public boolean isLeaf() {
         if (track==null && getParent() instanceof RootTrackNode && root.generator.getExperiment().getPathToRoot(root.structureIdx).length==1) return false; // Lazy loading only for 1st structure after root
         return getChildCount()==0;
     }
 
-    public Enumeration children() {
+    @Override public Enumeration children() {
         return Collections.enumeration(getChildren());
     }
     /*
@@ -196,27 +168,27 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     }
     */
     // mutable tree node interface
-    public void insert(MutableTreeNode child, int index) {
+    @Override public void insert(MutableTreeNode child, int index) {
         getChildren().add(index, (TrackNode)child);
     }
 
-    public void remove(int index) {
+    @Override public void remove(int index) {
         getChildren().remove(index);
     }
 
-    public void remove(MutableTreeNode node) {
+    @Override public void remove(MutableTreeNode node) {
         getChildren().remove(node);
     }
 
-    public void setUserObject(Object object) {
+    @Override public void setUserObject(Object object) {
         
     }
 
-    public void removeFromParent() {
+    @Override public void removeFromParent() {
         parent.remove(this);
     }
 
-    public void setParent(MutableTreeNode newParent) {
+    @Override public void setParent(MutableTreeNode newParent) {
         if (newParent==null) parent = null;
         else parent=(TrackNodeInterface)newParent;
     }

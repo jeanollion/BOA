@@ -208,7 +208,7 @@ public class WatershedTransform {
         Score score = generateScore();
         List<Voxel> nextProp  = new ArrayList<>(neigh.getSize());
         Set<Integer> surroundingLabels = fusionCriterion==null || fusionCriterion instanceof DefaultFusionCriterion ? null : new HashSet<>(neigh.getSize());
-        logger.debug("fusion crit: {} surr. label null ? {}", fusionCriterion==null ? "null" : fusionCriterion.getClass(), surroundingLabels==null);
+        //logger.debug("fusion crit: {} surr. label null ? {}", fusionCriterion==null ? "null" : fusionCriterion.getClass(), surroundingLabels==null);
         while (!heap.isEmpty()) {
             //Voxel v = heap.poll();
             Voxel v = heap.pollFirst();

@@ -58,8 +58,8 @@ import java.util.stream.Collectors;
  */
 public class RootTrackNode implements TrackNodeInterface, UIContainer {
     TrackTreeGenerator generator;
-    private ArrayList<TrackNode> children;
-    private TreeMap<Integer, List<StructureObject>> remainingTrackHeadsPerFrame;
+    private  List<TrackNode> children;
+    private List<StructureObject> remainingTrackHeads;
     private StructureObject parentTrackHead;
     int structureIdx;
     TrackExperimentNode parent;
@@ -89,7 +89,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     
     public void refresh() {
         children = null;
-        remainingTrackHeadsPerFrame=null;
+        remainingTrackHeads=null;
     }
     
     
@@ -124,77 +124,29 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
         return generator.getObjectDAO(position).getRoots();
     }
     
-    public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeadsPerFrame() {
-        if (remainingTrackHeadsPerFrame==null) {
-            if (getParentTrackHead()==null) return new TreeMap<>();
+    public List<StructureObject> getRemainingTracksPerFrame() {
+        if (remainingTrackHeads==null) {
+            if (getParentTrackHead()==null) return Collections.EMPTY_LIST;
             long t0 = System.currentTimeMillis();
-            List<StructureObject> trackHeads = generator.getObjectDAO(position).getTrackHeads(getParentTrackHead(), structureIdx);
+            remainingTrackHeads = generator.getObjectDAO(position).getTrackHeads(getParentTrackHead(), structureIdx);
             long t1 = System.currentTimeMillis();
-            
-            //List<StructureObject> trackHeads = new ArrayList<StructureObject> (StructureObjectUtils.getAllTracks(getParentTrack(), structureIdx).keySet());
-            //Collections.sort(trackHeads);
-            if (trackHeads.isEmpty()) {
-                remainingTrackHeadsPerFrame = new TreeMap<>();
-                logger.debug("structure: {} no trackHeads found", structureIdx);
-            } else {
-                logger.debug("structure: {} nb trackHeads found: {} in {}ms", structureIdx, trackHeads.size(), t1-t0);
-                /*HashMap<Integer, List<StructureObject>> map  = new HashMap<> (trackHeads.get(trackHeads.size()-1).getFrame()-trackHeads.get(0).getFrame()+1);
-                int currentTimePoint = trackHeads.get(0).getFrame();
-                int lastIdx = 0;
-                int currentIdx = 1;
-                while (currentIdx<trackHeads.size()) {
-                    if (trackHeads.get(currentIdx).getFrame()>currentTimePoint) {
-                        //ArrayList<StructureObject> currentHeads = new ArrayList<StructureObject>(currentIdx-lastIdx);
-                        //for (int i = lastIdx; i<currentIdx; ++i) currentHeads.add(trackHeads.get(i));
-                        map.put(currentTimePoint, new ArrayList<>(trackHeads.subList(lastIdx, currentIdx)));
-                        lastIdx=currentIdx;
-                        currentTimePoint = trackHeads.get(currentIdx).getFrame();
-                    }
-                    currentIdx++;
-                }
-                // put last portion in map:
-                map.put(currentTimePoint, trackHeads.subList(lastIdx, currentIdx));
-                
-                remainingTrackHeadsPerFrame = new TreeMap<>(map);*/
-                remainingTrackHeadsPerFrame = new TreeMap<>(trackHeads.stream().collect(Collectors.groupingBy(tm->tm.getFrame())));
-                /*if (logger.isTraceEnabled()) {
-                    logger.trace("number of trackHeads found: {} number of distinct timePoints: {}", trackHeads.size(), map.size());
-                    for (Entry<Integer, List<StructureObject>> e : remainingTrackHeadsPerFrame.entrySet()) logger.trace("time point: {}, number of trackHeads {}, first: {}, last: {}", e.getKey(), e.getValue().size(), e.getValue().get(0).getTimePoint(), e.getValue().get(e.getValue().size()-1).getTimePoint());
-                }*/
-                
-            }
         }
-        return remainingTrackHeadsPerFrame;
+        return remainingTrackHeads;
     }
-    
+    @Override
     public List<TrackNode> getChildren() {
         if (children==null) {
-            children = new ArrayList<TrackNode>();
-            
-            Iterator<Entry<Integer, List<StructureObject>>> it = getRemainingTrackHeadsPerFrame().entrySet().iterator();
-            //logger.debug("get track nodes from root: remaining: {}",remainingTrackHeadsPerFrame.size());
-            while (it.hasNext()) {
-                Entry<Integer, List<StructureObject>> entry = it.next();
-                Iterator<StructureObject> subIt = entry.getValue().iterator();
-                while (subIt.hasNext()) {
-                    StructureObject o = subIt.next();
-                    if (o.getPrevious()==null) {
-                        children.add(new TrackNode(this, this, o));
-                        subIt.remove();
-                    }
-                }
-                if (entry.getValue().isEmpty()) {
-                    it.remove();
-                }
-            }
-            //logger.debug("get track nodes from root: {}, remaining: {}", children.size(), remainingTrackHeadsPerFrame.size());
+            children = getRemainingTracksPerFrame().stream()
+                .filter(th->th.getPrevious()==null)
+                .map(th-> new TrackNode(this, this, th))
+                .collect(Collectors.toList());
+            getRemainingTracksPerFrame().removeAll(children.stream().map(tn ->tn.trackHead).collect(Collectors.toSet()));
         }
         return children;
     }
     
     public TrackNode getChild(StructureObject trackHead) {
-        for (TrackNode t : getChildren()) if (t.trackHead==trackHead) return t;
-        return null;
+        return getChildren().stream().filter(t->t.trackHead==trackHead).findFirst().orElse(null);
     }
     
     // TreeNode implementation
@@ -202,27 +154,27 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
         return (parent!=null?position+ " (#"+generator.getExperiment().getPositionIdx(position)+") :: ": "")+(structureIdx>=0? generator.getExperiment().getStructure(structureIdx).getName():"Root");
     }
     
-    public TrackNode getChildAt(int childIndex) {
+    @Override public TrackNode getChildAt(int childIndex) {
         return getChildren().get(childIndex);
     }
 
-    public int getChildCount() {
+    @Override public int getChildCount() {
         return getChildren().size();
     }
 
-    public TreeNode getParent() {
+    @Override public TreeNode getParent() {
         return parent;
     }
 
-    public int getIndex(TreeNode node) {
+    @Override public int getIndex(TreeNode node) {
         return getChildren().indexOf(node);
     }
 
-    public boolean getAllowsChildren() {
+    @Override public boolean getAllowsChildren() {
         return true;
     }
 
-    public boolean isLeaf() {
+    @Override public boolean isLeaf() {
         if (children==null) return false; // lazy-loading
         return getChildCount()==0;
     }
@@ -233,27 +185,27 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     }
     
     // mutable tree node interface
-    public void insert(MutableTreeNode child, int index) {
+    @Override public void insert(MutableTreeNode child, int index) {
         getChildren().add(index, (TrackNode)child);
     }
 
-    public void remove(int index) {
+    @Override public void remove(int index) {
         getChildren().remove(index);
     }
 
-    public void remove(MutableTreeNode node) {
+    @Override public void remove(MutableTreeNode node) {
         getChildren().remove(node);
     }
 
-    public void setUserObject(Object object) {
+    @Override public void setUserObject(Object object) {
         
     }
 
-    public void removeFromParent() {
+    @Override public void removeFromParent() {
         parent.getChildren().remove(this);
     }
 
-    public void setParent(MutableTreeNode newParent) {
+    @Override public void setParent(MutableTreeNode newParent) {
         if (newParent==null) parent = null;
         else parent=(TrackExperimentNode)newParent;
     }

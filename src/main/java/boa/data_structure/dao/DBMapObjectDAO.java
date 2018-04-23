@@ -563,20 +563,11 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public List<StructureObject> getTrack(StructureObject trackHead) {
         Map<String, StructureObject> allObjects = getChildren(new Pair(trackHead.getParentTrackHeadId(), trackHead.getStructureIdx()));
-        List<StructureObject> list = new ArrayList<>();
-        for (StructureObject o : allObjects.values()) if (o.getTrackHeadId().equals(trackHead.getId())) list.add(o);
-        Collections.sort(list, (o1, o2)-> Integer.compare(o1.getFrame(), o2.getFrame()));
+        return allObjects.values().stream()
+                .filter(o->o.getTrackHeadId().equals(trackHead.getId()))
+                .sorted((o1, o2)-> Integer.compare(o1.getFrame(), o2.getFrame()))
+                .collect(Collectors.toList());
         // TODO: parents may no be set !
-        return list;
-        /*
-        StructureObject o = trackHead;
-        while(o!=null) {
-            if (o.getTrackHead()!=trackHead) break;
-            list.add(o);
-            o = o.getNext();
-        }
-        return list;
-                */
     }
 
     @Override
