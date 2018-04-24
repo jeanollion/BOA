@@ -140,20 +140,17 @@ public class DBMapObjectDAO implements ObjectDAO {
         else {
             synchronized(this) {
                 if (cache.containsKey(key) && allObjectsRetrievedInCache.getOrDefault(key, false)) return cache.get(key);
-                Map<String, StructureObject> objectMap = cache.getAndCreateIfNecessary(key);
                 HTreeMap<String, String> dbm = getDBMap(key);
-                if (!objectMap.isEmpty()) {
+                if (cache.containsKey(key) && !cache.get(key).isEmpty()) {
                     long t0 = System.currentTimeMillis();
-                    Set<String> alreadyInCache = new HashSet<>(objectMap.size());
-                    alreadyInCache.addAll(objectMap.keySet());
-
-                    for (Entry<String, String> e : getEntrySet(dbm)) {
-                        if (!alreadyInCache.contains(e.getKey())) {
-                            StructureObject o = JSONUtils.parse(StructureObject.class, e.getValue());
-                            o.setDAO(this);
-                            objectMap.put(o.getId(), o);
-                        }
-                    }
+                    Map<String, StructureObject> objectMap = cache.get(key);
+                    Map<String, StructureObject> objectMapToAdd = getEntrySet(dbm).parallelStream()
+                            .filter((e) -> (!objectMap.containsKey(e.getKey())))
+                            .map((e) -> JSONUtils.parse(StructureObject.class, e.getValue())).map((o) -> {
+                                o.setDAO(this);
+                                return o;
+                            }).collect(Collectors.toMap(o->o.getId(), o->o));
+                    objectMap.putAll(objectMapToAdd);
                     long t1 = System.currentTimeMillis();
                     //logger.debug("#{} (already: {}) objects from structure: {}, time {}", objectMap.size(), alreadyInCache.size(), key.value, t1-t0);
                 } else {
@@ -162,11 +159,13 @@ public class DBMapObjectDAO implements ObjectDAO {
                         Collection<String> allStrings = getValues(dbm);
                         allStrings.size();
                         long t1 = System.currentTimeMillis();
-                        for (String s : allStrings) {
-                            StructureObject o = JSONUtils.parse(StructureObject.class, s);
-                            o.setDAO(this);
-                            objectMap.put(o.getId(), o);
-                        }
+                        Map<String, StructureObject> objectMap = allStrings.parallelStream()
+                                .map((s) -> JSONUtils.parse(StructureObject.class, s))
+                                .map((o) -> {
+                                    o.setDAO(this);
+                                    return o;
+                                }).collect(Collectors.toMap(o->o.getId(), o->o));
+                        cache.put(key, objectMap);
                         long t2 = System.currentTimeMillis();
                         //logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
                     } catch(IOError|AssertionError|Exception e) {
@@ -178,6 +177,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                 }
                 allObjectsRetrievedInCache.put(key, true);
                 // set prev, next & trackHead
+                Map<String, StructureObject> objectMap = cache.get(key);
                 for (StructureObject o : objectMap.values()) {
                     if (o.getNextId()!=null) o.setNext(objectMap.get(o.getNextId()));
                     if (o.getPreviousId()!=null) o.setPrevious(objectMap.get(o.getPreviousId()));
@@ -237,13 +237,11 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (parentTrack.isEmpty()) return;
         Map<String, StructureObject> children = getChildren(new Pair(parentTrack.get(0).getTrackHeadId(), childStructureIdx));
         logger.debug("setting: {} children to {} parents", children.size(), parentTrack.size());
-        Map<StructureObject, List<StructureObject>> byParent = StructureObjectUtils.splitByParent(children.values());
-        for (StructureObject parent : parentTrack) {
-            List<StructureObject> c = byParent.get(parent);
-            if (c==null) continue;
+        StructureObjectUtils.splitByParent(children.values()).forEach((parent, c) -> {
+            if (c==null) return;
             Collections.sort(c);
             parent.setChildren(c, childStructureIdx);
-        }
+        });
     }
     
     @Override
