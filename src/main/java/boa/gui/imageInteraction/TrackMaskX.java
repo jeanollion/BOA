@@ -70,7 +70,8 @@ public class TrackMaskX extends TrackMask {
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
         long t1 = System.currentTimeMillis();
-        trackObjects = IntStream.range(0, trackOffset.length).parallel().mapToObj(i-> new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i])).peek(m->m.getObjects()).toArray(l->new StructureObjectMask[l]);
+        StructureObjectUtils.setAllChildren(parentTrack, childStructureIdx);
+        trackObjects = IntStream.range(0, trackOffset.length).mapToObj(i-> new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i])).peek(m->m.getObjects()).toArray(l->new StructureObjectMask[l]);
         long t2 = System.currentTimeMillis();
         logger.debug("TrackMaskX creation: offset: {}, objects: {}", t1-t0, t2-t1);
     }

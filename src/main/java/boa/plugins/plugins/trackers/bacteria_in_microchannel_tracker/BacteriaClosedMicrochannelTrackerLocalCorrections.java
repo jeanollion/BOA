@@ -284,12 +284,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (debugCorr) Utils.plotProfile("Error Rate per Frame (sliding mean on 7 frames)", errorCountMean.stream().mapToDouble(d->d.doubleValue()).toArray());
             int[] lowErrorFrames = IntStream.range(minF+1, maxFExcluded).filter(i -> errorCountMean.get(i)<=maxErrorRate).toArray();
             List<FrameRange> lowErrorRanges = FrameRange.getContinuousRangesFromFrameIndices(lowErrorFrames); // correction is limited to thoses ranges
+            
             // also split ranges where no error are found (for multithreading) in order to have independent correction ranges
             int[] lowAndNonNullErrorFrames = IntStream.range(minF+1, maxFExcluded).filter(i -> errorCountMean.get(i)>0 && errorCountMean.get(i)<=maxErrorRate).toArray();
             List<FrameRange> subLowErrorRanges = FrameRange.getContinuousRangesFromFrameIndices(lowAndNonNullErrorFrames); 
             if (subLowErrorRanges.size()>lowErrorRanges.size()) {
                 subLowErrorRanges = subLowErrorRanges.stream().collect(Collectors.groupingBy(r->FrameRange.getContainingRange(lowErrorRanges, r)))
-                        .entrySet().stream().filter(e->e.getKey().size()>3).peek(e->FrameRange.ensureContinuousRanges(e.getValue(), e.getKey()))
+                        .entrySet().stream().peek(e->FrameRange.ensureContinuousRanges(e.getValue(), e.getKey()))
                         .flatMap(e->e.getValue().stream()).sorted().collect(Collectors.toList());
             }
             if (debugCorr) logger.debug("Correction ranges: {}", subLowErrorRanges);
@@ -299,7 +300,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (correctionStepLimit<=1) return;
             }
             
-            parallele(subLowErrorRanges.stream(), multithreaded).forEach(range -> {
+            parallele(subLowErrorRanges.stream(), multithreaded).forEach(range -> { // TODO Solve concurent exeption on population between restore & getNext (getLineageSR)
                 List<FrameRange> corrRanges = new ArrayList<>();
                 List<FrameRange> subCorrRanges = new ArrayList<>(1);
                 int idxMax=0;
@@ -711,8 +712,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                             double nextSize = 0;
                             bucket.clear();
                             Set<TrackAttribute> n = ta.addNext(bucket);
-                            for (TrackAttribute t: n) if (t.touchEndOfChannel) {n.clear();break;} // do not take into acount if touches end of channel
-                            if ((ta.division && n.size()>1) || (!ta.division && n.size()==1)) {
+                            if (!n.stream().anyMatch(t->t.touchEndOfChannel) && ((ta.division && n.size()>1) || (!ta.division && n.size()==1))) {
                                 for (TrackAttribute t : n) nextSize+=t.getSize();
                                 res.add(nextSize/ta.getSize()); 
                             }
@@ -739,7 +739,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                                 double nextSize = 0;
                                 bucket.clear();
                                 ta.addNext(bucket);
-                                if (Utils.getFirst(bucket, t->t.touchEndOfChannel)==null && (ta.division && bucket.size()>1) || (!ta.division && bucket.size()==1)) { // do not take into acount if touches end of channel // nor take into acount weird divisions
+                                if (Utils.getFirst(bucket, t->t.touchEndOfChannel)==null && (ta.division && bucket.size()>1) || (!ta.division && bucket.size()<2)) { // do not take into acount if touches end of channel // nor take into acount weird divisions
                                     for (TrackAttribute t : bucket) nextSize+=t.getSize();
                                     res.add(nextSize/ta.getSize()); 
                                     nextTa.addAll(bucket);
@@ -821,11 +821,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (maxFExcluded-1<=frame) return res!=null ? res : Collections.EMPTY_SET;
             if (division) {
                 if (res==null) res = new HashSet<>();
+                if (populations.get(frame+1)==null) return res;
                 for (Region o : getObjects(frame+1)) {
                     TrackAttribute ta = objectAttributeMap.get(o);
                     if (ta!=null && ta.prev==this) res.add(ta);
                 }
-                res.add(next);
+                if (next!=null) res.add(next);
                 return res;
             } else if (next!=null) {
                 if (res==null) res = new HashSet<>();
