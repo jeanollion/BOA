@@ -183,7 +183,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                     if (o.getPreviousId()!=null) o.setPrevious(objectMap.get(o.getPreviousId()));
                     if (o.getTrackHeadIdIfPresent()!=null) o.setTrackHead(objectMap.get(o.getTrackHeadIdIfPresent()), false);
                 }
-                // set parents ? 
+                // set to parents ? 
                 if (key.value>=0) {
                     int parentStructureIdx = mDAO.getExperiment().getStructure(key.value).getParentStructure();
                     Map<String, StructureObject> parents = this.getCacheContaining(key.key, parentStructureIdx);
