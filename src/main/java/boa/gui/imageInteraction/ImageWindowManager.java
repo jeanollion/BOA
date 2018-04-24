@@ -248,7 +248,7 @@ public abstract class ImageWindowManager<I, U, V> {
     public void addImage(Image image, ImageObjectInterface i, int displayedStructureIdx, boolean displayImage) {
         if (image==null) return;
         //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
-        logger.debug("add image: {} (hash: {}), IOI exists: {} ({})", image.getName(), image.hashCode(), imageObjectInterfaces.containsKey(i.getKey()), imageObjectInterfaces.containsValue(i));
+        logger.debug("adding image: {} (hash: {}), IOI exists: {} ({})", image.getName(), image.hashCode(), imageObjectInterfaces.containsKey(i.getKey()), imageObjectInterfaces.containsValue(i));
         if (!imageObjectInterfaces.containsValue(i)) {
             //throw new RuntimeException("image object interface should be created through the manager");
             imageObjectInterfaces.put(i.getKey(), i);
@@ -263,7 +263,9 @@ public abstract class ImageWindowManager<I, U, V> {
     }
     
     public void displayImage(Image image, ImageObjectInterface i) {
+        long t0 = System.currentTimeMillis();
         displayer.showImage(image);
+        long t1 = System.currentTimeMillis();
         displayedInteractiveImages.add(image);
         addMouseListener(image);
         addWindowClosedListener(image, e-> {
@@ -275,8 +277,12 @@ public abstract class ImageWindowManager<I, U, V> {
             displayedInteractiveImages.remove(image);
             return null;
         });
+        long t2 = System.currentTimeMillis();
         GUI.updateRoiDisplayForSelections(image, i);
+        long t3 = System.currentTimeMillis();
         closeLastActiveImages(displayedImageNumber);
+        long t4 = System.currentTimeMillis();
+        logger.debug("display image: show: {} ms, add list: {}, update ROI: {}, close last active image: {}", t1-t0, t2-t1, t3-t2, t4-t3);
     }
     public String getPositionOfInputImage(I image) {
         String pos = Utils.getOneKey(displayedRawInputFrames, image);
@@ -361,7 +367,8 @@ public abstract class ImageWindowManager<I, U, V> {
             imageObjectInterfaces.put(i.getKey(), i);
             trackHeadTrackMap.getAndCreateIfNecessary(parentTrack.get(0)).add(parentTrack);
             i.setGUIMode(GUI.hasInstance());
-            logger.debug("create IOI: {} key: {}, time:{}ms", i.hashCode(), i.getKey().hashCode(), t1-t0);
+            long t2 = System.currentTimeMillis();
+            logger.debug("create IOI: {} key: {}, creation time: {} ms + {} ms", i.hashCode(), i.getKey().hashCode(), t1-t0, t2-t1);
         } 
         return i;
     }

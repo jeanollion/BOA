@@ -44,8 +44,7 @@ import boa.utils.geom.Point;
  */
 public class BacteriaPhaseMeasurements implements Measurement {
     protected StructureParameter bacteria = new StructureParameter("Bacteria Structure", 1, false, false);
-    BooleanParameter computeSpine = new BooleanParameter("Compute Spine Length & Width", true);
-    protected Parameter[] parameters = new Parameter[]{bacteria, computeSpine};
+    protected Parameter[] parameters = new Parameter[]{bacteria};
     
     public BacteriaPhaseMeasurements(){}
     
@@ -69,10 +68,7 @@ public class BacteriaPhaseMeasurements implements Measurement {
         res.add(new MeasurementKeyObject("BacteriaLength", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaArea", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaWidth", structureIdx));
-        if (computeSpine.getSelected()) {
-            res.add(new MeasurementKeyObject("BacteriaSpineLength", structureIdx));
-            res.add(new MeasurementKeyObject("BacteriaSpineWidth", structureIdx));
-        }
+
         // from tracking
         res.add(new MeasurementKeyObject(StructureObject.trackErrorPrev, structureIdx));
         res.add(new MeasurementKeyObject(StructureObject.trackErrorNext, structureIdx));
@@ -110,13 +106,6 @@ public class BacteriaPhaseMeasurements implements Measurement {
         else m.setValue("SizeRatio", null); // remove
         if (Boolean.TRUE.equals(object.getAttribute("TrackErrorSizeRatio"))) m.setValue("TrackErrorSizeRatio", true);
         else m.setValue("TrackErrorSizeRatio", null); // remove
-        if (computeSpine.getSelected()) {
-            double[] lw = GeometricalMeasurements.getSpineLengthAndWidth(bactObject);
-            if (lw!=null) {
-                m.setValue("BacteriaSpineLength", scale*lw[0]);
-                m.setValue("BacteriaSpineWidth", scale*lw[1]);
-            }
-        }
     }
     
     @Override

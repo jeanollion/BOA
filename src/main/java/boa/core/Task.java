@@ -578,10 +578,17 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         this.publish("Errors: "+this.errors.size()+ " For JOB: "+this.toString());
         for (Pair<String, ? extends Throwable> e : errors) {
             publish("Error @"+e.key+(e.value==null?"null":e.value.toString()));
-            for (StackTraceElement s : e.value.getStackTrace()) {
-                String ss = s.toString();
-                if (toPrint(ss)) publish(s.toString());
-            }
+            publishError(e.value);
+        }
+    }
+    private void publishError(Throwable t) {
+        for (StackTraceElement s : t.getStackTrace()) {
+            String ss = s.toString();
+            if (toPrint(ss)) publish(s.toString());
+        }
+        if (t.getCause()!=null) {
+            publish("caused By");
+            publishError(t.getCause());
         }
     }
     // Progress Callback
@@ -617,15 +624,16 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (ui instanceof MultiUserInterface) ((MultiUserInterface)ui).applyToLogUserInterfaces(setLF);
             else if (ui instanceof LogUserInterface) setLF.accept((LogUserInterface)ui);
             tasks.get(i).runTask();
+            tasks.get(i).done();
+            if (ui!=null) ui.setRunning(i<tasks.size()-1);
             if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
-            tasks.get(i).publish("Job done");
-            if (tasks.size()>1) tasks.get(i).publishErrors();
             tasks.get(i).db=null;
             if (ui instanceof MultiUserInterface) ((MultiUserInterface)ui).applyToLogUserInterfaces(unsetLF);
             else if (ui instanceof LogUserInterface) unsetLF.accept((LogUserInterface)ui);
+            
             return "";
         }, tasks.size()).setEndOfWork(
-                ()->{for (Task t : tasks) t.done(); for (Runnable r : endOfWork) r.run();});
+                ()->{for (Runnable r : endOfWork) r.run();});
     }
     public static void executeTask(Task t, UserInterface ui, Runnable... endOfWork) {
         executeTasks(new ArrayList<Task>(1){{add(t);}}, ui, endOfWork);

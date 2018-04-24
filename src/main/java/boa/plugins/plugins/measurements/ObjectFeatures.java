@@ -77,14 +77,15 @@ public class ObjectFeatures implements Measurement {
         this.preFilters.add(prefilters);
         return this;
     }
+    @Override
     public int getCallStructure() {
         return structure.getParentStructureIdx();
     }
-
+    @Override
     public boolean callOnlyOnTrackHeads() {
         return false;
     }
-
+    @Override
     public List<MeasurementKey> getMeasurementKeys() {
         ArrayList<MeasurementKey> res=  new ArrayList<>(features.getChildCount());
         for (PluginParameter<ObjectFeature> ofp : features.getActivatedChildren()) res.add(new MeasurementKeyObject(((TextParameter)ofp.getAdditionalParameters().get(0)).getValue(), structure.getSelectedIndex()));

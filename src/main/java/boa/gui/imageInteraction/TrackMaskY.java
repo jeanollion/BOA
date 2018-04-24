@@ -41,6 +41,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import boa.utils.Pair;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -56,16 +57,15 @@ public class TrackMaskY extends TrackMask {
         maxParentX = parentTrack.stream().mapToInt(p->p.getBounds().sizeX()).max().getAsInt();
         maxParentZ = parentTrack.stream().mapToInt(p->p.getBounds().sizeZ()).max().getAsInt();
         logger.trace("track mask image object: max parent X-size: {} z-size: {}", maxParentX, maxParentZ);
+        trackOffset =  parentTrack.stream().map(p-> new SimpleBoundingBox(p.getBounds()).resetOffset()).toArray(l -> new BoundingBox[l]);
         int currentOffsetY=0;
         for (int i = 0; i<parentTrack.size(); ++i) {
-            trackOffset[i] = new SimpleBoundingBox(parentTrack.get(i).getBounds()).resetOffset(); 
             if (middleXZ) trackOffset[i].translate(new SimpleOffset((int)((maxParentX-1)/2.0-(trackOffset[i].sizeX()-1)/2.0), currentOffsetY , (int)((maxParentZ-1)/2.0-(trackOffset[i].sizeZ()-1)/2.0))); // Y & Z middle of parent track
             else trackOffset[i].translate(new SimpleOffset(0, currentOffsetY, 0)); // X & Z up of parent track
-            trackObjects[i] = new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i]);
             currentOffsetY+=interval+trackOffset[i].sizeY();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetY);
         }
-        for (StructureObjectMask m : trackObjects) m.getObjects();
+        trackObjects = IntStream.range(0, trackOffset.length).parallel().mapToObj(i-> new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i])).peek(m->m.getObjects()).toArray(l->new StructureObjectMask[l]);
     }
     
     

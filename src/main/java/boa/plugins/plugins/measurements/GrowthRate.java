@@ -21,6 +21,7 @@ package boa.plugins.plugins.measurements;
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
+import boa.configuration.parameters.ConditionalParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
@@ -63,10 +64,22 @@ public class GrowthRate implements Measurement, MultiThreaded {
     protected TextParameter suffix = new TextParameter("Suffix", "", false).setToolTipText("Suffix added to measurement keys");
     protected BooleanParameter residuals = new BooleanParameter("Save Residuals", false);
     protected BooleanParameter intersection = new BooleanParameter("Save Intersection", false);
-    protected Parameter[] parameters = new Parameter[]{structure, feature, suffix, residuals, intersection};
-    public GrowthRate() {}
+    protected BooleanParameter saveFeature = new BooleanParameter("Save Feature", false);
+    protected TextParameter featureKey = new TextParameter("Feature Name", "", false).setToolTipText("Name given to feature in measurement");
+    protected ConditionalParameter saveFeatureCond = new ConditionalParameter(saveFeature).setActionParameters("true", featureKey);
+    protected Parameter[] parameters = new Parameter[]{structure, feature, suffix, saveFeatureCond, residuals, intersection};
+    
+    public GrowthRate() {
+        feature.addListener( p -> {
+            if (suffix.getValue().length()!=0 && featureKey.getValue().length()!=0) return;
+            String n = feature.instanciatePlugin().getDefaultName();
+            if (suffix.getValue().length()==0) suffix.setValue(n);
+            if (featureKey.getValue().length()==0) featureKey.setValue(n);
+        });
+    }
     
     public GrowthRate(int structureIdx) {
+        this();
         structure.setSelectedIndex(structureIdx);
     }
     
@@ -77,6 +90,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
     public GrowthRate setFeature(ObjectFeature f) {
         this.feature.setPlugin(f);
         this.suffix.setValue(f.getDefaultName());
+        this.featureKey.setValue(f.getDefaultName());
         return this;
     }
     
@@ -93,8 +107,10 @@ public class GrowthRate implements Measurement, MultiThreaded {
     public void performMeasurement(StructureObject parentTrackHead) {
         int bIdx = structure.getSelectedIndex();
         String suffix = this.suffix.getValue();
+        String featKey = this.featureKey.getValue();
         boolean res = residuals.getSelected();
         boolean inter = intersection.getSelected();
+        boolean feat = saveFeature.getSelected();
         final ArrayList<ObjectFeatureCore> cores = new ArrayList<>();
         HashMapGetCreate<StructureObject, ObjectFeature> ofMap = new HashMapGetCreate<>(p -> {
             ObjectFeature of = feature.instanciatePlugin().setUp(p, bIdx, p.getObjectPopulation(bIdx));
@@ -104,10 +120,8 @@ public class GrowthRate implements Measurement, MultiThreaded {
         List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
         parentTrack.stream().forEach(p->ofMap.getAndCreateIfNecessary(p));
         long t1 = System.currentTimeMillis();
-        //logger.debug("GR: {} create OF {}, parnet: {}, #children: {}", feature.instanciatePlugin().getDefaultName(), t1-t0, parentTrackHead, StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), bIdx).count());
-        Map<StructureObject, Double> lengthMap = parallele(StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), bIdx), multithread).collect(Collectors.toMap(b->b, b->Math.log(ofMap.get(b.getParent()).performMeasurement(b.getRegion()))));
+        Map<StructureObject, Double> logLengthMap = parallele(StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), bIdx), multithread).collect(Collectors.toMap(b->b, b->Math.log(ofMap.get(b.getParent()).performMeasurement(b.getRegion()))));
         long t2 = System.currentTimeMillis();
-        //logger.debug("GR: {} compute values: {}", feature.instanciatePlugin().getDefaultName(), t2-t1);
         Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
         long t3 = System.currentTimeMillis();
         parallele(bacteriaTracks.values().stream(), multithread).forEach(l-> {
@@ -117,7 +131,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
                 int idx = 0;
                 for (StructureObject b : l) {
                     frame[idx] = b.getCalibratedTimePoint();
-                    length[idx++] = lengthMap!=null ? lengthMap.get(b) : Math.log(ofMap.getAndCreateIfNecessary(b.getParent()).performMeasurement(b.getRegion()));
+                    length[idx++] =   logLengthMap.get(b);
                 }
                 double[] beta = LinearRegression.run(frame, length);
                 double[] residuals = res? LinearRegression.getResiduals(frame, length, beta[0], beta[1]) : null;
@@ -126,6 +140,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
                     b.getMeasurements().setValue("GrowthRate"+suffix, beta[1] );
                     if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, beta[0] );
                     if (res) b.getMeasurements().setValue("GrowthRateResidual"+suffix, residuals[idx++] );
+                    if (feat) b.getMeasurements().setValue(featKey, Math.exp(logLengthMap.get(b)));
                 }
             }
         });

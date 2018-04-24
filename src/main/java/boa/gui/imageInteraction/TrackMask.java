@@ -67,9 +67,6 @@ public abstract class TrackMask extends ImageObjectInterface {
     Map<Image, Predicate<BoundingBox>> imageCallback = new HashMap<>();
     public TrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
         super(parentTrack, childStructureIdx);
-        trackOffset = new BoundingBox[parentTrack.size()];
-        trackObjects = new StructureObjectMask[parentTrack.size()];
-        
     }
     
     @Override public List<StructureObject> getParents() {

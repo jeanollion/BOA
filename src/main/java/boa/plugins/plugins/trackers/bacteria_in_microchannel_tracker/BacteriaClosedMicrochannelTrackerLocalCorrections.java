@@ -527,24 +527,24 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return inputImages!=null ? inputImages.get(frame) : null;
     }
     
-    protected List<Region> getObjects(int timePoint) {
-        if (timePoint<minF || timePoint>=maxFExcluded) return Collections.EMPTY_LIST;
-        if (this.populations.get(timePoint)==null) {
+    protected List<Region> getObjects(int frame) {
+        if (frame<minF || frame>=maxFExcluded) return Collections.EMPTY_LIST;
+        if (this.populations.get(frame)==null) {
             //synchronized(lock) {
-            //    if (this.populations.get(timePoint)==null) {
-                    StructureObject parent = this.parentsByF.get(timePoint);
+            //    if (this.populations.get(frame)==null) {
+                    StructureObject parent = this.parentsByF.get(frame);
                     List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
                     if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
                         if (segment || correction) o.getRegion().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
                         return o.getRegion();
                     }));
-                    else populations.put(timePoint, Collections.EMPTY_LIST); 
-                    //logger.debug("get object @ {}, size: {}", timePoint, populations.get(timePoint].size());
-                    createAttributes(timePoint);
+                    else populations.put(frame, Collections.EMPTY_LIST); 
+                    //logger.debug("get object @ {}, size: {}", frame, populations.get(frame].size());
+                    createAttributes(frame);
             //    }
             //}
         }
-        return populations.get(timePoint);
+        return populations.get(frame);
     }
         
     protected TrackAttribute getAttribute(int frame, int idx) {
@@ -700,24 +700,26 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<Double> res=  new ArrayList<>(sizeRatioFrameNumber);
             TrackAttribute ta = this.prev;
             Set<TrackAttribute> bucket = new HashSet<>(3);
-            WL: while(res.size()<sizeRatioFrameNumber && ta!=null) {
-                if (ta.next==null) {
-                    StructureObject p = parentsByF.get(ta.frame);
-                    logger.error("Prev's NEXT NULL db:{}, position: {}, parent: {}, current: {}: ta with no next: {}, last of channel: {}", p.getDAO().getMasterDAO().getDBName(), p.getDAO().getPositionName(), p, this, ta, ta.idx==populations.get(ta.frame).size()-1);
+            synchronized(lock) { // this function that can go outside processing range
+                WL: while(res.size()<sizeRatioFrameNumber && ta!=null) {
+                    if (ta.next==null) {
+                        StructureObject p = parentsByF.get(ta.frame);
+                        logger.debug("Prev's NEXT NULL db:{}, position: {}, parent: {}, current: {}: ta with no next: {}, last of channel: {}", p.getDAO().getMasterDAO().getDBName(), p.getDAO().getPositionName(), p, this, ta, ta.idx==populations.get(ta.frame).size()-1);
+                    }
+                    if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
+                        if (ta.division || ta.next==null) {
+                            double nextSize = 0;
+                            bucket.clear();
+                            Set<TrackAttribute> n = ta.addNext(bucket);
+                            for (TrackAttribute t: n) if (t.touchEndOfChannel) {n.clear();break;} // do not take into acount if touches end of channel
+                            if ((ta.division && n.size()>1) || (!ta.division && n.size()==1)) {
+                                for (TrackAttribute t : n) nextSize+=t.getSize();
+                                res.add(nextSize/ta.getSize()); 
+                            }
+                        } else if (!ta.next.touchEndOfChannel) res.add(ta.next.getSize()/ta.getSize()); 
+                    }
+                    ta = ta.prev;
                 }
-                if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
-                    if (ta.division || ta.next==null) {
-                        double nextSize = 0;
-                        bucket.clear();
-                        Set<TrackAttribute> n = ta.addNext(bucket);
-                        for (TrackAttribute t: n) if (t.touchEndOfChannel) {n.clear();break;} // do not take into acount if touches end of channel
-                        if ((ta.division && n.size()>1) || (!ta.division && n.size()==1)) {
-                            for (TrackAttribute t : n) nextSize+=t.getSize();
-                            res.add(nextSize/ta.getSize()); 
-                        }
-                    } else if (!ta.next.touchEndOfChannel) res.add(ta.next.getSize()/ta.getSize()); 
-                }
-                ta = ta.prev;
             }
             return res;
         }
@@ -729,28 +731,30 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             Set<TrackAttribute> nextTa = new HashSet<>();
             Set<TrackAttribute> bucket = new HashSet<>(3);
             Set<TrackAttribute> switchTa;
-            WL: while(res.size()<sizeRatioFrameNumber && !curTa.isEmpty()) {
-                for (TrackAttribute ta : curTa) {
-                    if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
-                        if (ta.division || ta.next==null) {
-                            double nextSize = 0;
-                            bucket.clear();
-                            ta.addNext(bucket);
-                            if (Utils.getFirst(bucket, t->t.touchEndOfChannel)==null && (ta.division && bucket.size()>1) || (!ta.division && bucket.size()==1)) { // do not take into acount if touches end of channel // nor take into acount weird divisions
-                                for (TrackAttribute t : bucket) nextSize+=t.getSize();
-                                res.add(nextSize/ta.getSize()); 
-                                nextTa.addAll(bucket);
-                            }
-                        } else if (!ta.next.touchEndOfChannel) {
-                            res.add(ta.next.getSize()/ta.getSize());
-                            nextTa.add(ta.next);
-                        } 
+            synchronized(lock) { // this function that can go outside processing range
+                WL: while(res.size()<sizeRatioFrameNumber && !curTa.isEmpty()) {
+                    for (TrackAttribute ta : curTa) {
+                        if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
+                            if (ta.division || ta.next==null) {
+                                double nextSize = 0;
+                                bucket.clear();
+                                ta.addNext(bucket);
+                                if (Utils.getFirst(bucket, t->t.touchEndOfChannel)==null && (ta.division && bucket.size()>1) || (!ta.division && bucket.size()==1)) { // do not take into acount if touches end of channel // nor take into acount weird divisions
+                                    for (TrackAttribute t : bucket) nextSize+=t.getSize();
+                                    res.add(nextSize/ta.getSize()); 
+                                    nextTa.addAll(bucket);
+                                }
+                            } else if (!ta.next.touchEndOfChannel) {
+                                res.add(ta.next.getSize()/ta.getSize());
+                                nextTa.add(ta.next);
+                            } 
+                        }
                     }
+                    switchTa = curTa;
+                    curTa = nextTa;
+                    nextTa = switchTa;
+                    nextTa.clear();
                 }
-                switchTa = curTa;
-                curTa = nextTa;
-                nextTa = switchTa;
-                nextTa.clear();
             }
             return res;
         }
@@ -1151,13 +1155,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             restore(fMin, fMin+objects.length-1, copy);
         }
         public boolean restore(int fMin, int fMaxIncluded, boolean copy) {
-            for (int f = fMin; f<=fMaxIncluded; ++f) restore(f, false, copy);
-            for (int f = fMin; f<=fMaxIncluded; ++f) { // setLinks AFTER having restored
-                if (f<0 || f>=maxFExcluded) continue;
-                for (Region o : populations.get(f)) {
-                    TrackAttribute curTa = objectAttributeMap.get(o);
-                    if (curTa.prev!=null) curTa.prev = objectAttributeMap.get(curTa.prev.o);
-                    if (curTa.next!=null) curTa.next = objectAttributeMap.get(curTa.next.o);
+            synchronized(lock) { // modification of objectAttibutes & population while processing. 
+                for (int f = fMin; f<=fMaxIncluded; ++f) restore(f, false, copy);
+                for (int f = fMin; f<=fMaxIncluded; ++f) { // setLinks AFTER having restored
+                    if (f<0 || f>=maxFExcluded) continue;
+                    for (Region o : populations.get(f)) {
+                        TrackAttribute curTa = objectAttributeMap.get(o);
+                        if (curTa.prev!=null) curTa.prev = objectAttributeMap.get(curTa.prev.o);
+                        if (curTa.next!=null) curTa.next = objectAttributeMap.get(curTa.next.o);
+                    }
                 }
             }
             return true;
@@ -1165,17 +1171,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         private boolean restore(int f, boolean setLinks, boolean copy) {
             if (f<fMin || f>=fMin+objects.length) return false;
             List<Region> rList = populations.get(f);
-            synchronized(lock) {
-                rList.forEach((o) -> objectAttributeMap.remove(o));
-                rList.clear();
-                rList.addAll(objects[f-fMin]);
-                for (Region o : rList) {
-                    TrackAttribute curTa = copy ? taMap.get(o).duplicate(): taMap.get(o);
-                    objectAttributeMap.put(o, curTa);
-                    if (setLinks) {
-                        if (curTa.prev!=null) curTa.prev = objectAttributeMap.get(curTa.prev.o);
-                        if (curTa.next!=null) curTa.next = objectAttributeMap.get(curTa.next.o);
-                    }
+            rList.forEach((o) -> objectAttributeMap.remove(o));
+            rList.clear();
+            rList.addAll(objects[f-fMin]);
+            for (Region o : rList) {
+                TrackAttribute curTa = copy ? taMap.get(o).duplicate(): taMap.get(o);
+                objectAttributeMap.put(o, curTa);
+                if (setLinks) {
+                    if (curTa.prev!=null) curTa.prev = objectAttributeMap.get(curTa.prev.o);
+                    if (curTa.next!=null) curTa.next = objectAttributeMap.get(curTa.next.o);
                 }
             }
             return true;

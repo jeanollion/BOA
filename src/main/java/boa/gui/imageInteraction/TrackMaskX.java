@@ -44,6 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
 import boa.utils.Pair;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -59,15 +60,19 @@ public class TrackMaskX extends TrackMask {
 
         logger.trace("track mask image object: max parent Y-size: {} z-size: {}", maxParentSizeY, maxParentSizeZ);
         int currentOffsetX=0;
+        long t0 = System.currentTimeMillis();
+        trackOffset =  parentTrack.stream().map(p-> new SimpleBoundingBox(p.getBounds()).resetOffset()).toArray(l -> new BoundingBox[l]);
+        // set cumulative offset
         for (int i = 0; i<parentTrack.size(); ++i) {
-            trackOffset[i] = new SimpleBoundingBox(parentTrack.get(i).getBounds()).resetOffset(); 
             if (middleYZ) trackOffset[i].translate(new SimpleOffset(currentOffsetX, (int)((maxParentSizeY-1)/2.0-(trackOffset[i].sizeY()-1)/2.0), (int)((maxParentSizeZ-1)/2.0-(trackOffset[i].sizeZ()-1)/2.0))); // Y & Z middle of parent track
             else trackOffset[i].translate(new SimpleOffset(currentOffsetX, 0, 0)); // Y & Z up of parent track
-            trackObjects[i] = new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i]);
             currentOffsetX+=interval+trackOffset[i].sizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
-        for (StructureObjectMask m : trackObjects) m.getObjects();
+        long t1 = System.currentTimeMillis();
+        trackObjects = IntStream.range(0, trackOffset.length).parallel().mapToObj(i-> new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i])).peek(m->m.getObjects()).toArray(l->new StructureObjectMask[l]);
+        long t2 = System.currentTimeMillis();
+        logger.debug("TrackMaskX creation: offset: {}, objects: {}", t1-t0, t2-t1);
     }
     
     @Override

@@ -253,15 +253,6 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     }
     
     
-
-    /*public void showImage(ImagePlus image) {
-        if (IJ.getInstance()==null) new ImageJ();
-        StackStatistics s = new StackStatistics(image);
-        logger.trace("display range: min: {} max: {}", s.min, s.max);
-        image.setDisplayRange(s.min, s.max);
-        image.show();
-    }*/
-    
     @Override public ImagePlus showImage5D(String title, Image[][] imageTC) {
         if (IJ.getInstance()==null) new ImageJ();
         /*Image5D res = new Image5D(title, getImagePlus(imageTC), imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
