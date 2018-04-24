@@ -45,6 +45,7 @@ import javax.swing.tree.TreeNode;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -257,17 +258,14 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             final int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
-                            logger.debug("running segmentation and tracking for structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
-                            /*Experiment xp = root.generator.getExperiment();
-                            ArrayList<StructureObject> parents = new ArrayList<StructureObject>();
-                            for (TrackNode n : root.generator.getSelectedTrackNodes()) parents.addAll(n.track);
-                            Processor.processStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), parents, null);
-                            Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
-                            */
-                            for (TrackNode n : root.generator.getSelectedTrackNodes()) {
-                                logger.debug("run seg & track on : {}", n);
-                                Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
-                            }
+                            Map<String, List<TrackNode>> nodesByPosition = root.generator.getSelectedTrackNodes().stream().collect(Collectors.groupingBy(n->n.root.position));
+                            nodesByPosition.forEach((p, l) -> {
+                                l.forEach(n -> {
+                                    logger.debug("run seg & track on : {}, structure: {}", n.trackHead, structureIdx);
+                                    Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
+                                });
+                                if (nodesByPosition.size()>1) root.generator.db.clearCache(p);
+                            });
                             
                             // reload tree
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
@@ -288,11 +286,14 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             final int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
-                            logger.debug("running tracking for structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
-                            for (TrackNode n : root.generator.getSelectedTrackNodes()) {
-                                Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
-                            }
-                            
+                            Map<String, List<TrackNode>> nodesByPosition = root.generator.getSelectedTrackNodes().stream().collect(Collectors.groupingBy(n->n.root.position));
+                            nodesByPosition.forEach((p, l) -> {
+                                l.forEach(n -> {
+                                    logger.debug("run seg & track on : {}, structure: {}", n.trackHead, structureIdx);
+                                    Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
+                                });
+                                if (nodesByPosition.size()>1) root.generator.db.clearCache(p);
+                            });
                             // reload tree
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
                             // reload objects
