@@ -58,6 +58,7 @@ import java.awt.image.ColorModel;
 import java.util.HashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import javax.swing.SwingUtilities;
 
 /**
@@ -91,9 +92,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ip.setDisplayRange(displayRange[0], displayRange[1]);
         //logger.debug("show image:w={}, h={}, disp: {}", ip.getWidth(), ip.getHeight(), displayRange);
         if (!ip.isVisible()) ip.show();
-        Runnable afterZoom = () -> addMouseWheelListener(image, null); // after zoom is set so that call back is not called on whole image
-        if (displayRange.length>=3) zoom(ip, displayRange[2], afterZoom);
-        else zoom(ip, ImageDisplayer.zoomMagnitude, afterZoom);
+        addMouseWheelListener(image, null);
         ImageWindowManagerFactory.getImageManager().addLocalZoom(ip.getCanvas());
         return ip;
     }
@@ -129,35 +128,14 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     private boolean imageExistsButHasBeenClosed(Image image) {
         return displayedImages.get(image)!=null && displayedImages.get(image).getCanvas()==null;
     }
-    
-    private static void zoom(ImagePlus image, double magnitude, Runnable runAfterZoom) {
-        DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
-
-            @Override
-            public String run(int workingTaskIndex) {
-                ImageCanvas ic = image.getCanvas();
-                if (ic==null) return "";
-                if (ic.getMagnification()==magnitude) return "";
-                try {Thread.sleep(500);} // TODO method that indicated if image is already displayed ? 
-                catch(Exception e) {}
-                ic.zoom100Percent();
-                //IJ.runPlugIn("ij.plugin.Zoom", null);
-                if (magnitude > 1) {
-                    for (int i = 0; i < (int) (magnitude + 0.5); i++) {
-                        ic.zoomIn(image.getWidth() / 2, image.getHeight() / 2);
-                    }
-                } else if (magnitude > 0 && magnitude < 1) {
-                    for (int i = 0; i < (int) (1 / magnitude + 0.5); i++) {
-                        ic.zoomOut(image.getWidth() / 2, image.getHeight() / 2);
-                    }
-                }
-                image.updateAndRepaintWindow();
-                if (runAfterZoom!=null) runAfterZoom.run();
-                return "";
-            }
-        };
-        //t.run(0);
-        DefaultWorker w = DefaultWorker.execute(t, 1, null);
+    private static void waitUntill(long max, Supplier<Boolean> test) {
+        long start = System.currentTimeMillis();
+        while (!test.get()) {
+            try {Thread.sleep(50);} 
+            catch(InterruptedException e) {}
+            if (System.currentTimeMillis()-start > max) break;
+        }
+        logger.debug("wait: {} test: {}", System.currentTimeMillis()-start, test.get());
     }
     
     @Override public void addMouseWheelListener(final Image image, Predicate<BoundingBox> callBack) {
@@ -165,15 +143,22 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         if (imp==null) return;
         final ImageWindow iw = imp.getWindow();
         final ImageCanvas ic = imp.getCanvas();
+        final boolean[] zoomHasBeenFixed = new boolean[1];
         if (iw==null || ic ==null) return;
         MouseWheelListener mwl = e ->  { // code modified from IJ source to better suit needs for LARGE track mask images + call back to display images
             synchronized (iw) {
                 if (e==null) { 
                     if (callBack!=null) { // can be called when scroll moved manually
-                        boolean update = callBack.test(new SimpleBoundingBox(ic.getSrcRect().x, ic.getSrcRect().x+ic.getSrcRect().width-1, ic.getSrcRect().y, ic.getSrcRect().y+ic.getSrcRect().height-1, 0, 0));
+                        Rectangle max = GUI.getMaxWindowBounds();
+                        boolean update = callBack.test(new SimpleBoundingBox(ic.getSrcRect().x, ic.getSrcRect().x+Math.min(max.width-1, ic.getSrcRect().width-1), ic.getSrcRect().y, ic.getSrcRect().y+Math.min(max.height-1, ic.getSrcRect().height-1), 0, 0));
                         if (update ) imp.updateAndRepaintWindow();
                     }
                     return;
+                }
+                
+                if (!zoomHasBeenFixed[0] && ic.getMagnification()<0.1) { // case zoom is very low -> set to 100%
+                    ic.zoom100Percent();
+                    zoomHasBeenFixed[0] = true;
                 }
                 int rotation =   e.getWheelRotation();
                 int amount =   e.getScrollAmount();
@@ -226,7 +211,10 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 }
                 if (srcRect.x!=xstart || srcRect.y!=ystart) {
                     boolean update = false;
-                    if (callBack !=null )  update = callBack.test(new SimpleBoundingBox(srcRect.x, srcRect.x+srcRect.width-1, srcRect.y, srcRect.y+srcRect.height-1, 0, 0));
+                    if (callBack !=null )  {
+                        Rectangle max = GUI.getMaxWindowBounds();
+                        update = callBack.test(new SimpleBoundingBox(ic.getSrcRect().x, ic.getSrcRect().x+Math.min(max.width-1, ic.getSrcRect().width-1), ic.getSrcRect().y, ic.getSrcRect().y+Math.min(max.height-1, ic.getSrcRect().height-1), 0, 0));
+                    }
                     if (update) imp.updateAndRepaintWindow();//ic.repaint();
                     else  ic.repaint();
                 }
