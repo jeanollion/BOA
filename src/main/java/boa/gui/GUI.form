@@ -392,14 +392,6 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearMemoryMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="clearPPImageMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Clear Pre-Processed Images"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearPPImageMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="CloseNonInteractiveWindowsMenuItem">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Close Non Interactive Windows"/>
@@ -422,6 +414,14 @@
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearTrackImagesMenuItemActionPerformed"/>
+                  </Events>
+                </MenuItem>
+                <MenuItem class="javax.swing.JMenuItem" name="clearPPImageMenuItem">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Clear Pre-Processed Images"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearPPImageMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
               </SubComponents>

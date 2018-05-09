@@ -65,7 +65,7 @@ import java.util.stream.Collectors;
  * @author jollion
  */
 public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransformation {
-    PluginParameter<SimpleThresholder> thresholdBck = new PluginParameter<>("Background Threshold", SimpleThresholder.class, new BackgroundThresholder(3, 6, 3), false).setToolTipText("Pixel under this value are background"); 
+    PluginParameter<SimpleThresholder> thresholdBck = new PluginParameter<>("Background Threshold", SimpleThresholder.class, new BackgroundThresholder(3, 12, 4), false).setToolTipText("Pixel under this value are background. This threshold method is run on all images once"); 
     PluginParameter<SimpleThresholder> thresholdHyper = new PluginParameter<>("HyperFluo Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setToolTipText("when hyper-fluo cells are present, this threshold discriminates between hyper-fluo & normal cells<br > when no hyper-fluo cells are present this threshold discriminates between foreground and background"); 
     NumberParameter foregroundProportion = new BoundedNumberParameter("Hyperfluorecent cells foreground proportion threshold", 2, 0.2, 0, 1).setToolTipText("When number of pixels over hyperfluo threshold / number of pixel over background threshold is lower than this value, image contains hyper-fluo cells"); 
     NumberParameter minimumVolume = new BoundedNumberParameter("Minimum volume of signal (pixels)", 0, 10000, 1, null).setToolTipText("Image containing less foreground pixel than this value, are  not used.");
@@ -100,8 +100,7 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
         long t0 = System.currentTimeMillis();
         int minimumCount = minimumVolume.getValue().intValue();
         double thldBack = thresholdBck.instanciatePlugin().runSimpleThresholder(Image.mergeZPlanes(allImages), null);
-        List<Double> thldsList = allImages.stream().parallel().map(image -> getThld(image, pThld, thldBack, thresholdHyper.instanciatePlugin(), minimumCount)).collect(Collectors.toList());
-        thldsList.removeIf(d -> Double.isInfinite(d) || Double.isNaN(d));
+        List<Double> thldsList = allImages.stream().parallel().map(image -> getThld(image, pThld, thldBack, thresholdHyper.instanciatePlugin(), minimumCount)).filter(d -> Double.isFinite(d) && !Double.isNaN(d)).collect(Collectors.toList());
         if (testMode) logger.debug("SaturateHisto: #satu: {},list: {}", thldsList.size(), thldsList);
         double thld = ArrayUtil.median(thldsList);
         //double thld = Arrays.stream(thlds).min((d1, d2)->Double.compare(d1, d2)).get();
@@ -116,31 +115,33 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
         if (!Double.isNaN(thld) && Double.isFinite(thld)) SaturateHistogram.saturate(thld, thld, im);
     }
     private double getThld(Image im, double proportionThld, double thldBack, SimpleThresholder thlderHyper, int minimumCount) {
-        
-        double thldHyper = thlderHyper.runSimpleThresholder(im, null);
+        ImageMask backMask = new ThresholdMask(im, thldBack, true, true);
+        double thldHyper = thlderHyper.runSimpleThresholder(im, backMask);
         //backThld=ImageOperations.threshold(im, thldBack, true, true, false, backMask);
         //ImageOperations.filterObjects(backMask, backMask, o->o.size()<=1);
         //double count = backMask.count();
         ImageMask hyperMask = new ThresholdMask(im, thldHyper, true, true);
-        ImageMask backMask = new ThresholdMask(im, thldBack, true, true);
+        
         // remove small obejcts (if background is too low isolated pixels)
         double count = ImageLabeller.labelImageList(backMask).stream().mapToInt(o->o.size()).filter(i->i>1).sum();
         
-        if (count<minimumCount) return Double.POSITIVE_INFINITY;
+        if (count<minimumCount) return Double.POSITIVE_INFINITY; // no enough signal in image
         double countHyper = hyperMask.count();
         if (testMode) logger.debug(" thldBack:{} hyper: {}, count back: {}, hyper: {}, prop: {}", thldBack, thldHyper, count, countHyper, countHyper / count);
         double proportion = countHyper / count;
         if (proportion<proportionThld && count-countHyper>minimumCount) { // recompute hyper thld within seg bact
-            ImageMask thldMask = new ThresholdMask(im, thldBack, true, true);
-            double thldHyper2 = thlderHyper.runSimpleThresholder(im, thldMask);
-            //double thldHyper2  = thldHyper;
+            //ImageMask thldMask = new ThresholdMask(im, thldBack, true, true);
+            //double thldHyper2 = thlderHyper.runSimpleThresholder(im, thldMask);
+            double thldHyper2  = thldHyper;
             // ThldHyper is over-estimated. ThldHyper = maximum value of objects that do not contain pixel over ThldHyp +1
-            List<Region> objects = ImageLabeller.labelImageList(thldMask);
-            List<Double> maxValues = Utils.transform(objects, o->BasicMeasurements.getMaxValue(o, im));
-            maxValues.removeIf(v->v>=thldHyper2);
-            double thldHyper3 = maxValues.isEmpty() ? thldHyper2 : Math.min(Collections.max(maxValues)*1.15, thldHyper2);
+            /*double thldHyper3 = ImageLabeller.labelImageList(thldMask).stream()
+                    .mapToDouble(o->BasicMeasurements.getMaxValue(o, im))
+                    .filter(v->v<thldHyper2)
+                    .max().orElse(Double.POSITIVE_INFINITY);
+            if (Double.isFinite(thldHyper3)) Math.min(thldHyper3 * 1.15, thldHyper2);
             if (testMode) logger.debug("SaturateHisto: proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {}), max values of non-saturated objects: {}", proportion, count/im.sizeXYZ(), thldBack, thldHyper2, thldHyper,thldHyper3);
-            return thldHyper3;
+            return thldHyper3;*/
+            return thldHyper2;
         }
         else return Double.POSITIVE_INFINITY; // no saturation
     }

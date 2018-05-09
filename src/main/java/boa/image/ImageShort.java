@@ -330,7 +330,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
         LoopFunction function = (x, y, z) -> {
             if (m.insideMask(x, y, z)) {
                 int idx = (int) (((pixels[z][x+y*sizeX]&0xffff) - min) * coeff);
-                histo[idx>=256?255:idx]++;
+                histo[idx>=256?255:idx<=0?0:idx]++;
             }
         };
         BoundingBox.loop(limits, function);

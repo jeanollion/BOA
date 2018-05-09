@@ -205,7 +205,7 @@ public class ImageFloat extends Image<ImageFloat> {
         LoopFunction function = (x, y, z) -> {
             if (m.insideMask(x, y, z)) {
                 int idx = (int) ((pixels[z][x+y*sizeX] - min) * coeff);
-                histo[idx>=256?255:idx]++;
+                histo[idx>=256?255:idx<=0?0:idx]++;
             }
         };
         BoundingBox.loop(limits, function);

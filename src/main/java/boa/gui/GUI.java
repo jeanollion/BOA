@@ -1142,10 +1142,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         miscMenu = new javax.swing.JMenu();
         jMenu1 = new javax.swing.JMenu();
         clearMemoryMenuItem = new javax.swing.JMenuItem();
-        clearPPImageMenuItem = new javax.swing.JMenuItem();
         CloseNonInteractiveWindowsMenuItem = new javax.swing.JMenuItem();
         closeAllWindowsMenuItem = new javax.swing.JMenuItem();
         clearTrackImagesMenuItem = new javax.swing.JMenuItem();
+        clearPPImageMenuItem = new javax.swing.JMenuItem();
         openedImageNumberLimitMenu = new javax.swing.JMenu();
         localZoomMenu = new javax.swing.JMenu();
         multiThreadMenu = new javax.swing.JMenu();
@@ -1947,14 +1947,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         jMenu1.add(clearMemoryMenuItem);
 
-        clearPPImageMenuItem.setText("Clear Pre-Processed Images");
-        clearPPImageMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                clearPPImageMenuItemActionPerformed(evt);
-            }
-        });
-        jMenu1.add(clearPPImageMenuItem);
-
         CloseNonInteractiveWindowsMenuItem.setText("Close Non Interactive Windows");
         CloseNonInteractiveWindowsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1978,6 +1970,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         });
         jMenu1.add(clearTrackImagesMenuItem);
+
+        clearPPImageMenuItem.setText("Clear Pre-Processed Images");
+        clearPPImageMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                clearPPImageMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu1.add(clearPPImageMenuItem);
 
         miscMenu.add(jMenu1);
 
