@@ -41,6 +41,7 @@ import boa.plugins.SimpleThresholder;
  * @author jollion
  */
 public class BackgroundThresholder implements SimpleThresholder {
+    public static boolean debug = false;
     NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 2.5, 0.01, null);
     NumberParameter finalSigmaFactor = new BoundedNumberParameter("Final Sigma factor", 2, 4, 0.01, null);
     NumberParameter iterations = new BoundedNumberParameter("Iteration number", 0, 2, 1, null);
@@ -64,7 +65,8 @@ public class BackgroundThresholder implements SimpleThresholder {
         if (this.startingPoint.isOnePluginSet()) {
             firstValue = startingPoint.instanciatePlugin().runSimpleThresholder(input, mask);
         }
-        return runThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), firstValue, null);
+        //return runThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), firstValue, null);
+        return runThresholderHisto(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), firstValue, null);
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
@@ -72,7 +74,7 @@ public class BackgroundThresholder implements SimpleThresholder {
         //return BackgroundThresholder.runSimpleThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
         return runSimpleThresholder(input , mask);
     }
-    
+    // slower, more precise
     public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double firstValue) {
         return runThresholder(input,mask, sigmaFactor, lastSigmaFactor, iterations, firstValue, null);
     }
@@ -111,56 +113,60 @@ public class BackgroundThresholder implements SimpleThresholder {
             }
             double newThreshold = i==iterations-1 ? mean + lastSigmaFactor * sigma : mean + sigmaFactor * sigma;
             if (Double.isFinite(firstValue)) newThreshold = Math.min(firstValue, newThreshold);
-            //logger.debug("Kappa Sigma Thresholder: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);
+            if (debug) logger.debug("Kappa Sigma Thresholder: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);
             if (newThreshold == lastThreshold) return lastThreshold;
             else lastThreshold = newThreshold;
         }
-        //logger.debug("background thlder: {} ms: {}, first value: {}", Math.min(firstValue, lastThreshold), meanSigma, firstValue);
+        if (debug) logger.debug("background thlder: {} ms: {}, first value: {}", Math.min(firstValue, lastThreshold), meanSigma, firstValue);
         return Math.min(firstValue, lastThreshold);
     }
-    /*
-    public static double runThresholderHisto(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
+    
+    public static double runThresholderHisto(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double firstValue, double[] meanSigma) {
         Histogram histo = input.getHisto256(mask, null);
-        return BackgroundThresholder.runThresholder(histo, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
+        return BackgroundThresholder.runThresholder(histo, sigmaFactor, lastSigmaFactor, iterations, firstValue, meanSigma);
     }
     
-    public static double runThresholder(Histogram histo, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
-        double thld = getHistogramIdx(histo.data, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
-        return histo.getValueFromIdx(thld);
-    }
-    // TODO TEST !!! 
-    private static double getHistogramIdx(int[] histogram, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
+    public static double runThresholder(Histogram histo, double sigmaFactor, double lastSigmaFactor, int iterations, double firstValue, double[] meanSigma) {
+        int firstIdx =  Double.isInfinite(firstValue) ? 255 : (int)histo.getIdxFromValue(firstValue);
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
-        int lastThreshold = 255;
+        if (firstIdx>255) firstIdx=255;
+        double binInc = 0.245; // empirical correction !
+        double lastThreshold = firstIdx;
         double mean=0, sigma=0;
         double count=0;
         if (iterations<=0) iterations=1;
-        for (int i = 0; i<iterations; i++) { //TODO for more precision: linear approx : add a part of next histogram break proportional to thld-(int)thld
+        for (int i = 0; i<iterations; i++) {
             count=0;
             sigma=0;
             mean=0;
-            for (int idx = 0; idx<=lastThreshold; idx++) {
-                mean+=idx*histogram[idx];
-                count+=histogram[idx];
+            for (int idx = 0; idx<lastThreshold; idx++) {
+                mean+=(idx+binInc)*histo.data[idx];
+                count+=histo.data[idx];
             }
+            double lastBinCount = histo.getCountLinearApprox(lastThreshold);
+            mean+=((int)lastThreshold+binInc) * lastBinCount;
+            count+=lastBinCount;
             if (count>0) {
                 mean = mean/count;
-                for (int idx = 0; idx<=lastThreshold; idx++) sigma+=Math.pow(mean-idx, 2)*histogram[idx];
+                for (int idx = 0; idx<lastThreshold; idx++) sigma+=Math.pow(mean-(idx+binInc), 2)*histo.data[idx];
+                sigma+= Math.pow(mean-((int)lastThreshold+binInc), 2)*lastBinCount;
                 sigma= Math.sqrt(sigma/count);
                 if (meanSigma!=null) {
                     meanSigma[0]=mean;
                     meanSigma[1]=sigma;
                 }
             }
-            int newThreshold = i==iterations-1 ? (int)(mean + lastSigmaFactor * sigma+0.5) : (int)(mean + sigmaFactor * sigma+0.5);
-            //logger.debug("Kappa Sigma Thresholder HISTO: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);
+            double newThreshold = i==iterations-1 ? (mean + lastSigmaFactor * sigma) : (mean + sigmaFactor * sigma);
+            newThreshold = Math.min(firstIdx, newThreshold);
+            if (debug) logger.debug("Kappa Sigma Thresholder HISTO: Iteration: {}, Mean : {}, Sigma : {}, thld: {}, lastBinCount: {} (full bin: {}, delta: {})", i, histo.getValueFromIdx(mean),histo.getValueFromIdx(sigma),histo.getValueFromIdx(newThreshold), lastBinCount, histo.data[(int)lastThreshold], (lastThreshold-(int)lastThreshold));
             if (newThreshold == lastThreshold) break;
             else lastThreshold = newThreshold;
         }
-        return mean + lastSigmaFactor * sigma;
-    }*/
-    
-    
+        if (debug) logger.debug("background thlder HISTO: {}, first idx: {}", histo.getValueFromIdx(Math.min(firstIdx, lastThreshold)), firstIdx);
+        return histo.getValueFromIdx(Math.min(firstIdx, lastThreshold));
+    }
+
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }

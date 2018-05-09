@@ -30,6 +30,7 @@ import boa.utils.StreamConcatenation;
 import boa.utils.Utils;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
@@ -169,7 +170,8 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
     }
     public static <T extends Image<T>> T mergeZPlanes(List<T> planes) {
         if (planes==null || planes.isEmpty()) return null;
-        //for (T im : planes) if (im.getSizeZ()>1) throw
+        int maxZ  = planes.stream().mapToInt(i->i.sizeZ()).max().getAsInt();
+        if (maxZ>1) planes = planes.stream().map(i-> i.splitZPlanes()).flatMap(List::stream).collect(Collectors.toList());
         String title = "merged planes";
         Image<T> plane0 = planes.get(0);
         if (plane0 instanceof ImageByte) {

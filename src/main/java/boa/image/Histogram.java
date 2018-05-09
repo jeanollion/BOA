@@ -80,11 +80,9 @@ public class Histogram {
     }
 
     public static int convertTo256Threshold(double threshold, double[] minAndMax) {
-        int res = (int) Math.round((threshold - minAndMax[0]) * 256 / ((minAndMax[1] - minAndMax[0])));
-        if (res >= 256) {
-            res = 255;
-        }
-        return res;
+        if (threshold>=minAndMax[1]) return 255;
+        if (threshold<=minAndMax[0]) return 0;
+        return (int) Math.round((threshold - minAndMax[0]) * 256 / ((minAndMax[1] - minAndMax[0])));
     }
 
     public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, MutableBoundingBox limits) {
@@ -217,5 +215,11 @@ public class Histogram {
             res[i] = (double) (idx + idxInc) * binSize + getHistoMinBreak();
         }
         return res;
+    }
+    public double getCountLinearApprox(double histoIdx) {
+        if (histoIdx<=0) return data[0];
+        if (histoIdx>=255) return data[255];
+        int idx = (int)histoIdx;
+        return data[idx]  * (histoIdx-idx);
     }
 }
