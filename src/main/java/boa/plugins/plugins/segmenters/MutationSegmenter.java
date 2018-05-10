@@ -55,7 +55,6 @@ import jj2000.j2k.util.ArrayUtil;
 import boa.measurement.BasicMeasurements;
 import boa.plugins.ManualSegmenter;
 import boa.plugins.ObjectSplitter;
-import boa.plugins.ParameterSetup;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.Segmenter;
 import boa.plugins.plugins.manual_segmentation.WatershedObjectSplitter;
@@ -80,7 +79,7 @@ import boa.utils.geom.Point;
  *
  * @author jollion
  */
-public class MutationSegmenter implements Segmenter, TrackParametrizable<MutationSegmenter>, ManualSegmenter, ObjectSplitter, ParameterSetup, ToolTip {
+public class MutationSegmenter implements Segmenter, TrackParametrizable<MutationSegmenter>, ManualSegmenter, ObjectSplitter, ToolTip {
     public List<Image> intermediateImages;
     public static boolean debug = false;
     public static boolean displayImages = false;
@@ -135,16 +134,6 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         Utils.removeDuplicates(res2, true);
         if (res2.size()<res.length) return Utils.toDoubleArray(res2, false);
         else return res;
-    }
-    // ParameterSetup implementation
-    @Override
-    public boolean canBeTested(String p) {
-        return new ArrayList<String>(){{add(scale.getName());add(intensityThreshold.getName()); add(thresholdHigh.getName()); add(thresholdLow.getName());}}.contains(p);
-    }
-    String testParam;
-    @Override 
-    public void setTestParameter(String p) {
-        testParam = p;
     }
     /**
      * See {@link #run(boa.image.Image, boa.data_structure.StructureObjectProcessing, double[], int, double, double, double, java.util.List) }
@@ -301,19 +290,7 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         }
         pop.filter(new RegionPopulation.RemoveFlatObjects(false));
         pop.filter(new RegionPopulation.Size().setMin(minSpotSize));
-        if (testParam!=null) {
-            ImageWindowManagerFactory.showImage(TypeConverter.toByteMask(parent.getMask(), null, 1));
-            ImageWindowManagerFactory.showImage(input);
-            ImageWindowManagerFactory.showImage(pv.getScaledInput());
-            boolean showLap = testParam.equals(this.scale.getName()) || testParam.equals(this.thresholdHigh.getName()) || testParam.equals(this.thresholdLow.getName());
-            if (showLap) {
-                ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("LaplacianMap scale space ", new Image[][]{lapSPZ});
-                ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("LaplacianMap scale space ", new Image[][]{seedsSPZ});
-            }
-            if (testParam.equals(this.scale.getName()) || testParam.equals(this.intensityThreshold.getName())) ImageWindowManagerFactory.showImage(pv.getSmoothedMap().setName("IntensityMap"));
-            logger.debug("Quality: {}", Utils.toStringList(pop.getRegions(), o->o.getQuality()+""));
-            ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("segmented image"));
-        }
+        
         if (intermediateImages!=null) {
             if (planeByPlane) {
                 for (int z = 0; z<seedsSPZ.length; ++z) {

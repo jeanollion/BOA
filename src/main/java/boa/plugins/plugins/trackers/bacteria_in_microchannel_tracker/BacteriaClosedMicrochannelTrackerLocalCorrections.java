@@ -69,8 +69,6 @@ import boa.plugins.MultiThreaded;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
-import boa.plugins.ParameterSetup;
-import boa.plugins.ParameterSetupTracker;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.processing_scheme.SegmentOnly;
@@ -91,7 +89,7 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter, MultiThreaded, ParameterSetupTracker, ToolTip {
+public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter, MultiThreaded, ToolTip {
     public final static Logger logger = LoggerFactory.getLogger(BacteriaClosedMicrochannelTrackerLocalCorrections.class);
     
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
@@ -125,22 +123,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return segmenter.instanciatePlugin();
     }
 
-
-    @Override
-    public boolean canBeTested(String p) {
-        return segmenter.getName().equals(p) || maxSR.getName().equals(p)|| minSR.getName().equals(p)|| costLimit.getName().equals(p)|| cumCostLimit.getName().equals(p)|| endOfChannelContactThreshold.getName().equals(p);
-    }
-
-    String testParameterName;
-    @Override
-    public void setTestParameter(String p) {
-        this.testParameterName=p;
-    }
-    @Override 
-    public boolean runSegmentAndTrack(String p) {
-        return  segmenter.getName().equals(p);
-    }
-    
     // tracker-related attributes 
     int structureIdx;
     TrackPreFilterSequence trackPreFilters; 

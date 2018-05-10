@@ -48,7 +48,6 @@ import java.util.List;
 import java.util.Set;
 import boa.plugins.ManualSegmenter;
 import boa.plugins.ObjectSplitter;
-import boa.plugins.ParameterSetup;
 import boa.plugins.Segmenter;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.plugins.pre_filters.ImageFeature;
@@ -78,7 +77,7 @@ import java.util.stream.Stream;
  *
  * @author jollion
  */
-public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensityPhase>, SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup, ToolTip {
+public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensityPhase>, SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ToolTip {
     public static boolean verbose = false;
     public boolean testMode = false;
     protected double threshold=Double.NaN;
@@ -188,16 +187,6 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         res.filter(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         res.filter(new RegionPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
         
-        if (testParameter!=null) {
-            logger.debug("testParameter: {}", testParameter);
-            if (splitThreshold.getName().equals(testParameter)) {
-                Image hess = splitAndMerge.getHessian().duplicate("Split map");
-                hess = ImageOperations.divide(hess, input, null);
-                ImageWindowManagerFactory.showImage(res.getLabelMap().setName("Segmentation with splitThreshold: "+splitThreshold.getValue().doubleValue()));
-                ImageOperations.trim(hess, res.getLabelMap(), hess);
-                ImageWindowManagerFactory.showImage(hess);
-            }
-        }
         res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         return res;
     }
@@ -347,16 +336,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         return pop;
     }
     
-    // ParameterSetup Implementation
     
-    @Override public boolean canBeTested(String p) {
-        List canBeTested = new ArrayList(){{add(splitThreshold); }};
-        return canBeTested.contains(p);
-    }
-    String testParameter;
-    @Override public void setTestParameter(String p) {
-        this.testParameter=p;
-    }
     // apply to segmenter from whole track information (will be set prior to call any other methods)
     
     boolean isVoid = false;

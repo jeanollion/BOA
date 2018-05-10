@@ -68,6 +68,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingWorker;
 import boa.measurement.MeasurementExtractor;
+import boa.plugins.TestableProcessingPlugin.TestDataStore;
 import boa.utils.ArrayFileWriter;
 import boa.utils.HashMapGetCreate;
 import boa.utils.HashMapGetCreate.Factory;
@@ -209,6 +210,7 @@ public abstract class ImageWindowManager<I, U, V> {
         displayedRawInputFrames.clear();
         displayedPrePocessedFrames.clear();
         displayedInteractiveImages.clear();
+        testData.clear();
     }
     public void closeNonInteractiveWindows() {
         closeLastInputImages(0);
@@ -347,11 +349,6 @@ public abstract class ImageWindowManager<I, U, V> {
         } 
         return i;
     }
-    public TrackMask generateTrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
-        //setAllChildren(parentTrack, childStructureIdx); // if set -> tracking test cannot work ? 
-        BoundingBox bb = parentTrack.get(0).getBounds();
-        return bb.sizeY()>=bb.sizeX() ? new TrackMaskX(parentTrack, childStructureIdx, false) : new TrackMaskY(parentTrack, childStructureIdx);
-    }
     public ImageObjectInterface getImageTrackObjectInterface(List<StructureObject> parentTrack, int childStructureIdx) {
         
         if (parentTrack.isEmpty()) {
@@ -362,7 +359,7 @@ public abstract class ImageWindowManager<I, U, V> {
         logger.debug("getIOI: hash: {} ({}), exists: {}, trackHeadTrackMap: {}", parentTrack.hashCode(), new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true).hashCode(), i!=null, trackHeadTrackMap.containsKey(parentTrack.get(0)));
         if (i==null) {
             long t0 = System.currentTimeMillis();
-            i = generateTrackMask(parentTrack, childStructureIdx);
+            i = TrackMask.generateTrackMask(parentTrack, childStructureIdx);
             long t1 = System.currentTimeMillis();
             imageObjectInterfaces.put(i.getKey(), i);
             trackHeadTrackMap.getAndCreateIfNecessary(parentTrack.get(0)).add(parentTrack);
@@ -1113,17 +1110,38 @@ public abstract class ImageWindowManager<I, U, V> {
         
         return null;
     }
+    // menu section
+    
+    protected Map<Image, List<TestDataStore>> testData = new HashMap<>();
+    
     protected JPopupMenu getMenu(Image image) {
-        List<StructureObject> sel =getSelectedLabileObjects(image);
+        List<StructureObject> sel = getSelectedLabileObjects(image);
         if (sel.isEmpty()) return null;
-        else if (sel.size()==1) return getMenu(sel.get(0));
-        else {
-            Collections.sort(sel);
-            if (sel.size()>50) sel=sel.subList(0, 50);
-            return getMenu(sel);
+        
+        if (testData.containsKey(image)) { // test menu
+            List<TestDataStore> stores = testData.get(image);
+            StructureObject o = sel.get(0); // only first selected object
+            JPopupMenu menu = new JPopupMenu();
+            menu.add(new JMenuItem(o.toString()));
+            JMenuItem item = new JMenuItem("Display Test Data");
+            menu.add(item);
+            item.setAction(new AbstractAction(item.getActionCommand()) {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    stores.stream().filter(s->s.getParent().equals(o)).forEach(s-> s.displayMiscData());
+                }
+            });
+            return menu;
+        } else { // regular menu
+            if (sel.size()==1) return getMenu(sel.get(0));
+            else {
+                Collections.sort(sel);
+                if (sel.size()>50) sel=sel.subList(0, 50);
+                return getMenu(sel);
+            }
         }
     }
-    
+
     private JPopupMenu getMenu(StructureObject o) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(o.toString()));

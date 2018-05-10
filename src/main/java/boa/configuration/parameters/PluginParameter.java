@@ -28,9 +28,11 @@ import java.util.Arrays;
 import java.util.List;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import boa.plugins.ParameterSetup;
 import boa.plugins.Plugin;
 import boa.plugins.PluginFactory;
+import boa.plugins.Segmenter;
+import boa.plugins.TestableProcessingPlugin;
+import boa.plugins.Tracker;
 import boa.utils.JSONUtils;
 import boa.utils.Utils;
 
@@ -264,8 +266,8 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
             if (s!=null) {
                 Plugin pl = this.instanciatePlugin();
-                if (pl instanceof ParameterSetup) {
-                    ui.addActions(PluginConfigurationUtils.getTestMenu("Test Parameters", (ParameterSetup)pl, this, pl.getParameters(), s.getIndex()), true);
+                if (pl instanceof Segmenter || pl instanceof Tracker) {
+                    ui.addActions(PluginConfigurationUtils.getTestCommand(pl, this, s.getIndex()), true);
                 }
             }
         }

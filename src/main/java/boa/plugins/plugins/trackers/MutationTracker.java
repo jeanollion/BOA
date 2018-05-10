@@ -49,7 +49,6 @@ import java.util.function.Function;
 import org.apache.commons.lang.ArrayUtils;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import boa.plugins.MultiThreaded;
-import boa.plugins.ParameterSetupTracker;
 import boa.plugins.Segmenter;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.ToolTip;
@@ -78,7 +77,7 @@ import boa.utils.geom.Point;
  *
  * @author jollion
  */
-public class MutationTracker implements TrackerSegmenter, MultiThreaded, ParameterSetupTracker, ToolTip {
+public class MutationTracker implements TrackerSegmenter, MultiThreaded, ToolTip {
     public static boolean registerTMI=false;
     public static TrackMateInterface<SpotWithinCompartment> debugTMI;
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new MutationSegmenter(), false);
@@ -446,23 +445,6 @@ public class MutationTracker implements TrackerSegmenter, MultiThreaded, Paramet
     @Override
     public Parameter[] getParameters() {
         return parameters;
-    }
-    // parameter setup
-    @Override
-    public boolean runSegmentAndTrack(String p) {
-        return p.equals(spotQualityThreshold.getName());
-    }
-
-    @Override
-    public boolean canBeTested(String p) {
-        if (p==null) return false;
-        return p.equals(spotQualityThreshold.getName()) || p.equals(maxGap.getName());
-    }
-    String testParam;
-    @Override
-    public void setTestParameter(String p) {
-        testParam = p;
-        logger.debug("test parameter: {}", p);
     }
 
     @Override

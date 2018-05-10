@@ -59,6 +59,12 @@ import java.util.stream.IntStream;
  * @author jollion
  */
 public abstract class TrackMask extends ImageObjectInterface {
+
+    public static TrackMask generateTrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
+        //setAllChildren(parentTrack, childStructureIdx); // if set -> tracking test cannot work ?
+        BoundingBox bb = parentTrack.get(0).getBounds();
+        return bb.sizeY() >= bb.sizeX() ? new TrackMaskX(parentTrack, childStructureIdx, false) : new TrackMaskY(parentTrack, childStructureIdx);
+    }
     BoundingBox[] trackOffset;
     StructureObjectMask[] trackObjects;
     static final int updateImageFrequency=50;

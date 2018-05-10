@@ -26,6 +26,7 @@ import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Position;
 import boa.data_structure.dao.BasicObjectDAO;
 import boa.data_structure.region_container.RegionContainer;
+import boa.gui.imageInteraction.TrackMask;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.MutableBoundingBox;
@@ -882,7 +883,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                         if (im!=null) { // set image && set offsets for all track
                             im.setCalibration(getScaleXY(), getScaleZ());
                             List<StructureObject> track = StructureObjectUtils.getTrack(this, false);
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().generateTrackMask(track, structureIdx); // not saved in image window manager to avoid memory leaks
+                            ImageObjectInterface i = TrackMask.generateTrackMask(track, structureIdx); // not saved in image window manager to avoid memory leaks
                             List<Pair<StructureObject, BoundingBox>> off = i.pairWithOffset(track);
                             for (Pair<StructureObject, BoundingBox> p : off) p.key.offsetInTrackImage=p.value;
                             //logger.debug("get track image: track:{}(id: {}/trackImageCId: {}) length: {}, chId: {}", this, this.hashCode(), trackImagesC.hashCode(), track.size(), channelIdx);
