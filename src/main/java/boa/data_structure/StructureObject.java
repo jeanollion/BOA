@@ -264,7 +264,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (structureIdx == this.structureIdx) {
             final StructureObject o = this;
             return new ArrayList<StructureObject>(){{add(o);}};
-        }
+        } else if (structureIdx<0) return new ArrayList<StructureObject>(1){{add(getRoot());}};
         List<StructureObject> res= this.childrenSM.get(structureIdx);
         if (res==null) {
             if (getExperiment().isDirectChildOf(this.structureIdx, structureIdx)) { // direct child

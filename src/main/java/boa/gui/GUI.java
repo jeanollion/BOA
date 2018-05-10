@@ -398,12 +398,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_I, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Change Interactive structure") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (interactiveStructure.getItemCount()>0) {
-                    int s = interactiveStructure.getSelectedIndex();
-                    s = (s+1) % interactiveStructure.getItemCount();
+                if (interactiveStructure.getItemCount()>1) {
+                    int s = interactiveStructure.getSelectedIndex()-1;
+                    s = (s+1) % (interactiveStructure.getItemCount()-1);
                     setInteractiveStructureIdx(s);
                 }
-                logger.debug("Current interactive structure: {}", interactiveStructure.getSelectedIndex());
+                logger.debug("Current interactive structure: {}", interactiveStructure.getSelectedIndex()-1);
             }
         });
         
@@ -910,13 +910,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void setTrackTreeStructures(String[] structureNames) {
         this.trackStructureJCB.removeAllItems();
         this.interactiveStructure.removeAllItems();
+        interactiveStructure.addItem("Root");
         for (String s: structureNames) {
             trackStructureJCB.addItem(s);
             interactiveStructure.addItem(s);
         }
         if (structureNames.length>0) {
             trackStructureJCB.setSelectedIndex(0);
-            interactiveStructure.setSelectedIndex(0);
+            interactiveStructure.setSelectedIndex(1);
             setStructure(0);
         }
     }
@@ -2193,7 +2194,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             ImageObjectInterfaceKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage2());
             int currentImageStructure = key ==null ? i.getChildStructureIdx() : key.displayedStructureIdx;
             if (i.getChildStructureIdx() == currentImageStructure) idx += (next ? 1 : -1) ; // only increment if same structure
-            logger.debug("current inter: {}, current image child: {}",interactiveStructure.getSelectedIndex(), currentImageStructure);
+            logger.debug("current inter: {}, current image child: {}",interactiveStructure.getSelectedIndex()-1, currentImageStructure);
             if (siblings.size()==idx || idx<0) { // next position
                 List<String> positions = Arrays.asList(i.getParent().getExperiment().getPositionsAsString());
                 int idxP = positions.indexOf(i.getParent().getPositionName()) + (next ? 1 : -1);
@@ -3433,7 +3434,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
         if (!checkConnection()) return;
-        getImageManager().setInteractiveStructure(interactiveStructure.getSelectedIndex());
+        getImageManager().setInteractiveStructure(interactiveStructure.getSelectedIndex()-1);
     }//GEN-LAST:event_interactiveStructureActionPerformed
 
     private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
@@ -3596,8 +3597,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     
     public void setInteractiveStructureIdx(int structureIdx) {
-        if (interactiveStructure.getItemCount()<=structureIdx) logger.error("Error set interactive structure out of bounds: max: {}, current: {}, asked: {}", interactiveStructure.getItemCount(), interactiveStructure.getSelectedIndex(), structureIdx );
-        interactiveStructure.setSelectedIndex(structureIdx);
+        if (interactiveStructure.getItemCount()<=structureIdx+1) logger.error("Error set interactive structure out of bounds: max: {}, current: {}, asked: {}", interactiveStructure.getItemCount()-1, interactiveStructure.getSelectedIndex()-1, structureIdx );
+        interactiveStructure.setSelectedIndex(structureIdx+1);
         interactiveStructureActionPerformed(null);
     }
     
