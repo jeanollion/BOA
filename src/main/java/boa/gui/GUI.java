@@ -2100,7 +2100,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         jMenuItem11.setText("Ctrl + M: merge objects");
         jMenu3.add(jMenuItem11);
 
-        jMenuItem22.setText("C: switch to creation tool / rectangle selection");
+        jMenuItem22.setText("C: switch to object creation tool / rectangle selection");
         jMenu3.add(jMenuItem22);
 
         jMenuItem12.setText("Ctrl + C: create object(s) from selected point(s)");

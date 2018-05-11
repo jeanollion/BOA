@@ -486,8 +486,9 @@ public class ManualCorrection {
     }
     public static void ensurePreFilteredImages(Stream<StructureObject> parents, int structureIdx, Experiment xp , ObjectDAO dao) {
         TrackPreFilterSequence tpf = xp.getStructure(structureIdx).getProcessingScheme().getTrackPreFilters(false);
+        boolean needToComputeAllPreFilteredImage = !tpf.get().isEmpty() || xp.getStructure(structureIdx).getProcessingScheme().getSegmenter() instanceof TrackParametrizable;
         TrackPreFilterSequence tpfWithPF = xp.getStructure(structureIdx).getProcessingScheme().getTrackPreFilters(true);
-        if (tpf.get().isEmpty()) { // only preFilters on current objects
+        if (!needToComputeAllPreFilteredImage) { // only preFilters on current objects
             PreFilterSequence pf = xp.getStructure(structureIdx).getProcessingScheme().getPreFilters();
             parents.forEach(parent ->{
                 if (parent.getPreFilteredImage(structureIdx)==null) {

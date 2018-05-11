@@ -609,7 +609,7 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="jMenuItem22">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="C: switch to creation tool / rectangle selection"/>
+                    <Property name="text" type="java.lang.String" value="C: switch to object creation tool / rectangle selection"/>
                   </Properties>
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="jMenuItem12">
