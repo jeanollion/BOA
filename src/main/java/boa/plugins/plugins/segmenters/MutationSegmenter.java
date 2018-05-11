@@ -29,6 +29,7 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
+import boa.gui.GUI;
 import static boa.image.BoundingBox.loop;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
@@ -69,6 +70,7 @@ import static boa.image.processing.watershed.WatershedTransform.watershed;
 import boa.image.processing.neighborhood.CylindricalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
+import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
 import boa.utils.HashMapGetCreate;
@@ -79,10 +81,8 @@ import boa.utils.geom.Point;
  *
  * @author jollion
  */
-public class MutationSegmenter implements Segmenter, TrackParametrizable<MutationSegmenter>, ManualSegmenter, ObjectSplitter, ToolTip {
-    public List<Image> intermediateImages;
+public class MutationSegmenter implements Segmenter, TrackParametrizable<MutationSegmenter>, ManualSegmenter, ObjectSplitter, TestableProcessingPlugin, ToolTip {
     public static boolean debug = false;
-    public static boolean displayImages = false;
     ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 5).setToolTipText("Scale (in pixels) for gaussian smooth");
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null).setToolTipText("In pixels: spots under this size will be removed");
@@ -144,28 +144,14 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
      */
     @Override
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return run(input, parent, getScale(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
+        return run(input, parent, getScale(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue());
+    }
+    // testable
+    Map<StructureObject, TestDataStore> stores;
+    @Override public void setTestDataStore(Map<StructureObject, TestDataStore> stores) {
+        this.stores=  stores;
     }
 
-    
-
-    /*public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
-        if (input.getSizeZ()>1) {
-            // tester sur average, max, ou plan par plan
-            ArrayList<Image> planes = input.splitZPlanes();
-            ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
-            for (Image plane : planes) {
-                RegionPopulation obj = runPlane(plane, parent, scale, minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
-                //if (true) return obj;
-                if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
-            }
-            if (populations.isEmpty()) return new RegionPopulation(new ArrayList<Object3D>(0), planes.get(0));
-            // combine: 
-            RegionPopulation pop = populations.remove(populations.size()-1);
-            pop.combine(populations);
-            return pop;
-        } else return runPlane(input, parent, scale, minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
-    }*/
     private static class ProcessingVariables {
         Image input;
         Image[] lap;
@@ -227,10 +213,9 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
      * @param thresholdSeeds minimal laplacian value to segment a spot
      * @param thresholdPropagation laplacian value at the border of spots
      * @param intensityThreshold minimal gaussian value to semgent a spot
-     * @param intermediateImages for testing purpose
      * @return segmented spots
      */
-    public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
+    public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold) {
         Arrays.sort(scale);
         ImageMask parentMask = parent.getMask().sizeZ()!=input.sizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
@@ -290,22 +275,28 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         }
         pop.filter(new RegionPopulation.RemoveFlatObjects(false));
         pop.filter(new RegionPopulation.Size().setMin(minSpotSize));
-        
-        if (intermediateImages!=null) {
+        if (stores!=null) {
             if (planeByPlane) {
-                for (int z = 0; z<seedsSPZ.length; ++z) {
-                    intermediateImages.add(seedsSPZ[z].setName("seed scale space z="+z));
-                    intermediateImages.add(lapSPZ[z].setName("Laplacian scale space z="+z));
+                if (scale.length>1) {
+                    for (int z = 0; z<seedsSPZ.length; ++z) {
+                        stores.get(parent).addIntermediateImage("Seeds: Scale-space z="+z, seedsSPZ[z]);
+                        stores.get(parent).addIntermediateImage("Laplacian: Scale-space z="+z, lapSPZ[z]);
+                    }
+                } else {
+                    stores.get(parent).addIntermediateImage("Seeds", Image.mergeZPlanes(seedsSPZ));
+                    stores.get(parent).addIntermediateImage("Laplacian", Image.mergeZPlanes(lapSPZ));
                 }
             } else {
-                for (int sp = 0; sp<wsMap.length; ++sp) {
-                    intermediateImages.add(seedMaps[sp].setName("seed sp"+sp));
-                    intermediateImages.add(wsMap[sp].setName("Laplacian sp"+sp));
+                if (seedMaps[0].sizeZ()>1) {
+                    for (int sp = 0; sp<wsMap.length; ++sp) {
+                        stores.get(parent).addIntermediateImage("seed sp"+sp, seedMaps[sp]);
+                        stores.get(parent).addIntermediateImage("Laplacian sp"+sp, wsMap[sp]);
+                    }
+                } else {
+                    stores.get(parent).addIntermediateImage("Seeds Scale-space", Image.mergeZPlanes(seedMaps));
+                    stores.get(parent).addIntermediateImage("Laplacian Scale-space", Image.mergeZPlanes(wsMap));
                 }
             }
-            intermediateImages.add(pv.getScaledInput());
-            intermediateImages.add(smooth.setName("gaussian"));
-            
         }
         return pop;
     }

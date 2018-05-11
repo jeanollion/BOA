@@ -60,13 +60,9 @@ public class ImageObjectInterfaceKey {
             return false;
         }
         final ImageObjectInterfaceKey other = (ImageObjectInterfaceKey) obj;
-        if (this.timeImage != other.timeImage) {
-            return false;
-        }
-        if (this.parent != other.parent && (this.parent == null || !this.parent.equals(other.parent))) {
-            return false;
-        }
-        return this.displayedStructureIdx == other.displayedStructureIdx; 
+        if (this.timeImage != other.timeImage) return false;
+        if (this.displayedStructureIdx!=other.displayedStructureIdx) return false;
+        return !(this.parent != other.parent && (this.parent == null || !this.parent.equals(other.parent)));
     }
     
     @Override

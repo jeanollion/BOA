@@ -22,6 +22,7 @@ import boa.configuration.parameters.ui.ChoiceParameterUI;
 import static boa.configuration.parameters.ui.ChoiceParameterUI.NO_SELECTION;
 import boa.configuration.experiment.Structure;
 import boa.gui.PluginConfigurationUtils;
+import boa.plugins.ImageProcessingPlugin;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Arrays;
@@ -267,7 +268,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             if (s!=null) {
                 Plugin pl = this.instanciatePlugin();
                 if (pl instanceof Segmenter || pl instanceof Tracker) {
-                    ui.addActions(PluginConfigurationUtils.getTestCommand(pl, this, s.getIndex()), true);
+                    ui.addActions(PluginConfigurationUtils.getTestCommand((ImageProcessingPlugin)pl, ParameterUtils.getExperiment(this), s.getIndex()), true);
                 }
             }
         }

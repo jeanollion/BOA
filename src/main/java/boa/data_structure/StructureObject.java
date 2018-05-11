@@ -216,7 +216,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             StructureObject p = this;
             while (p.getStructureIdx()!=common) p = p.getParent();
             List<StructureObject> candidates = p.getChildren(parentStructureIdx);
-            logger.debug("{} (2D?:{} so2D?: {}) common parent: {}, candidates: {}", this, getRegion().is2D(), is2D(), p, candidates);
+            //logger.debug("{} (2D?:{} so2D?: {}) common parent: {}, candidates: {}", this, getRegion().is2D(), is2D(), p, candidates);
             return StructureObjectUtils.getInclusionParent(getRegion(), candidates, null);
         }
     }

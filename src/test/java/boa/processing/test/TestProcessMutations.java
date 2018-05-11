@@ -80,8 +80,7 @@ public class TestProcessMutations {
         Segmenter seg = parent.getExperiment().getStructure(2).getProcessingScheme().getSegmenter();
         
         //TODO apply to segmenter & preFIlteredImages
-        ((MutationSegmenter)seg).intermediateImages=intermediateImages;
-        
+
         RegionPopulation pop = seg.runSegmenter(localInput, 2, parent);
         
         

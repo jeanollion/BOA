@@ -83,7 +83,7 @@ public class TestSegmenter {
                 }
             }
         }
-        Map<String, StructureObject> gCutMap = StructureObjectUtils.createGraphCut(parentTrack, true); 
+        Map<String, StructureObject> gCutMap = StructureObjectUtils.createGraphCut(parentTrack, true, false); 
         logger.debug("parentTrack: {} ({})", parentTrack.get(0), parentTrack.size());
         parentTrack = Utils.transform(parentTrack, o->gCutMap.get(o.getId()));
         for (StructureObject p : parentTrack) p.setChildren(null, structureIdx);

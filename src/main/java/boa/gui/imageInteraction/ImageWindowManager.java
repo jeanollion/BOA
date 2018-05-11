@@ -1112,23 +1112,25 @@ public abstract class ImageWindowManager<I, U, V> {
     }
     // menu section
     
-    protected Map<Image, List<TestDataStore>> testData = new HashMap<>();
-    
+    protected Map<Image, Collection<TestDataStore>> testData = new HashMap<>();
+    public void addTestData(Image image, Collection<TestDataStore> testData) {
+        this.testData.put(image, testData);
+    }
     protected JPopupMenu getMenu(Image image) {
         List<StructureObject> sel = getSelectedLabileObjects(image);
         if (sel.isEmpty()) return null;
         
         if (testData.containsKey(image)) { // test menu
-            List<TestDataStore> stores = testData.get(image);
+            Collection<TestDataStore> stores = testData.get(image);
             StructureObject o = sel.get(0); // only first selected object
-            JPopupMenu menu = new JPopupMenu();
-            menu.add(new JMenuItem(o.toString()));
+            JPopupMenu menu = getMenu(o);
+            menu.addSeparator();
             JMenuItem item = new JMenuItem("Display Test Data");
             menu.add(item);
             item.setAction(new AbstractAction(item.getActionCommand()) {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    stores.stream().filter(s->s.getParent().equals(o)).forEach(s-> s.displayMiscData());
+                    stores.stream().filter(s->s.getParent().equals(o.getParent(s.getParent().getStructureIdx()))).forEach(s-> s.displayMiscData());
                 }
             });
             return menu;

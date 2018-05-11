@@ -135,7 +135,7 @@ public class TestTracker {
         ps.getPreFilters().removeAll();
         ps.getTrackPreFilters(false).removeAll();
         
-        Map<String, StructureObject> gCutMap = StructureObjectUtils.createGraphCut(parentTrack, true); 
+        Map<String, StructureObject> gCutMap = StructureObjectUtils.createGraphCut(parentTrack, true, true); 
         parentTrack = Utils.transform(parentTrack, o->gCutMap.get(o.getId()));
         for (StructureObject p : parentTrack) p.setChildren(null, structureIdx);
         logger.debug("parent track: {}", parentTrack.size());
@@ -199,7 +199,7 @@ public class TestTracker {
         }
         ps.getPreFilters().removeAll();
         ps.getTrackPreFilters(false).removeAll();
-        Map<String, StructureObject> gCutMap = StructureObjectUtils.createGraphCut(parentTrack, true); 
+        Map<String, StructureObject> gCutMap = StructureObjectUtils.createGraphCut(parentTrack, true, true); 
         parentTrack = Utils.transform(parentTrack, o->gCutMap.get(o.getId()));
         for (StructureObject p : parentTrack) p.setChildren(null, structureIdx);
         

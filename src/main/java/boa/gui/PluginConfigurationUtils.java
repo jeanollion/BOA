@@ -17,7 +17,7 @@
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
 package boa.gui;
-
+import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Position;
 import boa.configuration.experiment.PreProcessingChain;
 import boa.configuration.parameters.Parameter;
@@ -39,6 +39,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.imageInteraction.TrackMask;
 import boa.image.Image;
 import boa.plugins.ConfigurableTransformation;
+import boa.plugins.ImageProcessingPlugin;
 import boa.plugins.MultichannelTransformation;
 import boa.plugins.Plugin;
 import boa.plugins.ProcessingScheme;
@@ -46,6 +47,7 @@ import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.TestableProcessingPlugin.TestDataStore;
+import static boa.plugins.TestableProcessingPlugin.buildIntermediateImages;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
@@ -70,14 +72,95 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
 import boa.utils.HashMapGetCreate;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Function;
 
 /**
  *
  * @author jollion
  */
 public class PluginConfigurationUtils {
-    public static Pair<ImageObjectInterface, List<Image>> lastTest;
-    public static JMenuItem getTestCommand(final Plugin plugin, PluginParameter pp, int structureIdx) {
+    
+    public static Map<StructureObject, TestDataStore> testImageProcessingPlugin(final ImageProcessingPlugin plugin, Experiment xp, int structureIdx, List<StructureObject> sel) {
+        ProcessingScheme psc=xp.getStructure(structureIdx).getProcessingScheme();
+        
+        // get parent objects -> create graph cut
+        StructureObject o = sel.get(0);
+        int parentStrutureIdx = o.getExperiment().getStructure(structureIdx).getParentStructure();
+        int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
+        Function<StructureObject, StructureObject> getParent = c -> (c.getStructureIdx()>parentStrutureIdx) ? c.getParent(parentStrutureIdx) : c.getChildren(parentStrutureIdx).get(0);
+        List<StructureObject> wholeParentTrack = StructureObjectUtils.getTrack( getParent.apply(o).getTrackHead(), false);
+        Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut(wholeParentTrack, true, true);  // don't modify object directly. 
+        List<StructureObject> wholeParentTrackDup = wholeParentTrack.stream().map(p->dupMap.get(p.getId())).collect(Collectors.toList());
+        List<StructureObject> parentTrackDup = sel.stream().map(getParent).distinct().map(p->dupMap.get(p.getId())).sorted().collect(Collectors.toList());
+
+        // generate data store for test images
+        Map<StructureObject, TestDataStore> stores = HashMapGetCreate.getRedirectedMap(so->new TestDataStore(so), HashMapGetCreate.Syncronization.SYNC_ON_MAP);
+        if (plugin instanceof TestableProcessingPlugin) ((TestableProcessingPlugin)plugin).setTestDataStore(stores);
+        parentTrackDup.forEach(p->stores.get(p).addIntermediateImage("input", p.getRawImage(structureIdx))); // add input image
+
+
+        logger.debug("test processing: sel {}", sel);
+        logger.debug("test processing: parent track: {}", parentTrackDup);
+        if (plugin instanceof Segmenter) { // case segmenter -> segment only & call to test method
+
+            // run pre-filters on whole track -> some track preFilters need whole track to be effective. todo : parameter to limit ? 
+            boolean runPreFiltersOnWholeTrack = !psc.getTrackPreFilters(false).isEmpty() || plugin instanceof TrackParametrizable; 
+            if (runPreFiltersOnWholeTrack) {
+                psc.getTrackPreFilters(true).filter(structureIdx, wholeParentTrackDup);
+                parentTrackDup.forEach(p->stores.get(p).addIntermediateImage("pre-filtered", p.getPreFilteredImage(structureIdx))); // add preFiltered image
+            }
+
+            TrackParametrizer  applyToSeg = TrackParametrizable.getTrackParametrizer(structureIdx, wholeParentTrackDup, (Segmenter)plugin);
+            SegmentOnly so; 
+            if (psc instanceof SegmentOnly) {
+                so = (SegmentOnly)psc;
+                if (runPreFiltersOnWholeTrack) { // were already run
+                    so.getPreFilters().removeAll();
+                    so.getTrackPreFilters(false).removeAll();
+                }
+            } else {
+                so = new SegmentOnly((Segmenter)plugin).setPostFilters(psc.getPostFilters());
+                if (!runPreFiltersOnWholeTrack) so.addPreFilters(psc.getPreFilters().get()); // track pre-filters where not run -> add regular prefilters
+            }
+
+            if (segParentStrutureIdx!=parentStrutureIdx && o.getStructureIdx()==segParentStrutureIdx) { // when selected objects are segmentation parent -> remove all others
+                Set<StructureObject> selectedObjects = sel.stream().map(s->dupMap.get(s.getId())).collect(Collectors.toSet());
+                parentTrackDup.forEach(p->p.getChildren(segParentStrutureIdx).removeIf(c->!selectedObjects.contains(c)));
+                logger.debug("remaining segmentation parents: {}", Utils.toStringList(parentTrackDup, p->p.getChildren(segParentStrutureIdx)));
+            }
+            TrackParametrizer  apply = (p, s)-> {
+                if (s instanceof TestableProcessingPlugin) ((TestableProcessingPlugin)s).setTestDataStore(stores);
+                if (applyToSeg!=null) applyToSeg.apply(p, s); 
+            };
+            so.segmentAndTrack(structureIdx, parentTrackDup, apply);
+
+        } else if (plugin instanceof Tracker) {
+            boolean segAndTrack = true; 
+            if (!(plugin instanceof TrackerSegmenter)) segAndTrack = false;
+
+            // get continuous parent track
+            int minF = parentTrackDup.stream().mapToInt(p->p.getFrame()).min().getAsInt();
+            int maxF = parentTrackDup.stream().mapToInt(p->p.getFrame()).max().getAsInt();
+            parentTrackDup = wholeParentTrackDup.stream().filter(p->p.getFrame()>=minF && p.getFrame()<=maxF).collect(Collectors.toList());
+
+            // run testing
+            TrackPostFilterSequence tpf=null;
+            if (psc instanceof ProcessingSchemeWithTracking) tpf = ((ProcessingSchemeWithTracking)psc).getTrackPostFilters();
+            if (segAndTrack) {
+                if (!psc.getTrackPreFilters(false).isEmpty()) { // run pre-filters on whole track -> some track preFilters need whole track to be effective. todo : parameter to limit ? 
+                    psc.getTrackPreFilters(true).filter(structureIdx, wholeParentTrackDup);
+                    psc.getTrackPreFilters(false).removeAll();
+                }
+                ((TrackerSegmenter)plugin).segmentAndTrack(structureIdx, parentTrackDup, psc.getTrackPreFilters(true), psc.getPostFilters());
+            }
+            else ((Tracker)plugin).track(structureIdx, parentTrackDup);
+            if (tpf!=null) tpf.filter(structureIdx, parentTrackDup);
+        }
+        return stores;
+    }
+    public static JMenuItem getTestCommand(ImageProcessingPlugin plugin, Experiment xp, int structureIdx) {
         JMenuItem item = new JMenuItem("Test");
         item.setAction(new AbstractAction(item.getActionCommand()) {
             @Override
@@ -85,91 +168,45 @@ public class PluginConfigurationUtils {
                 // selected objects from GUI
                 List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
                 if ((sel == null || sel.isEmpty()) && GUI.getInstance().getSelectedPositions(false).isEmpty()) {
-                    GUI.log("Select an object OR position to test parameter");
+                    GUI.log("No selected objects : test will be run on first object");
                 }
-                else {
-                    if (sel==null) sel = new ArrayList<>(1);
-                    if (sel.isEmpty()) sel.add(GUI.getDBConnection().getDao(GUI.getInstance().getSelectedPositions(false).get(0)).getRoot(0));
-                    
-                    // get processing scheme
-                    ProcessingScheme psc=null;
-                    if (pp.instanciatePlugin() instanceof ProcessingScheme) psc = (ProcessingScheme)pp.instanciatePlugin();
-                    else {
-                        PluginParameter pp2 = ParameterUtils.getFirstParameterFromParents(PluginParameter.class, pp, false);
-                        while(pp2 != null && !(pp2.instanciatePlugin() instanceof ProcessingScheme)) pp2 = ParameterUtils.getFirstParameterFromParents(PluginParameter.class, pp2, false);
-                        if (pp2!=null && pp2.instanciatePlugin() instanceof ProcessingScheme) psc = (ProcessingScheme)pp2.instanciatePlugin();
-                        else {
-                            GUI.log("no processing scheme found in configuration tree");
-                            return;
-                        }
-                    }
-                    
-                    // get parent objects -> create graph cut
-                    todo do not limit to one parent & run on all parents
-                    StructureObject o = sel.get(0);
-                    int parentStrutureIdx = o.getExperiment().getStructure(structureIdx).getParentStructure();
-                    int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
-                    StructureObject parent = (o.getStructureIdx()>parentStrutureIdx) ? o.getParent(parentStrutureIdx) : o.getChildren(parentStrutureIdx).get(0);
-                    List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parent.getTrackHead(), false);
-                    Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut( parentTrack, true);  // don't modify object directly. 
-                    parent = dupMap.get(parent.getId()); 
-                    parentTrack = parentTrack.stream().map(p->dupMap.get(p.getId())).collect(Collectors.toList());
-                    psc.getTrackPreFilters(true).filter(structureIdx, parentTrack);
-                    
-                    // data store for test images
-                    Map<StructureObject, TestDataStore> stores = HashMapGetCreate.getRedirectedMap(so->new TestDataStore(so), HashMapGetCreate.Syncronization.SYNC_ON_MAP);
-                    if (plugin instanceof TestableProcessingPlugin) ((TestableProcessingPlugin)plugin).setTestDataStore(stores);
-                    
-                    if (plugin instanceof Segmenter) { // case segmenter -> segment only & call to test method
-                        TrackParametrizer  applyToSeg = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, (Segmenter)plugin);
-                        SegmentOnly so; 
-                        if (psc instanceof SegmentOnly) {
-                            so = (SegmentOnly)psc;
-                            so.getPreFilters().removeAll();
-                            so.getTrackPreFilters(false).removeAll();
-                        }
-                        else so = new SegmentOnly((Segmenter)plugin).setPostFilters(psc.getPostFilters());
+                String pos = GUI.getInstance().getSelectedPositions(false).isEmpty() ? GUI.getDBConnection().getExperiment().getPosition(0).getName() : GUI.getInstance().getSelectedPositions(false).get(0);
+                if (sel==null) sel = new ArrayList<>(1);
+                if (sel.isEmpty()) sel.add(GUI.getDBConnection().getDao(pos).getRoot(0));
 
-                        if (segParentStrutureIdx!=parentStrutureIdx && o.getStructureIdx()==segParentStrutureIdx) {
-                            final List<StructureObject> selF = sel;
-                            parent.getChildren(segParentStrutureIdx).removeIf(oo -> !selF.contains(oo));
-                        }
-                        sel = new ArrayList<>();
-                        sel.add(parent);
-                        TrackParametrizer  apply = (p, s)-> {
-                            if (s instanceof TestableProcessingPlugin) ((TestableProcessingPlugin)s).setTestDataStore(stores);
-                            applyToSeg.apply(p, s); 
-                        };
-                        so.segmentAndTrack(structureIdx, sel, apply);
-
-                    } else if (plugin instanceof Tracker) {
-                        boolean segAndTrack = true; 
-                        if (!(plugin instanceof TrackerSegmenter)) segAndTrack = false;
-                        
-                        // get first continuous parent track
-                        todo: graph cut
-                        sel = Utils.transform(sel, ob -> o.getStructureIdx()>parentStrutureIdx?ob.getParent(parentStrutureIdx):ob.getChildren(parentStrutureIdx).get(0));
-                        Utils.removeDuplicates(sel, false);
-                        Collections.sort(sel, (o1, o2)->Integer.compare(o1.getFrame(), o2.getFrame()));
-                        int i = 0;
-                        while (i+1<sel.size() && sel.get(i+1).getFrame()==sel.get(i).getFrame()+1) ++i;
-                        sel = sel.subList(0, i+1);
-                        logger.debug("getImage: {}, getXP: {}", parentTrack.get(0).getRawImage(0)!=null, parentTrack.get(0).getExperiment()!=null);
-                        
-                        // run testing
-                        TrackPostFilterSequence tpf=null;
-                        if (psc instanceof ProcessingSchemeWithTracking) tpf = ((ProcessingSchemeWithTracking)psc).getTrackPostFilters();
-                        if (segAndTrack) ((TrackerSegmenter)plugin).segmentAndTrack(structureIdx, parentTrack, psc.getTrackPreFilters(true), psc.getPostFilters());
-                        else ((Tracker)plugin).track(structureIdx, parentTrack);
-                        if (tpf!=null) tpf.filter(structureIdx, parentTrack);
-
-                        
-                    }
-                    run display command (move it to this class)
-                }
+                Map<StructureObject, TestDataStore> stores = testImageProcessingPlugin(plugin, xp, structureIdx, sel);
+                if (stores!=null) displayIntermediateImages(stores, structureIdx);
             }
         });
         return item;
+    }
+    
+    public static void displayIntermediateImages(Map<StructureObject, TestDataStore> stores, int structureIdx) {
+        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+        int parentStructureIdx = stores.values().stream().findAny().get().getParent().getExperiment().getStructure(structureIdx).getParentStructure();
+        int segParentStrutureIdx = stores.values().stream().findAny().get().getParent().getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
+        
+        Pair<ImageObjectInterface, List<Image>> res = buildIntermediateImages(stores.values(), parentStructureIdx);
+        res.value.forEach((image) -> {
+            iwm.addImage(image, res.key, structureIdx, true);
+            iwm.addTestData(image, stores.values());
+        });
+        if (parentStructureIdx!=segParentStrutureIdx) { // add a selection to diplay the segmentation parent on the intermediate image
+            List<StructureObject> parentTrack = stores.values().stream().map(s->s.getParent().getParent(parentStructureIdx)).distinct().sorted().collect(Collectors.toList());
+            Collection<StructureObject> bact = Utils.flattenMap(StructureObjectUtils.getChildrenByFrame(parentTrack, segParentStrutureIdx));
+            Selection bactS = new Selection("testTrackerSelection", parentTrack.get(0).getDAO().getMasterDAO());
+            bactS.setColor("Grey");
+            bactS.addElements(bact);
+            bactS.setIsDisplayingObjects(true);
+            GUI.getInstance().addSelection(bactS);
+            res.value.forEach((image) -> GUI.updateRoiDisplayForSelections(image, res.key));
+        }
+        GUI.getInstance().setInteractiveStructureIdx(structureIdx);
+        res.value.forEach((image) -> {
+            iwm.displayAllObjects(image);
+            iwm.displayAllTracks(image);
+        });
+        
     }
 
     public static JMenuItem getTransformationTest(String name, Position position, int transfoIdx, boolean showAllSteps) {

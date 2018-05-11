@@ -211,7 +211,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                             //logger.debug("interactive selection after remove, contained: {}", selectedObjects.size());
                         }
                         long t2 = System.currentTimeMillis();
-                        logger.debug("select objects: find indices: {} remove afterwards: {}", t1-t0, t2-t1);
+                        //logger.debug("select objects: find indices: {} remove afterwards: {}", t1-t0, t2-t1);
                         if (!freeHandSplit || !strechObjects) ip.deleteRoi();
                     }
                 }
