@@ -330,7 +330,17 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
             }
             if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages && !exportData) errors.add(new Pair(dbName, new Exception("No action to run!")));
-            printErrors();
+            // check parametrization
+            if (preProcess) {
+                for (int p : positions) if (!db.getExperiment().getPosition(p).isValid()) errors.add(new Pair(dbName, new Exception("Configuration error @ Position: "+ db.getExperiment().getPosition(p).getName())));
+            }
+            if (segmentAndTrack || trackOnly) {
+                for (int s : structures) if (!db.getExperiment().getStructure(s).isValid()) errors.add(new Pair(dbName, new Exception("Configuration error @ Structure: "+ db.getExperiment().getStructure(s).getName())));
+            }
+            if (measurements) {
+                if (!db.getExperiment().getMeasurements().isValid()) errors.add(new Pair(dbName, new Exception("Configuration error @ Meausements: ")));
+            }
+            for (Pair<String, Throwable> e : errors) publish("Invalid Task Error @"+e.key+" "+(e.value==null?"null":e.value.getLocalizedMessage()));
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
             db.clearCache(); // unlock if (unlock) 
             return errors.isEmpty();
@@ -577,7 +587,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         unrollMultipleExceptions();
         this.publish("Errors: "+this.errors.size()+ " For JOB: "+this.toString());
         for (Pair<String, ? extends Throwable> e : errors) {
-            publish("Error @"+e.key+(e.value==null?"null":e.value.toString()));
+            publish("Error @"+e.key+" "+(e.value==null?"null":e.value.toString()));
             publishError(e.value);
         }
     }

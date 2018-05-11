@@ -37,12 +37,16 @@ public class ParentStructureParameter extends StructureParameter {
 
     public void setMaxStructureIdx(int maxStructureExcl) {
         this.maxStructure = maxStructureExcl;
-        if (maxStructure>=0 && getSelectedIndex()>=maxStructure) setSelectedIndex(-1);
+        if (maxStructure>=0 && super.getSelectedIndex()>=maxStructure) setSelectedIndex(-1);
     }
     @Override public int getSelectedIndex() {
         int idx = super.getSelectedIndex();
+        if (maxStructure>=0 && idx>=maxStructure) {
+            setSelectedIndex(-1);
+            idx= -1;
+        }
         //logger.debug("parent structure parameter:{}. sel idx: {} max idx : {}", name, idx, maxStructure);
-        if (maxStructure>=0 && idx>=maxStructure) throw new IllegalArgumentException("ParentStructureParameter "+name+"sel structure:"+idx+" superior to max structure: "+maxStructure);
+        //if (maxStructure>=0 && idx>=maxStructure) throw new IllegalArgumentException("ParentStructureParameter "+name+"sel structure:"+idx+" superior to max structure: "+maxStructure);
         return idx;
     }
     
