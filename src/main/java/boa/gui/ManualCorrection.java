@@ -424,7 +424,7 @@ public class ManualCorrection {
             
             for (Map.Entry<StructureObject, List<int[]>> e : points.entrySet()) {
                 ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
-                if (!parentThMapParam.isEmpty()) parentThMapParam.get(e.getKey()).apply(e.getKey(), segmenter);
+                if (!parentThMapParam.isEmpty()) parentThMapParam.get(e.getKey().getTrackHead()).apply(e.getKey(), segmenter);
                 segmenter.setManualSegmentationVerboseMode(test);
                 StructureObject globalParent = e.getKey().getParent(parentStructureIdx);
                 StructureObject subParent = e.getKey();
