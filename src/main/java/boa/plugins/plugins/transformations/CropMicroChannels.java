@@ -37,8 +37,10 @@ import boa.plugins.Plugin;
 import boa.plugins.Transformation;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -102,7 +104,6 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
             default :
                 frames =  InputImages.chooseNImagesWithSignal(inputImages, channelIdx, framesN);
         }
-        
         Function<Integer, MutableBoundingBox> getBds = i -> {
             Image<? extends Image> im = inputImages.getImage(channelIdx, i);
             if (im.sizeZ()>1) {
@@ -118,8 +119,9 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
             getBds.apply(inputImages.getDefaultTimePoint());
         }
         if (framesN!=1) this.setTestMode(false);
-        Map<Integer, MutableBoundingBox> bounds = frames.stream().parallel().collect(Collectors.toMap(i->i, i->getBds.apply(i)));
-        
+        Map<Integer, MutableBoundingBox> bounds = frames.stream().parallel().collect(HashMap::new, (m, i)->m.put(i, getBds.apply(i)), HashMap::putAll); // not using collectors toMap because result of getBounds can be null
+        for (Entry<Integer, MutableBoundingBox> e : bounds.entrySet()) if (e.getValue()==null) logger.error("crop MC: null bound for frame: {}", e.getKey());
+        bounds.values().removeIf(b->b==null);
         if (bounds.isEmpty()) throw new RuntimeException("Bounds could not be computed");
         // uniformize y + reduce sizeY if necessary
         int maxSizeY = bounds.values().stream().mapToInt(b->b.sizeY()).max().getAsInt();
