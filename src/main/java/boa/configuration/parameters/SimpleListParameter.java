@@ -249,6 +249,13 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     }
     
     @Override
+    public boolean isValid() {
+        if (unMutableIndex>=this.getChildCount()) return false;
+        for (T child : this.getActivatedChildren()) if (!child.isValid()) return false;
+        return true;
+    }
+    
+    @Override
     public boolean sameContent(Parameter other) { // ne check pas le nom ni l'index unMutable..
         if (other instanceof ListParameter) {
             ListParameter otherLP = (ListParameter)other;

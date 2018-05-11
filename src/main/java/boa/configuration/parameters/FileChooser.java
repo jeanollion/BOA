@@ -34,13 +34,17 @@ import java.util.function.Consumer;
  */
 public class FileChooser extends SimpleParameter implements Listenable {
     protected String[] selectedFiles=new String[0];
+    boolean allowNoSelection = true;
     protected FileChooserOption option = FileChooserOption.DIRECTORIES_ONLY;
     FileChooserUI ui;
     
-    
     public FileChooser(String name, FileChooserOption option) {
+        this(name, option, true);
+    }
+    public FileChooser(String name, FileChooserOption option, boolean allowNoSelection) {
         super(name);
         this.option=option;
+        this.allowNoSelection=allowNoSelection;
     }
     
     public ParameterUI getUI() {
@@ -67,6 +71,10 @@ public class FileChooser extends SimpleParameter implements Listenable {
         int i = 0;
         for (File f : filePath) selectedFiles[i++]=f.getAbsolutePath();
         fireListeners();
+    }
+    @Override 
+    public boolean isValid() {
+        return !(!allowNoSelection && this.selectedFiles.length==0);
     }
     @Override
     public boolean sameContent(Parameter other) {

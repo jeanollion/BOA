@@ -41,7 +41,10 @@ public class BoundedNumberParameter extends NumberParameter {
     public Number getUpperBound() {
         return upperBound;
     }
-    
+    @Override 
+    public boolean isValid() {
+        return super.isValid() && (lowerBound==null || value.doubleValue()>=lowerBound.doubleValue()) && (upperBound==null || value.doubleValue()<=upperBound.doubleValue());
+    }
     @Override public BoundedNumberParameter duplicate() {
         BoundedNumberParameter res = new BoundedNumberParameter(name, decimalPlaces, value, lowerBound, upperBound);
         res.setListeners(listeners);

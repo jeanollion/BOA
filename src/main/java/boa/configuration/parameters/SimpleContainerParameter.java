@@ -82,6 +82,12 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     protected abstract void initChildList();
     
     @Override
+    public boolean isValid() {
+        for (Parameter child : getChildren()) if (!child.isValid()) return false;
+        return true;
+    }
+    
+    @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof SimpleContainerParameter) {
             bypassListeners=true;

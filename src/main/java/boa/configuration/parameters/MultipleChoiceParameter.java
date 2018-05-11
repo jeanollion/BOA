@@ -57,7 +57,10 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
         else ui.updateUIFromParameter();
         return ui;
     }
-    
+    @Override 
+    public boolean isValid() {
+        return true;
+    }
     // multiple choice parameter implementation
     @Override
     public void setSelectedIndicies(int[] selectedItems) {

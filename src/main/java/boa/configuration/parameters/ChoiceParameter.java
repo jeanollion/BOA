@@ -79,6 +79,10 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     public ParameterUI getUI() {
         return new ChoiceParameterUI(this);
     }
+    @Override 
+    public boolean isValid() {
+        return !(!allowNoSelection && this.selectedIndex<0);
+    }
     @Override
     public boolean sameContent(Parameter other) {
         if (other instanceof ChoiceParameter) {

@@ -52,6 +52,10 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
         this.allowNoSelection=allowNoSelection;
         this.multipleSelection=true;
     }
+    @Override 
+    public boolean isValid() {
+        return !(allowNoSelection && selectedIndicies.length==0);
+    }
     @Override
     public boolean sameContent(Parameter other) {
         if (other instanceof StructureParameter) {

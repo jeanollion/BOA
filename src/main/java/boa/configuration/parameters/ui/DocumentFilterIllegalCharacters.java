@@ -51,13 +51,13 @@ import javax.swing.text.DocumentFilter;
 public class DocumentFilterIllegalCharacters extends DocumentFilter {
 
 
-    private char[] ILLEGAL_CHARACTERS = {'/', '\n', '\r', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':', '.', ';', ',', ' ', '-'};
-    private char[] ILLEGAL_CHARACTERS_START = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    private static char[] ILLEGAL_CHARACTERS = {'/', '\n', '\r', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"', ':', '.', ';', ',', ' ', '-'};
+    private static char[] ILLEGAL_CHARACTERS_START = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
     
-    public DocumentFilterIllegalCharacters(char[] illegalCharacters, char[] illegalCharactersStart) {
+    /*public DocumentFilterIllegalCharacters(char[] illegalCharacters, char[] illegalCharactersStart) {
         if (illegalCharacters!=null) ILLEGAL_CHARACTERS=illegalCharacters;
         if (illegalCharactersStart!=null) ILLEGAL_CHARACTERS_START=illegalCharactersStart;
-    }
+    }*/
     
     public DocumentFilterIllegalCharacters() {
     }
@@ -78,18 +78,23 @@ public class DocumentFilterIllegalCharacters extends DocumentFilter {
     {
         StringBuilder sb = new StringBuilder();
         if (offset==0) {
-        if (!isIllegalFileNameCharStart(s.charAt(0)) && !isIllegalFileNameChar (s.charAt (0)))
+        if (!isIllegalCharStart(s.charAt(0)) && !isIllegalChar(s.charAt (0)))
                 sb.append (s.charAt (0));
         }
         for(int i = offset==0?1:0; i < s.length(); ++i)
         {
-            if (!isIllegalFileNameChar (s.charAt (i)))
+            if (!isIllegalChar(s.charAt (i)))
                 sb.append (s.charAt (i));
         }
         return sb.toString();
     }
-
-    private boolean isIllegalFileNameChar (char c)
+    public static boolean containsIllegalCharacters(String s) {
+        if (s.length()==0) return false;
+        if (isIllegalCharStart(s.charAt(0))) return true;
+        for (char c : s.toCharArray()) if (isIllegalChar(c)) return true;
+        return false;
+    }
+    public static boolean isIllegalChar(char c)
     {
         for (int i = 0; i < ILLEGAL_CHARACTERS.length; i++)
         {
@@ -99,7 +104,7 @@ public class DocumentFilterIllegalCharacters extends DocumentFilter {
 
         return false;
     }
-    private boolean isIllegalFileNameCharStart (char c)
+    private static boolean isIllegalCharStart (char c)
     {
         for (int i = 0; i < ILLEGAL_CHARACTERS_START.length; i++)
         {

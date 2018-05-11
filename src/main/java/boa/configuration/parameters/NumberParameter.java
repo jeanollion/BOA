@@ -59,7 +59,10 @@ public class NumberParameter extends SimpleParameter implements Listenable, OpPa
         this.value=value;
         this.fireListeners();
     }
-    
+    @Override 
+    public boolean isValid() {
+        return value!=null;
+    }
     @Override
     public String toString() {
         return name+": "+value;

@@ -35,22 +35,31 @@ import javax.swing.text.AbstractDocument;
  */
 public class TextParameter extends SimpleParameter {
     TextEditorUI ui;
-    boolean allowSpecialCharacters;
+    boolean allowSpecialCharacters, allowBlank;
     String value;
     
     public TextParameter(String name) {
-        this(name, "", true);
+        this(name, "", true, true);
     }
     
     public TextParameter(String name, String defaultText, boolean allowSpecialCharacters) {
+        this(name, defaultText, allowSpecialCharacters, true);
+    }
+    public TextParameter(String name, String defaultText, boolean allowSpecialCharacters, boolean allowBlank) {
         super(name);
         this.value=defaultText;
         this.allowSpecialCharacters=allowSpecialCharacters;
+        this.allowBlank=allowBlank;
     }
     @Override 
     public ParameterUI getUI() {
         if (ui==null) ui=new TextEditorUI(this, allowSpecialCharacters);
         return ui;
+    }
+    @Override
+    public boolean isValid() {
+        if (!allowBlank && this.value.length()==0) return false;
+        return !(!allowSpecialCharacters && DocumentFilterIllegalCharacters.containsIllegalCharacters(value));
     }
     @Override
     public boolean sameContent(Parameter other) {
