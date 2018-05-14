@@ -38,15 +38,10 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
-import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithinCompartment;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.SplitScenario;
 import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLikelyhoodEstimator.Track;
 import boa.utils.HashMapGetCreate;
-import boa.utils.HashMapGetCreate.Factory;
-import boa.utils.Pair;
-import boa.image.processing.clustering.ClusterCollection;
-import boa.image.processing.clustering.InterfaceImpl;
 import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithQuality;
 
 /**
@@ -103,13 +98,13 @@ public class MutationTrackPostProcessing {
                 if (prevTrackEnd.getNext()!=null) continue; // look only within track ends
                 if (prevTrackEnd.getPrevious()==null) continue; // look only wihtin tracks with >=1 element
                 //if (trackHeadTrackMap.get(headTrackTail.getTrackHead()).size()>=maxTrackSize) continue;
-                SpotWithinCompartment sprevTrackEnd  = (SpotWithinCompartment)objectSpotMap.get(prevTrackEnd.getRegion());
-                SpotWithinCompartment sPrevTrackP = (SpotWithinCompartment)objectSpotMap.get(prevTrackEnd.getPrevious().getRegion());
-                if (!sNextTrackTH.isLowQuality() && !sprevTrackEnd.lowQuality) continue;
+                SpotWithQuality sprevTrackEnd  = (SpotWithQuality)objectSpotMap.get(prevTrackEnd.getRegion());
+                SpotWithQuality sPrevTrackP = (SpotWithQuality)objectSpotMap.get(prevTrackEnd.getPrevious().getRegion());
+                if (!sNextTrackTH.isLowQuality() && !sprevTrackEnd.isLowQuality()) continue;
                 double dEndToN = sprevTrackEnd.squareDistanceTo(sNextTrackN);
                 double dPToTH = sPrevTrackP.squareDistanceTo(sNextTrackTH);
                 if (dEndToN>maxSqDist && dPToTH>maxSqDist) continue;
-                if (sNextTrackTH.isLowQuality() && sprevTrackEnd.lowQuality) { // 2 LQ spots: compare distances
+                if (sNextTrackTH.isLowQuality() && sprevTrackEnd.isLowQuality()) { // 2 LQ spots: compare distances
                     if (dEndToN<dPToTH) {
                         if (bestPrevTrackEnd==null || minDist>dEndToN) {
                             minDist = dEndToN;
@@ -129,7 +124,7 @@ public class MutationTrackPostProcessing {
                         deleteNextTrackTH = false;
                         bestPrevTrackEnd = prevTrackEnd;
                     }
-                } else if (!sprevTrackEnd.lowQuality && dEndToN<=maxSqDist) { // keep the high quality spot
+                } else if (!sprevTrackEnd.isLowQuality() && dEndToN<=maxSqDist) { // keep the high quality spot
                     if (bestPrevTrackEnd==null || minDist>dEndToN) {
                         minDist = dEndToN;
                         deleteNextTrackTH = true;

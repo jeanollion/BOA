@@ -33,7 +33,7 @@ public class DistanceComputationParameters {
         public boolean includeLQ = true;
         public boolean allowGapBetweenLQ = false;
         int maxFrameDiff = 0;
-        PROJECTION projectionType=PROJECTION.NEAREST_POLE;
+        public PROJECTION projectionType=PROJECTION.NEAREST_POLE;
         public DistanceComputationParameters() {
             
         }

@@ -129,7 +129,7 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     }
     public double distSq(Point other) {
         double d = 0;
-        for (int i = 0; i<coords.length; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
+        for (int i = 0; i<Math.min(coords.length, other.coords.length); ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
         return d;
     }
     public double distSqXY(Point other) {
@@ -272,6 +272,15 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
         }
         final Point<?> other = (Point<?>) obj;
         return Arrays.equals(this.coords, other.coords);
+    }
+    public boolean equals(Point other, double accuracy) {
+        if (other==null) return false;
+        if (coords.length!=other.coords.length) return false;
+        if (Arrays.equals(this.coords, other.coords)) return true;
+        for (int i = 0; i<coords.length; ++i) {
+            if (Math.abs(coords[i]-other.coords[i])>accuracy) return false;
+        }
+        return true;
     }
     public static Point intersect2D(Point line1Point1, Point line1Point2, Point line2Point1, Point line2Point2) {
         double d = (line1Point1.coords[0]-line1Point2.coords[0])*(line2Point1.coords[1]-line2Point2.coords[1]) - (line1Point1.coords[1]-line1Point2.coords[1])*(line2Point1.coords[0]-line2Point2.coords[0]);

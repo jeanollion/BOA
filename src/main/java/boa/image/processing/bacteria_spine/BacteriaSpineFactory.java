@@ -505,6 +505,7 @@ public class BacteriaSpineFactory {
         if (zoomFactor%2==0) throw new IllegalArgumentException("Zoom Factory should be uneven");
         int add = zoomFactor > 1 ? 1 : 0;
         ImageFloat spineImage = new ImageFloat("", new SimpleImageProperties(new SimpleBoundingBox(0, bounds.sizeX()*zoomFactor-1, 0, bounds.sizeY()*zoomFactor-1, 0, 0), 1, 1));
+        spineImage.translate(bounds);
         Offset off = bounds;
         Voxel vox = new Voxel(0, 0, 0);
         // draw contour of bacteria

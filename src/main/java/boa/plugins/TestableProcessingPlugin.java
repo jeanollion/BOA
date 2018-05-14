@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -47,7 +48,7 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
     public static class TestDataStore {
         final StructureObject parent;
         Map<String, Image> images = new HashMap<>();
-        List<Runnable> miscData = new ArrayList<>();
+        List<Consumer<List<StructureObject>>> miscData = new ArrayList<>();
         public TestDataStore(StructureObject parent) {
             this.parent= parent;
         }
@@ -64,11 +65,11 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
          * Adds misc data that will be displayed by running the run method of {@param misc}
          * @param misc data displayed though run method
          */
-        public void addMisc(Runnable misc) {
+        public void addMisc(Consumer<List<StructureObject>> misc) {
             miscData.add(misc);
         }
-        public void displayMiscData() {
-            miscData.forEach((r) -> r.run());
+        public void displayMiscData(List<StructureObject> selectedObjects) {
+            miscData.forEach((r) -> r.accept(selectedObjects));
         }
     }
     

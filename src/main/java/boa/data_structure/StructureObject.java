@@ -54,6 +54,7 @@ import boa.utils.Pair;
 import boa.utils.SmallArray;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
+import java.util.Collections;
 
 
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject>, PostLoadable, JSONSerializable {
@@ -660,7 +661,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     }
                 } 
             }
-            //logger.trace("get div siblings: previous non null, divSiblings: {}", res==null?"null":res.size());
+            
         } /*else { // get thespatially closest sibling
             double distance = Double.MAX_VALUE;
             StructureObject min = null;
@@ -685,6 +686,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 res.add(this);
             } else res.add(0, this);
         }
+        if (res==null) return Collections.EMPTY_LIST;
         return res;
     }
     

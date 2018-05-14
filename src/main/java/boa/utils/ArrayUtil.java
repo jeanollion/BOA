@@ -282,6 +282,30 @@ public class ArrayUtil {
         return regionalExtrema;
     }
     
+    public static List<Integer> getRegionalExtrema(double[] array, int scale, boolean max) {
+        if (scale<1) scale = 1;
+        ArrayList<Integer> localExtrema = new ArrayList<>();
+        // get local extrema
+        if (max) for (int i = 0; i<array.length; ++i) {if (isLocalMax(array, scale, i)) localExtrema.add(i);}
+        else for (int i = 0; i<array.length; ++i) {if (isLocalMin(array, scale, i)) localExtrema.add(i);}
+        if (localExtrema.size()<=1) return localExtrema;
+        
+        // suppress plateau
+        ArrayList<Integer> regionalExtrema = new ArrayList<>(localExtrema.size());
+        for (int i = 1; i<localExtrema.size(); ++i) {
+            if (localExtrema.get(i)==localExtrema.get(i-1)+1) {
+                int j = i+1;
+                while (j<localExtrema.size() && localExtrema.get(j)==localExtrema.get(j-1)+1){j++;}
+                //logger.debug("i: {}, j:{}, loc i-1: {}, loc j-1: {}",i, j, localExtrema.get(i-1), localExtrema.get(j-1));
+                regionalExtrema.add((localExtrema.get(i-1)+localExtrema.get(j-1))/2); //mid-value of plateau (i-1 = borne inf, j-1 = borne sup)
+                i=j;
+            } else regionalExtrema.add(localExtrema.get(i-1));
+        }
+        // add last element if not plateau:
+        if (localExtrema.get(localExtrema.size()-1)!=localExtrema.get(localExtrema.size()-2)+1) regionalExtrema.add(localExtrema.get(localExtrema.size()-1));
+        return regionalExtrema;
+    }
+    
     protected static boolean isLocalMax(float[] array, int scale, int idx) {
         for (int i = 1; i<=scale; ++i) {
             if (idx-i>=0 && array[idx-i]>array[idx]) return false;
@@ -290,6 +314,20 @@ public class ArrayUtil {
         return true;
     }
     protected static boolean isLocalMin(float[] array, int scale, int idx) {
+        for (int i = 1; i<=scale; ++i) {
+            if (idx-i>=0 && array[idx-i]<array[idx]) return false;
+            if (idx+i<array.length && array[idx+i]<array[idx]) return false; 
+        }
+        return true;
+    }
+    protected static boolean isLocalMax(double[] array, int scale, int idx) {
+        for (int i = 1; i<=scale; ++i) {
+            if (idx-i>=0 && array[idx-i]>array[idx]) return false;
+            if (idx+i<array.length && array[idx+i]>array[idx]) return false; 
+        }
+        return true;
+    }
+    protected static boolean isLocalMin(double[] array, int scale, int idx) {
         for (int i = 1; i<=scale; ++i) {
             if (idx-i>=0 && array[idx-i]<array[idx]) return false;
             if (idx+i<array.length && array[idx+i]<array[idx]) return false; 

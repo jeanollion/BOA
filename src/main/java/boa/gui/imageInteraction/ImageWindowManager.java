@@ -1117,7 +1117,7 @@ public abstract class ImageWindowManager<I, U, V> {
         this.testData.put(image, testData);
     }
     protected JPopupMenu getMenu(Image image) {
-        List<StructureObject> sel = getSelectedLabileObjects(image);
+        final List<StructureObject> sel = getSelectedLabileObjects(image);
         if (sel.isEmpty()) return null;
         
         if (testData.containsKey(image)) { // test menu
@@ -1130,7 +1130,7 @@ public abstract class ImageWindowManager<I, U, V> {
             item.setAction(new AbstractAction(item.getActionCommand()) {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    stores.stream().filter(s->s.getParent().equals(o.getParent(s.getParent().getStructureIdx()))).forEach(s-> s.displayMiscData());
+                    stores.stream().filter(s->s.getParent().equals(o.getParent(s.getParent().getStructureIdx()))).forEach(s-> s.displayMiscData(sel));
                 }
             });
             return menu;
@@ -1138,8 +1138,7 @@ public abstract class ImageWindowManager<I, U, V> {
             if (sel.size()==1) return getMenu(sel.get(0));
             else {
                 Collections.sort(sel);
-                if (sel.size()>50) sel=sel.subList(0, 50);
-                return getMenu(sel);
+                return getMenu(sel.subList(0, 50));
             }
         }
     }
