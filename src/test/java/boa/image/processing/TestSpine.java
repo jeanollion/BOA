@@ -62,34 +62,40 @@ public class TestSpine {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        int structureIdx = 3;
+        int structureIdx = 1;
         //String dbName = "AyaWT_mmglu";
         //String dbName = "MutH_150324";
-        String dbName = "WT_180318_Fluo";
+        //String dbName = "WT_180318_Fluo";
         //String dbName = "WT_150609";
-        int postition= 26, frame=0, mc=0, b=0;
+        String dbName = "fluo160501_uncorr_TestParam";
+        int postition= 0, frame=122, mc=0, b=0;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
         
         MasterDAO mDAO = new Task(dbName).getDB();
         
-        testAllObjects(mDAO, structureIdx, 26);
+        //testAllObjects(mDAO, structureIdx, 26);
         
         int parentStructure = mDAO.getExperiment().getStructure(structureIdx).getParentStructure();
         Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(parentStructure).get(mc).getChildren(structureIdx).get(b);
-        StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
-        StructureObject bact2 = root2.getChildren(parentStructure).get(mc).getChildren(structureIdx).get(1);
         
+        //testSpineCreation(bact);
         //testContourCleaning(bact);
         //testAllSteps(bact);
         //testLocalization(bact, true);
         //testLocalization(bact, false);
+        testSkeleton(bact);
+        
+        //StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
+        //StructureObject bact2 = root2.getChildren(parentStructure).get(mc).getChildren(structureIdx).get(1);
+        
+        
         //testProjection(bact, bact2);
-        testSpineCreation(bact);
-        //testSkeleton(bact);
+        
+        
     }
     public static void testAllObjects(MasterDAO mDAO, int structureIdx, int fromPosition) {
         int parentStructure = mDAO.getExperiment().getStructure(structureIdx).getParentStructure();
@@ -159,7 +165,7 @@ public class TestSpine {
         Map<StructureObject, BacteriaSpineLocalizer> locMap = HashMapGetCreate.getRedirectedMap((StructureObject b)->new BacteriaSpineLocalizer(b.getRegion()).setTestMode(true), Syncronization.NO_SYNC);
         Point center = locMap.get(bact1).getSpine()[1].duplicate().translate(new Vector(-2, 1.3f));
         if (!bact1.getRegion().contains(center.asVoxel())) throw new IllegalArgumentException("projected point outside bacteria");
-        Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, NEAREST_POLE, locMap); 
+        Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, NEAREST_POLE, locMap, true); 
         //Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, PROPORTIONAL, locMap);
         
         center.translateRev(bact1.getBounds());
