@@ -511,7 +511,7 @@ public class GenerateXP {
             xp.addMeasurement(new MutationTrackMeasurements(1, 2));
             xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));
             xp.addMeasurement(new ObjectFeatures(2).addFeatures(new Quality()));
-            xp.addMeasurement(new RelativePosition(1, 0, 1, 2));
+            xp.addMeasurement(new RelativePosition(1, 0, RelativePosition.REF_POINT.GEOM_CENTER, RelativePosition.REF_POINT.UPPER_LEFT_CORNER).setMeasurementName("Center"));
             xp.addMeasurement(new Focus(1));
         }
     }

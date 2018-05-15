@@ -215,7 +215,7 @@ public class GenerateMutationDynamicsXP {
         xp.addMeasurement(new SimpleIntensityMeasurementStructureExclusion(1, 2, 2).setPrefix("YfpMutExcl").setRadii(2, 2));
         xp.addMeasurement(new SimpleIntensityMeasurement(2, 2).setPrefix("Yfp"));
         xp.addMeasurement(new ObjectFeatures(2).addFeature(new SNR(1), "Snr").addFeature(new LocalSNR(1), "LocalSnr"));
-        xp.addMeasurement(new RelativePosition(2, 1, 0, 0).setMeasurementName("CoordMassToBacteriaMass"));
+        /*xp.addMeasurement(new RelativePosition(2, 1, 0, 0).setMeasurementName("CoordMassToBacteriaMass"));
         xp.addMeasurement(new RelativePosition(2, 1, 0, 1).setMeasurementName("CoordMassToBacteriaGeom"));
         xp.addMeasurement(new RelativePosition(2, 1, 2, 1).setMeasurementName("CoordToBacteriaGeom"));
         xp.addMeasurement(new RelativePosition(2, 0, 0, 2).setMeasurementName("CoordMassToMC"));
@@ -225,7 +225,7 @@ public class GenerateMutationDynamicsXP {
         xp.addMeasurement(new RelativePosition(2, -1, 1, 2).setMeasurementName("CoordGeom"));
         xp.addMeasurement(new RelativePosition(1, -1, 1, 2).setMeasurementName("CoordGeom"));
         xp.addMeasurement(new RelativePosition(1, -1, 0, 2).setMeasurementName("CoordMass"));
-        xp.addMeasurement(new RelativePosition(1, 0, 0, 2).setMeasurementName("CoordMassToMC"));
+        xp.addMeasurement(new RelativePosition(1, 0, 0, 2).setMeasurementName("CoordMassToMC"));*/
     }
     
     /*public static Experiment generateXPSingleChannel(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, int[] crop) {

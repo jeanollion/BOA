@@ -31,29 +31,42 @@ import java.util.List;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
+import static boa.plugins.plugins.measurements.RelativePosition.REF_POINT.MASS_CENTER;
 import boa.utils.ArrayUtil;
 import boa.utils.geom.Point;
+import java.util.Arrays;
 
 /**
  *
  * @author jollion
  */
 public class RelativePosition implements Measurement {
+    public enum REF_POINT {
+        MASS_CENTER("Mass Center"), GEOM_CENTER("Geometrical Center"), FROM_SEGMENTATION("From segmentation"), UPPER_LEFT_CORNER("Upper Left Corner");
+        public final String name;
+        private REF_POINT(String name) {this.name = name;}
+        public static REF_POINT get(String name) {
+            return Arrays.stream(REF_POINT.values()).filter(s->s.name.equals(name)).findAny().orElseThrow(()->new RuntimeException("ENUM not found"));
+        }
+        public static String[] names() {
+            return Arrays.stream(REF_POINT.values()).map(s->s.name).toArray(l->new String[l]);
+        }
+    };
     protected StructureParameter objects = new StructureParameter("Structure", -1, false, false);
     protected StructureParameter reference = new StructureParameter("Reference Structure", -1, true, false);
-    ChoiceParameter objectCenter= new ChoiceParameter("Object Point", new String[]{"Mass Center", "Geometrical Center", "From segmentation", "Upper Left Corner"}, "Mass Center", false);
-    ChoiceParameter refPoint = new ChoiceParameter("Reference Point", new String[]{"Mass Center", "Geometrical Center", "Upper Left Corner"}, "Mass Center", false).setToolTipText("If no reference structure is selected the reference point will automatically be the upper left corner of the image");;
+    ChoiceParameter objectCenter= new ChoiceParameter("Object Point", REF_POINT.names(), MASS_CENTER.name, false);
+    ChoiceParameter refPoint = new ChoiceParameter("Reference Point", REF_POINT.names(), MASS_CENTER.name, false).setToolTipText("If no reference structure is selected the reference point will automatically be the upper left corner of the image");;
     TextParameter key = new TextParameter("Key Name", "RelativeCoord", false);
     //ConditionalParameter refCond = new ConditionalParameter(reference); structure param not actionable...
     protected Parameter[] parameters = new Parameter[]{objects, reference, objectCenter, refPoint, key};
     
     public RelativePosition() {}
     
-    public RelativePosition(int objectStructure, int referenceStructure, int objectCenterType, int refPointType) {
+    public RelativePosition(int objectStructure, int referenceStructure, REF_POINT objectCenter, REF_POINT refPoint) {
         this.objects.setSelectedStructureIdx(objectStructure);
         this.reference.setSelectedStructureIdx(referenceStructure);
-        this.objectCenter.setSelectedIndex(objectCenterType);
-        this.refPoint.setSelectedIndex(refPointType);
+        this.objectCenter.setSelectedItem(objectCenter.name);
+        this.refPoint.setSelectedItem(refPoint.name);
     }
     
     public RelativePosition setMeasurementName(String name) {

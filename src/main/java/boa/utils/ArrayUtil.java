@@ -363,6 +363,7 @@ public class ArrayUtil {
         ImageFloat im = new ImageFloat("array", array.length, new float[][]{array});
         ImageFeatures.gaussianSmooth(im, scale, scale, true);
     }
+    
     public static <T> T[] duplicate(T[] array) {
         if (array==null) return null;
         return Arrays.copyOf(array, array.length);
