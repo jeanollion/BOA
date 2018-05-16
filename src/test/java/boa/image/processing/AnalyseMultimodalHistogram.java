@@ -42,29 +42,18 @@ public class AnalyseMultimodalHistogram {
     public static void main(String[] args) {
         // open histo
         new ImageJ();
-        /*
+        
         String dbName = "MF1_180509";
-        int postition=3, frame=122;
+        int postition=5, frame=122;
         MasterDAO mDAO = new Task(dbName).getDB();
         List<Image> images = new ArrayList<>();
         for (int f = 0; f<mDAO.getExperiment().getPosition(postition).getFrameNumber(true); ++f)  images.add(mDAO.getExperiment().getPosition(postition).getInputImages().getImage(0, f));
-        Histogram histo = Histogram.getHisto256(images, null);
+        Histogram histo = Histogram.getHisto256(images, null, true);
         ImageWindowManagerFactory.showImage(Image.mergeZPlanes(images));
-        */
         
-        Image im = ImageReader.openIJTif("/data/Images/MOP/SaturationHyperFluo3.tif");
-        List<Image> images = im.splitZPlanes();
-        
-        
-        int fInterval = 1000;
-        for (int f = 0; f<images.size(); f+=fInterval) {
-            Image subIm = Image.mergeZPlanes(images.subList(f, Math.min(images.size(), f+fInterval)));
-            ImageWindowManagerFactory.showImage(subIm);
-            Histogram histo = subIm.getHisto256(null);
-            HistogramAnalyzer ha = new HistogramAnalyzer(histo, true).setVerbose(true);
-            logger.debug("range: [{}] bck range: [{}-{}]({}), saturation: {}, thld: {}", histo.minAndMax, histo.getValueFromIdx(ha.getBackgroundRange().min), histo.getValueFromIdx(ha.getBackgroundRange().max), ha.getBackgroundRange().max, ha.getSaturationThreshold(5, 0.2), ha.getThresholdMultimodal());
-            ha.plot();
-        }
+        HistogramAnalyzer ha = new HistogramAnalyzer(histo,5, true).setVerbose(true);
+        logger.debug("range: [{}] bck range: [{}-{}]({}), saturation: {}, thld: {}", histo.minAndMax, histo.getValueFromIdx(ha.getBackgroundRange().min), histo.getValueFromIdx(ha.getBackgroundRange().max), ha.getBackgroundRange().max, ha.getSaturationThreshold(5, 0.2), ha.getThresholdMultimodal());
+        ha.plot();
         
         
         

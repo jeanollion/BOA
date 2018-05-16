@@ -124,12 +124,8 @@ public class Histogram {
             minAndMax[0] = mm[0];
             minAndMax[1] = mm[1];
         }
-        boolean byteHisto = images.iterator().next() instanceof ImageByte;
         double[] mm = minAndMax;
-        return parallele(images.stream(), parallele).reduce(
-                new Histogram(new int[256], byteHisto, mm), 
-                (h, im)->{h.add(im.getHisto256(mm[0], mm[1], null, null));return h;}, 
-                (h1, h2)->{h1.add(h2);return h1;});
+        return parallele(images.stream(), parallele).map(im -> im.getHisto256(mm[0], mm[1], null, null)).reduce((h1, h2)->{h1.add(h2);return h1;}).get();
     }
     public static Histogram getHisto256(Map<Image, ImageMask> images, double[] minAndMax, boolean parallele) {
         if (minAndMax==null) minAndMax=new double[2];
@@ -138,13 +134,8 @@ public class Histogram {
             minAndMax[0] = mm[0];
             minAndMax[1] = mm[1];
         }
-        boolean byteHisto = images.keySet().iterator().next() instanceof ImageByte;
         double[] mm = minAndMax;
-        return parallele(images.entrySet().stream(), parallele).reduce(
-                new Histogram(new int[256], byteHisto, mm), 
-                (h, e)->{h.add(e.getKey().getHisto256(mm[0], mm[1], e.getValue(), null));return h;}, 
-                (h1, h2)->{h1.add(h2);return h1;});
-
+        return parallele(images.entrySet().stream(), parallele).map(e->e.getKey().getHisto256(mm[0], mm[1], e.getValue(), null)).reduce((h1, h2)->{h1.add(h2);return h1;}).get();
     }
     public static List<Histogram> getHisto256AsList(Collection<Image> images, double[] minAndMax, boolean parallele) {
         if (minAndMax==null) minAndMax=new double[2];

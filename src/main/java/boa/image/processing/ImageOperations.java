@@ -110,10 +110,7 @@ public class ImageOperations {
             if (mm1[1]<mm2[1]) mm1[1] = mm2[1];
             return mm1;
         };
-        return parallele(images.stream(), parallele).reduce(
-                new double[]{Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY}, 
-                (mm, im)->combiner.apply(mm, im.getMinAndMax(null)), 
-                combiner);
+        return parallele(images.stream(), parallele).map(im->im.getMinAndMax(null)).reduce(combiner).get();
     }
     public static double[] getMinAndMax(Map<Image, ImageMask> images, boolean parallele) {
         if (images.isEmpty()) {
@@ -124,10 +121,7 @@ public class ImageOperations {
             if (mm1[1]<mm2[1]) mm1[1] = mm2[1];
             return mm1;
         };
-        return parallele(images.entrySet().stream(), parallele).reduce(
-                new double[]{Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY}, 
-                (mm, e)->combiner.apply(mm, e.getKey().getMinAndMax(e.getValue())), 
-                combiner);
+        return parallele(images.entrySet().stream(), parallele).map(e->e.getKey().getMinAndMax(e.getValue())).reduce(combiner).get();
     }
     
     public static enum Axis {X, Y, Z;

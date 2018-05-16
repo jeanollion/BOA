@@ -52,25 +52,43 @@ public class HistogramAnalyzer {
     public HistogramAnalyzer(Histogram histo, boolean log) {
         this(histo, getScale(histo), log);
     }
-    public static int getScale(Histogram histo) {
+    /*public static double[] getSignalBackgroundAndForeground(Histogram histo) {
         double[] ms = new double[2];
-        double thld = BackgroundThresholder.runThresholder(histo, 3, 4, 3, Double.POSITIVE_INFINITY, ms);
+        double thld = BackgroundThresholder.runThresholder(histo, 3, 6, 3, Double.POSITIVE_INFINITY, ms);
         double thldIdx = histo.getIdxFromValue(thld);
         //double meanForeIdx = histo.getMeanIdx((int)thldIdx, 256);
-        double meanForeIdx = histo.getIdxFromValue(histo.duplicate((int)thldIdx, histo.data.length).getQuantiles(0.5)[0]);
-        double meanBackIdx = histo.getIdxFromValue(ms[0]);
-        double scale = (meanForeIdx-meanBackIdx)/5d;
-        logger.debug("autoscale: mean back: {} mean fore: {} scale: {}", ms[0], histo.getValueFromIdx(meanForeIdx), scale);
+        double fore = histo.duplicate((int)thldIdx+1, histo.data.length).getQuantiles(0.5)[0];
+        logger.debug("signal back & fore : back {} thld: {} fore (q): {}, fore: (m)",ms, thld, fore);
+        return new double[]{ms[0], fore};
+    }*/
+    public static double[] getSignalBackgroundAndForeground(Histogram histo) {
+        HistogramAnalyzer ha = new HistogramAnalyzer(histo, 3, true);
+        ha.plot();
+        Histogram histoFore = histo.duplicate(ha.getBackgroundRange().max+1, histo.data.length);
+        double fore = histoFore.getQuantiles(0.5)[0];
+        logger.debug("signal back & fore : back {}, foreMed: {}, foreMean: {}",histo.getValueFromIdx(ha.getBackgroundRange().max), fore, histoFore.getValueFromIdx(histoFore.getMeanIdx(0, histo.data.length)));
+        return new double[]{histo.getValueFromIdx(ha.getBackgroundRange().meanIdx()), fore};
+    }
+    public static int getScale(Histogram histo) {
+        double[] bf = getSignalBackgroundAndForeground(histo);
+        double meanBackIdx = histo.getIdxFromValue(bf[0]);
+        double foreIdx = histo.getIdxFromValue(bf[1]);
+        double scale = (foreIdx-meanBackIdx)/5d;
+        logger.debug("autoscale: back & fore: {} scale: {}",bf, scale);
         return Math.max(3, (int)Math.round(scale));
     }
     public HistogramAnalyzer(Histogram histo, int scale, boolean log) {
         this.histo= histo;
         this.scale = scale;
         this.log=log;
+        der2 = getHistoValuesAsFloat();
+        if (log) log(der2);
+        ArrayUtil.getDerivative(der2, scale, 2, true);
         smooth = getHistoValuesAsFloat();
-        smooth(smooth, scale);
         if (log) log(smooth);
-        der2 = ArrayUtil.getDerivative(smooth, scale, 2, false);
+        smooth(smooth, scale);
+        
+        
         for (int i =0; i<der2.length; ++i) der2[i] = -der2[i];
         peakDer2Max = ArrayUtil.getRegionalExtrema(der2, scale, true);
         peakDer2Min = ArrayUtil.getRegionalExtrema(der2, scale, false);
@@ -79,13 +97,15 @@ public class HistogramAnalyzer {
         int peak = this.peakDer2Max.stream().sorted(peakComparator(true)).limit(3).mapToInt(i->i).min().getAsInt();
         // first zero after the negative peak ? 
 
-        backgroundRange = new Range(0, getNextZero(peak+1, der2.length, peak));
+        backgroundRange = new Range(0, getNextLocalMin(peak+1, der2.length, peak));
         peakDer2Max.removeIf(i->i<peak); // remove peaks before bck
         foregroundRanges = new ArrayList<>();
         int iPrev = 1;
         while (iPrev < peakDer2Max.size()) {
             int iCur = iPrev;
-            while(iCur<peakDer2Max.size()-1 && getNextZero(peakDer2Max.get(iPrev), peakDer2Max.get(iCur+1), -1)<0) ++iCur;
+            while(iCur<peakDer2Max.size()-1 && 
+                    (der2[peakDer2Max.get(iCur)]<=0 ||
+                    getNextZero(peakDer2Max.get(iPrev), peakDer2Max.get(iCur+1), -1)<0 ) ) ++iCur; // merge peak that do not cross zero
             Range r = new Range(
                     getNextLocalMin(peakDer2Max.get(iPrev), peakDer2Max.get(iPrev-1), peakDer2Max.get(iPrev)), 
                     getNextLocalMin(peakDer2Max.get(iCur), iCur<peakDer2Max.size()-1 ? peakDer2Max.get(iCur+1): der2.length, peakDer2Max.get(iCur))
@@ -175,7 +195,8 @@ public class HistogramAnalyzer {
     }
     public void plot() {
         plot("smoothed histogram"+(log?" (log)":""), smooth);
-        plot("d2/dx "+(log?" (log)":""), der2);
+        plot("d2/dx2 "+(log?" (log)":""), der2);
+        plot("d/dx "+(log?" (log)":""), ArrayUtil.getDerivative(smooth, 1, 1, false));
     }
     protected void plot(String title, float[] values) {
         //Utils.plotProfile(title, values);
