@@ -76,9 +76,10 @@ public class BackgroundFit implements SimpleThresholder, Thresholder {
         int mode = ArrayUtil.max(histo.data);
         if (mode<20 && histo.getBinSize()>2) { // bining is to high -> recompute histogram
             histo = input.getHisto256(histo.minAndMax[0], histo.getValueFromIdx(mode*3), mask, null);
+            histo.data[histo.data.length-1] = histo.data[histo.data.length-2]; // remove saturated values
         }
         
-        // use gaussian fit on lowest half of data
+        // use gaussian fit on lowest half of data -> gaussian function with a baseline
     }
     public static double backgroundFitHalf(Image input, ImageMask mask, double sigmaFactor, double[] meanSigma) {
         if (mask==null) mask = new BlankMask(input);
