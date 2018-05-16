@@ -21,6 +21,7 @@ package boa.plugins.plugins.thresholders;
 import boa.image.Histogram;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
+import ij.gui.Plot;
 import ij.process.AutoThresholder;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -60,11 +61,9 @@ public class HistogramAnalyzer {
         
         // among 3 most intense peaks -> the first in
         int peak = this.peakDer2Max.stream().sorted(peakComparator(true)).limit(3).mapToInt(i->i).min().getAsInt();
-        // first negative peak after this peak
-        int peakN = this.peakDer2Min.stream().filter(p->p>peak).mapToInt(i->i).min().getAsInt();
         // first zero after the negative peak ? 
 
-        backgroundRange = new Range(0, getNextZero(peakN+1, der2.length, peakN));
+        backgroundRange = new Range(0, getNextZero(peak+1, der2.length, peak));
         peakDer2Max.removeIf(i->i<peak); // remove peaks before bck
         foregroundRanges = new ArrayList<>();
         int iPrev = 1;
@@ -72,8 +71,8 @@ public class HistogramAnalyzer {
             int iCur = iPrev;
             while(iCur<peakDer2Max.size()-1 && getNextZero(peakDer2Max.get(iPrev), peakDer2Max.get(iCur+1), -1)<0) ++iCur;
             foregroundRanges.add(new Range(
-                    getNextZero(peakDer2Max.get(iPrev), peakDer2Max.get(iPrev-1), peakDer2Max.get(iPrev)), 
-                    getNextZero(peakDer2Max.get(iCur), iCur<peakDer2Max.size()-1 ? peakDer2Max.get(iCur+1): der2.length, peakDer2Max.get(iCur))
+                    getNextLocalMin(peakDer2Max.get(iPrev), peakDer2Max.get(iPrev-1), peakDer2Max.get(iPrev)), 
+                    getNextLocalMin(peakDer2Max.get(iCur), iCur<peakDer2Max.size()-1 ? peakDer2Max.get(iCur+1): der2.length, peakDer2Max.get(iCur))
             ));
             iPrev=iCur+1;
         }
@@ -82,6 +81,10 @@ public class HistogramAnalyzer {
     protected int getNextZero(int fromIdx, int toIdx, int defaultValue) {
         if (toIdx>=fromIdx) return IntStream.range(fromIdx, toIdx).filter(crossZero()).min().orElse(defaultValue);
         else return IntStream.iterate(fromIdx, e->e-1).limit(fromIdx-toIdx).filter(crossZero()).findFirst().orElse(defaultValue);
+    }
+    protected int getNextLocalMin(int fromIdx, int toIdx, int defaultValue) {
+        if (toIdx>=fromIdx) return peakDer2Min.stream().filter(i->i>=fromIdx && i<=toIdx).findFirst().orElse(defaultValue);
+        else return peakDer2Min.stream().filter(i->i<=fromIdx && i>=toIdx).mapToInt(i->i).max().orElse(defaultValue);
     }
     protected IntPredicate crossZero() {
         return i -> der2[i]== 0 || (i<der2.length-1 && (der2[i]*der2[i+1])<=0);
@@ -156,13 +159,16 @@ public class HistogramAnalyzer {
     public void plot() {
         plot("smoothed histogram"+(log?" (log)":""), smooth);
         plot("d2/dx "+(log?" (log)":""), der2);
-        plot("d/dx "+(log?" (log)":""), ArrayUtil.getDerivative(smooth, scale, 1, false));
     }
-    public static void plot(String title, float[] values) {
-        Utils.plotProfile(title, values);
+    protected void plot(String title, float[] values) {
+        //Utils.plotProfile(title, values);
+        float[] x = new float[values.length];
+        for (int i = 0; i<x.length; ++i) x[i] = (float)histo.getValueFromIdx(i);
+        new Plot(title, "value", "count", x, values).show();
+
     }
     public class Range {
-        int min, max;
+        public final int min, max;
         public Range(int min, int max) {
             if (min>max) throw new IllegalArgumentException("Invalid range");
             this.min = min;
@@ -182,7 +188,7 @@ public class HistogramAnalyzer {
         }
         @Override
         public String toString() {
-            return min!=max ? "["+min+";"+max+"]" : "["+min+"]";
+            return min!=max ? "["+histo.getValueFromIdx(min)+"("+min+");"+histo.getValueFromIdx(max)+"("+max+")]" : "["+histo.getValueFromIdx(min)+"("+min+")]";
         }
     }
 }
