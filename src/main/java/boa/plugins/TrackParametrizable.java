@@ -89,7 +89,7 @@ public interface TrackParametrizable<P extends Plugin> {
     public static double getGlobalThreshold(int structureIdx, List<StructureObject> parentTrack, SimpleThresholder thlder) {
         Map<Image, ImageMask> maskMap = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
         if (thlder instanceof ThresholderHisto) {
-            Histogram hist = Histogram.getHisto256(maskMap, null);
+            Histogram hist = Histogram.getHisto256(maskMap, null, true);
             return ((ThresholderHisto)thlder).runThresholderHisto(hist);
         } else {
             Supplier<Pair<List<Image>, List<ImageInteger>>> supplier = ()->new Pair<>(new ArrayList<>(), new ArrayList<>());

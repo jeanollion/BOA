@@ -52,7 +52,7 @@ public class AnalyseMultimodalHistogram {
         ImageWindowManagerFactory.showImage(Image.mergeZPlanes(images));
         */
         
-        Image im = ImageReader.openIJTif("/data/Images/MOP/SaturationHyperFluo2.tif");
+        Image im = ImageReader.openIJTif("/data/Images/MOP/SaturationHyperFluo3.tif");
         List<Image> images = im.splitZPlanes();
         
         

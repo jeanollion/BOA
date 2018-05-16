@@ -41,7 +41,7 @@ import java.util.stream.IntStream;
  */
 public class SaturateHyperfluoBacteria implements ConfigurableTransformation {
     NumberParameter maxSignalProportion = new BoundedNumberParameter("Maximum Saturated Signal Amount Proportion", 3, 0.2, 0, 1).setToolTipText("Condition on amount of signal for detection of hyperfluo. bacteria: <br />Total amount of foreground signal / amount of Hyperfluo signal &lt; this threshold"); 
-    NumberParameter minSignalRatio = new BoundedNumberParameter("Minimum Signal Ratio", 2, 3, 2, null).setToolTipText("Condition on signal value for detection of hyperfluo. bacteria: <br />Mean Hyperfluo signal / Mean Foreground signal > this threshold");
+    NumberParameter minSignalRatio = new BoundedNumberParameter("Minimum Signal Ratio", 2, 5, 2, null).setToolTipText("Condition on signal value for detection of hyperfluo. bacteria: <br />Mean Hyperfluo signal / Mean Foreground signal > this threshold");
     //NumberParameter frameInterval = new BoundedNumberParameter("Frame Interval", 0, 2000, 1, null).setToolTipText("Frames are grouped by interval and saturated data is searched at each interval");
     
     Parameter[] parameters = new Parameter[]{maxSignalProportion, minSignalRatio};
@@ -75,7 +75,7 @@ public class SaturateHyperfluoBacteria implements ConfigurableTransformation {
         } else logger.debug("saturate histo: images: {}", allImages.size());
         long t0 = System.currentTimeMillis();
         
-        Histogram histo = Histogram.getHisto256(allImages, null);
+        Histogram histo = Histogram.getHisto256(allImages, null, true);
         HistogramAnalyzer ha = new HistogramAnalyzer(histo, true).setVerbose(testMode);
         if (testMode) ha.plot();
         saturateValue = ha.getSaturationThreshold(minSignalRatio.getValue().doubleValue(), maxSignalProportion.getValue().doubleValue());

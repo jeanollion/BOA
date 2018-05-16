@@ -47,7 +47,7 @@ public class NormalizeTrack  implements TrackPreFilter {
     }
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImage) {
-        Histogram histo = Histogram.getHisto256(preFilteredImages.values(), null);
+        Histogram histo = Histogram.getHisto256(preFilteredImages.values(), null, true);
         double[] minAndMax = new double[2];
         minAndMax[0] = histo.minAndMax[0];
         if (saturation.getValue().doubleValue()<1) minAndMax[1] = histo.getQuantiles(saturation.getValue().doubleValue())[0];

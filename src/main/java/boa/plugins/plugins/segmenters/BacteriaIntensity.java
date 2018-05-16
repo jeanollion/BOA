@@ -416,7 +416,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         
         Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!voidMC.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
-        Histogram histo = Histogram.getHisto256(imageMapMask, null);
+        Histogram histo = Histogram.getHisto256(imageMapMask, null, true);
         double minThreshold = histo.getQuantiles(0.5)[0];
         
         double globalThld =  IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
@@ -426,7 +426,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
     }
     protected static double getGlobalOtsuThreshold(Stream<StructureObject> parent, int structureIdx) {
         Map<Image, ImageMask> imageMapMask = parent.collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
-        Histogram histo = Histogram.getHisto256(imageMapMask, null);
+        Histogram histo = Histogram.getHisto256(imageMapMask, null, true);
         return IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
     }
 }

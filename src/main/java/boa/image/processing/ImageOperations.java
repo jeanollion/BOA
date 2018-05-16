@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import boa.utils.Utils;
+import static boa.utils.Utils.parallele;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.StackProcessor;
@@ -53,6 +54,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.DoublePredicate;
 
 /**
@@ -98,41 +101,33 @@ public class ImageOperations {
         }
     }
 
-    public static double[] getMinAndMax(Collection<Image> images) {
+    public static double[] getMinAndMax(Collection<Image> images, boolean parallele) {
         if (images.isEmpty()) {
             return new double[2];
         }
-        Iterator<Image> it = images.iterator();
-        double[] minAndMax = it.next().getMinAndMax(null);
-        while (it.hasNext()) {
-            double[] mm = it.next().getMinAndMax(null);
-            if (minAndMax[0] > mm[0]) {
-                minAndMax[0] = mm[0];
-            }
-            if (minAndMax[1] < mm[1]) {
-                minAndMax[1] = mm[1];
-            }
-        }
-        return minAndMax;
+        BinaryOperator<double[]> combiner = (mm1, mm2)-> {
+            if (mm1[0]>mm2[0]) mm1[0] = mm2[0];
+            if (mm1[1]<mm2[1]) mm1[1] = mm2[1];
+            return mm1;
+        };
+        return parallele(images.stream(), parallele).reduce(
+                new double[]{Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY}, 
+                (mm, im)->combiner.apply(mm, im.getMinAndMax(null)), 
+                combiner);
     }
-    public static double[] getMinAndMax(Map<Image, ImageMask> images) {
+    public static double[] getMinAndMax(Map<Image, ImageMask> images, boolean parallele) {
         if (images.isEmpty()) {
             return new double[2];
         }
-        Iterator<Entry<Image, ImageMask>> it = images.entrySet().iterator();
-        Entry<Image, ImageMask> e = it.next();
-        double[] minAndMax = e.getKey().getMinAndMax(e.getValue());
-        while (it.hasNext()) {
-            e = it.next();
-            double[] mm = e.getKey().getMinAndMax(e.getValue());
-            if (minAndMax[0] > mm[0]) {
-                minAndMax[0] = mm[0];
-            }
-            if (minAndMax[1] < mm[1]) {
-                minAndMax[1] = mm[1];
-            }
-        }
-        return minAndMax;
+        BinaryOperator<double[]> combiner = (mm1, mm2)-> {
+            if (mm1[0]>mm2[0]) mm1[0] = mm2[0];
+            if (mm1[1]<mm2[1]) mm1[1] = mm2[1];
+            return mm1;
+        };
+        return parallele(images.entrySet().stream(), parallele).reduce(
+                new double[]{Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY}, 
+                (mm, e)->combiner.apply(mm, e.getKey().getMinAndMax(e.getValue())), 
+                combiner);
     }
     
     public static enum Axis {X, Y, Z;
