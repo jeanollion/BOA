@@ -104,11 +104,11 @@ public class HistogramAnalyzer {
         if (fore ==null) return Double.NaN;
         double foreIdx = fore.meanIdx();
         double bckIdx = this.backgroundRange.meanIdx();
-        double minPeakIdx =  (foreIdx - bckIdx) * valueRatioThreshold + bckIdx;
+        double minPeakIdx =  (foreIdx - bckIdx) * valueRatioThreshold + bckIdx; // signal value condition
         Range satRange = this.foregroundRanges.stream().filter(r->r.max>minPeakIdx).filter(r->r.min>minPeakIdx || r.meanIdx()>minPeakIdx).max((r1, r2)->Double.compare(r1.count(), r2.count())).orElse(null);
         if (satRange==null) return Double.NaN;
-        // signal amount condition1
-        if (new Range(satRange.min, histo.data.length-1).count() * maxAmountRatioThrehsold > fore.count()) return Double.NaN; // sum all other foreground count ? 
+        // signal amount condition
+        if (new Range(satRange.min, histo.data.length-1).count() * maxAmountRatioThrehsold > new Range(fore.min, histo.data.length-1).count()) return Double.NaN; 
         return getThldRange(fore.min, smooth.length);
     }
     public List<Range> getMainForegroundRanges(int limit) {
