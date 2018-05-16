@@ -44,10 +44,14 @@ public class Histogram {
         this.minAndMax = minAndMax;
     }
     public Histogram duplicate() {
-        int[] dataC = new int[256];
-        System.arraycopy(data, 0, dataC, 0, 256);
-        return new Histogram(dataC, byteHisto, new double[]{minAndMax[0], minAndMax[1]});
+        return duplicate(0, data.length);
     }
+    public Histogram duplicate(int fromIdxIncluded, int toIdxExcluded) {
+        int[] dup = new int[data.length];
+        System.arraycopy(data, fromIdxIncluded, dup, fromIdxIncluded, toIdxExcluded-fromIdxIncluded);
+        return new Histogram(dup, byteHisto, new double[]{minAndMax[0], minAndMax[1]});
+    }
+    
     public double getHistoMinBreak() {
         if (byteHisto) return 0;
         else return minAndMax[0];
@@ -74,6 +78,15 @@ public class Histogram {
             return idx;
         }
         return convertTo256Threshold(thld, minAndMax);
+    }
+    public double getMeanIdx(int fromIncluded, int toExcluded) {
+        double count = 0;
+        double meanIdx = 0;
+        for (int i = fromIncluded; i<toExcluded; ++i) {
+            meanIdx+=data[i] * i;
+            count+=data[i];
+        }
+        return meanIdx/count;
     }
     public static double convertHisto256Threshold(double threshold256, double[] minAndMax) {
         return threshold256 * (minAndMax[1] - minAndMax[0]) / 256.0 + minAndMax[0];
@@ -222,4 +235,5 @@ public class Histogram {
         int idx = (int)histoIdx;
         return data[idx]  * (histoIdx-idx);
     }
+    
 }

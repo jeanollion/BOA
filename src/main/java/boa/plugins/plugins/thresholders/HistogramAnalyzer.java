@@ -19,6 +19,7 @@
 package boa.plugins.plugins.thresholders;
 
 import boa.image.Histogram;
+import boa.image.processing.ImageOperations;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import ij.gui.Plot;
@@ -47,6 +48,21 @@ public class HistogramAnalyzer {
     private final List<Integer> peakDer2Max, peakDer2Min;
     private final List<Range> foregroundRanges;
     private final Range backgroundRange;
+    private boolean verbose = false;
+    public HistogramAnalyzer(Histogram histo, boolean log) {
+        this(histo, getScale(histo), log);
+    }
+    public static int getScale(Histogram histo) {
+        double[] ms = new double[2];
+        double thld = BackgroundThresholder.runThresholder(histo, 3, 4, 3, Double.POSITIVE_INFINITY, ms);
+        double thldIdx = histo.getIdxFromValue(thld);
+        //double meanForeIdx = histo.getMeanIdx((int)thldIdx, 256);
+        double meanForeIdx = histo.getIdxFromValue(histo.duplicate((int)thldIdx, histo.data.length).getQuantiles(0.5)[0]);
+        double meanBackIdx = histo.getIdxFromValue(ms[0]);
+        double scale = (meanForeIdx-meanBackIdx)/5d;
+        logger.debug("autoscale: mean back: {} mean fore: {} scale: {}", ms[0], histo.getValueFromIdx(meanForeIdx), scale);
+        return Math.max(3, (int)Math.round(scale));
+    }
     public HistogramAnalyzer(Histogram histo, int scale, boolean log) {
         this.histo= histo;
         this.scale = scale;
@@ -70,13 +86,18 @@ public class HistogramAnalyzer {
         while (iPrev < peakDer2Max.size()) {
             int iCur = iPrev;
             while(iCur<peakDer2Max.size()-1 && getNextZero(peakDer2Max.get(iPrev), peakDer2Max.get(iCur+1), -1)<0) ++iCur;
-            foregroundRanges.add(new Range(
+            Range r = new Range(
                     getNextLocalMin(peakDer2Max.get(iPrev), peakDer2Max.get(iPrev-1), peakDer2Max.get(iPrev)), 
                     getNextLocalMin(peakDer2Max.get(iCur), iCur<peakDer2Max.size()-1 ? peakDer2Max.get(iCur+1): der2.length, peakDer2Max.get(iCur))
-            ));
+            );
+            if (r.count()>0) foregroundRanges.add(r);
             iPrev=iCur+1;
         }
-        logger.debug("peaks: {}, bck: {}, ranges: {}", peakDer2Max, backgroundRange,  foregroundRanges);
+        if (verbose) logger.debug("peaks (histoIdx): {}, bck: {}, ranges: {}", peakDer2Max, backgroundRange,  foregroundRanges);
+    }
+    public HistogramAnalyzer setVerbose(boolean verbose) {
+        this.verbose=verbose;
+        return this;
     }
     protected int getNextZero(int fromIdx, int toIdx, int defaultValue) {
         if (toIdx>=fromIdx) return IntStream.range(fromIdx, toIdx).filter(crossZero()).min().orElse(defaultValue);
@@ -99,44 +120,40 @@ public class HistogramAnalyzer {
     public Range getForegroundRange() {
         return this.foregroundRanges.stream().max((r1, r2)->Double.compare(r1.count(), r2.count())).orElse(null);
     }
-    public double getSaturationThreshold(double valueRatioThreshold, double maxAmountRatioThrehsold) {
+    public double getSaturationThreshold(double valueRatioThreshold, double maxSignalAmountProportionThrehsold) {
+        if (foregroundRanges.size()<2) return Double.NaN;
         Range fore = getForegroundRange();
         if (fore ==null) return Double.NaN;
         double foreIdx = fore.meanIdx();
         double bckIdx = this.backgroundRange.meanIdx();
         double minPeakIdx =  (foreIdx - bckIdx) * valueRatioThreshold + bckIdx; // signal value condition
+        if (verbose)  {
+            logger.debug("saturation thld: bck {} v=({}), fore: {} (v={}) minIdx: {}", backgroundRange, histo.getValueFromIdx(bckIdx), fore, histo.getValueFromIdx(foreIdx), histo.getValueFromIdx(minPeakIdx));
+            logger.debug("all ranges: {}", Utils.toStringList(foregroundRanges, r->r+" v="+histo.getValueFromIdx(r.meanIdx())+" count="+r.count()));
+        }
         Range satRange = this.foregroundRanges.stream().filter(r->r.max>minPeakIdx).filter(r->r.min>minPeakIdx || r.meanIdx()>minPeakIdx).max((r1, r2)->Double.compare(r1.count(), r2.count())).orElse(null);
         if (satRange==null) return Double.NaN;
-        // signal amount condition
-        if (new Range(satRange.min, histo.data.length-1).count() * maxAmountRatioThrehsold > new Range(fore.min, histo.data.length-1).count()) return Double.NaN; 
-        return getThldRange(fore.min, smooth.length);
+        if (new Range(satRange.min, histo.data.length-1).count() * maxSignalAmountProportionThrehsold > new Range(fore.min, histo.data.length-1).count()) return Double.NaN;  // signal amount condition
+        return histo.getValueFromIdx(satRange.min);
     }
     public List<Range> getMainForegroundRanges(int limit) {
         return foregroundRanges.stream().sorted((r1, r2)-> -Double.compare(r1.count(), r2.count())).limit(limit).sorted((r1, r2)->Integer.compare(r1.min, r2.min)).collect(Collectors.toList());
     }
-    public double getThresholdMultimodal(int modeNumber) {
-        List<Range> foreRanges =  getMainForegroundRanges(modeNumber);
-        if (foreRanges.size()<2) return IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
+    public double getThresholdMultimodal() {
+        if (foregroundRanges.size()<2) return IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
         // get threshold between background and first foreground peak
-        logger.debug("multimodal thld: non bck peaks: {}, range: [0;{}]", foreRanges, foreRanges.get(0).max);
-        return getThldRange(0, foreRanges.get(0).max);
+        Range thldRange = new Range(getBackgroundRange().min, getForegroundRange().max);
+        if (verbose) logger.debug("get multimodal thld in range: {}", thldRange);
+        return getThldRange(thldRange.min, thldRange.max+1);
     }
-    public double count(int fromIncluded, int toExcluded) {
-        double s = 0;
-        for (int i = fromIncluded; i<toExcluded; ++i) s+=histo.data[i];
-        return s;
-    }
+
     protected Comparator<Integer> peakComparator(boolean highestPeakFirst) {
         if (highestPeakFirst) return (p1, p2) -> -Float.compare(der2[p1], der2[p2]);
         else return (p1, p2) -> Float.compare(der2[p1], der2[p2]);
     }
-    public Histogram getHistoRange(int fromIncluded, int toExcluded) {
-        int[] res = new int[histo.data.length];
-        System.arraycopy(histo.data, fromIncluded, res, fromIncluded, toExcluded-fromIncluded);
-        return new Histogram(res, histo.byteHisto, new double[]{histo.minAndMax[0], histo.minAndMax[1]});
-    }
+
     public double getThldRange(int fromIncluded, int toExcluded) {
-        Histogram h = getHistoRange(fromIncluded,toExcluded );
+        Histogram h = histo.duplicate(fromIncluded,toExcluded );
         return IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, h);
     }
     public float[] getD2() {
@@ -169,22 +186,38 @@ public class HistogramAnalyzer {
     }
     public class Range {
         public final int min, max;
+        private double count = Double.NaN, meanIdx=Double.NaN;
         public Range(int min, int max) {
             if (min>max) throw new IllegalArgumentException("Invalid range");
             this.min = min;
             this.max = max;
         }
         public double count() {
-            return HistogramAnalyzer.this.count(min, max+1);
+            if (Double.isNaN(count)) {
+                synchronized(this) {
+                    if (Double.isNaN(count)) {
+                        count = 0;
+                        for (int i = min; i<=max; ++i) count+=histo.data[i];
+                    }
+                }
+            }
+            return count;
         }
         public double meanIdx() {
-            double sum = 0;
-            double mean = 0;
-            for (int i = min; i<=max; ++i) {
-                mean+=histo.data[i] * i;
-                sum+=histo.data[i];
+            if (Double.isNaN(meanIdx)) {
+                synchronized(this) {
+                    if (Double.isNaN(meanIdx)) {
+                        count = 0;
+                        meanIdx = 0;
+                        for (int i = min; i<=max; ++i) {
+                            meanIdx+=histo.data[i] * i;
+                            count+=histo.data[i];
+                        }
+                        meanIdx/=count;
+                    }
+                }
             }
-            return mean/sum;
+            return meanIdx;
         }
         @Override
         public String toString() {
