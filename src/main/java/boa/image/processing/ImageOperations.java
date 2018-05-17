@@ -747,7 +747,7 @@ public class ImageOperations {
     }
     public static double[] getQuantiles(Image image, ImageMask mask, BoundingBox limits, double... percent) {
         double[] mm = image.getMinAndMax(mask);
-        Histogram histo = image.getHisto256(mm[0], mm[1], mask, limits);
+        Histogram histo = image.getHisto(mm[0], mm[1], mask, limits);
         return histo.getQuantiles(percent);
     }
     

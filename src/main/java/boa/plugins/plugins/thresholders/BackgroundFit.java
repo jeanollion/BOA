@@ -24,27 +24,73 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObjectProcessing;
 import boa.image.BlankMask;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
+import boa.image.ImageInteger;
 import boa.image.ImageMask;
+import boa.image.ImageMask2D;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
 import boa.image.processing.ImageFeatures;
+import boa.image.processing.ImageOperations;
+import boa.plugins.MultiThreaded;
+import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
+import boa.utils.Pair;
 import boa.utils.Utils;
+import ij.gui.Plot;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.DoubleFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.apache.commons.math3.analysis.ParametricUnivariateFunction;
+import org.apache.commons.math3.analysis.function.Gaussian;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.NullArgumentException;
+import org.apache.commons.math3.fitting.AbstractCurveFitter;
+import org.apache.commons.math3.fitting.GaussianCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoint;
+import org.apache.commons.math3.fitting.WeightedObservedPoints;
+import org.apache.commons.math3.fitting.leastsquares.LeastSquaresBuilder;
+import org.apache.commons.math3.fitting.leastsquares.LeastSquaresProblem;
+import org.apache.commons.math3.linear.DiagonalMatrix;
 
 /**
  * @author jollion
  */
-public class BackgroundFit implements SimpleThresholder, Thresholder {
+public class BackgroundFit implements SimpleThresholder, MultiThreaded, Thresholder, ToolTip {
     public static boolean debug;
-    
     NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 3, 0.01, null);
+    public BackgroundFit() {
+        
+    }
+    public BackgroundFit(double sigmaFactor) {
+        this.sigmaFactor.setValue(sigmaFactor);
+    }
+    @Override
+    public String getToolTipText() {
+        return "Fits a gaussian on the lower half of the mode's peak of the histogram to extract its parameters: Mean & Std. <br />Resulting Threshold = Mean + <em>Sigma Factor</em> * Std<br /> Supposes that the mode corresponds to the background values and that the lower half of the background peak is not too far from a gaussian distribution";
+    }
+    
+    
+    boolean multithread;
+    @Override
+    public void setMultithread(boolean multithread) {
+        this.multithread=multithread;
+    }
     
     @Override
     public double runSimpleThresholder(Image input, ImageMask mask) {
-        return backgroundFitHalf(input, mask, sigmaFactor.getValue().doubleValue(), null);
+        return backgroundFit(HistogramFactory.getHistogram(input, mask, 1d, multithread), sigmaFactor.getValue().doubleValue(), null);
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
@@ -57,108 +103,79 @@ public class BackgroundFit implements SimpleThresholder, Thresholder {
         return image.getPixelArray()[0];
     }
     public static void fillZeros(int[] data) {
-        for (int i = 0; i<data.length; ++i) {
+        for (int i = 1; i<data.length-1; ++i) {
             if (data[i]==0) {
-                int lowerV = i>0? data[i-1] : 0;
+                int lowerV = data[i-1];
                 int lowerB = i;
-                while(i<data.length-1 && data[i]==0) ++i;
-                int fillV;
-                if (lowerV>0 && data[i]>0) fillV = (lowerV+data[i])/2;
-                else if (data[lowerB]>0) fillV = lowerV;
-                else fillV = data[i+1];
+                while(i<data.length-2 && data[i]==0) ++i;
+                int fillV = (lowerV+data[i])/2;
                 for (int j = lowerB; j<i; ++j) data[j]=fillV;
             }
         }
     }
-    public static double backgroundFitHalfPrecise(Image input, ImageMask mask, double sigmaFactor, double[] meanSigma) {
-        Histogram histo = input.getHisto256(mask);
+    
+    public static double backgroundFit(Histogram histo, double sigmaFactor, double[] meanSigma) {
+        long t0 = System.currentTimeMillis();
+        long t1 = System.currentTimeMillis();
         // get mode -> background
         int mode = ArrayUtil.max(histo.data);
-        if (mode<20 && histo.getBinSize()>2) { // bining is to high -> recompute histogram
-            histo = input.getHisto256(histo.minAndMax[0], histo.getValueFromIdx(mode*3), mask, null);
-            histo.data[histo.data.length-1] = histo.data[histo.data.length-2]; // remove saturated values
-        }
+        double halfWidthIdx = getHalfWidthIdx(histo, mode);
         
-        // use gaussian fit on lowest half of data -> gaussian function with a baseline
-    }
-    public static double backgroundFitHalf(Image input, ImageMask mask, double sigmaFactor, double[] meanSigma) {
-        if (mask==null) mask = new BlankMask(input);
-        return backgroundFitHalf(input.getHisto256(mask), sigmaFactor, meanSigma);
-    }
-    public static double backgroundFitHalf(Histogram histo, double sigmaFactor, double[] meanSigma) {
-        if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
-        //fillZeros(histo);
-        float[] histoSmooth = smooth(histo.data, 3); //2 ou 3
+        long t2 = System.currentTimeMillis();
+        double modeFit;
+        int halfHalf = Math.max(2, (int)(halfWidthIdx/2d));
+        int startT = mode - halfHalf;
+        if (startT>=0) {
+            // gaussian fit on trimmed data to get more precise mean value
+            WeightedObservedPoints obsT = new WeightedObservedPoints();
+            for (int i = startT; i<=2 * mode - halfHalf; ++i) obsT.add( i, histo.data[i]-histo.data[startT]);
+            double sigma = (mode - halfWidthIdx) / Math.sqrt(2*Math.log(2));
+            double[] coeffsT = GaussianCurveFitter.create().withStartPoint(new double[]{histo.data[mode]-histo.data[startT], mode, sigma/2.0}).fit(obsT.toList());
+            modeFit = coeffsT[1];
+            double stdBckT = coeffsT[2];
+            //logger.debug("mean (T): {}, std (T): {}", modeFit, stdBckT);
+        } else modeFit = mode;
+        halfWidthIdx = getHalfWidthIdx(histo, modeFit);
+        double sigma = (histo.getValueFromIdx(modeFit) - histo.getValueFromIdx(halfWidthIdx)) / Math.sqrt(2*Math.log(2)); // real values
+        int start = Double.isNaN(halfWidthIdx) ? getMinMonoBefore(histo.data, mode) : Math.max(0, (int) (modeFit - 6 * (modeFit-halfWidthIdx)));
+        // use gaussian fit on lowest half of data 
+        long t3 = System.currentTimeMillis();
+        WeightedObservedPoints obs = new WeightedObservedPoints();
+        for (int i = start; i<=mode; ++i) obs.add(histo.getValueFromIdx(i), histo.data[i]);
+        obs.add(modeFit, histo.getCountLinearApprox(modeFit));
+        for (double i  = modeFit; i<=2 * modeFit - start; ++i) obs.add(histo.getValueFromIdx(i), histo.getCountLinearApprox(2*modeFit-i));  
         
-        // fit on whole histogram
-        double[] fit = ArrayUtil.gaussianFit(histoSmooth, 0);
-        int mode = (int)(fit[0]+0.5);
-        if (debug) logger.debug("first fit: {}", fit);
-        //int mode = ArrayUtil.max(histo);
-        double[] subset = new double[mode+1];
-        for (int i = 0;i<=mode;++i) subset[i]=histoSmooth[i];
-        if (debug) {
-            Utils.plotProfile("gauss fit: histo", histo.data);
-            Utils.plotProfile("gauss fit: histo smooth", histoSmooth);
-            Utils.plotProfile("gauss fit: histo smooth sub", subset);
-        }
-        fit = ArrayUtil.gaussianFit(subset, 2);
-        if (debug) logger.debug("second fit: {}", fit);
-        double threshold = mode + sigmaFactor * fit[1];
-        
-        
-        double binSize = histo.getBinSize();
-        double min =histo.getHistoMinBreak();
-        threshold = threshold * binSize + min;
+        double[] coeffs = GaussianCurveFitter.create().withStartPoint(new double[]{histo.data[mode], histo.getValueFromIdx(mode), sigma}).fit(obs.toList());
+        double meanBck = coeffs[1];
+        double stdBck = coeffs[2];
         if (meanSigma!=null) {
-            meanSigma[0] = fit[0] * binSize + min;
-            meanSigma[1] = fit[1] * binSize;
-            if (meanSigma.length>2) meanSigma[2] = threshold;
-            if (meanSigma.length>3) meanSigma[3] = fit[0] - sigmaFactor * fit[1];
+            meanSigma[0] = meanBck;
+            meanSigma[1] = stdBck;
         }
-        //logger.debug("gaussian fit histo: modal value: {}, sigma: {}, threshold: {}", meanSigma[0], meanSigma[1], threshold);
-        return threshold;
+        double thld = meanBck + sigmaFactor * stdBck;
+        long t4 = System.currentTimeMillis();
+        //logger.debug("mean: {} sigma: {} (from half width: {}), thld: {}, get histo: {} & {}, fit: {} & {}", meanBck, stdBck, sigma, thld, t1-t0, t2-t1, t3-t2, t4-t3);
+        return thld;
     }
     
-    public static double backgroundFit(Image input, ImageMask mask, double sigmaFactor, double[] meanSigma) {
-        if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
-        if (mask==null) mask = new BlankMask(input);
-        Histogram histo = input.getHisto256(mask);
-        //fillZeros(histo);
-        float[] histoSmooth = smooth(histo.data, 3); //2 ou 3
-        
-        // fit on whole histogram
-        double[] fit = ArrayUtil.gaussianFit(histoSmooth, 0);
-        int mode = (int)(fit[0]+0.5);
-        if (debug) logger.debug("first fit: {}", fit);
-        //int mode = ArrayUtil.max(histo);
-        if (debug) {
-            Utils.plotProfile("gauss fit: histo", histo.data);
-            Utils.plotProfile("gauss fit: histo smooth", histoSmooth);
-        }
-        double threshold = mode + sigmaFactor * fit[1];
-        
-        double[] mm = input.getMinAndMax(mask, null);
-        double binSize = (input instanceof ImageByte) ? 1 : (mm[1] - mm[0]) / 256.0;
-        double min = (input instanceof ImageByte) ? 0 : mm[0];
-        threshold = threshold * binSize + min;
-        if (meanSigma!=null) {
-            meanSigma[0] = fit[0] * binSize + min;
-            meanSigma[1] = fit[1] * binSize;
-            if (meanSigma.length>2) meanSigma[2] = threshold;
-            if (meanSigma.length>3) meanSigma[3] = fit[0] - sigmaFactor * fit[1];
-        }
-        //logger.debug("gaussian fit histo: modal value: {}, sigma: {}, threshold: {}", meanSigma[0], meanSigma[1], threshold);
-        return threshold;
+    private static double getHalfWidthIdx(Histogram histo, double mode) {
+        double halfH = histo.getCountLinearApprox(mode) / 2d;
+        int half = (int)mode;
+        while(half>0 && histo.data[half-1]>halfH) --half;
+        if (half<=0) return Double.NaN;
+        // linear approx between half & half -1
+        return half-1 + (halfH - histo.data[half-1]) / (double)(histo.data[half]-histo.data[half-1]) ;
+    }
+    
+    private static int getMinMonoBefore(int[] array, int start) {
+        while(start>0 && array[start]>array[start-1]) --start;
+        return start;
     }
     
     
+    @Override
     public Parameter[] getParameters() {
         return new Parameter[]{sigmaFactor};
-    }
-
-    public boolean does3D() {
-        return true;
     }
     
 }

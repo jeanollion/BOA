@@ -151,9 +151,10 @@ public class Position extends SimpleContainerParameter implements ListElementEra
                     if (defTp<0) defTp=0;
                     if (defTp>=tpNp) defTp=tpNp-1;   
                     preProcessedImages = new InputImagesImpl(res, defTp, getExperiment().getFocusChannelAndAlgorithm());
+                    //logger.debug("creation input images: def tp: {}, frames: {}, channels: {}",defaultTimePoint.getSelectedFrame(),preProcessedImages.getFrameNumber(), preProcessedImages.getChannelNumber());
                 }
             }
-            //logger.debug("creation input images: def tp: {}, total: {}, tp: {}",defaultTimePoint.getSelectedTimePoint(),images.getTimePointNumber(), inputImages.getDefaultTimePoint());
+            
         }
         return preProcessedImages;
     }

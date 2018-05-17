@@ -267,6 +267,7 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
     }
     public abstract DoubleStream streamPlane(int z);
     public DoubleStream stream(ImageMask mask, boolean maskHasAbsoluteOffset) {
+        if (mask==null) return stream();
         int minZ = maskHasAbsoluteOffset? Math.max(zMin, mask.zMin()) : mask.zMin();
         int maxZ = maskHasAbsoluteOffset ? Math.min(zMin+sizeZ, mask.zMin()+mask.sizeZ()) : Math.min(sizeZ, mask.sizeZ()+mask.zMin());
         if (minZ>=maxZ) return DoubleStream.empty();
@@ -321,8 +322,8 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
     }
 
     public abstract Histogram getHisto256(ImageMask mask, BoundingBox bounds);
-    public Histogram getHisto256(ImageMask mask) {return getHisto256(mask, null);}
-    public abstract Histogram getHisto256(double min, double max, ImageMask mask, BoundingBox limit);
+    public Histogram getHisto(ImageMask mask) {return getHisto256(mask, null);}
+    public abstract Histogram getHisto(double min, double max, ImageMask mask, BoundingBox limit);
     
     public I cropWithOffset(BoundingBox bounds) {
         return crop(new SimpleBoundingBox(bounds).translate(getOffset().reverseOffset()));

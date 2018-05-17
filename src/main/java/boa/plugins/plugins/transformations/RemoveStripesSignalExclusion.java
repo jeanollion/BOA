@@ -37,22 +37,11 @@ import boa.image.processing.ImageOperations;
 import boa.image.ThresholdMask;
 import boa.image.TypeConverter;
 import boa.plugins.ConfigurableTransformation;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.SimpleThresholder;
-import boa.plugins.Thresholder;
-import boa.plugins.Transformation;
-import boa.plugins.plugins.thresholders.BackgroundThresholder;
-import boa.plugins.plugins.thresholders.ConstantValue;
-import boa.plugins.plugins.thresholders.IJAutoThresholder;
-import boa.utils.ArrayUtil;
-import boa.utils.ThreadRunner;
+import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.utils.Utils;
 import java.util.stream.IntStream;
 
@@ -62,12 +51,12 @@ import java.util.stream.IntStream;
  */
 public class RemoveStripesSignalExclusion implements ConfigurableTransformation {
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
-    PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new BackgroundThresholder(2.5, 3, 3), false); //new ConstantValue(150)
+    PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new BackgroundFit(5), false); //new ConstantValue(150)
     BooleanParameter signalExclusionBool2 = new BooleanParameter("Second Signal Exclusion", false);
     ChannelImageParameter signalExclusion2 = new ChannelImageParameter("Channel for Signal Exclusion 2", -1, false);
-    PluginParameter<SimpleThresholder> signalExclusionThreshold2 = new PluginParameter<>("Signal Exclusion Threshold 2", SimpleThresholder.class, new BackgroundThresholder(4, 5, 2), false);
+    PluginParameter<SimpleThresholder> signalExclusionThreshold2 = new PluginParameter<>("Signal Exclusion Threshold 2", SimpleThresholder.class, new BackgroundFit(5), false);
     ConditionalParameter signalExclusionCond = new ConditionalParameter(signalExclusionBool2).setActionParameters("true", new Parameter[]{signalExclusion2, signalExclusionThreshold2});
-    BooleanParameter addGlobalMean = new BooleanParameter("Add global mean (avoid negative values)", true);
+    BooleanParameter addGlobalMean = new BooleanParameter("Add global mean (avoid negative values)", false);
     BooleanParameter trimNegativeValues = new BooleanParameter("Set Negative values to Zero", false);
     ConditionalParameter addGMCond = new ConditionalParameter(addGlobalMean).setActionParameters("false", new Parameter[]{trimNegativeValues});
     Parameter[] parameters = new Parameter[]{signalExclusion, signalExclusionThreshold, signalExclusionCond, addGMCond};

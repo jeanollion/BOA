@@ -73,7 +73,7 @@ public class IJAutoThresholder implements SimpleThresholder, ThresholderHisto {
         histo.removeSaturatingValue(4, true);
         AutoThresholder at = new AutoThresholder();
         double thld = at.getThreshold(method, histo.data);
-        return Histogram.convertHisto256Threshold(thld, input, mask, limits);
+        return histo.getValueFromIdx(thld);
     }
     
     public static double runThresholder(Method method, Histogram histo) {

@@ -23,6 +23,7 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObject;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
@@ -51,7 +52,7 @@ public class Saturate implements TrackPreFilter, ToolTip {
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         Map<Image, ImageMask> maskMap = TrackPreFilter.getMaskMap(preFilteredImages);
-        Histogram histo = Histogram.getHisto256(maskMap, null, true);
+        Histogram histo = HistogramFactory.getHisto(maskMap, 1, null, true);
         double sv = IJAutoThresholder.runThresholder(AutoThresholder.Method.MaxEntropy, histo); //Shanbhag
         double svBin = (int)histo.getIdxFromValue(sv);
         // limit to saturagePercentage
@@ -61,8 +62,7 @@ public class Saturate implements TrackPreFilter, ToolTip {
             svBin = satBin;
             sv = sat;
         }
-        for (int i = (int)svBin; i<256; ++i) histo.data[i]=0;
-        histo.minAndMax[1] = sv;
+        for (int i = (int)svBin; i<histo.data.length; ++i) histo.data[i]=0;
         logger.debug("saturate value: {}", sv);
         for (Entry<StructureObject, Image> e : preFilteredImages.entrySet()) {
             Image im = e.getValue();

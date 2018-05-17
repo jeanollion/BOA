@@ -21,6 +21,7 @@ package boa.image.processing;
 import boa.core.Task;
 import boa.data_structure.dao.MasterDAO;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
 import static boa.test_utils.TestUtils.logger;
 import boa.utils.ArrayUtil;
@@ -58,7 +59,7 @@ public class GaussianMixtureModel {
         MasterDAO mDAO = new Task(dbName).getDB();
         List<Image> images = new ArrayList<>();
         for (int f = 0; f<mDAO.getExperiment().getPosition(postition).getFrameNumber(true); ++f)  images.add(mDAO.getExperiment().getPosition(postition).getInputImages().getImage(0, frame));
-        Histogram histo = Histogram.getHisto256(images, null, true);
+        Histogram histo = HistogramFactory.getHistogram(images, 1, null, true);
         
         // get estimation of peak localization -> local extrema
         long t0 = System.currentTimeMillis();

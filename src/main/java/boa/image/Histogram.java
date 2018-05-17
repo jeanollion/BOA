@@ -21,7 +21,9 @@ package boa.image;
 import boa.image.processing.ImageOperations;
 import static boa.image.Image.logger;
 import static boa.utils.Utils.parallele;
+import ij.gui.Plot;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -36,49 +38,45 @@ import java.util.stream.Collectors;
 public class Histogram {
 
     public final int[] data;
-    public final boolean byteHisto;
-    public final double[] minAndMax;
-
-    public Histogram(int[] data, boolean byteHisto, double[] minAndMax) {
+    public final double  min;
+    public final double binSize;
+    public Histogram(int[] data, double[] minAndMax) {
         this.data = data;
-        this.byteHisto = byteHisto;
-        this.minAndMax = minAndMax;
+        this.min = minAndMax[0];
+        binSize = ( minAndMax[1] - minAndMax[0]) / (double)data.length;
+    }
+    public Histogram(int[] data, double binSize, double min) {
+        this.data = data;
+        this.binSize = binSize;
+        this.min=min;
     }
     public Histogram duplicate() {
         return duplicate(0, data.length);
     }
+    public double getMaxValue() {
+        return getValueFromIdx(getMaxNonNullIdx()+binSize/2);
+    }
     public Histogram duplicate(int fromIdxIncluded, int toIdxExcluded) {
         int[] dup = new int[data.length];
         System.arraycopy(data, fromIdxIncluded, dup, fromIdxIncluded, toIdxExcluded-fromIdxIncluded);
-        return new Histogram(dup, byteHisto, new double[]{minAndMax[0], minAndMax[1]});
+        return new Histogram(dup, binSize, min);
     }
     
-    public double getHistoMinBreak() {
-        if (byteHisto) return 0;
-        else return minAndMax[0];
-    }
-    public double getBinSize() {
-        return byteHisto ? 1 : (minAndMax[1] - minAndMax[0]) / 256d;
-    }
     public void add(Histogram other) {
-        for (int i = 0; i < 256; ++i) data[i]+=other.data[i];
+        for (int i = 0; i < data.length; ++i) data[i]+=other.data[i];
     }
     public void remove(Histogram other) {
-        for (int i = 0; i < 256; ++i) data[i]-=other.data[i];
+        for (int i = 0; i < data.length; ++i) data[i]-=other.data[i];
     }
     
-    public double getValueFromIdx(double thld256) {
-        if (byteHisto) return thld256;
-        return convertHisto256Threshold(thld256, minAndMax);
+    public double getValueFromIdx(double idx) {
+        return idx * binSize + min;
     }
-    public double getIdxFromValue(double thld) {
-        if (byteHisto) {
-            int idx = (int)Math.round(thld);
-            if (idx<0) idx =0;
-            if (idx>255) idx = 255;
-            return idx;
-        }
-        return convertTo256Threshold(thld, minAndMax);
+    public double getIdxFromValue(double value) {
+        if (value<=min) return 0;
+        int idx = (int) Math.round((value - min) / binSize );
+        if (idx>=data.length) return data.length-1;
+        return idx;
     }
     public double getMeanIdx(int fromIncluded, int toExcluded) {
         double count = 0;
@@ -89,112 +87,38 @@ public class Histogram {
         }
         return meanIdx/count;
     }
-    public static double convertHisto256Threshold(double threshold256, double[] minAndMax) {
-        return threshold256 * (minAndMax[1] - minAndMax[0]) / 256.0 + minAndMax[0];
-    }
-
-    public static int convertTo256Threshold(double threshold, double[] minAndMax) {
-        if (threshold>=minAndMax[1]) return 255;
-        if (threshold<=minAndMax[0]) return 0;
-        return (int) Math.round((threshold - minAndMax[0]) * 256 / ((minAndMax[1] - minAndMax[0])));
-    }
-
-    public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, MutableBoundingBox limits) {
-        if (mask == null) {
-            mask = new BlankMask(input);
-        }
-        double[] mm = input.getMinAndMax(mask, limits);
-        if (input instanceof ImageByte) {
-            return threshold256;
-        } else {
-            return Histogram.convertHisto256Threshold(threshold256, mm);
-        }
-    }
-    /**
-     *
-     * @param images
-     * @param minAndMax the method will output min and max values in this array, except if minAndMax[0]<minAndMax[1] -> in this case will use these values for histogram
-     * @return
-     */
-    public static Histogram getHisto256(Collection<Image> images, double[] minAndMax, boolean parallele) {
-        if (images.isEmpty()) return null;
-        if (minAndMax==null) minAndMax=new double[2];
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = ImageOperations.getMinAndMax(images, parallele);
-            minAndMax[0] = mm[0];
-            minAndMax[1] = mm[1];
-        }
-        double[] mm = minAndMax;
-        return parallele(images.stream(), parallele).map(im -> im.getHisto256(mm[0], mm[1], null, null)).reduce((h1, h2)->{h1.add(h2);return h1;}).get();
-    }
-    public static Histogram getHisto256(Map<Image, ImageMask> images, double[] minAndMax, boolean parallele) {
-        if (minAndMax==null) minAndMax=new double[2];
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = ImageOperations.getMinAndMax(images, parallele);
-            minAndMax[0] = mm[0];
-            minAndMax[1] = mm[1];
-        }
-        double[] mm = minAndMax;
-        return parallele(images.entrySet().stream(), parallele).map(e->e.getKey().getHisto256(mm[0], mm[1], e.getValue(), null)).reduce((h1, h2)->{h1.add(h2);return h1;}).get();
-    }
-    public static List<Histogram> getHisto256AsList(Collection<Image> images, double[] minAndMax, boolean parallele) {
-        if (minAndMax==null) minAndMax=new double[2];
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = ImageOperations.getMinAndMax(images, parallele);
-            minAndMax[0] = mm[0];
-            minAndMax[1] = mm[1];
-        }
-        double[] mm = minAndMax;
-        return parallele(images.stream(), parallele).map(im -> im.getHisto256(mm[0], mm[1], null, null)).collect(Collectors.toList());
-    }
-    public static Map<Image, Histogram> getHistoAll256(Map<Image, ImageMask> images, double[] minAndMax, boolean parallele) {
-        if (minAndMax==null) minAndMax=new double[2];
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = ImageOperations.getMinAndMax(images,parallele);
-            minAndMax[0] = mm[0];
-            minAndMax[1] = mm[1];
-        }
-        final double[] mm = minAndMax;
-        return parallele(images.entrySet().stream(), parallele).collect(Collectors.toMap(e->e.getKey(), e->e.getKey().getHisto256(mm[0], mm[1], e.getValue(), null)));
+    public int count(int fromIncluded, int toExcluded) {
+        int count = 0;
+        for (int i = fromIncluded; i<toExcluded; ++i) count+=data[i];
+        return count;
     }
     public int count() {
         int sum = 0;
         for (int i : data) sum+=i;
         return sum;
     }
+    private int getMaxNonNullIdx() {
+        int i = data.length-1;
+        if (data[i]==0) while(i>0 && data[i-1]==0) --i;
+        return i;
+    }
     public void removeSaturatingValue(double countThlFactor, boolean highValues) {
         if (highValues) {
-            if (this.byteHisto) {
-                int i = 255;
-                if (data[i]==0) while(i>0 && data[i-1]==0) --i;
-                if (i>0) {
-                    //logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
-                    if (data[i]>data[i-1]*countThlFactor) data[i]=0;
-                }
-            } else {
-                //logger.debug("remove saturating value: {} (prev: {})", data[255], data[254]);
-                if (data[255]>data[254]*countThlFactor) {
-                    data[255]=0;
-                }
+            int i = getMaxNonNullIdx();
+            if (i>0) {
+                //logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
+                if (data[i]>data[i-1]*countThlFactor) data[i]=0;
             }
         } else {
-            if (this.byteHisto) {
-                int i = 0;
-                if (data[i]==0) while(i>0 && data[i+1]==0) ++i;
-                if (i<255) {
-                    //logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
-                    if (data[i]>data[i+1]*countThlFactor) data[i]=0;
-                }
-            } else {
-                //logger.debug("remove saturating value: {} (prev: {})", data[255], data[254]);
-                if (data[0]>data[1]*countThlFactor) {
-                    data[0]=0;
-                }
+            int i = 0;
+            if (data[i]==0) while(i>0 && data[i+1]==0) ++i;
+            if (i<data.length-1) {
+                //logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
+                if (data[i]>data[i+1]*countThlFactor) data[i]=0;
             }
         }
     }
     public double[] getQuantiles(double... quantile) {
-        double binSize = getBinSize();
         int gcount = 0;
         for (int i : data) gcount += i;
         double[] res = new double[quantile.length];
@@ -202,25 +126,36 @@ public class Histogram {
             int count = gcount;
             double limit = count * (1-quantile[i]); // 1- ?
             if (limit >= count) {
-                res[i] = minAndMax[0];
+                res[i] = min;
                 continue;
             }
-            count = data[255];
-            int idx = 255;
+            count = data[data.length-1];
+            int idx = data.length-1;
             while (count < limit && idx > 0) {
                 idx--;
                 count += data[idx];
             }
             double idxInc = (data[idx] != 0) ? (count - limit) / (data[idx]) : 0; //lin approx
-            res[i] = (double) (idx + idxInc) * binSize + getHistoMinBreak();
+            res[i] = getValueFromIdx(idx + idxInc);
         }
         return res;
     }
     public double getCountLinearApprox(double histoIdx) {
         if (histoIdx<=0) return data[0];
-        if (histoIdx>=255) return data[255];
+        if (histoIdx>=data.length-1) return data[data.length-1];
         int idx = (int)histoIdx;
-        return data[idx]  * (histoIdx-idx);
+        return data[idx] + (data[idx+1]-data[idx]) * (histoIdx-idx);
     }
-    
+    public void eraseRange(int fromIncluded, int toExcluded) {
+        Arrays.fill(data, fromIncluded, toExcluded, 0);
+    }
+    public void plotIJ1(String title, boolean xValues) {
+        float[] values = new float[data.length];
+        float[] x = new float[values.length];
+        for (int i = 0; i<values.length; ++i) {
+            values[i] = data[i];
+            x[i] = xValues ? (float)getValueFromIdx(i) : i;
+        }
+        new Plot(title, "value", "count", x, values).show();
+    }
 }

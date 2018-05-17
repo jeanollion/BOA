@@ -240,12 +240,12 @@ public class EdgeDetector implements Segmenter, ToolTip {
                         for (Region o : pop.getRegions()) {
                             if (values.get(o)<=thld1 || values2.get(o)<thld2) o.draw(valueMap, thld1);
                         }
-                    }       Histogram h = valueMap.getHisto256(mask);
+                    }       Histogram h = valueMap.getHisto(mask);
                     int sMax = 0, eMax = 0;
-                    for (int s = 0; s<254; ++s) {
+                    for (int s = 0; s<h.data.length-2; ++s) {
                         if (h.data[s]!=0) continue;
                         int e = s;
-                        while(e<254 && h.data[e+1]==0) ++e;
+                        while(e<h.data.length-2 && h.data[e+1]==0) ++e;
                         if (e-s>eMax-sMax) {
                             eMax = e;
                             sMax = s;

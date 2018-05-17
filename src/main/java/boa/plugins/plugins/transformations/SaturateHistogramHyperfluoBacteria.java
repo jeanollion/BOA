@@ -25,55 +25,36 @@ import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import static boa.core.TaskRunner.logger;
 import boa.data_structure.input_image.InputImages;
-import boa.data_structure.Region;
-import boa.data_structure.RegionPopulation;
-import boa.data_structure.StructureObject;
-import ij.process.AutoThresholder;
-import boa.image.BlankMask;
+import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
-import boa.image.ImageByte;
-import boa.image.ImageInteger;
-import boa.image.ImageLabeller;
-import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
-import boa.image.ThresholdMask;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import boa.measurement.BasicMeasurements;
-import boa.plugins.SimpleThresholder;
-import boa.plugins.Thresholder;
-import boa.plugins.Transformation;
-import boa.plugins.plugins.thresholders.BackgroundFit;
-import static boa.plugins.plugins.thresholders.BackgroundFit.smooth;
-import boa.plugins.plugins.thresholders.BackgroundThresholder;
-import boa.plugins.plugins.thresholders.ConstantValue;
-import boa.plugins.plugins.thresholders.IJAutoThresholder;
-import boa.image.processing.Filters;
 import boa.plugins.ConfigurableTransformation;
-import boa.utils.ArrayUtil;
-import boa.utils.Pair;
-import boa.utils.ReusableQueue;
-import boa.utils.ThreadRunner;
-import boa.utils.ThreadRunner.ThreadAction;
-import boa.utils.Utils;
-import java.util.stream.Collectors;
+import boa.plugins.SimpleThresholder;
+import boa.plugins.plugins.thresholders.BackgroundFit;
+import boa.plugins.plugins.thresholders.BackgroundThresholder;
+import boa.plugins.plugins.thresholders.HistogramAnalyzer;
+import static boa.utils.Utils.parallele;
+import java.util.stream.IntStream;
 
 /**
  *
  * @author jollion
  */
 public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransformation {
-    PluginParameter<SimpleThresholder> thresholdBck = new PluginParameter<>("Background Threshold", SimpleThresholder.class, new BackgroundThresholder(3, 12, 4), false).setToolTipText("Pixel under this value are background. This threshold method is run on all images once"); 
-    PluginParameter<SimpleThresholder> thresholdHyper = new PluginParameter<>("HyperFluo Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setToolTipText("when hyper-fluo cells are present, this threshold discriminates between hyper-fluo & normal cells<br > when no hyper-fluo cells are present this threshold discriminates between foreground and background"); 
-    NumberParameter foregroundProportion = new BoundedNumberParameter("Hyperfluorecent cells foreground proportion threshold", 2, 0.2, 0, 1).setToolTipText("When number of pixels over hyperfluo threshold / number of pixel over background threshold is lower than this value, image contains hyper-fluo cells"); 
-    NumberParameter minimumVolume = new BoundedNumberParameter("Minimum volume of signal (pixels)", 0, 10000, 1, null).setToolTipText("Image containing less foreground pixel than this value, are  not used.");
-    Parameter[] parameters = new Parameter[]{thresholdBck, thresholdHyper, foregroundProportion, minimumVolume};
+    PluginParameter<SimpleThresholder> thresholder = new PluginParameter<>("Background Threshold", SimpleThresholder.class, new BackgroundFit(10), false); 
+    NumberParameter maxSignalProportion = new BoundedNumberParameter("Maximum Saturated Signal Amount Proportion", 3, 0.2, 0, 1).setToolTipText("Condition on amount of signal for detection of hyperfluo. bacteria: <br />Total amount of foreground signal / amount of Hyperfluo signal &lt; this threshold"); 
+    NumberParameter minSignalRatio = new BoundedNumberParameter("Minimum Signal Ratio", 2, 7.5, 2, null).setToolTipText("Condition on signal value for detection of hyperfluo. bacteria: <br />Mean Hyperfluo signal / Mean Foreground signal > this threshold");
+    
+    Parameter[] parameters = new Parameter[]{thresholder, maxSignalProportion, minSignalRatio};
     double saturateValue= Double.NaN;
     boolean configured = false;
-    public SaturateHistogramHyperfluoBacteria setForegroundProportion(double proportion) {
-        this.foregroundProportion.setValue(proportion);
+    
+    public SaturateHistogramHyperfluoBacteria setForegroundProportion(double maxSignalAmountProportion, double minSignalRatio) {
+        this.maxSignalProportion.setValue(maxSignalAmountProportion);
+        this.minSignalRatio.setValue(minSignalRatio);
         return this;
     }
     
@@ -81,9 +62,9 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         List<Image> allImages = new ArrayList<>();
         //List<Image> imageTemp = new ArrayList<>();
-        int tpMax = inputImages.getFrameNumber();
+        int fMax = inputImages.getFrameNumber();
         //int count =0;
-        for (int f = 0; f<tpMax; ++f) {
+        for (int f = 0; f<fMax; ++f) {
             Image<? extends Image> image = inputImages.getImage(channelIdx, f);
             if (image.sizeZ()>1) {
                 int plane = inputImages.getBestFocusPlane(f);
@@ -96,56 +77,31 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
             logger.error("No image");
             return;
         } else logger.debug("saturate histo: images: {}", allImages.size());
-        double pThld = foregroundProportion.getValue().doubleValue();
         long t0 = System.currentTimeMillis();
-        int minimumCount = minimumVolume.getValue().intValue();
-        double thldBack = thresholdBck.instanciatePlugin().runSimpleThresholder(Image.mergeZPlanes(allImages), null);
-        List<Double> thldsList = allImages.stream().parallel().map(image -> getThld(image, pThld, thldBack, thresholdHyper.instanciatePlugin(), minimumCount)).filter(d -> Double.isFinite(d) && !Double.isNaN(d)).collect(Collectors.toList());
-        if (testMode) logger.debug("SaturateHisto: #satu: {},list: {}", thldsList.size(), thldsList);
-        double thld = ArrayUtil.median(thldsList);
-        //double thld = Arrays.stream(thlds).min((d1, d2)->Double.compare(d1, d2)).get();
-        long t1 = System.currentTimeMillis();
-        if (Double.isFinite(thld)) saturateValue = thld;
-        configured = true;
-        logger.debug("SaturateHistoAuto: {} ({}ms)",saturateValue, t1-t0);
-    }
-    public void saturateHistogram(Image im) {
-        double thldBack = thresholdBck.instanciatePlugin().runSimpleThresholder(im, null);
-        double thld = getThld(im, this.foregroundProportion.getValue().doubleValue(), thldBack, this.thresholdHyper.instanciatePlugin(), this.minimumVolume.getValue().intValue() );
-        if (!Double.isNaN(thld) && Double.isFinite(thld)) SaturateHistogram.saturate(thld, thld, im);
-    }
-    private double getThld(Image im, double proportionThld, double thldBack, SimpleThresholder thlderHyper, int minimumCount) {
-        ImageMask backMask = new ThresholdMask(im, thldBack, true, true);
-        double thldHyper = thlderHyper.runSimpleThresholder(im, backMask);
-        //backThld=ImageOperations.threshold(im, thldBack, true, true, false, backMask);
-        //ImageOperations.filterObjects(backMask, backMask, o->o.size()<=1);
-        //double count = backMask.count();
-        ImageMask hyperMask = new ThresholdMask(im, thldHyper, true, true);
         
-        // remove small obejcts (if background is too low isolated pixels)
-        double count = ImageLabeller.labelImageList(backMask).stream().mapToInt(o->o.size()).filter(i->i>1).sum();
+        double[] minAndMax = new double[2];
+        Histogram histo = HistogramFactory.getHistogram(allImages, 1, minAndMax, true);
+        double[] bckMuStd = new double[2];
+        double bckThld = thresholder.instanciatePlugin().runSimpleThresholder(Image.mergeZPlanes(allImages), null);
+        Histogram histoFore = histo.duplicate((int)histo.getIdxFromValue(bckThld)+1, histo.data.length);
+        double foreThld = histoFore.getQuantiles(0.5)[0];
         
-        if (count<minimumCount) return Double.POSITIVE_INFINITY; // no enough signal in image
-        double countHyper = hyperMask.count();
-        if (testMode) logger.debug(" thldBack:{} hyper: {}, count back: {}, hyper: {}, prop: {}", thldBack, thldHyper, count, countHyper, countHyper / count);
-        double proportion = countHyper / count;
-        if (proportion<proportionThld && count-countHyper>minimumCount) { // recompute hyper thld within seg bact
-            //ImageMask thldMask = new ThresholdMask(im, thldBack, true, true);
-            //double thldHyper2 = thlderHyper.runSimpleThresholder(im, thldMask);
-            double thldHyper2  = thldHyper;
-            // ThldHyper is over-estimated. ThldHyper = maximum value of objects that do not contain pixel over ThldHyp +1
-            /*double thldHyper3 = ImageLabeller.labelImageList(thldMask).stream()
-                    .mapToDouble(o->BasicMeasurements.getMaxValue(o, im))
-                    .filter(v->v<thldHyper2)
-                    .max().orElse(Double.POSITIVE_INFINITY);
-            if (Double.isFinite(thldHyper3)) Math.min(thldHyper3 * 1.15, thldHyper2);
-            if (testMode) logger.debug("SaturateHisto: proportion: {} (of total image: {}) back {}, thldHyper: {} (on whole image: {}), max values of non-saturated objects: {}", proportion, count/im.sizeXYZ(), thldBack, thldHyper2, thldHyper,thldHyper3);
-            return thldHyper3;*/
-            return thldHyper2;
+        double satThld = bckMuStd[0] + (foreThld - bckMuStd[0]) * this.minSignalRatio.getValue().doubleValue();
+        if (satThld<minAndMax[1]) {
+            // condition on signal amount
+            double satSignal = histo.count((int)histo.getIdxFromValue(satThld), histo.data.length);
+            double totalSignal = histo.count((int)histo.getIdxFromValue(bckThld), histo.data.length);
+            logger.debug("sat signal proportion: {}, ", satSignal / totalSignal);
+            if (maxSignalProportion.getValue().doubleValue() * totalSignal > satSignal) {
+                saturateValue = satThld;
+            }
         }
-        else return Double.POSITIVE_INFINITY; // no saturation
+         
+        long t1 = System.currentTimeMillis();
+        configured = true;
+        logger.debug("SaturateHistoAuto: {}  , bck : {}, thld: {} fore: {}, saturation thld: {}, image range: {} computation time {}ms",saturateValue, bckMuStd[0], bckThld, foreThld, satThld, minAndMax, t1-t0);
     }
-
+    
     @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
         return configured;

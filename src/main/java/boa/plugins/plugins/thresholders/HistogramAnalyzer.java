@@ -49,45 +49,23 @@ public class HistogramAnalyzer {
     private final List<Range> foregroundRanges;
     private final Range backgroundRange;
     private boolean verbose = false;
-    public HistogramAnalyzer(Histogram histo, boolean log) {
-        this(histo, getScale(histo), log);
-    }
-    /*public static double[] getSignalBackgroundAndForeground(Histogram histo) {
-        double[] ms = new double[2];
-        double thld = BackgroundThresholder.runThresholder(histo, 3, 6, 3, Double.POSITIVE_INFINITY, ms);
-        double thldIdx = histo.getIdxFromValue(thld);
-        //double meanForeIdx = histo.getMeanIdx((int)thldIdx, 256);
-        double fore = histo.duplicate((int)thldIdx+1, histo.data.length).getQuantiles(0.5)[0];
-        logger.debug("signal back & fore : back {} thld: {} fore (q): {}, fore: (m)",ms, thld, fore);
-        return new double[]{ms[0], fore};
-    }*/
-    public static double[] getSignalBackgroundAndForeground(Histogram histo) {
-        HistogramAnalyzer ha = new HistogramAnalyzer(histo, 3, true);
-        ha.plot();
-        Histogram histoFore = histo.duplicate(ha.getBackgroundRange().max+1, histo.data.length);
-        double fore = histoFore.getQuantiles(0.5)[0];
-        logger.debug("signal back & fore : back {}, foreMed: {}, foreMean: {}",histo.getValueFromIdx(ha.getBackgroundRange().max), fore, histoFore.getValueFromIdx(histoFore.getMeanIdx(0, histo.data.length)));
-        return new double[]{histo.getValueFromIdx(ha.getBackgroundRange().meanIdx()), fore};
-    }
-    public static int getScale(Histogram histo) {
-        double[] bf = getSignalBackgroundAndForeground(histo);
-        double meanBackIdx = histo.getIdxFromValue(bf[0]);
-        double foreIdx = histo.getIdxFromValue(bf[1]);
-        double scale = (foreIdx-meanBackIdx)/5d;
-        logger.debug("autoscale: back & fore: {} scale: {}",bf, scale);
-        return Math.max(3, (int)Math.round(scale));
+    
+    public static double getBinSize(Histogram histo, double backgroundThld, int binNBetweenForeAndBack) {
+        Histogram histoFore = histo.duplicate((int)histo.getIdxFromValue(backgroundThld)+1, histo.data.length);
+        double foreThld = histoFore.getQuantiles(0.5)[0];
+        logger.debug("foreground: {}  ", foreThld);
+        return (foreThld - backgroundThld) / binNBetweenForeAndBack;
     }
     public HistogramAnalyzer(Histogram histo, int scale, boolean log) {
         this.histo= histo;
         this.scale = scale;
         this.log=log;
-        der2 = getHistoValuesAsFloat();
-        if (log) log(der2);
-        ArrayUtil.getDerivative(der2, scale, 2, true);
-        smooth = getHistoValuesAsFloat();
-        if (log) log(smooth);
-        smooth(smooth, scale);
         
+        smooth = getHistoValuesAsFloat();
+        smooth(smooth, scale);
+        if (log) log(smooth);
+        
+        der2 = ArrayUtil.getDerivative(smooth, scale, 2, false);
         
         for (int i =0; i<der2.length; ++i) der2[i] = -der2[i];
         peakDer2Max = ArrayUtil.getRegionalExtrema(der2, scale, true);
@@ -203,8 +181,8 @@ public class HistogramAnalyzer {
         float[] x = new float[values.length];
         for (int i = 0; i<x.length; ++i) x[i] = (float)histo.getValueFromIdx(i);
         new Plot(title, "value", "count", x, values).show();
-
     }
+    
     public class Range {
         public final int min, max;
         private double count = Double.NaN, meanIdx=Double.NaN;

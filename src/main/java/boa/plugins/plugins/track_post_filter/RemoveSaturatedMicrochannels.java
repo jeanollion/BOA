@@ -77,7 +77,7 @@ public class RemoveSaturatedMicrochannels implements TrackPostFilter {
         double thld = IJAutoThresholder.runThresholder(image, o.getMask(), AutoThresholder.Method.Otsu);
         ThresholdMask mask = new ThresholdMask(image, thld, true, false);
         double stauratedPixelsThld =  mask.count() * minPercentageOfSaturatedPixels.getValue().doubleValue() / 100d;
-        Histogram hist = image.getHisto256(mask);
+        Histogram hist = image.getHisto(mask);
         int i = 255;
         if (hist.data[i]==0) while(i>0 && hist.data[i-1]==0) --i;
         if (testMode) logger.debug("test saturated object: {}: total bact pixels: {} (thld: {}) sat pixel limit: {}, max value count: {} max value: {} ", o, mask.count(), thld, stauratedPixelsThld, i>0?hist.data[i]:0, hist.getValueFromIdx(i) );

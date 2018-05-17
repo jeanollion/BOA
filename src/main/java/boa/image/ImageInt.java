@@ -319,9 +319,9 @@ public class ImageInt extends ImageInteger<ImageInt> {
     public Histogram getHisto256(ImageMask mask, BoundingBox limits) {
         if (mask==null) mask=new BlankMask( this);
         double[] minAndMax = getMinAndMax(mask);
-        return getHisto256(minAndMax[0], minAndMax[1], mask, limits);
+        return getHisto(minAndMax[0], minAndMax[1], mask, limits);
     }
-    @Override public Histogram getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {
+    @Override public Histogram getHisto(double min, double max, ImageMask mask, BoundingBox limits) {
         ImageMask m = mask==null ?  new BlankMask(this) : mask;
         if (limits==null) limits = new SimpleBoundingBox(this).resetOffset();
         double coeff = 256d / (max - min);
@@ -329,11 +329,11 @@ public class ImageInt extends ImageInteger<ImageInt> {
         LoopFunction function = (x, y, z) -> {
             if (m.insideMask(x, y, z)) {
                 int idx = (int) ((pixels[z][x+y*sizeX] - min) * coeff);
-                histo[idx>=256?255:idx<=0?0:idx]++;
+                if (idx>=0 && idx<=255) histo[idx]++;
             }
         };
         BoundingBox.loop(limits, function);
-        return new Histogram(histo, false, new double[]{min, max});
+        return new Histogram(histo, 1/coeff, min);
     }
     @Override public int getBitDepth() {return 64;}
 }

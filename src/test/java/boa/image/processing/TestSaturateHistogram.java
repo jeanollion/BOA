@@ -22,9 +22,12 @@ import boa.core.Task;
 import boa.data_structure.dao.MasterDAO;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.io.ImageReader;
+import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.plugins.plugins.thresholders.HistogramAnalyzer;
+import boa.plugins.plugins.transformations.SaturateHistogramHyperfluoBacteria;
 import static boa.test_utils.TestUtils.logger;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
@@ -38,28 +41,28 @@ import java.util.stream.IntStream;
  *
  * @author Jean Ollion
  */
-public class AnalyseMultimodalHistogram {
+public class TestSaturateHistogram {
     public static void main(String[] args) {
         // open histo
         new ImageJ();
         
-        String dbName = "MF1_180509";
-        int postition=5, frame=122;
+        //String dbName = "MF1_180509";
+        //String dbName = "fluo160501_uncorr_TestParam";
+        String dbName= "WT_180318_Fluo";
+        int channelIdx = 1;
+        int postition=0;
         MasterDAO mDAO = new Task(dbName).getDB();
         List<Image> images = new ArrayList<>();
-        for (int f = 0; f<mDAO.getExperiment().getPosition(postition).getFrameNumber(true); ++f)  images.add(mDAO.getExperiment().getPosition(postition).getInputImages().getImage(0, f));
-        Histogram histo = Histogram.getHisto256(images, null, true);
-        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(images));
+        for (int f = 0; f<mDAO.getExperiment().getPosition(postition).getFrameNumber(true); ++f)  images.add(mDAO.getExperiment().getPosition(postition).getInputImages().getImage(channelIdx, f));
+        Image im = Image.mergeZPlanes(images);
+        ImageWindowManagerFactory.showImage(im);
         
-        HistogramAnalyzer ha = new HistogramAnalyzer(histo,5, true).setVerbose(true);
-        logger.debug("range: [{}] bck range: [{}-{}]({}), saturation: {}, thld: {}", histo.minAndMax, histo.getValueFromIdx(ha.getBackgroundRange().min), histo.getValueFromIdx(ha.getBackgroundRange().max), ha.getBackgroundRange().max, ha.getSaturationThreshold(5, 0.2), ha.getThresholdMultimodal());
-        ha.plot();
+        //HistogramAnalyzer ha = new HistogramAnalyzer(histo,5, true).setVerbose(true);
+        //logger.debug("range: [{}] bck range: [{}-{}]({}), saturation: {}, thld: {}", histo.minAndMax, histo.getValueFromIdx(ha.getBackgroundRange().min), histo.getValueFromIdx(ha.getBackgroundRange().max), ha.getBackgroundRange().max, ha.getSaturationThreshold(5, 0.2), ha.getThresholdMultimodal());
+        //ha.plot();
         
-        
-        
-        
-        
-        
+        SaturateHistogramHyperfluoBacteria sat = new SaturateHistogramHyperfluoBacteria();
+        sat.computeConfigurationData(channelIdx, mDAO.getExperiment().getPosition(postition).getInputImages());
         
     }
 }

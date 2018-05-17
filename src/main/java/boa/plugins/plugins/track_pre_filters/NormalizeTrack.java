@@ -24,6 +24,7 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObject;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.processing.ImageOperations;
 import java.util.List;
@@ -47,11 +48,11 @@ public class NormalizeTrack  implements TrackPreFilter {
     }
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImage) {
-        Histogram histo = Histogram.getHisto256(preFilteredImages.values(), null, true);
+        Histogram histo = HistogramFactory.getHistogram(preFilteredImages.values(), 1, null, true);
         double[] minAndMax = new double[2];
-        minAndMax[0] = histo.minAndMax[0];
+        minAndMax[0] = histo.min;
         if (saturation.getValue().doubleValue()<1) minAndMax[1] = histo.getQuantiles(saturation.getValue().doubleValue())[0];
-        else minAndMax[1] = histo.minAndMax[1];
+        else minAndMax[1] = histo.getMaxValue();
         double scale = 1 / (minAndMax[1] - minAndMax[0]);
         double offset = -minAndMax[0] * scale;
         if (invert.getSelected()) {

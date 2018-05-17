@@ -133,7 +133,7 @@ public class MOPEmptyMicrochannel {
         @Override
         public double compute(Image i) {
             ImageFeats ifea = imageFeatures.getAndCreateIfNecessary(i);
-            int[] histo = ifea.cropped().getHisto256(null).data;
+            int[] histo = ifea.cropped().getHisto(null).data;
             double count = 0;
             for (int p : histo) count+=p;
             double entropy = 0;

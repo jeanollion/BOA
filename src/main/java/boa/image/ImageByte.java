@@ -325,14 +325,15 @@ public class ImageByte extends ImageInteger<ImageByte> {
             }
         };
         BoundingBox.loop(limits, function);
-        int min = 0; 
-        if (histo[min]==0) while(min<255 && histo[min+1]==0) ++min;
-        int max = 255; 
-        if (histo[max]==0) while(max>0 && histo[max-1]==0) --max;
-        return new Histogram(histo, true, new double[]{min, max});
+        return new Histogram(histo, 1,0);
     }
     
-    @Override public Histogram getHisto256(double min, double max, ImageMask mask, BoundingBox limit) {return getHisto256(mask, limit);}
+    @Override public Histogram getHisto(double min, double max, ImageMask mask, BoundingBox limit) {
+        Histogram histo = getHisto256(mask, limit);
+        if (min>0) for (int i = 0; i<=min; ++i) histo.data[i] = 0;
+        if (max<255) for (int i = 255; i>=max; --i) histo.data[i] = 0;
+        return histo;
+    }
 
     @Override public int getBitDepth() {return 8;}
 

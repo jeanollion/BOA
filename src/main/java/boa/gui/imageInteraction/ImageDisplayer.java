@@ -79,14 +79,14 @@ public interface ImageDisplayer<T> {
         return resTC;
     }
     public static double[] getDisplayRange(Image im, ImageMask mask) {
-        Histogram hist = im.getHisto256(mask);
+        Histogram hist = im.getHisto(mask);
         
         hist.removeSaturatingValue(5, true);
         hist.removeSaturatingValue(5, false);
         double[] per =  hist.getQuantiles(0.01, 0.9999);
         if (per[0]==per[1]) {
-            per[0] = hist.minAndMax[0];
-            per[1] = hist.minAndMax[1];
+            per[0] = hist.min;
+            per[1] = hist.getMaxValue();
         }
         if (per[0]>0 &&  im instanceof ImageInteger) per[0] -= 1; // possibly a label image
         return per;

@@ -35,6 +35,7 @@ import ij.process.AutoThresholder;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
@@ -416,7 +417,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         
         Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!voidMC.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
-        Histogram histo = Histogram.getHisto256(imageMapMask, null, true);
+        Histogram histo = HistogramFactory.getHisto(imageMapMask, null, 256, true);
         double minThreshold = histo.getQuantiles(0.5)[0];
         
         double globalThld =  IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
@@ -424,9 +425,9 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), minThreshold, globalThld);
         return new double[]{minThreshold, globalThld}; 
     }
-    protected static double getGlobalOtsuThreshold(Stream<StructureObject> parent, int structureIdx) {
+    protected static double getGlobalOtsuThreshold(Stream<StructureObject> parent, int structureIdx) { // TODO : remplacer par background fit. attention si image normalisée -> bin pas 1, sinon bin = 1. Calcult auto des bin ? ou en deux temps ? 
         Map<Image, ImageMask> imageMapMask = parent.collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
-        Histogram histo = Histogram.getHisto256(imageMapMask, null, true);
+        Histogram histo = HistogramFactory.getHisto(imageMapMask, null, 256, true);
         return IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
     }
 }

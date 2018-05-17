@@ -41,7 +41,7 @@ import boa.plugins.Transformation;
 public class InputImage {
     MultipleImageContainer imageSources;
     ImageDAO dao;
-    int channelIdx, timePoint, inputTimePoint;
+    int channelIdx, frame, inputTimePoint;
     String microscopyFieldName;
     Image originalImageType;
     Image image;
@@ -52,14 +52,14 @@ public class InputImage {
         this.imageSources = imageSources;
         this.dao = dao;
         this.channelIdx = channelIdx;
-        this.timePoint = timePoint;
+        this.frame = timePoint;
         this.inputTimePoint=inputTimePoint;
         this.microscopyFieldName = microscopyFieldName;
         transformationsToApply=new ArrayList<>();
     }
     
     public InputImage duplicate() {
-        InputImage res = new InputImage(channelIdx, inputTimePoint, timePoint, microscopyFieldName, imageSources, dao);
+        InputImage res = new InputImage(channelIdx, inputTimePoint, frame, microscopyFieldName, imageSources, dao);
         if (image!=null) {
             res.image = image.duplicate();
             res.originalImageType=originalImageType.duplicate();
@@ -81,10 +81,10 @@ public class InputImage {
         if (image == null) {
             synchronized (this) {
                 if (image==null) {
-                    if (intermediateImageSavedToDAO) image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
+                    if (intermediateImageSavedToDAO) image = dao.openPreProcessedImage(channelIdx, frame, microscopyFieldName); //try to open from DAO
                     if (image==null) {
                         image = imageSources.getImage(inputTimePoint, channelIdx);
-                        if (image==null) throw new RuntimeException("Image not found: position:"+microscopyFieldName+" channel:"+channelIdx+" frame:"+timePoint);
+                        if (image==null) throw new RuntimeException("Image not found: position:"+microscopyFieldName+" channel:"+channelIdx+" frame:"+frame);
                         originalImageType = Image.createEmptyImage("source Type", image, new BlankMask( 0, 0, 0));
                     }
                 }
@@ -94,7 +94,7 @@ public class InputImage {
         return image;
     }
     
-    void deleteFromDAO() {dao.deletePreProcessedImage(channelIdx, timePoint, microscopyFieldName);}
+    void deleteFromDAO() {dao.deletePreProcessedImage(channelIdx, frame, microscopyFieldName);}
     
     public void flush() {
         if (image!=null) image=null;
@@ -109,7 +109,7 @@ public class InputImage {
                 //new IJImageDisplayer().showImage(image);
                 while(it.hasNext()) {
                     Transformation t = it.next();
-                    image =t.applyTransformation(channelIdx, timePoint, image);
+                    image =t.applyTransformation(channelIdx, frame, image);
                     it.remove();
                 }
             }
@@ -121,10 +121,10 @@ public class InputImage {
         if (originalImageType!=null && originalImageType.getBitDepth()!=image.getBitDepth()) {
             image = TypeConverter.cast(image, originalImageType);
         }
-        dao.writePreProcessedImage(image, channelIdx, timePoint, microscopyFieldName);
+        dao.writePreProcessedImage(image, channelIdx, frame, microscopyFieldName);
     }
     
     void setTimePoint(int timePoint) {
-        this.timePoint=timePoint;
+        this.frame=timePoint;
     }
 }
