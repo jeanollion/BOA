@@ -39,19 +39,26 @@ import boa.utils.Utils;
 public class TypeConverter implements MultichannelTransformation {
 
     public enum METHOD {LIMIT_TO_16}
-    ChoiceParameter searchMethod = new ChoiceParameter("Method", Utils.toStringArray(METHOD.values()), METHOD.LIMIT_TO_16.toString(), false).setToolTipText("<ul><li><b>"+METHOD.LIMIT_TO_16.toString()+"</b>: Only 32-bit Images are converted to 16-bits </li><</ul>");
+    ChoiceParameter method = new ChoiceParameter("Method", Utils.toStringArray(METHOD.values()), METHOD.LIMIT_TO_16.toString(), false).setToolTipText("<ul><li><b>"+METHOD.LIMIT_TO_16.toString()+"</b>: Only 32-bit Images are converted to 16-bits </li><</ul>");
     NumberParameter constantValue = new BoundedNumberParameter("Add value", 0, 0, 0, Short.MAX_VALUE).setToolTipText("Adds this value to all images. This is useful to avoid trimming negative during convertion to 16-bit. No check is done to enshure values will be within 16-bit range");
-    ConditionalParameter cond = new ConditionalParameter(searchMethod).setActionParameters(METHOD.LIMIT_TO_16.toString(), constantValue);
+    ConditionalParameter cond = new ConditionalParameter(method).setActionParameters(METHOD.LIMIT_TO_16.toString(), constantValue);
     Parameter[] parameters = new Parameter[]{cond};
     
+    public TypeConverter() {
+    }
+    public TypeConverter setLimitTo16(short addValue) {
+        this.method.setSelectedItem(METHOD.LIMIT_TO_16.toString());
+        constantValue.setValue(addValue);
+        return this;
+    }
     @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.ALL;
+    public OUTPUT_SELECTION_MODE getOutputChannelSelectionMode() {
+        return OUTPUT_SELECTION_MODE.ALL;
     }
 
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        switch(METHOD.valueOf(searchMethod.getSelectedItem())) {
+        switch(METHOD.valueOf(method.getSelectedItem())) {
             case LIMIT_TO_16:
             default:
                 if (image instanceof ImageFloat) {
@@ -75,5 +82,4 @@ public class TypeConverter implements MultichannelTransformation {
         return parameters;
     }
 
-    
 }

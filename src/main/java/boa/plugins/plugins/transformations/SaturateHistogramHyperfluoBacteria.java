@@ -79,15 +79,14 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
         } else logger.debug("saturate histo: images: {}", allImages.size());
         long t0 = System.currentTimeMillis();
         
-        double[] minAndMax = new double[2];
-        Histogram histo = HistogramFactory.getHistogram(allImages, 1, minAndMax, true);
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages).parallel(), HistogramFactory.allImagesAreInteger(allImages));
         double[] bckMuStd = new double[2];
         double bckThld = thresholder.instanciatePlugin().runSimpleThresholder(Image.mergeZPlanes(allImages), null);
         Histogram histoFore = histo.duplicate((int)histo.getIdxFromValue(bckThld)+1, histo.data.length);
         double foreThld = histoFore.getQuantiles(0.5)[0];
         
         double satThld = bckMuStd[0] + (foreThld - bckMuStd[0]) * this.minSignalRatio.getValue().doubleValue();
-        if (satThld<minAndMax[1]) {
+        if (satThld<histo.getMaxValue()) {
             // condition on signal amount
             double satSignal = histo.count((int)histo.getIdxFromValue(satThld), histo.data.length);
             double totalSignal = histo.count((int)histo.getIdxFromValue(bckThld), histo.data.length);
@@ -99,14 +98,13 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
          
         long t1 = System.currentTimeMillis();
         configured = true;
-        logger.debug("SaturateHistoAuto: {}  , bck : {}, thld: {} fore: {}, saturation thld: {}, image range: {} computation time {}ms",saturateValue, bckMuStd[0], bckThld, foreThld, satThld, minAndMax, t1-t0);
+        logger.debug("SaturateHistoAuto: {}  , bck : {}, thld: {} fore: {}, saturation thld: {}, image range: {} computation time {}ms",saturateValue, bckMuStd[0], bckThld, foreThld, satThld, new double[]{histo.min, histo.getMaxValue()}, t1-t0);
     }
     
     @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
         return configured;
     }
-    
 
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {

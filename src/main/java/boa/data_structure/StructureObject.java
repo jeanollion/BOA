@@ -1022,7 +1022,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return (T)attributes.getOrDefault(key, defaultValue);
     }
     public Map<String, Object> getAttributes() {
-        if (this.attributes==null) attributes = new HashMap<>();
+        if (this.attributes==null) {
+            synchronized(this) {
+                if (attributes==null) {
+                    attributes = new HashMap<>();
+                }
+            }
+        }
         return attributes;
     }
     public void setMeasurements(Measurements m) {

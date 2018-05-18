@@ -194,8 +194,8 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
     }
     
     @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.ALL;
+    public OUTPUT_SELECTION_MODE getOutputChannelSelectionMode() {
+        return OUTPUT_SELECTION_MODE.ALL;
     }
     protected abstract MutableBoundingBox getBoundingBox(Image image);
     

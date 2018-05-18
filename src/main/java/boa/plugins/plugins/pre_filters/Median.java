@@ -69,9 +69,6 @@ public class Median implements PreFilter, Filter {
         return runPreFilter(image, null);
     }
 
-    public ArrayList getConfigurationData() {
-        return null;
-    }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
 }

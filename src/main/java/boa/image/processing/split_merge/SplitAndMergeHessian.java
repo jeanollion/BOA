@@ -51,7 +51,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
     public final double splitThresholdValue, hessianScale;
     Function<Interface, Double> interfaceValue;
 
-    public SplitAndMergeHessian(Image input, double splitThreshold, double hessianScale) {
+    public SplitAndMergeHessian(Image input, double splitThreshold, double hessianScale, double intensityBackground) {
         super(input);
         splitThresholdValue=splitThreshold;
         this.hessianScale=hessianScale;
@@ -62,7 +62,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
                 double[] sum = new double[2];
                 Stream.concat(i.voxels.stream(), i.duplicatedVoxels.stream()).forEach(v->{
                     sum[0]+=hessian.getPixel(v.x, v.y, v.z);
-                    sum[1]+=intensityMap.getPixel(v.x, v.y, v.z);
+                    sum[1]+=intensityMap.getPixel(v.x, v.y, v.z)-intensityBackground;
                 });
                 return sum[0] / sum[1];
             }
@@ -135,7 +135,7 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
         @Override
         public boolean checkFusion() {
             // criterion = - hessian @ border / intensity @ border < threshold
-            if (testMode) logger.debug("check fusion: {}+{}, size: {}, value: {}, threhsold: {}, fusion: {}", e1.getLabel(), e2.getLabel(), voxels.size(), value, splitThresholdValue, value<splitThresholdValue);
+            if (addTestImage!=null) logger.debug("check fusion: {}+{}, size: {}, value: {}, threhsold: {}, fusion: {}", e1.getLabel(), e2.getLabel(), voxels.size(), value, splitThresholdValue, value<splitThresholdValue);
             return value<splitThresholdValue;
         }
 

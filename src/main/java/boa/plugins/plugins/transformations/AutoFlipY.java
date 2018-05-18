@@ -64,7 +64,6 @@ import java.util.Arrays;
  * @author jollion
  */
 public class AutoFlipY implements ConfigurableTransformation, MultichannelTransformation, ToolTip {
-
     
     public static enum AutoFlipMethod {
         FLUO("Bacteria Fluo", "Detects side where bacteria are more aligned -> should be the upper side"),
@@ -300,8 +299,8 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
     }
 
     @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.ALL;
+    public OUTPUT_SELECTION_MODE getOutputChannelSelectionMode() {
+        return OUTPUT_SELECTION_MODE.ALL;
     }
     boolean testMode;
     @Override

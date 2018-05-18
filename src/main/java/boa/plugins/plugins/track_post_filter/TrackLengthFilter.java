@@ -59,7 +59,7 @@ public class TrackLengthFilter implements TrackPostFilter {
             if (e.getValue().size()<min || (max>0 && e.getValue().size()>max)) objectsToRemove.addAll(e.getValue());
         }
         //logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false);
+        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false, false);
     }
 
     @Override

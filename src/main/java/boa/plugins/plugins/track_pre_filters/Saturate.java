@@ -52,7 +52,7 @@ public class Saturate implements TrackPreFilter, ToolTip {
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         Map<Image, ImageMask> maskMap = TrackPreFilter.getMaskMap(preFilteredImages);
-        Histogram histo = HistogramFactory.getHisto(maskMap, 1, null, true);
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(maskMap, true).parallel(), HistogramFactory.allImagesAreInteger(maskMap.keySet()));
         double sv = IJAutoThresholder.runThresholder(AutoThresholder.Method.MaxEntropy, histo); //Shanbhag
         double svBin = (int)histo.getIdxFromValue(sv);
         // limit to saturagePercentage

@@ -98,16 +98,24 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
         for (List<StructureObject> track : allTracks.values()) {
             List<Double> values = Utils.transform(track, so->valueMap.get(so.getRegion()));
             double value;
-            if (statistics.getSelectedIndex()==0) value = ArrayUtil.mean(values);
-            else if (statistics.getSelectedIndex()==1) value = ArrayUtil.median(values);
-            else value = ArrayUtil.quantile(values, quantile.getValue().doubleValue());
+            switch (statistics.getSelectedIndex()) {
+                case 0:
+                    value = ArrayUtil.mean(values);
+                    break;
+                case 1:
+                    value = ArrayUtil.median(values);
+                    break;
+                default:
+                    value = ArrayUtil.quantile(values, quantile.getValue().doubleValue());
+                    break;
+            }
             if (keepOverThreshold.getSelected()) {
                 if (value<threshold.getValue().doubleValue()) objectsToRemove.addAll(track);
             } else {
                 if (value>threshold.getValue().doubleValue()) objectsToRemove.addAll(track);
             }
         }
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false); // only delete
+        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false, false); // only delete
     }
 
     @Override

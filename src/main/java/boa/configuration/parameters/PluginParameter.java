@@ -308,6 +308,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         return res.toArray(new String[res.size()]);
     }
 
+    @Override
     public int getSelectedIndex() {
         String[] choices = getChoiceList();
         for (int i = 0; i<choices.length; ++i) {
@@ -316,8 +317,14 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         return -1;
     }
 
+    @Override
     public boolean isAllowNoSelection() {
         return allowNoSelection;
+    }
+    
+    @Override
+    public String getNoSelectionString() {
+        return ChoiceParameterUI.NO_SELECTION;
     }
     
     public Class<T> getPluginType() {

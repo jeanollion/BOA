@@ -28,7 +28,9 @@ import boa.image.Histogram;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageMask;
+import boa.plugins.MultiThreaded;
 import boa.plugins.SimpleThresholder;
+import boa.plugins.ThresholderHisto;
 
 /**
  * Adapted from Implementation of Kappa Sigma Clipping algorithm by Gaëtan Lehmann, http://www.insight-journal.org/browse/publication/132. 
@@ -40,7 +42,7 @@ import boa.plugins.SimpleThresholder;
  * Variation : added final sigma for final threshold computation
  * @author jollion
  */
-public class BackgroundThresholder implements SimpleThresholder {
+public class BackgroundThresholder implements SimpleThresholder, ThresholderHisto, MultiThreaded {
     public static boolean debug = false;
     NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 2.5, 0.01, null);
     NumberParameter finalSigmaFactor = new BoundedNumberParameter("Final Sigma factor", 2, 4, 0.01, null);
@@ -59,14 +61,24 @@ public class BackgroundThresholder implements SimpleThresholder {
         this.startingPoint.setPlugin(thlder);
         return this;
     }
+    @Override
+    public double runThresholderHisto(Histogram histogram) {
+        double firstValue = Double.MAX_VALUE;
+        if (this.startingPoint.isOnePluginSet()) {
+            if (startingPoint.instanciatePlugin() instanceof ThresholderHisto) {
+                firstValue = ((ThresholderHisto)startingPoint.instanciatePlugin()).runThresholderHisto(histogram);
+            } else throw new IllegalArgumentException("Starting point should be a thresholder histo");
+        }
+        return runThresholder(histogram, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), firstValue, null);
+    }
     @Override 
     public double runSimpleThresholder(Image input, ImageMask mask) {
         double firstValue = Double.MAX_VALUE;
         if (this.startingPoint.isOnePluginSet()) {
             firstValue = startingPoint.instanciatePlugin().runSimpleThresholder(input, mask);
         }
-        //return runThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), firstValue, null);
-        return runThresholderHisto(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), firstValue, null);
+        return runThresholder(input, mask, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), firstValue, null);
+        
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
@@ -173,6 +185,13 @@ public class BackgroundThresholder implements SimpleThresholder {
 
     public boolean does3D() {
         return true;
+    }
+
+    
+    boolean multithread;
+    @Override
+    public void setMultithread(boolean multithread) {
+        this.multithread=multithread;
     }
     
 }

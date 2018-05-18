@@ -30,6 +30,8 @@ import boa.utils.StreamConcatenation;
 import boa.utils.Utils;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -267,15 +269,29 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
     }
     public abstract DoubleStream streamPlane(int z);
     public DoubleStream stream(ImageMask mask, boolean maskHasAbsoluteOffset) {
-        if (mask==null) return stream();
+        if (mask==null || mask instanceof BlankMask) return stream();
         int minZ = maskHasAbsoluteOffset? Math.max(zMin, mask.zMin()) : mask.zMin();
         int maxZ = maskHasAbsoluteOffset ? Math.min(zMin+sizeZ, mask.zMin()+mask.sizeZ()) : Math.min(sizeZ, mask.sizeZ()+mask.zMin());
         if (minZ>=maxZ) return DoubleStream.empty();
         if (minZ==maxZ-1) return streamPlane(minZ-(maskHasAbsoluteOffset?zMin:0), mask, maskHasAbsoluteOffset);
         return StreamConcatenation.concat((DoubleStream[])IntStream.range(minZ-(maskHasAbsoluteOffset?zMin:0), maxZ-(maskHasAbsoluteOffset?zMin:0)).mapToObj(z->streamPlane(z, mask, maskHasAbsoluteOffset)).filter(s->s!=DoubleStream.empty()).toArray(s->new DoubleStream[s]));
     }
-    public abstract DoubleStream streamPlane(int z, ImageMask mask, boolean useOffset);
+    public abstract DoubleStream streamPlane(int z, ImageMask mask, boolean maskHasAbsoluteOffset);
     
+    public static DoubleStream stream(Collection<Image> images) {
+        // get one single plane collection and concatenate
+        boolean all2D =  (Utils.objectsAllHaveSameProperty(images, im->im.sizeZ()==1));
+        List<Image> planes = all2D ?  (images instanceof List ? (List)images: new ArrayList<>(images)) : images.stream().flatMap(im -> ((List<Image>)im.splitZPlanes()).stream()).collect(Collectors.toList());
+        return StreamConcatenation.concat((DoubleStream[])IntStream.range(0, planes.size()).mapToObj(i->planes.get(i).streamPlane(0)).toArray(s->new DoubleStream[s]));
+    }
+    public static DoubleStream stream(Map<Image, ImageMask> images, boolean masksHaveAbsoluteOffset) {
+        // if all masks are blank masks or null -> use method with no masks
+        if (Utils.objectsAllHaveSameProperty(images.values(), im -> im == null || im instanceof BlankMask)) return stream(images.keySet());
+        else { // combine streams using image's. TODO check performances in 3D -> if necessary decompose to make a single concatenation
+            DoubleStream[] streams = images.entrySet().stream().map(e->e.getKey().stream(e.getValue(), masksHaveAbsoluteOffset)).toArray(s->new DoubleStream[s]);
+            return StreamConcatenation.concat(streams);
+        }
+    }
     /**
      * 
      * @param extent minimal values: if negative, will extend the image, if positive will crop the image. maximal values: if positive will extend the image, if negative will crop the image

@@ -60,14 +60,11 @@ producing a new filtered stack.
 													Christopher Philip Mauer 
 	cpmauer@northwestern.edu
 */
-public class KalmanFilter implements Filter {
+public class KalmanFilter { // implements Filter
    private static double defpercentvar = 0.05;
    private static double defgain = 0.8;;
    public static final Logger logger = LoggerFactory.getLogger(KalmanFilter.class);
 
-   boolean testMode;
-    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
-   
    
    
     public static List<Image> run (List<Image> images, double percentvar, double gain) {
@@ -172,7 +169,7 @@ public class KalmanFilter implements Filter {
         }
         return doubles;
     }
-
+    /*
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -182,4 +179,8 @@ public class KalmanFilter implements Filter {
     public Parameter[] getParameters() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+    boolean testMode;
+    @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
+   
+   */
 }

@@ -88,7 +88,7 @@ public class RemoveMicrochannelsWithOverexpression implements TrackPostFilter {
             }
         }
         //logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false);
+        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false, false);
     }
     
     @Override

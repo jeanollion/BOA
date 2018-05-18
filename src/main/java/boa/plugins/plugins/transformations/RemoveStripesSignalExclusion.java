@@ -231,4 +231,5 @@ public class RemoveStripesSignalExclusion implements ConfigurableTransformation 
     }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
+
 }

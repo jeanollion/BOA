@@ -44,9 +44,10 @@ public class ConditionalParameter extends SimpleContainerParameter {
     public Object toJSONEntry() {
         JSONObject res = new JSONObject();
         res.put("action", action.toJSONEntry());
-        if (defaultParameters!=null && !defaultParameters.isEmpty()) res.put("def", JSONUtils.toJSONArrayMap(defaultParameters));
+        //if (defaultParameters!=null && !defaultParameters.isEmpty()) res.put("def", JSONUtils.toJSONArrayMap(defaultParameters));
         JSONObject params = new JSONObject();
-        for (Entry<String, List<Parameter>> e : parameters.entrySet()) params.put(e.getKey(), JSONUtils.toJSONArrayMap(e.getValue()));
+        //for (Entry<String, List<Parameter>> e : parameters.entrySet()) params.put(e.getKey(), JSONUtils.toJSONArrayMap(e.getValue()));
+        if (getCurrentParameters()!=null && currentValue!=null) params.put(currentValue, JSONUtils.toJSONArrayMap(getCurrentParameters())); // only the currently used parameters
         res.put("params", params);
         return res;
     }

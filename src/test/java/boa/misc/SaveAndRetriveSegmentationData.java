@@ -18,7 +18,7 @@
 package boa.misc;
 
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.GUI;
+
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.core.Task;

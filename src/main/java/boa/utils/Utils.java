@@ -88,6 +88,8 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import static jdk.nashorn.internal.objects.ArrayBufferView.buffer;
 import boa.measurement.MeasurementExtractor;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -96,6 +98,14 @@ import java.util.stream.Stream;
  */
 public class Utils {
     public static <T> Stream<T> parallele(Stream<T> stream, boolean parallele) {
+        if (parallele) return stream.parallel();
+        else return stream.sequential();
+    }
+    public static DoubleStream parallele(DoubleStream stream, boolean parallele) {
+        if (parallele) return stream.parallel();
+        else return stream.sequential();
+    }
+    public static IntStream parallele(IntStream stream, boolean parallele) {
         if (parallele) return stream.parallel();
         else return stream.sequential();
     }

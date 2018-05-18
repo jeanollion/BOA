@@ -95,16 +95,16 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
             switch (this.deleteMethod.getSelectedIndex()) {
                 case 0:
-                    ManualCorrection.deleteObjects(null, objectsToRemove, false); // only delete
+                    ManualCorrection.deleteObjects(null, objectsToRemove, false, false); // only delete
                     break;
                 case 2:
-                    ManualCorrection.prune(null, objectsToRemove, false); // prune tracks
+                    ManualCorrection.prune(null, objectsToRemove, false, false); // prune tracks
                     break;
                 case 1:
                     Set<StructureObject> trackHeads = new HashSet<>(Utils.transform(objectsToRemove, o->o.getTrackHead()));
                     objectsToRemove.clear();
                     for (StructureObject th : trackHeads) objectsToRemove.addAll(StructureObjectUtils.getTrack(th, false));
-                    ManualCorrection.deleteObjects(null, objectsToRemove, false);
+                    ManualCorrection.deleteObjects(null, objectsToRemove, false, false);
                     break;
                 default:
                     break;

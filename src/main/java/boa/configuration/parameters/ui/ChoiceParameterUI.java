@@ -67,7 +67,7 @@ public class ChoiceParameterUI implements ArmableUI {
         if (choice.isAllowNoSelection()) {
             String[] c = choice.getChoiceList();
             String[] res = new String[c.length+1];
-            res[0] = NO_SELECTION;
+            res[0] = choice_.getNoSelectionString();
             System.arraycopy(c, 0, res, 1, c.length);
             choices=res;
         } else choices=choice.getChoiceList();

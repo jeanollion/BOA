@@ -23,6 +23,14 @@ package boa.plugins;
  * @author Jean Ollion
  */
 public interface MultichannelTransformation extends Transformation {
-    public static enum SelectionMode{SAME, SINGLE, MULTIPLE, ALL};
-    public SelectionMode getOutputChannelSelectionMode();
+    public static enum OUTPUT_SELECTION_MODE{SAME, SINGLE, MULTIPLE, ALL};
+    /**
+     * Selection mode for channels on which transformation will be applied
+     * SINGLE: only one channel that can be configured
+     * MULTIPLE : several channels that can be configured
+     * ALL: all channels
+     * SAME: same channel as input channels. Transformation must be configurable for this mode, if not error will be throwns
+     * @return 
+     */
+    public OUTPUT_SELECTION_MODE getOutputChannelSelectionMode();
 }

@@ -34,6 +34,7 @@ import boa.configuration.parameters.FrameParameter;
 import boa.configuration.parameters.TransformationPluginParameter;
 import boa.configuration.parameters.ui.MultipleChoiceParameterUI;
 import boa.configuration.parameters.ui.ParameterUI;
+import boa.plugins.ConfigurableTransformation;
 import boa.plugins.MultichannelTransformation;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
@@ -149,16 +150,16 @@ public class PreProcessingChain extends SimpleContainerParameter {
      * @param transformation 
      */
     public TransformationPluginParameter<Transformation> addTransformation(int idx, int inputChannel, int[] outputChannel, Transformation transformation) {
-        if (inputChannel<-1) throw new IllegalArgumentException("Input channel should be >=0");
+        if (inputChannel<-1 && (transformation instanceof ConfigurableTransformation) || (transformation instanceof MultichannelTransformation && ((MultichannelTransformation)transformation).getOutputChannelSelectionMode()==MultichannelTransformation.OUTPUT_SELECTION_MODE.SAME)) throw new IllegalArgumentException("Input channel should be >=0");
         Experiment xp = ParameterUtils.getExperiment(this);
         if (xp!=null &&  inputChannel>=xp.getChannelImageCount()) throw new IllegalArgumentException("Input channel should be < channel image count ("+xp.getChannelImageCount()+")");
-        TransformationPluginParameter<Transformation> tpp= new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false);
+        TransformationPluginParameter<Transformation> tpp= new TransformationPluginParameter<>("Transformation", Transformation.class, false);
         transformations.insert(tpp, idx);
         tpp.setPlugin(transformation);
         tpp.setInputChannel(inputChannel);
         if (transformation instanceof MultichannelTransformation) {
             MultichannelTransformation mct = (MultichannelTransformation)transformation;
-            if (outputChannel==null && (mct.getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.MULTIPLE || mct.getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.SINGLE) ) outputChannel = new int[]{inputChannel};
+            if (outputChannel==null && (mct.getOutputChannelSelectionMode()==MultichannelTransformation.OUTPUT_SELECTION_MODE.MULTIPLE || mct.getOutputChannelSelectionMode()==MultichannelTransformation.OUTPUT_SELECTION_MODE.SINGLE) ) outputChannel = new int[]{inputChannel};
             tpp.setOutputChannel(outputChannel);
         }
         return tpp;

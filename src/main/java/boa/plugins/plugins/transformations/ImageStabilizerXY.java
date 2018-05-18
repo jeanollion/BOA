@@ -349,8 +349,8 @@ public class ImageStabilizerXY implements ConfigurableTransformation, Multichann
         return true;
     }
 
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.ALL;
+    public OUTPUT_SELECTION_MODE getOutputChannelSelectionMode() {
+        return OUTPUT_SELECTION_MODE.ALL;
     }
     private static class Bucket {
         ImageProcessor[][] pyramid;
@@ -385,4 +385,5 @@ public class ImageStabilizerXY implements ConfigurableTransformation, Multichann
     }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
+
 }

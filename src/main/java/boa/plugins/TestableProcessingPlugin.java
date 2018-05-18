@@ -23,6 +23,7 @@ import boa.data_structure.Selection;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.imageInteraction.TrackMask;
 import boa.image.Image;
 import boa.utils.HashMapGetCreate;
@@ -45,6 +46,17 @@ import java.util.stream.Collectors;
 public interface TestableProcessingPlugin extends ImageProcessingPlugin {
     public void setTestDataStore(Map<StructureObject, TestDataStore> stores);
 
+    public static Consumer<Image> getAddTestImageConsumer(Map<StructureObject, TestDataStore> stores, StructureObject parent) {
+        if (stores==null) return null;
+        return i -> {
+            if (i.sameDimensions(parent.getBounds())) {
+                stores.get(parent).addIntermediateImage(i.getName(), i);
+            } else {
+                stores.get(parent).addMisc(l -> {ImageWindowManagerFactory.showImage(i);});
+            }
+        };
+    }
+    
     public static class TestDataStore {
         final StructureObject parent;
         Map<String, Image> images = new HashMap<>();

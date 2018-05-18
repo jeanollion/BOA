@@ -64,8 +64,8 @@ public class SimpleTranslation implements MultichannelTransformation {
     }
     
     @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.MULTIPLE;
+    public OUTPUT_SELECTION_MODE getOutputChannelSelectionMode() {
+        return OUTPUT_SELECTION_MODE.MULTIPLE;
     }
 
     boolean testMode;

@@ -87,9 +87,7 @@ public class TopHat implements PreFilter, Filter {
         return true;
     }
 
-    public ArrayList getConfigurationData() {
-        return null;
-    }
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
+
 }

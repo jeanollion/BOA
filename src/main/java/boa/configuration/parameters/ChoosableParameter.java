@@ -32,4 +32,5 @@ public interface ChoosableParameter extends Parameter, Listenable {
     public String[] getChoiceList();
     public int getSelectedIndex();
     public boolean isAllowNoSelection();
+    public String getNoSelectionString();
 }

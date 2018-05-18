@@ -105,6 +105,7 @@ import boa.plugins.plugins.post_filters.BinaryClose;
 import boa.plugins.plugins.post_filters.FillHoles2D;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.plugins.plugins.segmenters.BacteriaIntensityPhase;
+import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.plugins.plugins.track_post_filter.AverageMask;
 import boa.plugins.plugins.track_pre_filters.NormalizeTrack;
 import boa.plugins.plugins.track_pre_filters.PreFilter;
@@ -112,6 +113,7 @@ import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.plugins.plugins.track_pre_filters.Saturate;
 import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
 import boa.plugins.plugins.trackers.MutationTrackerSpine;
+import boa.plugins.plugins.transformations.TypeConverter;
 
 
 /**
@@ -448,8 +450,8 @@ public class GenerateXP {
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
         ps.addTransformation(1, null, new RemoveDeadPixels(20, 4)); // for reminiscent pixels
         ps.addTransformation(1, null, new RemoveDeadPixels(35, 1)); // for non-reminiscent pixels
-        ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0).setAddGlobalMean(false).setTrimNegativeValues(true)); // TODO test trim negative values. make background thresholder more sensitive because sd of background is rediced -> modify otsu thld. advantage: after transformations, convertion to 16 bit trim values so same behavior of further transformation & segmentation.
-        ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0).setSecondSignalExclusion(1, new BackgroundThresholder(4, 5, 2))); // add secondary mask in case of non-bacteria "contaminents" -> high fluo in mutation and no fluo in bacteria
+        ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0));
+        ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0).setSecondSignalExclusion(1, new BackgroundFit(10))); // add secondary mask in case of non-bacteria "contaminents" -> high fluo in mutation and no fluo in bacteria
         ps.addTransformation(0, null, new SaturateHistogramHyperfluoBacteria());
         ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR).setRemoveIncompleteRowsAndColumns(false).setMaintainMaximum(true));
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE));
@@ -457,6 +459,8 @@ public class GenerateXP {
         //ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
         CropMicroChannels cropper = new CropMicrochannelsFluo2D(410, 45, 200, 0.5, 10);
         ps.addTransformation(0, null, cropper).setActivated(true);
+        ps.addTransformation(-1, null, new TypeConverter().setLimitTo16((short)1000));
+        
         //ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, 0).setCropper(cropper)).setActivated(false); // additional translation to correct chromatic shift
     }
     public static void setPreprocessingPhase(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
@@ -491,7 +495,7 @@ public class GenerateXP {
                             new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaIntensity()).setCostParameters(0.25, 1.25)
                     ).addTrackPostFilters(
                             new SegmentationPostFilter().setDeleteMethod(2).addPostFilters(new RemoveEndofChannelBacteria()), 
-                            new RemoveTrackByFeature().setFeature(new Size(), 300, true).setQuantileValue(0.25)
+                            new RemoveTrackByFeature().setFeature(new Size(), 150, true).setQuantileValue(0.25)
                     )
             );
             // modification of scaling: lap * 2.5, gauss * scale (=2) quality * 2.23

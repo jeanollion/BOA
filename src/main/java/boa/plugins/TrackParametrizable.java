@@ -90,8 +90,14 @@ public interface TrackParametrizable<P extends Plugin> {
     public static double getGlobalThreshold(int structureIdx, List<StructureObject> parentTrack, SimpleThresholder thlder) {
         Map<Image, ImageMask> maskMap = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
         if (thlder instanceof ThresholderHisto) {
-            Histogram hist = HistogramFactory.getHisto(maskMap, null, 256, true);
-            return ((ThresholderHisto)thlder).runThresholderHisto(hist);
+            if (thlder instanceof IJAutoThresholder) {
+                // histo must be 256
+                Histogram hist = HistogramFactory.getHistogram(()->Image.stream(maskMap, true).parallel(), 256);
+                return ((ThresholderHisto)thlder).runThresholderHisto(hist);
+            } else {
+                Histogram hist = HistogramFactory.getHistogram(()->Image.stream(maskMap, true).parallel(), HistogramFactory.allImagesAreInteger(maskMap.keySet()));
+                return ((ThresholderHisto)thlder).runThresholderHisto(hist);
+            }
         } else {
             Supplier<Pair<List<Image>, List<ImageInteger>>> supplier = ()->new Pair<>(new ArrayList<>(), new ArrayList<>());
             BiConsumer<Pair<List<Image>, List<ImageInteger>>, Map.Entry<Image, ImageMask>> accumulator =  (p, e)->{

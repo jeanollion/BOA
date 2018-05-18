@@ -245,7 +245,7 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public int getIndex() {
-        return this.getParent().getIndex(this);
+        return getParent().getIndex(this);
     }
     
     @Override 
@@ -256,7 +256,7 @@ public class Structure extends SimpleContainerParameter {
     
     protected void setMaxStructureIdx() {
         if (parent ==null) return;
-        int idx = parent.getIndex(this);
+        int idx = getIndex();
         parentStructure.setMaxStructureIdx(idx);
         segmentationParent.setMaxStructureIdx(idx);
         if (processingScheme.isOnePluginSet() && processingScheme.instanciatePlugin() instanceof Duplicate) {

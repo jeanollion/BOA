@@ -64,8 +64,8 @@ public class SimpleRotationXY implements MultichannelTransformation {
     }
     
     @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.ALL;
+    public OUTPUT_SELECTION_MODE getOutputChannelSelectionMode() {
+        return OUTPUT_SELECTION_MODE.ALL;
     }
 
     boolean testMode;

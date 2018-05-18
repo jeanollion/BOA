@@ -76,7 +76,7 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
             //ImageWindowManagerFactory.showImage(bck.getLabelMap().duplicate("right background"));
             if (intersectWithBackground(object, bck)) objectsToRemove.addAll(allTracks.get(object));
         }
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false);
+        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false, false);
     }
     private boolean intersectWithBackground(StructureObject object, RegionPopulation bck) {
         bck.filter(o->o.size()>10); // 

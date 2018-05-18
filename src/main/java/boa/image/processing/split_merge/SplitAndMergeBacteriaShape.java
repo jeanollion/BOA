@@ -124,7 +124,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         popWS.smoothRegions(2, true, null);
         RegionCluster<InterfaceLocalShape> c = new RegionCluster(popWS, true, getFactory());
         c.addForbidFusionPredicate(forbidFusion);
-        RegionCluster.verbose=this.testMode;
+        RegionCluster.verbose=addTestImage!=null;
         if (minSizeFusion>0) c.mergeSmallObjects(minSizeFusion, objectMergeLimit, null);
         if (ignoreEndOfChannelRegionWhenMerginSmallRegions && !popWS.getRegions().isEmpty()) yLimLastObject = Collections.max(popWS.getRegions(), (o1, o2)->Double.compare(o1.getBounds().yMax(), o2.getBounds().yMax())).getBounds().yMax();
         if (curvaturePerCluster) updateCurvature(c.getClusters(), popWS.getLabelMap());
@@ -134,7 +134,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
                 if (set.isEmpty()) return null;
                 Region closest = Collections.min(set, (o1, o2) -> Double.compare(getDistance(o1.getBounds(), smallO.getBounds()), getDistance(o2.getBounds(), smallO.getBounds())));
                 double d = GeometricalMeasurements.getDistanceBB(closest, smallO, false);
-                if (testMode) logger.debug("merge small objects with no interface: min distance: {} to {} = {}", smallO.getLabel(), closest.getLabel(), d);
+                if (addTestImage!=null)  logger.debug("merge small objects with no interface: min distance: {} to {} = {}", smallO.getLabel(), closest.getLabel(), d);
                 if (d<maxMergeDistanceBB) return closest;
                 else return null;
             }; 
@@ -159,11 +159,11 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         ImageOperations.jitterIntegerValues(distanceMap, segmentationMask, 3);
         RegionPopulation popWS = WatershedTransform.watershed(distanceMap, segmentationMask, ImageLabeller.labelImageList(seeds), config);
         
-        if (testMode) {
+        if (addTestImage!=null) {
             popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-            //ImageWindowManagerFactory.showImage(seeds);
-            //ImageWindowManagerFactory.showImage(getWatershedMap());
-            ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("Split by EDM: labels before merge"));
+            //addTestImage.accept(seeds);
+            //addTestImage.accept(getWatershedMap());
+            addTestImage.accept(popWS.getLabelMap().duplicate("Split by EDM: labels before merge"));
         }
         
         return merge(popWS, objectMergeLimit);
@@ -237,7 +237,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
                 ImageByte mask = new ImageByte("joinedMask:"+e1.getLabel()+"+"+e2.getLabel(), joinBox.getBlankMask());//.setCalibration(m1);
                 Image.pasteImage(m1, mask, m1.getBoundingBox().translate(mask.getBoundingBox().reverseOffset()));
                 
-                if (testMode) for (Voxel v : e2.getVoxels()) mask.setPixelWithOffset(v.x, v.y, v.z, 2);
+                if (addTestImage!=null) for (Voxel v : e2.getVoxels()) mask.setPixelWithOffset(v.x, v.y, v.z, 2);
                 else ImageOperations.orWithOffset(m2, mask, mask);
                 joinedMask = mask;
             }
@@ -251,7 +251,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             else {
                 if (localCurvatureMap==null) {
                     localCurvatureMap = Curvature.computeCurvature(getJoinedMask(), curvatureScale);
-                    if (testMode && false && ((e1.getLabel()==2 && e2.getLabel()==4))) {
+                    if ( addTestImage!=null && false && ((e1.getLabel()==2 && e2.getLabel()==4))) {
                         ImageWindowManagerFactory.showImage(joinedMask);
                         ImageWindowManagerFactory.showImage(Curvature.getCurvatureMask(getJoinedMask(), localCurvatureMap));
                     }
@@ -297,7 +297,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
 
             // criterion on curvature
             // curvature has been computed @ upadateSortValue
-            if (testMode) logger.debug("check fusion interface: {}+{}, Mean curvature: {} ({} & {}), Threshold: {} & {}", e1.getLabel(), e2.getLabel(), curvatureValue, curvL, curvR, thresholdCurvMean, thresholdCurvSides);
+            if (addTestImage!=null) logger.debug("check fusion interface: {}+{}, Mean curvature: {} ({} & {}), Threshold: {} & {}", e1.getLabel(), e2.getLabel(), curvatureValue, curvL, curvR, thresholdCurvMean, thresholdCurvSides);
             if (curvCriterionOnBothSides && ((Double.isNaN(curvL) || curvL<thresholdCurvSides || Double.isNaN(curvR) || curvR<thresholdCurvSides))) return false;
             if (!curvCriterionOnBothSides && (curvatureValue<thresholdCurvMean || (curvL<thresholdCurvSides && (Double.isNaN(curvR) || curvR<thresholdCurvSides)))) return false;
             if (!useThicknessCriterion) return true;
@@ -310,7 +310,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
 
             double norm = Math.min(max1, max2);
             value = maxDistance/norm;
-            if (testMode) logger.debug("Thickness criterioninterface: {}+{}, norm: {} maxInter: {}, criterion value: {} threshold: {} fusion: {}, scale: {}", e1.getLabel(), e2.getLabel(), norm, maxDistance,value, relativeThicknessThreshold, value>relativeThicknessThreshold, e1.getScaleXY() );
+            if (addTestImage!=null) logger.debug("Thickness criterioninterface: {}+{}, norm: {} maxInter: {}, criterion value: {} threshold: {} fusion: {}, scale: {}", e1.getLabel(), e2.getLabel(), norm, maxDistance,value, relativeThicknessThreshold, value>relativeThicknessThreshold, e1.getScaleXY() );
             return  value>relativeThicknessThreshold;
         }
         private void searchKDTree(RadiusNeighborSearchOnKDTree<Double> search, RealLocalizable r, double searchScale, Map<RealLocalizable, double[]> res) {
@@ -390,11 +390,11 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             } else if (!borderVoxels.isEmpty()) curvL = getMinCurvature(borderVoxels);
             
             if (Double.isNaN(curvL)&&Double.isNaN(curvR)) {
-                if (testMode) logger.debug("{} : NO BORDER VOXELS");
+                if (addTestImage!=null) logger.debug("{} : NO BORDER VOXELS");
                 return Double.NEGATIVE_INFINITY; // inclusion of the two regions
             } else {    
                 if (borderVoxels2.isEmpty()) {
-                    if (testMode) logger.debug("{}, GET CURV: {}, borderVoxels: {}", this, getMinCurvature(borderVoxels), borderVoxels.size());
+                    if (addTestImage!=null) logger.debug("{}, GET CURV: {}, borderVoxels: {}", this, getMinCurvature(borderVoxels), borderVoxels.size());
                     return curvL;
                 } else {
                     //logger.debug("mean of min: b1: {}, b2: {}", getMinCurvature(borderVoxels), getMinCurvature(borderVoxels2));
@@ -405,7 +405,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
                     else if ((Math.abs(curvL-curvR)>2*Math.abs(thresholdCurvMean))) {  // when one side has a curvature very different from the other -> hole -> do not take into acount // TODO: check generality of criterion. put parameter? 
                         res = Math.max(curvL, curvR);
                     } else res = 0.5 * (curvL + curvR); 
-                    if ( testMode) logger.debug("{}, GET CURV: {}&{} -> {} , borderVoxels: {}&{}", this, curvL, curvR, res, borderVoxels.size(), borderVoxels2.size());
+                    if (addTestImage!=null) logger.debug("{}, GET CURV: {}&{} -> {} , borderVoxels: {}&{}", this, curvL, curvR, res, borderVoxels.size(), borderVoxels2.size());
                     return res;
                 }
             }
@@ -454,9 +454,9 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
                 borderVoxels.addAll(l.get(0).getVoxels());   
                 if (l.size()==2) borderVoxels2.addAll(l.get(1).getVoxels());} 
             else {
-                if (testMode) logger.error("interface: {}, #{} sides found!!", this, l.size());
+                if (addTestImage!=null) logger.error("interface: {}, #{} sides found!!", this, l.size());
             }
-            if (testMode) {
+            if (addTestImage!=null) {
                 for (Voxel v : borderVoxels) joinedMask.setPixelWithOffset(v.x, v.y, v.z, 3);
                 for (Voxel v : borderVoxels2) joinedMask.setPixelWithOffset(v.x, v.y, v.z, 4);
             }
@@ -473,6 +473,5 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
             return "Interface: " + e1.getLabel()+"+"+e2.getLabel()+ " curvature: "+curvatureValue;
         }
     }
-    
     
 }

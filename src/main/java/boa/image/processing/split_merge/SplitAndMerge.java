@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -50,14 +51,14 @@ import java.util.stream.Collectors;
  * @param <I>
  */
 public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& RegionCluster.InterfaceVoxels<I>
-    public boolean testMode;
+    protected Consumer<Image> addTestImage;
     protected ClusterCollection.InterfaceFactory<Region, I> factory;
     protected HashMapGetCreate<Region, Double> medianValues;
     protected Image intensityMap;
     boolean wsMapIsEdgeMap = true, localMinOnSeedMap=true;
     ImageMask foregroundMask;
-    public void setTestMode(boolean testMode) {
-        this.testMode = testMode;
+    public void setTestMode(Consumer<Image> addTestImage) {
+        this.addTestImage = addTestImage;
     }
     public SplitAndMerge(Image intensityMap) {
         this.intensityMap=intensityMap;
@@ -129,13 +130,13 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
      * @return 
      */
     public RegionPopulation merge(RegionPopulation popWS, int numberOfObjectsToKeep) {
-        RegionCluster.verbose=testMode;
+        RegionCluster.verbose=addTestImage!=null; //TODO proper test mode
         RegionCluster<I> c = new RegionCluster<>(popWS, foregroundMask, true, getFactory()); // TODO INCLUDE BACKGROUND
         c.addForbidFusionPredicate(forbidFusion);
         c.mergeSort(numberOfObjectsToKeep<=1, 0, numberOfObjectsToKeep);
         //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
         popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-        if (testMode) ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("Split&Merge: regions after merge"));
+        if (addTestImage!=null) addTestImage.accept(popWS.getLabelMap().duplicate("Split&Merge: regions after merge"));
         return popWS;
     }
     /**
@@ -147,9 +148,9 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
      */
     public RegionPopulation splitAndMerge(ImageMask segmentationMask, int minSizePropagation, int objectMergeLimit) {
         RegionPopulation popWS = split(segmentationMask, minSizePropagation);
-        if (testMode) {
-            ImageWindowManagerFactory.showImage(getWatershedMap());
-            ImageWindowManagerFactory.showImage(popWS.getLabelMap().duplicate("Split&Merge: seg map after split before merge"));
+        if (addTestImage!=null) {
+            addTestImage.accept(getWatershedMap().duplicate("Split&Merge:WS_Map"));
+            addTestImage.accept(popWS.getLabelMap().duplicate("Split&Merge: seg map after split before merge"));
         }
         return merge(popWS, objectMergeLimit);
     }
@@ -158,7 +159,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
         WatershedTransform.WatershedConfiguration config = new WatershedTransform.WatershedConfiguration().decreasingPropagation(!wsMapIsEdgeMap);
         if (minSizePropagation>0) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         RegionPopulation popWS = WatershedTransform.watershed(getWatershedMap(), segmentationMask, seeds, config);
-        if (testMode) popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
+        if (addTestImage!=null) popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         return popWS;
     }
     public RegionCluster<I> getInterfaces(RegionPopulation population, boolean lowConnectivity) {

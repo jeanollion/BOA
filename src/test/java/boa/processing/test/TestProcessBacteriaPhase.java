@@ -116,7 +116,7 @@ public class TestProcessBacteriaPhase {
             Segmenter seg = psc.getSegmenter();
             if (apply!=null) apply.apply(mc, seg);
             if (parentTrack.size()==1) {
-                if (seg instanceof BacteriaIntensity) ((BacteriaIntensity)seg).testMode=true;
+                //if (seg instanceof BacteriaIntensity) ((BacteriaIntensity)seg).testMode=true; /// TODO USE TEST FRAME WORK
             }
             mc.setChildrenObjects(seg.runSegmenter(input, bacteriaStructureIdx, mc), bacteriaStructureIdx);
            

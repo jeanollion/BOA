@@ -103,12 +103,18 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     }
     
     // choosable parameter
-
+    @Override
     public boolean isAllowNoSelection() {
         return this.allowNoSelection;
     }
     
+    @Override
+    public String getNoSelectionString() {
+        return ChoiceParameterUI.NO_SELECTION;
+    }
+    
     // actionable parameter
+    @Override
     public String[] getChoiceList() {
         return listChoice;
     }

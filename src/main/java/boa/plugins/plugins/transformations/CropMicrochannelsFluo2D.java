@@ -48,6 +48,7 @@ import boa.plugins.Thresholder;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.MicrochannelSegmenter.Result;
+import boa.plugins.plugins.thresholders.BackgroundFit;
 
 /**
  *
@@ -57,7 +58,7 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
     
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.5, 0.05, 1);
-    PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new BackgroundThresholder(3, 6, 3), false);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
+    PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new BackgroundFit(10), false);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     
     Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, minObjectSize, threshold, fillingProportion, frameNumber, boundGroup};
     

@@ -34,6 +34,7 @@ import boa.data_structure.Voxel;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.BoundingBox;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
@@ -51,6 +52,7 @@ import boa.image.processing.split_merge.SplitAndMergeRegionCriterion;
 import boa.measurement.BasicMeasurements;
 import boa.measurement.GeometricalMeasurements;
 import static boa.plugins.Plugin.logger;
+import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.pre_filters.Sigma;
@@ -68,6 +70,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
@@ -159,20 +162,21 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
     protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
         if (pop.getRegions().isEmpty()) return pop;
         Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(parent.getPreFilteredImage(structureIdx))));
+        Consumer<Image> imageDisp = TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent);
         if (Double.isNaN(threshold)) { // if need to compute thld -> compute thld
             Image valueMap = EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values);
-            threshold = threhsolder.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
-            if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("value map. thld = "+threshold+" global: "+globalThreshold+ " min thld:"+minThld));
-        } else if (testMode)  ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values).setName("value map. thld = "+threshold+" global: "+globalThreshold+ " min thld:"+minThld));
+            threshold = this.localThrehsolder.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
+            if (stores!=null) imageDisp.accept(valueMap.setName("value map"));
+        } else if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values).setName("value map"));
         if (!Double.isNaN(minThld)) threshold = Math.max(minThld, threshold);
         if (Double.isNaN(globalThreshold)) globalThreshold = threshold;
         // define 3 categories: background / forground / unknown
         // foreground -> high intensity, foreground -> low intensity -> merge them
         Function<Region, Integer> artefactFunc = getFilterBorderArtefacts(parent, structureIdx);
-        if (testMode) {
+        if (stores!=null) {
             Map<Region, Double> valuesArt = pop.getRegions().stream().collect(Collectors.toMap(r->r, r->artefactFunc.apply(r)+2d));
-            ImageWindowManagerFactory.showImage(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), valuesArt).setName("artefact map"));
-            ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("region before artefact filter"));
+            imageDisp.accept(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), valuesArt).setName("artefact map"));
+            imageDisp.accept(pop.getLabelMap().duplicate("region before artefact filter"));
         }
         Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<minThld || artefactFunc.apply(r)==-1).collect(Collectors.toSet());
         Set<Region> foregroundL = pop.getRegions().stream().filter(r->values.get(r)>Math.max(globalThreshold, threshold) && !backgroundL.contains(r) && artefactFunc.apply(r)==1).collect(Collectors.toSet());
@@ -187,12 +191,12 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
             pop.getRegions().removeAll(foregroundL);
             pop.getRegions().addAll(0, foregroundL);
             pop.relabel(true);
-            if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("before merge undetermined regions with foregorund foreground<="+foregroundL.size()));
+            if (stores!=null) imageDisp.accept(pop.getLabelMap().duplicate("before merge undetermined regions with foregorund"));
             SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS);
             //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getRawImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS_INV); // TODO TRY WITH RAW INTENSITIES
             sm.addForbidFusion(i->foregroundL.contains(i.getE1())==foregroundL.contains(i.getE2()));
             sm.merge(pop, -1);
-            if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after merge undetermined regions with foregorund foreground<="+foregroundL.size()));
+            if (stores!=null) imageDisp.accept(pop.getLabelMap().duplicate("after merge undetermined regions with foregorund foreground"));
             relabeled= true;
         }
         if (pop.getRegions().size()>foregroundL.size()) { // there are still undetermined regions
@@ -203,13 +207,13 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
                 pop.getRegions().add(0, background); // fixed index so that same instance is conserved when merged
                 pop.getRegions().add(1, foreground); // fixed index so that same instance is conserved when merged
                 pop.relabel(false);
-                if (testMode) {
+                if (stores!=null) {
                     /*pop.getRegions().removeAll(backgroundL);
                     pop.getRegions().addAll(0, backgroundL);
                     pop.getRegions().removeAll(foregroundL);
                     pop.getRegions().addAll(backgroundL.size(), foregroundL);
                     pop.relabel(false);*/
-                    ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back fusion. foreground=["+backgroundL.size()+";"+(backgroundL.size()+foregroundL.size()-1)+"]"));
+                    imageDisp.accept(pop.getLabelMap().duplicate("after fore & back fusion. foreground=["+backgroundL.size()+";"+(backgroundL.size()+foregroundL.size()-1)+"]"));
                 }
                 SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false);
                 sm.setInterfaceValue(0.1, false);
@@ -217,7 +221,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
                 sm.allowMergeWithBackground(parent.getMask()); // helps to remove artefacts on the side but can remove head of mother cell
                 sm.addForbidFusionForegroundBackground(r->r==background, r->r==foreground);
                 //sm.addForbidFusionForegroundBackground(r->backgroundL.contains(r), r->foregroundL.contains(r));
-                sm.setTestMode(testMode);
+                sm.setTestMode(imageDisp);
                 sm.merge(pop, 2); // merge intertermined until 2 categories in the image
                 pop.getRegions().remove(background);
                 //pop.getRegions().removeAll(backgroundL);
@@ -227,7 +231,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         }
         if (!relabeled) pop.relabel(true);
         
-        if (testMode) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after fore & back & intertermined fusion"));
+        if (stores!=null) imageDisp.accept(pop.getLabelMap().duplicate("after fore & back & intertermined fusion"));
         return pop;
     }
     /**
@@ -252,7 +256,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
      */
     protected Function<Region, Integer> getFilterBorderArtefacts(StructureObjectProcessing parent, int structureIdx) {
         if (!filterBorderArtefacts.getSelected()) return r->1;
-        boolean verbose = testMode;
+        boolean verbose = stores!=null;
         // filter border artefacts: thin objects in X direction, contact on one side of the image 
         ContactBorderMask contactLeft = new ContactBorderMask(1, parent.getMask(), Border.Xl);
         ContactBorderMask contactRight = new ContactBorderMask(1, parent.getMask(), Border.Xr);
@@ -305,9 +309,10 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         double dilRadius = callFromSplit ? 0 : 2;
         Image smooth = smoothScale.getValue().doubleValue()<1 ? parent.getRawImage(structureIdx) : ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
         Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), parent.getMask(), 3, 1, smoothScale.getValue().doubleValue(), 1);
-        if (testMode || (callFromSplit && splitVerbose)) {
-            ImageWindowManagerFactory.showImage(smooth.setName("local threshold intensity map"));
-            ImageWindowManagerFactory.showImage(edgeMap.setName("local threshold edge map"));
+        Consumer<Image> imageDisp = TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent);
+        if (imageDisp!=null) { //| (callFromSplit && splitVerbose)
+            imageDisp.accept(smooth.setName("local threshold intensity map"));
+            imageDisp.accept(edgeMap.setName("local threshold edge map"));
         }
         ImageMask mask = parent.getMask();
         // different local threshold for middle part of upper cell when touches borders
@@ -318,7 +323,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
                 differentialLF = true;
                 double yLim = upperCell.getGeomCenter(false).get(1)+upperCell.getBounds().sizeY()/3.0;
                 pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask, v->v.y<yLim); // local threshold for lower cells & half lower part of cell
-                if (testMode || (callFromSplit && splitVerbose)) {
+                if (stores!=null) { //|| (callFromSplit && splitVerbose)
                     logger.debug("y lim: {}", yLim);
                     ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after lower localThreshold"));
                 }
@@ -326,7 +331,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
             } 
         } 
         if (!differentialLF) pop.localThresholdEdges(smooth, edgeMap, localThresholdFactor.getValue().doubleValue(), false, false, dilRadius, mask, null);
-        if (testMode || (callFromSplit && splitVerbose)) ImageWindowManagerFactory.showImage(pop.getLabelMap().duplicate("after localThreshold"));
+        if (imageDisp!=null) imageDisp.accept(pop.getLabelMap().duplicate("after localThreshold"));
         pop.smoothRegions(2, true, mask);
         return pop;
     }
@@ -339,7 +344,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
             currentParent = parent;
             splitAndMerge = initializeSplitAndMerge(parent, structureIdx,parent.getMask());
         }
-        splitAndMerge.setTestMode(splitVerbose);
+        splitAndMerge.setTestMode(TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent));
         splitAndMerge.setInterfaceValue(i->-(double)i.getVoxels().size()); // split @ smallest interface ? 
         RegionPopulation res = splitAndMerge.splitAndMerge(mask, object.size()/4, 2);
         setInterfaceValue(input, splitAndMerge); // for interface value computation
@@ -373,5 +378,10 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
 
         return new double[]{minThreshold, globalThld}; 
     }
-    
+    protected static double  getGlobalOtsuThreshold(Stream<StructureObject> parent, int structureIdx) { // TODO : remplacer par background fit. attention si image normalisée -> bin pas 1, sinon bin = 1. Calcult auto des bin ? ou en deux temps ? 
+        Map<Image, ImageMask> imageMapMask = parent.collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), 256);
+        return IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
+        
+    }
 }

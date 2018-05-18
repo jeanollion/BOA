@@ -69,4 +69,28 @@ public class DoubleStatistics extends DoubleSummaryStatistics {
     public static DoubleStatistics getStats(DoubleStream stream) {
         return stream.collect(DoubleStatistics::new, DoubleStatistics::accept, DoubleStatistics::combine);
     }
+    
+    public static void add(double value, double[] sumOfSquare) {
+        double squareValue = value * value;
+        sumOfSquare[0]+=squareValue;
+        sumOfSquareWithCompensation(squareValue, sumOfSquare);
+    }
+    public static void combine(double[] sumOfSquare1, double[] sumOfSquare2) {
+        sumOfSquare1[0] += sumOfSquare2[0];
+        sumOfSquareWithCompensation(sumOfSquare2[1], sumOfSquare1);
+        sumOfSquareWithCompensation(sumOfSquare2[2], sumOfSquare1);
+    }
+    public static double getSumOfSquare(double[] sumOfSquare) {
+        double tmp =  sumOfSquare[1] + sumOfSquare[2];
+        if (Double.isNaN(tmp) && Double.isInfinite(sumOfSquare[0])) {
+            return sumOfSquare[0];
+        }
+        return tmp;
+    }
+    private static void sumOfSquareWithCompensation(double value, double[] sumOfSquare) {
+        double tmp = value - sumOfSquare[2];
+        double velvel = sumOfSquare[1] + tmp; // Little wolf of rounding error
+        sumOfSquare[2] = (velvel - sumOfSquare[1]) - tmp;
+        sumOfSquare[1] = velvel;
+    }
 }

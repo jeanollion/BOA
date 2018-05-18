@@ -143,7 +143,7 @@ public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeReg
 
         @Override
         public boolean checkFusion() {
-            if (testMode) logger.debug("check fusion: {}+{}, value: {}, threhsold: {}, fusion: {}", e1.getLabel(), e2.getLabel(), value, splitThresholdValue, value<splitThresholdValue);
+            if (addTestImage!=null) logger.debug("check fusion: {}+{}, value: {}, threhsold: {}, fusion: {}", e1.getLabel(), e2.getLabel(), value, splitThresholdValue, value<splitThresholdValue);
             return value<splitThresholdValue;
         }
 

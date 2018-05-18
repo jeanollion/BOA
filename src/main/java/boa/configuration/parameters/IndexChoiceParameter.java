@@ -54,7 +54,11 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     }
     @Override 
     public boolean isValid() {
-        return !(allowNoSelection && selectedIndicies.length==0);
+        return allowNoSelection || selectedIndicies.length>0;
+    }
+    public <T extends IndexChoiceParameter> T setAllowNoSelection(boolean allowNoSelection) {
+        this.allowNoSelection= allowNoSelection;
+        return (T)this;
     }
     @Override
     public boolean sameContent(Parameter other) {
@@ -101,6 +105,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     public String toString(){
         if (!multipleSelection) {
             if (getSelectedIndex()>=0 && getChoiceList().length>getSelectedIndex()) return name+": "+getChoiceList()[getSelectedIndex()];
+            else if (allowNoSelection && getSelectedIndex()==-1) return name+": "+getNoSelectionString();
             else return name+": no selected index";
         } else return name +": "+ Utils.getStringArrayAsStringTrim(50, getSelectedItemsNames());
     }
@@ -111,6 +116,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
         return res;
     }
     
+    @Override 
     public ParameterUI getUI() {
         if (multipleSelection) {
             return new MultipleChoiceParameterUI(this);

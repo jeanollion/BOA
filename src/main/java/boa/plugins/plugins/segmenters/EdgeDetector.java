@@ -62,6 +62,7 @@ import boa.plugins.SimpleThresholder;
 import boa.utils.Utils;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 /**
  *
  * @author jollion
@@ -90,7 +91,8 @@ public class EdgeDetector implements Segmenter, ToolTip {
     NumberParameter seedRadius = new BoundedNumberParameter("Seed Radius", 1, 1.5, 1, null);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Min Size Propagation", 0, 0, 0, null);
     BooleanParameter darkBackground = new BooleanParameter("Dark Background", true);
-    boolean testMode;
+    
+    Consumer<Image> addTestImage;
     
     // variables
     Image wsMap;
@@ -105,6 +107,10 @@ public class EdgeDetector implements Segmenter, ToolTip {
     @Override
     public String getToolTipText() {return toolTip;}
 
+    public void setTestMode(Consumer<Image> addTestImage) {
+        this.addTestImage = addTestImage;
+    }
+    
     public PreFilterSequence getWSMapSequence() {
         return this.watershedMap;
     }
@@ -189,10 +195,10 @@ public class EdgeDetector implements Segmenter, ToolTip {
         if (minSizePropagation>0) config.fusionCriterion(new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         //config.propagation(WatershedTransform.PropagationType.DIRECT);
         RegionPopulation res =  WatershedTransform.watershed(getWsMap(input, mask), mask, Arrays.asList(ImageLabeller.labelImage(getSeedMap(input, mask))), config);
-        if (testMode) {
-            ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("EdgeDetector: Segmented Regions"));
-            ImageWindowManagerFactory.showImage(seedMap.setName("EdgeDetector: Seeds"));
-            ImageWindowManagerFactory.showImage(wsMap.setName("EdgeDetector: Watershed Map"));
+        if (addTestImage!=null) {
+            addTestImage.accept(res.getLabelMap().duplicate("EdgeDetector: Segmented Regions"));
+            addTestImage.accept(seedMap.setName("EdgeDetector: Seeds"));
+            addTestImage.accept(wsMap.setName("EdgeDetector: Watershed Map"));
         }
         return res;
     }
@@ -206,7 +212,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
         switch (THLD_METHOD.getValue(this.thresholdMethod.getSelectedItem())) {
             case INTENSITY_MAP: {
                     double thld = threshold.instanciatePlugin().runSimpleThresholder(input, mask);
-                    if (testMode) ImageWindowManagerFactory.showImage(generateRegionValueMap(pop, input).setName("Intensity value Map. Threshold: "+thld+" thldMethod: "+this.threshold.getPluginName()));
+                    if (addTestImage!=null) addTestImage.accept(generateRegionValueMap(pop, input).setName("Intensity value Map"));
                     pop.filter(new RegionPopulation.MedianIntensity(thld, darkBackground.getSelected(), input));
                     return;
             } case VALUE_MAP:
@@ -214,7 +220,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
                     Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(input)));
                     Image valueMap = generateRegionValueMap(input, values);
                     double thld = threshold.instanciatePlugin().runSimpleThresholder(valueMap , mask);
-                    if (testMode) ImageWindowManagerFactory.showImage(valueMap.setName("EdgeDetector: Intensity value Map. Threshold: "+thld));
+                    if (addTestImage!=null) addTestImage.accept(valueMap.setName("EdgeDetector: Intensity value Map"));
                     if (darkBackground.getSelected()) values.entrySet().removeIf(e->e.getValue()>=thld);
                     else values.entrySet().removeIf(e->e.getValue()<=thld);
                     pop.getRegions().removeAll(values.keySet());
@@ -227,7 +233,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
                     Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(input)));
                     Image valueMap = generateRegionValueMap(input, values);
                     double thld1 = IJAutoThresholder.runThresholder(valueMap, mask, AutoThresholder.Method.Otsu);
-                    if (testMode) ImageWindowManagerFactory.showImage(valueMap.duplicate("EdgeDetector: Primary thld value map. Thld: "+thld1));
+                    if (addTestImage!=null) addTestImage.accept(valueMap.duplicate("EdgeDetector: Primary thld value map"));
                     Map<Region, Double> values2 = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(getSecondaryThresholdMap(input, mask))));
                     Image valueMap2 = generateRegionValueMap(input , values2);
                     double thld2 = IJAutoThresholder.runThresholder(valueMap2, mask, AutoThresholder.Method.Otsu);
@@ -252,9 +258,9 @@ public class EdgeDetector implements Segmenter, ToolTip {
                         }
                     }       double thld  = h.getValueFromIdx((eMax+sMax)/2.0);
                     //double thld = BackgroundThresholder.runThresholder(valueMap, parent.getMask(), 4, 4, 1, thld1); // run background thlder with thld1 as limit to select border form interfaces
-                    if (testMode) {
-                        ImageWindowManagerFactory.showImage(valueMap2.setName("EdgeDetector: Secondary thld value map. Thld: "+thld2));
-                        ImageWindowManagerFactory.showImage(valueMap.setName("EdgeDetector: Value map. Thld: "+thld));
+                    if (addTestImage!=null) {
+                        addTestImage.accept(valueMap2.setName("EdgeDetector: Secondary thld value map"));
+                        addTestImage.accept(valueMap.setName("EdgeDetector: Value map"));
                     }       
                     if (darkBackground.getSelected()) values.entrySet().removeIf(e->e.getValue()>=thld);
                     else values.entrySet().removeIf(e->e.getValue()<=thld);
@@ -285,11 +291,5 @@ public class EdgeDetector implements Segmenter, ToolTip {
     public Parameter[] getParameters() {
         return new Parameter[]{watershedMap, threshold, thresholdCond};
     }
-
-    public void setTestMode(boolean testMode) {
-        this.testMode = testMode;
-    }
-
-    
     
 }

@@ -19,81 +19,122 @@
 package boa.image;
 
 import boa.image.processing.ImageOperations;
+import boa.plugins.Plugin;
+import boa.utils.DoubleStatistics;
+import boa.utils.Utils;
 import static boa.utils.Utils.parallele;
 import java.util.Collection;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.ObjDoubleConsumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Jean Ollion
  */
 public class HistogramFactory {
-    public static Histogram getHistogram(Image image, ImageMask mask, int length, boolean parallele) {
-        if (!parallele || image.sizeZ()==0) return getHistogram(image, mask, length);
-        List<Image> planes = image.splitZPlanes();
-        if (mask==null || mask instanceof BlankMask) return HistogramFactory.getHistogram(planes, null, length, true);
-        else {
-            Map<Image, ImageMask> map =  IntStream.range(0, planes.size()).mapToObj(i->i).collect(Collectors.toMap(i->planes.get(i), i->new ImageMask2D(mask, i)));
-            return HistogramFactory.getHisto(map, null, length , true);
-        }
-    }
-    public static Histogram getHistogram(Image image, ImageMask mask, double binSize, boolean parallele) {
-        if (!parallele || image.sizeZ()==0) return getHistogram(image, mask, binSize);
-        List<Image> planes = image.splitZPlanes();
-        if (mask==null || mask instanceof BlankMask) return HistogramFactory.getHistogram(planes, binSize, null, true);
-        else {
-            Map<Image, ImageMask> map =  IntStream.range(0, planes.size()).mapToObj(i->i).collect(Collectors.toMap(i->planes.get(i), i->new ImageMask2D(mask, i)));
-            return HistogramFactory.getHisto(map, binSize, null , true);
-        }
-    }
-    public static Histogram getHistogram(Image image, ImageMask mask, int length) {
-        DoubleSummaryStatistics stats = image.stream(mask, false).summaryStatistics();
-        double min = stats.getMin();
-        double max = stats.getMax();
-        return HistogramFactory.getHistogram(image, mask, length, min, max);
-    }
-    public static Histogram getHistogram(Image image, ImageMask mask, double binSize) {
-        if (image instanceof ImageByte && binSize==1) return HistogramFactory.getHistogram(image, mask, 1d, 256, 0d);
-        DoubleSummaryStatistics stats = image.stream(mask, false).summaryStatistics();
-        double min = stats.getMin();
-        double max = stats.getMax();
-        return HistogramFactory.getHistogram(image, mask, binSize, min, max);
-    }
-    public static Histogram getHistogram(Image image, ImageMask mask, double binSize, double min, double max) {
-        return HistogramFactory.getHistogram(image, mask, binSize, (int)((max-min)/binSize)+1, min);
-    }
-    public static Histogram getHistogram(Image image, ImageMask mask, int length, double min, double max) {
-        return HistogramFactory.getHistogram(image, mask, (max-min)/length, length, min);
+    public final static Logger logger = LoggerFactory.getLogger(HistogramFactory.class);
+    public static int MIN_N_BINS = 256;
+    public static int MAX_N_BINS = 2000;
+    
+    public static double[] getMinAndMaxAndBinSize(DoubleStream stream) {
+        // stats -> 0-2: Sum of Square with compensation variables, 3: count, 4: sum, 5 : min; 6: max; 7: max decimal place 
+        BiConsumer<double[], double[]> combiner = (stats1, stats2)-> {
+            stats1[4]+=stats2[4];
+            stats1[3]+=stats2[3];
+            DoubleStatistics.combine(stats1, stats2);
+            if (stats1[5]>stats2[5]) stats1[5] = stats2[5];
+            if (stats1[6]<stats2[6]) stats1[6] = stats2[6];
+            if (stats1[7]<stats2[7]) stats1[7] = stats2[7];
+        };
+        ObjDoubleConsumer<double[]> cons = (double[] stats, double v) -> {
+            stats[3]++;
+            stats[4]+=v;
+            DoubleStatistics.add(v, stats);
+            if (stats[5]>v) stats[5] = v;
+            if (stats[6]<v) stats[6] = v;
+            double dec = v-(long)v;
+            if (stats[7]<dec) stats[7] = dec;
+        };
+        double[] stats = stream.collect(() -> new double[]{0, 0, 0, 0, 0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, 0},cons, combiner);
+        if (stats[7]==0) return new double[]{stats[5], stats[6], 1}; // no decimal place -> bin 1
+        double std = stats[3]>0 ?  Math.sqrt((DoubleStatistics.getSumOfSquare(stats) / stats[3]) - Math.pow(stats[4]/stats[3], 2)) : 0.0d;
+        double binSize = 3.49 * std * Math.pow(stats[3], -1/3d);
+        /* FROM : 
+        Scott, D. 1979.
+        On optimal and data-based histograms.
+        Biometrika, 66:605-610. */
+        
+        // enshure histogram will respect nbins range
+        int nBins = getNBins(stats[5], stats[6], binSize);
+        if (nBins<MIN_N_BINS) binSize = getBinSize(stats[5], stats[6], MIN_N_BINS); 
+        if (nBins>MAX_N_BINS)binSize = getBinSize(stats[5], stats[6], MAX_N_BINS);
+        //logger.debug("autobin: range: [{};{}], count: {}, sigma: {}, max decimal place: {} binSize: {}", stats[5], stats[6], stats[3], std, stats[7], binSize);
+        return new double[]{stats[5], stats[6], binSize};
     }
     
-    
-    
-    
-    public static double getBinSize(double min, double max, int length) {
-        return (max - min) / length;
+    public static Histogram getHistogram(Supplier<DoubleStream> streamSupplier, boolean integerImages) {
+        double[] mmb;
+        if (integerImages) {
+            double[] mm = getMinAndMax(streamSupplier.get());
+            mmb = new double[]{mm[0], mm[1], 1d};
+        } else mmb = getMinAndMaxAndBinSize(streamSupplier.get());
+        return getHistogram(streamSupplier.get(), mmb[2], getNBins(mmb[0], mmb[1], mmb[2]), mmb[0]);
     }
-    public static double getLength(double min, double max, double binSize) {
-        return (int)(max-min)/binSize;
+    public static Histogram getHistogram(Supplier<DoubleStream> streamSupplier, double binSize) {
+        double[] mm = getMinAndMax(streamSupplier.get());
+        return getHistogram(streamSupplier.get(), binSize, getNBins(mm[0], mm[1], binSize), mm[0]);
     }
-    private static Histogram getHistogram(Image image, ImageMask mask, double binSize, int length, double min) {
-        int[] res = new int[length];
+    public static Histogram getHistogram(Supplier<DoubleStream> streamSupplier, int nBins) {
+        double[] mm = getMinAndMax(streamSupplier.get());
+        return getHistogram(streamSupplier.get(), getBinSize(mm[0], mm[1], nBins), nBins, mm[0]);
+    }
+    public static Histogram getHistogram(DoubleStream stream, double binSize, int nBins, double min) {
         double coeff = 1 / binSize;
-        image.stream(mask, false).forEach(v->{
+        ObjDoubleConsumer<int[]> fillHisto = (int[] histo, double v) -> {
             int idx = (int)((v-min) * coeff);
-            if (idx==length) res[length-1]++;
-            else if (idx>=0 && idx<length) res[idx]++;
-        });
-        return new Histogram(res, binSize, min);
+            if (idx==nBins) histo[nBins-1]++;
+            else if (idx>=0 && idx<nBins) histo[idx]++;
+        };
+        BiConsumer<int[], int[]> combiner = (int[] h1, int[] h2) -> {
+            for (int i = 0; i<nBins; ++i) h1[i]+=h2[i];
+        };
+        int[] histo = stream.collect(()->new int[nBins], fillHisto, combiner);
+        return new Histogram(histo, binSize, min);
     }
-
-    public static Histogram getHistogram(Collection<Image> images, double[] minAndMax, int length, boolean parallele) {
-        if (images.isEmpty()) {
-            return null;
-        }
+    public static double[] getMinAndMax(DoubleStream stream) {
+        BiConsumer<double[], double[]> combiner = (mm1, mm2)-> {
+            if (mm1[0]>mm2[0]) mm1[0] = mm2[0];
+            if (mm1[1]<mm2[1]) mm1[1] = mm2[1];
+        };
+        ObjDoubleConsumer<double[]> cons = (double[] mm, double v) -> {
+            if (mm[0]>v) mm[0] = v;
+            if (mm[1]<v) mm[1] = v;
+        };
+        return stream.collect(() -> new double[2],cons, combiner);
+    }
+    
+    public static boolean allImagesAreInteger(Collection<Image> images) {
+        return Utils.objectsAllHaveSameProperty(images, im -> im instanceof ImageInteger);
+    }
+    
+    public static double getBinSize(double min, double max, int nBins) {
+        return (max - min) / nBins;
+    }
+    public static int getNBins(double min, double max, double binSize) {
+        return (int)((max-min)/binSize);
+    }
+    
+    public static List<Histogram> getHistograms(Collection<Image> images, double binSize, double[] minAndMax, boolean parallele) {
         if (minAndMax == null) {
             minAndMax = new double[2];
         }
@@ -103,83 +144,11 @@ public class HistogramFactory {
             minAndMax[1] = mm[1];
         }
         double[] mm = minAndMax;
-        return parallele(images.stream(), parallele).map((Image im) -> HistogramFactory.getHistogram(im, null, length, mm[0], mm[1])).reduce((Histogram h1, Histogram h2) -> {
-            h1.add(h2);
-            return h1;
-        }).get();
+        int nBins = getNBins(mm[0], mm[1], binSize); 
+        return parallele(images.stream(), parallele).map((Image im) -> HistogramFactory.getHistogram(im.stream(), binSize, nBins, mm[0])).collect(Collectors.toList());
     }
 
-    /**
-     *
-     * @param images
-     * @param minAndMax the method will output min and max values in this array, except if minAndMax[0]<minAndMax[1] -> in this case will use these values for histogram
-     * @return
-     */
-    public static Histogram getHistogram(Collection<Image> images, double binSize, double[] minAndMax, boolean parallele) {
-        if (images.isEmpty()) {
-            return null;
-        }
-        if (minAndMax == null) {
-            minAndMax = new double[2];
-        }
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = ImageOperations.getMinAndMax(images, parallele);
-            minAndMax[0] = mm[0];
-            minAndMax[1] = mm[1];
-        }
-        double[] mm = minAndMax;
-        return parallele(images.stream(), parallele).map((Image im) -> HistogramFactory.getHistogram(im, null, binSize, mm[0], mm[1])).reduce((Histogram h1, Histogram h2) -> {
-            h1.add(h2);
-            return h1;
-        }).get();
-    }
-
-    public static Histogram getHisto(Map<Image, ImageMask> images, double[] minAndMax, int length, boolean parallele) {
-        if (minAndMax == null) {
-            minAndMax = new double[2];
-        }
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = ImageOperations.getMinAndMax(images, parallele);
-            minAndMax[0] = mm[0];
-            minAndMax[1] = mm[1];
-        }
-        double[] mm = minAndMax;
-        return parallele(images.entrySet().stream(), parallele).map((Map.Entry<Image, ImageMask> e) -> HistogramFactory.getHistogram(e.getKey(), e.getValue(), length, mm[0], mm[1])).reduce((Histogram h1, Histogram h2) -> {
-            h1.add(h2);
-            return h1;
-        }).get();
-    }
-
-    public static Histogram getHisto(Map<Image, ImageMask> images, double binSize, double[] minAndMax, boolean parallele) {
-        if (minAndMax == null) {
-            minAndMax = new double[2];
-        }
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = ImageOperations.getMinAndMax(images, parallele);
-            minAndMax[0] = mm[0];
-            minAndMax[1] = mm[1];
-        }
-        double[] mm = minAndMax;
-        return parallele(images.entrySet().stream(), parallele).map((Map.Entry<Image, ImageMask> e) -> HistogramFactory.getHistogram(e.getKey(), e.getValue(), binSize, mm[0], mm[1])).reduce((Histogram h1, Histogram h2) -> {
-            h1.add(h2);
-            return h1;
-        }).get();
-    }
-
-    public static List<Histogram> getHistoAsList(Collection<Image> images, double binSize, double[] minAndMax, boolean parallele) {
-        if (minAndMax == null) {
-            minAndMax = new double[2];
-        }
-        if (!(minAndMax[0] < minAndMax[1])) {
-            double[] mm = ImageOperations.getMinAndMax(images, parallele);
-            minAndMax[0] = mm[0];
-            minAndMax[1] = mm[1];
-        }
-        double[] mm = minAndMax;
-        return parallele(images.stream(), parallele).map((Image im) -> HistogramFactory.getHistogram(im, null, binSize, mm[0], mm[1])).collect(Collectors.toList());
-    }
-
-    public static Map<Image, Histogram> getHistoAll(Map<Image, ImageMask> images, double binSize, double[] minAndMax, boolean parallele) {
+    public static Map<Image, Histogram> getHistograms(Map<Image, ImageMask> images, double binSize, double[] minAndMax, boolean parallele) {
         if (minAndMax == null) {
             minAndMax = new double[2];
         }
@@ -189,6 +158,7 @@ public class HistogramFactory {
             minAndMax[1] = mm[1];
         }
         final double[] mm = minAndMax;
-        return parallele(images.entrySet().stream(), parallele).collect(Collectors.toMap((Map.Entry<Image, ImageMask> e) -> e.getKey(), (Map.Entry<Image, ImageMask> e) -> HistogramFactory.getHistogram(e.getKey(), e.getValue(), binSize, mm[0], mm[1])));
+        int nBins = getNBins(mm[0], mm[1], binSize); 
+        return parallele(images.entrySet().stream(), parallele).collect(Collectors.toMap((Map.Entry<Image, ImageMask> e) -> e.getKey(), (Map.Entry<Image, ImageMask> e) -> HistogramFactory.getHistogram(e.getKey().stream(e.getValue(), true),  binSize, nBins, mm[0])));
     }
 }

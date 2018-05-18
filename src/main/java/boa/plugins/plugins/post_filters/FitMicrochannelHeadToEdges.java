@@ -201,7 +201,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
             if ((bck1!=bck2 && partition.getRegions().size()>3) || (bck1==bck2 && partition.getRegions().size()>2)) { // some seeds were not merge either with bck or foreground -> decide with merge sort algorithm on edge value
                 if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(partition.getLabelMap().duplicate("beofre merge"));
                 SplitAndMergeRegionCriterion sm  = new SplitAndMergeRegionCriterion(edgeMapLocal, inputLocal, Double.POSITIVE_INFINITY, SplitAndMergeRegionCriterion.InterfaceValue.DIFF_MEDIAN_BTWN_REGIONS);
-                sm.setTestMode(verbose && object.getLabel()==debugLabel);
+                //sm.setTestMode(verbose && object.getLabel()==debugLabel); // TODO ADD A MISC TEST VALUE THAT CHECKS IF OBJECTS OVERLAY
                 sm.addForbidFusionForegroundBackground(r->r==bck1||r==bck2, r->!Collections.disjoint(r.getVoxels(), foregroundVox));
                 if (bck1!=bck2) sm.addForbidFusion(i->(i.getE1()==bck1&&i.getE2()==bck2) || (i.getE1()==bck1&&i.getE2()==bck2)); // to be able to know how many region we want in the end. somtimes bck1 & bck2 can't merge
                 partition = sm.merge(partition, bck1==bck2 ? 2 :3); // keep 3 regions = background on both sides & foreground

@@ -127,10 +127,6 @@ public class SiblingStructureParameter extends StructureParameter {
             //includeParent=otherP.includeParent;
         } else throw new IllegalArgumentException("wrong parameter type");
     }
-    @Override public SiblingStructureParameter setAutoConfiguration(boolean autoConfiguration) {
-        this.autoConfiguration=autoConfiguration;
-        return this;
-    }
     
     @Override protected void autoConfiguration() {
         if (getXP()!=null) {

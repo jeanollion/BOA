@@ -50,7 +50,7 @@ public class RemoveTracksStartingAfterFrame implements TrackPostFilter {
             if (e.getKey().getFrame()>start) objectsToRemove.addAll(e.getValue());
         }
         //logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false);
+        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false, false);
     }
 
     @Override

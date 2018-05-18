@@ -36,6 +36,7 @@ import boa.plugins.Thresholder;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations;
 import boa.plugins.MultiThreaded;
+import boa.plugins.ThresholderHisto;
 import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
@@ -67,9 +68,10 @@ import org.apache.commons.math3.linear.DiagonalMatrix;
 /**
  * @author jollion
  */
-public class BackgroundFit implements SimpleThresholder, MultiThreaded, Thresholder, ToolTip {
+public class BackgroundFit implements ThresholderHisto, SimpleThresholder, MultiThreaded, Thresholder, ToolTip {
     public static boolean debug;
-    NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 3, 0.01, null);
+    NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 3, 10, 0, null);
+    
     public BackgroundFit() {
         
     }
@@ -89,8 +91,13 @@ public class BackgroundFit implements SimpleThresholder, MultiThreaded, Threshol
     }
     
     @Override
+    public double runThresholderHisto(Histogram histogram) {
+        return backgroundFit(histogram, sigmaFactor.getValue().doubleValue(), null);
+    }
+    
+    @Override
     public double runSimpleThresholder(Image input, ImageMask mask) {
-        return backgroundFit(HistogramFactory.getHistogram(input, mask, 1d, multithread), sigmaFactor.getValue().doubleValue(), null);
+        return runThresholderHisto(HistogramFactory.getHistogram(()->Utils.parallele(input.stream(mask, true), multithread), input instanceof ImageInteger) );
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
@@ -177,5 +184,7 @@ public class BackgroundFit implements SimpleThresholder, MultiThreaded, Threshol
     public Parameter[] getParameters() {
         return new Parameter[]{sigmaFactor};
     }
+
+    
     
 }

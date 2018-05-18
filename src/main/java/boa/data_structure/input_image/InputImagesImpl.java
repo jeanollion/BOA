@@ -100,9 +100,10 @@ public class InputImagesImpl implements InputImages {
         if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);
         else { // null channel indices either same or all
             if (transfo instanceof MultichannelTransformation) {
-                if (((MultichannelTransformation)transfo).getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.SAME) addTransformation(inputChannel, transfo);
+                if (((MultichannelTransformation)transfo).getOutputChannelSelectionMode()==MultichannelTransformation.OUTPUT_SELECTION_MODE.SAME) addTransformation(inputChannel, transfo);
                 else for (int c = 0; c<getChannelNumber(); ++c) addTransformation(c, transfo); 
-            } else addTransformation(inputChannel, transfo);
+            } else if (inputChannel>=0) addTransformation(inputChannel, transfo);
+            else for (int c = 0; c<getChannelNumber(); ++c) addTransformation(c, transfo); 
         }
     }
     

@@ -20,14 +20,16 @@ package boa.configuration.parameters;
 
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Structure;
+import java.util.function.IntConsumer;
+import java.util.function.ObjIntConsumer;
 
 /**
  *
  * @author nasique
  */
-public class StructureParameter extends IndexChoiceParameter {
+public class StructureParameter<T extends StructureParameter> extends IndexChoiceParameter {
     protected Experiment xp;
-    boolean autoConfiguration;
+    ObjIntConsumer<T> autoConfiguration;
     
     public StructureParameter(String name) {
         super(name);
@@ -40,15 +42,17 @@ public class StructureParameter extends IndexChoiceParameter {
         super(name, selectedStructures, allowNoSelection);
     }
     
-    public StructureParameter setAutoConfiguration(boolean autoConfiguration) {
+    public T setAutoConfiguration(ObjIntConsumer<T> autoConfiguration) {
         this.autoConfiguration=autoConfiguration;
-        return this;
+        return (T)this;
     }
-    
+    public static ObjIntConsumer<StructureParameter> defaultAutoConfiguration() {
+        return (p, s)->p.setSelectedStructureIdx(s);
+    }
     protected void autoConfiguration() {
-        if (getXP()!=null) {
+        if (getXP()!=null && this.autoConfiguration!=null) {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
-            if (s!=null) this.setSelectedStructureIdx(s.getIndex());
+            if (s!=null) autoConfiguration.accept((T)this, s.getIndex());
         }
     }
     
@@ -61,21 +65,16 @@ public class StructureParameter extends IndexChoiceParameter {
         super.setSelectedIndex(structureIdx);
     }
     
-    @Override public int getSelectedIndex() {
+    public int getSelectedStructureIdx() {
         int idx = super.getSelectedIndex();
-        if (idx==-1 && !allowNoSelection &&  getChoiceList().length==1 && getXP()!=null) {
+        if (idx==-1 && !allowNoSelection && getChoiceList().length==1 && getXP()!=null) {
            this.setSelectedStructureIdx(0);
            return 0;
         }
-        if (idx==-1 && autoConfiguration) {
+        if (idx==-1 && autoConfiguration!=null) {
             autoConfiguration();
             return super.getSelectedIndex();
-        }
-        return idx;
-    }
-    
-    public int getSelectedStructureIdx() {
-        return this.getSelectedIndex();
+        } else return idx;
     }
     
     @Override
@@ -102,6 +101,11 @@ public class StructureParameter extends IndexChoiceParameter {
             return -1;
         }
         else return getXP().getFirstCommonParentStructureIdx(getSelectedIndex(), otherStructureIdx);
+    }
+
+    @Override
+    public String getNoSelectionString() {
+        return "Root";
     }
     
 }

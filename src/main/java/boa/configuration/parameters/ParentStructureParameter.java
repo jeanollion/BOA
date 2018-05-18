@@ -18,12 +18,16 @@
  */
 package boa.configuration.parameters;
 
+import boa.configuration.experiment.Structure;
+import java.util.function.IntConsumer;
+import java.util.function.ObjIntConsumer;
+
 
 /**
  *
  * @author jollion
  */
-public class ParentStructureParameter extends StructureParameter {
+public class ParentStructureParameter extends StructureParameter<ParentStructureParameter> {
     int maxStructure;
     
     public ParentStructureParameter(String name) {
@@ -62,6 +66,7 @@ public class ParentStructureParameter extends StructureParameter {
         } else {
            return new String[]{"error: no xp found in tree"};
         }
+        if (maxStructure<=0 && this.autoConfiguration!=null) autoConfiguration();
         if (maxStructure<=0) return new String[]{};
         String[] res = new String[maxStructure];
         System.arraycopy(choices, 0, res, 0, maxStructure);
@@ -72,5 +77,9 @@ public class ParentStructureParameter extends StructureParameter {
     public void setSelectedIndex(int structureIdx) {
         if (maxStructure>=0 && structureIdx>=maxStructure) throw new IllegalArgumentException("Parent Structure ("+structureIdx+") cannot be superior to max structure ("+maxStructure+")");
         super.setSelectedIndex(structureIdx);
+    }
+    
+    public static ObjIntConsumer<ParentStructureParameter> defaultAutoConfigurationParent() {
+        return (p, s)->p.setMaxStructureIdx(s);
     }
 }

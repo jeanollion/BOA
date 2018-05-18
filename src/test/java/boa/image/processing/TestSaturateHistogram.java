@@ -46,14 +46,16 @@ public class TestSaturateHistogram {
         // open histo
         new ImageJ();
         
-        //String dbName = "MF1_180509";
+        String dbName = "MF1_180509";
         //String dbName = "fluo160501_uncorr_TestParam";
-        String dbName= "WT_180318_Fluo";
-        int channelIdx = 1;
+        //String dbName= "WT_180318_Fluo";
+        int channelIdx = 0;
         int postition=0;
         MasterDAO mDAO = new Task(dbName).getDB();
         List<Image> images = new ArrayList<>();
-        for (int f = 0; f<mDAO.getExperiment().getPosition(postition).getFrameNumber(true); ++f)  images.add(mDAO.getExperiment().getPosition(postition).getInputImages().getImage(channelIdx, f));
+        int maxF = mDAO.getExperiment().getPosition(postition).getFrameNumber(true);
+        //int maxF = 10;
+        for (int f = 0; f<maxF; ++f)  images.add(mDAO.getExperiment().getPosition(postition).getInputImages().getImage(channelIdx, f));
         Image im = Image.mergeZPlanes(images);
         ImageWindowManagerFactory.showImage(im);
         
@@ -61,8 +63,13 @@ public class TestSaturateHistogram {
         //logger.debug("range: [{}] bck range: [{}-{}]({}), saturation: {}, thld: {}", histo.minAndMax, histo.getValueFromIdx(ha.getBackgroundRange().min), histo.getValueFromIdx(ha.getBackgroundRange().max), ha.getBackgroundRange().max, ha.getSaturationThreshold(5, 0.2), ha.getThresholdMultimodal());
         //ha.plot();
         
-        SaturateHistogramHyperfluoBacteria sat = new SaturateHistogramHyperfluoBacteria();
-        sat.computeConfigurationData(channelIdx, mDAO.getExperiment().getPosition(postition).getInputImages());
-        
+        //SaturateHistogramHyperfluoBacteria sat = new SaturateHistogramHyperfluoBacteria();
+        //sat.computeConfigurationData(channelIdx, mDAO.getExperiment().getPosition(postition).getInputImages());
+        long t0 = System.currentTimeMillis();
+            //Histogram histo = HistogramFactory.getHistogram(images, 1, null, true);
+            Histogram histo = HistogramFactory.getHistogram(()->Image.stream(images).parallel(), false);
+            histo.plotIJ1("histo", true);
+        long t1 = System.currentTimeMillis();
+        logger.debug("get histo: {}ms", t1-t0);
     }
 }

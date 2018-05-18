@@ -22,7 +22,9 @@ import static boa.configuration.parameters.Parameter.logger;
 import boa.configuration.parameters.ui.ChoiceParameterUI;
 import boa.configuration.experiment.Position;
 import boa.gui.PluginConfigurationUtils;
+import boa.plugins.ConfigurableTransformation;
 import boa.plugins.MultichannelTransformation;
+import boa.plugins.MultichannelTransformation.OUTPUT_SELECTION_MODE;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.simple.JSONObject;
@@ -35,7 +37,7 @@ import boa.utils.Utils;
  */
 public class TransformationPluginParameter<T extends Transformation> extends PluginParameter<T> {
     //List configurationData;
-    ChannelImageParameter inputChannel = new ChannelImageParameter("Configuration Channel", -1);
+    ChannelImageParameter inputChannel = null;
     ChannelImageParameter outputChannel = null;
     boolean allChannels = false;
     //Parameter inputTimePoints;
@@ -43,7 +45,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     @Override
     public JSONObject toJSONEntry() {
         JSONObject res = super.toJSONEntry();
-        res.put("inputChannel", inputChannel.toJSONEntry());
+        if (inputChannel!=null) res.put("inputChannel", inputChannel.toJSONEntry());
         if (outputChannel!=null) res.put("outputChannel", outputChannel.toJSONEntry());
         //if (configurationData!=null && !configurationData.isEmpty()) res.put("configurationData", JSONUtils.toJSONList(configurationData));
         return res;
@@ -52,7 +54,10 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     public void initFromJSONEntry(Object jsonEntry) {
         super.initFromJSONEntry(jsonEntry);
         JSONObject jsonO = (JSONObject)jsonEntry;
-        inputChannel.initFromJSONEntry(jsonO.get(("inputChannel")));
+        if (jsonO.containsKey("inputChannel")) {
+            if (inputChannel==null) inputChannel = new ChannelImageParameter("Configuration Channel", -1);
+            inputChannel.initFromJSONEntry(jsonO.get(("inputChannel")));
+        }
         if (jsonO.containsKey("outputChannel")) {
             if (outputChannel==null) outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
             outputChannel.initFromJSONEntry(jsonO.get(("outputChannel")));
@@ -62,12 +67,10 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     
     public TransformationPluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name, pluginType, allowNoSelection);
-        outputChannel=null;
     }
     
     public TransformationPluginParameter(String name, Class<T> pluginType, String defaultMethod, boolean allowNoSelection) {
         super(name, pluginType, defaultMethod, allowNoSelection);
-        outputChannel=null;
     }
     
     // constructeur désactivé car la methode setPlugin a besoin de l'experience
@@ -77,9 +80,11 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     
     @Override 
     public TransformationPluginParameter<T> setPlugin(T pluginInstance) {
+        if (pluginInstance instanceof ConfigurableTransformation) inputChannel = new ChannelImageParameter("Configuration Channel", -1);
+        else inputChannel = null;
+        
         if (pluginInstance instanceof MultichannelTransformation) {  
-            MultichannelTransformation.SelectionMode oc = ((MultichannelTransformation)pluginInstance).getOutputChannelSelectionMode();
-            switch (oc) {
+            switch (((MultichannelTransformation)pluginInstance).getOutputChannelSelectionMode()) {
                 case MULTIPLE:
                     outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
                     break;
@@ -88,8 +93,12 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
                     break;
                 case ALL:
                     allChannels=true;
-                default:
                     outputChannel=null;
+                    break;
+                case SAME:
+                    if (inputChannel==null) throw new IllegalArgumentException("Invalid Transformation: Output channel == SAME & not configurable transformation");
+                    outputChannel=null;
+                    allChannels=false;
                     break;
             }
         }
@@ -107,7 +116,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     }
     
     public void setInputChannel(int channelIdx) {
-        this.inputChannel.setSelectedIndex(channelIdx);
+        if (inputChannel!=null) this.inputChannel.setSelectedIndex(channelIdx);
     }
     
     public int[] getOutputChannels() { // if null -> all selected or same as input...
@@ -118,21 +127,15 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         else return outputChannel.getSelectedItems();
     }
     
-    /*public int[] getInputTimePoints() { // if null -> all selected
-        if (inputTimePoints==null) return null;
-        else if (inputTimePoints instanceof MultipleChoiceParameter) return ((MultipleChoiceParameter)inputTimePoints).getSelectedItems();
-        else if (inputTimePoints instanceof ChoiceParameter) return new int[]{((ChoiceParameter)inputTimePoints).getSelectedIndex()};
-        else return null;
-    }*/
-    
     public int getInputChannel() {
-        return inputChannel.getSelectedIndex();
+        if (inputChannel!=null) return inputChannel.getSelectedIndex();
+        return -1;
     }
     
     @Override
     protected void initChildList() {
         ArrayList<Parameter> p = new ArrayList<Parameter>(2+(pluginParameters!=null?pluginParameters.size():0));
-        p.add(inputChannel);
+        if (inputChannel!=null) p.add(inputChannel);
         if (outputChannel!=null) p.add(outputChannel);
         if (pluginParameters!=null) p.addAll(pluginParameters);
         if (additionalParameters!=null) p.addAll(additionalParameters);
@@ -159,7 +162,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
                 logger.debug("transformationPP {}!={} differ in output channel: {} vs {}", name, otherPP.name, outputChannel, otherPP.outputChannel);
                 return false;
             }
-            if (!inputChannel.sameContent(otherPP.inputChannel)) {
+            if ((inputChannel==null && otherPP.inputChannel!=null) || (inputChannel!=null && !inputChannel.sameContent(otherPP.inputChannel))) {
                 logger.debug("transformationPP {}!={} differ in input channel: {} vs {}", name, otherPP.name, inputChannel, otherPP.inputChannel);
                 return false;
             }
@@ -172,12 +175,18 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         if (other instanceof TransformationPluginParameter && ((TransformationPluginParameter)other).getPluginType().equals(getPluginType())) {
             TransformationPluginParameter otherPP = (TransformationPluginParameter) other;
             //this.configurationData=ParameterUtils.duplicateConfigurationDataList(otherPP.configurationData);
-            inputChannel.setContentFrom(otherPP.inputChannel);
+            boolean init = false;
+            if (otherPP.inputChannel==null) inputChannel=null;
+            else {
+                inputChannel.setContentFrom(otherPP.inputChannel);
+                init = true;
+            }
             if (otherPP.outputChannel==null) this.outputChannel=null;
             else {
                 this.outputChannel=otherPP.outputChannel.duplicate();
-                initChildList();
+                init = true;
             }
+            if (init) initChildList();
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     

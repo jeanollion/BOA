@@ -242,7 +242,7 @@ public class PluginConfigurationUtils {
                             if (!showAllSteps) {
                                 outputChannels = tpp.getOutputChannels();
                                 if (outputChannels==null) {
-                                    if (transfo instanceof MultichannelTransformation && ((MultichannelTransformation)transfo).getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.ALL) outputChannels = ArrayUtil.generateIntegerArray(images.getChannelNumber());
+                                    if (transfo instanceof MultichannelTransformation && ((MultichannelTransformation)transfo).getOutputChannelSelectionMode()==MultichannelTransformation.OUTPUT_SELECTION_MODE.ALL) outputChannels = ArrayUtil.generateIntegerArray(images.getChannelNumber());
                                     else outputChannels = new int[]{tpp.getInputChannel()}; 
                                 }
                             }
@@ -292,7 +292,7 @@ public class PluginConfigurationUtils {
                     outputL.removeIf(idx -> idx>=images.getChannelNumber());
                     output = Utils.toArray(outputL, false);
                 } else if (output == null ) {
-                    if (transfo instanceof MultichannelTransformation && ((MultichannelTransformation)transfo).getOutputChannelSelectionMode()==MultichannelTransformation.SelectionMode.ALL) output = ArrayUtil.generateIntegerArray(images.getChannelNumber());
+                    if (transfo instanceof MultichannelTransformation && ((MultichannelTransformation)transfo).getOutputChannelSelectionMode()==MultichannelTransformation.OUTPUT_SELECTION_MODE.ALL) output = ArrayUtil.generateIntegerArray(images.getChannelNumber());
                     else output = new int[]{input};
                 }
 

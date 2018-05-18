@@ -107,8 +107,8 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         return true;
     }
     @Override
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.ALL;
+    public OUTPUT_SELECTION_MODE getOutputChannelSelectionMode() {
+        return OUTPUT_SELECTION_MODE.ALL;
     }
     public double getAngle(Image image) {
         double angle=0;

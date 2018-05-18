@@ -105,7 +105,7 @@ public class SelectBestFocusPlane implements ConfigurableTransformation, Autofoc
         Image gradient = ImageFeatures.getGradientMagnitude(plane, scale, false);
         return ImageOperations.getMeanAndSigma(gradient, mask, null)[0];
     }
-
+    @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (bestFocusPlaneIdxT==null || timePoint>=bestFocusPlaneIdxT.size()) throw new RuntimeException("SelectBestFocusPlane transformation is not configured");
         if (image.sizeZ()>1) return image.getZPlane(bestFocusPlaneIdxT.get(timePoint));
@@ -115,7 +115,7 @@ public class SelectBestFocusPlane implements ConfigurableTransformation, Autofoc
     public ArrayList getConfigurationData() {
         return bestFocusPlaneIdxT;
     }
-
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
@@ -123,7 +123,7 @@ public class SelectBestFocusPlane implements ConfigurableTransformation, Autofoc
     public boolean does3D() {
         return true;
     }
-    
+    @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
         return bestFocusPlaneIdxT !=null && bestFocusPlaneIdxT.size() == totalTimePointNumber;
     }

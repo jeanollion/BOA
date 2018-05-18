@@ -38,7 +38,7 @@ import boa.plugins.plugins.measurements.SimpleObjectFeature;
  */
 public abstract class IntensityMeasurement extends SimpleObjectFeature implements ObjectFeatureWithCore {
     protected IntensityMeasurementCore core;
-    protected StructureParameter intensity = new StructureParameter("Intensity").setAutoConfiguration(true);
+    protected StructureParameter intensity = new StructureParameter("Intensity").setAutoConfiguration(StructureParameter.defaultAutoConfiguration());
     protected Image intensityMap;
     public IntensityMeasurement setIntensityStructure(int structureIdx) {
         this.intensity.setSelectedStructureIdx(structureIdx);
