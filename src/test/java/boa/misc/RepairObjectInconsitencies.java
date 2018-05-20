@@ -90,7 +90,7 @@ public class RepairObjectInconsitencies {
             }
         }
         
-        if (!toDelete.isEmpty()) ManualCorrection.deleteObjects(db, toDelete, false);
+        if (!toDelete.isEmpty()) ManualCorrection.deleteObjects(db, toDelete, true, false);
         logger.debug("Position:{}, total collapse: {}, deleted objects: {}, uncorrected: {}", positionName, collapseCount, toDelete.size(), uncorrected.size());
     }
     
