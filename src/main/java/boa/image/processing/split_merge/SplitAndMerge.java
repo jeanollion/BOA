@@ -123,6 +123,9 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
     }
     
     protected Predicate<I> forbidFusion;
+    public boolean isFusionForbidden(I inter) {
+        return forbidFusion!=null ? forbidFusion.test(inter) : false;
+    } 
      /**
      * 
      * @param popWS population to merge according to criterion on hessian value @ interface / value @ interfacepopWS.filterAndMergeWithConnected(new RegionPopulation.Size().setMin(minSize));

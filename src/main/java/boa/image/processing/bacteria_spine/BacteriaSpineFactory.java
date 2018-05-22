@@ -506,6 +506,7 @@ public class BacteriaSpineFactory {
         int add = zoomFactor > 1 ? 1 : 0;
         ImageFloat spineImage = new ImageFloat("", new SimpleImageProperties(new SimpleBoundingBox(0, bounds.sizeX()*zoomFactor-1, 0, bounds.sizeY()*zoomFactor-1, 0, 0), 1, 1));
         spineImage.translate(bounds);
+        spineImage.setCalibration(1d/zoomFactor, 1);
         Offset off = bounds;
         Voxel vox = new Voxel(0, 0, 0);
         // draw contour of bacteria

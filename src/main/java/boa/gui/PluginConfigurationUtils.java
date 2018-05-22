@@ -36,6 +36,7 @@ import boa.data_structure.input_image.InputImagesImpl;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import static boa.gui.imageInteraction.ImageWindowManagerFactory.getImageManager;
 import boa.gui.imageInteraction.TrackMask;
 import boa.image.Image;
 import boa.plugins.ConfigurableTransformation;
@@ -82,18 +83,18 @@ import java.util.function.Function;
  */
 public class PluginConfigurationUtils {
     
-    public static Map<StructureObject, TestDataStore> testImageProcessingPlugin(final ImageProcessingPlugin plugin, Experiment xp, int structureIdx, List<StructureObject> sel) {
+    public static Map<StructureObject, TestDataStore> testImageProcessingPlugin(final ImageProcessingPlugin plugin, Experiment xp, int structureIdx, List<StructureObject> parentSelection) {
         ProcessingScheme psc=xp.getStructure(structureIdx).getProcessingScheme();
         
         // get parent objects -> create graph cut
-        StructureObject o = sel.get(0);
+        StructureObject o = parentSelection.get(0);
         int parentStrutureIdx = o.getExperiment().getStructure(structureIdx).getParentStructure();
         int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
         Function<StructureObject, StructureObject> getParent = c -> (c.getStructureIdx()>parentStrutureIdx) ? c.getParent(parentStrutureIdx) : c.getChildren(parentStrutureIdx).get(0);
         List<StructureObject> wholeParentTrack = StructureObjectUtils.getTrack( getParent.apply(o).getTrackHead(), false);
         Map<String, StructureObject> dupMap = StructureObjectUtils.createGraphCut(wholeParentTrack, true, true);  // don't modify object directly. 
         List<StructureObject> wholeParentTrackDup = wholeParentTrack.stream().map(p->dupMap.get(p.getId())).collect(Collectors.toList());
-        List<StructureObject> parentTrackDup = sel.stream().map(getParent).distinct().map(p->dupMap.get(p.getId())).sorted().collect(Collectors.toList());
+        List<StructureObject> parentTrackDup = parentSelection.stream().map(getParent).distinct().map(p->dupMap.get(p.getId())).sorted().collect(Collectors.toList());
 
         // generate data store for test images
         Map<StructureObject, TestDataStore> stores = HashMapGetCreate.getRedirectedMap(so->new TestDataStore(so), HashMapGetCreate.Syncronization.SYNC_ON_MAP);
@@ -101,7 +102,7 @@ public class PluginConfigurationUtils {
         parentTrackDup.forEach(p->stores.get(p).addIntermediateImage("input", p.getRawImage(structureIdx))); // add input image
 
 
-        logger.debug("test processing: sel {}", sel);
+        logger.debug("test processing: sel {}", parentSelection);
         logger.debug("test processing: parent track: {}", parentTrackDup);
         if (plugin instanceof Segmenter) { // case segmenter -> segment only & call to test method
 
@@ -126,7 +127,7 @@ public class PluginConfigurationUtils {
             }
 
             if (segParentStrutureIdx!=parentStrutureIdx && o.getStructureIdx()==segParentStrutureIdx) { // when selected objects are segmentation parent -> remove all others
-                Set<StructureObject> selectedObjects = sel.stream().map(s->dupMap.get(s.getId())).collect(Collectors.toSet());
+                Set<StructureObject> selectedObjects = parentSelection.stream().map(s->dupMap.get(s.getId())).collect(Collectors.toSet());
                 parentTrackDup.forEach(p->p.getChildren(segParentStrutureIdx).removeIf(c->!selectedObjects.contains(c)));
                 logger.debug("remaining segmentation parents: {}", Utils.toStringList(parentTrackDup, p->p.getChildren(segParentStrutureIdx)));
             }
@@ -194,6 +195,7 @@ public class PluginConfigurationUtils {
         if (parentStructureIdx!=segParentStrutureIdx) { // add a selection to diplay the segmentation parent on the intermediate image
             List<StructureObject> parentTrack = stores.values().stream().map(s->s.getParent().getParent(parentStructureIdx)).distinct().sorted().collect(Collectors.toList());
             Collection<StructureObject> bact = Utils.flattenMap(StructureObjectUtils.getChildrenByFrame(parentTrack, segParentStrutureIdx));
+            //Selection bactS = parentTrack.get(0).getDAO().getMasterDAO().getSelectionDAO().getOrCreate("testTrackerSelection", true);
             Selection bactS = new Selection("testTrackerSelection", parentTrack.get(0).getDAO().getMasterDAO());
             bactS.setColor("Grey");
             bactS.addElements(bact);
@@ -201,7 +203,7 @@ public class PluginConfigurationUtils {
             GUI.getInstance().addSelection(bactS);
             res.value.forEach((image) -> GUI.updateRoiDisplayForSelections(image, res.key));
         }
-        GUI.getInstance().setInteractiveStructureIdx(structureIdx);
+        getImageManager().setInteractiveStructure(structureIdx);
         res.value.forEach((image) -> {
             iwm.displayAllObjects(image);
             iwm.displayAllTracks(image);

@@ -42,8 +42,11 @@ public class GenerateXPConfig {
         PluginFactory.findPlugins("boa.plugins.plugins");
         //String path = "/home/jollion/Fiji.app/plugins/BOA"; // portable
         String path = "/data/Images/Fiji.app/plugins/BOA"; // LJP
-        Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, 0, 0, Double.NaN, null);
+        Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, true, 0, 0, Double.NaN, null);
         exportXP(path, xpFluo, false);
+        
+        Experiment xpFluoHN = generateXPFluo("MotherMachineMutationHighBck", null, true, false, 0, 0, Double.NaN, null);
+        exportXP(path, xpFluoHN, false);
         
         Experiment xpTrans = GenerateXP.generateXPPhase("MotherMachinePhaseContrast", null, true, 0, 0, Double.NaN);
         exportXP(path, xpTrans, false);

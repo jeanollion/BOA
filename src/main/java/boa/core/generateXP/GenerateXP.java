@@ -407,7 +407,7 @@ public class GenerateXP {
         if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) DBUtil.removePrefix(dbName, GUI.DBprefix);
         MasterDAO mDAO = MasterDAOFactory.createDAO(dbName, configDir);
         MasterDAO.deleteObjectsAndSelectionAndXP(mDAO);
-        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPPhase(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY); 
+        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, true, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPPhase(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, null, inputDir);
@@ -425,7 +425,7 @@ public class GenerateXP {
     }
     
     
-    public static Experiment generateXPFluo(String name, String outputDir, boolean setUpPreProcessing, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
+    public static Experiment generateXPFluo(String name, String outputDir, boolean setUpPreProcessing, boolean mutationHighBck, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
         
         Experiment xp = new Experiment(name);
         if (importMethod==null) xp.setImportImageMethod(ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
@@ -436,7 +436,7 @@ public class GenerateXP {
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         Structure mutation = new Structure("Mutation", 0, 1, 1);
         xp.getStructures().insert(mc, bacteria, mutation);
-        setParametersFluo(xp, true, true);
+        setParametersFluo(xp, true, mutationHighBck, true);
         
         if (setUpPreProcessing) setPreprocessingFluo(xp.getPreProcessingTemplate(), trimFramesStart, trimFramesEnd, scaleXY, crop);
         return xp;
@@ -466,7 +466,7 @@ public class GenerateXP {
     public static void setPreprocessingPhase(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.setFrameDuration(4);
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
-        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(10, true, false, true, true)).setRemoveIncompleteRowsAndColumns(false).setMaintainMaximum(false));
+        ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(10, true, false, true, true)).setRemoveIncompleteRowsAndColumns(false).setMaintainMaximum(true));
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.PHASE));
         ps.addTransformation(0, null, new CropMicrochannelsPhase2D());
         ps.setTrimFrames(trimFramesStart, trimFramesEnd);
@@ -477,7 +477,7 @@ public class GenerateXP {
         ps.addTransformation(1, null, new RemoveStripesSignalExclusion(-1));
         //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, 0, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(false); // nearest -> translation entiers //flip?-1:1 depends on FLIP !!!
     }
-    public static void setParametersFluo(Experiment xp, boolean processing, boolean measurements) {
+    public static void setParametersFluo(Experiment xp, boolean processing, boolean mutationHighBck, boolean measurements) {
         Structure mc = xp.getStructure(0).setBrightObject(true);
         Structure bacteria = xp.getStructure(1).setBrightObject(true).setAllowSplit(true);
         Structure mutation = xp.getStructure(2).setBrightObject(true);
@@ -500,12 +500,11 @@ public class GenerateXP {
             );
             // modification of scaling: lap * 2.5, gauss * scale (=2) quality * 2.23
             mutation.setProcessingScheme(new SegmentAndTrack(
-                    new MutationTrackerSpine().setCompartimentStructure(1).setSegmenter(
-                        new MutationSegmenter(2.25, 1.625, 1.8).setScale(2.5, 3)  // was 0.9, 0.65, 0.9, scale was 2 for mutH
+                    new MutationTrackerSpine().setCompartimentStructure(1).setSegmenter(new MutationSegmenter(!mutationHighBck ? 2.25 : 3, !mutationHighBck ? 1.625 : 3, !mutationHighBck ? 1.8 : 2).setScale(2.5)  // was 0.9, 0.65, 0.9, scale was 2 for mutH
                 ).setSpotQualityThreshold(3.122) // 4.46 for mutH ? 
-                            .setLinkingMaxDistance(0.8, 0.82).setGapParameters(0.8, 0.15, 3)
-            ).addPreFilters(new BandPass(0, 10, 0, 5) // was 10
-            ).addPostFilters(new FeatureFilter(new Quality(), 2.23, true, true))); // was 1
+                            .setLinkingMaxDistance(0.75, 0.77).setGapParameters(0.75, 0.2, 3)
+            ).addPreFilters(new BandPass(0, 7, 0, 0) // was 10
+            ).addPostFilters(new FeatureFilter(new Quality(), 2.23, true, true)));
         }
         if (measurements) {
             xp.clearMeasurements();

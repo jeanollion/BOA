@@ -109,6 +109,10 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
         image = ImageFeatures.gaussianSmooth(image, scale, scale, true);
         return image.getPixelArray()[0];
     }
+    public static void smoothInPlace(int[] data, double scale) {
+        float[] smoothed = smooth(data, scale);
+        for (int i = 0; i<smoothed.length; ++i)  data[i] = Math.round(smoothed[i]);
+    }
     public static void fillZeros(int[] data) {
         for (int i = 1; i<data.length-1; ++i) {
             if (data[i]==0) {
@@ -120,11 +124,15 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
             }
         }
     }
-    
     public static double backgroundFit(Histogram histo, double sigmaFactor, double[] meanSigma) {
+        return backgroundFit(histo, sigmaFactor, meanSigma, false); 
+    }
+    private static double backgroundFit(Histogram histo, double sigmaFactor, double[] meanSigma, boolean smooth) {
         long t0 = System.currentTimeMillis();
         long t1 = System.currentTimeMillis();
         // get mode -> background
+        fillZeros(histo.data);
+        if (smooth) smoothInPlace(histo.data, 3);
         int mode = ArrayUtil.max(histo.data);
         double halfWidthIdx = getHalfWidthIdx(histo, mode);
         
@@ -137,10 +145,15 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
             WeightedObservedPoints obsT = new WeightedObservedPoints();
             for (int i = startT; i<=2 * mode - halfHalf; ++i) obsT.add( i, histo.data[i]-histo.data[startT]);
             double sigma = (mode - halfWidthIdx) / Math.sqrt(2*Math.log(2));
-            double[] coeffsT = GaussianCurveFitter.create().withStartPoint(new double[]{histo.data[mode]-histo.data[startT], mode, sigma/2.0}).fit(obsT.toList());
-            modeFit = coeffsT[1];
-            double stdBckT = coeffsT[2];
-            //logger.debug("mean (T): {}, std (T): {}", modeFit, stdBckT);
+            try { 
+                double[] coeffsT = GaussianCurveFitter.create().withStartPoint(new double[]{histo.data[mode]-histo.data[startT], mode, sigma/2.0}).fit(obsT.toList());
+                modeFit = coeffsT[1];
+                double stdBckT = coeffsT[2];
+                //logger.debug("mean (T): {}, std (T): {}", modeFit, stdBckT);
+            } catch (Throwable t) {
+                if (!smooth) return backgroundFit(histo.duplicate(), sigmaFactor, meanSigma, true);
+                throw t;
+            }
         } else modeFit = mode;
         halfWidthIdx = getHalfWidthIdx(histo, modeFit);
         double sigma = (histo.getValueFromIdx(modeFit) - histo.getValueFromIdx(halfWidthIdx)) / Math.sqrt(2*Math.log(2)); // real values
@@ -151,18 +164,24 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
         for (int i = start; i<=mode; ++i) obs.add(histo.getValueFromIdx(i), histo.data[i]);
         obs.add(modeFit, histo.getCountLinearApprox(modeFit));
         for (double i  = modeFit; i<=2 * modeFit - start; ++i) obs.add(histo.getValueFromIdx(i), histo.getCountLinearApprox(2*modeFit-i));  
-        
-        double[] coeffs = GaussianCurveFitter.create().withStartPoint(new double[]{histo.data[mode], histo.getValueFromIdx(mode), sigma}).fit(obs.toList());
-        double meanBck = coeffs[1];
-        double stdBck = coeffs[2];
-        if (meanSigma!=null) {
-            meanSigma[0] = meanBck;
-            meanSigma[1] = stdBck;
+        try {
+            double[] coeffs = GaussianCurveFitter.create().withStartPoint(new double[]{histo.data[mode], histo.getValueFromIdx(mode), sigma}).fit(obs.toList());
+            double meanBck = coeffs[1];
+            double stdBck = coeffs[2];
+            if (meanSigma!=null) {
+                meanSigma[0] = meanBck;
+                meanSigma[1] = stdBck;
+            }
+            double thld = meanBck + sigmaFactor * stdBck;
+            return thld;
+        } catch(Throwable t) {
+            if (!smooth) return backgroundFit(histo.duplicate(), sigmaFactor, meanSigma, true);
+            throw t;
         }
-        double thld = meanBck + sigmaFactor * stdBck;
-        long t4 = System.currentTimeMillis();
+        
+        //long t4 = System.currentTimeMillis();
         //logger.debug("mean: {} sigma: {} (from half width: {}), thld: {}, get histo: {} & {}, fit: {} & {}", meanBck, stdBck, sigma, thld, t1-t0, t2-t1, t3-t2, t4-t3);
-        return thld;
+        
     }
     
     private static double getHalfWidthIdx(Histogram histo, double mode) {

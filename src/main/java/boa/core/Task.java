@@ -555,9 +555,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         for (String s : strings) logger.info(s);
         
     }
-    private static boolean toPrint(String stackTraceElement) {
+    public static boolean printStackTraceElement(String stackTraceElement) {
         //return true;
         return !stackTraceElement.startsWith("java.util.")&&!stackTraceElement.startsWith("java.lang.")
+                &&!stackTraceElement.startsWith("java.awt.")&&!stackTraceElement.startsWith("java.lang.")
                 &&!stackTraceElement.startsWith("sun.reflect.")&&!stackTraceElement.startsWith("javax.swing.")
                 &&!stackTraceElement.startsWith("boa.core.")&&!stackTraceElement.startsWith("boa.utils."); 
     }
@@ -594,7 +595,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     private void publishError(Throwable t) {
         for (StackTraceElement s : t.getStackTrace()) {
             String ss = s.toString();
-            if (toPrint(ss)) publish(s.toString());
+            if (printStackTraceElement(ss)) publish(s.toString());
         }
         if (t.getCause()!=null) {
             publish("caused By");

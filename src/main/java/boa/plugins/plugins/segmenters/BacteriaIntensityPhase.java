@@ -213,7 +213,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
                     pop.getRegions().removeAll(foregroundL);
                     pop.getRegions().addAll(backgroundL.size(), foregroundL);
                     pop.relabel(false);*/
-                    imageDisp.accept(pop.getLabelMap().duplicate("after fore & back fusion. foreground=["+backgroundL.size()+";"+(backgroundL.size()+foregroundL.size()-1)+"]"));
+                    imageDisp.accept(pop.getLabelMap().duplicate("after fore & back fusion"));
                 }
                 SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false);
                 sm.setInterfaceValue(0.1, false);

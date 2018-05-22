@@ -779,6 +779,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         return Utils.asList(selectionModel);
     }
     public void addSelection(Selection s) {
+        int i = 0;
+        while (i<selectionModel.getSize()) {
+            if (selectionModel.getElementAt(i).getName()==s.getName()) selectionModel.remove(i);
+            else ++i;
+        }
         this.selectionModel.addElement(s);
     }
     
@@ -3597,7 +3602,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     
     public void setInteractiveStructureIdx(int structureIdx) {
-        if (interactiveStructure.getItemCount()<=structureIdx+1) logger.error("Error set interactive structure out of bounds: max: {}, current: {}, asked: {}", interactiveStructure.getItemCount()-1, interactiveStructure.getSelectedIndex()-1, structureIdx );
+        if (interactiveStructure.getItemCount()<=structureIdx+1) {
+            logger.error("Error set interactive structure out of bounds: max: {}, current: {}, asked: {}", interactiveStructure.getItemCount()-1, interactiveStructure.getSelectedIndex()-1, structureIdx );
+            return;
+        }
         interactiveStructure.setSelectedIndex(structureIdx+1);
         interactiveStructureActionPerformed(null);
     }

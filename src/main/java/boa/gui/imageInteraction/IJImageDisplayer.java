@@ -156,7 +156,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                     return;
                 }
                 
-                if (!zoomHasBeenFixed[0] && ic.getMagnification()<0.1) { // case zoom is very low -> set to 100%
+                if (!zoomHasBeenFixed[0] && ic.getMagnification()<0.4) { // case zoom is very low -> set to 100%
                     ic.zoom100Percent();
                     zoomHasBeenFixed[0] = true;
                 }

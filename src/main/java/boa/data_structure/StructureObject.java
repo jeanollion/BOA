@@ -862,6 +862,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return rawImagesC.get(channelIdx);
     }
+    @Override
     public Image getPreFilteredImage(int structureIdx) {
         return this.preFilteredImagesS.get(structureIdx);
     }

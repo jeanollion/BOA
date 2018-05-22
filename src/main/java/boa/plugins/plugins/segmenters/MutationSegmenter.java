@@ -28,9 +28,12 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
+import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
 import boa.gui.GUI;
 import static boa.image.BoundingBox.loop;
+import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
@@ -73,9 +76,17 @@ import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
+import boa.plugins.plugins.thresholders.BackgroundFit;
+import boa.utils.DoubleStatistics;
 import boa.utils.HashMapGetCreate;
+import boa.utils.Pair;
+import boa.utils.StreamConcatenation;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
+import java.util.DoubleSummaryStatistics;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 /**
  *
@@ -162,17 +173,13 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         public void initPV(Image input, ImageMask mask, double smoothScale) {
             this.input=input;
             this.smoothScale=smoothScale;
-            //BackgroundFit.debug=debug;
-            ms = new double[2];
-            //double thld = BackgroundFit.backgroundFitHalf(input, mask, 2, ms);
-            //final double thld= Double.POSITIVE_INFINITY;
-            //final double t = thld;
-            //ms = ImageOperations.getMeanAndSigmaWithOffset(input, mask, v->v<=t);
-            //if (ms[2]==0) thld = BackgroundThresholder.runThresholder(input, mask, 3, 3, 2, ms);
-            
-            double thld = BackgroundThresholder.runThresholder(input, mask, 3, 3, 2, Double.MAX_VALUE, ms);
-            
-            if (debug) logger.debug("scaling thld: {} mean & sigma: {}", thld, ms); //if (debug) 
+            if (ms == null) {
+                //BackgroundFit.debug=debug;
+                ms = new double[2];
+                //double thld = BackgroundFit.backgroundFit(HistogramFactory.getHistogram(()->input.stream(mask, true), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS), 5, ms);
+                double thld = BackgroundThresholder.runThresholder(input, mask, 6, 6, 2, Double.MAX_VALUE, ms); // more robust than background fit because too few values to make histogram
+                if (debug) logger.debug("scaling thld: {} mean & sigma: {}", thld, ms); //if (debug) 
+            }
         }
         public Image getScaledInput() {
             return ImageOperations.affineOperation2WithOffset(input, null, 1/ms[1], -ms[0]).setName("Scaled Input");
@@ -218,6 +225,7 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
     public RegionPopulation run(Image input, StructureObjectProcessing parent, double[] scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold) {
         Arrays.sort(scale);
         ImageMask parentMask = parent.getMask().sizeZ()!=input.sizeZ() ? new ImageMask2D(parent.getMask()) : parent.getMask();
+        if (this.parentSegTHMapmeanAndSigma!=null) pv.ms = parentSegTHMapmeanAndSigma.get(((StructureObject)parent).getTrackHead());
         this.pv.initPV(input, parentMask, smoothScale.getValue().doubleValue()) ;
         if (pv.smooth==null || pv.getLaplacianMap()==null) throw new RuntimeException("Mutation Segmenter not parametrized");//setMaps(computeMaps(input, input));
         
@@ -255,7 +263,7 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         
         ImageByte[] seedMaps = arrangeSpAndZPlanes(seedsSPZ, planeByPlane).toArray(new ImageByte[0]);
         Image[] wsMap = ((List<Image>)arrangeSpAndZPlanes(lapSPZ, planeByPlane)).toArray(new Image[0]);
-        RegionPopulation[] pops =  MultiScaleWatershedTransform.watershed(wsMap, parentMask, seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdPropagation), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize));
+        RegionPopulation[] pops =  MultiScaleWatershedTransform.watershed(wsMap, parentMask, seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdPropagation), null);
         //ObjectPopulation pop =  watershed(lap, parent.getMask(), seedPop.getObjects(), true, new ThresholdPropagationOnWatershedMap(thresholdPropagation), new SizeFusionCriterion(minSpotSize), false);
         SubPixelLocalizator.debug=debug;
         for (int i = 0; i<pops.length; ++i) { // TODO voir si en 3D pas mieux avec gaussian
@@ -269,13 +277,14 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
             }
         }
         RegionPopulation pop = MultiScaleWatershedTransform.combine(pops, input);
-        if (debug) {
+        if (stores!=null) {
             logger.debug("Parent: {}: Q: {}", parent, Utils.toStringList(pop.getRegions(), o->""+o.getQuality()));
             logger.debug("Parent: {}: C: {}", parent ,Utils.toStringList(pop.getRegions(), o->""+o.getCenter()));
         }
         pop.filter(new RegionPopulation.RemoveFlatObjects(false));
         pop.filter(new RegionPopulation.Size().setMin(minSpotSize));
         if (stores!=null) {
+            stores.get(parent).addIntermediateImage("smoothed & scaled", smooth);
             if (planeByPlane) {
                 if (scale.length>1) {
                     for (int z = 0; z<seedsSPZ.length; ++z) {
@@ -354,7 +363,7 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         
         
     }
-
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
@@ -432,10 +441,46 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
      */
     @Override
     public TrackParametrizer<MutationSegmenter> run(int structureIdx, List<StructureObject> parentTrack) {
-        HashMapGetCreate<StructureObject, Image[]> parentMapImages = new HashMapGetCreate<>(parentTrack.size(), p->computeMaps(p.getRawImage(structureIdx), p.getPreFilteredImage(structureIdx)));
-        return (p, s) -> s.setMaps(parentMapImages.getAndCreateIfNecessarySyncOnKey(p));
+        Map<StructureObject, Image[]> parentMapImages = parentTrack.stream().parallel().collect(Collectors.toMap(p->p, p->computeMaps(p.getRawImage(structureIdx), p.getPreFilteredImage(structureIdx))));
+        // get scaling per segmentation parent track
+        int segParent = parentTrack.iterator().next().getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
+        int parentIdx = parentTrack.iterator().next().getStructureIdx();
+        Map<StructureObject, List<StructureObject>> segParentTracks = StructureObjectUtils.getAllTracks(parentTrack, segParent);
+        Function<List<StructureObject>, DoubleStream> valueStream = t -> {
+            DoubleStream[] ds = t.stream().map(so-> so.getParent(parentIdx).getPreFilteredImage(structureIdx).stream(so.getMask(), true)).toArray(s->new DoubleStream[s]);
+            return StreamConcatenation.concat(ds);
+        };
+        /*
+        // compute background per track -> not very effective because background can vary within track. To do -> sliding mean ?
+        Map<StructureObject, double[]> parentSegTHMapmeanAndSigma = segParentTracks.values().stream().parallel().collect(Collectors.toMap(t->t.get(0), t -> {
+            //DoubleStatistics ds = DoubleStatistics.getStats(valueStream.apply(t));
+            //logger.debug("track: {}: mean: {}, sigma: {}", t.get(0), ds.getAverage(), ds.getStandardDeviation());
+            //return new double[]{ds.getAverage(), ds.getStandardDeviation()}; // get mean & std 
+            // TEST  backgroundFit / background thlder
+            double[] ms = new double[2];
+            if (t.size()>2) {
+                Histogram histo = HistogramFactory.getHistogram(()->valueStream.apply(t), HistogramFactory.BIN_SIZE_METHOD.AUTO);
+                try {
+                    BackgroundFit.backgroundFit(histo, 0, ms);
+                } catch(Throwable e) { }
+                if (stores!=null && t.get(0).getFrame()==0) {
+                    histo.plotIJ1("values of track: "+t.get(0)+" (length: "+t.size()+ " total values: "+valueStream.apply(t).count()+")" + " mean: "+ms[0]+ " std: "+ms[1], true);
+                }
+            }
+            if (ms[1]==0) {
+                DoubleStatistics ds = DoubleStatistics.getStats(valueStream.apply(t));
+                ms[0] = ds.getAverage();
+                ms[1] = ds.getStandardDeviation();
+            }
+            return ms;
+        }));
+        */
+        return (p, s) -> {
+            //s.parentSegTHMapmeanAndSigma = parentSegTHMapmeanAndSigma;
+            s.setMaps(parentMapImages.get(p));
+        };
     }
-    
+    Map<StructureObject, double[]> parentSegTHMapmeanAndSigma;
     protected Image[] computeMaps(Image rawSource, Image filteredSource) {
         double[] scale = getScale();
         double smoothScale = this.smoothScale.getValue().doubleValue();
@@ -459,4 +504,5 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
         this.pv.lap=new Image[scale.length];
         for (int i = 0; i<scale.length; ++i) pv.lap[i] = maps[i+1];
     }
+    
 }

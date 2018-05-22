@@ -67,7 +67,7 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
         return RegionCluster.drawInterfaceValues(new RegionCluster<>(pop, true, getFactory()), i->{i.updateInterface(); return i.value;});
     }
     public SplitAndMergeEdge setInterfaceValue(double quantile, boolean normalizeEdgeValues) {
-        interfaceValue = i->{
+        interfaceValue = i-> {
             if (i.getVoxels().isEmpty()) {
                 return Double.NaN;
             } else {
@@ -75,7 +75,8 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
                 double val= ArrayUtil.quantile(Stream.concat(i.voxels.stream(), i.duplicatedVoxels.stream()).mapToDouble(v->edge.getPixel(v.x, v.y, v.z)).sorted(), size, quantile);
                 if (normalizeEdgeValues) {// normalize by intensity (mean better than median, better than mean @ edge)
                     double sum = BasicMeasurements.getSum(i.getE1(), intensityMap)+BasicMeasurements.getSum(i.getE2(), intensityMap);
-                    val= val/(sum/(double)(i.getE1().size()+i.getE2().size()));
+                    double mean = sum /(double)(i.getE1().size()+i.getE2().size());
+                    val= val/mean;
                 }
                 return val;
             }
@@ -155,7 +156,9 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
         public Collection<Voxel> getVoxels() {
             return voxels;
         }
-
+        public Collection<Voxel> getDuplicatedVoxels() {
+            return duplicatedVoxels;
+        }
         @Override
         public String toString() {
             return "Interface: " + e1.getLabel()+"+"+e2.getLabel()+ " sortValue: "+value;

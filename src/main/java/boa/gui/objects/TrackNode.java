@@ -24,6 +24,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.core.Processor;
 import boa.configuration.experiment.Experiment;
+import boa.core.Task;
 import boa.data_structure.Selection;
 import boa.data_structure.dao.SelectionDAO;
 import boa.data_structure.StructureObject;
@@ -263,7 +264,17 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                                 l.forEach(n -> {
                                     logger.debug("run seg & track on : {}, structure: {}", n.trackHead, structureIdx);
                                     GUI.log("RUN Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx);
-                                    Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
+                                    try {
+                                        Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
+                                    } catch (MultipleException me) {
+                                        for (Pair<String, Throwable> pe : me.getExceptions()) {
+                                            GUI.log("Error @ "+pe.key+ " "+pe.value.getMessage());
+                                            Arrays.stream(pe.value.getStackTrace()).map(s->s.toString()).filter(s->Task.printStackTraceElement(s)).forEachOrdered(s->GUI.log(s));
+                                        }
+                                    } catch (Throwable t) {
+                                        GUI.log("Error: "+t.getMessage());
+                                        Arrays.stream(t.getStackTrace()).map(s->s.toString()).filter(s->Task.printStackTraceElement(s)).forEachOrdered(s->GUI.log(s));
+                                    }
                                 });
                                 if (nodesByPosition.size()>1) root.generator.db.clearCache(p);
                             });
@@ -292,7 +303,15 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                                 l.forEach(n -> {
                                     logger.debug("Running Segmentation & Tracking on : {}, structure: {}", n.trackHead, structureIdx);
                                     GUI.log("RUN Seg & track on track: "+n.trackHead+ " structureIdx: "+structureIdx);
-                                    Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
+                                    try {
+                                        Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
+                                    } catch (MultipleException me) {
+                                        for (Pair<String, Throwable> t : me.getExceptions()) {
+                                            GUI.log("Error @ "+t.key+ " "+t.value.getMessage());
+                                        }
+                                    } catch (Throwable t) {
+                                        GUI.log("Error: "+t.getMessage());
+                                    }
                                 });
                                 if (nodesByPosition.size()>1) root.generator.db.clearCache(p);
                             });

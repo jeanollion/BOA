@@ -33,10 +33,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.DoubleFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -60,6 +63,7 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
     public static class TestDataStore {
         final StructureObject parent;
         Map<String, Image> images = new HashMap<>();
+        Map<String, Integer> nameOrder = new HashMap<>();
         List<Consumer<List<StructureObject>>> miscData = new ArrayList<>();
         public TestDataStore(StructureObject parent) {
             this.parent= parent;
@@ -72,6 +76,7 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
         public void addIntermediateImage(String imageName, Image image) {
             if (image==null) return;
             images.put(imageName, image);
+            nameOrder.put(imageName, nameOrder.size());
         }
         /**
          * Adds misc data that will be displayed by running the run method of {@param misc}
@@ -95,11 +100,15 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
         TrackMask ioi = TrackMask.generateTrackMask(parents, childStructure);
         List<Image> images = new ArrayList<>();
         allImageNames.forEach(name -> {
+            first unify bit rate here (byte vs short)
             Image image = ioi.generateEmptyImage(name, stores.stream().map(s->s.images.get(name)).filter(i->i!=null).findAny().get()).setName(name);
             stores.stream().filter(s->s.images.containsKey(name)).forEach(s-> Image.pasteImage(s.images.get(name), image, ioi.getObjectOffset(s.parent)));
             images.add(image);
         });
-        Collections.sort(images, (i1, i2)->i1.getName().compareToIgnoreCase(i2.getName()));
+        // get order for each image (all images are not contained in all stores) & store
+        Function<String, Double> getOrder = name -> stores.stream().filter(s -> s.nameOrder.containsKey(name)).mapToDouble(s->s.nameOrder.get(name)).max().orElse(Double.POSITIVE_INFINITY);
+        Map<String, Double> orderMap = allImageNames.stream().collect(Collectors.toMap(n->n, n->getOrder.apply(n)));
+        Collections.sort(images, (i1, i2)->Double.compare(orderMap.get(i1.getName()), orderMap.get(i2.getName())));
         return new Pair<>(ioi, images);
     }
     

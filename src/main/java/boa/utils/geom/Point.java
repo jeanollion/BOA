@@ -77,12 +77,12 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     }
     /**
      * 
-     * @param dimension dimension of the output point
+     * @param untilDimensionIncluded dimension of the output point
      * @return duplicated point with {@param dimensions}
      */
-    public Point duplicate(int dimension) {
-        float[] res=  new float[dimension];
-        System.arraycopy(coords, 0, res, 0, Math.min(dimension, coords.length));
+    public Point duplicate(int untilDimensionIncluded) {
+        float[] res=  new float[untilDimensionIncluded];
+        System.arraycopy(coords, 0, res, 0, Math.min(untilDimensionIncluded, coords.length));
         return new Point(res);
     }
     public static Point middle(Offset o1, Offset o2) {

@@ -20,6 +20,7 @@ package boa.image.processing.bacteria_spine;
 
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import static boa.image.processing.bacteria_spine.CleanVoxelLine.cleanContour;
 import boa.utils.Utils;
@@ -53,6 +54,7 @@ public class BacteriaSpineLocalizer {
     final Region bacteria;
     BacteriaSpineFactory.SpineResult spine;
     double length;
+    public static double precision = 1E-4;
     public BacteriaSpineLocalizer(Region bacteria) {
         this.bacteria=bacteria;
         //long t0 = System.currentTimeMillis();
@@ -76,7 +78,9 @@ public class BacteriaSpineLocalizer {
         return length;
     }
     public Image draw(int zoomFactor) {
-        return BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine.spine, spine.circContour, zoomFactor);
+        Image image =  BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine.spine, spine.circContour, zoomFactor);
+        image.setCalibration(image.getScaleXY() * bacteria.getScaleXY(), bacteria.getScaleZ());
+        return image;
     }
     public static void drawPoint(Point p, Image dest, int zoomFactor, float value) {
         dest.setPixel((int)((p.get(0)-dest.xMin())*zoomFactor+0.5)+1, (int)((p.get(1)-dest.yMin())*zoomFactor+0.5)+1, 0, value);
@@ -178,12 +182,17 @@ public class BacteriaSpineLocalizer {
             return null;
         }
         
-        if (v0.equals(v1, 0.0001)) { // colinear vertebra: simple intersection of p & dir // IMPORTANT TO SET ACCURACY IF NOT MAY BE CONSIDERED AS GENERAL CASE AND MAY HAVE NO SOLUTION
+        if (v0.equals(v1, precision)) { // colinear vertebra: simple intersection of p & dir // IMPORTANT TO SET ACCURACY IF NOT MAY BE CONSIDERED AS GENERAL CASE AND MAY HAVE NO SOLUTION
             Point intersection = Point.intersect2D(source, source.duplicate().translateRev(v0), r0, r1);
             Vector sourceDir = Vector.vector(intersection, source);
             Vector r0_inter = Vector.vector(r0, intersection);
-            if (r0_inter.dotProduct(Vector.vector(r1, intersection))>0) { // case where intersection is not between 2 vertebra: only allow if there are no vertebra afterwards
-                throw new IllegalArgumentException("out-of-segment case should have been handled with cross-product tests!");
+            if (r0_inter.dotProduct(Vector.vector(r1, intersection))>precision) { // case where intersection is not between 2 vertebra: only allow if there are no vertebra afterwards
+                /*Image d = draw(7);
+                drawPoint(source, d, 7, 1000);
+                ImageWindowManagerFactory.showImage(d);
+                throw new IllegalArgumentException("out-of-segment case should have been handled with cross-product tests! dp:"+r0_inter.dotProduct(Vector.vector(r1, intersection))+" point: "+source+" v1:"+r0+" v2:"+r1);
+                */
+                return null;
             } else {
                 double alpha = r0_inter.norm() / Vector.vector(r0, r1).norm();
                 double w = 1-alpha;

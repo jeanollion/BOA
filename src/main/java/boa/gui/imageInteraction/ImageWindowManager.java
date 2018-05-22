@@ -78,6 +78,7 @@ import static boa.utils.Pair.unpairKeys;
 import static boa.utils.Pair.unpairValues;
 import boa.utils.Palette;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
 
 /**
  *
@@ -653,7 +654,7 @@ public abstract class ImageWindowManager<I, U, V> {
         long t1 = System.currentTimeMillis();
         displayer.updateImageRoiDisplay(image);
         long t2 = System.currentTimeMillis();
-        logger.debug("display {} objects: create roi & add to overlay: {}, update display: {}", objectsToDisplay.size(), t1-t0, t2-t1);
+        //logger.debug("display {} objects: create roi & add to overlay: {}, update display: {}", objectsToDisplay.size(), t1-t0, t2-t1);
     }
     
     public void hideObjects(Image image, Collection<Pair<StructureObject, BoundingBox>> objects, boolean labileObjects) {
@@ -1138,7 +1139,7 @@ public abstract class ImageWindowManager<I, U, V> {
             if (sel.size()==1) return getMenu(sel.get(0));
             else {
                 Collections.sort(sel);
-                return getMenu(sel.subList(0, 50));
+                return getMenu(sel.subList(0, Math.min(50, sel.size())));
             }
         }
     }
@@ -1238,6 +1239,7 @@ public abstract class ImageWindowManager<I, U, V> {
         }
     }
     private static String toString(Object o) {
+        if (o instanceof Point) return o.toString();
         return asString(o, MeasurementExtractor.numberFormater);
         //return o instanceof Number ? Utils.format((Number) o, 3) : o.toString();
     }   
