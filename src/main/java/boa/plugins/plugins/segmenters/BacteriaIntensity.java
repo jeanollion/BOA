@@ -37,6 +37,7 @@ import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;
+import boa.image.HistogramFactory.BIN_SIZE_METHOD;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageByte;
@@ -429,8 +430,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         if (this.thresholdMethod.getSelectedIndex()==1) { // global threshold on this track
             Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!voidMC.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
             Histogram histo;
-            if (globalThrehsolder.instanciatePlugin() instanceof IJAutoThresholder ) histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), 256);
-            else histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), HistogramFactory.allImagesAreInteger(imageMapMask.keySet()));
+            histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), globalThrehsolder.instanciatePlugin() instanceof IJAutoThresholder ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256: HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
             double minThreshold = histo.getQuantiles(0.5)[0];
             double globalThld = globalThrehsolder.instanciatePlugin().runThresholderHisto(histo);
             //double minThreshold = BackgroundThresholder.runThresholder(histo, 3, 3, 2, null);
@@ -445,7 +445,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         Map<Image, ImageMask> imageMapMask = parent.collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
         //Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), 256);
         //return IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
-        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), HistogramFactory.allImagesAreInteger(imageMapMask.keySet()));
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         double[] meanAndSigma = new double[2];
         double thld = BackgroundFit.backgroundFit(histo, 10, meanAndSigma);
         return new double[]{meanAndSigma[0], thld};

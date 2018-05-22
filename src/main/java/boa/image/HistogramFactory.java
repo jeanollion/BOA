@@ -45,8 +45,19 @@ public class HistogramFactory {
     public final static Logger logger = LoggerFactory.getLogger(HistogramFactory.class);
     public static int MIN_N_BINS = 256;
     public static int MAX_N_BINS = 2000;
-    
-    public static double[] getMinAndMaxAndBinSize(DoubleStream stream) {
+
+    public enum BIN_SIZE_METHOD {
+        NBINS_256,
+        AUTO_WITH_LIMITS,
+        AUTO
+    };
+    /**
+     * Automatic bin size computation
+     * @param stream value distribution used for the histogram
+     * @param method binning method: NBINS_256: forces number of bins to be 256; AUTO: uses Scott, D. 1979 formula for optimal bin size computation: 3.49 * std * N^-1/3 (if no decimal places in values, this value can't be lower than 1); AUTO_WITH_LIMITS same as auto, but if no decimal places, binsize=1, and bin size is adjusted to that number of bins is within range [256; 2000]
+     * @return {min, max bin size}
+     */
+    public static double[] getMinAndMaxAndBinSize(DoubleStream stream, BIN_SIZE_METHOD method) {
         // stats -> 0-2: Sum of Square with compensation variables, 3: count, 4: sum, 5 : min; 6: max; 7: max decimal place 
         BiConsumer<double[], double[]> combiner = (stats1, stats2)-> {
             stats1[4]+=stats2[4];
@@ -66,7 +77,6 @@ public class HistogramFactory {
             if (stats[7]<dec) stats[7] = dec;
         };
         double[] stats = stream.collect(() -> new double[]{0, 0, 0, 0, 0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, 0},cons, combiner);
-        if (stats[7]==0) return new double[]{stats[5], stats[6], 1}; // no decimal place -> bin 1
         double std = stats[3]>0 ?  Math.sqrt((DoubleStatistics.getSumOfSquare(stats) / stats[3]) - Math.pow(stats[4]/stats[3], 2)) : 0.0d;
         double binSize = 3.49 * std * Math.pow(stats[3], -1/3d);
         /* FROM : 
@@ -74,20 +84,32 @@ public class HistogramFactory {
         On optimal and data-based histograms.
         Biometrika, 66:605-610. */
         
-        // enshure histogram will respect nbins range
-        int nBins = getNBins(stats[5], stats[6], binSize);
-        if (nBins<MIN_N_BINS) binSize = getBinSize(stats[5], stats[6], MIN_N_BINS); 
-        if (nBins>MAX_N_BINS)binSize = getBinSize(stats[5], stats[6], MAX_N_BINS);
+        if (stats[7]==0) binSize = Math.max(1, binSize); // no decimal places
+        switch(method) {
+            case NBINS_256:
+                binSize = getBinSize(stats[5], stats[6], 256); 
+                break;
+            case AUTO_WITH_LIMITS:
+                if (stats[7]==0) binSize=1;
+                else {
+                    // enshure histogram will respect nbins range
+                    int nBins = getNBins(stats[5], stats[6], binSize);
+                    if (nBins<MIN_N_BINS) binSize = getBinSize(stats[5], stats[6], MIN_N_BINS); 
+                    if (nBins>MAX_N_BINS)binSize = getBinSize(stats[5], stats[6], MAX_N_BINS);
+                }
+                break;
+        }
         //logger.debug("autobin: range: [{};{}], count: {}, sigma: {}, max decimal place: {} binSize: {}", stats[5], stats[6], stats[3], std, stats[7], binSize);
         return new double[]{stats[5], stats[6], binSize};
     }
-    
-    public static Histogram getHistogram(Supplier<DoubleStream> streamSupplier, boolean integerImages) {
-        double[] mmb;
-        if (integerImages) {
-            double[] mm = getMinAndMax(streamSupplier.get());
-            mmb = new double[]{mm[0], mm[1], 1d};
-        } else mmb = getMinAndMaxAndBinSize(streamSupplier.get());
+    /**
+     * Computes histogram with automatic bin size computation
+     * @param streamSupplier
+     * @param method see {@link #getMinAndMaxAndBinSize(java.util.stream.DoubleStream, boa.image.HistogramFactory.BIN_METHOD) }
+     * @return 
+     */
+    public static Histogram getHistogram(Supplier<DoubleStream> streamSupplier, BIN_SIZE_METHOD method) {
+        double[] mmb = getMinAndMaxAndBinSize(streamSupplier.get(), method);
         return getHistogram(streamSupplier.get(), mmb[2], getNBins(mmb[0], mmb[1], mmb[2]), mmb[0]);
     }
     public static Histogram getHistogram(Supplier<DoubleStream> streamSupplier, double binSize) {

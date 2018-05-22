@@ -105,9 +105,7 @@ public class ParentThresholder implements Thresholder {
                 synchronized(p.getAttributes()) {
                     // get track histogram
                     Map<Image, ImageMask> map = track.stream().collect(Collectors.toMap(o->o.getRawImage(sIdx), o->o.getMask()));
-                    Histogram histo;
-                    if (thresholderHisto.instanciatePlugin() instanceof IJAutoThresholder)  histo = HistogramFactory.getHistogram(()->Image.stream(map, true), 256);
-                    else histo = HistogramFactory.getHistogram(()->Image.stream(map, true), HistogramFactory.allImagesAreInteger(map.keySet()));
+                    Histogram  histo = HistogramFactory.getHistogram(()->Image.stream(map, true), thresholderHisto.instanciatePlugin() instanceof IJAutoThresholder ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256: HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
                     double thld = this.thresholderHisto.instanciatePlugin().runThresholderHisto(histo);
                     logger.debug("computing thld : {}, thresholder {} on track: {}, key: {}", thld, this.thresholderHisto.getPluginName(), p, key);
                     p.setAttribute(key, thld);

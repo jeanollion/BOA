@@ -67,7 +67,7 @@ public class TestSaturateHistogram {
         //sat.computeConfigurationData(channelIdx, mDAO.getExperiment().getPosition(postition).getInputImages());
         long t0 = System.currentTimeMillis();
             //Histogram histo = HistogramFactory.getHistogram(images, 1, null, true);
-            Histogram histo = HistogramFactory.getHistogram(()->Image.stream(images).parallel(), false);
+            Histogram histo = HistogramFactory.getHistogram(()->Image.stream(images).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
             histo.plotIJ1("histo", true);
         long t1 = System.currentTimeMillis();
         logger.debug("get histo: {}ms", t1-t0);

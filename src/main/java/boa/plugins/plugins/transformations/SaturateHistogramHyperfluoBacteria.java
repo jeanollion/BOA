@@ -79,7 +79,7 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
         } else logger.debug("saturate histo: images: {}", allImages.size());
         long t0 = System.currentTimeMillis();
         
-        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages).parallel(), HistogramFactory.allImagesAreInteger(allImages));
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         double[] bckMuStd = new double[2];
         double bckThld = thresholder.instanciatePlugin().runSimpleThresholder(Image.mergeZPlanes(allImages), null);
         Histogram histoFore = histo.duplicate((int)histo.getIdxFromValue(bckThld)+1, histo.data.length);

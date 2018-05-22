@@ -24,6 +24,7 @@ import boa.gui.imageInteraction.TrackMaskX;
 import boa.image.BlankMask;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;
+import boa.image.HistogramFactory.BIN_SIZE_METHOD;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
@@ -90,14 +91,8 @@ public interface TrackParametrizable<P extends Plugin> {
     public static double getGlobalThreshold(int structureIdx, List<StructureObject> parentTrack, SimpleThresholder thlder) {
         Map<Image, ImageMask> maskMap = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
         if (thlder instanceof ThresholderHisto) {
-            if (thlder instanceof IJAutoThresholder) {
-                // histo must be 256
-                Histogram hist = HistogramFactory.getHistogram(()->Image.stream(maskMap, true).parallel(), 256);
-                return ((ThresholderHisto)thlder).runThresholderHisto(hist);
-            } else {
-                Histogram hist = HistogramFactory.getHistogram(()->Image.stream(maskMap, true).parallel(), HistogramFactory.allImagesAreInteger(maskMap.keySet()));
-                return ((ThresholderHisto)thlder).runThresholderHisto(hist);
-            }
+            Histogram hist = HistogramFactory.getHistogram(()->Image.stream(maskMap, true).parallel(), thlder instanceof IJAutoThresholder ? BIN_SIZE_METHOD.NBINS_256: BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+            return ((ThresholderHisto)thlder).runThresholderHisto(hist);
         } else {
             Supplier<Pair<List<Image>, List<ImageInteger>>> supplier = ()->new Pair<>(new ArrayList<>(), new ArrayList<>());
             BiConsumer<Pair<List<Image>, List<ImageInteger>>, Map.Entry<Image, ImageMask>> accumulator =  (p, e)->{

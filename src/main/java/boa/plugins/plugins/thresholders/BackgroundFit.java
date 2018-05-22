@@ -97,7 +97,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
     
     @Override
     public double runSimpleThresholder(Image input, ImageMask mask) {
-        return runThresholderHisto(HistogramFactory.getHistogram(()->Utils.parallele(input.stream(mask, true), multithread), input instanceof ImageInteger) );
+        return runThresholderHisto(HistogramFactory.getHistogram(()->Utils.parallele(input.stream(mask, true), multithread), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS) );
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
