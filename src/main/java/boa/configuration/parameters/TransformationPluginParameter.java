@@ -55,11 +55,11 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         super.initFromJSONEntry(jsonEntry);
         JSONObject jsonO = (JSONObject)jsonEntry;
         if (jsonO.containsKey("inputChannel")) {
-            if (inputChannel==null) inputChannel = new ChannelImageParameter("Configuration Channel", -1);
+            if (inputChannel==null) initInputChannel();
             inputChannel.initFromJSONEntry(jsonO.get(("inputChannel")));
         }
         if (jsonO.containsKey("outputChannel")) {
-            if (outputChannel==null) outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
+            if (outputChannel==null) initOutputChannel(null);
             outputChannel.initFromJSONEntry(jsonO.get(("outputChannel")));
         }
         //if (jsonO.containsKey("configurationData")) configurationData = (List)jsonO.get("configurationData");
@@ -77,19 +77,24 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     /*public TransformationPluginParameter(String name, boolean allowNoSelection, Class<T> pluginType, T pluginInstance) {
         super(name, allowNoSelection, pluginType, pluginInstance);
     }*/
-    
+    private void initInputChannel() {
+        inputChannel = new ChannelImageParameter("Configuration Channel", -1);
+    }
+    private void initOutputChannel(int... selectedChannels) {
+        outputChannel = new ChannelImageParameter("Channels on which apply transformation", selectedChannels);
+    }
     @Override 
     public TransformationPluginParameter<T> setPlugin(T pluginInstance) {
-        if (pluginInstance instanceof ConfigurableTransformation) inputChannel = new ChannelImageParameter("Configuration Channel", -1);
+        if (pluginInstance instanceof ConfigurableTransformation) initInputChannel();
         else inputChannel = null;
         
         if (pluginInstance instanceof MultichannelTransformation) {  
             switch (((MultichannelTransformation)pluginInstance).getOutputChannelSelectionMode()) {
                 case MULTIPLE:
-                    outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
+                    initOutputChannel(null);
                     break;
                 case SINGLE:
-                    outputChannel = new ChannelImageParameter("Channels on which apply transformation", -1);
+                    initOutputChannel(-1);
                     break;
                 case ALL:
                     allChannels=true;
@@ -134,7 +139,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     
     @Override
     protected void initChildList() {
-        ArrayList<Parameter> p = new ArrayList<Parameter>(2+(pluginParameters!=null?pluginParameters.size():0));
+        ArrayList<Parameter> p = new ArrayList<>(2+(pluginParameters!=null?pluginParameters.size():0));
         if (inputChannel!=null) p.add(inputChannel);
         if (outputChannel!=null) p.add(outputChannel);
         if (pluginParameters!=null) p.addAll(pluginParameters);
@@ -169,6 +174,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             return true;
         } else return false;
     }
+    
     @Override
     public void setContentFrom(Parameter other) {
         super.setContentFrom(other);
@@ -178,11 +184,13 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             boolean init = false;
             if (otherPP.inputChannel==null) inputChannel=null;
             else {
+                if (inputChannel==null) initInputChannel();
                 inputChannel.setContentFrom(otherPP.inputChannel);
                 init = true;
             }
             if (otherPP.outputChannel==null) this.outputChannel=null;
             else {
+                if (outputChannel==null) initOutputChannel(((MultichannelTransformation)otherPP).getOutputChannelSelectionMode()==MultichannelTransformation.OUTPUT_SELECTION_MODE.SINGLE?-1:null);
                 this.outputChannel=otherPP.outputChannel.duplicate();
                 init = true;
             }
