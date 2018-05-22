@@ -291,7 +291,7 @@ public class ImageShort extends ImageInteger<ImageShort> {
             }
         }
     }
-    
+    @Override
     public void appendBinaryMasks(int startLabel, ImageMask... masks) {
         if (masks == null || masks.length==0) return;
         if (startLabel==-1) startLabel = (int)this.getMinAndMax(null)[1]+1;
@@ -316,26 +316,5 @@ public class ImageShort extends ImageInteger<ImageShort> {
         }
     }
     
-    @Override 
-    public Histogram getHisto256(ImageMask mask, BoundingBox limits) {
-        if (mask==null) mask=new BlankMask(this);
-        double[] minAndMax = getMinAndMax(mask);
-        return getHisto(minAndMax[0], minAndMax[1], mask, limits);
-    }
-    @Override public Histogram getHisto(double min, double max, ImageMask mask, BoundingBox limits) {
-        ImageMask m = mask==null ?  new BlankMask(this) : mask;
-        if (limits==null) limits = new SimpleBoundingBox(this).resetOffset();
-        double coeff = 256d / (max - min);
-        int[] histo = new int[256];
-        LoopFunction function = (x, y, z) -> {
-            if (m.insideMask(x, y, z)) {
-                int idx = (int) (((pixels[z][x+y*sizeX]&0xffff) - min) * coeff);
-                if (idx == 256) histo[255]++;
-                else if (idx>=0 && idx<=255) histo[idx]++;
-            }
-        };
-        BoundingBox.loop(limits, function);
-        return new Histogram(histo, 1/coeff, min);
-    }
     @Override public int getBitDepth() {return 16;}
 }

@@ -97,9 +97,14 @@ public class Histogram {
         for (int i : data) sum+=i;
         return sum;
     }
-    private int getMaxNonNullIdx() {
+    public int getMaxNonNullIdx() {
         int i = data.length-1;
         if (data[i]==0) while(i>0 && data[i-1]==0) --i;
+        return i;
+    }
+    public int getMinNonNullIdx() {
+        int i = 0;
+        if (data[i]==0) while(i<data.length-1 && data[i+1]==0) ++i;
         return i;
     }
     public void removeSaturatingValue(double countThlFactor, boolean highValues) {
@@ -110,8 +115,7 @@ public class Histogram {
                 if (data[i]>data[i-1]*countThlFactor) data[i]=0;
             }
         } else {
-            int i = 0;
-            if (data[i]==0) while(i>0 && data[i+1]==0) ++i;
+            int i = getMinNonNullIdx();
             if (i<data.length-1) {
                 //logger.debug("remove saturating value: {} (prev: {}, i: {})", data[i], data[i-1], i);
                 if (data[i]>data[i+1]*countThlFactor) data[i]=0;

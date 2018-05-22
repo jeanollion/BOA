@@ -25,6 +25,7 @@ import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.StructureObjectProcessing;
 import boa.image.BlankMask;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageMask;
@@ -134,7 +135,7 @@ public class BackgroundThresholder implements SimpleThresholder, ThresholderHist
     }
     
     public static double runThresholderHisto(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double firstValue, double[] meanSigma) {
-        Histogram histo = input.getHisto256(mask, null);
+        Histogram histo = HistogramFactory.getHistogram(()->input.stream(mask, true), iterations);
         return BackgroundThresholder.runThresholder(histo, sigmaFactor, lastSigmaFactor, iterations, firstValue, meanSigma);
     }
     

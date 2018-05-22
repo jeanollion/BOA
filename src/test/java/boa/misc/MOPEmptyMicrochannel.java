@@ -129,7 +129,7 @@ public class MOPEmptyMicrochannel {
         }
         @Override public String name() {return "ContrastPercentile";}
     }; 
-    static Feature entropy = new Feature() {
+    /*static Feature entropy = new Feature() {
         @Override
         public double compute(Image i) {
             ImageFeats ifea = imageFeatures.getAndCreateIfNecessary(i);
@@ -145,7 +145,7 @@ public class MOPEmptyMicrochannel {
             return -entropy;
         }
         @Override public String name() {return "Entropy";}
-    }; 
+    }; */
     static Feature sigma = new Feature() {
         @Override
         public double compute(Image i) {
@@ -235,7 +235,7 @@ public class MOPEmptyMicrochannel {
         @Override public String name() {return "LCSigma";}
     };
     
-    static Feature[] features = new Feature[]{sigma, mean, LCSigma, contrast, contrastPercentile, entropy, ostuVolume, LCVolume, ostuDistance};
+    static Feature[] features = new Feature[]{sigma, mean, LCSigma, contrast, contrastPercentile, ostuVolume, LCVolume, ostuDistance}; //entropy
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         //createImageDataset(false);

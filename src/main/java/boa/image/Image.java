@@ -337,10 +337,6 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
         return minAndMax;
     }
 
-    public abstract Histogram getHisto256(ImageMask mask, BoundingBox bounds);
-    public Histogram getHisto(ImageMask mask) {return getHisto256(mask, null);}
-    public abstract Histogram getHisto(double min, double max, ImageMask mask, BoundingBox limit);
-    
     public I cropWithOffset(BoundingBox bounds) {
         return crop(new SimpleBoundingBox(bounds).translate(getOffset().reverseOffset()));
     }

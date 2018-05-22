@@ -27,6 +27,7 @@ import boa.image.BoundingBox;
 import static boa.image.BoundingBox.loop;
 import boa.image.MutableBoundingBox;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.IJImageWrapper;
 import boa.image.Image;
 import boa.image.ImageByte;
@@ -746,8 +747,7 @@ public class ImageOperations {
         return output;
     }
     public static double[] getQuantiles(Image image, ImageMask mask, BoundingBox limits, double... percent) {
-        double[] mm = image.getMinAndMax(mask);
-        Histogram histo = image.getHisto(mm[0], mm[1], mask, limits);
+        Histogram histo = HistogramFactory.getHistogram(()->image.stream(mask, true), HistogramFactory.BIN_SIZE_METHOD.AUTO);
         return histo.getQuantiles(percent);
     }
     

@@ -33,6 +33,7 @@ import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
 import ij.process.AutoThresholder;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
@@ -246,7 +247,8 @@ public class EdgeDetector implements Segmenter, ToolTip {
                         for (Region o : pop.getRegions()) {
                             if (values.get(o)<=thld1 || values2.get(o)<thld2) o.draw(valueMap, thld1);
                         }
-                    }       Histogram h = valueMap.getHisto(mask);
+                    }       
+                    Histogram h = HistogramFactory.getHistogram(()->valueMap.stream(mask, true), thld2);
                     int sMax = 0, eMax = 0;
                     for (int s = 0; s<h.data.length-2; ++s) {
                         if (h.data[s]!=0) continue;

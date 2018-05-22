@@ -20,6 +20,7 @@ package boa.gui.imageInteraction;
 
 import boa.image.BoundingBox;
 import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import static boa.image.IJImageWrapper.getStackIndex;
 import boa.image.Image;
 import static boa.image.Image.logger;
@@ -79,7 +80,7 @@ public interface ImageDisplayer<T> {
         return resTC;
     }
     public static double[] getDisplayRange(Image im, ImageMask mask) {
-        Histogram hist = im.getHisto(mask);
+        Histogram hist = HistogramFactory.getHistogram(()->im.stream(mask, true), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         
         hist.removeSaturatingValue(5, true);
         hist.removeSaturatingValue(5, false);
