@@ -121,12 +121,12 @@ public class RemoveStripesSignalExclusion implements ConfigurableTransformation 
                     Image se1 = inputImages.getImage(chExcl, frame);
                     double thld1 = signalExclusionThreshold.instanciatePlugin().runSimpleThresholder(se1, null);
                     ThresholdMask mask = currentImage.sizeZ()>1 && se1.sizeZ()==1 ? new ThresholdMask(se1, thld1, true, true, 0):new ThresholdMask(se1, thld1, true, true);
-                    if (testMode) testMasks.put(frame, TypeConverter.toByteMask(mask, null, 1));
+                    if (testMode) synchronized(testMasks) {testMasks.put(frame, TypeConverter.toByteMask(mask, null, 1));}
                     if (chExcl2>=0) {
                         Image se2 = inputImages.getImage(chExcl2, frame);
                         double thld2 = signalExclusionThreshold2.instanciatePlugin().runSimpleThresholder(se2, null);
                         ThresholdMask mask2 = currentImage.sizeZ()>1 && se2.sizeZ()==1 ? new ThresholdMask(se2, thld2, true, true, 0):new ThresholdMask(se2, thld2, true, true);
-                        if (testMode) testMasks2.put(frame, TypeConverter.toByteMask(mask2, null, 1));
+                        if (testMode) synchronized(testMasks2) {testMasks2.put(frame, TypeConverter.toByteMask(mask2, null, 1));}
                         mask = ThresholdMask.or(mask, mask2);
                     }
                     m = mask;

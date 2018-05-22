@@ -42,10 +42,7 @@ public class SaturateHistogram implements Filter {
         this.maxValue.setValue(maxValue);
     }
     
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        
-    }
-
+    @Override
     public Image applyTransformation(int channelIdx, int timePoint, final Image image) {
         saturate(threshold.getValue().doubleValue(), maxValue.getValue().doubleValue(), image);
         return image;

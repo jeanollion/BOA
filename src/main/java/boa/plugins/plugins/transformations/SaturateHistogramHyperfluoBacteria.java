@@ -44,11 +44,10 @@ import java.util.stream.IntStream;
  * @author jollion
  */
 public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransformation {
-    PluginParameter<SimpleThresholder> thresholder = new PluginParameter<>("Background Threshold", SimpleThresholder.class, new BackgroundFit(10), false); 
     NumberParameter maxSignalProportion = new BoundedNumberParameter("Maximum Saturated Signal Amount Proportion", 3, 0.2, 0, 1).setToolTipText("Condition on amount of signal for detection of hyperfluo. bacteria: <br />Total amount of foreground signal / amount of Hyperfluo signal &lt; this threshold"); 
     NumberParameter minSignalRatio = new BoundedNumberParameter("Minimum Signal Ratio", 2, 7.5, 2, null).setToolTipText("Condition on signal value for detection of hyperfluo. bacteria: <br />Mean Hyperfluo signal / Mean Foreground signal > this threshold");
     
-    Parameter[] parameters = new Parameter[]{thresholder, maxSignalProportion, minSignalRatio};
+    Parameter[] parameters = new Parameter[]{maxSignalProportion, minSignalRatio};
     double saturateValue= Double.NaN;
     boolean configured = false;
     
@@ -81,7 +80,7 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
         
         Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         double[] bckMuStd = new double[2];
-        double bckThld = thresholder.instanciatePlugin().runSimpleThresholder(Image.mergeZPlanes(allImages), null);
+        double bckThld = BackgroundFit.backgroundFit(histo, 10, bckMuStd);
         Histogram histoFore = histo.duplicate((int)histo.getIdxFromValue(bckThld)+1, histo.data.length);
         double foreThld = histoFore.getQuantiles(0.5)[0];
         
