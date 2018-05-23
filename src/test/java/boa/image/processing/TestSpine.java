@@ -68,7 +68,7 @@ public class TestSpine {
         //String dbName = "WT_180318_Fluo";
         //String dbName = "WT_150609";
         String dbName = "fluo160501_uncorr_TestParam";
-        int postition= 0, frame=122, mc=0, b=0;
+        int postition= 0, frame=4, mc=0, b=3;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
@@ -82,12 +82,12 @@ public class TestSpine {
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(parentStructure).get(mc).getChildren(structureIdx).get(b);
         
-        //testSpineCreation(bact);
+        testSpineCreation(bact);
         //testContourCleaning(bact);
         //testAllSteps(bact);
         //testLocalization(bact, true);
         //testLocalization(bact, false);
-        testSkeleton(bact);
+        //testSkeleton(bact);
         
         //StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         //StructureObject bact2 = root2.getChildren(parentStructure).get(mc).getChildren(structureIdx).get(1);
@@ -112,8 +112,11 @@ public class TestSpine {
     public static void testSkeleton(StructureObject b) {
         Set<Voxel> contour =cleanContour(b.getRegion().getContour(), true);
         BacteriaSpineFactory.verbose = true;
-        ImageWindowManagerFactory.showImage(BacteriaSpineFactory.getMaskFromContour(contour).setName("mask after clean contour"));
+        Image mask  = BacteriaSpineFactory.getMaskFromContour(contour).setName("mask after clean contour");
+        
         List<Voxel> skeleton = BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(contour));
+        for (Voxel v : skeleton) mask.setPixelWithOffset(v.x, v.y, v.z, 0);
+        ImageWindowManagerFactory.showImage(mask);
     }
     public static void testAllSteps(StructureObject b, boolean sk, boolean spine) {
         Set<Voxel> contour;

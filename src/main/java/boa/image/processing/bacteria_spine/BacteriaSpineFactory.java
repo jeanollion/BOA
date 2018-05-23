@@ -430,6 +430,10 @@ public class BacteriaSpineFactory {
             Voxel nextVox2 = nextPoint2.asVoxel();
             if (!mask.containsWithOffset(nextVox2.x, nextVox2.y, mask.zMin()) || !mask.insideMaskWithOffset(nextVox2.x, nextVox2.y, mask.zMin())) { 
                 adjustPointToContour(next, spineDir, s2, bucketFirst); // adjust to contour
+                if (sp.size()>2) { // check that adjusted point is after previous point
+                    Point ref = sp.get(sp.size()-3);
+                    if (sp.get(sp.size()-2).distSqXY(ref)>next.distSqXY(ref)) sp.remove(sp.size()-2);
+                }
                 return sp;
             }
             lastPoint = next;
