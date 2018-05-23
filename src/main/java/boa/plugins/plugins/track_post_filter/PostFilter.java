@@ -40,6 +40,7 @@ import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
 import static boa.utils.Utils.parallele;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 /**
@@ -48,9 +49,24 @@ import java.util.function.Consumer;
  */
 public class PostFilter implements TrackPostFilter, MultiThreaded {
     PluginParameter<boa.plugins.PostFilter> filter = new PluginParameter<>("Filter",boa.plugins.PostFilter.class, false);
-    final static String[] methods = new String[]{"Delete single objects", "Delete whole track", "Prune Track"};
-    ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", methods, methods[0], false);
-
+    final static String[] METHODS = new String[]{"Delete single objects", "Delete whole track", "Prune Track"};
+    ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", METHODS, METHODS[0], false);
+    public enum MERGE_POLICY {
+        NERVER_MERGE(ManualCorrection.NERVE_MERGE), 
+        ALWAYS_MERGE(ManualCorrection.ALWAYS_MERGE), 
+        MERGE_TRACKS_SIZE_COND(ManualCorrection.MERGE_TRACKS_SIZE_COND);
+        public final BiPredicate<StructureObject, StructureObject> mergePredicate;
+        private MERGE_POLICY(BiPredicate<StructureObject, StructureObject> mergePredicate) {
+            this.mergePredicate=mergePredicate; 
+        }
+    }
+    ChoiceParameter mergePolicy = new ChoiceParameter("Merge Policy", Utils.toStringArray(MERGE_POLICY.values()), MERGE_POLICY.ALWAYS_MERGE.toString(), false).setToolTipText("When removing an object/track that has a previous object (p) that was linked to this object and one other object (n). p is now linked to one single object n. This parameter controls wheter / in which conditions should p's track and n's track be merged.<br/><ul><li>NEVER_MERGE: never merge tracks</li><li>ALWAYS_MERGE: always merge tracks</li><li>MERGE_TRACKS_SIZE_COND: merge tracks only if size(n)>0.8 * size(p) (useful for bacteria linking)</li></ul>");
+    
+    public PostFilter setMergePolicy(PostFilter.MERGE_POLICY policy) {
+        mergePolicy.setSelectedItem(policy.toString());
+        return this;
+    }
+    
     public PostFilter() {}
     public PostFilter(boa.plugins.PostFilter filter) {
         this.filter.setPlugin(filter);
@@ -98,18 +114,19 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
         ThreadRunner.exexcuteAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
         if (!objectsToRemove.isEmpty()) { 
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
+            BiPredicate<StructureObject, StructureObject> mergePredicate = MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;
             switch (this.deleteMethod.getSelectedIndex()) {
                 case 0:
-                    ManualCorrection.deleteObjects(null, objectsToRemove, false, false); // only delete
+                    ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false); // only delete
                     break;
                 case 2:
-                    ManualCorrection.prune(null, objectsToRemove, false, false); // prune tracks
+                    ManualCorrection.prune(null, objectsToRemove, mergePredicate, false); // prune tracks
                     break;
                 case 1:
                     Set<StructureObject> trackHeads = new HashSet<>(Utils.transform(objectsToRemove, o->o.getTrackHead()));
                     objectsToRemove.clear();
                     for (StructureObject th : trackHeads) objectsToRemove.addAll(StructureObjectUtils.getTrack(th, false));
-                    ManualCorrection.deleteObjects(null, objectsToRemove, false, false);
+                    ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false);
                     break;
                 default:
                     break;
@@ -119,7 +136,7 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{filter, deleteMethod};
+        return new Parameter[]{filter, deleteMethod, mergePolicy};
     }
     // multithreaded interface
     boolean multithreaded;

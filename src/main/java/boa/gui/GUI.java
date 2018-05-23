@@ -2831,7 +2831,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (!checkConnection()) return;
         if (db.isReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        ManualCorrection.prune(db, sel, true, true);
+        ManualCorrection.prune(db, sel, ManualCorrection.ALWAYS_MERGE, true);
         logger.debug("prune: {}", Utils.toStringList(sel));
     }
     
@@ -3397,7 +3397,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         logger.info("delete: evt source {}, evt: {}, ac: {}, param: {}", evt.getSource(), evt, evt.getActionCommand(), evt.paramString());
         //if (db.isReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (sel.size()<=10 || Utils.promptBoolean("Delete "+sel.size()+ " Objects ? ", null)) ManualCorrection.deleteObjects(db, sel, true, true);
+        if (sel.size()<=10 || Utils.promptBoolean("Delete "+sel.size()+ " Objects ? ", null)) ManualCorrection.deleteObjects(db, sel, ManualCorrection.ALWAYS_MERGE, true);
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
     private void deleteObjectsButtonMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteObjectsButtonMousePressed

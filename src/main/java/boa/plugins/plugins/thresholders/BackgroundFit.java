@@ -134,8 +134,8 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
         fillZeros(histo.data);
         if (smooth) smoothInPlace(histo.data, 3);
         int mode = ArrayUtil.max(histo.data);
-        double halfWidthIdx = getHalfWidthIdx(histo, mode);
-        
+        double halfWidthIdx = getHalfWidthIdx(histo, mode, true);
+        if (Double.isNaN(halfWidthIdx)) halfWidthIdx = getHalfWidthIdx(histo, mode, false);
         long t2 = System.currentTimeMillis();
         double modeFit;
         int halfHalf = Math.max(2, (int)(halfWidthIdx/2d));
@@ -155,7 +155,8 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
                 throw t;
             }
         } else modeFit = mode;
-        halfWidthIdx = getHalfWidthIdx(histo, modeFit);
+        halfWidthIdx = getHalfWidthIdx(histo, modeFit, true);
+        if (Double.isNaN(halfWidthIdx)) halfWidthIdx = getHalfWidthIdx(histo, mode, false);
         double sigma = (histo.getValueFromIdx(modeFit) - histo.getValueFromIdx(halfWidthIdx)) / Math.sqrt(2*Math.log(2)); // real values
         int start = Double.isNaN(halfWidthIdx) ? getMinMonoBefore(histo.data, mode) : Math.max(0, (int) (modeFit - 6 * (modeFit-halfWidthIdx)));
         // use gaussian fit on lowest half of data 
@@ -176,6 +177,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
             return thld;
         } catch(Throwable t) {
             if (!smooth) return backgroundFit(histo.duplicate(), sigmaFactor, meanSigma, true);
+            histo.plotIJ1("mode: "+modeFit+ " sigma: "+sigma, debug);
             throw t;
         }
         
@@ -184,13 +186,20 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
         
     }
     
-    private static double getHalfWidthIdx(Histogram histo, double mode) {
+    private static double getHalfWidthIdx(Histogram histo, double mode, boolean before) {
         double halfH = histo.getCountLinearApprox(mode) / 2d;
         int half = (int)mode;
-        while(half>0 && histo.data[half-1]>halfH) --half;
-        if (half<=0) return Double.NaN;
-        // linear approx between half & half -1
-        return half-1 + (halfH - histo.data[half-1]) / (double)(histo.data[half]-histo.data[half-1]) ;
+        if (before) {
+            while(half>0 && histo.data[half-1]>halfH) --half;
+            if (half<=0) return Double.NaN;
+            // linear approx between half & half -1
+            return half-1 + (halfH - histo.data[half-1]) / (double)(histo.data[half]-histo.data[half-1]) ;
+        } else {
+            while(half<histo.data.length-1 && histo.data[half+1]>halfH) ++half;
+            if (half==histo.data.length-1) return Double.NaN;
+            // linear approx between half & half -1
+            return half + (halfH - histo.data[half]) / (double)(histo.data[half]-histo.data[half+1]) ;
+        }
     }
     
     private static int getMinMonoBefore(int[] array, int start) {

@@ -20,6 +20,7 @@ package boa.plugins.plugins.track_post_filter;
 
 import boa.gui.ManualCorrection;
 import boa.configuration.parameters.BoundedNumberParameter;
+import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
@@ -28,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import boa.plugins.TrackPostFilter;
+import boa.utils.Utils;
+import java.util.function.BiPredicate;
 
 /**
  *
@@ -37,9 +40,19 @@ public class TrackLengthFilter implements TrackPostFilter {
     
     BoundedNumberParameter minSize = new BoundedNumberParameter("Minimum Length", 0, 0, 0, null);
     BoundedNumberParameter maxSize = new BoundedNumberParameter("Maximum Length", 0, 0, 0, null);
-    Parameter[] parameters = new Parameter[]{minSize, maxSize};
+    ChoiceParameter mergePolicy = new ChoiceParameter("Merge Policy", Utils.toStringArray(PostFilter.MERGE_POLICY.values()), PostFilter.MERGE_POLICY.ALWAYS_MERGE.toString(), false).setToolTipText("When removing an object/track that has a previous object (p) that was linked to this object and one other object (n). p is now linked to one single object n. This parameter controls wheter / in which conditions should p's track and n's track be merged.<br/><ul><li>NEVER_MERGE: never merge tracks</li><li>ALWAYS_MERGE: always merge tracks</li><li>MERGE_TRACKS_SIZE_COND: merge tracks only if size(n)>0.8 * size(p) (useful for bacteria linking)</li></ul>");
+    
+    Parameter[] parameters = new Parameter[]{minSize, maxSize, mergePolicy};
+    
+    
     
     public TrackLengthFilter() {}
+    
+    public TrackLengthFilter setMergePolicy(PostFilter.MERGE_POLICY policy) {
+        mergePolicy.setSelectedItem(policy.toString());
+        return this;
+    }
+    
     public TrackLengthFilter setMinSize(int minSize) {
         this.minSize.setValue(minSize);
         return this;
@@ -59,7 +72,9 @@ public class TrackLengthFilter implements TrackPostFilter {
             if (e.getValue().size()<min || (max>0 && e.getValue().size()>max)) objectsToRemove.addAll(e.getValue());
         }
         //logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false, false);
+        BiPredicate<StructureObject, StructureObject> mergePredicate = PostFilter.MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;
+            
+        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false);
     }
 
     @Override

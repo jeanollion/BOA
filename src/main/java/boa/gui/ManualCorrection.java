@@ -74,12 +74,18 @@ import boa.utils.Utils;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
+import java.util.function.BiPredicate;
 
 /**
  *
  * @author jollion
  */
 public class ManualCorrection {
+
+    public static final BiPredicate<StructureObject, StructureObject> NERVE_MERGE = (s1, s2)->false;
+    public static final BiPredicate<StructureObject, StructureObject> ALWAYS_MERGE = (s1, s2)->true;
+    public static final BiPredicate<StructureObject, StructureObject> MERGE_TRACKS_SIZE_COND = (prev, next)-> next.getRegion().size()>prev.getRegion().size()  * 0.8;
+    
     private static List<StructureObject> getNext(StructureObject o) {
         StructureObject nextParent = o.getNext()==null ? o.getParent().getNext() : o.getNext().getParent();
         if (nextParent==null) return Collections.EMPTY_LIST;
@@ -96,10 +102,10 @@ public class ManualCorrection {
         //logger.debug("prev of : {} = {}", o, res);
         return res;
     }
-    public static void unlinkObject(StructureObject o, boolean resetTrackHeadIfOnlyOneNextLeft, Collection<StructureObject> modifiedObjects) {
+    public static void unlinkObject(StructureObject o, BiPredicate<StructureObject, StructureObject> mergeTracks, Collection<StructureObject> modifiedObjects) {
         if (o==null) return;
-        for (StructureObject n : getNext(o) ) unlinkObjects(o, n, resetTrackHeadIfOnlyOneNextLeft, modifiedObjects);
-        for (StructureObject p : getPrevious(o) ) unlinkObjects(p, o, resetTrackHeadIfOnlyOneNextLeft, modifiedObjects);
+        for (StructureObject n : getNext(o) ) unlinkObjects(o, n, mergeTracks, modifiedObjects);
+        for (StructureObject p : getPrevious(o) ) unlinkObjects(p, o, mergeTracks, modifiedObjects);
         //o.resetTrackLinks(true, true);
         modifiedObjects.add(o);
         //logger.debug("unlinking: {}", o);
@@ -110,8 +116,8 @@ public class ManualCorrection {
         if (next) o.getMeasurements().setStringValue(trackErrorNext, value);
         
     }
-    public static void unlinkObjects(StructureObject prev, StructureObject next, boolean resetTrackHeadIfOnlyOneNext, Collection<StructureObject> modifiedObjects) {
-        if (next.getFrame()<prev.getFrame()) unlinkObjects(next, prev, resetTrackHeadIfOnlyOneNext, modifiedObjects);
+    public static void unlinkObjects(StructureObject prev, StructureObject next, BiPredicate<StructureObject, StructureObject> mergeTracks, Collection<StructureObject> modifiedObjects) {
+        if (next.getFrame()<prev.getFrame()) unlinkObjects(next, prev, mergeTracks, modifiedObjects);
         else {
             if (next.getPrevious()==prev) {
                 next.resetTrackLinks(true, false);
@@ -119,8 +125,8 @@ public class ManualCorrection {
             } else prev.resetTrackLinks(false, prev.getNext()==next);
             
             List<StructureObject> allNext = getNext(prev); 
-            if (allNext.size()==1 && resetTrackHeadIfOnlyOneNext) { // set trackHead 
-                unlinkObjects(prev, allNext.get(0), false, modifiedObjects);
+            if (allNext.size()==1 && mergeTracks.test(prev, allNext.get(0))) { // set trackHead 
+                unlinkObjects(prev, allNext.get(0), NERVE_MERGE, modifiedObjects);
                 linkObjects(prev, allNext.get(0), true, modifiedObjects);
             }
             if (modifiedObjects!=null) {
@@ -163,7 +169,7 @@ public class ManualCorrection {
                 boolean allowMergeLink = true;
                 if (!allNext.contains(next)) {
                     if (!allowSplit) {
-                        for (StructureObject n : allNext) unlinkObjects(prev, n, true, modifiedObjects);
+                        for (StructureObject n : allNext) unlinkObjects(prev, n, ALWAYS_MERGE, modifiedObjects);
                     } else allowMergeLink = false;
                 }
                 if (allowMergeLink && !allNext.contains(next)) {
@@ -179,7 +185,7 @@ public class ManualCorrection {
                 boolean allowSplitLink = true;
                 if (!allPrev.contains(prev)) {
                     if (!allowMerge) {
-                        for (StructureObject p : allPrev) unlinkObjects(p, next, true, modifiedObjects);
+                        for (StructureObject p : allPrev) unlinkObjects(p, next, ALWAYS_MERGE, modifiedObjects);
                     } else allowSplitLink = false;
                 }
                 if (allowSplitLink && !allPrev.contains(prev)) {
@@ -195,8 +201,8 @@ public class ManualCorrection {
                 
             }
             if (doubleLink) {
-                if (prev.getNext()!=null && prev.getNext()!=next) unlinkObjects(prev, prev.getNext(), true, modifiedObjects);
-                if (next.getPrevious()!=null && next.getPrevious()!=prev) unlinkObjects(next.getPrevious(), next, true, modifiedObjects);
+                if (prev.getNext()!=null && prev.getNext()!=next) unlinkObjects(prev, prev.getNext(), ALWAYS_MERGE, modifiedObjects);
+                if (next.getPrevious()!=null && next.getPrevious()!=prev) unlinkObjects(next.getPrevious(), next, ALWAYS_MERGE, modifiedObjects);
                 //if (next!=prev.getNext() || prev!=next.getPrevious() || next.getTrackHead()!=prev.getTrackHead()) {
                     prev.setTrackLinks(next, true, true);
                     prev.setAttribute(correctionMerge, true);
@@ -208,7 +214,7 @@ public class ManualCorrection {
             }
         }
     }
-    public static void prune(MasterDAO db, List<StructureObject> objects, boolean resetTrackHeadIfOnlyOneNextLeft, boolean updateDisplay) {
+    public static void prune(MasterDAO db, List<StructureObject> objects, BiPredicate<StructureObject, StructureObject> mergeTracks, boolean updateDisplay) {
         if (objects.isEmpty()) return;
         TreeSet<StructureObject> queue = new TreeSet<>(objects);
         List<StructureObject> toDel = new ArrayList<>();
@@ -220,7 +226,7 @@ public class ManualCorrection {
             queue.addAll(next);
         }
         Utils.removeDuplicates(toDel, false);
-        deleteObjects(db, toDel, resetTrackHeadIfOnlyOneNextLeft, updateDisplay);
+        deleteObjects(db, toDel, mergeTracks, updateDisplay);
     }
     public static void modifyObjectLinks(MasterDAO db, List<StructureObject> objects, boolean unlink, boolean updateDisplay) {
         StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
@@ -248,14 +254,14 @@ public class ManualCorrection {
                 if (prev.size()==1 && current.size()==1) {
                     if (unlink) {
                         if (current.get(0).getPrevious()==prev.get(0) || prev.get(0).getNext()==current) { //unlink the 2 spots
-                            ManualCorrection.unlinkObjects(prev.get(0), current.get(0), true, modifiedObjects);
+                            ManualCorrection.unlinkObjects(prev.get(0), current.get(0), ALWAYS_MERGE, modifiedObjects);
                         } 
                     } else ManualCorrection.linkObjects(prev.get(0), current.get(0), true, modifiedObjects);
                 } else if (prev.size()==1 && split && !merge) {
                     for (StructureObject c : current) {
                         if (unlink) {
                             if (c.getPrevious()==prev.get(0) || prev.get(0).getNext()==c) { //unlink the 2 spots
-                                ManualCorrection.unlinkObjects(prev.get(0), c, true, modifiedObjects);
+                                ManualCorrection.unlinkObjects(prev.get(0), c, ALWAYS_MERGE, modifiedObjects);
                             } 
                         } else ManualCorrection.linkObjects(prev.get(0), c, false, modifiedObjects);
                     }
@@ -263,7 +269,7 @@ public class ManualCorrection {
                     for (StructureObject p : prev) {
                         if (unlink) {
                             if (current.get(0).getPrevious()==p || p.getNext()==current.get(0)) { //unlink the 2 spots
-                                ManualCorrection.unlinkObjects(p, current.get(0), true, modifiedObjects);
+                                ManualCorrection.unlinkObjects(p, current.get(0), ALWAYS_MERGE, modifiedObjects);
                             } 
                         } else ManualCorrection.linkObjects(p, current.get(0), false, modifiedObjects);
                     }
@@ -272,10 +278,10 @@ public class ManualCorrection {
                     map.put(currentParent.getFrame(), current);
                     // unlink objects
                     for (StructureObject n : current) {
-                        if (prev.contains(n.getPrevious())) ManualCorrection.unlinkObjects(n.getPrevious(), n, true, modifiedObjects);
+                        if (prev.contains(n.getPrevious())) ManualCorrection.unlinkObjects(n.getPrevious(), n, ALWAYS_MERGE, modifiedObjects);
                     }
                     for (StructureObject p : prev) {
-                        if (current.contains(p.getNext())) ManualCorrection.unlinkObjects(p, p.getNext(), true, modifiedObjects);
+                        if (current.contains(p.getNext())) ManualCorrection.unlinkObjects(p, p.getNext(), ALWAYS_MERGE, modifiedObjects);
                     }
                 }
                 
@@ -357,7 +363,7 @@ public class ManualCorrection {
         if (updateDisplay) ImageWindowManagerFactory.getImageManager().removeTracks(StructureObjectUtils.getTrackHeads(objects));
         
         List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
-        for (StructureObject o : objects) ManualCorrection.unlinkObject(o, true, modifiedObjects);
+        for (StructureObject o : objects) ManualCorrection.unlinkObject(o, ALWAYS_MERGE, modifiedObjects);
         Utils.removeDuplicates(modifiedObjects, false);
         db.getDao(objects.get(0).getPositionName()).store(modifiedObjects);
         if (updateDisplay) {
@@ -528,9 +534,9 @@ public class ManualCorrection {
                         newObjects.add(newObject);
                         objectToSplit.setAttribute(StructureObject.correctionSplit, true);
                         StructureObject prev = objectToSplit.getPrevious();
-                        if (prev!=null) unlinkObjects(prev, objectToSplit, true, objectsToStore);
+                        if (prev!=null) unlinkObjects(prev, objectToSplit, ALWAYS_MERGE, objectsToStore);
                         List<StructureObject> nexts = getNext(objectToSplit);
-                        for (StructureObject n : nexts) unlinkObjects(objectToSplit, n, true, objectsToStore);
+                        for (StructureObject n : nexts) unlinkObjects(objectToSplit, n, ALWAYS_MERGE, objectsToStore);
                         StructureObject next = nexts.size()==1 ? nexts.get(0) : null;
                         objectToSplit.getParent().relabelChildren(objectToSplit.getStructureIdx(), objectsToStore);
                         newObject.setAttribute(StructureObject.correctionSplitNew, true);
@@ -614,7 +620,7 @@ public class ManualCorrection {
                 StructureObject prev = getPreviousObject(objectsToMerge); // previous object if all objects have same previous object
                 StructureObject next = getNextObject(objectsToMerge); // next object if all objects have same next object
                 Set<StructureObject> modifiedObjects = new HashSet<>();
-                for (StructureObject o : objectsToMerge) unlinkObject(o, true, modifiedObjects);
+                for (StructureObject o : objectsToMerge) unlinkObject(o, ALWAYS_MERGE, modifiedObjects);
                 StructureObject res = objectsToMerge.remove(0);               
                 for (StructureObject toMerge : objectsToMerge) res.merge(toMerge);
                 
@@ -663,7 +669,7 @@ public class ManualCorrection {
         // update trackTree
         if (GUI.getInstance().trackTreeController!=null) GUI.getInstance().trackTreeController.updateParentTracks();
     }
-    public static void deleteObjects(MasterDAO db, Collection<StructureObject> objects, boolean resetTrackHeadIfOnlyOneNextLeft, boolean updateDisplay) {
+    public static void deleteObjects(MasterDAO db, Collection<StructureObject> objects, BiPredicate<StructureObject, StructureObject> mergeTracks, boolean updateDisplay) {
         String fieldName = StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
         ObjectDAO dao = db!=null ? db.getDao(fieldName) : null;
         Map<Integer, List<StructureObject>> objectsByStructureIdx = StructureObjectUtils.splitByStructureIdx(objects);
@@ -671,7 +677,7 @@ public class ManualCorrection {
             List<StructureObject> toDelete = objectsByStructureIdx.get(structureIdx);
             Set<StructureObject> modifiedObjects = new HashSet<>();
             for (StructureObject o : toDelete) {
-                unlinkObject(o, resetTrackHeadIfOnlyOneNextLeft, modifiedObjects);
+                unlinkObject(o, mergeTracks, modifiedObjects);
                 o.getParent().getChildren(o.getStructureIdx()).remove(o);
             }
             Set<StructureObject> parents = StructureObjectUtils.getParents(toDelete);
@@ -772,7 +778,7 @@ public class ManualCorrection {
             List<StructureObject> toDelete = Pair.unpairKeys(ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface().getObjects());
             if (after) toDelete.removeIf(o -> o.getFrame()<first.getFrame());
             else toDelete.removeIf(o -> o.getFrame()>first.getFrame());
-            deleteObjects(db, toDelete, true, true);
+            deleteObjects(db, toDelete, ALWAYS_MERGE, true);
         }
     }
     

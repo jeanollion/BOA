@@ -64,6 +64,7 @@ import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.split_merge.SplitAndMergeEdge;
 import boa.image.processing.split_merge.SplitAndMergeRegionCriterion;
 import boa.measurement.BasicMeasurements;
+import boa.measurement.GeometricalMeasurements;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.TestableProcessingPlugin;
@@ -83,6 +84,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -217,14 +219,22 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         }
         double foreThld = threshold;
         //if (Double.isNaN(minThld) || (Double.isNaN(foreThld))) return pop;
-        
-        Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<=minThld).collect(Collectors.toSet());
+        RegionPopulation.ContactBorderMask contactLeft = new RegionPopulation.ContactBorderMask(1, parent.getMask(), RegionPopulation.Border.Xl);
+        RegionPopulation.ContactBorderMask contactRight = new RegionPopulation.ContactBorderMask(1, parent.getMask(), RegionPopulation.Border.Xr);
+        Predicate<Region> touchBorder = r-> {
+            //double l = GeometricalMeasurements.maxThicknessY(r);
+            int cLeft = contactLeft.getContact(r);
+            if (cLeft>0) return true;
+            int cRight = contactRight.getContact(r);
+            return cRight>0;
+        };
+        Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<=minThld || touchBorder.test(r) ).collect(Collectors.toSet());
         if (foreThld==minThld) { // simple thresholding
             pop.getRegions().removeAll(backgroundL);
             pop.relabel(true);
             return pop;
         }
-        Set<Region> foregroundL = pop.getRegions().stream().filter(r->values.get(r)>=foreThld).collect(Collectors.toSet());
+        Set<Region> foregroundL = pop.getRegions().stream().filter(r->!backgroundL.contains(r) && values.get(r)>=foreThld).collect(Collectors.toSet());
         if (foregroundL.isEmpty()) {
             pop.getRegions().clear();
             pop.relabel(true);

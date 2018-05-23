@@ -46,6 +46,7 @@ import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
 import static boa.utils.Utils.parallele;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 /**
@@ -59,6 +60,12 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
     ConditionalParameter statCond = new ConditionalParameter(statistics).setActionParameters("Quantile", new Parameter[]{quantile});
     NumberParameter threshold = new NumberParameter("Threshold", 4, 0);
     BooleanParameter keepOverThreshold = new BooleanParameter("Keep over threshold", true);
+    ChoiceParameter mergePolicy = new ChoiceParameter("Merge Policy", Utils.toStringArray(PostFilter.MERGE_POLICY.values()), PostFilter.MERGE_POLICY.ALWAYS_MERGE.toString(), false).setToolTipText("When removing an object/track that has a previous object (p) that was linked to this object and one other object (n). p is now linked to one single object n. This parameter controls wheter / in which conditions should p's track and n's track be merged.<br/><ul><li>NEVER_MERGE: never merge tracks</li><li>ALWAYS_MERGE: always merge tracks</li><li>MERGE_TRACKS_SIZE_COND: merge tracks only if size(n)>0.8 * size(p) (useful for bacteria linking)</li></ul>");
+
+    public RemoveTrackByFeature setMergePolicy(PostFilter.MERGE_POLICY policy) {
+        mergePolicy.setSelectedItem(policy.toString());
+        return this;
+    }
     
     public RemoveTrackByFeature setFeature(ObjectFeature feature, double thld, boolean keepOverThld) {
         this.feature.setPlugin(feature);
@@ -115,12 +122,13 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
                 if (value>threshold.getValue().doubleValue()) objectsToRemove.addAll(track);
             }
         }
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, false, false); // only delete
+        BiPredicate<StructureObject, StructureObject> mergePredicate = PostFilter.MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;
+        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false); // only delete
     }
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{feature, statCond, threshold, keepOverThreshold};
+        return new Parameter[]{feature, statCond, threshold, keepOverThreshold, mergePolicy};
     }
     // multithreaded interface
     boolean multithreaded;

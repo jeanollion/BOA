@@ -51,10 +51,10 @@ public class TestImageProcessingPlugin {
         //String dbName = "MutH_151220";
         //String dbName = "WT_150616";
         //String dbName = "WT_180318_Fluo";
-        int pIdx =0;
-        int mcIdx =0;
+        int pIdx =1;
+        int mcIdx =6;
         int structureIdx =1;
-        int[] frames = new int[]{156,156}; //{215, 237};
+        int[] frames = new int[]{422,422}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);

@@ -36,11 +36,13 @@ import java.util.concurrent.ExecutorService;
 import boa.plugins.MultiThreaded;
 import boa.plugins.PostFilter;
 import boa.plugins.TrackPostFilter;
+import boa.plugins.plugins.track_post_filter.PostFilter.MERGE_POLICY;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
 import static boa.utils.Utils.parallele;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 /**
@@ -51,6 +53,12 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
     final static String[] methods = new String[]{"Delete single objects", "Delete whole track", "Prune Track"};
     ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", methods, methods[0], false);
     PostFilterSequence postFilters = new PostFilterSequence("Filter");
+    ChoiceParameter mergePolicy = new ChoiceParameter("Merge Policy", Utils.toStringArray(MERGE_POLICY.values()), MERGE_POLICY.ALWAYS_MERGE.toString(), false).setToolTipText("When removing an object/track that has a previous object (p) that was linked to this object and one other object (n). p is now linked to one single object n. This parameter controls wheter / in which conditions should p's track and n's track be merged.<br/><ul><li>NEVER_MERGE: never merge tracks</li><li>ALWAYS_MERGE: always merge tracks</li><li>MERGE_TRACKS_SIZE_COND: merge tracks only if size(n)>0.8 * size(p) (useful for bacteria linking)</li></ul>");
+    
+    public SegmentationPostFilter setMergePolicy(MERGE_POLICY policy) {
+        mergePolicy.setSelectedItem(policy.toString());
+        return this;
+    }
     
     public SegmentationPostFilter setDeleteMethod(int method) {
         this.deleteMethod.setSelectedIndex(method);
@@ -91,20 +99,23 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
             
         };
         ThreadRunner.exexcuteAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
+        
         if (!objectsToRemove.isEmpty()) { 
+            BiPredicate<StructureObject, StructureObject> mergePredicate = boa.plugins.plugins.track_post_filter.PostFilter.MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;
+            
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
             switch (this.deleteMethod.getSelectedIndex()) {
                 case 0:
-                    ManualCorrection.deleteObjects(null, objectsToRemove, false, false); // only delete
+                    ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false); // only delete
                     break;
                 case 2:
-                    ManualCorrection.prune(null, objectsToRemove, false, false); // prune tracks
+                    ManualCorrection.prune(null, objectsToRemove, mergePredicate, false); // prune tracks
                     break;
                 case 1:
                     Set<StructureObject> trackHeads = new HashSet<>(Utils.transform(objectsToRemove, o->o.getTrackHead()));
                     objectsToRemove.clear();
                     for (StructureObject th : trackHeads) objectsToRemove.addAll(StructureObjectUtils.getTrack(th, false));
-                    ManualCorrection.deleteObjects(null, objectsToRemove, false, false);
+                    ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false);
                     break;
                 default:
                     break;
@@ -114,7 +125,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{deleteMethod, postFilters};
+        return new Parameter[]{deleteMethod, mergePolicy, postFilters};
     }
     // multithreaded interface
     boolean multithreaded;
