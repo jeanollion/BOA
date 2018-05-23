@@ -457,7 +457,7 @@ public class GenerateXP {
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.FLUO_HALF_IMAGE));
         //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, flip?-1:1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(true); // nearest -> translation entiers
         //ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-        CropMicroChannels cropper = new CropMicrochannelsFluo2D(410, 45, 200, 0.5, 10);
+        CropMicroChannels cropper = new CropMicrochannelsFluo2D(350, 45, 200, 0.5, 10);
         ps.addTransformation(0, null, cropper).setActivated(true);
         ps.addTransformation(-1, null, new TypeConverter().setLimitTo16((short)1000));
         

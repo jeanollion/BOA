@@ -22,6 +22,8 @@ import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.FilterSequence;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
+import boa.data_structure.input_image.InputImage;
+import boa.data_structure.input_image.InputImages;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.BoundingBox;
@@ -37,6 +39,7 @@ import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  *
@@ -150,6 +153,16 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
     @Override
     public Parameter[] getParameters() {
         return parameters;
+    }
+
+    @Override
+    protected void uniformizeBoundingBoxes(Map<Integer, MutableBoundingBox> allBounds, InputImages inputImages, int channelIdx) {
+        // limit sizeY so that no null pixels (due to rotation) is present in the image & not out-of-bounds
+        int maxSizeY = allBounds.values().stream().mapToInt(b->b.sizeY()).max().getAsInt();
+        int sY = allBounds.entrySet().stream().mapToInt(b-> b.getValue().yMax() - Math.max(b.getValue().yMax()-(maxSizeY-1), getYmin(inputImages.getImage(channelIdx, b.getKey()), b.getValue().xMin(), b.getValue().xMax()))+1).min().getAsInt();
+        allBounds.values().stream().filter(bb->bb.sizeY()!=sY).forEach(bb-> bb.setyMin(bb.yMax()-(sY-1)));
+        uniformizeX(allBounds);
+        
     }
 
 }

@@ -26,6 +26,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.imageInteraction.TrackMask;
 import boa.image.Image;
+import boa.image.TypeConverter;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
@@ -100,9 +101,9 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
         TrackMask ioi = TrackMask.generateTrackMask(parents, childStructure);
         List<Image> images = new ArrayList<>();
         allImageNames.forEach(name -> {
-            first unify bit rate here (byte vs short)
-            Image image = ioi.generateEmptyImage(name, stores.stream().map(s->s.images.get(name)).filter(i->i!=null).findAny().get()).setName(name);
-            stores.stream().filter(s->s.images.containsKey(name)).forEach(s-> Image.pasteImage(s.images.get(name), image, ioi.getObjectOffset(s.parent)));
+            int maxBitDepth = stores.stream().filter(s->s.images.containsKey(name)).mapToInt(s->s.images.get(name).getBitDepth()).max().getAsInt();
+            Image image = ioi.generateEmptyImage(name, Image.createEmptyImage(maxBitDepth)).setName(name);
+            stores.stream().filter(s->s.images.containsKey(name)).forEach(s-> Image.pasteImage(TypeConverter.cast(s.images.get(name), image), image, ioi.getObjectOffset(s.parent)));
             images.add(image);
         });
         // get order for each image (all images are not contained in all stores) & store

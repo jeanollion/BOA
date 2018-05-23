@@ -28,6 +28,8 @@ import boa.data_structure.input_image.InputImages;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObjectProcessing;
+import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import ij.process.AutoThresholder;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
@@ -49,6 +51,14 @@ import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.MicrochannelSegmenter.Result;
 import boa.plugins.plugins.thresholders.BackgroundFit;
+import static boa.image.processing.ImageOperations.threshold;
+import boa.measurement.BasicMeasurements;
+import boa.plugins.ThresholderHisto;
+import boa.plugins.plugins.thresholders.IJAutoThresholder;
+import boa.utils.ArrayUtil;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -58,24 +68,25 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
     
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.5, 0.05, 1);
-    PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new BackgroundFit(10), false);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
+    PluginParameter<ThresholderHisto> thresholder = new PluginParameter<>("Intensity Threshold", ThresholderHisto.class, new BackgroundFit(10), false);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, minObjectSize, threshold, fillingProportion, frameNumber, boundGroup};
-    
-    public CropMicrochannelsFluo2D(int channelHeight, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, minObjectSize, thresholder, fillingProportion, boundGroup};
+    double threshold = Double.NaN;
+    public CropMicrochannelsFluo2D(int channelHeight, int cropMargin, int minObjectSize, double fillingProportion, int FrameNumber) {
         this.channelHeight.setValue(channelHeight);
         this.cropMarginY.setValue(cropMargin);
         this.minObjectSize.setValue(minObjectSize);
         this.fillingProportion.setValue(fillingProportion);
         this.referencePoint.setSelectedIndex(0);
-        frameNumber.setValue(timePointNumber);
+        this.frameNumber.setValue(0);
+        //frameNumber.setValue(FrameNumber);
     }
     
     public CropMicrochannelsFluo2D() {
         //this.margin.setValue(30);
     }
-    public CropMicrochannelsFluo2D setThresholder(SimpleThresholder instance) {
-        this.threshold.setPlugin(instance);
+    public CropMicrochannelsFluo2D setThresholder(ThresholderHisto instance) {
+        this.thresholder.setPlugin(instance);
         return this;
     }
     public CropMicrochannelsFluo2D setChannelDim(int channelHeight, double fillingProportion) {
@@ -88,8 +99,20 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
         return this;
     }
     @Override
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
+        // compute one threshold for all images
+        List<Image> allImages = IntStream.range(0, inputImages.getFrameNumber()).mapToObj(f->inputImages.getImage(channelIdx, f)).collect(Collectors.toList());
+        ThresholderHisto thlder = thresholder.instanciatePlugin();
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages), thlder instanceof IJAutoThresholder ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256 : HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+        threshold = thlder.runThresholderHisto(histo);
+        super.computeConfigurationData(channelIdx, inputImages);
+    }
+            
+    @Override
     public MutableBoundingBox getBoundingBox(Image image) {
-        double thld = this.threshold.instanciatePlugin().runSimpleThresholder(image, null);
+        double thld = Double.isNaN(threshold)? 
+                thresholder.instanciatePlugin().runThresholderHisto(HistogramFactory.getHistogram(()->image.stream(), thresholder.instanciatePlugin() instanceof IJAutoThresholder ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256 : HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS)) 
+                : threshold;
         return getBoundingBox(image, null , thld);
     }
     
@@ -105,9 +128,8 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
         int yMin = Math.max(yStart, r.yMin);
         if (yStop==0) yStop = image.sizeY()-1;
         if (xStop==0) xStop = image.sizeX()-1;
-        yStop = Math.min(yStop, yMin+channelHeight.getValue().intValue() + cropMargin);
-        
         yStart = Math.max(yMin-cropMargin, yStart);
+        yStop = Math.min(yStop, yMin+channelHeight.getValue().intValue()-1);
         
         //xStart = Math.max(xStart, r.getXMin()-cropMargin);
         //xStop = Math.min(xStop, r.getXMax() + cropMargin);
@@ -116,7 +138,25 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
         return new MutableBoundingBox(xStart, xStop, yStart, yStop, 0, image.sizeZ()-1);
         
     }
-    
+    @Override
+    protected void uniformizeBoundingBoxes(Map<Integer, MutableBoundingBox> allBounds, InputImages inputImages, int channelIdx) {
+        // reference point = top -> all y start are conserved
+        int imageSizeY = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint()).sizeY();
+        int maxSizeY = allBounds.values().stream().mapToInt(b->b.sizeY()).max().getAsInt();
+        // TODO : parameter to allow out of bound in order to preserve size ? 
+        int sY = allBounds.values().stream().filter(b->b.sizeY()!=maxSizeY).mapToInt(b-> { // get maximal sizeY so that all channels fit within range
+            int yMin = b.yMin();
+            int yMax = yMin + maxSizeY-1;
+            if (yMax>=imageSizeY) {
+                yMax = imageSizeY-1;
+                yMin = Math.max(0, yMax - maxSizeY+1);
+            }
+            return yMax - yMin +1;
+        }).min().orElse(-1);
+        if (sY>0) allBounds.values().stream().filter(b->b.sizeY()!=sY).forEach(b-> b.setyMax(b.yMin() + sY -1)); // keep yMin and set yMax
+        //int sizeY = (int)Math.round(ArrayUtil.quantile(allBounds.values().stream().mapToDouble(b->b.sizeY()).sorted(), allBounds.size(), 0.5));
+        uniformizeX(allBounds);
+    }
 
     @Override public Parameter[] getParameters() {
         return parameters;

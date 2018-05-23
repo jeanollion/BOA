@@ -38,9 +38,11 @@ import boa.plugins.Transformation;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -95,7 +97,7 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
         int framesN = frameNumber.getValue().intValue();
         List<Integer> frames; 
         switch(framesN) {
-            case 0:
+            case 0: // all frames
                 frames = IntStream.range(0, inputImages.getFrameNumber()).mapToObj(i->(Integer)i).collect(Collectors.toList());
                 break;
             case 1:
@@ -119,40 +121,49 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
             getBds.apply(inputImages.getDefaultTimePoint());
         }
         if (framesN!=1) this.setTestMode(false);
-        Map<Integer, MutableBoundingBox> bounds = frames.stream().parallel().collect(HashMap::new, (m, i)->m.put(i, getBds.apply(i)), HashMap::putAll); // not using collectors toMap because result of getBounds can be null
-        for (Entry<Integer, MutableBoundingBox> e : bounds.entrySet()) if (e.getValue()==null) logger.error("crop MC: null bound for frame: {}", e.getKey());
+        Map<Integer, MutableBoundingBox> bounds = frames.stream().parallel().collect(HashMap::new, (m, i)->m.put(i, getBds.apply(i)), HashMap::putAll); // not using Collectors.toMap because result of getBounds can be null
+        List<Integer> nullBounds = bounds.entrySet().stream().filter(e->e.getValue()==null).map(b->b.getKey()).collect(Collectors.toList());
+        if (!nullBounds.isEmpty()) logger.warn("bounds could not be computed for frames: {}", nullBounds);
         bounds.values().removeIf(b->b==null);
         if (bounds.isEmpty()) throw new RuntimeException("Bounds could not be computed");
-        // uniformize y + reduce sizeY if necessary
-        int maxSizeY = bounds.values().stream().mapToInt(b->b.sizeY()).max().getAsInt();
-        if (referencePoint.getSelectedIndex()==0) { // ref = top
-            int yMax = bounds.values().stream().mapToInt(b->b.yMin()+maxSizeY-1).max().getAsInt();
-            int sY = yMax>=image.sizeY() ? maxSizeY -(yMax-image.sizeY()+1) : maxSizeY;
-            for (MutableBoundingBox bb : bounds.values()) bb.setyMax(bb.yMin()+sY-1);
-        } else { //ref = bottom (eg optical aberration)
-            // limit sizeY so that no null pixels is present in the image & not negative
-            int sY = bounds.entrySet().stream().mapToInt(b-> b.getValue().yMax() - Math.max(b.getValue().yMax()-(maxSizeY-1), getYmin(inputImages.getImage(channelIdx, b.getKey()), b.getValue().xMin(), b.getValue().xMax()))+1).min().getAsInt();
-            for (MutableBoundingBox bb : bounds.values()) bb.setyMin(bb.yMax()-(sY-1));
+        if (framesN==0 && bounds.size()<frames.size()) { // fill holes
+            Set<Integer> missingFrames = new HashSet<>(frames);
+            missingFrames.removeAll(bounds.keySet());
+            missingFrames.forEach((f) -> {
+                int infF = bounds.keySet().stream().filter(fr->fr<f).mapToInt(fr->fr).max().orElse(-1);
+                int supF = bounds.keySet().stream().filter(fr->fr>f).mapToInt(fr->fr).min().orElse(-1);
+                if (infF>=0 && supF>=0) { // mean bounding box between the two
+                    MutableBoundingBox b1 = bounds.get(infF);
+                    MutableBoundingBox b2 = bounds.get(supF);
+                    MutableBoundingBox res = new MutableBoundingBox((b1.xMin()+b2.xMin())/2, (b1.xMax()+b2.xMax())/2, (b1.yMin()+b2.yMin())/2, (b1.yMax()+b2.yMax())/2, (b1.zMin()+b2.zMin())/2, (b1.zMax()+b2.zMax())/2);
+                    bounds.put(f, res);
+                } else if (infF>=0)  bounds.put(f, bounds.get(infF).duplicate());
+                else bounds.put(f, bounds.get(supF).duplicate());
+            });
         }
-        
-        if (framesN !=0) { // merge all bounds by expanding
+        uniformizeBoundingBoxes(bounds, inputImages, channelIdx);
+        if (framesN!=0)  cropBounds = bounds;
+        else this.bounds = bounds.values().stream().findAny().get();
+        /*if (framesN !=0) { // one bounding box for all images: merge all bounds by expanding
             Iterator<MutableBoundingBox> it = bounds.values().iterator();
             MutableBoundingBox bds = it.next();
             while (it.hasNext()) bds.union(it.next());
             this.bounds = bds;
-        } else {
-            // uniformize X if necessary -> min X size + ref point = middle point
-            int sizeX = bounds.values().stream().mapToInt(b->b.sizeX()).min().getAsInt();
-            bounds.values().stream().filter(bb->bb.sizeX()>sizeX).forEach(bb-> {
-                int diff = bb.sizeX() - sizeX;
-                int addLeft=diff/2;
-                int remRight = diff - addLeft;
-                bb.setxMin(bb.xMin()+addLeft);
-                bb.setxMax(bb.xMax()-remRight);
-            });
-            this.cropBounds = bounds;
-        }
+        }*/
     }
+    protected abstract void uniformizeBoundingBoxes(Map<Integer, MutableBoundingBox> allBounds, InputImages inputImages, int channelIdx);
+    
+    protected void uniformizeX(Map<Integer, MutableBoundingBox> allBounds) {
+        int sizeX = allBounds.values().stream().mapToInt(b->b.sizeX()).min().getAsInt();
+        allBounds.values().stream().filter(bb->bb.sizeX()!=sizeX).forEach(bb-> {
+            int diff = bb.sizeX() - sizeX;
+            int addLeft=diff/2;
+            int remRight = diff - addLeft;
+            bb.setxMin(bb.xMin()+addLeft);
+            bb.setxMax(bb.xMax()-remRight);
+        });
+    }
+    
     /**
      * 
      * @param image

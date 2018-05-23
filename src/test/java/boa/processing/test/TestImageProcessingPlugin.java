@@ -54,7 +54,7 @@ public class TestImageProcessingPlugin {
         int pIdx =0;
         int mcIdx =0;
         int structureIdx =1;
-        int[] frames = new int[]{0,1000}; //{215, 237};
+        int[] frames = new int[]{156,156}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
