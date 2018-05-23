@@ -335,6 +335,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 for (int p : positions) if (!db.getExperiment().getPosition(p).isValid()) errors.add(new Pair(dbName, new Exception("Configuration error @ Position: "+ db.getExperiment().getPosition(p).getName())));
             }
             if (segmentAndTrack || trackOnly) {
+                if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
                 for (int s : structures) if (!db.getExperiment().getStructure(s).isValid()) errors.add(new Pair(dbName, new Exception("Configuration error @ Structure: "+ db.getExperiment().getStructure(s).getName())));
             }
             if (measurements) {
