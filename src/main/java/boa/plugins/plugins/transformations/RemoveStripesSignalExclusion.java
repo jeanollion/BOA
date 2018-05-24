@@ -214,7 +214,7 @@ public class RemoveStripesSignalExclusion implements ConfigurableTransformation 
     
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (meanFZY==null || meanFZY.length<timePoint) throw new RuntimeException("RemoveStripes transformation not configured: "+ (meanFZY==null?"null":  meanFZY.length));
+        if (meanFZY==null || meanFZY.length<timePoint) throw new RuntimeException("RemoveStripes transformation not configured");
         Image res = removeMeanX(image, image instanceof ImageFloat ? image : null, meanFZY[timePoint]);
         if (trimNegativeValues.getSelected()) ImageOperations.trimValues(res, 0, 0, true);
         if (timePoint%100==0) logger.debug(Utils.getMemoryUsage());

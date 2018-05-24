@@ -475,7 +475,7 @@ public class RegionPopulation {
         }
     }
     public Region getBackground(ImageMask mask) {
-        if (mask!=null && !mask.sameDimensions(getLabelMap())) throw new RuntimeException("Mask should have same size as label map: mask: "+new SimpleBoundingBox(mask)+" lm:"+this.getLabelMap().getBoundingBox());
+        if (mask!=null && !mask.sameDimensions(getLabelMap())) throw new RuntimeException("Mask should have same size as label map");
         int bckLabel = getRegions().isEmpty() ? 1 : Collections.max(getRegions(), (o1, o2)->Integer.compare(o1.getLabel(), o2.getLabel())).getLabel()+1;
         ImageInteger bckMask = getLabelMap().duplicate().resetOffset();
         if (mask!=null) ImageOperations.andNot(mask, bckMask, bckMask);
@@ -483,7 +483,7 @@ public class RegionPopulation {
         return new Region(bckMask, bckLabel, bckMask.sizeZ()==1);
     }
     public void smoothRegions(double radius, boolean eraseVoxelsIfConnectedToBackground, ImageMask mask) {
-        if (mask!=null && !mask.sameDimensions(getLabelMap())) throw new RuntimeException("Mask should have same size as label map: mask: "+new SimpleBoundingBox(mask)+" lm:"+this.getLabelMap().getBoundingBox());
+        if (mask!=null && !mask.sameDimensions(getLabelMap())) throw new RuntimeException("Mask should have same size as label map");
         Neighborhood n = Filters.getNeighborhood(radius, getImageProperties());
         HashMapGetCreate<Integer, int[]> count = new HashMapGetCreate<>(9, i->new int[1]);
         

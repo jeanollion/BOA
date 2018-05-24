@@ -115,7 +115,7 @@ public class Processor {
         InputImagesImpl images = field.getInputImages();
         if (images==null || images.getImage(0, images.getDefaultTimePoint())==null) {
             if (pcb!=null) pcb.log("Error: no input images found for position: "+field.getName());
-            throw new RuntimeException("No images found for position "+field.getName());
+            throw new RuntimeException("No images found for position");
         }
         images.deleteFromDAO(); // eraseAll images if existing in imageDAO
         for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(field.getName(), s);
@@ -151,7 +151,7 @@ public class Processor {
                 dao.setRoots(res);
             }
         } else dao.getExperiment().getPosition(dao.getPositionName()).setOpenedImageToRootTrack(res);
-        if (res==null || res.isEmpty()) throw new RuntimeException("ERROR db: "+dao.getMasterDAO().getDBName()+" pos: "+dao.getPositionName()+ " no pre-processed image found");
+        if (res==null || res.isEmpty()) throw new RuntimeException("no pre-processed image found");
         return res;
     }
     
@@ -283,7 +283,7 @@ public class Processor {
         List<StructureObject> roots = dao.getRoots();
         logger.debug("{} number of roots: {}", dao.getPositionName(), roots.size());
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
-        if (roots.isEmpty()) throw new RuntimeException("ERROR db: "+dao.getMasterDAO().getDBName()+" position: "+dao.getPositionName()+ " no root");
+        if (roots.isEmpty()) throw new RuntimeException("no root");
         Map<StructureObject, List<StructureObject>> rootTrack = new HashMap<>(1); rootTrack.put(roots.get(0), roots);
         boolean containsObjects=false;
         for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
@@ -338,7 +338,7 @@ public class Processor {
         }
         logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getPositionName(), t1-t0, allModifiedObjects.size());
         dao.upsertMeasurements(allModifiedObjects);
-        if (containsObjects && allModifiedObjects.isEmpty()) throw new RuntimeException("ERROR db: "+dao.getMasterDAO().getDBName()+" position: "+dao.getPositionName()+"No Measurement preformed");
+        if (containsObjects && allModifiedObjects.isEmpty()) throw new RuntimeException("No Measurement preformed");
     }
     
     

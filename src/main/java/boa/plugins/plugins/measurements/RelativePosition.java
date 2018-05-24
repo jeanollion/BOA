@@ -127,7 +127,7 @@ public class RelativePosition implements Measurement {
             default:
                 break;
         }
-        if (objectCenter==null) throw new RuntimeException("No center found for object:" + object.toString());
+        if (objectCenter==null) throw new RuntimeException("No center found for object");
         objectCenter.multiplyDim(object.getRegion().getScaleXY(), 0);
         objectCenter.multiplyDim(object.getRegion().getScaleXY(), 1);
         objectCenter.multiplyDim(object.getRegion().getScaleZ(), 2);

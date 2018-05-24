@@ -457,7 +457,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         Function<StructureObject, float[]> compute = p->{
             Image imR = p.getRawImage(structureIdx);
             Image im = p.getPreFilteredImage(structureIdx);
-            if (im==null) throw new RuntimeException("no prefiltered image for : "+p + " ("+p.getId()+ ") at structure: "+structureIdx);
+            if (im==null) throw new RuntimeException("no prefiltered image");
             int xMargin = im.sizeX()/3;
             MutableBoundingBox bb= new MutableBoundingBox(im).resetOffset().extend(new SimpleBoundingBox(xMargin, -xMargin, im.sizeX(), -im.sizeY()/6, 0, 0)); // only central line to avoid border effects + remove open end -> sometimes optical aberration
             double[] sum = new double[3];

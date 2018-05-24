@@ -80,7 +80,7 @@ public class SplitScenario extends CorrectionScenario {
         protected void applyScenario() {
             Collections.sort(splitObjects, getComparatorRegion(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
             int idx = tracker.populations.get(frameMin).indexOf(o);
-            if (idx<0) throw new RuntimeException("Error SplitScenario at frame: "+frameMin+" object with bounds: "+o.getBounds()+ " not found");
+            if (idx<0) throw new RuntimeException("Error SplitScenario object not found");
             tracker.populations.get(frameMin).remove(idx);
             tracker.populations.get(frameMin).addAll(idx, splitObjects);
             tracker.objectAttributeMap.remove(o);

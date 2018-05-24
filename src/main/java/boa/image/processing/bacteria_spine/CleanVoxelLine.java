@@ -163,7 +163,7 @@ public class CleanVoxelLine {
                     ImageWindowManagerFactory.showImage(draw(false).setName("labels after clean junction"));
                 }
                 if (!cleanPerformed) {
-                    throw new RuntimeException("Unable to clean junction "+junction.label);
+                    throw new RuntimeException("Unable to clean junction");
                     //break;
                 }
             }

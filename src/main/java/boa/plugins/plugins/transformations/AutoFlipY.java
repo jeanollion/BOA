@@ -160,7 +160,7 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
                 float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null, v->v>0); // if rotation before -> top & bottom of image can contain zeros -> mean proj then return NaN
                 int startY = getFirstNonNanIdx(yProj, true);
                 int stopY = getFirstNonNanIdx(yProj, false);
-                if (startY>=stopY)  throw new RuntimeException("Autoflip error: no values>0 @ Frame: "+inputImages.getDefaultTimePoint()+", channel "+channelIdx);
+                if (startY>=stopY)  throw new RuntimeException("Autoflip error: no values>0");
                 int peakIdx = ArrayUtil.max(yProj, startY, stopY+1);           
                 double median = ArrayUtil.median(Arrays.copyOfRange(yProj, startY, stopY+1-startY));
                 double peakHeight = yProj[peakIdx] - median;

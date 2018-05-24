@@ -90,7 +90,7 @@ public class FrameRange implements Comparable<FrameRange>{
         int idx = Collections.binarySearch(sortedRanges, range, (r1, r2)->Integer.compare(r1.min, r2.min));
         if (idx>=0) return sortedRanges.get(idx);
         FrameRange fr = sortedRanges.get(-idx-2);
-        if (!range.isIncludedIn(fr)) throw new RuntimeException("Could not find range:"+range+" in:"+Utils.toStringList(sortedRanges));
+        if (!range.isIncludedIn(fr)) throw new RuntimeException("Could not find range");
         return fr;
     }
     

@@ -115,7 +115,7 @@ public class StructureObjectUtils {
         } else if (previous!=null && next==null) {
             previous.resetTrackLinks(false, setNext);
         }
-        else if (next.getFrame()<=previous.getFrame()) throw new RuntimeException("setLink should be of time>= "+(previous.getFrame()+1) +" but is: "+next.getFrame()+ " current: "+previous+", next: "+next);
+        else if (next.getFrame()<=previous.getFrame()) throw new RuntimeException("setLink previous after next");
         else {
             if (setPrevious && setNext) { // double link: set trackHead
                 previous.setNext(next);
