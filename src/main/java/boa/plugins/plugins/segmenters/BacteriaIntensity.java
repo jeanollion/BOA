@@ -98,8 +98,8 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
     protected double threshold=Double.NaN;
     protected double minThld = Double.NaN;
     // configuration-related attributes
-    PluginParameter<SimpleThresholder> localThrehsolder = new PluginParameter<>("Local Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
-    PluginParameter<ThresholderHisto> globalThrehsolder = new PluginParameter<>("Global Threshold", ThresholderHisto.class, new BackgroundFit(15), false);
+    PluginParameter<SimpleThresholder> localThresholder = new PluginParameter<>("Local Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
+    PluginParameter<ThresholderHisto> globalThresholder = new PluginParameter<>("Global Threshold", ThresholderHisto.class, new BackgroundFit(15), false);
     PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.GAUSS).setScale(2), new Sigma(2).setMedianRadius(0)).setToolTipText("Filters used to define edge map used in first watershed step. <br />Max eigen value of Structure tensore is a good option<br />Median/Gaussian + Sigma is more suitable for noisy images (involve less derivation)<br />Gradient magnitude is another option");  // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2) //new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)
     NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.3, 0, null).setToolTipText("Lower value splits more. At step 2) regions are merge if sum(hessian)|interface / sum(raw intensity)|interface < (this parameter)"); // TODO was 0.12 before change of scale (hess *= sqrt(2pi)-> *2.5 
     NumberParameter localThresholdFactor = new BoundedNumberParameter("Local Threshold Factor", 2, 1.25, 0, null).setToolTipText("Factor defining the local threshold.  Lower value of this factor will yield in smaller cells. T = median value - (inter-quartile) * (this factor).");
@@ -108,7 +108,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 0, 5).setToolTipText("Scale (pixels) for gaussian filtering for the local thresholding step");
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6).setToolTipText("In pixels. Used in step 2). Lower value -> finner split, more sentitive to noise. Influences the value of split threshold parameter");
     ChoiceParameter thresholdMethod=  new ChoiceParameter("Threshold Method", new String[]{"Local Threshold", "Global Threshold"}, "Global Threshold", false);
-    ConditionalParameter thldCond = new ConditionalParameter(thresholdMethod).setActionParameters("Local Threshold", localThrehsolder).setActionParameters("Global Threshold", globalThrehsolder);
+    ConditionalParameter thldCond = new ConditionalParameter(thresholdMethod).setActionParameters("Local Threshold", localThresholder).setActionParameters("Global Threshold", globalThresholder);
     NumberParameter sigmaThldForVoidMC = new BoundedNumberParameter("Sigma/Mu thld for void channels", 3, 0.085, 0, null).setToolTipText("Parameter to look for void microchannels, at track pre-filter step: <br /> To assess if whole microchannel track is void: sigma / mu of raw images is computed on whole track, in the central line of each microchannel (1/3 of the width). If sigma / mu < this value, the whole track is considered to be void. <br />If the track is not void, a global otsu threshold is computed on the prefiltered signal. A channel is considered as void if its value of sigma / mu of raw signal is inferior to this threshold and is its mean value of prefiltered signal is superior to the global threshold");
     
     @Override
@@ -215,7 +215,7 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(parent.getPreFilteredImage(structureIdx))));
         Consumer<Image> imageDisp = TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent);
         if (Double.isNaN(threshold) || this.thresholdMethod.getSelectedIndex()==0) {
-            threshold = this.localThrehsolder.instanciatePlugin().runSimpleThresholder(parent.getPreFilteredImage(structureIdx), parent.getMask());
+            threshold = this.localThresholder.instanciatePlugin().runSimpleThresholder(parent.getPreFilteredImage(structureIdx), parent.getMask());
         }
         double foreThld = threshold;
         //if (Double.isNaN(minThld) || (Double.isNaN(foreThld))) return pop;
@@ -512,9 +512,9 @@ public class BacteriaIntensity  implements TrackParametrizable<BacteriaIntensity
         if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!voidMC.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
         if (this.thresholdMethod.getSelectedIndex()==1) { // global threshold on this track
-            Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), globalThrehsolder.instanciatePlugin() instanceof IJAutoThresholder ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256: HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+            Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), globalThresholder.instanciatePlugin() instanceof IJAutoThresholder ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256: HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
             double minThreshold = BackgroundFit.backgroundFit(histo, 5, null);
-            double globalThld = globalThrehsolder.instanciatePlugin().runThresholderHisto(histo);
+            double globalThld = globalThresholder.instanciatePlugin().runThresholderHisto(histo);
             //double minThreshold = BackgroundThresholder.runThresholder(histo, 3, 3, 2, null);
             logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), minThreshold, globalThld);
             return new double[]{minThreshold, globalThld}; 

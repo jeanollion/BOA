@@ -85,16 +85,16 @@ import java.util.stream.Stream;
  */
 public class BacteriaIntensityPhase extends BacteriaIntensity {
     BooleanParameter filterBorderArtefacts = new BooleanParameter("Filter border Artefacts", true);
-    BooleanParameter localThreshold = new BooleanParameter("Perform Local Threshold", true);
+    BooleanParameter performLocalThreshold = new BooleanParameter("Perform Local Threshold", true);
     BooleanParameter upperCellCorrection = new BooleanParameter("Upper Cell Correction", false).setToolTipText("If true: when the upper cell is touching the top of the microchannel, a different local threshold factor is applied to the upper half of the cell");
     NumberParameter upperCellLocalThresholdFactor = new BoundedNumberParameter("Upper cell local threshold factor", 2, 2, 0, null).setToolTipText("Local Threshold factor applied to the upper part of the cell");
     NumberParameter maxYCoordinate = new BoundedNumberParameter("Max yMin coordinate of upper cell", 0, 5, 0, null);
     ConditionalParameter cond = new ConditionalParameter(upperCellCorrection).setActionParameters("true", upperCellLocalThresholdFactor, maxYCoordinate);
-    ConditionalParameter ltCond = new ConditionalParameter(localThreshold).setActionParameters("true", localThresholdFactor, smoothScale, upperCellCorrection);
+    ConditionalParameter ltCond = new ConditionalParameter(performLocalThreshold).setActionParameters("true", localThresholdFactor, smoothScale, upperCellCorrection);
     
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{watershedMap, thresholdMethod, splitThreshold , minSize, hessianScale, filterBorderArtefacts,ltCond, sigmaThldForVoidMC};
+        return new Parameter[]{watershedMap, thldCond, splitThreshold , minSize, hessianScale, filterBorderArtefacts,ltCond, sigmaThldForVoidMC};
     }
     public BacteriaIntensityPhase() {
         this.splitThreshold.setValue(0.10); // 0.15 for scale = 3
@@ -104,6 +104,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         thresholdMethod.setSelectedIndex(1);
         localThresholdFactor.setToolTipText("Factor defining the local threshold. <br />Lower value of this factor will yield in smaller cells. <br />Threshold = mean_w - sigma_w * (this factor), <br />with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
         localThresholdFactor.setValue(1);
+        globalThresholder.setPlugin(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu));
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         if (isVoid) return null;
@@ -165,7 +166,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         Consumer<Image> imageDisp = TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent);
         if (Double.isNaN(threshold)) { // if need to compute thld -> compute thld
             Image valueMap = EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values);
-            threshold = this.localThrehsolder.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
+            threshold = this.localThresholder.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
             if (stores!=null) imageDisp.accept(valueMap.setName("value map"));
         } else if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values).setName("value map"));
         if (!Double.isNaN(minThld)) threshold = Math.max(minThld, threshold);
@@ -305,7 +306,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
     @Override
     protected RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx, boolean callFromSplit) {
         if (pop.getRegions().isEmpty()) return pop;
-        if (!localThreshold.getSelected()) return pop;
+        if (!performLocalThreshold.getSelected()) return pop;
         double dilRadius = callFromSplit ? 0 : 2;
         Image smooth = smoothScale.getValue().doubleValue()<1 ? parent.getRawImage(structureIdx) : ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
         Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), parent.getMask(), 3, 1, smoothScale.getValue().doubleValue(), 1);

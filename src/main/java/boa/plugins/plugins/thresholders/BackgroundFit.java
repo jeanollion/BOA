@@ -140,7 +140,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
         double modeFit;
         int halfHalf = Math.max(2, (int)(halfWidthIdx/2d));
         int startT = mode - halfHalf;
-        if (startT>=0) {
+        if (startT>=0 && 2 * mode - halfHalf<histo.data.length) {
             // gaussian fit on trimmed data to get more precise mean value
             WeightedObservedPoints obsT = new WeightedObservedPoints();
             for (int i = startT; i<=2 * mode - halfHalf; ++i) obsT.add( i, histo.data[i]-histo.data[startT]);

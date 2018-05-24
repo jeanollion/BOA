@@ -443,7 +443,6 @@ public class GenerateXP {
         return xp;
     }
     public static void setPreprocessingFluo(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
-        ps.setFrameDuration(120);
         ps.removeAllTransformations();
         ps.setFrameDuration(120);
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
@@ -466,11 +465,13 @@ public class GenerateXP {
     }
     public static void setPreprocessingPhase(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.setFrameDuration(4);
+        ps.setTrimFrames(trimFramesStart, trimFramesEnd);
+        ps.removeAllTransformations();
         if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
         ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(10, true, false, true, true)).setRemoveIncompleteRowsAndColumns(false).setMaintainMaximum(true));
         ps.addTransformation(0, null, new AutoFlipY().setMethod(AutoFlipY.AutoFlipMethod.PHASE));
         ps.addTransformation(0, null, new CropMicrochannelsPhase2D());
-        ps.setTrimFrames(trimFramesStart, trimFramesEnd);
+        ps.addTransformation(-1, null, new TypeConverter().setLimitTo16((short)0));
     }
     public static void setPreprocessingTransAndMut(PreProcessingChain ps, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         ps.removeAllTransformations();
