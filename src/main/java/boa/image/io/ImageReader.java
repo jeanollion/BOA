@@ -405,7 +405,7 @@ public class ImageReader {
                 return im;
             }
         } catch (IOException ex) {
-            logger.error("An error occured while opening tif image", ex);
+            throw new RuntimeException(ex);
         }
 
         return null;

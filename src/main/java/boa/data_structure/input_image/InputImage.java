@@ -106,7 +106,6 @@ public class InputImage {
             synchronized(transformationsToApply) {
                 if (transformationsToApply.isEmpty()) return;
                 Iterator<Transformation> it = transformationsToApply.iterator();
-                //new IJImageDisplayer().showImage(image);
                 while(it.hasNext()) {
                     Transformation t = it.next();
                     image =t.applyTransformation(channelIdx, frame, image);
@@ -118,9 +117,9 @@ public class InputImage {
     
     public void saveImage() { // si modification du bitDepth -> faire la même pour toutes les images. Parfois seulement bruit négatif -> pas besoin
         // cast to initial type
-        if (originalImageType!=null && originalImageType.getBitDepth()!=image.getBitDepth()) {
+        /*if (originalImageType!=null && originalImageType.getBitDepth()!=image.getBitDepth()) {
             image = TypeConverter.cast(image, originalImageType);
-        }
+        }*/
         dao.writePreProcessedImage(image, channelIdx, frame, microscopyFieldName);
     }
     
