@@ -75,6 +75,8 @@ import boa.utils.JSONUtils;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -153,17 +155,13 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             else {
                 if (ui.equals(this.ui)) return this;
                 this.ui=ui;
-                addPropertyChangeListener(new PropertyChangeListener() {
-                    @Override    
-                    public void propertyChange(PropertyChangeEvent evt) {
-                        if ("progress".equals(evt.getPropertyName())) {
-                            int progress = (Integer) evt.getNewValue();
-                            ui.setProgress(progress);
-                            
-                            //if (IJ.getInstance()!=null) IJ.getInstance().getProgressBar().show(progress, 100);
-                            //logger.ingo("progress: {}%", i);
-                                //gui.setProgress((Integer) evt.getNewValue());
-                        }
+                addPropertyChangeListener((PropertyChangeEvent evt) -> {
+                    if ("progress".equals(evt.getPropertyName())) {
+                        int progress1 = (Integer) evt.getNewValue();
+                        ui.setProgress(progress1);
+                        //if (IJ.getInstance()!=null) IJ.getInstance().getProgressBar().show(progress, 100);
+                        //logger.ingo("progress: {}%", i);
+                        //gui.setProgress((Integer) evt.getNewValue());
                     }
                 });
             }
@@ -388,8 +386,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             db.getExperiment(); // lock directly after
             ImageWindowManagerFactory.getImageManager().flush();
             publishMemoryUsage("Before processing");
-            if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
-            if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
+            if (positions==null) positions= IntStream.range(0, db.getExperiment().getPositionCount()).mapToObj(i->i).collect(Collectors.toList());
+            if (structures==null) structures = IntStream.range(0, db.getExperiment().getStructureCount()).toArray();
             
             boolean needToDeleteObjects = preProcess || segmentAndTrack;
             boolean deleteAll =  needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && positions.size()==db.getExperiment().getPositionCount();
@@ -402,8 +400,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             
             if (this.taskCounter==null) this.taskCounter = new int[]{0, this.countSubtasks()};
             publish("number of subtasks: "+countSubtasks());
-            for (int pIdx : positions) {
-                String position = db.getExperiment().getPosition(pIdx).getName();
+            positions.stream().map((pIdx) -> db.getExperiment().getPosition(pIdx).getName()).forEachOrdered((position) -> {
                 try {
                     process(position, deleteAllField);
                 } catch (MultipleException e) {
@@ -418,7 +415,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     System.gc();
                     publishMemoryUsage("After clearing cache");
                 }
-            }
+            });
             
             for (Pair<String, int[]> e  : this.extractMeasurementDir) extractMeasurements(e.key==null?db.getDir():e.key, e.value);
             if (exportData) exportData();

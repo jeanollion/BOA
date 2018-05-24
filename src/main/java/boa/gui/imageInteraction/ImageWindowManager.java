@@ -1157,7 +1157,7 @@ public abstract class ImageWindowManager<I, U, V> {
         if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {
             menu.addSeparator();
             for (Entry<String, Object> en : new TreeMap<>(o.getAttributes()).entrySet()) {
-                JMenuItem item = new JMenuItem(en.getKey()+": "+toString(en.getValue()));
+                JMenuItem item = new JMenuItem(truncate(en.getKey(), TRUNC_LENGTH)+": "+truncate(toString(en.getValue()), TRUNC_LENGTH));
                 menu.add(item);
                 item.setAction(new AbstractAction(item.getActionCommand()) {
                     @Override
@@ -1172,7 +1172,7 @@ public abstract class ImageWindowManager<I, U, V> {
 
         menu.addSeparator();
         for (Entry<String, Object> en : new TreeMap<>(o.getMeasurements().getValues()).entrySet()) {
-            JMenuItem item = new JMenuItem(en.getKey()+": "+toString(en.getValue()));
+            JMenuItem item = new JMenuItem(truncate(en.getKey(), TRUNC_LENGTH)+": "+truncate(toString(en.getValue()), TRUNC_LENGTH));
             menu.add(item);
             item.setAction(new AbstractAction(item.getActionCommand()) {
                 @Override
@@ -1213,7 +1213,7 @@ public abstract class ImageWindowManager<I, U, V> {
                 List<Object> values = new ArrayList(list.size());
                 for (StructureObject o : list) values.add(o.getAttribute(s));
                 replaceRepetedValues(values);
-                menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> toString(v))));
+                menu.add(new JMenuItem(truncate(s, TRUNC_LENGTH)+": "+Utils.toStringList(values, v -> truncate(toString(v), TRUNC_LENGTH))));
             }
         }
         if (!mesKeys.isEmpty()) {
@@ -1222,11 +1222,12 @@ public abstract class ImageWindowManager<I, U, V> {
                 List<Object> values = new ArrayList(list.size());
                 for (StructureObject o : list) values.add(o.getMeasurements().getValue(s));
                 replaceRepetedValues(values);
-                menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> toString(v) )));
+                menu.add(new JMenuItem(truncate(s, TRUNC_LENGTH)+": "+Utils.toStringList(values, v -> truncate(toString(v), TRUNC_LENGTH) )));
             }
         }
         return menu;
     }
+    
     private static void replaceRepetedValues(List list) {
         if (list.size()<=1) return;
         Object lastValue=list.get(0);
@@ -1242,5 +1243,10 @@ public abstract class ImageWindowManager<I, U, V> {
         if (o instanceof Point) return o.toString();
         return asString(o, MeasurementExtractor.numberFormater);
         //return o instanceof Number ? Utils.format((Number) o, 3) : o.toString();
-    }   
+    }
+    private static int TRUNC_LENGTH = 30;
+    private static String truncate(String s, int length) {
+        if (s.length()>length) return s.substring(0, length-3)+"...";
+        else return s;
+    }
 }
