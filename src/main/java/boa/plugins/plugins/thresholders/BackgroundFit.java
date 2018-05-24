@@ -186,7 +186,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
         
     }
     
-    private static double getHalfWidthIdx(Histogram histo, double mode, boolean before) {
+    public static double getHalfWidthIdx(Histogram histo, double mode, boolean before) {
         double halfH = histo.getCountLinearApprox(mode) / 2d;
         int half = (int)mode;
         if (before) {

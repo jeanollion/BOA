@@ -403,4 +403,8 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
     }
 
     public abstract int getBitDepth();
+    @Override
+    public String toString() {
+        return getBitDepth()+";"+super.toString()+";"+this.hashCode();
+    }
 }

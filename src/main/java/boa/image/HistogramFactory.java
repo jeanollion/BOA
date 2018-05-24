@@ -153,7 +153,7 @@ public class HistogramFactory {
         return (max - min) / nBins;
     }
     public static int getNBins(double min, double max, double binSize) {
-        return (int)((max-min)/binSize);
+        return Math.max(2, (int)((max-min)/binSize));
     }
     
     public static List<Histogram> getHistograms(Collection<Image> images, double binSize, double[] minAndMax, boolean parallele) {
