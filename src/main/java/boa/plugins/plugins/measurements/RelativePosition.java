@@ -141,7 +141,7 @@ public class RelativePosition implements Measurement {
                     refPoint = refObject.getRegion().getGeomCenter(false);
                     break;
                 default: // upper-left corner
-                    objectCenter = Point.asPoint(refObject.getBounds());
+                    refPoint = Point.asPoint(refObject.getBounds());
                     break;
             }
         } else refPoint = new Point(0, 0, 0); // absolute
