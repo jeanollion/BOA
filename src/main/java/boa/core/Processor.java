@@ -213,7 +213,7 @@ public class Processor {
         
         MultipleException me=null;
         try { // execute sequentially, store what has been processed, and throw exception in the end
-            ThreadRunner.exexcuteAndThrowErrors(allParentTracks.values().stream(), pt -> execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao));
+            ThreadRunner.executeAndThrowErrors(allParentTracks.values().stream(), pt -> execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao));
         } catch (MultipleException e) {
             me=e;
         }
@@ -303,7 +303,7 @@ public class Processor {
             });
             if (pcb!=null && actionPool.size()>0) pcb.log("Executing: #"+actionPool.size()+" track measurements");
             if (!actionPool.isEmpty()) containsObjects=true;
-            ThreadRunner.exexcuteAndThrowErrors(actionPool.parallelStream(), p->p.key.performMeasurement(p.value));
+            ThreadRunner.executeAndThrowErrors(actionPool.parallelStream(), p->p.key.performMeasurement(p.value));
             
             // parallele measurement on tracks
             int paralleleMeasCount = (int)e.getValue().stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded)).count();
@@ -318,7 +318,7 @@ public class Processor {
             // measurements on objects
             dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->!m.callOnlyOnTrackHeads()).forEach(m-> {
                 if (pcb!=null) pcb.log("Executing Measurement: "+m.getClass().getSimpleName()+" on #"+allObCount+" objects");
-                ThreadRunner.exexcuteAndThrowErrors(StreamConcatenation.concat((Stream<StructureObject>[])allParentTracks.values().stream().map(l->l.parallelStream()).toArray(s->new Stream[s])), o->m.performMeasurement(o));
+                ThreadRunner.executeAndThrowErrors(StreamConcatenation.concat((Stream<StructureObject>[])allParentTracks.values().stream().map(l->l.parallelStream()).toArray(s->new Stream[s])), o->m.performMeasurement(o));
             });
             if (!containsObjects && allObCount>0) containsObjects = e.getValue().stream().filter(m->!m.callOnlyOnTrackHeads()).findAny().orElse(null)!=null;
             

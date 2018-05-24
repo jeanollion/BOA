@@ -22,6 +22,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -30,17 +36,34 @@ import java.util.List;
 public class MultipleException extends RuntimeException {
     final private List<Pair<String, Throwable>> exceptions;
     public MultipleException(List<Pair<String, Throwable>> exceptions) {
-        this.exceptions=exceptions;
+        this.exceptions= new ArrayList<>();
+        addExceptions(exceptions);
     }
     public MultipleException() {
         this.exceptions=new ArrayList<>();
     }
     public void addExceptions(Pair<String, Throwable>... ex) {
-        exceptions.addAll(Arrays.asList(ex));
+        if (ex==null || ex.length==0) return;
+        if (ex.length == 1) addException(ex[0]);
+        else addExceptions(Arrays.asList(ex));
     }
     public void addExceptions(Collection<Pair<String, Throwable>> ex) {
-        exceptions.addAll(ex);
+        ex.forEach(p->addException(p));
     }
+    
+    private void addException(Pair<String, Throwable> ex) {
+        boolean[] added = new boolean[1];
+        exceptions.stream().filter(p->thowableEqual.test(p.value, ex.value)).findAny().ifPresent(p->{
+            p.key+=";"+ex.key;
+            added[0] = true;
+        });
+        if (!added[0]) exceptions.add(ex);
+
+    }
+    
+    private final static BiPredicate<Throwable, Throwable> tEq = (t1, t2) -> t1==null ? t2==null : t2==null ? false : t1.getMessage().equals(t2.getMessage()) && Arrays.equals(t1.getStackTrace(), t2.getStackTrace());
+    public final static BiPredicate<Throwable, Throwable> thowableEqual = (t1, t2) -> tEq.test(t1, t2) && tEq.test(t1.getCause(), t2.getCause());
+    
     public List<Pair<String, Throwable>> getExceptions() {
         return exceptions;
     }

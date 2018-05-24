@@ -194,7 +194,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
             else parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(parent.getPreFilteredImage(structureIdx), false), structureIdx); // no Y - shift here because the mean shift is added afterwards
             //parent.setPreFilteredImage(null, structureIdx); // save memory
         };
-        ThreadRunner.exexcuteAndThrowErrors(parallele(IntStream.range(0, parentTrack.size()).mapToObj(i->(Integer)i), multithreaded), exe);
+        ThreadRunner.executeAndThrowErrors(parallele(IntStream.range(0, parentTrack.size()).mapToObj(i->(Integer)i), multithreaded), exe);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
         

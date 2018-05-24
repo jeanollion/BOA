@@ -41,10 +41,13 @@ import boa.image.processing.neighborhood.ConditionalNeighborhoodZ;
 import boa.image.processing.neighborhood.ConicalNeighborhood;
 import boa.dummy_plugins.DummySegmenter;
 import boa.utils.ArrayUtil;
+import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.SymetricalPair;
+import static boa.utils.ThreadRunner.executeAndThrowErrors;
 import static boa.utils.Utils.removeFromMap;
 import boa.utils.geom.Point;
+import java.util.stream.IntStream;
 import net.imglib2.Localizable;
 
 /**
@@ -53,13 +56,16 @@ import net.imglib2.Localizable;
  */
 public class TestClass {
     public static void main(String[] args) {
-        List<Voxel> l = new ArrayList<>(5);
-        l.add( new Voxel(1, 2, 3));
-        List<Localizable> lll = (List<Localizable>)(List)l;
-        Localizable vox = lll.get(0);
-        lll.add(new Point(0, 1));
-        logger.debug("vox: {}", vox);
-        toString(lll);
+        List<Integer> ints = IntStream.range(0, 10).mapToObj(i->i).collect(Collectors.toList());
+        try {
+            executeAndThrowErrors(ints.stream(), 
+                i->{throw new RuntimeException("hoho");}
+        );
+        } catch(MultipleException ex) {
+            for (Pair<String, Throwable> e : ex.getExceptions()) {
+                logger.debug("{}", e);
+            }
+        }
     }
     private static <T extends Localizable> void toString(List<T> loc) {
         for (T t: loc) logger.debug("elem: {}", t);

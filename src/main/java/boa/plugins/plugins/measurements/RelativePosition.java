@@ -145,7 +145,7 @@ public class RelativePosition implements Measurement {
                     break;
             }
         } else refPoint = new Point(0, 0, 0); // absolute
-        if (refPoint==null) throw new RuntimeException("No reference point found for ref object: " + refObject+ " ref type: "+this.refPoint.getSelectedItem()+ " & object: "+object);
+        if (refPoint==null) throw new RuntimeException("No reference point found for ref object");
         refPoint.multiplyDim(object.getRegion().getScaleXY(), 0);
         refPoint.multiplyDim(object.getRegion().getScaleXY(), 1);
         refPoint.multiplyDim(object.getRegion().getScaleZ(), 2);

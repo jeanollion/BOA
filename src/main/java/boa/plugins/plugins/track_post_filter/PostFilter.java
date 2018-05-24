@@ -111,7 +111,7 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
             if (parent.getChildren(structureIdx)!=null) parent.getChildren(structureIdx).stream().forEachOrdered((o) -> { o.objectHasBeenModified(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
             
         };
-        ThreadRunner.exexcuteAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
+        ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
         if (!objectsToRemove.isEmpty()) { 
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
             BiPredicate<StructureObject, StructureObject> mergePredicate = MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;

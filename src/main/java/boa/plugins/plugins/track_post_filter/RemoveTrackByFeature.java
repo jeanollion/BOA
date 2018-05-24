@@ -98,7 +98,7 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
                 valueMap.putAll(locValueMap);
             }
         };
-        ThreadRunner.exexcuteAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
+        ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
         // compute one value per track
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         List<StructureObject> objectsToRemove = new ArrayList<>();

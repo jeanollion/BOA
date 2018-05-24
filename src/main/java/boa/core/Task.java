@@ -87,7 +87,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         List<Integer> positions;
         int[] structures;
         List<Pair<String, int[]>> extractMeasurementDir = new ArrayList<>();
-        List<Pair<String, Throwable>> errors = new ArrayList<>();
+        MultipleException errors = new MultipleException();
         MasterDAO db;
         int[] taskCounter;
         UserInterface ui;
@@ -200,7 +200,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             return this;
         }
         
-        public List<Pair<String, Throwable>> getErrors() {return errors;}
+        public List<Pair<String, Throwable>> getErrors() {return errors.getExceptions();}
         public MasterDAO getDB() {
             initDB();
             return db;
@@ -306,7 +306,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 return false;
             }
             if (db.getExperiment()==null) {
-                errors.add(new Pair(dbName, new Exception("DB: "+ dbName+ " not found")));
+                errors.addExceptions(new Pair(dbName, new Exception("DB: "+ dbName+ " not found")));
                 printErrors();
                 if (initDB) db = null;
                 return false;
@@ -325,38 +325,38 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             for (Pair<String, int[]> e : extractMeasurementDir) {
                 String exDir = e.key==null? db.getDir() : e.key;
                 File f= new File(exDir);
-                if (!f.exists()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " not found")));
-                else if (!f.isDirectory()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " is not a directory")));
+                if (!f.exists()) errors.addExceptions(new Pair(dbName, new Exception("File: "+ exDir+ " not found")));
+                else if (!f.isDirectory()) errors.addExceptions(new Pair(dbName, new Exception("File: "+ exDir+ " is not a directory")));
                 else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
             }
-            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages && !exportData) errors.add(new Pair(dbName, new Exception("No action to run!")));
+            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages && !exportData) errors.addExceptions(new Pair(dbName, new Exception("No action to run!")));
             // check parametrization
             if (preProcess) {
-                for (int p : positions) if (!db.getExperiment().getPosition(p).isValid()) errors.add(new Pair(dbName, new Exception("Configuration error @ Position: "+ db.getExperiment().getPosition(p).getName())));
+                for (int p : positions) if (!db.getExperiment().getPosition(p).isValid()) errors.addExceptions(new Pair(dbName, new Exception("Configuration error @ Position: "+ db.getExperiment().getPosition(p).getName())));
             }
             if (segmentAndTrack || trackOnly) {
                 if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
-                for (int s : structures) if (!db.getExperiment().getStructure(s).isValid()) errors.add(new Pair(dbName, new Exception("Configuration error @ Structure: "+ db.getExperiment().getStructure(s).getName())));
+                for (int s : structures) if (!db.getExperiment().getStructure(s).isValid()) errors.addExceptions(new Pair(dbName, new Exception("Configuration error @ Structure: "+ db.getExperiment().getStructure(s).getName())));
             }
             if (measurements) {
-                if (!db.getExperiment().getMeasurements().isValid()) errors.add(new Pair(dbName, new Exception("Configuration error @ Meausements: ")));
+                if (!db.getExperiment().getMeasurements().isValid()) errors.addExceptions(new Pair(dbName, new Exception("Configuration error @ Meausements: ")));
             }
-            for (Pair<String, Throwable> e : errors) publish("Invalid Task Error @"+e.key+" "+(e.value==null?"null":e.value.getLocalizedMessage()));
+            for (Pair<String, Throwable> e : errors.getExceptions()) publish("Invalid Task Error @"+e.key+" "+(e.value==null?"null":e.value.getLocalizedMessage()));
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
             db.clearCache(); // unlock if (unlock) 
             return errors.isEmpty();
         }
         private void checkArray(int[] array, int maxValue, String message) {
-            if (array[ArrayUtil.max(array)]>=maxValue) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.max(array)]+ " not found, max value: "+maxValue)));
-            if (array[ArrayUtil.min(array)]<0) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.min(array)]+ " not found")));
+            if (array[ArrayUtil.max(array)]>=maxValue) errors.addExceptions(new Pair(dbName, new Exception(message + array[ArrayUtil.max(array)]+ " not found, max value: "+maxValue)));
+            if (array[ArrayUtil.min(array)]<0) errors.addExceptions(new Pair(dbName, new Exception(message + array[ArrayUtil.min(array)]+ " not found")));
         }
         private void checkArray(List<Integer> array, int maxValue, String message) {
-            if (Collections.max(array)>=maxValue) errors.add(new Pair(dbName, new Exception(message + Collections.max(array)+ " not found, max value: "+maxValue)));
-            if (Collections.min(array)<0) errors.add(new Pair(dbName, new Exception(message + Collections.min(array)+ " not found")));
+            if (Collections.max(array)>=maxValue) errors.addExceptions(new Pair(dbName, new Exception(message + Collections.max(array)+ " not found, max value: "+maxValue)));
+            if (Collections.min(array)<0) errors.addExceptions(new Pair(dbName, new Exception(message + Collections.min(array)+ " not found")));
         }
         public void printErrors() {
             if (!errors.isEmpty()) logger.error("Errors for Task: {}", toString());
-            for (Pair<String, ? extends Throwable> e : errors) logger.error(e.key, e.value);
+            for (Pair<String, ? extends Throwable> e : errors.getExceptions()) logger.error(e.key, e.value);
         }
         public int countSubtasks() {
             initDB();
@@ -407,9 +407,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 try {
                     process(position, deleteAllField);
                 } catch (MultipleException e) {
-                    errors.addAll(e.getExceptions());
+                    errors.addExceptions(e.getExceptions());
                 } catch (Throwable e) {
-                    errors.add(new Pair("Error while processing: db: "+db.getDBName()+" pos: "+position, e));
+                    errors.addExceptions(new Pair("Error while processing: db: "+db.getDBName()+" pos: "+position, e));
                 } finally {
                     db.getExperiment().getPosition(position).flushImages(true, true);
                     db.clearCache(position);
@@ -448,9 +448,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 try {
                     executeProcessingScheme(root, s, trackOnly, false);
                 } catch (MultipleException e) {
-                    errors.addAll(e.getExceptions());
+                    errors.addExceptions(e.getExceptions());
                 } catch (Throwable e) {
-                    errors.add(new Pair("Error while processing: db: "+db.getDBName()+" pos: "+position+" structure: "+s, e));
+                    errors.addExceptions(new Pair("Error while processing: db: "+db.getDBName()+" pos: "+position+" structure: "+s, e));
                 }
                 incrementProgress();
                 if (generateTrackImages && !db.getExperiment().getAllDirectChildStructures(s).isEmpty()) {
@@ -510,7 +510,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             w.close();
         } catch (Exception e) {
             publish("Error while dumping");
-            this.errors.add(new Pair(this.dbName, e));
+            this.errors.addExceptions(new Pair(this.dbName, e));
         }
     }
     private List<String> getPositions() {
@@ -548,7 +548,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     @Override
     protected Integer doInBackground() throws Exception {
         this.runTask();
-        return this.errors.size();
+        return this.errors.getExceptions().size();
     }
     @Override
     protected void process(List<String> strings) {
@@ -575,7 +575,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     private void unrollMultipleExceptions() {
         // check for multiple exceptions and unroll them
         List<Pair<String, Throwable>> errorsToAdd = new ArrayList<>();
-        Iterator<Pair<String, Throwable>> it = errors.iterator();
+        Iterator<Pair<String, Throwable>> it = errors.getExceptions().iterator();
         while(it.hasNext()) {
             Pair<String, ? extends Throwable> e = it.next();
             if (e.value instanceof MultipleException) {
@@ -583,12 +583,12 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 errorsToAdd.addAll(((MultipleException)e.value).getExceptions());
             }
         }
-        this.errors.addAll(errorsToAdd);
+        this.errors.addExceptions(errorsToAdd);
     }
     public void publishErrors() {
         unrollMultipleExceptions();
-        this.publish("Errors: "+this.errors.size()+ " For JOB: "+this.toString());
-        for (Pair<String, ? extends Throwable> e : errors) {
+        this.publish("Errors: "+this.errors.getExceptions().size()+ " For JOB: "+this.toString());
+        for (Pair<String, ? extends Throwable> e : errors.getExceptions()) {
             publish("Error @"+e.key+" "+(e.value==null?"null":e.value.toString()));
             publishError(e.value);
         }

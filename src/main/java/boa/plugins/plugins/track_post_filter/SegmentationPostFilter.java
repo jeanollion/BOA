@@ -98,7 +98,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
             if (parent.getChildren(structureIdx)!=null) parent.getChildren(structureIdx).stream().forEachOrdered((o) -> { o.objectHasBeenModified(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
             
         };
-        ThreadRunner.exexcuteAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
+        ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
         
         if (!objectsToRemove.isEmpty()) { 
             BiPredicate<StructureObject, StructureObject> mergePredicate = boa.plugins.plugins.track_post_filter.PostFilter.MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;

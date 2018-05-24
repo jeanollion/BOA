@@ -259,7 +259,7 @@ public class ThreadRunner {
             throw new MultipleException(errors);
         }
     }
-    public static <T> void exexcuteAndThrowErrors(Stream<T> stream, Consumer<T> action) {
+    public static <T> void executeAndThrowErrors(Stream<T> stream, Consumer<T> action) {
         MultipleException e = new MultipleException();
         stream.forEach(t -> {
             try {
