@@ -326,7 +326,7 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
                     ImageWindowManagerFactory.showImage(spine2);
                 }
             };
-            parentTrack.forEach((p) -> stores.get(p).addMisc(displayDistance));
+            parentTrack.forEach((p) -> stores.get(p).addMisc("Display Spine", displayDistance));
         }
     }
     

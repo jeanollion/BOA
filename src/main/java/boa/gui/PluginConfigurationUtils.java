@@ -75,6 +75,7 @@ import boa.plugins.TrackParametrizable.TrackParametrizer;
 import boa.utils.HashMapGetCreate;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -83,7 +84,7 @@ import java.util.function.Function;
  */
 public class PluginConfigurationUtils {
     
-    public static Map<StructureObject, TestDataStore> testImageProcessingPlugin(final ImageProcessingPlugin plugin, Experiment xp, int structureIdx, List<StructureObject> parentSelection) {
+    public static Map<StructureObject, TestDataStore> testImageProcessingPlugin(final ImageProcessingPlugin plugin, Experiment xp, int structureIdx, List<StructureObject> parentSelection, boolean trackOnly) {
         ProcessingScheme psc=xp.getStructure(structureIdx).getProcessingScheme();
         
         // get parent objects -> create graph cut
@@ -138,48 +139,71 @@ public class PluginConfigurationUtils {
             so.segmentAndTrack(structureIdx, parentTrackDup, apply);
 
         } else if (plugin instanceof Tracker) {
-            boolean segAndTrack = true; 
-            if (!(plugin instanceof TrackerSegmenter)) segAndTrack = false;
-
+            
             // get continuous parent track
             int minF = parentTrackDup.stream().mapToInt(p->p.getFrame()).min().getAsInt();
             int maxF = parentTrackDup.stream().mapToInt(p->p.getFrame()).max().getAsInt();
             parentTrackDup = wholeParentTrackDup.stream().filter(p->p.getFrame()>=minF && p.getFrame()<=maxF).collect(Collectors.toList());
 
             // run testing
-            TrackPostFilterSequence tpf=null;
-            if (psc instanceof ProcessingSchemeWithTracking) tpf = ((ProcessingSchemeWithTracking)psc).getTrackPostFilters();
-            if (segAndTrack) {
-                if (!psc.getTrackPreFilters(false).isEmpty()) { // run pre-filters on whole track -> some track preFilters need whole track to be effective. todo : parameter to limit ? 
+            if (!trackOnly) {
+                if (!psc.getTrackPreFilters(false).isEmpty()) { // run pre-filters on whole track -> some track preFilters need whole track to be effective. TODO : parameter to limit ? 
                     psc.getTrackPreFilters(true).filter(structureIdx, wholeParentTrackDup);
                     psc.getTrackPreFilters(false).removeAll();
                 }
-                ((TrackerSegmenter)plugin).segmentAndTrack(structureIdx, parentTrackDup, psc.getTrackPreFilters(true), psc.getPostFilters());
+                psc.segmentAndTrack(structureIdx, parentTrackDup);
+                //((TrackerSegmenter)plugin).segmentAndTrack(structureIdx, parentTrackDup, psc.getTrackPreFilters(true), psc.getPostFilters());
+            } else {
+                ((Tracker)plugin).track(structureIdx, parentTrackDup);
+                TrackPostFilterSequence tpf= (psc instanceof ProcessingSchemeWithTracking) ? ((ProcessingSchemeWithTracking)psc).getTrackPostFilters() : null;
+                if (tpf!=null) tpf.filter(structureIdx, parentTrackDup);
             }
-            else ((Tracker)plugin).track(structureIdx, parentTrackDup);
-            if (tpf!=null) tpf.filter(structureIdx, parentTrackDup);
+            
         }
         return stores;
     }
-    public static JMenuItem getTestCommand(ImageProcessingPlugin plugin, Experiment xp, int structureIdx) {
-        JMenuItem item = new JMenuItem("Test");
-        item.setAction(new AbstractAction(item.getActionCommand()) {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                // selected objects from GUI
-                List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-                if ((sel == null || sel.isEmpty()) && GUI.getInstance().getSelectedPositions(false).isEmpty()) {
-                    GUI.log("No selected objects : test will be run on first object");
-                }
-                String pos = GUI.getInstance().getSelectedPositions(false).isEmpty() ? GUI.getDBConnection().getExperiment().getPosition(0).getName() : GUI.getInstance().getSelectedPositions(false).get(0);
-                if (sel==null) sel = new ArrayList<>(1);
-                if (sel.isEmpty()) sel.add(GUI.getDBConnection().getDao(pos).getRoot(0));
-
-                Map<StructureObject, TestDataStore> stores = testImageProcessingPlugin(plugin, xp, structureIdx, sel);
-                if (stores!=null) displayIntermediateImages(stores, structureIdx);
+    public static List<JMenuItem> getTestCommand(ImageProcessingPlugin plugin, Experiment xp, int structureIdx) {
+        Consumer<Boolean> performTest = b-> {
+            List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+            if ((sel == null || sel.isEmpty()) && GUI.getInstance().getSelectedPositions(false).isEmpty()) {
+                GUI.log("No selected objects : test will be run on first object");
             }
-        });
-        return item;
+            String pos = GUI.getInstance().getSelectedPositions(false).isEmpty() ? GUI.getDBConnection().getExperiment().getPosition(0).getName() : GUI.getInstance().getSelectedPositions(false).get(0);
+            if (sel==null) sel = new ArrayList<>(1);
+            if (sel.isEmpty()) sel.add(GUI.getDBConnection().getDao(pos).getRoot(0));
+
+            Map<StructureObject, TestDataStore> stores = testImageProcessingPlugin(plugin, xp, structureIdx, sel, b);
+            if (stores!=null) displayIntermediateImages(stores, structureIdx);
+        };
+        List<JMenuItem> res = new ArrayList<>();
+        if (plugin instanceof Tracker) {
+            JMenuItem trackOnly = new JMenuItem("Test Track Only");
+            trackOnly.setAction(new AbstractAction(trackOnly.getActionCommand()) {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    performTest.accept(true);
+                }
+            });
+            res.add(trackOnly);
+            JMenuItem segTrack = new JMenuItem("Test Segmentation and Tracking");
+            segTrack.setAction(new AbstractAction(segTrack.getActionCommand()) {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    performTest.accept(false);
+                }
+            });
+            res.add(segTrack);
+        } else if (plugin instanceof Segmenter) {
+            JMenuItem item = new JMenuItem("Test Segmenter");
+            item.setAction(new AbstractAction(item.getActionCommand()) {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    performTest.accept(true);
+                }
+            });
+            res.add(item);
+        } else throw new IllegalArgumentException("Processing plugin not supported for testing");
+        return res;
     }
     
     public static void displayIntermediateImages(Map<StructureObject, TestDataStore> stores, int structureIdx) {

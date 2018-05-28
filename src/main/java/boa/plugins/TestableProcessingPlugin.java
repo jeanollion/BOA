@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +57,7 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
             if (i.sameDimensions(parent.getBounds())) {
                 stores.get(parent).addIntermediateImage(i.getName(), i);
             } else {
-                stores.get(parent).addMisc(l -> {ImageWindowManagerFactory.showImage(i);});
+                stores.get(parent).addMisc("Show Image", l -> {ImageWindowManagerFactory.showImage(i);});
             }
         };
     }
@@ -65,7 +66,7 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
         final StructureObject parent;
         Map<String, Image> images = new HashMap<>();
         Map<String, Integer> nameOrder = new HashMap<>();
-        List<Consumer<List<StructureObject>>> miscData = new ArrayList<>();
+        HashMapGetCreate<String, List<Consumer<List<StructureObject>>>> miscData = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());
         public TestDataStore(StructureObject parent) {
             this.parent= parent;
         }
@@ -81,13 +82,18 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
         }
         /**
          * Adds misc data that will be displayed by running the run method of {@param misc}
+         * @param command name of command associated with {@param misc} displayed in menu
          * @param misc data displayed though run method
          */
-        public void addMisc(Consumer<List<StructureObject>> misc) {
-            miscData.add(misc);
+        public void addMisc(String command, Consumer<List<StructureObject>> misc) {
+            miscData.getAndCreateIfNecessary(command).add(misc);
         }
-        public void displayMiscData(List<StructureObject> selectedObjects) {
-            miscData.forEach((r) -> r.accept(selectedObjects));
+        public void displayMiscData(String command, List<StructureObject> selectedObjects) {
+            if (!miscData.containsKey(command)) return;
+            miscData.get(command).forEach((r) -> r.accept(selectedObjects));
+        }
+        public Set<String> getMiscCommands() {
+            return new HashSet<>(miscData.keySet());
         }
     }
     

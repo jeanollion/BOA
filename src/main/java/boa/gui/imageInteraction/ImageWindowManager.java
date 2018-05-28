@@ -79,6 +79,9 @@ import static boa.utils.Pair.unpairValues;
 import boa.utils.Palette;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -1124,16 +1127,19 @@ public abstract class ImageWindowManager<I, U, V> {
         if (testData.containsKey(image)) { // test menu
             Collection<TestDataStore> stores = testData.get(image);
             StructureObject o = sel.get(0); // only first selected object
+            Predicate<TestDataStore> storeWithinSel = s->s.getParent().equals(o.getParent(s.getParent().getStructureIdx()));
+            Set<String> commands = stores.stream().filter(storeWithinSel).map(s->s.getMiscCommands()).flatMap(Set::stream).distinct().sorted().collect(Collectors.toSet());
             JPopupMenu menu = getMenu(o);
-            menu.addSeparator();
-            JMenuItem item = new JMenuItem("Display Test Data");
-            menu.add(item);
-            item.setAction(new AbstractAction(item.getActionCommand()) {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    stores.stream().filter(s->s.getParent().equals(o.getParent(s.getParent().getStructureIdx()))).forEach(s-> s.displayMiscData(sel));
-                }
-            });
+            if (!commands.isEmpty()) {
+                menu.addSeparator();
+                commands.forEach(s-> {
+                    JMenuItem item = new JMenuItem(s);
+                    menu.add(item);
+                    item.setAction(new AbstractActionImpl(item.getActionCommand(), stores, storeWithinSel, sel));
+                });
+            
+            
+            }
             return menu;
         } else { // regular menu
             if (sel.size()==1) return getMenu(sel.get(0));
@@ -1248,5 +1254,26 @@ public abstract class ImageWindowManager<I, U, V> {
     private static String truncate(String s, int length) {
         if (s.length()>length) return s.substring(0, length-3)+"...";
         else return s;
+    }
+
+    private static class AbstractActionImpl extends AbstractAction {
+
+        private final Collection<TestDataStore> stores;
+        private final Predicate<TestDataStore> storeWithinSel;
+        private final List<StructureObject> sel;
+
+        public AbstractActionImpl(String name, Collection<TestDataStore> stores, Predicate<TestDataStore> storeWithinSel, List<StructureObject> sel) {
+            super(name);
+            this.stores = stores;
+            this.storeWithinSel = storeWithinSel;
+            this.sel = sel;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            stores.stream().filter(storeWithinSel).forEach((TestDataStore s) -> {
+                s.displayMiscData(e.getActionCommand(), sel);
+            });
+        }
     }
 }
