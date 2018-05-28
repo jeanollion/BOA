@@ -36,7 +36,7 @@ import org.scijava.module.ModuleItem;
 public abstract class SimpleParameter implements Parameter {
     protected String name;
     private ContainerParameter parent;
-    
+    protected boolean isEmphasized;
     
     protected SimpleParameter(String name) {
         this.name=name;
@@ -154,7 +154,7 @@ public abstract class SimpleParameter implements Parameter {
     
     public static ArrayList<Parameter> getPath(Parameter p){
         if (p.getParent()==null) {
-            ArrayList<Parameter> res = new ArrayList<Parameter>();
+            ArrayList<Parameter> res = new ArrayList<>();
             res.add(p);
             return res;
         }
@@ -163,6 +163,15 @@ public abstract class SimpleParameter implements Parameter {
             path.add(p);
             return path;
         }
+    }
+    
+    @Override
+    public boolean isEmphasized() {
+        return isEmphasized;
+    }
+    public <T extends Parameter> T setEmphasized(boolean isEmphasized) {
+        this.isEmphasized = isEmphasized;
+        return (T) this;
     }
     
     @Override

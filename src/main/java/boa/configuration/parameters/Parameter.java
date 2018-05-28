@@ -42,4 +42,6 @@ public interface Parameter extends MutableTreeNode, JSONSerializable, ToolTip {
     public String toStringFull();
     public <T extends Parameter> T setToolTipText(String text);
     public boolean isValid();
+    public boolean isEmphasized();
+    public <T extends Parameter> T setEmphasized(boolean isEmphasized);
 }

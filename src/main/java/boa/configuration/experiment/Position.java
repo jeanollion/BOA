@@ -92,7 +92,10 @@ public class Position extends SimpleContainerParameter implements ListElementEra
         super(name);
         initChildList();
     }
-    
+    @Override 
+    public boolean isEmphasized() {
+        return false;
+    }
     public int getIndex() {
         return getParent().getIndex(this);
     }
