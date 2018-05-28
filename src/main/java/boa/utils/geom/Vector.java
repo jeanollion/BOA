@@ -53,7 +53,10 @@ public class Vector extends Point<Vector>  {
         for (int i = 0; i<coords.length; ++i) coords[i] =(float)(end.getDoublePosition(i) - start.getDoublePosition(i));
         return new Vector(coords);
     }
-    
+    public boolean isNull() {
+        for (int i = 0; i<coords.length; ++i) if (coords[i]!=0) return false;
+        return true;
+    }
     public double norm() {
         double norm = 0;
         for (float c : coords) norm+=c*c;

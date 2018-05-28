@@ -52,7 +52,7 @@ public class BacteriaSpineLocalizer {
     public static final Logger logger = LoggerFactory.getLogger(BacteriaSpineLocalizer.class);
     public boolean testMode;
     final Region bacteria;
-    BacteriaSpineFactory.SpineResult spine;
+    public final BacteriaSpineFactory.SpineResult spine;
     double length;
     public static double precision = 1E-4;
     public BacteriaSpineLocalizer(Region bacteria) {
@@ -78,7 +78,7 @@ public class BacteriaSpineLocalizer {
         return length;
     }
     public Image draw(int zoomFactor) {
-        Image image =  BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine.spine, spine.circContour, zoomFactor);
+        Image image =  BacteriaSpineFactory.drawSpine(bacteria.getBounds(), spine.spine, spine.circContour, zoomFactor, true);
         image.setCalibration(image.getScaleXY() * bacteria.getScaleXY(), bacteria.getScaleZ());
         return image;
     }

@@ -192,7 +192,7 @@ public class TestSpine {
         long t0 = System.currentTimeMillis();
         SpineResult spine = BacteriaSpineFactory.createSpine(bact.getRegion());
         long t1 = System.currentTimeMillis();
-        Image test = spine.drawSpine(7);
+        Image test = spine.drawSpine(13, true);
         // test localization
         
         Point p = spine.spine[1].duplicate().translate(new Vector(-3, 0.7f));

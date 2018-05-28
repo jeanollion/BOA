@@ -25,6 +25,7 @@ import boa.utils.JSONUtils;
 import boa.utils.Utils;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.IntStream;
 import net.imglib2.Localizable;
 import net.imglib2.RealLocalizable;
 
@@ -123,34 +124,22 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
         return (T)this;
     }
     public double distSq(Offset other) {
-        double d = 0;
-        for (int i = 0; i<Math.min(3, coords.length); ++i) d+=Math.pow(coords[i]-other.getIntPosition(i), 2);
-        return d;
+        return IntStream.range(0, Math.min(coords.length, 3)).mapToDouble(i->Math.pow(coords[i]-other.getIntPosition(i), 2)).sum();
     }
     public double distSq(Point other) {
-        double d = 0;
-        for (int i = 0; i<Math.min(coords.length, other.coords.length); ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
-        return d;
+        return IntStream.range(0, Math.min(coords.length, other.coords.length)).mapToDouble(i->Math.pow(coords[i]-other.coords[i], 2)).sum();
     }
     public double distSqXY(Point other) {
-        double d = 0;
-        for (int i = 0; i<2; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
-        return d;
+        return IntStream.range(0, 2).mapToDouble(i->Math.pow(coords[i]-other.coords[i], 2)).sum();
     }
     public double distXY(Point other) {
-        double d = 0;
-        for (int i = 0; i<2; ++i) d+=Math.pow(coords[i]-other.coords[i], 2);
-        return Math.sqrt(d);
+        return Math.sqrt(distSqXY(other));
     }
     public double distSq(RealLocalizable other) {
-        double d = 0;
-        for (int i = 0; i<coords.length; ++i) d+=Math.pow(coords[i]-other.getDoublePosition(i), 2);
-        return d;
+        return IntStream.range(0,  coords.length).mapToDouble(i->Math.pow(coords[i]-other.getDoublePosition(i), 2)).sum();
     }
     public double distSqXY(RealLocalizable other) {
-        double d = 0;
-        for (int i = 0; i<2; ++i) d+=Math.pow(coords[i]-other.getDoublePosition(i), 2);
-        return d;
+        return Math.sqrt(distSqXY(other));
     }
     public double dist(Point other) {
         return Math.sqrt(distSq(other));
