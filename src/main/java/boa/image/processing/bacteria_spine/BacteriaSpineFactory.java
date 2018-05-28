@@ -524,10 +524,11 @@ public class BacteriaSpineFactory {
                     vox.y = (int)Math.round((c.element.getDoublePosition(1)-off.yMin())*zoomFactor+add+neigh.dy[i]);
                     if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, lab[0]);
                 }
-                ++lab[0];
+                //++lab[0];
             }, true);
         }
-        if (spine!=null) {
+        if (spine!=null) { // draw spine
+            // draw lateral direction
             int spineVectLabel = 1;
             for (PointContainer2<Vector, Double> p : spine) {
                 double norm = p.getContent1().norm();
@@ -544,15 +545,24 @@ public class BacteriaSpineFactory {
                 }
                 spineVectLabel++;
             }
-            // draw spine
-            for (PointContainer2<Vector, Double> p : spine) {
-                vox.x = (int)((p.get(0)-off.xMin())*zoomFactor+add);
-                vox.y = (int)((p.get(1)-off.yMin())*zoomFactor+add);
-                if (!spineImage.contains(vox.x, vox.y, 0)) {
-                    logger.debug("out of bounds: {}, p: {}", vox, p);
-                    continue;
+            // draw central line
+            PointContainer2<Vector, Double> p0 = spine[0];
+            vox.x = (int)((p0.get(0)-off.xMin())*zoomFactor+add);
+            vox.y = (int)((p0.get(1)-off.yMin())*zoomFactor+add);
+            spineImage.setPixel(vox.x, vox.y, 0,  Float.MIN_VALUE );
+            for (int i = 1; i<spine.length; ++i) { 
+                PointContainer2<Vector, Double> p = spine[i-1];
+                PointContainer2<Vector, Double> p2 = spine[i];
+                Vector dir = Vector.vector2D(p, p2);
+                double vectSize = dir.norm();
+                dir.multiply(1/(vectSize*zoomFactor));
+                Point cur = p.duplicate().translateRev(off);
+                for (int j = 0; j<vectSize*zoomFactor; ++j) {
+                    cur.translate(dir);
+                    vox.x = (int)(cur.get(0)*zoomFactor+add);
+                    vox.y = (int)(cur.get(1)*zoomFactor+add);
+                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, p2.getContent2().floatValue());
                 }
-                spineImage.setPixel(vox.x, vox.y, 0, p.getContent2()==0?Float.MIN_VALUE:p.getContent2());
             }
         }
         return spineImage;
