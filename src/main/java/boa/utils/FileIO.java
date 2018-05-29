@@ -56,6 +56,7 @@ import java.util.zip.ZipOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static boa.utils.ArrayFileWriter.separator;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -96,15 +97,13 @@ public class FileIO {
             fstream = new java.io.FileWriter(output);
             out = new BufferedWriter(fstream);
             //out.flush();
-            Iterator<T> it = objects.iterator();
-            T next = it.next();
-            String nextS = next==null? null : converter.apply(next);
-            if (nextS!=null) out.write(nextS);
-            else logger.error("object: {} could not be written to file: {}", next, outputFile);
-            
+            List<String> toWrite = objects.stream().parallel().map(converter).filter(o->o!=null).collect(Collectors.toList());
+            if (toWrite.size()!=objects.size()) logger.error("#{} objects could not be converted", objects.size()-toWrite.size());
+            Iterator<String> it = toWrite.iterator();
+            out.write(it.next());
             while(it.hasNext()) {
                 out.newLine();
-                out.write(converter.apply(it.next()));
+                out.write(it.next());
             }
             out.close();
         } catch (IOException ex) {
@@ -119,12 +118,12 @@ public class FileIO {
     }
     public static <T> List<T> readFromFile(String path, Function<String, T> converter) {
         FileReader input = null;
-        List<T> res = new ArrayList<>();
+        List<String> resS = new ArrayList<>();
         try {
             input = new FileReader(path);
             BufferedReader bufRead = new BufferedReader(input);
             String myLine = null;
-            while ( (myLine = bufRead.readLine()) != null) res.add(converter.apply(myLine));
+            while ( (myLine = bufRead.readLine()) != null) resS.add(myLine);
         } catch (IOException ex) {
             logger.debug("an error occured trying read file: {}, {}", path, ex);
         } finally {
@@ -132,14 +131,16 @@ public class FileIO {
                 if (input!=null) input.close();
             } catch (IOException ex) { }
         }
-        return res;
+        return resS.stream().map(converter).collect(Collectors.toList());
     }
     public static <T> void writeToZip(ZipOutputStream outStream, String relativePath, Collection<T> objects, Function<T, String> converter) {
         try {
             ZipEntry e= new ZipEntry(relativePath);
             outStream.putNextEntry(e);
-            for (T o : objects) {
-                outStream.write(converter.apply(o).getBytes());
+            List<byte[]> toWrite = objects.stream().parallel().map(o->converter.apply(o)).filter(o->o!=null).map(o->o.getBytes()).collect(Collectors.toList());
+            if (toWrite.size()!=objects.size()) logger.error("#{} objects could not be converted", objects.size()-toWrite.size());
+            for (byte[] b : toWrite) {
+                outStream.write(b);
                 outStream.write('\n');
             }
             outStream.closeEntry();
@@ -148,19 +149,19 @@ public class FileIO {
         }
     }
     public static <T> List<T> readFromZip(ZipFile file, String relativePath, Function<String, T> converter) {
-        List<T> res = new ArrayList<>();
+        List<String> resS = new ArrayList<>();
         try {
             ZipEntry e = file.getEntry(relativePath);
             if (e!=null) {
                 Reader r = new InputStreamReader(file.getInputStream(e));
                 BufferedReader bufRead = new BufferedReader(r);
                 String myLine = null;
-                while ( (myLine = bufRead.readLine()) != null) res.add(converter.apply(myLine));
+                while ( (myLine = bufRead.readLine()) != null) resS.add(myLine);
             }
         } catch (IOException ex) {
             logger.debug("an error occured trying read file: {}, {}", relativePath, ex);
         }
-        return res;
+        return resS.stream().parallel().map(converter).collect(Collectors.toList());
     }
     public static <T> T readFirstFromZip(ZipFile file, String relativePath, Function<String, T> converter) {
         try {

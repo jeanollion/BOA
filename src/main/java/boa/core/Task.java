@@ -460,8 +460,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 System.gc();
                 publishMemoryUsage("After Processing structure:"+s);
             }
-            
-            //publishMemoryUsage("After Processing:");
+            publishMemoryUsage("After Processing:");
         } else if (generateTrackImages) {
             publish("Generating Track Images...");
             // generate track images for all selected structure that has direct children
@@ -475,7 +474,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         
         if (measurements) {
             publish("Measurements...");
-            logger.info("Measurements: DB: {}, Field: {}", dbName, position);
+            logger.info("Measurements: DB: {}, Position: {}", dbName, position);
             db.getDao(position).deleteAllMeasurements();
             Processor.performMeasurements(db.getDao(position), this);
             incrementProgress();
