@@ -220,8 +220,7 @@ public class CleanVoxelLine {
         // remove all edges not included in path 
         Predicate<Segment> isEdgeOutsidePath = e -> {
             if (e.isJunction()) return false;
-            if (((Edge)e).isContainedInPath(path)) return false;
-            return true;
+            return !((Edge)e).isContainedInPath(path);
         };
         Set<Vertex> toRelabel = new HashSet<>();
         Set<Vertex> toRemove = new HashSet<>();
