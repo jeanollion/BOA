@@ -66,7 +66,7 @@ public class JSONUtils {
         else if (o instanceof String) return o;
         else if (o instanceof List) {
             JSONArray l = new JSONArray();
-            for (Object oo : ((List)o)) l.add(toJSONEntry(oo));
+            ((List)o).forEach((oo) -> l.add(toJSONEntry(oo)));
             return l;
         }
         else if (o instanceof boolean[]) return toJSONArray((boolean[])o);
@@ -113,7 +113,7 @@ public class JSONUtils {
         float[] res = new float[array.size()];
         for (int i = 0; i<res.length; ++i) {
             if (array.get(i)==null) {
-                logger.debug("fromDoubleArrayError: {}", array);
+                logger.debug("fromFloatArrayError: {}", array);
                 res[i] = Float.NaN;
             } else res[i]=((Number)array.get(i)).floatValue();
         }

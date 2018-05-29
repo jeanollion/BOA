@@ -400,23 +400,28 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             
             if (this.taskCounter==null) this.taskCounter = new int[]{0, this.countSubtasks()};
             publish("number of subtasks: "+countSubtasks());
-            positions.stream().map((pIdx) -> db.getExperiment().getPosition(pIdx).getName()).forEachOrdered((position) -> {
-                try {
-                    process(position, deleteAllField);
-                } catch (MultipleException e) {
-                    errors.addExceptions(e.getExceptions());
-                } catch (Throwable e) {
-                    errors.addExceptions(new Pair("Error while processing: db: "+db.getDBName()+" pos: "+position, e));
-                } finally {
-                    db.getExperiment().getPosition(position).flushImages(true, true);
-                    db.clearCache(position);
-                    db.getSelectionDAO().clearCache();
-                    ImageWindowManagerFactory.getImageManager().flush();
-                    System.gc();
-                    publishMemoryUsage("After clearing cache");
-                }
-            });
-            
+            try {
+                positions.stream().map((pIdx) -> db.getExperiment().getPosition(pIdx).getName()).forEachOrdered((position) -> {
+                    try {
+                        process(position, deleteAllField);
+                    } catch (MultipleException e) {
+                        errors.addExceptions(e.getExceptions());
+                    } catch (Throwable e) {
+                        errors.addExceptions(new Pair("Error while processing: db: "+db.getDBName()+" pos: "+position, e));
+                    } finally {
+                        db.getExperiment().getPosition(position).flushImages(true, true);
+                        db.clearCache(position);
+                        db.getSelectionDAO().clearCache();
+                        ImageWindowManagerFactory.getImageManager().flush();
+                        System.gc();
+                        publishMemoryUsage("After clearing cache");
+                    }
+                });
+            } catch (Throwable t) {
+                publish("Error While Processing Positions");
+                publishError(t);
+                publishErrors();
+            }
             for (Pair<String, int[]> e  : this.extractMeasurementDir) extractMeasurements(e.key==null?db.getDir():e.key, e.value);
             if (exportData) exportData();
             db.clearCache();

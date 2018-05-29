@@ -56,16 +56,20 @@ import net.imglib2.Localizable;
  */
 public class TestClass {
     public static void main(String[] args) {
+        MultipleException ex = new MultipleException();
         List<Integer> ints = IntStream.range(0, 10).mapToObj(i->i).collect(Collectors.toList());
-        try {
-            executeAndThrowErrors(ints.stream(), 
-                i->{throw new RuntimeException("hoho");}
-        );
-        } catch(MultipleException ex) {
-            for (Pair<String, Throwable> e : ex.getExceptions()) {
-                logger.debug("{}", e);
+        ints.stream().forEachOrdered(i -> {
+            try {
+               throw new RuntimeException("hoho"); 
+            } catch(Throwable t) {
+                logger.debug("hoho", t);
+                ex.addExceptions(new Pair(""+i, t));
+            } finally {
+                logger.debug("ex: {}: {}", ex.getExceptions().size(), ex.getExceptions());
             }
-        }
+        
+        });
+        
     }
     private static <T extends Localizable> void toString(List<T> loc) {
         for (T t: loc) logger.debug("elem: {}", t);

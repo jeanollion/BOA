@@ -55,6 +55,8 @@ import boa.utils.SmallArray;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
 import java.util.Collections;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject>, PostLoadable, JSONSerializable {
@@ -98,10 +100,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.parent=parent;
         this.parentId=parent.getId();
         if (this.parent!=null) this.dao=parent.dao;
-        // attributes
-        if (!Double.isNaN(object.getQuality())) setAttribute("Quality", object.getQuality());
-        if (object.getCenter()!=null) attributes.put("Center", object.getCenter());
+        setRegionAttributesToAttributes();
     }
+    
+    
     /**
      * Constructor for root objects only.
      * @param timePoint
@@ -749,6 +751,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public boolean hasRegion() {return object!=null;}
     public boolean objectHasBeenModified() {return objectModified=true;}
     // object- and image-related methods
+    @Override 
     public Region getRegion() {
         if (object==null) {
             if (objectContainer==null) return null;
@@ -757,7 +760,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     object=objectContainer.getObject().setIsAbsoluteLandmark(true); 
                     if (attributes!=null) {
                         if (attributes.containsKey("Quality")) object.setQuality((Double)attributes.get("Quality"));
-                        if (attributes.containsKey("Center")) object.setCenter(new Point(JSONUtils.fromFloatArray((List)attributes.get("Center"))));
+                        if (attributes.containsKey("Center")) object.setCenter(new Point(JSONUtils.fromFloatArray((List)attributes.get("Center")))); 
                     }
                 }
             }
@@ -770,8 +773,21 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             object=o;
             object.label=idx+1;
             flushImages();
+            setRegionAttributesToAttributes();
         }
     }
+    private void setRegionAttributesToAttributes() {
+        if (attributes!=null) {
+            attributes.remove("Quality");
+            attributes.remove("Center");
+        }
+        if (!Double.isNaN(object.getQuality())) setAttribute("Quality", object.getQuality());
+        if (object.getCenter()!=null) {
+            Point c = object.getCenter();
+            setAttributeList("Center", IntStream.range(0, c.numDimensions()).mapToObj(i->(double)c.get(i)).collect(Collectors.toList()));
+        }
+    }
+    
     public ImageProperties getMaskProperties() {return getRegion().getImageProperties();}
     @Override public ImageMask getMask() {return getRegion().getMask();}
     public BoundingBox getBounds() {return getRegion().getBounds();}
@@ -993,6 +1009,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         attributes.put(key, value);
     }
     public void setAttributeArray(String key, double[] value) {
+        if (this.attributes==null) attributes = new HashMap<>();
+        attributes.put(key, Utils.toList(value));
+    }
+    public void setAttributeArray(String key, float[] value) {
         if (this.attributes==null) attributes = new HashMap<>();
         attributes.put(key, Utils.toList(value));
     }
