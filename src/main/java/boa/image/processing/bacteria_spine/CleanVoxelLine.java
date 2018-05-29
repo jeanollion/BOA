@@ -43,7 +43,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.collections.impl.factory.Sets;
@@ -203,7 +205,7 @@ public class CleanVoxelLine {
             } else break;
         }
         if (segments.size()==1) return lines;
-        // keep only largest shortest path
+        // compute largest shortest path & remove all the segments not included in the path
         // set end-points as vertices
         segments.values().stream().filter(v->v.isEndBranch()).map(e->(Edge)e).collect(Collectors.toList()).forEach(e ->e.setEndPointsAsVertex());
         if (verbose) {
@@ -215,20 +217,24 @@ public class CleanVoxelLine {
             for (int i = 0; i<lsPath.size()-1; ++i) logger.debug("largest shortest path: {}->{} w={}", lsPath.get(i).label, lsPath.get(i+1).label, Sets.intersect(lsPath.get(i).connectedSegments, lsPath.get(i+1).connectedSegments).iterator().next().voxels.size());
         }
         Set<Vertex> path = new HashSet<>(lsPath);
-        segments.values().stream().filter(e->!e.isJunction()).map(e->(Edge)e).filter(e->!e.isContainedInPath(path)).collect(Collectors.toList()).forEach(e->{
+        // remove all edges not included in path 
+        Predicate<Segment> isEdgeOutsidePath = e -> {
+            if (e.isJunction()) return false;
+            if (((Edge)e).isContainedInPath(path)) return false;
+            return true;
+        };
+        Set<Vertex> toRelabel = new HashSet<>();
+        Set<Vertex> toRemove = new HashSet<>();
+        Consumer<Edge> cleanEdge = e -> {
             e.remove(true, true);
-            // also remove end-branches && relabel junction
-            Iterator<Vertex> vIt = e.connectedSegments.iterator();
-            Vertex n1 = vIt.next();
-            Vertex n2 = vIt.next();
-            if (n1.connectedSegments.size()==1) {
-                n1.remove(true, true);
-                n2.relabel();
-            } else {
-                n2.remove(true, true);
-                n1.relabel();
-            }
-        });
+            e.connectedSegments.forEach(v->{
+                if (path.contains(v)) toRelabel.add(v);
+                else toRemove.add(v);
+            });
+        };
+        segments.values().stream().filter(isEdgeOutsidePath).map(e->(Edge)e).collect(Collectors.toSet()).forEach(cleanEdge);
+        toRemove.forEach((v) ->  v.remove(true, true));
+        toRelabel.forEach((v) ->  v.relabel());
         
         if (segments.size()>1) { // put end points back to branch
             segments.values().stream().filter(s->s.isJunction() && s.connectedSegments.size()==1 && s.voxels.size()==1).map(s->(Vertex)s).collect(Collectors.toList()).forEach(v->{
@@ -239,7 +245,7 @@ public class CleanVoxelLine {
                 voxMapNeighAndLabels.get(vox)[0] = 1;
             });
         }
-        // last cleaning of right angles if necessary -> end breanches with one voxel
+        // last cleaning of right angles if necessary -> end branches with one voxel
         while (segments.size()>1) {
             Edge endBranch = segments.values().stream().filter(s->!s.isJunction() && s.connectedSegments.size()==1 && s.voxels.size()==1).map(s->(Edge)s).findAny().orElse(null);
             if (endBranch==null) break;
@@ -528,7 +534,7 @@ public class CleanVoxelLine {
         }
         @Override
         public String toString() {
-            return label+ " W="+voxels.size()+"->"+Utils.toStringList(this.connectedSegments, s->s.label);
+            return label+ " Size="+voxels.size()+"->"+Utils.toStringList(this.connectedSegments, s->s.label);
         }
     }
     private class Vertex extends Segment<Edge> {

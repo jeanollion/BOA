@@ -68,7 +68,7 @@ public class TestSpine {
         //String dbName = "WT_180318_Fluo";
         //String dbName = "WT_150609";
         String dbName = "fluo160501_uncorr_TestParam";
-        int postition= 0, frame=0, mc=0, b=0;
+        int postition= 19, frame=550, mc=5, b=0;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
@@ -80,14 +80,14 @@ public class TestSpine {
         int parentStructure = mDAO.getExperiment().getStructure(structureIdx).getParentStructure();
         Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
-        StructureObject bact = root.getChildren(parentStructure).get(mc).getChildren(structureIdx).get(b);
+        StructureObject bact = root.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(structureIdx).get(b);
         
-        testSpineCreation(bact);
+        //testSpineCreation(bact);
         //testContourCleaning(bact);
         //testAllSteps(bact);
         //testLocalization(bact, true);
         //testLocalization(bact, false);
-        //testSkeleton(bact);
+         testSkeleton(bact);
         
         //StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         //StructureObject bact2 = root2.getChildren(parentStructure).get(mc).getChildren(structureIdx).get(1);
@@ -95,7 +95,18 @@ public class TestSpine {
         
         //testProjection(bact, bact2);
         
-        
+        /*Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(mDAO.getDao(f.getName()).getRoots(), parentStructure, false);
+        allTracks.entrySet().stream().filter(e->e.getKey().getIdx()==mc).findAny().get().getValue().stream().filter(o->o.getFrame()>429).map(mic -> mic.getChildren(structureIdx).get(0)).forEach(bacteria-> {
+            try {
+                Set<Voxel> contour =cleanContour(bacteria.getRegion().getContour(), false);
+                List<Voxel> skeleton = BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(contour));
+            } catch(Throwable t) {
+                logger.error("error for spine: {}", bacteria);
+                //BacteriaSpineFactory.verbose=true;
+                //BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(cleanContour(bacteria.getRegion().getContour(), true)));
+            }
+            
+        });*/
     }
     public static void testAllObjects(MasterDAO mDAO, int structureIdx, int fromPosition) {
         int parentStructure = mDAO.getExperiment().getStructure(structureIdx).getParentStructure();
