@@ -47,6 +47,8 @@ import boa.core.Task;
 import boa.configuration.experiment.Position;
 import boa.configuration.experiment.PreProcessingChain;
 import boa.configuration.experiment.Structure;
+import boa.configuration.parameters.ChoiceParameter;
+import boa.configuration.parameters.Parameter;
 import boa.data_structure.dao.ImageDAO;
 import boa.data_structure.dao.BasicMasterDAO;
 import boa.data_structure.dao.DBMapMasterDAO;
@@ -57,6 +59,8 @@ import boa.data_structure.Selection;
 import boa.data_structure.dao.SelectionDAO;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
+import boa.gui.Shortcuts.ACTION;
+import boa.gui.Shortcuts.PRESET;
 import ij.ImageJ;
 import boa.image.Image;
 import java.awt.Color;
@@ -143,6 +147,7 @@ import boa.utils.Utils;
 import static boa.utils.Utils.addHorizontalScrollBar;
 import ij.IJ;
 import java.awt.dnd.DropTarget;
+import java.util.function.Consumer;
 import javax.swing.ToolTipManager;
 
 
@@ -179,8 +184,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     DefaultListModel<Selection> selectionModel;
     PythonGateway pyGtw;
     // shortcuts
-    private HashMap<KeyStroke, Action> actionMap = new HashMap<KeyStroke, Action>();
-    KeyboardFocusManager kfm;
+    private Shortcuts shortcuts;
+    
     //JProgressBar progressBar;
     //private static int progressBarTabIndex = 3;
     // enable/disable components
@@ -308,86 +313,80 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 }
             }
         });
-        
+        Map<ACTION, Action> actionMap = new HashMap<>();
         // KEY shortcuts
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Link") {
+        actionMap.put(ACTION.LINK, new AbstractAction("Link") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 linkObjectsButtonActionPerformed(e);
                 logger.debug("L pressed: " + e);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_U, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Unlink") {
+        actionMap.put(ACTION.UNLINK, new AbstractAction("Unlink") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 unlinkObjectsButtonActionPerformed(e);
                 logger.debug("U pressed: " + e);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Delete") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                deleteObjectsButtonActionPerformed(e);
-                logger.debug("D pressed: " + e);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Prune Track") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                pruneTrackActionPerformed(e);
-                logger.debug("P pressed: " + e);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_M, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Merge") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                mergeObjectsButtonActionPerformed(e);
-                logger.debug("M pressed: " + e);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Split") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                splitObjectsButtonActionPerformed(e);
-                logger.debug("S pressed: " + e);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Create") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                manualSegmentButtonActionPerformed(e);
-                logger.debug("C pressed: " + e);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), new AbstractAction("Zoom") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ImageWindowManagerFactory.getImageManager().toggleActivateLocalZoom();
-                logger.debug("Zoom pressed: " + e);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0 ), new AbstractAction("Toggle creation tool") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ImageWindowManagerFactory.getImageManager().toggleSetObjectCreationTool();
-                logger.debug("C pressed: " + e);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Reset Links") {
+        actionMap.put(ACTION.RESET_LINKS, new AbstractAction("Reset Links") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 resetLinksButtonActionPerformed(e);
                 logger.debug("R pressed: " + e);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_A, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Select All Objects") {
+        actionMap.put(ACTION.DELETE, new AbstractAction("Delete") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                selectAllObjectsActionPerformed(e);
+                deleteObjectsButtonActionPerformed(e);
+                logger.debug("D pressed: " + e);
+            }
+        });
+        actionMap.put(ACTION.PRUNE, new AbstractAction("Prune Track") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pruneTrackActionPerformed(e);
+                logger.debug("P pressed: " + e);
+            }
+        });
+        actionMap.put(ACTION.MERGE, new AbstractAction("Merge") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mergeObjectsButtonActionPerformed(e);
+                logger.debug("M pressed: " + e);
+            }
+        });
+        actionMap.put(ACTION.SPLIT, new AbstractAction("Split") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                splitObjectsButtonActionPerformed(e);
+                logger.debug("S pressed: " + e);
+            }
+        });
+        actionMap.put(ACTION.CREATE, new AbstractAction("Create") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                manualSegmentButtonActionPerformed(e);
+                logger.debug("C pressed: " + e);
+            }
+        });
+        actionMap.put(ACTION.TOGGLE_CREATION_TOOL, new AbstractAction("Toggle creation tool") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ImageWindowManagerFactory.getImageManager().toggleSetObjectCreationTool();
+                logger.debug("C pressed: " + e);
+            }
+        });
+        
+        actionMap.put(ACTION.SELECT_ALL_OBJECTS, new AbstractAction("Select All Objects") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectAllObjectsButtonActionPerformed(e);
                 logger.debug("A pressed: " + e);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Q, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Select All Tracks") {
+        actionMap.put(ACTION.SELECT_ALL_TRACKS, new AbstractAction("Select All Tracks") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 selectAllTracksButtonActionPerformed(e);
@@ -395,7 +394,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         });
         
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_I, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Change Interactive structure") {
+        actionMap.put(ACTION.CHANGE_INTERACTIVE_STRUCTURE, new AbstractAction("Change Interactive structure") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (interactiveStructure.getItemCount()>1) {
@@ -407,7 +406,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         });
         
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Track mode") {
+        actionMap.put(ACTION.TOGGLE_SELECT_MODE, new AbstractAction("Track mode") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (ImageWindowManager.displayTrackMode) ImageWindowManager.displayTrackMode = false;
@@ -415,108 +414,122 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 logger.debug("TrackMode is {}", ImageWindowManager.displayTrackMode? "ON":"OFF");
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Prev") {
+        actionMap.put(ACTION.TOGGLE_LOCAL_ZOOM, new AbstractAction("Local Zoom") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ImageWindowManagerFactory.getImageManager().toggleActivateLocalZoom();
+                logger.debug("Zoom pressed: " + e);
+            }
+        });
+        actionMap.put(ACTION.NAV_PREV, new AbstractAction("Prev") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 previousTrackErrorButtonActionPerformed(e);
             }
         });
         
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Next") {
+        actionMap.put(ACTION.NAV_NEXT, new AbstractAction("Next") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 nextTrackErrorButtonActionPerformed(e);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.SHIFT_DOWN_MASK), new AbstractAction("Add to selection 0") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                logger.debug("Z pressed (shift)");
-                addToSelectionActionPerformed(0);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Remove from selection 0") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                logger.debug("Z pressed (alt)");
-                removeFromSelectionActionPerformed(0);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.ALT_GRAPH_DOWN_MASK), new AbstractAction("Remove All from selection 0") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                logger.debug("Z pressed (alt gr)");
-                removeAllFromSelectionActionPerformed(0);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Toggle display selection 0") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                logger.debug("Z pressed (ctrl)");
-                toggleDisplaySelection(0);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.SHIFT_DOWN_MASK), new AbstractAction("Add to selection 1") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                logger.debug("E pressed (shift)");
-                addToSelectionActionPerformed(1);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Remove from selection 1") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                logger.debug("E pressed (alt)");
-                removeFromSelectionActionPerformed(1);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.ALT_GRAPH_DOWN_MASK), new AbstractAction("Remove All from selection 1") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                logger.debug("E pressed (alt gr)");
-                removeAllFromSelectionActionPerformed(1);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_E, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Toggle display selection 1") {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                logger.debug("E pressed (ctrl)");
-                toggleDisplaySelection(1);
-            }
-        });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Open Next Image") {
+        actionMap.put(ACTION.OPEN_NEXT, new AbstractAction("Open Next Image") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 navigateToNextImage(true);
             }
         });
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, KeyEvent.ALT_DOWN_MASK), new AbstractAction("Open Previous Image") {
+        actionMap.put(ACTION.OPEN_PREV, new AbstractAction("Open Previous Image") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 navigateToNextImage(false);
             }
         });
         
-        kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-        kfm.addKeyEventDispatcher( new KeyEventDispatcher() {
+        actionMap.put(ACTION.ADD_TO_SEL0, new AbstractAction("Add to selection 0") {
             @Override
-            public boolean dispatchKeyEvent(KeyEvent e) {
-                KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(e);
-                if ( actionMap.containsKey(keyStroke) ) {
-                    final Action a = actionMap.get(keyStroke);
-                    final ActionEvent ae = new ActionEvent(e.getSource(), e.getID(), null );
-                    /*SwingUtilities.invokeLater( new Runnable() {
-                        @Override
-                        public void run() {
-                            a.actionPerformed(ae);
-                        }
-                    });*/
-                    a.actionPerformed(ae);
-                    return true;
-                }
-                return false;
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("Z pressed (shift)");
+                addToSelectionActionPerformed(0);
             }
-          });
+        });
+        actionMap.put(ACTION.REM_FROM_SEL0, new AbstractAction("Remove from selection 0") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("Z pressed (alt)");
+                removeFromSelectionActionPerformed(0);
+            }
+        });
+        actionMap.put(ACTION.REM_ALL_FROM_SEL0, new AbstractAction("Remove All from selection 0") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("Z pressed (alt gr)");
+                removeAllFromSelectionActionPerformed(0);
+            }
+        });
+        actionMap.put(ACTION.TOGGLE_DISPLAY_SEL0, new AbstractAction("Toggle display selection 0") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("Z pressed (ctrl)");
+                toggleDisplaySelection(0);
+            }
+        });
+        actionMap.put(ACTION.ADD_TO_SEL1, new AbstractAction("Add to selection 1") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("E pressed (shift)");
+                addToSelectionActionPerformed(1);
+            }
+        });
+        actionMap.put(ACTION.REM_FROM_SEL1, new AbstractAction("Remove from selection 1") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("E pressed (alt)");
+                removeFromSelectionActionPerformed(1);
+            }
+        });
+        actionMap.put(ACTION.REM_ALL_FROM_SEL1, new AbstractAction("Remove All from selection 1") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("E pressed (alt gr)");
+                removeAllFromSelectionActionPerformed(1);
+            }
+        });
+        actionMap.put(ACTION.TOGGLE_DISPLAY_SEL1, new AbstractAction("Toggle display selection 1") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                logger.debug("E pressed (ctrl)");
+                toggleDisplaySelection(1);
+            }
+        });
+        ChoiceParameter shortcutPreset = new ChoiceParameter("Shortcut preset", Utils.toStringArray(PRESET.values()), PRESET.AZERTY.toString(), false);
+        PropertyUtils.setPersistant(shortcutPreset, "shortcut_preset");
+        ConfigurationTreeGenerator.addToMenu(shortcutPreset.getName(), shortcutPreset.getUI().getDisplayComponent(), this.shortcutPresetMenu);
+        this.shortcuts = new Shortcuts(actionMap, PRESET.valueOf(shortcutPreset.getValue()));
+        
+        Consumer<Parameter> setShortcut = p->{
+            shortcuts.setPreset(PRESET.valueOf(((ChoiceParameter)p).getValue()));
+            shortcuts.addToMenu(this.ShortcutMenu);
+            ShortcutMenu.add(shortcutPresetMenu);
+            setDataBrowsingButtonsTitles();
+        };
+        shortcutPreset.addListener(setShortcut);
+        setShortcut.accept(shortcutPreset);
+    }
+    private void setDataBrowsingButtonsTitles() {
+        this.selectAllObjectsButton.setText("Select All Objects ("+shortcuts.getShortcutFor(ACTION.SELECT_ALL_OBJECTS)+")");
+        this.selectAllTracksButton.setText("Select All Tracks ("+shortcuts.getShortcutFor(ACTION.SELECT_ALL_TRACKS)+")");
+        this.nextTrackErrorButton.setText("Navigate Next ("+shortcuts.getShortcutFor(ACTION.NAV_NEXT)+")");
+        this.previousTrackErrorButton.setText("Navigate Previous ("+shortcuts.getShortcutFor(ACTION.NAV_PREV)+")");
+        this.manualSegmentButton.setText("Segment ("+shortcuts.getShortcutFor(ACTION.CREATE)+")");
+        this.splitObjectsButton.setText("Split ("+shortcuts.getShortcutFor(ACTION.SPLIT)+")");
+        this.mergeObjectsButton.setText("Merge ("+shortcuts.getShortcutFor(ACTION.MERGE)+")");
+        this.deleteObjectsButton.setText("Delete ("+shortcuts.getShortcutFor(ACTION.DELETE)+")");
+        this.pruneTrackButton.setText("Prune Track(s) ("+shortcuts.getShortcutFor(ACTION.PRUNE)+")");
+        this.linkObjectsButton.setText("Link ("+shortcuts.getShortcutFor(ACTION.LINK)+")");
+        this.unlinkObjectsButton.setText("UnLink ("+shortcuts.getShortcutFor(ACTION.UNLINK)+")");
+        this.resetLinksButton.setText("Reset Links ("+shortcuts.getShortcutFor(ACTION.RESET_LINKS)+")");
     }
     boolean running = false;
     @Override
@@ -1080,7 +1093,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         mergeObjectsButton = new javax.swing.JButton();
         previousTrackErrorButton = new javax.swing.JButton();
         interactiveStructure = new javax.swing.JComboBox();
-        selectAllObjects = new javax.swing.JButton();
+        selectAllObjectsButton = new javax.swing.JButton();
         deleteObjectsButton = new javax.swing.JButton();
         updateRoiDisplayButton = new javax.swing.JButton();
         manualSegmentButton = new javax.swing.JButton();
@@ -1160,6 +1173,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         activateLoggingMenuItem = new javax.swing.JCheckBoxMenuItem();
         appendToFileMenuItem = new javax.swing.JCheckBoxMenuItem();
         ShortcutMenu = new javax.swing.JMenu();
+        shortcutPresetMenu = new javax.swing.JMenu();
         ActiveSelMenu = new javax.swing.JMenu();
         jMenuItem20 = new javax.swing.JMenuItem();
         jMenuItem1 = new javax.swing.JMenuItem();
@@ -1409,10 +1423,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             }
         });
 
-        selectAllObjects.setText("Select All Objects (A)");
-        selectAllObjects.addActionListener(new java.awt.event.ActionListener() {
+        selectAllObjectsButton.setText("Select All Objects (A)");
+        selectAllObjectsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                selectAllObjectsActionPerformed(evt);
+                selectAllObjectsButtonActionPerformed(evt);
             }
         });
 
@@ -1498,7 +1512,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             .addComponent(mergeObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(previousTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(interactiveStructure, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(selectAllObjects, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(selectAllObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(deleteObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(linkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(unlinkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1532,7 +1546,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(updateRoiDisplayButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(selectAllObjects, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(selectAllObjectsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectAllTracksButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -2029,6 +2043,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         mainMenu.add(miscMenu);
 
         ShortcutMenu.setText("Shortcuts");
+
+        shortcutPresetMenu.setText("Shortcut Preset");
+        ShortcutMenu.add(shortcutPresetMenu);
 
         ActiveSelMenu.setText("Active Selection");
 
@@ -3432,10 +3449,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
     }//GEN-LAST:event_deleteObjectsButtonMousePressed
 
-    private void selectAllObjectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsActionPerformed
+    private void selectAllObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsButtonActionPerformed
         getImageManager().displayAllObjects(null);
         //GUI.updateRoiDisplayForSelections(null, null);
-    }//GEN-LAST:event_selectAllObjectsActionPerformed
+    }//GEN-LAST:event_selectAllObjectsButtonActionPerformed
 
     private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
         if (!checkConnection()) return;
@@ -3838,13 +3855,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JMenu runMenu;
     private javax.swing.JMenuItem runSelectedActionsMenuItem;
     private javax.swing.JMenuItem saveXPMenuItem;
-    private javax.swing.JButton selectAllObjects;
+    private javax.swing.JButton selectAllObjectsButton;
     private javax.swing.JButton selectAllTracksButton;
     private javax.swing.JScrollPane selectionJSP;
     private javax.swing.JList selectionList;
     private javax.swing.JPanel selectionPanel;
     private javax.swing.JMenuItem setLogFileMenuItem;
     private javax.swing.JMenuItem setSelectedExperimentMenuItem;
+    private javax.swing.JMenu shortcutPresetMenu;
     private javax.swing.JButton splitObjectsButton;
     private javax.swing.JList structureList;
     private javax.swing.JTabbedPane tabs;

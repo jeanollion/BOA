@@ -410,11 +410,11 @@ public class SelectionUtils {
             } else for (Selection s : allSelections ) s.setNavigate(false);
         });
         menu.add(navigateMI);
-        final JCheckBoxMenuItem addObjects0MI = new JCheckBoxMenuItem("Active Selection with shortcut Z");
+        final JCheckBoxMenuItem addObjects0MI = new JCheckBoxMenuItem("Active Selection Group 0");
         addObjects0MI.setSelected(addObjects0==selectedValues.size());
         addObjects0MI.addActionListener((ActionEvent e) -> { for (Selection s : selectedValues ) s.setAddObjects(addObjects0MI.isSelected()?0:-1);});
         menu.add(addObjects0MI);
-        final JCheckBoxMenuItem addObjects1MI = new JCheckBoxMenuItem("Active Selection with shortcut E");
+        final JCheckBoxMenuItem addObjects1MI = new JCheckBoxMenuItem("Active Selection Group 1");
         addObjects1MI.setSelected(addObjects1==selectedValues.size());
         addObjects1MI.addActionListener((ActionEvent e) -> {for (Selection s : selectedValues ) s.setAddObjects(addObjects1MI.isSelected()?1:-1);});
         menu.add(addObjects1MI);

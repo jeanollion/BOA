@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  * @author jollion
  */
 
-public class ChoiceParameter extends SimpleParameter implements ActionableParameter, ChoosableParameter {
+public class ChoiceParameter extends SimpleParameter implements ActionableParameter, ChoosableParameter, Listenable {
     String selectedItem;
     String[] listChoice;
     boolean allowNoSelection;

@@ -18,6 +18,7 @@
  */
 package boa.ui;
 
+import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Listenable;
 import boa.configuration.parameters.NumberParameter;
 import static boa.gui.GUI.logger;
@@ -33,6 +34,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractButton;
@@ -195,11 +197,19 @@ public class PropertyUtils {
     public static void setPersistant(Listenable parameter, String key) {
         if (parameter instanceof NumberParameter) {
             NumberParameter np = (NumberParameter)parameter;    
-            np.setValue(get(key, ((NumberParameter) parameter).getValue().doubleValue()));
-            logger.debug("persit number: {} = {} -> {}", np.getName(), ((NumberParameter) parameter).getValue().doubleValue(), np.toString());
+            np.setValue(get(key, np.getValue().doubleValue()));
+            logger.debug("persit number: {} = {} -> {}", np.getName(), np.getValue().doubleValue(), np.toString());
             parameter.addListener(p->{
                 //logger.debug("persist parameter: {}", ((Parameter)parameter).getName());
                 PropertyUtils.set(key, ((NumberParameter)p).getValue().doubleValue());
+            });
+        } else if (parameter instanceof ChoiceParameter) {
+            ChoiceParameter cp = (ChoiceParameter) parameter;
+            cp.setValue(get(key, cp.getValue()));
+            logger.debug("persit choice: {} -> {}", cp.getName(), cp.getValue());
+            cp.addListener(p -> {
+                PropertyUtils.set(key, ((ChoiceParameter)p).getValue());
+                logger.debug("persit choice: {} -> {}", cp.getName(), cp.getValue());
             });
         } else logger.debug("persistance on parameter not supported yet!");
         

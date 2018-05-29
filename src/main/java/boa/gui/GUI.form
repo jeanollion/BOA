@@ -485,6 +485,11 @@
             <Property name="text" type="java.lang.String" value="Shortcuts"/>
           </Properties>
           <SubComponents>
+            <Menu class="javax.swing.JMenu" name="shortcutPresetMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Shortcut Preset"/>
+              </Properties>
+            </Menu>
             <Menu class="javax.swing.JMenu" name="ActiveSelMenu">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Active Selection"/>
@@ -1102,7 +1107,7 @@
                               <Component id="mergeObjectsButton" alignment="0" max="32767" attributes="0"/>
                               <Component id="previousTrackErrorButton" alignment="0" max="32767" attributes="0"/>
                               <Component id="interactiveStructure" alignment="0" max="32767" attributes="0"/>
-                              <Component id="selectAllObjects" alignment="0" max="32767" attributes="0"/>
+                              <Component id="selectAllObjectsButton" alignment="0" max="32767" attributes="0"/>
                               <Component id="deleteObjectsButton" alignment="0" max="32767" attributes="0"/>
                               <Component id="linkObjectsButton" alignment="0" max="32767" attributes="0"/>
                               <Component id="unlinkObjectsButton" alignment="0" max="32767" attributes="0"/>
@@ -1142,7 +1147,7 @@
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="updateRoiDisplayButton" min="-2" pref="25" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="selectAllObjects" min="-2" pref="25" max="-2" attributes="0"/>
+                                  <Component id="selectAllObjectsButton" min="-2" pref="25" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="selectAllTracksButton" min="-2" pref="25" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
@@ -1237,12 +1242,12 @@
                             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="interactiveStructureActionPerformed"/>
                           </Events>
                         </Component>
-                        <Component class="javax.swing.JButton" name="selectAllObjects">
+                        <Component class="javax.swing.JButton" name="selectAllObjectsButton">
                           <Properties>
                             <Property name="text" type="java.lang.String" value="Select All Objects (A)"/>
                           </Properties>
                           <Events>
-                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectAllObjectsActionPerformed"/>
+                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectAllObjectsButtonActionPerformed"/>
                           </Events>
                         </Component>
                         <Component class="javax.swing.JButton" name="deleteObjectsButton">
