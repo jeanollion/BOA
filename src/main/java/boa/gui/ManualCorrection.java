@@ -416,7 +416,7 @@ public class ManualCorrection {
             ManualSegmenter s = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
             HashMap<StructureObject, TrackParametrizer> parentThMapParam = new HashMap<>();
             if (s instanceof TrackParametrizable) {
-                points.keySet().stream().map(p->p.getTrackHead()).distinct().forEach(p->parentThMapParam.put(p, TrackParametrizable.getTrackParametrizer(structureIdx, db.getDao(positions[0]).getTrack(p), s)));
+                points.keySet().stream().map(p->p.getParent(parentStructureIdx)).map(p->p.getTrackHead()).distinct().forEach(p->parentThMapParam.put(p, TrackParametrizable.getTrackParametrizer(structureIdx, db.getDao(positions[0]).getTrack(p), s)));
                 parentThMapParam.entrySet().removeIf(e->e.getValue()==null);
             }
             
@@ -425,12 +425,12 @@ public class ManualCorrection {
             
             for (Map.Entry<StructureObject, List<int[]>> e : points.entrySet()) {
                 ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
-                if (!parentThMapParam.isEmpty()) parentThMapParam.get(e.getKey().getTrackHead()).apply(e.getKey(), segmenter);
+                if (!parentThMapParam.isEmpty()) parentThMapParam.get(e.getKey().getParent(parentStructureIdx).getTrackHead()).apply(e.getKey(), segmenter);
                 segmenter.setManualSegmentationVerboseMode(test);
                 StructureObject globalParent = e.getKey().getParent(parentStructureIdx);
                 StructureObject subParent = e.getKey();
                 boolean subSegmentation = !subParent.equals(globalParent);
-                boolean ref2D = subParent.is2D() && globalParent.getPreFilteredImage(structureIdx).sizeZ()>1;
+                boolean ref2D = subParent.is2D() && globalParent.getRawImage(structureIdx).sizeZ()>1;
                 
                 Image input = globalParent.getPreFilteredImage(structureIdx);
                 if (subSegmentation) input = input.cropWithOffset(ref2D?new MutableBoundingBox(subParent.getBounds()).copyZ(input):subParent.getBounds());
@@ -486,20 +486,20 @@ public class ManualCorrection {
         splitObjects(db, objects, updateDisplay, test, null);
     }
     public static void ensurePreFilteredImages(Stream<StructureObject> parents, int structureIdx, Experiment xp , ObjectDAO dao) {
+        int parentStructureIdx = xp.getStructure(structureIdx).getParentStructure();
         TrackPreFilterSequence tpf = xp.getStructure(structureIdx).getProcessingScheme().getTrackPreFilters(false);
         boolean needToComputeAllPreFilteredImage = !tpf.get().isEmpty() || xp.getStructure(structureIdx).getProcessingScheme().getSegmenter() instanceof TrackParametrizable;
         TrackPreFilterSequence tpfWithPF = xp.getStructure(structureIdx).getProcessingScheme().getTrackPreFilters(true);
         if (!needToComputeAllPreFilteredImage) { // only preFilters on current objects
             PreFilterSequence pf = xp.getStructure(structureIdx).getProcessingScheme().getPreFilters();
-            parents.forEach(parent ->{
+            parents.map(p->p.getParent(parentStructureIdx)).forEach(parent ->{
                 if (parent.getPreFilteredImage(structureIdx)==null) {
                     parent.setPreFilteredImage(pf.filter(parent.getRawImage(structureIdx), parent.getMask()), structureIdx);
                 }
             });
-            return;
-        } else if (dao==null) throw new RuntimeException("Cannot split objects because track preFilters are present and DAO not preset");
-        else {
-            parents.map(o->o.getTrackHead()).distinct().forEach(p->{
+        } else {
+            if (dao==null) throw new RuntimeException("Cannot compute pre-filtered images because track preFilters are present and DAO not preset");
+            parents.map(p->p.getParent(parentStructureIdx)).map(o->o.getTrackHead()).distinct().forEach(p->{
                 logger.debug("tpf for : {}", p);
                 if (p.getPreFilteredImage(structureIdx)==null) {
                     tpfWithPF.filter(structureIdx, dao.getTrack(p));

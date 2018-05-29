@@ -84,7 +84,7 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
     }
 
     public static TreePath getPath(TreeNode treeNode) {
-        ArrayList<Object> nodes = new ArrayList<Object>();
+        ArrayList<Object> nodes = new ArrayList<>();
         if (treeNode != null) {
             nodes.add(treeNode);
             treeNode = treeNode.getParent();

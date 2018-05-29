@@ -63,7 +63,7 @@ public class ProcessingChain extends SimpleContainerParameter {
     }
     
     public ArrayList<PreFilter> getPrefilters() {
-        ArrayList<PreFilter> res = new ArrayList<PreFilter> (preFilters.getChildCount());
+        ArrayList<PreFilter> res = new ArrayList<> (preFilters.getChildCount());
         for (PluginParameter p : preFilters.getChildren()) if (((PluginParameter)p).isOnePluginSet() && ((PluginParameter)p).isActivated()) res.add((PreFilter)((PluginParameter)p).instanciatePlugin());
         return res;
         //return preFilters.getChildren().toArray(new PreFilter[preFilters.getChildCount()]);
@@ -71,7 +71,7 @@ public class ProcessingChain extends SimpleContainerParameter {
     }
     
     public ArrayList<PostFilter> getPostfilters() {
-        ArrayList<PostFilter> res = new ArrayList<PostFilter> (postFilters.getChildCount());
+        ArrayList<PostFilter> res = new ArrayList<> (postFilters.getChildCount());
         for (Parameter p : postFilters.getChildren()) if (((PluginParameter)p).isOnePluginSet() && ((PluginParameter)p).isActivated()) res.add((PostFilter)((PluginParameter)p).instanciatePlugin());
         return res;
     }
@@ -87,11 +87,11 @@ public class ProcessingChain extends SimpleContainerParameter {
     }
     
     public void addPreFilters(PreFilter... preFilter) {
-        for (PreFilter p : preFilter) this.preFilters.insert(new PluginParameter<PreFilter>("Pre-Filter", PreFilter.class, p, false));
+        for (PreFilter p : preFilter) this.preFilters.insert(new PluginParameter<>("Pre-Filter", PreFilter.class, p, false));
     }
     
     public void addPostFilters(PostFilter... postFilter) {
-        for (PostFilter p : postFilter) this.postFilters.insert(new PluginParameter<PostFilter>("Post-Filter", PostFilter.class, p, false));
+        for (PostFilter p : postFilter) this.postFilters.insert(new PluginParameter<>("Post-Filter", PostFilter.class, p, false));
     }
     
     @Override

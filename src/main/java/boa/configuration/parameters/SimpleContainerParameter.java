@@ -41,6 +41,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     protected String name;
     protected ContainerParameter parent;
     protected List<Parameter> children;
+    protected boolean isEmphasized;
     public SimpleContainerParameter(String name) {
         this.name=name;
     }
@@ -53,6 +54,17 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     public <T extends Parameter> T setToolTipText(String txt) {
         this.toolTipText=txt;
         return (T)this;
+    }
+    @Override
+    public boolean isEmphasized() {
+        if (isEmphasized) return true;
+        return getChildren().stream().anyMatch((child) -> (child.isEmphasized()));
+    }
+    @Override
+    public <T extends Parameter> T setEmphasized(boolean isEmphasized) {
+        this.getChildren().stream().filter(p->!p.isEmphasized()).forEach(p -> p.setEmphasized(isEmphasized));
+        this.isEmphasized = isEmphasized;
+        return (T) this;
     }
     protected void initChildren(List<Parameter> parameters) {
         if (parameters==null) {
@@ -83,8 +95,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     
     @Override
     public boolean isValid() {
-        for (Parameter child : getChildren()) if (!child.isValid()) return false;
-        return true;
+        return getChildren().stream().noneMatch((child) -> (!child.isValid()));
     }
     
     @Override

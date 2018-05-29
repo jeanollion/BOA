@@ -36,6 +36,7 @@ import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.Tracker;
 import boa.utils.JSONUtils;
 import boa.utils.Utils;
+import javax.swing.JMenuItem;
 
 /**
  *
@@ -268,7 +269,8 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             if (s!=null) {
                 Plugin pl = this.instanciatePlugin();
                 if (pl instanceof Segmenter || pl instanceof Tracker) {
-                    ui.addActions(PluginConfigurationUtils.getTestCommand((ImageProcessingPlugin)pl, ParameterUtils.getExperiment(this), s.getIndex()), true);
+                    List<JMenuItem> testCommands = PluginConfigurationUtils.getTestCommand((ImageProcessingPlugin)pl, ParameterUtils.getExperiment(this), s.getIndex());
+                    for (int i = 0; i<testCommands.size(); ++i) ui.addActions(testCommands.get(i), i==0);
                 }
             }
         }

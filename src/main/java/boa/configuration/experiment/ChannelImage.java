@@ -48,7 +48,10 @@ public class ChannelImage extends SimpleContainerParameter {
     protected void initChildList() {
         super.initChildren(importKeyWord);
     }
-    
+    @Override 
+    public boolean isEmphasized() {
+        return false;
+    }
     @Override
     public ParameterUI getUI() {
         if (ui==null) ui=new NameEditorUI(this, false);

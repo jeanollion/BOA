@@ -39,6 +39,7 @@ import fiji.plugin.trackmate.Spot;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
+import static boa.image.processing.bacteria_spine.BacteriaSpineFactory.verboseZoomFactor;
 import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.project;
 import java.util.ArrayList;
@@ -80,6 +81,7 @@ import boa.utils.SymetricalPair;
 import boa.utils.Utils;
 import static boa.utils.Utils.parallele;
 import boa.utils.geom.Point;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -274,7 +276,7 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
         
         // test mode 
         if (stores!=null) {
-            Consumer<List<StructureObject>> displayDistance =  l -> {
+            BiConsumer<List<StructureObject>, Boolean> displayDistance =  (l, drawDistances) -> {
                 if (l.size()==2 && l.get(0).getStructureIdx()==structureIdx && l.get(1).getStructureIdx()==structureIdx) {
                     Collections.sort(l);
                     StructureObject b1 = mutationMapParentBacteria.get(l.get(0).getRegion());
@@ -283,11 +285,11 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
                         return;
                     }
                     BacteriaSpineLocalizer bsl1 = localizerMap.get(b1);
-                    bsl1.setTestMode(true);
                     if (bsl1==null) {
                         logger.info("bacteria spine localizer not computable for bacteria: "+b1);
                         return;
                     }
+                    bsl1.setTestMode(true);
                     if ( l.get(0).getRegion().getCenter()==null)  l.get(0).getRegion().setCenter( l.get(0).getRegion().getGeomCenter(false).translate(l.get(0).getBounds()));
                     if ( l.get(1).getRegion().getCenter()==null)  l.get(1).getRegion().setCenter( l.get(1).getRegion().getGeomCenter(false).translate(l.get(1).getBounds()));
                     
@@ -309,24 +311,27 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
                     // actual projection
                     distParams.includeLQ = true;
                     
-                    Image spine1 = bsl1.draw(7).setName("Source Spine: "+b1);
-                    BacteriaSpineLocalizer.drawPoint(l.get(0).getRegion().getCenter(), spine1, 7, 1000);
+                    Image spine1 = bsl1.spine.drawSpine(verboseZoomFactor, drawDistances).setName("Source Spine: "+b1);
+                    BacteriaSpineLocalizer.drawPoint(l.get(0).getRegion().getCenter(), spine1, verboseZoomFactor, 1000);
                     ImageWindowManagerFactory.showImage(spine1);
-                    Image spine2 = bsl2.draw(7).setName("Destination Spine: "+b2);
-                    BacteriaSpineLocalizer.drawPoint(l.get(1).getRegion().getCenter(), spine2, 7, 1001);
+                    Image spine2 = bsl2.spine.drawSpine(verboseZoomFactor, drawDistances).setName("Destination Spine: "+b2);
+                    BacteriaSpineLocalizer.drawPoint(l.get(1).getRegion().getCenter(), spine2, verboseZoomFactor, 1001);
                     
                     NestedSpot s1 = new NestedSpot(l.get(0).getRegion(), b1, localizerMap, distParams);
                     NestedSpot s2 = new NestedSpot(l.get(1).getRegion(), b2, localizerMap, distParams);
                     Point proj = project(l.get(0).getRegion().getCenter(), b1, b2, distParams.projectionType, localizerMap, true);
                     if (proj!=null) {
-                        BacteriaSpineLocalizer.drawPoint(proj, spine2, 7, 1000);
+                        BacteriaSpineLocalizer.drawPoint(proj, spine2, verboseZoomFactor, 1000);
                         logger.info("Dist {} -> {}: {}", l.get(0), l.get(1), proj.dist(l.get(1).getRegion().getCenter()) * l.get(0).getScaleXY());
                     } else logger.info("Could not project point");
                     
                     ImageWindowManagerFactory.showImage(spine2);
                 }
             };
-            parentTrack.forEach((p) -> stores.get(p).addMisc(displayDistance));
+            parentTrack.forEach((p) -> {
+                stores.get(p).addMisc("Display Spine", l->displayDistance.accept(l, false));
+                stores.get(p).addMisc("Display Spine With Distance", l->displayDistance.accept(l, true));
+            });
         }
     }
     

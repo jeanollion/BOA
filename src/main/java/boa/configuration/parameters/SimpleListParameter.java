@@ -52,7 +52,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     protected Class<T> childClass;
     protected String childClassName;
     protected T childInstance;
-    
+    protected boolean isEmphasized;
     protected ListParameterUI ui;
     protected ContainerParameter parent;
     protected Function<Integer, String> newInstanceNameFunction;
@@ -171,12 +171,14 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
             try {
                 T instance;
                 instance = childClass.getDeclaredConstructor(String.class).newInstance(newInstanceNameFunction!=null ? newInstanceNameFunction.apply(getChildCount()) : "new "+childClass.getSimpleName());
+                instance.setEmphasized(isEmphasized);
                 return instance;
             } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
                 logger.error("duplicate error", ex);
             }
         } else if (childInstance != null) {
             T res =  (T)childInstance.duplicate();
+            if (childInstance.isEmphasized() || isEmphasized) res.setEmphasized(true);
             if (newInstanceNameFunction!=null) res.setName(newInstanceNameFunction.apply(getChildCount()));
             return res;
             //if (res instanceof SimpleContainerParameter) ((SimpleContainerParameter)res).setListeners(((SimpleContainerParameter)childInstance).listeners);
@@ -251,8 +253,20 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     @Override
     public boolean isValid() {
         if (unMutableIndex>=this.getChildCount()) return false;
-        for (T child : this.getActivatedChildren()) if (!child.isValid()) return false;
-        return true;
+        return this.getActivatedChildren().stream().noneMatch((child) -> (!child.isValid()));
+    }
+    
+    @Override
+    public boolean isEmphasized() {
+        //return isEmphasized;
+        if(isEmphasized) return true;
+        return getActivatedChildren().stream().anyMatch((child) -> (child.isEmphasized()));
+    }
+    @Override
+    public <T extends Parameter> T setEmphasized(boolean isEmphasized) {
+        this.getChildren().stream().filter(p->!p.isEmphasized()).forEach(p -> p.setEmphasized(isEmphasized));
+        this.isEmphasized = isEmphasized;
+        return (T) this;
     }
     
     @Override
@@ -309,7 +323,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     public void setUnmutableIndex(int unMutableIndex) {
         this.unMutableIndex=unMutableIndex;
     }
-    
+    @Override
     public int getUnMutableIndex() {
         return unMutableIndex;
     }

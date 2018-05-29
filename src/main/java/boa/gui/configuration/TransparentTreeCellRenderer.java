@@ -19,6 +19,7 @@
 package boa.gui.configuration;
 
 import boa.configuration.parameters.Parameter;
+import com.itextpdf.text.Font;
 import java.awt.Color;
 import java.awt.Component;
 import javax.swing.JTree;
@@ -56,6 +57,9 @@ public class TransparentTreeCellRenderer extends DefaultTreeCellRenderer {
         if (value instanceof Parameter) {
             boolean isValid = ((Parameter)value).isValid();
             if (!isValid) ret.setForeground(Color.RED);
+            boolean isEmphasized = ((Parameter)value).isEmphasized();
+            if (isEmphasized) ret.setFont(ret.getFont().deriveFont(Font.BOLD));
+            else ret.setFont(ret.getFont().deriveFont(Font.NORMAL));
         }
         
         return ret;

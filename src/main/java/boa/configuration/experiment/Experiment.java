@@ -135,7 +135,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         structures.addListener((Parameter source) -> ((SimpleListParameter<Structure>)source).getChildren().stream().forEachOrdered((s) -> s.setMaxStructureIdx()));
         initChildList();
     }
-    
+    @Override 
+    public boolean isEmphasized() {
+        return false;
+    }
     public Experiment(String name, Structure... defaultStructures) {
         this(name);
         for (Structure s : defaultStructures) structures.insert(s);

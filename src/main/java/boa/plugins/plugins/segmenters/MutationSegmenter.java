@@ -94,12 +94,12 @@ import java.util.stream.DoubleStream;
  */
 public class MutationSegmenter implements Segmenter, TrackParametrizable<MutationSegmenter>, ManualSegmenter, ObjectSplitter, TestableProcessingPlugin, ToolTip {
     public static boolean debug = false;
-    ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true);
+    ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true).setEmphasized(true);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 5).setToolTipText("Scale (in pixels) for gaussian smooth");
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null).setToolTipText("In pixels: spots under this size will be removed");
-    NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 2.25).setToolTipText("Higher value will increase false negative and decrease false positives.<br /> Laplacian Threshold for seed selection");
-    NumberParameter thresholdLow = new NumberParameter("Threshold for propagation", 2, 1.63).setToolTipText("Lower value will yield in larger spots.<br /> Laplacian Threshold for watershed propagation: propagation stops at this value.");
-    NumberParameter intensityThreshold = new NumberParameter("Intensity Threshold for Seeds", 2, 1.8).setToolTipText("Higher value will increase false negative and decrease false positives.<br /> Laplacian Threshold for seed selection"); 
+    NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 2.25).setEmphasized(true).setToolTipText("Higher value will increase false negative and decrease false positives.<br /> Laplacian Threshold for seed selection");
+    NumberParameter thresholdLow = new NumberParameter("Threshold for propagation", 2, 1.63).setEmphasized(true).setToolTipText("Lower value will yield in larger spots.<br /> Laplacian Threshold for watershed propagation: propagation stops at this value.");
+    NumberParameter intensityThreshold = new NumberParameter("Intensity Threshold for Seeds", 2, 1.8).setEmphasized(true).setToolTipText("Higher value will increase false negative and decrease false positives.<br /> Laplacian Threshold for seed selection"); 
     boolean planeByPlane = false;
     Parameter[] parameters = new Parameter[]{scale, smoothScale, minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold};
     ProcessingVariables pv = new ProcessingVariables();

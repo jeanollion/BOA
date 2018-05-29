@@ -54,6 +54,7 @@ public class TestImageProcessingPlugin {
         int pIdx =1;
         int mcIdx =6;
         int structureIdx =1;
+        boolean segAndTrack = true;
         int[] frames = new int[]{422,422}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
@@ -77,7 +78,7 @@ public class TestImageProcessingPlugin {
             parentTrack.removeIf(o -> o.getFrame()<frames[0] || o.getFrame()>frames[1]);
         }
         
-        Map<StructureObject, TestableProcessingPlugin.TestDataStore> stores = testImageProcessingPlugin(ps.getSegmenter(), db.getExperiment(), structureIdx, parentTrack);
+        Map<StructureObject, TestableProcessingPlugin.TestDataStore> stores = testImageProcessingPlugin(ps.getSegmenter(), db.getExperiment(), structureIdx, parentTrack, segAndTrack);
         if (stores!=null) displayIntermediateImages(stores, structureIdx);
     }
 }

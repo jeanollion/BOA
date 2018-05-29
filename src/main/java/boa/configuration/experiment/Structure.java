@@ -142,7 +142,10 @@ public class Structure extends SimpleContainerParameter {
     public Structure(String name) {
         this(name, -1, -1);
     }
-    
+    @Override 
+    public boolean isEmphasized() {
+        return false;
+    }
     @Override
     protected void initChildList() {
         
