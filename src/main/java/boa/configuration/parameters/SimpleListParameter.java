@@ -52,7 +52,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     protected Class<T> childClass;
     protected String childClassName;
     protected T childInstance;
-    protected boolean isEmphasized;
+    protected Boolean isEmphasized;
     protected ListParameterUI ui;
     protected ContainerParameter parent;
     protected Function<Integer, String> newInstanceNameFunction;
@@ -171,14 +171,14 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
             try {
                 T instance;
                 instance = childClass.getDeclaredConstructor(String.class).newInstance(newInstanceNameFunction!=null ? newInstanceNameFunction.apply(getChildCount()) : "new "+childClass.getSimpleName());
-                instance.setEmphasized(isEmphasized);
+                if (isEmphasized!=null) instance.setEmphasized(isEmphasized);
                 return instance;
             } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
                 logger.error("duplicate error", ex);
             }
         } else if (childInstance != null) {
             T res =  (T)childInstance.duplicate();
-            if (childInstance.isEmphasized() || isEmphasized) res.setEmphasized(true);
+            if (childInstance.isEmphasized() || Boolean.FALSE.equals(isEmphasized)) res.setEmphasized(true);
             if (newInstanceNameFunction!=null) res.setName(newInstanceNameFunction.apply(getChildCount()));
             return res;
             //if (res instanceof SimpleContainerParameter) ((SimpleContainerParameter)res).setListeners(((SimpleContainerParameter)childInstance).listeners);
@@ -259,7 +259,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     @Override
     public boolean isEmphasized() {
         //return isEmphasized;
-        if(isEmphasized) return true;
+        if(isEmphasized!=null) return isEmphasized;
         return getActivatedChildren().stream().anyMatch((child) -> (child.isEmphasized()));
     }
     @Override

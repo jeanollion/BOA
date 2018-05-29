@@ -75,8 +75,9 @@ public class NestedSpot extends SpotWithQuality {
             if (!distanceParameters.includeLQ && (lowQuality || ss.lowQuality)) return Double.POSITIVE_INFINITY;
             if (this.frame()>ss.frame()) return ss.squareDistanceTo(this);
             if (ss.frame()-frame()>distanceParameters.maxFrameDiff) return Double.POSITIVE_INFINITY;
-            return BacteriaSpineLocalizer.distanceSq(spineCoord, ss.region.getCenter(), parent, ss.parent, distanceParameters.projectionType, localizerMap, false);
-            
+            double distSq = BacteriaSpineLocalizer.distanceSq(spineCoord, ss.region.getCenter(), parent, ss.parent, distanceParameters.projectionType, localizerMap, false);
+            distSq+=distanceParameters.getSquareDistancePenalty(distSq, this, ss);
+            return distSq;
         } else return super.squareDistanceTo(s);
     }
 }

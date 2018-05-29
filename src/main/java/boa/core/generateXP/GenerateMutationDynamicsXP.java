@@ -62,7 +62,6 @@ import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
 import boa.plugins.plugins.segmenters.BacteriaIntensity;
 import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
-import boa.plugins.plugins.trackers.MutationTracker;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import boa.plugins.plugins.transformations.AutoRotationXY;
@@ -75,6 +74,7 @@ import boa.plugins.plugins.transformations.SimpleCrop;
 import boa.plugins.plugins.transformations.SimpleTranslation;
 import boa.image.processing.ImageTransformation;
 import static boa.core.generateXP.GenerateXP.generateXPPhase;
+import boa.plugins.plugins.trackers.MutationTrackerSpine;
 
 /**
  *
@@ -177,7 +177,7 @@ public class GenerateMutationDynamicsXP {
         //bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
         bacteria.setProcessingScheme(new SegmentThenTrack(new BacteriaIntensity(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
         mutation.setProcessingScheme(new SegmentAndTrack(
-                new MutationTracker().setCompartimentStructure(1).setSegmenter(
+                new MutationTrackerSpine().setCompartimentStructure(1).setSegmenter(
                         new MutationSegmenter(0.65, 0.5, 0.55).setScale(2.5) 
                 ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.4, 0.41).setGapParameters(0.4, 0.1, 3)
         ).addPreFilters(new BandPass(0, 8, 0, 5) // was 10

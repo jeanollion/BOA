@@ -65,10 +65,7 @@ import boa.plugins.plugins.processing_scheme.SegmentOnly;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
 import boa.plugins.plugins.trackers.nested_spot_tracker.DistanceComputationParameters;
 import boa.plugins.plugins.trackers.nested_spot_tracker.NestedSpot;
-import boa.plugins.plugins.trackers.nested_spot_tracker.SpotCompartiment;
-import static boa.plugins.plugins.trackers.nested_spot_tracker.SpotCompartiment.isTruncated;
 import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.MutationTrackPostProcessing;
-import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithinCompartment;
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface;
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface.SpotFactory;
 import static boa.plugins.plugins.trackers.trackmate.TrackMateInterface.logger;
@@ -90,7 +87,6 @@ import java.util.stream.Collectors;
  * @author jollion
  */
 public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, TestableProcessingPlugin, ToolTip {
-    public static TrackMateInterface<SpotWithinCompartment> debugTMI;
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new MutationSegmenter(), false);
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", 1, false, false).setToolTipText("Structure of bacteria objects.");
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5).setToolTipText("Spot with quality parameter over this threshold are considered as high quality spots, others as low quality spots");
@@ -99,7 +95,7 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Maximum Linking Distance", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for theglobal linking step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together. An additional cost proportional to the gap is added to the distance between spots (see <em>gap penalty</em>");
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null).setToolTipText("When two spots are separated by a gap, an additional distance is added to their distance: this value x number of frame of the gap");
     NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance", 2, 0.8, 0, null).setToolTipText("The algorithm performs a global optimization minimizing the global cost. Cost are the distance between spots. Alternative distance represent the cost of being linked with no other spot. If this value is too low, the algorithm won't link any spot, it should be superior to the linking distance threshold");
-    ChoiceParameter projectionType = new ChoiceParameter("Projection type", Utils.transform(BacteriaSpineLocalizer.PROJECTION.values(),i->new String[i], p->p.name()), BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE.name(), false );
+    ChoiceParameter projectionType = new ChoiceParameter("Projection type", Utils.toStringArray(BacteriaSpineLocalizer.PROJECTION.values()), BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL.toString(), false );
     Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, projectionType, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
     String toolTip = "<b>Mutation tracking within bacteria</b> using <em>TrackMate (https://imagej.net/TrackMate)</em> <br />"
             + "<ul><li>Distance between spots is relative to the nearest bacteria pole (or division point for dividing bacteria) in order to take into acount bacteria growth</li>"
@@ -313,16 +309,18 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
                     
                     Image spine1 = bsl1.spine.drawSpine(verboseZoomFactor, drawDistances).setName("Source Spine: "+b1);
                     BacteriaSpineLocalizer.drawPoint(l.get(0).getRegion().getCenter(), spine1, verboseZoomFactor, 1000);
+                    spine1.setCalibration(spine1.getScaleXY() * l.get(0).getScaleXY(), 1);
                     ImageWindowManagerFactory.showImage(spine1);
                     Image spine2 = bsl2.spine.drawSpine(verboseZoomFactor, drawDistances).setName("Destination Spine: "+b2);
                     BacteriaSpineLocalizer.drawPoint(l.get(1).getRegion().getCenter(), spine2, verboseZoomFactor, 1001);
+                    spine2.setCalibration(spine2.getScaleXY() * l.get(0).getScaleXY(), 1);
                     
                     NestedSpot s1 = new NestedSpot(l.get(0).getRegion(), b1, localizerMap, distParams);
                     NestedSpot s2 = new NestedSpot(l.get(1).getRegion(), b2, localizerMap, distParams);
                     Point proj = project(l.get(0).getRegion().getCenter(), b1, b2, distParams.projectionType, localizerMap, true);
                     if (proj!=null) {
                         BacteriaSpineLocalizer.drawPoint(proj, spine2, verboseZoomFactor, 1000);
-                        logger.info("Dist {} -> {}: {}", l.get(0), l.get(1), proj.dist(l.get(1).getRegion().getCenter()) * l.get(0).getScaleXY());
+                        logger.info("Dist {} -> {}: {} ({})", l.get(0), l.get(1), proj.dist(l.get(1).getRegion().getCenter()) * l.get(0).getScaleXY(), Math.sqrt(tmi.objectSpotMap.get(l.get(0).getRegion()).squareDistanceTo(tmi.objectSpotMap.get(l.get(1).getRegion()))));
                     } else logger.info("Could not project point");
                     
                     ImageWindowManagerFactory.showImage(spine2);
@@ -397,12 +395,13 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
         }
         return false;
     }
-    private static void switchCrossingLinksWithLQBranches(TrackMateInterface<SpotWithinCompartment> tmi, double spatialTolerance, double distanceThld, int maxGap) {
+    
+    private static void switchCrossingLinksWithLQBranches(TrackMateInterface<NestedSpot> tmi, double spatialTolerance, double distanceThld, int maxGap) {
         long t0 = System.currentTimeMillis();
         double distanceSqThld = distanceThld*distanceThld;
         Set<SymetricalPair<DefaultWeightedEdge>> crossingLinks = tmi.getCrossingLinks(spatialTolerance, null);
-        HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackBefore = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getObject(e, true), true, false));
-        HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackAfter = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getObject(e, false), false, true));
+        HashMapGetCreate<DefaultWeightedEdge, List<NestedSpot>> trackBefore = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getObject(e, true), true, false));
+        HashMapGetCreate<DefaultWeightedEdge, List<NestedSpot>> trackAfter = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getObject(e, false), false, true));
         Function<SymetricalPair<DefaultWeightedEdge>, Double> distance = p -> {
             boolean beforeLQ1 = isLowQ(trackBefore.getAndCreateIfNecessary(p.key));
             boolean afterLQ1 = isLowQ(trackAfter.getAndCreateIfNecessarySync(p.key));
@@ -425,12 +424,12 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
             e.getValue().removeAll(deletedEdges);
             if (e.getValue().isEmpty()) continue;
             DefaultWeightedEdge closestEdge = e.getValue().size()==1? e.getValue().iterator().next() : Collections.min(e.getValue(), (e1, e2)-> Double.compare(linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e1)), linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e2))));
-            SpotWithinCompartment e1 = tmi.getObject(e.getKey(), true);
-            SpotWithinCompartment t1 = tmi.getObject(e.getKey(), false);
-            SpotWithinCompartment e2 = tmi.getObject(closestEdge, true);
-            SpotWithinCompartment t2 = tmi.getObject(closestEdge, false);
-            if (t2.frame>e1.frame && (t2.frame-e1.frame) <=maxGap && e1.squareDistanceTo(t2)<=distanceSqThld)  tmi.addEdge(e1, t2);
-            if (t1.frame>e2.frame && (t1.frame-e2.frame) <=maxGap && e2.squareDistanceTo(t1)<=distanceSqThld)  tmi.addEdge(e2, t1);
+            NestedSpot e1 = tmi.getObject(e.getKey(), true);
+            NestedSpot t1 = tmi.getObject(e.getKey(), false);
+            NestedSpot e2 = tmi.getObject(closestEdge, true);
+            NestedSpot t2 = tmi.getObject(closestEdge, false);
+            if (t2.frame()>e1.frame() && (t2.frame()-e1.frame()) <=maxGap && e1.squareDistanceTo(t2)<=distanceSqThld)  tmi.addEdge(e1, t2);
+            if (t1.frame()>e2.frame() && (t1.frame()-e2.frame()) <=maxGap && e2.squareDistanceTo(t1)<=distanceSqThld)  tmi.addEdge(e2, t1);
             tmi.removeFromGraph(e.getKey());
             tmi.removeFromGraph(closestEdge);
             deletedEdges.add(e.getKey());
@@ -440,8 +439,8 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
         tmi.logGraphStatus("switch LQ links", t1-t0);
     }
     
-    private static boolean isLowQ(List<SpotWithinCompartment> track) {
-        for (SpotWithinCompartment s : track) if (!s.lowQuality) return false;
+    private static boolean isLowQ(List<NestedSpot> track) {
+        for (NestedSpot s : track) if (!s.isLowQuality()) return false;
         return true;
     }
     private static void removeUnlinkedLQSpots(List<StructureObject> parentTrack, int structureIdx, TrackMateInterface<NestedSpot> tmi) {

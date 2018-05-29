@@ -41,7 +41,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     protected String name;
     protected ContainerParameter parent;
     protected List<Parameter> children;
-    protected boolean isEmphasized;
+    protected Boolean isEmphasized;
     public SimpleContainerParameter(String name) {
         this.name=name;
     }
@@ -57,7 +57,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     @Override
     public boolean isEmphasized() {
-        if (isEmphasized) return true;
+        if (isEmphasized!=null) return isEmphasized;
         return getChildren().stream().anyMatch((child) -> (child.isEmphasized()));
     }
     @Override

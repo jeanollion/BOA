@@ -19,7 +19,6 @@
 package boa.plugins.plugins.trackers.nested_spot_tracker;
 
 import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION;
-import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithinCompartment;
 
 /**
  *
@@ -62,9 +61,10 @@ public class DistanceComputationParameters {
             this.alternativeDistance=alternativeDistance;
             return this;
         }
-        public double getSquareDistancePenalty(double distance, SpotWithinCompartment s, SpotWithinCompartment t) {
-            int delta = Math.abs(t.frame-s.frame);
-            if (!allowGapBetweenLQ && delta>1 && s.lowQuality && t.lowQuality) return Double.POSITIVE_INFINITY; // no gap closing between LQ spots
-            return delta*delta * (gapSquareDistancePenalty + 2*gapDistancePenalty*distance); // pow* -> working on square distances
+        public double getSquareDistancePenalty(double distanceSq, SpotWithQuality s, SpotWithQuality t) {
+            int delta = Math.abs(t.frame()-s.frame())-1;
+            if (delta==0) return 0;
+            if (!allowGapBetweenLQ && s.isLowQuality() && t.isLowQuality()) return Double.POSITIVE_INFINITY; // no gap closing between LQ spots
+            return  delta * delta * gapSquareDistancePenalty + 2*delta * gapDistancePenalty*Math.sqrt(distanceSq); // working on square distance
         }
     }

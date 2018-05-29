@@ -77,7 +77,7 @@ public class BacteriaSpineCoord {
     }
     /**
      * modifies the spine coordinate so that it can be projected in a daughter cell 
-     * @param divisionProportion size of daughter cell / sum of daugter cells sizes
+     * @param divisionProportion size of daughter cell / sum of daughter cells sizes
      * @param upperCell wheter the projection will be done in the upper daughter cell or not
      * @return same modified object
      */

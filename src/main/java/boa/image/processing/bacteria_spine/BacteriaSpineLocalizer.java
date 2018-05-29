@@ -91,6 +91,7 @@ public class BacteriaSpineLocalizer {
      * @return {@link BacteriaSpineCoord} representation of {@param p} from {@param referencePole} or null if it could not be computed
      */
     public BacteriaSpineCoord getSpineCoord(RealLocalizable p) {
+        if (p==null) return null;
         //long t0 = System.currentTimeMillis();
         //search.search(p);
         //PointContainer2<Vector, Double> v = search.getSampler().get();
@@ -385,11 +386,11 @@ public class BacteriaSpineLocalizer {
                 double curLength = localizerMap.get(next).getLength();
                 if (Double.isNaN(totalLength) || sib.isEmpty()) totalLength = curLength; // most probably : division point @ middle
                 double prop = curLength/(totalLength+curLength);
-                boolean upperCell = sib.isEmpty() || next.getIdx() < sib.stream().mapToInt(o->o.getIdx()).min().getAsInt(); // THIS IS VALID FOR CLOSED-END MICROCHANNELS ONLY!
-                //if (testMode) logger.debug("project div: coord before proj {} {}", curentProj,  (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj))); //.setDivisionPoint(prop, upperCell)
+                boolean upperCell = sib.isEmpty() || next.getBounds().yMean() < sib.stream().mapToDouble(o->o.getBounds().yMean()).min().getAsDouble(); 
+                if (testMode) logger.debug("project div: coord before proj {} spine: {} after set div point : {}", curentProj,  (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj)), (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj)).setDivisionPoint(prop, upperCell)); //
                 if (curentProj==null) curentProj = localizerMap.get(next).project(sourceCoord.duplicate().setDivisionPoint(prop, upperCell), proj); // first projection
                 else curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell, proj);
-                if (testMode) logger.info("project div: {} -> {}, div prop: {}, upper cell: {} coord div: {}", cur, next, prop, upperCell, curentProj);
+                if (testMode) logger.info("project div: {} -> {}, div prop: {}, upper cell: {} coord div: {} spine: {}", cur, next, prop, upperCell, curentProj, localizerMap.get(next).getSpineCoord(curentProj));
             }
             if (curentProj==null) return null;
             cur = next;

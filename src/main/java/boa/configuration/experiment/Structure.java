@@ -106,9 +106,9 @@ public class Structure extends SimpleContainerParameter {
         this.parentStructure =  new ParentStructureParameter("Parent Structure", parentStructure, -1);
         segmentationParent =  new ParentStructureParameter("Segmentation Parent", segmentationParentStructure, -1);
         this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
-        objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true);
-        processingScheme = new PluginParameter<>("Processing Scheme", ProcessingScheme.class, true);
-        manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true);
+        objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true).setEmphasized(false);
+        processingScheme = new PluginParameter<>("Processing Scheme", ProcessingScheme.class, true).setEmphasized(false);
+        manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true).setEmphasized(false);
         this.parentStructure.addListener((Parameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();

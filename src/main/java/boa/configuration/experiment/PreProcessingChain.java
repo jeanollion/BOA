@@ -117,6 +117,10 @@ public class PreProcessingChain extends SimpleContainerParameter {
         this.scaleZ.setValue(scaleZ);
         return this;
     }
+    @Override 
+    public boolean isEmphasized() {
+        return false;
+    }
     public boolean useCustomScale() {return !useImageScale.getSelected();}
     public double getScaleXY() {return scaleXY.getValue().doubleValue();}
     public double getScaleZ() {return scaleZ.getValue().doubleValue();}

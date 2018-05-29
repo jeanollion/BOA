@@ -72,7 +72,6 @@ import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.plugins.plugins.track_post_filter.RemoveTracksStartingAfterFrame;
 import boa.plugins.plugins.track_post_filter.TrackLengthFilter;
 import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
-import boa.plugins.plugins.trackers.MutationTracker;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.plugins.plugins.transformations.AutoRotationXY;
@@ -502,9 +501,9 @@ public class GenerateXP {
             );
             // modification of scaling: lap * 2.5, gauss * scale (=2) quality * 2.23
             mutation.setProcessingScheme(new SegmentAndTrack(
-                    new MutationTrackerSpine().setCompartimentStructure(1).setSegmenter(new MutationSegmenter(!mutationHighBck ? 2.25 : 3, !mutationHighBck ? 1.625 : 3, !mutationHighBck ? 1.8 : 2).setScale(2.5)  // was 0.9, 0.65, 0.9, scale was 2 for mutH
+                    new MutationTrackerSpine().setCompartimentStructure(1).setSegmenter(new MutationSegmenter(!mutationHighBck ? 2.75 : 3, !mutationHighBck ? 2 : 2.75, !mutationHighBck ? 1.75 : 2).setScale(2.5)  // was 0.9, 0.65, 0.9, scale was 2 for mutH
                 ).setSpotQualityThreshold(3.122) // 4.46 for mutH ? 
-                            .setLinkingMaxDistance(0.75, 0.77).setGapParameters(0.75, 0.2, 3)
+                            .setLinkingMaxDistance(0.75, 0.77).setGapParameters(0.75, 0.15, 3)
             ).addPreFilters(new BandPass(0, 7, 0, 0) // was 10
             ).addPostFilters(new FeatureFilter(new Quality(), 2.23, true, true)));
         }
