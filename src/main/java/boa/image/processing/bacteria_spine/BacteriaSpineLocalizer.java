@@ -23,6 +23,7 @@ import boa.data_structure.StructureObject;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.Image;
 import static boa.image.processing.bacteria_spine.CleanVoxelLine.cleanContour;
+import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
@@ -37,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.ToDoubleFunction;
 import net.imglib2.KDTree;
 import net.imglib2.RealLocalizable;
 import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
@@ -373,30 +375,58 @@ public class BacteriaSpineLocalizer {
                 else curentProj = project(curentProj, localizerMap.get(cur), localizerMap.get(next), proj);
                 if (testMode) logger.info("project: {} -> {}: {}", cur, next, curentProj);
             } else { // division -> get division proportion
+                double divLength = getDivisionLength(next, localizerMap);
+                if (Double.isNaN(divLength)) {
+                    if (testMode) logger.debug("could not compute division length for: {}", next);
+                    return null;
+                }
+                double prop = localizerMap.get(next).getLength()/divLength;
                 List<StructureObject> sib = next.getDivisionSiblings(false);
-                double totalLength = 0;
-                for (StructureObject n : sib) {
-                    if (localizerMap.get(n)==null) {
-                        throw new RuntimeException("bacteria sibling: "+n+"of: "+ next+  " not present in localizer map, to compute distance with : "+source);
-                        //totalLength = Double.NaN;
-                        //break;
-                    }
-                    totalLength += localizerMap.get(n).getLength();
-                } 
-                double curLength = localizerMap.get(next).getLength();
-                if (Double.isNaN(totalLength) || sib.isEmpty()) totalLength = curLength; // most probably : division point @ middle
-                double prop = curLength/(totalLength+curLength);
-                boolean upperCell = sib.isEmpty() || next.getBounds().yMean() < sib.stream().mapToDouble(o->o.getBounds().yMean()).min().getAsDouble(); 
-                if (testMode) logger.debug("project div: coord before proj {} spine: {} after set div point : {}", curentProj,  (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj)), (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj)).setDivisionPoint(prop, upperCell)); //
-                if (curentProj==null) curentProj = localizerMap.get(next).project(sourceCoord.duplicate().setDivisionPoint(prop, upperCell), proj); // first projection
-                else curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, upperCell, proj);
-                if (testMode) logger.info("project div: {} -> {}, div prop: {}, upper cell: {} coord div: {} spine: {}", cur, next, prop, upperCell, curentProj, localizerMap.get(next).getSpineCoord(curentProj));
+                boolean nextIsUpperCell = sib.isEmpty() || next.getBounds().yMean() < sib.stream().mapToDouble(o->o.getBounds().yMean()).min().getAsDouble(); 
+                if (testMode) logger.debug("project div: coord before proj {} spine: {} after set div point : {}", curentProj,  (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj)), (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj)).setDivisionPoint(prop, nextIsUpperCell)); //
+                if (curentProj==null) curentProj = localizerMap.get(next).project(sourceCoord.duplicate().setDivisionPoint(prop, nextIsUpperCell), proj); // first projection
+                else curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, nextIsUpperCell, proj);
+                if (testMode) logger.info("project div: {} -> {}, div prop: {}, upper cell: {} coord div: {} spine: {}", cur, next, prop, nextIsUpperCell, curentProj, localizerMap.get(next).getSpineCoord(curentProj));
             }
             if (curentProj==null) return null;
             cur = next;
         }
         return curentProj;
     }
+    private static double getDivisionLength(StructureObject object, Map<StructureObject,BacteriaSpineLocalizer> localizerMap) {
+        ToDoubleFunction<StructureObject> getLength = o -> localizerMap.get(o)==null ? Double.NaN : localizerMap.get(o).getLength();
+        ToDoubleFunction<StructureObject> getDivLength = o -> {
+            List<StructureObject> sib = o.getDivisionSiblings(true);
+            if (sib.size()<=1) return Double.NaN;
+            return sib.stream().mapToDouble(getLength).sum();
+        };
+        double divLength = getDivLength.applyAsDouble(object);
+        if (!Double.isNaN(divLength)) return divLength;
+        // missing siblings -> cannot compute divsion proportion -> try to estimate it
+        // compute sizeRatio from previous objects
+        List<Double> sizeRatios = new ArrayList<>();
+        StructureObject current = object.getPrevious();
+        while(current!=null && current.getPrevious()!=null && sizeRatios.size()<5) {
+            StructureObject prev= current.getPrevious();
+            if (prev.getTrackHead() == current.getTrackHead()) {
+                double r=  getLength.applyAsDouble(current)/getLength.applyAsDouble(prev);
+                if (Double.isNaN(r)) break;
+                sizeRatios.add(r);
+            }
+            else {
+                double nLength=getDivLength.applyAsDouble(current);
+                if (nLength==0 || Double.isNaN(nLength)) break;
+                double r = nLength/getLength.applyAsDouble(prev);
+                if (Double.isNaN(r)) break;
+                sizeRatios.add(r);
+            }
+            current = prev;
+        }
+        if (sizeRatios.isEmpty()) return Double.NaN;
+        double sR = ArrayUtil.median(sizeRatios);
+        return sR * getLength.applyAsDouble(object.getPrevious());
+    }
+    
     public static Point project(Point sourcePoint, BacteriaSpineLocalizer source, BacteriaSpineLocalizer destination, PROJECTION proj) {
         BacteriaSpineCoord c = source.getSpineCoord(sourcePoint);
         if (c==null) return null;

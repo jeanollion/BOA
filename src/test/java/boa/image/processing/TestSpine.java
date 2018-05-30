@@ -68,7 +68,7 @@ public class TestSpine {
         //String dbName = "WT_180318_Fluo";
         //String dbName = "WT_150609";
         String dbName = "fluo160501_uncorr_TestParam";
-        int postition= 19, frame=550, mc=5, b=0;
+        int postition= 19, frame=175, mc=5, b=0;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
@@ -82,12 +82,12 @@ public class TestSpine {
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(structureIdx).get(b);
         
-        //testSpineCreation(bact);
+        testSpineCreation(bact);
         //testContourCleaning(bact);
         //testAllSteps(bact);
         //testLocalization(bact, true);
         //testLocalization(bact, false);
-         testSkeleton(bact);
+        //testSkeleton(bact);
         
         //StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         //StructureObject bact2 = root2.getChildren(parentStructure).get(mc).getChildren(structureIdx).get(1);

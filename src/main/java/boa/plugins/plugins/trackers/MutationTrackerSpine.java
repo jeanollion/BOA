@@ -199,8 +199,9 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
                 }
             }
         });
-        //final HashMapGetCreate<StructureObject, BacteriaSpineLocalizer> localizerMap = HashMapGetCreate.getRedirectedMap((StructureObject s) -> new BacteriaSpineLocalizer(s.getRegion()), HashMapGetCreate.Syncronization.SYNC_ON_KEY);
-        final Map<StructureObject, BacteriaSpineLocalizer> localizerMap = parallele(parentWithSpine.stream(), multithreaded).collect(Collectors.toMap(b->b, b->new BacteriaSpineLocalizer(b.getRegion()))); // spine is long to compute: better performance when computed all at once
+        Map<StructureObject, BacteriaSpineLocalizer> lMap = parallele(parentWithSpine.stream(), multithreaded).collect(Collectors.toMap(b->b, b->new BacteriaSpineLocalizer(b.getRegion()))); // spine is long to compute: better performance when computed all at once
+        final HashMapGetCreate<StructureObject, BacteriaSpineLocalizer> localizerMap = HashMapGetCreate.getRedirectedMap((StructureObject s) -> new BacteriaSpineLocalizer(s.getRegion()), HashMapGetCreate.Syncronization.SYNC_ON_KEY);
+        localizerMap.putAll(lMap);
         TrackMateInterface<NestedSpot> tmi = new TrackMateInterface<>(new SpotFactory<NestedSpot>() {
             @Override
             public NestedSpot toSpot(Region o, int frame) {
@@ -395,7 +396,7 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
         }
         return false;
     }
-    
+    /*
     private static void switchCrossingLinksWithLQBranches(TrackMateInterface<NestedSpot> tmi, double spatialTolerance, double distanceThld, int maxGap) {
         long t0 = System.currentTimeMillis();
         double distanceSqThld = distanceThld*distanceThld;
@@ -443,6 +444,7 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
         for (NestedSpot s : track) if (!s.isLowQuality()) return false;
         return true;
     }
+    */
     private static void removeUnlinkedLQSpots(List<StructureObject> parentTrack, int structureIdx, TrackMateInterface<NestedSpot> tmi) {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         Set<StructureObject> parentsToRelabel = new HashSet<>();

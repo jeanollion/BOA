@@ -18,12 +18,15 @@
  */
 package boa.utils.geom;
 
+import java.util.Arrays;
+
 
 /**
  *
  * @author jollion
+ * @param <T>
  */
-public class PointContainer<T> extends Point {
+public class PointContainer<T> extends Point<Point> {
     public T content1;
     public PointContainer(T o, float... coords) {
         super(coords);
@@ -42,4 +45,15 @@ public class PointContainer<T> extends Point {
     @Override public String toString() {
         return super.toString() + "["+content1.toString()+"]";
     }
+    /**
+     * Content will be duplicated only if it is a vector or a point, if not same instance will be set to the result
+     * @return 
+     */
+    /*@Override public PointContainer<T> duplicate() {
+        return new PointContainer(duplicateContent(content1), Arrays.copyOf(coords, coords.length));
+    }
+    protected static <T> T duplicateContent(T content) {
+        if (content instanceof Point) return (T)((Point)content).duplicate();
+        return content;
+    }*/
 }

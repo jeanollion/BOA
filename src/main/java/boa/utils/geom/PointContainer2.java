@@ -18,6 +18,8 @@
  */
 package boa.utils.geom;
 
+import java.util.Arrays;
+
 
 /**
  *
@@ -45,4 +47,7 @@ public class PointContainer2<T, U> extends PointContainer<T> {
     @Override public String toString() {
         return super.toString() + "["+content2.toString()+"]";
     }
+    /*@Override public PointContainer2<T, U> duplicate() {
+        return new PointContainer2(duplicateContent(content1), duplicateContent(content2), Arrays.copyOf(coords, coords.length));
+    }*/
 }

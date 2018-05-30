@@ -200,8 +200,14 @@ public class BacteriaSpineFactory {
         Offset logOff = new SimpleOffset(mask).reverseOffset();
         List<Pair<CircularNode<T>, CircularNode<T>>> contourPairs = mapToContourPair(skeleton, contour, circContour,logOff);
         List<PointContainer2<Vector, Double>> spListSk = contourPairs.stream().map(v -> PointContainer2.fromPoint(Point.middle2D(v.key.element, v.value.element), Vector.vector2D(v.key.element, v.value.element), 0d)).collect(Collectors.toList());
+        // 2) smooth direction vectors in order to limit brutal direction change
+        for (int i = 1; i<spListSk.size(); ++i) spListSk.get(i).setContent2((spListSk.get(i-1).getContent2() + spListSk.get(i).dist(spListSk.get(i-1)))); // set distance before smooth
         if (verbose) ImageWindowManagerFactory.showImage(new SpineResult().setBounds(mask).setCircContour((CircularNode<Localizable>)circContour).setSpine(spListSk.toArray(new PointContainer2[spListSk.size()])).drawSpine(verboseZoomFactor, false).setName("skeleton init spine"));
-        // 2) start getting the spList in one direction and the other
+        smoothSpine( spListSk, true, 2);
+        smoothSpine( spListSk, false, 2);
+        if (verbose) ImageWindowManagerFactory.showImage(new SpineResult().setBounds(mask).setCircContour((CircularNode<Localizable>)circContour).setSpine(spListSk.toArray(new PointContainer2[spListSk.size()])).drawSpine(verboseZoomFactor, false).setName("skeleton init spine after smooth"));
+        
+        // 3) start getting the spList in one direction and the other
         int persistanceRadius = Math.min(1+skeleton.size()/2, Math.max(4,(int)ArrayUtil.median(spListSk.stream().mapToDouble(v->v.getContent1().norm()).toArray())/2+1)); // persistence of skeleton direction
         if (verbose) logger.debug("persistance radius: {}", persistanceRadius);
         List<PointContainer2<Vector, Double>> spList = getSpineInSkeletonDirection(mask, contourPairs.get(0).key, contourPairs.get(0).value, spListSk, persistanceRadius, true, logOff);
@@ -210,14 +216,14 @@ public class BacteriaSpineFactory {
         spList.addAll(getSpineInSkeletonDirection(mask, contourPairs.get(contourPairs.size()-1).key, contourPairs.get(contourPairs.size()-1).value, spListSk, persistanceRadius, false, logOff));
         if (verbose) logger.debug("sk spine: total points: {}", spList.size());
         PointContainer2<Vector, Double>[] spine = spList.toArray(new PointContainer2[spList.size()]);
-        // 3) compute distances from first poles
+        // 4) compute distances from first poles
         for (int i = 1; i<spine.length; ++i) spine[i].setContent2((spine[i-1].getContent2() + spine[i].dist(spine[i-1])));
         //if (verbose) ImageWindowManagerFactory.showImage(drawSpine(mask, spine, circContour, verboseZoomFactor).setName("skeleton spine"));
-        // 4) smooth direction vectors in order to limit brutal direction change
-        smoothSpine(Arrays.asList(spine), true, 2);
-        smoothSpine(Arrays.asList(spine), false, 2);
+        // 5) smooth end of spine ? 
+        //smoothSpine( spListSk, true, 2);
+        //smoothSpine( spListSk, false, 2);
         if (verbose) ImageWindowManagerFactory.showImage(drawSpine(mask, spine, circContour, verboseZoomFactor, true).setName("skeleton Spine after smooth"));
-        // 5) TODO recompute center in actual smoothed direction, using intersection with contour function
+        // 6) TODO recompute center in actual smoothed direction, using intersection with contour function
         return spine;
     }
     
@@ -445,6 +451,7 @@ public class BacteriaSpineFactory {
             Point c2 = getIntersectionWithContour(mask, nextPoint, skDir.duplicate(), s2, bucketFirst, logOff);
             s2 = bucketFirst.get(0); // push
             PointContainer2<Vector, Double> next = PointContainer2.fromPoint(nextPoint, Vector.vector2D(c1, c2), 0d);
+            if (verbose) logger.debug("extend skeleton {}: [{};{}] -> {}",firstNext?"up":"down", c1.duplicate().translate(logOff), c2.duplicate().translate(logOff), next.duplicate().translate(logOff));   
             sp.add(next); 
             // stop condition
             Point nextPoint2 = next.duplicate().translate(spineDir);
@@ -458,7 +465,7 @@ public class BacteriaSpineFactory {
                 return sp;
             }
             lastPoint = next;
-            //if (verbose) logger.debug("contour: [{};{}] -> {}", s1.element, s2.element, sp.getSum(sp.size()-1));   
+            
         }
     }
     
@@ -496,12 +503,15 @@ public class BacteriaSpineFactory {
             out2 = !mask.containsWithOffset(vox.x, vox.y, vox.z) || !mask.insideMaskWithOffset(vox.x, vox.y, vox.z);
         }
         CircularNode.addTwoLocalNearestPoints(p, firstSearchPoint, bucket);
-        if (verbose) logger.debug("adjust to contour: closest points: {}, dir: {} (norm: {}), start p: {}, closest p {}", Utils.toStringList(bucket, b->Point.asPoint2D(b.element).translate(logOff)), dir.normalize(), dirNorm, startPoint.duplicate().translate(logOff), p.duplicate().translate(logOff));
+        if (verbose) logger.debug("adjust to contour: closest points: {}, dir: {} (norm: {}), start p: {}, closest p {}", Utils.toStringList(bucket, b->Point.asPoint2D(b.element).translate(logOff)), dir.normalize(), dirNorm, Point.asPoint2D((RealLocalizable)startPoint).translate(logOff), Point.asPoint2D((RealLocalizable)p).translate(logOff));
         if (bucket.size()==1) {
             p.setData(bucket.get(0).element.getFloatPosition(0), bucket.get(0).element.getFloatPosition(1));
         } else {
             if (p.equals(startPoint)) p.translate(dir.normalize().multiply(0.25));
             Point inter = Point.intersect2D(startPoint, p, Point.asPoint2D(bucket.get(0).element), Point.asPoint2D(bucket.get(1).element));
+            if (Vector.vector2D(inter, bucket.get(0).element).dotProduct(Vector.vector2D(inter, bucket.get(1).element))>0) { // intersection is not between the two closest points
+                inter = Point.asPoint(Collections.min(bucket, (p1, p2) -> Double.compare(p.distSq(p1.element), p.distSq(p2.element))).element); // set the closest point
+            }
             if (verbose) logger.debug("adjust to contour: intersection: {}", inter.duplicate().translate(logOff));
             if (inter!=null) p.setData(inter);
         }
@@ -521,6 +531,9 @@ public class BacteriaSpineFactory {
             p.setData(bucket.get(0).element.getFloatPosition(0), bucket.get(0).element.getFloatPosition(1));
         } else {
             Point inter = Point.intersect2D(p, p.duplicate().translate(dir), Point.asPoint2D(bucket.get(0).element), Point.asPoint2D(bucket.get(1).element));
+            if (Vector.vector2D(inter, bucket.get(0).element).dotProduct(Vector.vector2D(inter, bucket.get(1).element))>0) { // intersection is not between the two closest points
+                inter = Point.asPoint(Collections.min(bucket, (p1, p2) -> Double.compare(p.distSq(p1.element), p.distSq(p2.element))).element); // set the closest point
+            }
             //logger.debug("adjust to contour: intersection: {}", inter);
             if (inter!=null) p.setData(inter);
         }
@@ -636,18 +649,18 @@ public class BacteriaSpineFactory {
     }
     private static void smoothSpine(List<PointContainer2<Vector, Double>> spine, boolean directions, double sigma) {
         PointSmoother v = new PointSmoother(sigma);
-        List<Point> newVectors = new ArrayList<>(spine.size());
+        List<Point> smoothed = new ArrayList<>(spine.size());
         Function<PointContainer2<Vector, Double>, Point> elementToSmooth = directions ? p -> p.getContent1() : p->p;
-        BiConsumer<PointContainer2<Vector, Double>, Point> setSmoothedToInput = directions ?  (p, s) -> p.setContent1((Vector)s) : (p, s) -> p.setData(p);
+        BiConsumer<PointContainer2<Vector, Double>, Point> setSmoothedToInput = directions ?  (p, s) -> p.setContent1((Vector)s) : (p, s) -> p.setData(s);
         for (int i = 0; i<spine.size(); ++i) {
-            v.init(spine.get(i).getContent1(), true);
+            v.init(elementToSmooth.apply(spine.get(i)), true);
             double currentPos = spine.get(i).getContent2();
             int j = i-1;
             while (j>0 && v.add(elementToSmooth.apply(spine.get(j)), Math.abs(currentPos-spine.get(j).getContent2()))) {--j;}
             j = i+1;
             while (j<spine.size() && v.add(elementToSmooth.apply(spine.get(j)), Math.abs(currentPos-spine.get(j).getContent2()))) {++j;}
-            newVectors.add(v.getSmoothed());
+            smoothed.add(v.getSmoothed());
         }
-        for (int i = 0; i<spine.size(); ++i) setSmoothedToInput.accept(spine.get(i), newVectors.get(i));
+        for (int i = 0; i<spine.size(); ++i) setSmoothedToInput.accept(spine.get(i), smoothed.get(i));
     }
 }
