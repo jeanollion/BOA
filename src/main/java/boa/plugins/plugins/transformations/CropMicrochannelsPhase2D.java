@@ -32,8 +32,6 @@ import boa.image.Image;
 import boa.image.SimpleBoundingBox;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations;
-import static boa.plugins.plugins.segmenters.MicrochannelPhase2D.segmentMicroChannels;
-import boa.plugins.MicrochannelSegmenter.Result;
 import boa.plugins.Plugin;
 import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
@@ -118,7 +116,7 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
         double peakHeight = yProj[peakIdx] - median;
         float thld = (float) (peakHeight * peakProportion + median);
         int endOfPeakYIdx = ArrayUtil.getFirstOccurence(yProj, peakIdx, start, thld, true, true);
-        
+        // TODO -> get peak width using the half width on the side opposed to microchannels -> remove 2 x half width
         int startOfMicroChannel = endOfPeakYIdx - margin;
         if (testMode) {
             ImageWindowManagerFactory.showImage(image);

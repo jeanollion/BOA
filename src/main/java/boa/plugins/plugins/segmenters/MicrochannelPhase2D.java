@@ -22,6 +22,8 @@ import boa.plugins.MicrochannelSegmenter;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
+import boa.configuration.parameters.ChoiceParameter;
+import boa.configuration.parameters.ConditionalParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
@@ -31,11 +33,14 @@ import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
 import ij.process.AutoThresholder;
 import boa.image.BlankMask;
+import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
+import boa.image.ImageMask;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations;
 import static boa.image.processing.ImageOperations.threshold;
@@ -47,7 +52,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import boa.plugins.Segmenter;
+import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
+import boa.plugins.TrackParametrizable;
+import boa.plugins.plugins.segmenters.MicrochannelPhase2D.X_DER_METHOD;
+import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.plugins.plugins.transformations.CropMicrochannelsPhase2D;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
@@ -55,20 +64,27 @@ import static boa.utils.Utils.plotProfile;
 import ij.gui.Plot;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author jollion
  */
-public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
+public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProcessingPlugin, ToolTip, TrackParametrizable<MicrochannelPhase2D> {
+
     
+    public enum X_DER_METHOD {CONSTANT, RELATIVE_TO_INTENSITY}
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Typical Width (pixels)", 0, 20, 5, null);
     NumberParameter channelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
     NumberParameter channelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
     NumberParameter closedEndYAdjustWindow = new BoundedNumberParameter("Closed-end Y Adjust Window (pixels)", 0, 5, 0, null).setToolTipText("Window (in pixels) within which y-coordinate of the closed-end of microchannel will be refined, by searching for the first local maximum of the Y-derivate within the window: [y-this value; y+this value]");
+    ChoiceParameter xDerPeakThldMethod = new ChoiceParameter("X-Derivative Threshold Method", Utils.toStringArray(X_DER_METHOD.values()), X_DER_METHOD.RELATIVE_TO_INTENSITY.toString(), false);
     NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 3, 10, 0, null).setToolTipText("<html>Threshold for Microchannel border detection (peaks of 1st derivative in X-axis). <br />This parameter will depend on the intensity of the image and should be adjusted if microchannels are poorly detected. <br />A higher value if too many channels are detected and a lower value in the contrary</html>");
-    Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, localDerExtremaThld}; //sigmaThreshold
+    NumberParameter relativeDerThld = new BoundedNumberParameter("X-Derivative Ratio", 3, 40, 1, null).setToolTipText("Decrease this value if too many microchannels are detected. <br />To compute x-derivative threshold for peaks, the signal range is computed range = the median signal value - mean backgroud value. X-derivative threshold = signal range / this ratio");
+    ConditionalParameter xDerPeakThldCond = new ConditionalParameter(xDerPeakThldMethod).setActionParameters(X_DER_METHOD.CONSTANT.toString(), localDerExtremaThld).setActionParameters(X_DER_METHOD.RELATIVE_TO_INTENSITY.toString(), relativeDerThld);
+    Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, xDerPeakThldCond}; //sigmaThreshold
     public final static double PEAK_RELATIVE_THLD = 0.6;
     public static boolean debug = false;
     public static int debugIdx = -1;
@@ -81,13 +97,19 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
 
     public MicrochannelPhase2D() {}
 
+    // testable
+    Map<StructureObject, TestDataStore> stores;
+    @Override public void setTestDataStore(Map<StructureObject, TestDataStore> stores) {
+        this.stores=  stores;
+    }
+    
     public MicrochannelPhase2D setyStartAdjustWindow(int yStartAdjustWindow) {
         this.closedEndYAdjustWindow.setValue(yStartAdjustWindow);
         return this;
     }
     @Override
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        Result r = segment(input);
+        Result r = segment(input, structureIdx, parent);
         if (r==null) return null;
         ArrayList<Region> objects = new ArrayList<>(r.size());
         for (int idx = 0; idx<r.xMax.length; ++idx) {
@@ -96,45 +118,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         }
         return new RegionPopulation(objects, input);
     }
-    
-    @Override
-    public Result segment(Image input) {
-        Result r =  segmentMicroChannels(input, false, closedEndYAdjustWindow.getValue().intValue(), 0, channelWidth.getValue().intValue(), channelWidthMin.getValue().intValue(), channelWidthMax.getValue().intValue(), localDerExtremaThld.getValue().doubleValue(), debug);
-        if (r==null) return null;
-        //double thld = sigmaThreshold.getValue().doubleValue();
-        /*if (thld>0) { // refine borders: compare Y-variance from sides to center and remove if too low
-            for (int idx = 0; idx<r.xMax.length; ++idx) {
-                BoundingBox bds = r.getBounds(idx, true);
-                int yShift = bds.getSizeX()/2;
-                int xSizeInner = bds.getSizeX()/4;
-                int maxCropX = Math.min(xSizeInner, 2);
-                if (xSizeInner==0) continue;
-                BoundingBox inner = new BoundingBox(bds.getxMin()+xSizeInner, bds.getxMax()-xSizeInner, bds.getyMin()+yShift, bds.getyMax()-yShift, bds.getzMin(), bds.getzMax());
-                float[] yProjInner = ImageOperations.meanProjection(input, ImageOperations.Axis.Y, inner);
-                double[] sm = ArrayUtil.meanSigma(yProjInner, 0, yProjInner.length, null);
-                double sigmaInner = sm[1];
-                for (int x = bds.getxMin(); x<bds.getxMin()+maxCropX; ++x) { // adjust left
-                    double s = getSigmaLine(input, x, inner.getyMin(), (int)inner.getZMean(), yProjInner);
-                    //logger.debug("x: {}, sig: {}, ref: {},sig/ref:{}", x, s, sigmaInner, s/sigmaInner);
-                    if (s/sigmaInner<thld) r.xMin[idx]=x;
-                    else break;
-                }
-                for (int x = bds.getxMax(); x>=bds.getxMax()-maxCropX; --x) { // adjust right
-                    double s = getSigmaLine(input, x, inner.getyMin(), (int)inner.getZMean(), yProjInner);
-                    //logger.debug("x: {}, sig: {}, ref: {},sig/ref:{}", x, s, sigmaInner, s/sigmaInner);
-                    if (s/sigmaInner<thld) r.xMax[idx]=x;
-                    else break;
-                }
-            }
-        }*/
-        return r;
-    }
-    private static double getSigmaLine(Image image, int x, int yStart, int z, float[] array) {
-        for (int y = 0; y<array.length; ++y ) array[y] = image.getPixel(x, y+yStart, z);
-        double[] sm = ArrayUtil.meanSigma(array, 0, array.length, null);
-        return sm[1];
-    }
-    
+
     @Override public Parameter[] getParameters() {
         return parameters;
     }
@@ -145,24 +129,29 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
       3) search of x-positions of microchannels using X-projection (y in [ yEnd; yAberration]) of d/dx image & peak detection (detection of positive peak & negative peak over {@param localExtremaThld} separated by a distance closest of {@param channelWidth} and in the range [{@param widthMin} ; {@param widthMax}]
       4) Adjust yStart for each channel: first local max of d/dy image in the range [yEnd-{@param yStartAdjustWindow}; yEnd+{@param yStartAdjustWindow}]
      * @param image
-     * @param opticalAberration whether the image contains the optical aberration (procduced by shadow of the microfluidic device) 
-     * @param yClosedEndAdjustWindow defines the window for yStart 
-     * @param yMarginEndChannel
-     * @param channelWidth
-     * @param widthMin
-     * @param widthMax
-     * @param localExtremaThld
-     * @param testMode
      * @return Result object containing bounding boxes of segmented microchannels
      */
-    public static Result segmentMicroChannels(Image image, boolean opticalAberration, int yClosedEndAdjustWindow, int yMarginEndChannel, int channelWidth, int widthMin, int widthMax, double localExtremaThld, boolean testMode) {
+    @Override
+    public Result segment(Image image, int structureIdx, StructureObjectProcessing parent) {
+        int closedEndYAdjustWindow = this.closedEndYAdjustWindow.getValue().intValue();
+        int channelWidth = this.channelWidth.getValue().intValue();
+        int channelWidthMin = this.channelWidthMin.getValue().intValue();
+        int channelWidthMax = this.channelWidthMax.getValue().intValue();
+        double localDerExtremaThld;
+        switch(X_DER_METHOD.valueOf(xDerPeakThldMethod.getSelectedItem())) {
+            case CONSTANT:
+                localDerExtremaThld = this.localDerExtremaThld.getValue().doubleValue();
+                break;
+            case RELATIVE_TO_INTENSITY:
+            default:
+                localDerExtremaThld = this.globalLocalDerThld;
+                if (Double.isNaN(globalLocalDerThld)) throw new RuntimeException("Global X-Der threshold not set");
+        }
         
         double derScale = 2;
         // get aberration
-        int[] yStartStop = opticalAberration ? new int[2] : new int[]{0, image.sizeY()-1};
-        int aberrationStart = opticalAberration ? CropMicrochannelsPhase2D.searchYLimWithOpticalAberration(image, 0.25, yMarginEndChannel, testMode) : image.sizeY()-1;
-        if (aberrationStart<=0) return null;
-        Image imCrop = opticalAberration? image.crop(new MutableBoundingBox(0, image.sizeX()-1, yStartStop[0], aberrationStart, 0, image.sizeZ()-1)) : (image instanceof ImageFloat ? image.duplicate() : image);
+        int[] yStartStop = new int[]{0, image.sizeY()-1};
+        Image imCrop = (image instanceof ImageFloat ? image.duplicate() : image);
         
         // get global closed-end Y coordinate
         Image imDerY = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
@@ -170,7 +159,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         int closedEndY = ArrayUtil.max(yProj, 0, yProj.length) + yStartStop[0]; 
 
         // get X coordinates of each microchannel
-        imCrop = image.crop(new MutableBoundingBox(0, image.sizeX()-1, closedEndY, aberrationStart, 0, image.sizeZ()-1));
+        imCrop = image.crop(new MutableBoundingBox(0, image.sizeX()-1, closedEndY, image.sizeY()-1, 0, image.sizeZ()-1));
         float[] xProj = ImageOperations.meanProjection(imCrop, ImageOperations.Axis.X, null);
         // check for null values @ start & end that could be introduces by rotation and replace by first non-null value
         int start = 0;
@@ -184,20 +173,27 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         Image imDerX = ImageFeatures.getDerivative(imCrop, derScale, 1, 0, 0, true);
         float[] xProjDer = ImageOperations.meanProjection(imDerX, ImageOperations.Axis.X, null);
         
-        if (testMode) {
-            //plotProfile("XProjDer", xProjDer);
-            //plotProfile("XProj smoothed", xProj);
-            ImageWindowManagerFactory.showImage(imDerY);
-            ImageWindowManagerFactory.showImage(imDerX);
-            plotProfile("yProjCrop", yProj);
-            plotProfile("xProjDer", xProjDer);
-            plotProfile("xProj", xProj);
+        if (stores!=null) {
+            stores.get(parent).addMisc("show test data", l->{
+                ImageWindowManagerFactory.showImage(imDerY);
+                ImageWindowManagerFactory.showImage(imDerX);
+                plotProfile("yProjCrop", yProj);
+                plotProfile("xProjDer", xProjDer);
+                plotProfile("xProj", xProj);
+                Histogram xDerHisto = HistogramFactory.getHistogram(()->imDerX.stream(), HistogramFactory.BIN_SIZE_METHOD.AUTO);
+                Histogram inputHisto = HistogramFactory.getHistogram(()->image.stream(), HistogramFactory.BIN_SIZE_METHOD.AUTO);
+                xDerHisto.plotIJ1("histo for xDer", true);
+                double[] ms = new double[2];
+                double thld = BackgroundFit.backgroundFit(inputHisto, 5, ms);
+                double foreground = inputHisto.duplicate((int)inputHisto.getIdxFromValue(thld), inputHisto.data.length).getQuantiles(0.5)[0];
+                inputHisto.plotIJ1("histo for input bck: "+ms[0]+" fore: "+foreground+" thdl: "+thld+ " d="+(foreground-ms[0]), true);
+            });
         }
         
         final float[] derMap = xProjDer;
         List<Integer> localMax = ArrayUtil.getRegionalExtrema(xProjDer, (int)(derScale+0.5), true);
         List<Integer> localMin = ArrayUtil.getRegionalExtrema(xProjDer, (int)(derScale+0.5), false);
-        final Predicate<Integer> rem = i -> Math.abs(derMap[i])<localExtremaThld ;
+        final Predicate<Integer> rem = i -> Math.abs(derMap[i])<localDerExtremaThld ;
         localMax.removeIf(rem);
         localMin.removeIf(rem);
         
@@ -213,7 +209,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
             return comp;
         };
         
-        if (testMode) {
+        if (stores!=null) {
             logger.debug("{} max found, {} min found", localMax.size(), localMin.size());
             logger.debug("max: {}", localMax);
             logger.debug("min: {}", localMin);
@@ -223,26 +219,26 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         int lastMinIdx = 0;
         int maxIdx = 0;
         while (maxIdx<localMax.size()) {
-            if (testMode) logger.debug("VALID MAX: {}", localMax.get(maxIdx));
-            int minIdx = getNextMinIdx(derMap, localMin, localMax, maxIdx, lastMinIdx, widthMin,widthMax, segmentScoreComparator, testMode);
+            if (stores!=null) logger.debug("VALID MAX: {}", localMax.get(maxIdx));
+            int minIdx = getNextMinIdx(derMap, localMin, localMax, maxIdx, lastMinIdx, channelWidthMin,channelWidthMax, segmentScoreComparator, stores!=null);
             if (minIdx>=0 ) {
                 // check all valid max between current max and min
                 int nextMaxIdx = maxIdx+1;
                 while (nextMaxIdx<localMax.size() && localMax.get(nextMaxIdx)<localMin.get(minIdx)) {
                     if (Math.abs(derMap[localMax.get(maxIdx)])*PEAK_RELATIVE_THLD<Math.abs(derMap[localMax.get(nextMaxIdx)])) {
-                        int nextMinIdx = getNextMinIdx(derMap, localMin, localMax, nextMaxIdx, lastMinIdx, widthMin,widthMax, segmentScoreComparator, testMode);
+                        int nextMinIdx = getNextMinIdx(derMap, localMin, localMax, nextMaxIdx, lastMinIdx, channelWidthMin,channelWidthMax, segmentScoreComparator, stores!=null);
                         if (nextMinIdx>=0) {
                             int comp = segmentScoreComparator.compare(new int[]{maxIdx, minIdx}, new int[]{nextMaxIdx, nextMinIdx});
                             if (comp>0) {
                                 maxIdx = nextMaxIdx;
                                 minIdx = nextMinIdx;
-                                if (testMode) logger.debug("BETTER VALID MAX: {}, d: {}", localMax.get(maxIdx), localMin.get(minIdx) - localMax.get(maxIdx));
+                                if (stores!=null) logger.debug("BETTER VALID MAX: {}, d: {}", localMax.get(maxIdx), localMin.get(minIdx) - localMax.get(maxIdx));
                             }
                         }
                     }
                     ++nextMaxIdx;
                 }
-                if (testMode) {
+                if (stores!=null) {
                     int x1 = localMax.get(maxIdx);
                     int x2 = localMin.get(minIdx);
                     logger.debug("Peak found X: [{};{}], distance: {}, value: [{};{}], normedValue: [{};{}]", x1, x2, localMin.get(minIdx) - localMax.get(maxIdx), xProjDer[x1], xProjDer[x2], xProjDer[x1]/xProj[x1], xProjDer[x2]/xProj[x2]);
@@ -254,28 +250,55 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
         }
         
         // refine Y-coordinate of closed-end for each microchannel. As MC shape is generally ellipsoidal @ close-end, only get the profile in the 1/3-X center part
-        if (yClosedEndAdjustWindow>0) {
+        if (closedEndYAdjustWindow>0) {
             for (int idx = 0; idx<peaks.size();++idx) {
                 int[] peak = peaks.get(idx);
                 double sizeX = peak[1]-peak[2]+1;
-                MutableBoundingBox win = new MutableBoundingBox((int)(peak[0]+sizeX/3+0.5), (int)(peak[1]-sizeX/3+0.5), Math.max(0, closedEndY-yClosedEndAdjustWindow), Math.min(imDerY.sizeY()-1, closedEndY+yClosedEndAdjustWindow), 0, 0);
+                MutableBoundingBox win = new MutableBoundingBox((int)(peak[0]+sizeX/3+0.5), (int)(peak[1]-sizeX/3+0.5), Math.max(0, closedEndY-closedEndYAdjustWindow), Math.min(imDerY.sizeY()-1, closedEndY+closedEndYAdjustWindow), 0, 0);
                 float[] proj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, win);
                 List<Integer> localMaxY = ArrayUtil.getRegionalExtrema(proj, 2, true);
                 //peak[2] = ArrayUtil.max(proj)-yStartAdjustWindow;
                 if (localMaxY.isEmpty()) continue;
-                peak[2] = localMaxY.get(0)- (closedEndY>=yClosedEndAdjustWindow ? yClosedEndAdjustWindow : 0);
-                if (debug && debugIdx==idx) {
-                    new Plot("Y start adjustment", "y", "Y-der", ArrayUtil.generateFloatArray(win.yMin(), win.yMin()+win.sizeY()), proj).show();
+                peak[2] = localMaxY.get(0)- (closedEndY>=closedEndYAdjustWindow ? closedEndYAdjustWindow : 0);
+                if (stores!=null) {
+                    int ii = idx;
+                    stores.get(parent).addMisc("display y start adjument", l -> {
+                        Set<Integer> idxes = l.stream().map(o -> o.getIdx()).collect(Collectors.toSet());
+                        if (idxes.contains(ii)) new Plot("Y start adjustment", "y", "Y-der", ArrayUtil.generateFloatArray(win.yMin(), win.yMin()+win.sizeY()), proj).show();
+                    });
+                    
                 }
             }
         }
-        Result r= new Result(peaks, closedEndY, aberrationStart);
+        Result r= new Result(peaks, closedEndY, image.sizeY()-1);
          
         int xLeftErrode = (int)(derScale/2.0+0.5); // adjust Y: remove derScale from left 
         for (int i = 0; i<r.size(); ++i) r.xMax[i]-=xLeftErrode;
-        if (testMode) for (int i = 0; i<r.size(); ++i) logger.debug("mc: {} -> {}", i, r.getBounds(i, true));
+        if (stores!=null) for (int i = 0; i<r.size(); ++i) logger.debug("mc: {} -> {}", i, r.getBounds(i, true));
         return r;
     }
+    double globalLocalDerThld = Double.NaN;
+    // track parametrizable interface
+    @Override
+    public TrackParametrizer<MicrochannelPhase2D> run(int structureIdx, List<StructureObject> parentTrack) {
+        switch(X_DER_METHOD.valueOf(xDerPeakThldMethod.getSelectedItem())) {
+            case CONSTANT:
+                return (p, s)->{};
+            case RELATIVE_TO_INTENSITY:
+            default:
+                // compute signal range on all images
+                Map<Image, ImageMask> maskMap = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
+                Histogram histo = HistogramFactory.getHistogram(()->Image.stream(maskMap, true), HistogramFactory.BIN_SIZE_METHOD.AUTO);
+                double[] ms = new double[2];
+                double thld = BackgroundFit.backgroundFit(histo, 5, ms);
+                double foreground = histo.duplicate((int)histo.getIdxFromValue(thld), histo.data.length).getQuantiles(0.5)[0];
+                double range =foreground - ms[0];
+                double xDerThld = range / this.relativeDerThld.getValue().doubleValue();
+                // divide by ratio and set to segmenter
+                return (p, s) -> s.globalLocalDerThld = xDerThld;
+        }
+    }
+    
     
     private static int getNextMinIdx(final float[] derMap, final List<Integer> localMin, final List<Integer> localMax, final int maxIdx, int lastMinIdx, final double widthMin, final double widthMax, Comparator<int[]> segmentScoreComparator, boolean testMode) {
         int minIdx = lastMinIdx;
@@ -312,4 +335,5 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, ToolTip {
     public String getToolTipText() {
         return toolTip;
     }
+    
 }

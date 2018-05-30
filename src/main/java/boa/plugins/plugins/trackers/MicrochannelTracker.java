@@ -188,7 +188,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
             StructureObject parent = parentTrack.get(idx);
             MicrochannelSegmenter s = segmenter.instanciatePlugin();
             if (applyToSegmenter !=null) applyToSegmenter.apply(parent, s);
-            boundingBoxes[idx] = s.segment(parent.getPreFilteredImage(structureIdx));
+            boundingBoxes[idx] = s.segment(parent.getPreFilteredImage(structureIdx), structureIdx, parent);
             if (boundingBoxes[idx]==null) parent.setChildren(new ArrayList<>(), structureIdx); // if not set and call to getChildren() -> DAO will set old children
             //else parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards // TODO if post filter remove objects or modify -> how to link with result object??
             else parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(parent.getPreFilteredImage(structureIdx), false), structureIdx); // no Y - shift here because the mean shift is added afterwards

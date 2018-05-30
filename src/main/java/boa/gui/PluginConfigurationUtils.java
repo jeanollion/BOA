@@ -109,24 +109,18 @@ public class PluginConfigurationUtils {
 
             // run pre-filters on whole track -> some track preFilters need whole track to be effective. todo : parameter to limit ? 
             boolean runPreFiltersOnWholeTrack = !psc.getTrackPreFilters(false).isEmpty() || plugin instanceof TrackParametrizable; 
-            if (runPreFiltersOnWholeTrack) {
-                psc.getTrackPreFilters(true).filter(structureIdx, wholeParentTrackDup);
-                parentTrackDup.forEach(p->stores.get(p).addIntermediateImage("pre-filtered", p.getPreFilteredImage(structureIdx))); // add preFiltered image
-            }
-
+            if (runPreFiltersOnWholeTrack)  psc.getTrackPreFilters(true).filter(structureIdx, wholeParentTrackDup);
+            else  psc.getTrackPreFilters(true).filter(structureIdx, parentTrackDup); // only segmentation pre-filter -> run only on parentTrack
+            parentTrackDup.forEach(p->stores.get(p).addIntermediateImage("pre-filtered", p.getPreFilteredImage(structureIdx))); // add preFiltered image
+            
             TrackParametrizer  applyToSeg = TrackParametrizable.getTrackParametrizer(structureIdx, wholeParentTrackDup, (Segmenter)plugin);
             SegmentOnly so; 
             if (psc instanceof SegmentOnly) {
                 so = (SegmentOnly)psc;
-                if (runPreFiltersOnWholeTrack) { // were already run
-                    so.getPreFilters().removeAll();
-                    so.getTrackPreFilters(false).removeAll();
-                }
             } else {
                 so = new SegmentOnly((Segmenter)plugin).setPostFilters(psc.getPostFilters());
-                if (!runPreFiltersOnWholeTrack) so.addPreFilters(psc.getPreFilters().get()); // track pre-filters where not run -> add regular prefilters
             }
-
+            
             if (segParentStrutureIdx!=parentStrutureIdx && o.getStructureIdx()==segParentStrutureIdx) { // when selected objects are segmentation parent -> remove all others
                 Set<StructureObject> selectedObjects = parentSelection.stream().map(s->dupMap.get(s.getId())).collect(Collectors.toSet());
                 parentTrackDup.forEach(p->p.getChildren(segParentStrutureIdx).removeIf(c->!selectedObjects.contains(c)));
@@ -136,7 +130,7 @@ public class PluginConfigurationUtils {
                 if (s instanceof TestableProcessingPlugin) ((TestableProcessingPlugin)s).setTestDataStore(stores);
                 if (applyToSeg!=null) applyToSeg.apply(p, s); 
             };
-            so.segmentAndTrack(structureIdx, parentTrackDup, apply);
+            so.segmentAndTrack(structureIdx, parentTrackDup, apply); // won't run pre-filters
 
         } else if (plugin instanceof Tracker) {
             

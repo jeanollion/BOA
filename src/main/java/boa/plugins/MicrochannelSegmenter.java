@@ -20,6 +20,7 @@ package boa.plugins;
 
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
+import boa.data_structure.StructureObjectProcessing;
 import boa.image.BlankMask;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
@@ -40,7 +41,7 @@ public interface MicrochannelSegmenter extends Segmenter {
      * @param input image to segment microchannels from
      * @return Result object defining bounds of each segmented microchannel within {@param input} image
      */
-    public Result segment(Image input);
+    public Result segment(Image input, int structureIdx, StructureObjectProcessing parent);
     /**
      * Result Class for Microchannel Segmenters that defines the bounds of every microchannels, ordered from left to rigth. 
      */

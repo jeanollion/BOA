@@ -92,7 +92,7 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
     }
     
     @Override
-    public Result segment(Image input) {
+    public Result segment(Image input, int structureIdx, StructureObjectProcessing parent) {
         double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runSimpleThresholder(input, null) : thresholdValue;
         Result r = segmentMicroChannels(input, null, yShift.getValue().intValue(), channelWidth.getValue().intValue(), channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), thld, minObjectSize.getValue().intValue(), debug);
         return r;
