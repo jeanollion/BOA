@@ -436,11 +436,6 @@
                 <Property name="text" type="java.lang.String" value="Local Zoom"/>
               </Properties>
             </Menu>
-            <Menu class="javax.swing.JMenu" name="multiThreadMenu">
-              <Properties>
-                <Property name="text" type="java.lang.String" value="Multithread"/>
-              </Properties>
-            </Menu>
             <Menu class="javax.swing.JMenu" name="logMenu">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Log"/>
@@ -709,8 +704,8 @@
             <Container class="javax.swing.JPanel" name="actionPanel">
               <Constraints>
                 <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
-                  <JTabbedPaneConstraints tabName="Actions">
-                    <Property name="tabTitle" type="java.lang.String" value="Actions"/>
+                  <JTabbedPaneConstraints tabName="Home">
+                    <Property name="tabTitle" type="java.lang.String" value="Home"/>
                   </JTabbedPaneConstraints>
                 </Constraint>
               </Constraints>
@@ -768,7 +763,7 @@
                     <Property name="text" type="java.lang.String" value="localhost"/>
                     <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                       <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
-                        <TitledBorder title="DataBase URL"/>
+                        <TitledBorder title="Experiment Folder"/>
                       </Border>
                     </Property>
                   </Properties>

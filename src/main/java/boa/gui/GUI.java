@@ -269,16 +269,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         ConfigurationTreeGenerator.addToMenu(localZoomFactor.getName(), localZoomFactor.getUI().getDisplayComponent(), localZoomMenu);
         ConfigurationTreeGenerator.addToMenu(localZoomArea.getName(), localZoomArea.getUI().getDisplayComponent(), localZoomMenu);
         
-        // multithread
-        PropertyUtils.setPersistant(threadNumber, "thread_number");
-        PluginFactory.findPlugins("boa.plugins.plugins");
-        ConfigurationTreeGenerator.addToMenu(threadNumber.getName(), threadNumber.getUI().getDisplayComponent(), multiThreadMenu);
-        
         pyGtw = new PythonGateway();
         pyGtw.startGateway();
         
         // selections
-        selectionModel = new DefaultListModel<Selection>();
+        selectionModel = new DefaultListModel<>();
         this.selectionList.setModel(selectionModel);
         this.selectionList.setCellRenderer(new SelectionRenderer());
         setMouseAdapter(selectionList);
@@ -1167,7 +1162,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         clearPPImageMenuItem = new javax.swing.JMenuItem();
         openedImageNumberLimitMenu = new javax.swing.JMenu();
         localZoomMenu = new javax.swing.JMenu();
-        multiThreadMenu = new javax.swing.JMenu();
         logMenu = new javax.swing.JMenu();
         setLogFileMenuItem = new javax.swing.JMenuItem();
         activateLoggingMenuItem = new javax.swing.JCheckBoxMenuItem();
@@ -1211,7 +1205,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         tabs.setPreferredSize(new java.awt.Dimension(840, 450));
 
         hostName.setText("localhost");
-        hostName.setBorder(javax.swing.BorderFactory.createTitledBorder("DataBase URL"));
+        hostName.setBorder(javax.swing.BorderFactory.createTitledBorder("Experiment Folder"));
         hostName.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
                 hostNameMousePressed(evt);
@@ -1303,7 +1297,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                         .addComponent(experimentJSP))))
         );
 
-        tabs.addTab("Actions", actionPanel);
+        tabs.addTab("Home", actionPanel);
 
         javax.swing.GroupLayout configurationPanelLayout = new javax.swing.GroupLayout(configurationPanel);
         configurationPanel.setLayout(configurationPanelLayout);
@@ -2006,9 +2000,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         localZoomMenu.setText("Local Zoom");
         miscMenu.add(localZoomMenu);
-
-        multiThreadMenu.setText("Multithread");
-        miscMenu.add(multiThreadMenu);
 
         logMenu.setText("Log");
 
@@ -3839,7 +3830,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JList microscopyFieldList;
     private javax.swing.JMenu miscMenu;
-    private javax.swing.JMenu multiThreadMenu;
     private javax.swing.JMenuItem newXPFromTemplateMenuItem;
     private javax.swing.JMenuItem newXPMenuItem;
     private javax.swing.JButton nextTrackErrorButton;

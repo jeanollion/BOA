@@ -356,7 +356,7 @@ public abstract class ImageWindowManager<I, U, V> {
     public ImageObjectInterface getImageTrackObjectInterface(List<StructureObject> parentTrack, int childStructureIdx) {
         
         if (parentTrack.isEmpty()) {
-            logger.warn("cannot open track image of length == 0" );
+            logger.warn("cannot kymograph of length == 0" );
             return null;
         }
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true));
@@ -1122,12 +1122,10 @@ public abstract class ImageWindowManager<I, U, V> {
     }
     protected JPopupMenu getMenu(Image image) {
         final List<StructureObject> sel = getSelectedLabileObjects(image);
-        if (sel.isEmpty()) return null;
-        
         if (testData.containsKey(image)) { // test menu
             Collection<TestDataStore> stores = testData.get(image);
-            StructureObject o = sel.get(0); // only first selected object
-            Predicate<TestDataStore> storeWithinSel = s->s.getParent().equals(o.getParent(s.getParent().getStructureIdx()));
+            StructureObject o = sel.isEmpty() ? null : sel.get(0); // only first selected object
+            Predicate<TestDataStore> storeWithinSel = s->o==null ? true : s.getParent().equals(o.getParent(s.getParent().getStructureIdx()));
             Set<String> commands = stores.stream().filter(storeWithinSel).map(s->s.getMiscCommands()).flatMap(Set::stream).distinct().sorted().collect(Collectors.toSet());
             JPopupMenu menu = getMenu(o);
             if (!commands.isEmpty()) {
@@ -1137,12 +1135,11 @@ public abstract class ImageWindowManager<I, U, V> {
                     menu.add(item);
                     item.setAction(new AbstractActionImpl(item.getActionCommand(), stores, storeWithinSel, sel));
                 });
-            
-            
             }
             return menu;
         } else { // regular menu
-            if (sel.size()==1) return getMenu(sel.get(0));
+            if (sel.isEmpty()) return null;
+            else if (sel.size()==1) return getMenu(sel.get(0));
             else {
                 Collections.sort(sel);
                 return getMenu(sel.subList(0, Math.min(50, sel.size())));
@@ -1152,6 +1149,7 @@ public abstract class ImageWindowManager<I, U, V> {
 
     private JPopupMenu getMenu(StructureObject o) {
         JPopupMenu menu = new JPopupMenu();
+        if (o==null) return menu;
         menu.add(new JMenuItem(o.toString()));
         menu.add(new JMenuItem("Prev:"+o.getPrevious()));
         menu.add(new JMenuItem("Next:"+o.getNext()));

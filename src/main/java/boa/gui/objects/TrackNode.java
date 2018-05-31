@@ -209,7 +209,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
             this.actions = new JMenuItem[7];
             JMenu segSubMenu = new JMenu("Open Segmented Track Image");
             //actions[0] = segSubMenu;
-            JMenu rawSubMenu = new JMenu("Open Track Image");
+            JMenu rawSubMenu = new JMenu("Open Kymograph");
             actions[0] = rawSubMenu;
             String[] structureNames = trackNode.trackHead.getExperiment().getStructuresAsString();
             JMenu runSegAndTrackingSubMenu = new JMenu("Run segmentation and tracking");
