@@ -45,19 +45,19 @@ import org.slf4j.LoggerFactory;
  */
 public class PluginFactory {
 
-    private final static TreeMap<String, Class> plugins = new TreeMap<>();
+    private final static TreeMap<String, Class> PLUGINS = new TreeMap<>();
     private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
     private final static Map<String, String> refactoredNamesOldMapNew = new HashMap<String, String>(){{put("BacteriaFluo", "BacteriaIntensity");put("MicroChannelFluo2D", "MicrochannelFluo2D");put("LAPTracker", "MutationTracker");put("MutationSegmenter", "MutationSegmenter");put("CropMicroChannelBF2D", "CropMicrochannelsPhase2D");put("CropMicroChannelFluo2D", "CropMicrochannelsFluo2D");put("BacteriaTransMeasurements", "BacteriaPhaseMeasurements");}};
     
     public static void findPlugins(String packageName) {
-        logger.info("looking for plugin in package: {}", packageName);
+        logger.info("looking for plugins in package: {}", packageName);
         try {
             for (Class c : getClasses(packageName)) {
                 //Class<?> clazz = Class.forName(c);
                 if (Plugin.class.isAssignableFrom(c) && !Modifier.isAbstract( c.getModifiers() )) { // ne check pas l'heritage indirect!!
-                    if (!plugins.containsKey(c.getSimpleName())) plugins.put(c.getSimpleName(), c);
+                    if (!PLUGINS.containsKey(c.getSimpleName())) PLUGINS.put(c.getSimpleName(), c);
                     else {
-                        Class otherC = plugins.get(c.getSimpleName());
+                        Class otherC = PLUGINS.get(c.getSimpleName());
                         if (!otherC.equals(c)) logger.warn("Duplicate class name: {} & {}", otherC.getName(), c.getName());
                     }
                     //logger.debug("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
@@ -67,7 +67,8 @@ public class PluginFactory {
             logger.warn("find plugins", ex);
         } catch (IOException ex) {
             logger.warn("find plugins", ex);
-        }            
+        }
+        logger.info("total plugins found #{}", PLUGINS.size());
     }
     private static Iterator list(ClassLoader CL) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         Class CL_class = CL.getClass();
@@ -180,7 +181,7 @@ public class PluginFactory {
                 testClassIJ(command, className, loader);
             }
             
-            logger.info("number of plugins found: " + plugins.size());
+            logger.info("number of plugins found: " + PLUGINS.size());
         } catch (Exception ex) {
             logger.warn("find plugins IJ", ex);
         }
@@ -198,7 +199,7 @@ public class PluginFactory {
                     //String simpleName = c.getSimpleName();
                     String simpleName = command;
                     if (Plugin.class.isAssignableFrom(c)) {
-                        plugins.put(simpleName, c);
+                        PLUGINS.put(simpleName, c);
                     }
                 }
             } catch (ClassNotFoundException ex) {
@@ -218,8 +219,8 @@ public class PluginFactory {
         }
         try {
             Object res = null;
-            if (plugins.containsKey(s)) {
-                res = plugins.get(s).newInstance();
+            if (PLUGINS.containsKey(s)) {
+                res = PLUGINS.get(s).newInstance();
             } else if (refactoredNamesOldMapNew.containsKey(s)) return getPlugin(refactoredNamesOldMapNew.get(s));
             
             if (res != null && res instanceof Plugin) {
@@ -233,14 +234,14 @@ public class PluginFactory {
         return null;
     }
     public static <T extends Plugin> Class<T> getPluginClass(Class<T> clazz, String className) {
-        Class plugClass = plugins.get(className);
-        if (plugClass==null && refactoredNamesOldMapNew.containsKey(className)) plugClass = plugins.get(refactoredNamesOldMapNew.get(className));
+        Class plugClass = PLUGINS.get(className);
+        if (plugClass==null && refactoredNamesOldMapNew.containsKey(className)) plugClass = PLUGINS.get(refactoredNamesOldMapNew.get(className));
         return plugClass;
     }
     public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
         try {
-            Class plugClass = plugins.get(className);
-            if (plugClass==null && refactoredNamesOldMapNew.containsKey(className)) plugClass = plugins.get(refactoredNamesOldMapNew.get(className));
+            Class plugClass = PLUGINS.get(className);
+            if (plugClass==null && refactoredNamesOldMapNew.containsKey(className)) plugClass = PLUGINS.get(refactoredNamesOldMapNew.get(className));
             if (plugClass==null) {
                 logger.error("plugin: {} of class: {} not found", className, clazz);
                 return null;
@@ -257,7 +258,7 @@ public class PluginFactory {
 
     public static <T extends Plugin> ArrayList<String> getPluginNames(Class<T> clazz) {
         ArrayList<String> res = new ArrayList<String>();
-        for (Entry<String, Class> e : plugins.entrySet()) {
+        for (Entry<String, Class> e : PLUGINS.entrySet()) {
             if (clazz.isAssignableFrom(e.getValue())) {
                 res.add(e.getKey());
             }

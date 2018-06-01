@@ -206,6 +206,7 @@ public class PluginConfigurationUtils {
         int segParentStrutureIdx = stores.values().stream().findAny().get().getParent().getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
         
         Pair<ImageObjectInterface, List<Image>> res = buildIntermediateImages(stores.values(), parentStructureIdx);
+        ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(Math.max(ImageWindowManagerFactory.getImageManager().getDisplayImageLimit(), res.value.size()+1));
         res.value.forEach((image) -> {
             iwm.addImage(image, res.key, structureIdx, true);
             iwm.addTestData(image, stores.values());

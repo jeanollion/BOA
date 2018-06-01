@@ -133,6 +133,9 @@ public abstract class ImageWindowManager<I, U, V> {
     public void setDisplayImageLimit(int limit) {
         this.displayedImageNumber=limit;
     }
+    public int getDisplayImageLimit() {
+        return displayedImageNumber;
+    }
     public RegisteredImageType getRegisterType(Object image) {
         if (image instanceof Image) {
             if (displayedInteractiveImages.contains((Image)image)) return RegisteredImageType.Interactive;

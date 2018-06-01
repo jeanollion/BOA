@@ -987,53 +987,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         trackSubPanel.repaint();
     }
     
-    /*private void initDBImages() {
-            m=MorphiumUtils.createMorphium("testGUI");
-            m.clearCollection(Experiment.class);
-            m.clearCollection(StructureObject.class);
-            xpDAO = new ExperimentDAO(m);
-            objectDAO = new MorphiumObjectDAO(m, xpDAO);
-            MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
-            
-            // generate XP
-            Experiment xp = new Experiment("test");
-            ChannelImage cMic = new ChannelImage("ChannelImageMicroChannel");
-            xp.getChannelImages().insert(cMic);
-            ChannelImage cBact = new ChannelImage("ChannelImageBact");
-            xp.getChannelImages().insert(cBact);
-            xp.getStructures().removeAllElements();
-            Structure microChannel = new Structure("MicroChannel", -1, 0);
-            Structure bacteries = new Structure("Bacteries", 0, 1);
-            xp.getStructures().insert(microChannel, bacteries);
-            bacteries.setParentStructure(0);
-            
-            // processing chains
-            PluginFactory.findPlugins("plugins.plugins");
-            microChannel.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue()));
-            bacteries.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue()));
-            
-            // set-up traking
-            microChannel.setTracker(new ObjectIdxTracker());
-            bacteries.setTracker(new ObjectIdxTracker());
-            
-            // set up fields
-            Processor.importFiles(new String[]{"/data/Images/Test/syntheticData.ome.tiff"}, xp);
-            xp.setOutputImageDirectory("/data/Images/Test/Output");
-            
-            // save to morphium
-            xpDAO.storeLater(xp);
-            
-            // process
-            Processor.preProcessImages(xp, objectDAO, true);
-            ArrayList<StructureObject> root = xp.getMicroscopyField(0).createRootObjects();
-            objectDAO.storeLater(root); 
-            Processor.trackRoot(root, objectDAO);
-            for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (int t = 0; t<root.size(); ++t) Processor.processStructure(s, root.get(t), objectDAO, false); // process
-                for (StructureObject o : StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, objectDAO); // structure
-            }
-    }*/
-
     private static void removeTreeSelectionListeners(JTree tree) {
         for (TreeSelectionListener t : tree.getTreeSelectionListeners()) tree.removeTreeSelectionListener(t);
     }
@@ -3662,10 +3615,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //</editor-fold>
         /* Create and display the form */
         new ImageJ();
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new GUI().setVisible(true);
-            }
+        PluginFactory.findPlugins("boa.plugins.plugins");
+        java.awt.EventQueue.invokeLater(() -> {
+            new GUI().setVisible(true);
         });
     }
     
