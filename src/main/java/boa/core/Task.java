@@ -75,8 +75,13 @@ import boa.utils.JSONUtils;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.Objects;
+import java.util.function.BiPredicate;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  *
@@ -296,6 +301,16 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this.extractMeasurementDir.add(new Pair(dir, extractStructures));
             return this;
         }
+        private void ensurePositions() {
+            if (positions!=null) return;
+            initDB();
+            positions = Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+        }
+        private void ensureStructures() {
+            if (structures!=null) return; 
+            initDB();
+            structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
+        }
         public boolean isValid() {
             boolean initDB = db==null;
             if (initDB) initDB();
@@ -312,7 +327,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (structures!=null) checkArray(structures, db.getExperiment().getStructureCount(), "Invalid structure: ");
             if (positions!=null) checkArray(positions, db.getExperiment().getPositionCount(), "Invalid position: ");
             if (preProcess) { // compare pre processing to template
-                if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+                ensurePositions();
                 PreProcessingChain template = db.getExperiment().getPreProcessingTemplate();
                 for (int p : positions) {
                     PreProcessingChain pr = db.getExperiment().getPosition(p).getPreProcessingChain();
@@ -330,10 +345,11 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages && !exportData) errors.addExceptions(new Pair(dbName, new Exception("No action to run!")));
             // check parametrization
             if (preProcess) {
+                ensurePositions();
                 for (int p : positions) if (!db.getExperiment().getPosition(p).isValid()) errors.addExceptions(new Pair(dbName, new Exception("Configuration error @ Position: "+ db.getExperiment().getPosition(p).getName())));
             }
             if (segmentAndTrack || trackOnly) {
-                if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
+                ensureStructures();
                 for (int s : structures) if (!db.getExperiment().getStructure(s).isValid()) errors.addExceptions(new Pair(dbName, new Exception("Configuration error @ Structure: "+ db.getExperiment().getStructure(s).getName())));
             }
             if (measurements) {
@@ -358,8 +374,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         public int countSubtasks() {
             initDB();
-            if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
-            if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
+            ensurePositions();
+            ensureStructures();
             int count=0;
             // preProcess: 
             if (preProcess) count += positions.size();
@@ -614,7 +630,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     public void log(String message) {
         publish(message);
     }
-
+    
     public static void executeTasks(List<Task> tasks, UserInterface ui, Runnable... endOfWork) {
         int totalSubtasks = 0;
         for (Task t : tasks) {
@@ -650,5 +666,239 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
     public static void executeTask(Task t, UserInterface ui, Runnable... endOfWork) {
         executeTasks(new ArrayList<Task>(1){{add(t);}}, ui, endOfWork);
+    }
+    public static Stream<Task> splitPosition(Task task) {
+        boolean dbWasNull = task.db==null;
+        task.ensurePositions();
+        if (dbWasNull) {
+            task.db.clearCache();
+            task.db = null;
+        }
+        JSONObject taskObject = task.toJSON();
+        Function<Integer, Task> subTaskCreator = p -> {
+            Task res = new Task().fromJSON(taskObject).setPositions(p);
+            // also ensure no global task
+            res.exportConfig = false;
+            res.exportData = false;
+            res.exportObjects = false;
+            res.exportPreProcessedImages = false;
+            res.exportSelections = false;
+            res.exportTrackImages = false;
+            res.extractMeasurementDir.clear();
+            return res;
+        };
+        return task.positions.stream().map(subTaskCreator);
+    }
+    // check that no 2 xp with same name and different dirs
+    private static void checkXPNameDir(List<Task> tasks) {
+        boolean[] haveDup = new boolean[1];
+        tasks.stream().map(t -> new Pair<>(t.dbName, t.dir)).distinct().collect(Collectors.groupingBy(p -> p.key)).entrySet().stream().filter(e->e.getValue().size()>1).forEach(e -> {
+            haveDup[0] = true;
+            logger.error("Task: {} has several directories: {}", e.getKey(), e.getValue().stream().map(p->p.value).collect(Collectors.toList()));
+        });
+        if (haveDup[0]) throw new IllegalArgumentException("Cannot process tasks: some duplicate experiment name with distinct path");
+    }
+    public static Map<XP_POS, List<Task>> getProcessingTasksByPosition(List<Task> tasks) {
+        //checkXPNameDir(tasks);
+        BinaryOperator<Task> taskMerger=(t1, t2) -> {
+            if (!Arrays.equals(t1.structures, t2.structures)) throw new IllegalArgumentException("Tasks should have same structures to be merged");
+            if (t2.measurements) t1.measurements= true;
+            if (t2.preProcess) t1.preProcess = true;
+            if (t2.segmentAndTrack) {
+                t1.segmentAndTrack = true;
+                t1.trackOnly = false;
+            } else if (t2.trackOnly && !t1.segmentAndTrack) t1.trackOnly = true;
+            
+            return t1;
+        };
+        return tasks.stream().flatMap(t -> splitPosition(t)) // split by db / position
+                .collect(Collectors.groupingBy(t->new XP_POS_S(t.dbName, t.dir, t.positions.get(0), new StructureArray(t.structures)))) // group including structures;
+                .entrySet().stream().map(e -> e.getValue().stream().reduce(taskMerger).get()). // merge all tasks from same group
+                collect(Collectors.groupingBy(t->new XP_POS(t.dbName, t.dir, t.positions.get(0)))); // merge without including structures
+    }
+    public static Map<XP, List<Task>> getGlobalTasksByExperiment(List<Task> tasks) {
+        //checkXPNameDir(tasks);
+        Function<Task, Task> getGlobalTask = t -> {
+            if (!t.exportConfig && !t.exportData && !t.exportObjects && !t.exportPreProcessedImages && !t.exportSelections && !t.exportTrackImages && t.extractMeasurementDir.isEmpty()) return null;
+            Task res = new Task().fromJSON(t.toJSON());
+            // also ensure no processing tasks
+            res.measurements = false;
+            res.preProcess = false;
+            res.segmentAndTrack = false;
+            res.trackOnly = false;            
+            return res;
+        };
+        return tasks.stream().map(getGlobalTask).filter(t->t!=null).collect(Collectors.groupingBy(t->new XP(t.dbName, t.dir)));
+    }
+    // utility classes for task split & merge
+    public static class XP {
+        final String dbName, dir;
+
+        public XP(String dbName, String dir) {
+            this.dbName = dbName;
+            this.dir = dir;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 89 * hash + Objects.hashCode(this.dbName);
+            hash = 89 * hash + Objects.hashCode(this.dir);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final XP other = (XP) obj;
+            if (!Objects.equals(this.dbName, other.dbName)) {
+                return false;
+            }
+            if (!Objects.equals(this.dir, other.dir)) {
+                return false;
+            }
+            return true;
+        }
+        
+    }
+    
+    public static class XP_POS extends XP {
+        final int position;
+        
+        public XP_POS(String dbName, String dir, int position) {
+            super(dbName, dir);
+            this.position = position;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 53 * hash + Objects.hashCode(this.dbName);
+            hash = 53 * hash + Objects.hashCode(this.dir);
+            hash = 53 * hash + this.position;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final XP_POS other = (XP_POS) obj;
+            if (this.position != other.position) {
+                return false;
+            }
+            if (!Objects.equals(this.dbName, other.dbName)) {
+                return false;
+            }
+            if (!Objects.equals(this.dir, other.dir)) {
+                return false;
+            }
+            return true;
+        }
+        
+        
+    }
+    private static class XP_POS_S extends XP_POS {
+        StructureArray structures;
+        
+        public XP_POS_S(String dbName, String dir, int position, StructureArray structures) {
+            super(dbName, dir, position);
+            this.structures=structures;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 37 * hash + Objects.hashCode(this.dbName);
+            hash = 37 * hash + Objects.hashCode(this.dir);
+            hash = 37 * hash + Objects.hashCode(this.structures);
+            hash = 37 * hash + this.position;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final XP_POS_S other = (XP_POS_S) obj;
+            if (this.position != other.position) {
+                return false;
+            }
+            if (!Objects.equals(this.dbName, other.dbName)) {
+                return false;
+            }
+            if (!Objects.equals(this.dir, other.dir)) {
+                return false;
+            }
+            if (!Objects.equals(this.structures, other.structures)) {
+                return false;
+            }
+            return true;
+        }
+        
+    }
+    
+    private static class StructureArray implements Comparable<StructureArray> {
+        final int[] structures;
+
+        public StructureArray(int[] structures) {
+            this.structures = structures;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 97 * hash + Arrays.hashCode(this.structures);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final StructureArray other = (StructureArray) obj;
+            return Arrays.equals(this.structures, other.structures);
+        }
+
+        @Override
+        public int compareTo(StructureArray o) {
+            if (structures==null) {
+                if (o.structures==null) return 0;
+                else return -1;
+            } else {
+                if (o.structures==null) return 1;
+                else return Integer.compare(structures[0], o.structures[0]); // structures is a sorted array
+            }
+        }
+        
     }
 }
