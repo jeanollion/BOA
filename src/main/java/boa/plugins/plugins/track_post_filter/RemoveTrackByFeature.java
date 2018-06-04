@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.track_post_filter;
 
-import boa.gui.ManualCorrection;
+import boa.gui.ManualEdition;
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
@@ -123,7 +123,7 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
             }
         }
         BiPredicate<StructureObject, StructureObject> mergePredicate = PostFilter.MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false); // only delete
+        if (!objectsToRemove.isEmpty()) ManualEdition.deleteObjects(null, objectsToRemove, mergePredicate, false); // only delete
     }
 
     @Override

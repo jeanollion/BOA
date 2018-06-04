@@ -204,6 +204,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
      * Creates new form GUI
      */
     public GUI() {
+        PluginFactory.findPlugins("boa.plugins.plugins");
         //logger.info("DBMaker: {}", checkClass("org.mapdb.DBMaker"));
         ToolTipManager.sharedInstance().setInitialDelay(100);
         ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
@@ -331,6 +332,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 logger.debug("R pressed: " + e);
             }
         });
+        actionMap.put(ACTION.RESET_LINKS, new AbstractAction("Reset Links") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                resetLinksButtonActionPerformed(e);
+                logger.debug("R pressed: " + e);
+            }
+        });
         actionMap.put(ACTION.DELETE, new AbstractAction("Delete") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -338,11 +346,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 logger.debug("D pressed: " + e);
             }
         });
-        actionMap.put(ACTION.PRUNE, new AbstractAction("Prune Track") {
+        actionMap.put(ACTION.CREATE_BRANCH, new AbstractAction("Prune Track") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                pruneTrackActionPerformed(e);
-                logger.debug("P pressed: " + e);
+                if (!checkConnection()) return;
+                List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+                if (selList.isEmpty()) logger.warn("Select at least one object to Create branch from first!");
+                else if (selList.size()<=10 || Utils.promptBoolean("Create "+selList.size()+ " new branches ? ", null)) ManualEdition.createBranches(db, selList, true);
             }
         });
         actionMap.put(ACTION.MERGE, new AbstractAction("Merge") {
@@ -1121,35 +1131,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         appendToFileMenuItem = new javax.swing.JCheckBoxMenuItem();
         ShortcutMenu = new javax.swing.JMenu();
         shortcutPresetMenu = new javax.swing.JMenu();
-        ActiveSelMenu = new javax.swing.JMenu();
-        jMenuItem20 = new javax.swing.JMenuItem();
-        jMenuItem1 = new javax.swing.JMenuItem();
-        jMenuItem2 = new javax.swing.JMenuItem();
-        jMenuItem3 = new javax.swing.JMenuItem();
-        jMenuItem4 = new javax.swing.JMenuItem();
-        jMenu4 = new javax.swing.JMenu();
-        jMenuItem25 = new javax.swing.JMenuItem();
-        jMenuItem26 = new javax.swing.JMenuItem();
-        jMenuItem13 = new javax.swing.JMenuItem();
-        jMenuItem14 = new javax.swing.JMenuItem();
-        jMenuItem7 = new javax.swing.JMenuItem();
-        jMenuItem8 = new javax.swing.JMenuItem();
-        jMenuItem21 = new javax.swing.JMenuItem();
-        jMenuItem9 = new javax.swing.JMenuItem();
-        jMenuItem10 = new javax.swing.JMenuItem();
-        jMenuItem17 = new javax.swing.JMenuItem();
-        jMenuItem18 = new javax.swing.JMenuItem();
-        jMenu3 = new javax.swing.JMenu();
-        jMenuItem5 = new javax.swing.JMenuItem();
-        jMenuItem19 = new javax.swing.JMenuItem();
-        jMenuItem6 = new javax.swing.JMenuItem();
-        jMenuItem11 = new javax.swing.JMenuItem();
-        jMenuItem22 = new javax.swing.JMenuItem();
-        jMenuItem12 = new javax.swing.JMenuItem();
-        jMenuItem15 = new javax.swing.JMenuItem();
-        jMenuItem16 = new javax.swing.JMenuItem();
-        jMenuItem23 = new javax.swing.JMenuItem();
-        jMenuItem24 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
@@ -1158,7 +1139,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         tabs.setPreferredSize(new java.awt.Dimension(840, 450));
 
         hostName.setText("localhost");
-        hostName.setBorder(javax.swing.BorderFactory.createTitledBorder("Experiment Folder"));
+        hostName.setBorder(javax.swing.BorderFactory.createTitledBorder("Experiment Group Folder"));
         hostName.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
                 hostNameMousePressed(evt);
@@ -1991,101 +1972,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         shortcutPresetMenu.setText("Shortcut Preset");
         ShortcutMenu.add(shortcutPresetMenu);
 
-        ActiveSelMenu.setText("Active Selection");
-
-        jMenuItem20.setText("Active selections are set through right-clik menu on selections");
-        ActiveSelMenu.add(jMenuItem20);
-
-        jMenuItem1.setText("Ctrl + Z/E : Toggle Display Objects");
-        ActiveSelMenu.add(jMenuItem1);
-
-        jMenuItem2.setText("Shift + Z/E : Add selected object(s) to active selection(s)");
-        ActiveSelMenu.add(jMenuItem2);
-
-        jMenuItem3.setText("Alt + Z/E: Remove selected object(s) from active selection(s)");
-        ActiveSelMenu.add(jMenuItem3);
-
-        jMenuItem4.setText("AltGr + Z/E: Remove all objects of active image from active selection(s)");
-        ActiveSelMenu.add(jMenuItem4);
-
-        ShortcutMenu.add(ActiveSelMenu);
-
-        jMenu4.setText("Navigation / Display");
-
-        jMenuItem25.setText("Tab: toggle local zoom");
-        jMenu4.add(jMenuItem25);
-
-        jMenuItem26.setText("Shift + mouse wheel mouve: fast scroll");
-        jMenuItem26.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem26ActionPerformed(evt);
-            }
-        });
-        jMenu4.add(jMenuItem26);
-
-        jMenuItem13.setText("Ctrl + A : Display all objects on active image");
-        jMenu4.add(jMenuItem13);
-
-        jMenuItem14.setText("Ctrl + Q : Display all tracks on active image");
-        jMenu4.add(jMenuItem14);
-
-        jMenuItem7.setText("Ctrl + X: navigate to next objects of active selection or selected selection if no active selection");
-        jMenu4.add(jMenuItem7);
-
-        jMenuItem8.setText("Ctrl + W: navigate to previous objects of active selection or selected selection if no active selection");
-        jMenu4.add(jMenuItem8);
-
-        jMenuItem21.setText("Navigation selection is set through right-click menu on selections");
-        jMenu4.add(jMenuItem21);
-
-        jMenuItem9.setText("Alt + X: open next image");
-        jMenu4.add(jMenuItem9);
-
-        jMenuItem10.setText("Alt + W: open previous image");
-        jMenu4.add(jMenuItem10);
-
-        jMenuItem17.setText("Ctrl + T: toggle display object/track on click");
-        jMenu4.add(jMenuItem17);
-
-        jMenuItem18.setText("Ctrl + I: change interactive structure");
-        jMenu4.add(jMenuItem18);
-
-        ShortcutMenu.add(jMenu4);
-
-        jMenu3.setText("Object Modifications");
-
-        jMenuItem5.setText("Ctrl + D: delete object(s) selected on active image");
-        jMenu3.add(jMenuItem5);
-
-        jMenuItem19.setText("Ctrl + P: prune track starting from selected object(s)");
-        jMenu3.add(jMenuItem19);
-
-        jMenuItem6.setText("Ctrl + S: split object(s)");
-        jMenu3.add(jMenuItem6);
-
-        jMenuItem11.setText("Ctrl + M: merge objects");
-        jMenu3.add(jMenuItem11);
-
-        jMenuItem22.setText("C: switch to object creation tool / rectangle selection");
-        jMenu3.add(jMenuItem22);
-
-        jMenuItem12.setText("Ctrl + C: create object(s) from selected point(s)");
-        jMenu3.add(jMenuItem12);
-
-        jMenuItem15.setText("Ctrl + R: reset track links of selected object(s)");
-        jMenu3.add(jMenuItem15);
-
-        jMenuItem16.setText("Ctrl + L: link / unlink selected objects");
-        jMenu3.add(jMenuItem16);
-
-        jMenuItem23.setText("Ctrl + line : strech objects");
-        jMenu3.add(jMenuItem23);
-
-        jMenuItem24.setText("Ctrl + freehand line: manual split objects");
-        jMenu3.add(jMenuItem24);
-
-        ShortcutMenu.add(jMenu3);
-
         mainMenu.add(ShortcutMenu);
 
         setJMenuBar(mainMenu);
@@ -2792,7 +2678,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (!checkConnection()) return;
         if (db.isReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        ManualCorrection.prune(db, sel, ManualCorrection.ALWAYS_MERGE, true);
+        ManualEdition.prune(db, sel, ManualEdition.ALWAYS_MERGE, true);
         logger.debug("prune: {}", Utils.toStringList(sel));
     }
     
@@ -3303,7 +3189,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (!checkConnection()) return;
         List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
-        else ManualCorrection.splitObjects(db, selList, false, true);
+        else ManualEdition.splitObjects(db, selList, false, true);
     }//GEN-LAST:event_testSplitButtonActionPerformed
 
     private void resetLinksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetLinksButtonActionPerformed
@@ -3314,7 +3200,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             logger.warn("Select at least one object to modify its links");
             return;
         }
-        ManualCorrection.resetObjectLinks(db, sel, true);
+        ManualEdition.resetObjectLinks(db, sel, true);
     }//GEN-LAST:event_resetLinksButtonActionPerformed
 
     private void unlinkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unlinkObjectsButtonActionPerformed
@@ -3325,7 +3211,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             logger.warn("Select at least one object to modify its links");
             return;
         }
-        ManualCorrection.modifyObjectLinks(db, sel, true, true);
+        ManualEdition.modifyObjectLinks(db, sel, true, true);
     }//GEN-LAST:event_unlinkObjectsButtonActionPerformed
 
     private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
@@ -3336,17 +3222,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             logger.warn("Select at least one object to modify its links");
             return;
         }
-        ManualCorrection.modifyObjectLinks(db, sel, false, true);
+        ManualEdition.modifyObjectLinks(db, sel, false, true);
     }//GEN-LAST:event_linkObjectsButtonActionPerformed
 
     private void testManualSegmentationButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testManualSegmentationButtonActionPerformed
-        ManualCorrection.manualSegmentation(db, null, true);
+        ManualEdition.manualSegmentation(db, null, true);
     }//GEN-LAST:event_testManualSegmentationButtonActionPerformed
 
     private void manualSegmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manualSegmentButtonActionPerformed
         if (!checkConnection()) return;
         //if (db.isReadOnly()) return;
-        ManualCorrection.manualSegmentation(db, null, false);
+        ManualEdition.manualSegmentation(db, null, false);
     }//GEN-LAST:event_manualSegmentButtonActionPerformed
 
     private void updateRoiDisplayButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateRoiDisplayButtonActionPerformed
@@ -3358,7 +3244,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         logger.info("delete: evt source {}, evt: {}, ac: {}, param: {}", evt.getSource(), evt, evt.getActionCommand(), evt.paramString());
         //if (db.isReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (sel.size()<=10 || Utils.promptBoolean("Delete "+sel.size()+ " Objects ? ", null)) ManualCorrection.deleteObjects(db, sel, ManualCorrection.ALWAYS_MERGE, true);
+        if (sel.size()<=10 || Utils.promptBoolean("Delete "+sel.size()+ " Objects ? ", null)) ManualEdition.deleteObjects(db, sel, ManualEdition.ALWAYS_MERGE, true);
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
     private void deleteObjectsButtonMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteObjectsButtonMousePressed
@@ -3375,14 +3261,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             Action delAfter = new AbstractAction("Delete All objects after first selected object") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    ManualCorrection.deleteAllObjectsFromFrame(db, true);
+                    ManualEdition.deleteAllObjectsFromFrame(db, true);
                     logger.debug("will delete all after");
                 }
             };
             Action delBefore = new AbstractAction("Delete All objects before first selected object") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    ManualCorrection.deleteAllObjectsFromFrame(db, false);
+                    ManualEdition.deleteAllObjectsFromFrame(db, false);
                     logger.debug("will delete all after");
                 }
             };
@@ -3413,7 +3299,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //if (db.isReadOnly()) return;
         List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (selList.isEmpty()) logger.warn("Select at least two objects to Merge first!");
-        else if (selList.size()<=10 || Utils.promptBoolean("Merge "+selList.size()+ " Objects ? ", null))  ManualCorrection.mergeObjects(db, selList, true);
+        else if (selList.size()<=10 || Utils.promptBoolean("Merge "+selList.size()+ " Objects ? ", null))  ManualEdition.mergeObjects(db, selList, true);
     }//GEN-LAST:event_mergeObjectsButtonActionPerformed
 
     private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
@@ -3421,7 +3307,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //if (db.isReadOnly()) return;
         List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
-        else if (selList.size()<=10 || Utils.promptBoolean("Split "+selList.size()+ " Objects ? ", null)) ManualCorrection.splitObjects(db, selList, true, false);
+        else if (selList.size()<=10 || Utils.promptBoolean("Split "+selList.size()+ " Objects ? ", null)) ManualEdition.splitObjects(db, selList, true, false);
     }//GEN-LAST:event_splitObjectsButtonActionPerformed
 
     private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
@@ -3497,10 +3383,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             else setSelectedExperimentMenuItem.setText("Close Experiment: "+db.getDBName());
         }
     }//GEN-LAST:event_experimentListValueChanged
-
-    private void jMenuItem26ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem26ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jMenuItem26ActionPerformed
     
     public void addToSelectionActionPerformed(int selNumber) {
         if (!this.checkConnection()) return;
@@ -3615,7 +3497,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //</editor-fold>
         /* Create and display the form */
         new ImageJ();
-        PluginFactory.findPlugins("boa.plugins.plugins");
+        
         java.awt.EventQueue.invokeLater(() -> {
             new GUI().setVisible(true);
         });
@@ -3673,7 +3555,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JMenu ActiveSelMenu;
     private javax.swing.JMenuItem CloseNonInteractiveWindowsMenuItem;
     private javax.swing.JPanel ControlPanel;
     private javax.swing.JMenu ShortcutMenu;
@@ -3742,34 +3623,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenu jMenu3;
-    private javax.swing.JMenu jMenu4;
-    private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JMenuItem jMenuItem10;
-    private javax.swing.JMenuItem jMenuItem11;
-    private javax.swing.JMenuItem jMenuItem12;
-    private javax.swing.JMenuItem jMenuItem13;
-    private javax.swing.JMenuItem jMenuItem14;
-    private javax.swing.JMenuItem jMenuItem15;
-    private javax.swing.JMenuItem jMenuItem16;
-    private javax.swing.JMenuItem jMenuItem17;
-    private javax.swing.JMenuItem jMenuItem18;
-    private javax.swing.JMenuItem jMenuItem19;
-    private javax.swing.JMenuItem jMenuItem2;
-    private javax.swing.JMenuItem jMenuItem20;
-    private javax.swing.JMenuItem jMenuItem21;
-    private javax.swing.JMenuItem jMenuItem22;
-    private javax.swing.JMenuItem jMenuItem23;
-    private javax.swing.JMenuItem jMenuItem24;
-    private javax.swing.JMenuItem jMenuItem25;
-    private javax.swing.JMenuItem jMenuItem26;
-    private javax.swing.JMenuItem jMenuItem3;
-    private javax.swing.JMenuItem jMenuItem4;
-    private javax.swing.JMenuItem jMenuItem5;
-    private javax.swing.JMenuItem jMenuItem6;
-    private javax.swing.JMenuItem jMenuItem7;
-    private javax.swing.JMenuItem jMenuItem8;
-    private javax.swing.JMenuItem jMenuItem9;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JSplitPane jSplitPane3;
     private javax.swing.JButton linkObjectsButton;

@@ -408,7 +408,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 setNext(next);
             }
         }
-        if (next!=null && setPrev) next.setAttribute(trackErrorPrev, null);
+        if (next!=null && setPrev) next.setAttribute(TRACK_ERROR_PREV, null);
     }
     @Override
     public StructureObject resetTrackLinks(boolean prev, boolean next) {
@@ -425,11 +425,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             //if (this.previous!=null && this.equals(this.previous.next))
             setPrevious(null);
             setTrackHead(this, false, propagate, modifiedObjects);
-            setAttribute(trackErrorPrev, null);
+            setAttribute(TRACK_ERROR_PREV, null);
         }
         if (next) {
             setNext(null);
-            setAttribute(trackErrorNext, null);
+            setAttribute(TRACK_ERROR_NEXT, null);
         }
     }
 
@@ -531,20 +531,16 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return parentTrackHeadId;
     }
 
-    public static final String trackErrorPrev = "TrackErrorPrev";
-    public static final String trackErrorNext = "TrackErrorNext";
-    public static final String correctionMerge = "correctionMerge";
-    public static final String correctionSplit = "correctionSplit";
-    public static final String correctionSplitNew = "correctionSplitNew";
+    public static final String TRACK_ERROR_PREV = "TrackErrorPrev";
+    public static final String TRACK_ERROR_NEXT = "TrackErrorNext";
+    public static final String EDITED_LINK_PREV = "EditedLinkPrev";
+    public static final String EDITED_LINK_NEXT = "EditedLinkNext";
+    public static final String EDITED_SEGMENTATION = "EditedSegmentation";
     @Override public boolean hasTrackLinkError(boolean prev, boolean next) {
         if (attributes==null) return false;
-        if (prev && Boolean.TRUE.equals(getAttribute(trackErrorPrev))) return true;
-        else if (next && Boolean.TRUE.equals(getAttribute(trackErrorNext))) return true;
+        if (prev && Boolean.TRUE.equals(getAttribute(TRACK_ERROR_PREV))) return true;
+        else if (next && Boolean.TRUE.equals(getAttribute(TRACK_ERROR_NEXT))) return true;
         else return false;
-    }
-    
-    public boolean hasTrackLinkCorrection() {
-        return Boolean.TRUE.equals(getAttribute(correctionMerge)) || Boolean.TRUE.equals(getAttribute(correctionSplit)) || Boolean.TRUE.equals(getAttribute(correctionSplitNew));
     }
     
     public boolean isTrackHead() {return this.isTrackHead;}
@@ -567,8 +563,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects, Collection<StructureObject> modifiedObjects) {
         if (resetPreviousIfTrackHead && this==trackHead) {
-            if (previous!=null && previous.next==this) previous.setNext(null);
-            //this.setPrevious(null); // WAS MODIFIED FOR ManualCorrection linkObjects 191
+            if (previous!=null && previous.next==this) {
+                previous.setNext(null);
+                if (modifiedObjects!=null) modifiedObjects.add(previous);
+            }
         }
         this.isTrackHead=this.equals(trackHead);
         this.trackHead=trackHead;
@@ -713,7 +711,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         this.getParent().getChildObjects(structureIdx).remove(otherO); // concurent modification..
         // set flags
-        setAttribute(correctionMerge, true);
+        setAttribute(EDITED_SEGMENTATION, true);
         otherO.isTrackHead=false; // so that it won't be detected in the correction
         // update children
         int[] chilIndicies = getExperiment().getAllDirectChildStructuresAsArray(structureIdx);
@@ -744,8 +742,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
        
         StructureObject res = new StructureObject(timePoint, structureIdx, idx+1, pop.getRegions().get(1).setLabel(idx+2), getParent());
         getParent().getChildren(structureIdx).add(getParent().getChildren(structureIdx).indexOf(this)+1, res);
-        setAttribute(correctionSplit, true);
-        res.setAttribute(correctionSplitNew, true);
+        setAttribute(EDITED_SEGMENTATION, true);
+        res.setAttribute(EDITED_SEGMENTATION, true);
         return res;
     }
     public boolean hasRegion() {return object!=null;}

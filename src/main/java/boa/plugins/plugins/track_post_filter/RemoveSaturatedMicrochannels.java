@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.track_post_filter;
 
-import boa.gui.ManualCorrection;
+import boa.gui.ManualEdition;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObject;
@@ -59,7 +59,7 @@ public class RemoveSaturatedMicrochannels implements TrackPostFilter {
             if (isSaturated(e.getValue())) objectsToRemove.addAll(e.getValue());
         }
         //logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, ManualCorrection.ALWAYS_MERGE, false);
+        if (!objectsToRemove.isEmpty()) ManualEdition.deleteObjects(null, objectsToRemove, ManualEdition.ALWAYS_MERGE, false);
     }
     private boolean isSaturated(List<StructureObject> track) {
         int saturatedObjectCount = 0;

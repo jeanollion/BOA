@@ -400,7 +400,7 @@ public class SelectionUtils {
             GUI.getInstance().resetSelectionHighlight();
         });
         menu.add(highlightTracks);
-        final JCheckBoxMenuItem navigateMI = new JCheckBoxMenuItem("Navigate within this selection");
+        final JCheckBoxMenuItem navigateMI = new JCheckBoxMenuItem("Navigate");
         if (selectedValues.size()==1) navigateMI.setSelected(selectedValues.get(0).isNavigate());
         navigateMI.addActionListener((ActionEvent e) -> {
             if (selectedValues.isEmpty()) return;
@@ -443,7 +443,7 @@ public class SelectionUtils {
         }
         menu.add(colorMenu);
         menu.add(new JSeparator());
-        JMenuItem add = new JMenuItem("Add objects selected on Current Image");
+        JMenuItem add = new JMenuItem("Add objects selected on active Kymograph");
         add.addActionListener((ActionEvent e) -> {
             if (selectedValues.isEmpty()) return;
             addCurrentObjectsToSelections(selectedValues, dao);
@@ -452,7 +452,7 @@ public class SelectionUtils {
         });
         menu.add(add);
         
-        JMenuItem remove = new JMenuItem("Remove objects selected on Current Image");
+        JMenuItem remove = new JMenuItem("Remove objects selected on active Kymograph");
         remove.addActionListener((ActionEvent e) -> {
             if (selectedValues.isEmpty()) return;
             removeCurrentObjectsFromSelections(selectedValues, dao);
@@ -461,7 +461,7 @@ public class SelectionUtils {
         });
         menu.add(remove);
         
-        JMenuItem removeFromParent = new JMenuItem("Remove all Objects from Current Image");
+        JMenuItem removeFromParent = new JMenuItem("Remove all Objects from active Kymograph");
         removeFromParent.addActionListener((ActionEvent e) -> {
             if (selectedValues.isEmpty()) return;
             removeAllCurrentImageObjectsFromSelections(selectedValues, dao);

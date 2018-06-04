@@ -80,11 +80,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
                 for (Region o : seeds) {
                     for (Voxel v : o.getVoxels()) v.value = watershedMap.getPixel(v.x, v.y, v.z);
                 }
-                Comparator<Region> c = new Comparator<Region>() {
-                    public int compare(Region o1, Region o2) {
-                        return Double.compare(getMeanVoxelValue(o1), getMeanVoxelValue(o2));
-                    }
-                };
+                Comparator<Region> c = (Region o1, Region o2) -> Double.compare(getMeanVoxelValue(o1), getMeanVoxelValue(o2));
                 Collections.sort(seeds, c);
                 
                 if (keepOnlyTwoSeeds) {

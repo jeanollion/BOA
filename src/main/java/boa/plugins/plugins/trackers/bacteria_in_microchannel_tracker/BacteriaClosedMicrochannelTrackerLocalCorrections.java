@@ -448,8 +448,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             StructureObject o = children.get(i);
             o.setAttribute("TrackErrorSizeRatio", ta.sizeRatioError);
-            o.setAttribute(StructureObject.trackErrorPrev, ta.errorPrev);
-            o.setAttribute(StructureObject.trackErrorNext, ta.errorCur);
+            o.setAttribute(StructureObject.TRACK_ERROR_PREV, ta.errorPrev);
+            o.setAttribute(StructureObject.TRACK_ERROR_NEXT, ta.errorCur);
             o.setAttribute("SizeRatio", ta.sizeRatio);
             o.setAttribute("TruncatedDivision", ta.prev==null?false : ta.prev.truncatedDivision&&ta.endOfChannelContact<endOfChannelContactThreshold.getValue().doubleValue());
             if (ta.endOfChannelContact>0) o.setAttribute("EndOfChannelContact", ta.endOfChannelContact);

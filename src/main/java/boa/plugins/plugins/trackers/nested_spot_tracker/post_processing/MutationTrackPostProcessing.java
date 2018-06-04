@@ -183,8 +183,8 @@ public class MutationTrackPostProcessing {
                 StructureObject th = subTrack.get(0);
                 if (modif) {
                     trackHeadTrackMap.put(th, subTrack);
-                    if (i!=tracks.size()-1) subTrack.get(subTrack.size()-1).setAttribute(StructureObject.correctionSplit, true); // correction flag @ end
-                    if (i!=0 ) subTrack.get(0).setAttribute(StructureObject.correctionSplit, true); // correction flag @ start
+                    if (i!=tracks.size()-1) subTrack.get(subTrack.size()-1).setAttribute(StructureObject.EDITED_SEGMENTATION, true); // correction flag @ end
+                    if (i!=0 ) subTrack.get(0).setAttribute(StructureObject.EDITED_SEGMENTATION, true); // correction flag @ start
                 }
                 trackHeadSpotMapTemp.put(th, spotTracks.get(i));
                 if (i!=0) {
@@ -200,7 +200,7 @@ public class MutationTrackPostProcessing {
         for (List<StructureObject> track : trackHeadTrackMap.values()) {
             int trackLength = track.get(track.size()-1).getFrame()-track.get(0).getFrame();
             if ((shortTrackThreshold>0 && trackLength<shortTrackThreshold) || (longTrackTreshold>0 && trackLength>longTrackTreshold)) {
-                for (StructureObject o : track) o.setAttribute(StructureObject.trackErrorNext, true);
+                for (StructureObject o : track) o.setAttribute(StructureObject.TRACK_ERROR_NEXT, true);
             }
         }
     }

@@ -18,7 +18,7 @@
 package boa.misc;
 
 
-import boa.gui.ManualCorrection;
+import boa.gui.ManualEdition;
 import boa.core.Task;
 import boa.configuration.experiment.Experiment;
 import boa.data_structure.dao.MasterDAO;
@@ -33,9 +33,9 @@ public class RepairTrackInconsitencies {
         //String dbName = "boa_fluo160501";
         String dbName = "boa_fluo160501";
         MasterDAO mDAO = new Task(dbName).getDB();
-        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[0], structureIdx);
-        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[1], structureIdx);
-        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[3], structureIdx);
+        ManualEdition.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[0], structureIdx);
+        ManualEdition.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[1], structureIdx);
+        ManualEdition.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[3], structureIdx);
     }
     
 }

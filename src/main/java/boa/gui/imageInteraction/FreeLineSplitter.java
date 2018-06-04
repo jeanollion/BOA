@@ -43,6 +43,7 @@ import boa.plugins.ObjectSplitter;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.utils.Pair;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -58,9 +59,9 @@ public class FreeLineSplitter implements ObjectSplitter {
         this.xPoints=xPoints;
         this.yPoints=yPoints;
         offsetMap = new HashMap<>(objects.size());
-        for (Pair<StructureObject, BoundingBox> p : objects) {
+        objects.forEach((p) -> {
             offsetMap.put(p.key.getRegion(), p.value);
-        }
+        });
     }
     @Override
     public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
@@ -74,10 +75,14 @@ public class FreeLineSplitter implements ObjectSplitter {
         }
         int offX = off.xMin();
         int offY = off.yMin();
+        boolean[] removedPixel = new boolean[xPoints.length];
         for (int i = 0; i<xPoints.length; ++i) {
             int x = xPoints[i] - offX;
             int y = yPoints[i] - offY;
-            if (splitMask.contains(x, y, 0)) splitMask.setPixel(x, y, 0, 0);
+            if (splitMask.contains(x, y, 0) && splitMask.insideMask(y, y, 0)) {
+                splitMask.setPixel(x, y, 0, 0);
+                removedPixel[i] = true;
+            }
         }
         List<Region> objects = ImageLabeller.labelImageListLowConnectivity(splitMask);
         RegionPopulation res = new RegionPopulation(objects, input);
@@ -95,22 +100,20 @@ public class FreeLineSplitter implements ObjectSplitter {
         }
         // relabel removed pixels
         if (objects.size()==2) {
-            splitMask = res.getLabelMap();
+            ImageInteger popMask = res.getLabelMap();
             Neighborhood n = new EllipsoidalNeighborhood(1.5, true);
-            for (int i = 0; i<xPoints.length; ++i) {
+            IntStream.range(0, xPoints.length).filter(i->removedPixel[i]).forEach(i -> {
                 int x = xPoints[i] - offX;
                 int y = yPoints[i] - offY;
-                if (splitMask.contains(x, y, 0) && mask.insideMask(x, y, 0) && !splitMask.insideMask(x, y, 0)) {
-                    int l1Count = 0, l2Count=0;
-                    n.setPixels(x, y, 0, splitMask, null);
-                    for (float f : n.getPixelValues()) {
-                        if (f==1) ++l1Count;
-                        else if (f==2) ++l2Count;
-                    }
-                    splitMask.setPixel(x, y, 0, l1Count>=l2Count ? 1 : 2);
+                int l1Count = 0, l2Count=0;
+                n.setPixels(x, y, 0, popMask, null);
+                for (float f : n.getPixelValues()) {
+                    if (f==1) ++l1Count;
+                    else if (f==2) ++l2Count;
                 }
-            }
-            res = new RegionPopulation(splitMask, true);
+                popMask.setPixel(x, y, 0, l1Count>=l2Count ? 1 : 2);
+            });
+            res = new RegionPopulation(popMask, true);
         }
         if (verbose) {
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(res.getLabelMap());

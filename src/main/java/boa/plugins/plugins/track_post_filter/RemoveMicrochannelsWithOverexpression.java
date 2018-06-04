@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.track_post_filter;
 
-import boa.gui.ManualCorrection;
+import boa.gui.ManualEdition;
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.Parameter;
@@ -88,7 +88,7 @@ public class RemoveMicrochannelsWithOverexpression implements TrackPostFilter {
             }
         }
         //logger.debug("remove track trackLength: #objects to remove: {}", objectsToRemove.size());
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, ManualCorrection.ALWAYS_MERGE, false);
+        if (!objectsToRemove.isEmpty()) ManualEdition.deleteObjects(null, objectsToRemove, ManualEdition.ALWAYS_MERGE, false);
     }
     
     @Override

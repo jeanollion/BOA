@@ -20,7 +20,7 @@ package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
-import boa.gui.ManualCorrection;
+import boa.gui.ManualEdition;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.IJImageWindowManager.TrackRoi;
 import static boa.gui.imageInteraction.ImageWindowManager.displayTrackMode;
@@ -96,7 +96,9 @@ import boa.utils.Pair;
 import boa.utils.Utils;
 import java.awt.Event;
 import java.awt.Point;
+import java.util.HashSet;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  *
@@ -255,7 +257,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     // get line & split
                     FloatPolygon p = r.getInterpolatedPolygon(-1, true);
                     ObjectSplitter splitter = new FreeLineSplitter(selectedObjects, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints));
-                    ManualCorrection.splitObjects(GUI.getDBConnection(), objects, true, false, splitter);
+                    ManualEdition.splitObjects(GUI.getDBConnection(), objects, true, false, splitter);
                 }
                 if (strechObjects && r!=null && !selectedObjects.isEmpty()) {
                     Structure s = selectedObjects.get(0).key.getExperiment().getStructure(completionStructureIdx);
@@ -334,13 +336,12 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             image.setOverlay(o);
         }
         if (image.getNSlices()>1 && roi.is2D) roi.duplicateROIUntilZ(image.getNSlices());
-        if (image.getNSlices()>1) {
+        /*if (image.getNSlices()>1) {
             for (Roi r : roi.values()) {
                 o.add(r);
-                //if (r instanceof TextRoi) logger.debug("add text roi: {}", ((TextRoi)r).getText());
-                //logger.debug("add Roi loc: [{}, {}], type: {}", r.getBounds().x, r.getBounds().y, r.getTypeAsString());
             }
-        } else if (roi.containsKey(0)) o.add(roi.get(0));
+        } else if (roi.containsKey(0)) o.add(roi.get(0));*/
+        for (Roi r : roi.values()) o.add(r);
     }
 
     @Override
@@ -355,16 +356,25 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     public Roi3D generateObjectRoi(Pair<StructureObject, BoundingBox> object, Color color) {
         if (object.key.getMask().sizeZ()<=0 || object.key.getMask().sizeXY()<=0) logger.error("wrong object dim: o:{} {}", object.key, object.key.getBounds());
         Roi3D r =  RegionContainerIjRoi.createRoi(object.key.getMask(), object.value, !object.key.is2D());
+        if (object.key.getAttribute(StructureObject.EDITED_SEGMENTATION, false)) { // adds an arrow
+            double size = trackArrowStrokeWidth*1.5;
+            Arrow arrow = new Arrow(object.value.xMin()-size, object.value.yMin()-size, object.value.xMin(), object.value.yMin());
+            arrow.setStrokeColor(trackCorrectionColor);
+            arrow.setStrokeWidth(trackArrowStrokeWidth);
+            arrow.setHeadSize(size);
+            new HashSet<>(r.keySet()).forEach((z) -> {
+                Arrow arrowS = r.size()>1 ? (Arrow)arrow.clone() : arrow;
+                arrowS.setPosition(z);
+                r.put(-z-1, arrowS);
+            });
+        }
         setObjectColor(r, color);
         return r;
     }
     
     @Override
     protected void setObjectColor(Roi3D roi, Color color) {
-        for (Roi r : roi.values()) {
-            if (r instanceof TextRoi) continue;
-            r.setStrokeColor(color);
-        }
+        roi.entrySet().stream().filter(e->e.getKey()>=0).forEach(e -> e.getValue().setStrokeColor(color));
     }
 
     
@@ -408,6 +418,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     }
     
     protected static TrackRoi createTrackRoi(List<Pair<StructureObject, BoundingBox>> track, Color color) {
+        Predicate<StructureObject> editedprev = o -> o.getAttribute(StructureObject.EDITED_LINK_PREV, false);
+        Predicate<StructureObject> editedNext = o -> o.getAttribute(StructureObject.EDITED_LINK_NEXT, false);
         TrackRoi trackRoi= new TrackRoi();
         Pair<StructureObject, BoundingBox> o1 = track.get(0);
         trackRoi.setIs2D(o1.key.is2D());
@@ -419,7 +431,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             if (o1==null || o2==null) continue;
             Arrow arrow = new Arrow(o1.value.xMean(), o1.value.yMean(), o2.value.xMean(), o2.value.yMean());
             boolean error = o2.key.hasTrackLinkError(true, false) || (o1.key.hasTrackLinkError(false, true));
-            boolean correction = o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead());
+            boolean correction = editedNext.test(o1.key)||editedprev.test(o2.key);
             //arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);
             arrow.setStrokeColor(color);
             arrow.setStrokeWidth(trackArrowStrokeWidth);
@@ -432,6 +444,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 Color c = error ? ImageWindowManager.trackErrorColor : ImageWindowManager.trackCorrectionColor;
                 trackRoi.add(getErrorArrow(arrow.x1, arrow.y1, arrow.x2, arrow.y2, c, color));
             } 
+            
             if (!trackRoi.is2D) { // in 3D -> display on all slices between slice min & slice max
                 int zMin = Math.max(o1.value.zMin(), o2.value.zMin());
                 int zMax = Math.min(o1.value.zMax(), o2.value.zMax());
@@ -509,6 +522,14 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 Roi dup = (Roi)r.clone();
                 dup.setPosition(z+1);
                 this.put(z, dup);
+            }
+            if (this.containsKey(-1)) { // segmentation correction arrow
+                r = this.get(-1);
+                for (int z = 1; z<zMax; ++z) {
+                    Roi dup = (Roi)r.clone();
+                    dup.setPosition(z+1);
+                    this.put(-z-1, dup);
+                }
             }
         }
     }

@@ -70,8 +70,8 @@ public class BacteriaPhaseMeasurements implements Measurement {
         res.add(new MeasurementKeyObject("BacteriaWidth", structureIdx));
 
         // from tracking
-        res.add(new MeasurementKeyObject(StructureObject.trackErrorPrev, structureIdx));
-        res.add(new MeasurementKeyObject(StructureObject.trackErrorNext, structureIdx));
+        res.add(new MeasurementKeyObject(StructureObject.TRACK_ERROR_PREV, structureIdx));
+        res.add(new MeasurementKeyObject(StructureObject.TRACK_ERROR_NEXT, structureIdx));
         res.add(new MeasurementKeyObject("SizeRatio", structureIdx));
         res.add(new MeasurementKeyObject("TrackErrorSizeRatio", structureIdx));
         res.add(new MeasurementKeyObject("EndOfChannelContact", structureIdx));
@@ -94,10 +94,10 @@ public class BacteriaPhaseMeasurements implements Measurement {
         m.setValue("BacteriaLength", scale*GeometricalMeasurements.getFeretMax(bactObject));
         m.setValue("BacteriaArea", GeometricalMeasurements.getVolumeUnit(bactObject));
         m.setValue("BacteriaWidth", scale*GeometricalMeasurements.getThickness(bactObject));
-        if (object.hasTrackLinkError(false, true)) m.setValue(StructureObject.trackErrorNext, true);
-        else m.setValue(StructureObject.trackErrorNext, null); // remove
-        if (object.hasTrackLinkError(true, false)) m.setValue(StructureObject.trackErrorPrev, true);
-        else m.setValue(StructureObject.trackErrorPrev, null); // remove
+        if (object.hasTrackLinkError(false, true)) m.setValue(StructureObject.TRACK_ERROR_NEXT, true);
+        else m.setValue(StructureObject.TRACK_ERROR_NEXT, null); // remove
+        if (object.hasTrackLinkError(true, false)) m.setValue(StructureObject.TRACK_ERROR_PREV, true);
+        else m.setValue(StructureObject.TRACK_ERROR_PREV, null); // remove
         if (object.getAttribute("EndOfChannelContact")!=null) m.setValue("EndOfChannelContact", object.getAttribute("EndOfChannelContact", Double.NaN));
         else m.setValue("EndOfChannelContact", null); // remove
         if (object.getAttribute("TruncatedDivision")!=null) m.setValue("TruncatedDivision", object.getAttribute("TruncatedDivision", false));

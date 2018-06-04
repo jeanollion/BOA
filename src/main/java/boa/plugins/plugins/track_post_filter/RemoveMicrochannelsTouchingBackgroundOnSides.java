@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.track_post_filter;
 
-import boa.gui.ManualCorrection;
+import boa.gui.ManualEdition;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
@@ -76,7 +76,7 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
             //ImageWindowManagerFactory.showImage(bck.getLabelMap().duplicate("right background"));
             if (intersectWithBackground(object, bck)) objectsToRemove.addAll(allTracks.get(object));
         }
-        if (!objectsToRemove.isEmpty()) ManualCorrection.deleteObjects(null, objectsToRemove, ManualCorrection.ALWAYS_MERGE, false);
+        if (!objectsToRemove.isEmpty()) ManualEdition.deleteObjects(null, objectsToRemove, ManualEdition.ALWAYS_MERGE, false);
     }
     private boolean intersectWithBackground(StructureObject object, RegionPopulation bck) {
         bck.filter(o->o.size()>10); // 

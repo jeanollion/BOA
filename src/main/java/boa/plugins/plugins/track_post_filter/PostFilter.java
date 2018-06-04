@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.track_post_filter;
 
-import boa.gui.ManualCorrection;
+import boa.gui.ManualEdition;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
@@ -52,9 +52,9 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
     final static String[] METHODS = new String[]{"Delete single objects", "Delete whole track", "Prune Track"};
     ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", METHODS, METHODS[0], false);
     public enum MERGE_POLICY {
-        NERVER_MERGE(ManualCorrection.NERVE_MERGE), 
-        ALWAYS_MERGE(ManualCorrection.ALWAYS_MERGE), 
-        MERGE_TRACKS_SIZE_COND(ManualCorrection.MERGE_TRACKS_SIZE_COND);
+        NERVER_MERGE(ManualEdition.NERVE_MERGE), 
+        ALWAYS_MERGE(ManualEdition.ALWAYS_MERGE), 
+        MERGE_TRACKS_SIZE_COND(ManualEdition.MERGE_TRACKS_SIZE_COND);
         public final BiPredicate<StructureObject, StructureObject> mergePredicate;
         private MERGE_POLICY(BiPredicate<StructureObject, StructureObject> mergePredicate) {
             this.mergePredicate=mergePredicate; 
@@ -117,16 +117,16 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
             BiPredicate<StructureObject, StructureObject> mergePredicate = MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;
             switch (this.deleteMethod.getSelectedIndex()) {
                 case 0:
-                    ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false); // only delete
+                    ManualEdition.deleteObjects(null, objectsToRemove, mergePredicate, false); // only delete
                     break;
                 case 2:
-                    ManualCorrection.prune(null, objectsToRemove, mergePredicate, false); // prune tracks
+                    ManualEdition.prune(null, objectsToRemove, mergePredicate, false); // prune tracks
                     break;
                 case 1:
                     Set<StructureObject> trackHeads = new HashSet<>(Utils.transform(objectsToRemove, o->o.getTrackHead()));
                     objectsToRemove.clear();
                     for (StructureObject th : trackHeads) objectsToRemove.addAll(StructureObjectUtils.getTrack(th, false));
-                    ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false);
+                    ManualEdition.deleteObjects(null, objectsToRemove, mergePredicate, false);
                     break;
                 default:
                     break;

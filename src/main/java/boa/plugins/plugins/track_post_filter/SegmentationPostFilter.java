@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.track_post_filter;
 
-import boa.gui.ManualCorrection;
+import boa.gui.ManualEdition;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
@@ -106,16 +106,16 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
             switch (this.deleteMethod.getSelectedIndex()) {
                 case 0:
-                    ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false); // only delete
+                    ManualEdition.deleteObjects(null, objectsToRemove, mergePredicate, false); // only delete
                     break;
                 case 2:
-                    ManualCorrection.prune(null, objectsToRemove, mergePredicate, false); // prune tracks
+                    ManualEdition.prune(null, objectsToRemove, mergePredicate, false); // prune tracks
                     break;
                 case 1:
                     Set<StructureObject> trackHeads = new HashSet<>(Utils.transform(objectsToRemove, o->o.getTrackHead()));
                     objectsToRemove.clear();
                     for (StructureObject th : trackHeads) objectsToRemove.addAll(StructureObjectUtils.getTrack(th, false));
-                    ManualCorrection.deleteObjects(null, objectsToRemove, mergePredicate, false);
+                    ManualEdition.deleteObjects(null, objectsToRemove, mergePredicate, false);
                     break;
                 default:
                     break;

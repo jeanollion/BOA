@@ -18,7 +18,7 @@
  */
 package boa.gui.imageInteraction;
 
-import boa.gui.ManualCorrection;
+import boa.gui.ManualEdition;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -145,7 +145,7 @@ public class ManualObjectStrecher {
             childObject.translate(offset);
         }
         logger.debug("objects to update: {}", Utils.toStringList(objectsToUpdate, p->p.key.getRegion().getVoxels().size()+">"+p.value.getVoxels().size()));
-        ManualCorrection.updateObjects(objectsToUpdate, true);
+        ManualEdition.updateObjects(objectsToUpdate, true);
     }
     public static void drawLine(int x,int y,int x2, int y2, int z, int value, Image image) {
         int w = x2 - x ;
