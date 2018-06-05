@@ -479,9 +479,9 @@ public class GenerateXP {
         //ps.addTransformation(1, new int[]{1}, new SimpleTranslation(1, 0, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.NEAREST)).setActivated(false); // nearest -> translation entiers //flip?-1:1 depends on FLIP !!!
     }
     public static void setParametersFluo(Experiment xp, boolean processing, boolean mutationHighBck, boolean measurements) {
-        Structure mc = xp.getStructure(0).setBrightObject(true);
-        Structure bacteria = xp.getStructure(1).setBrightObject(true).setAllowSplit(true);
-        Structure mutation = xp.getStructure(2).setBrightObject(true);
+        Structure mc = xp.getStructure(0);
+        Structure bacteria = xp.getStructure(1).setAllowSplit(true);
+        Structure mutation = xp.getStructure(2);
         mutation.setSegmentationParentStructure(1);
         if (processing) {
             mc.setProcessingScheme(new SegmentAndTrack(

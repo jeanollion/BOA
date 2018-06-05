@@ -57,7 +57,7 @@ public class TestSegmenter {
             logger.error("DB {} not found", dbName);
             return;
         }
-        GUI.getInstance().setDBConnection(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
+        GUI.getInstance().openExperiment(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
         MasterDAO db = GUI.getDBConnection();
         
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();

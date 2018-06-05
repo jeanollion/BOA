@@ -156,7 +156,7 @@ public class StructureNode implements TreeNode, UIContainer {
             this.actions = new JMenuItem[2];
             JMenu segSubMenu = new JMenu("Open Segmented Image");
             actions[0] = segSubMenu;
-            JMenu rawSubMenu = new JMenu("Open Raw Input Image");
+            JMenu rawSubMenu = new JMenu("Open Input Image");
             actions[1] = rawSubMenu;
             JMenu segmentationSubMenu = new JMenu("Segmentation"); // No segmentation for the moment, see how to run it only if independent from tracking..
             //actions[2] = segmentationSubMenu;

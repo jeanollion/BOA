@@ -673,15 +673,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
     }
 
-    public void setDBConnection(String dbName, String hostnameOrDir, boolean readOnly) {
-        if (db!=null) unsetXP();
+    public void openExperiment(String dbName, String hostnameOrDir, boolean readOnly) {
+        if (db!=null) closeExperiment();
         //long t0 = System.currentTimeMillis();
         if (hostnameOrDir==null) hostnameOrDir = getHostNameOrDir(dbName);
         db = MasterDAOFactory.createDAO(dbName, hostnameOrDir);
         if (readOnly) db.setReadOnly(readOnly);
         if (db==null || db.getExperiment()==null) {
             logger.warn("no experiment found in DB: {}", db);
-            unsetXP();
+            closeExperiment();
             return;
         } else {
             logger.info("Experiment found in db: {} ", db.getDBName());
@@ -723,7 +723,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
     }
     
-    private void unsetXP() {
+    private void closeExperiment() {
         promptSaveUnsavedChanges();
         String xp = db!=null ? db.getDBName() : null;
         if (db!=null) db.clearCache();
@@ -2268,9 +2268,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void setSelectedExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setSelectedExperimentMenuItemActionPerformed
         String host = getCurrentHostNameOrDir();
         String dbName = getSelectedExperiment();
-        if (dbName==null || (this.db!=null && db.getDBName().equals(dbName)) || getSelectedExperiments().size()>1) unsetXP();
+        if (dbName==null || (this.db!=null && db.getDBName().equals(dbName)) || getSelectedExperiments().size()>1) closeExperiment();
         else {
-            setDBConnection(dbName, host, false);
+            openExperiment(dbName, host, false);
             if (db!=null) PropertyUtils.set(PropertyUtils.LAST_SELECTED_EXPERIMENT, dbName);
         }
     }//GEN-LAST:event_setSelectedExperimentMenuItemActionPerformed
@@ -2297,7 +2297,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             db2.updateExperiment();
             db2.clearCache();
             populateExperimentList();
-            setDBConnection(name, null, false);
+            openExperiment(name, null, false);
             if (this.db!=null) setSelectedExperiment(name);
         }
     }//GEN-LAST:event_newXPMenuItemActionPerformed
@@ -2306,7 +2306,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         List<String> xps = getSelectedExperiments();
         if (xps==null || xps.isEmpty()) return;
         if (Utils.promptBoolean( "Delete Selected Experiment"+(xps.size()>1?"s":"")+" (all data will be lost)", this)) {
-            if (db!=null && xps.contains(db.getDBName())) unsetXP();
+            if (db!=null && xps.contains(db.getDBName())) closeExperiment();
             for (String xpName : xps) MasterDAOFactory.createDAO(xpName, getHostNameOrDir(xpName)).eraseAll();
             populateExperimentList();
         }
@@ -2318,7 +2318,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("DB name already exists");
         else {
-            unsetXP();
+            closeExperiment();
             MasterDAO db1 = MasterDAOFactory.createDAO(getSelectedExperiment(), getCurrentHostNameOrDir());
             String adress = null;
             if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) { // create directory
@@ -2359,7 +2359,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         String dir = promptDir("Choose output directory", defDir, true);
         if (dir==null) return;
         List<String> xpToExport = getSelectedExperiments();
-        unsetXP();
+        closeExperiment();
         int count=0;
         for (String xp : xpToExport) {
             logger.info("Exporting whole XP : {}/{}", ++count, xpToExport.size());
@@ -2522,7 +2522,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             int n = JOptionPane.showOptionDialog(this, "Some experiments found in the directory are already present: "+Utils.toStringList(xpPresent), "Import Whole Experiment", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
             if (n==1) xpsToImport = xpNotPresent;
         }
-        unsetXP();
+        closeExperiment();
         List<String> xpList = new ArrayList<>(xpsToImport);
         /*DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
             @Override
@@ -2714,7 +2714,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void runActionAllXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runActionAllXPMenuItemActionPerformed
         List<String> xps = this.getSelectedExperiments();
         if (xps.isEmpty()) return;
-        unsetXP();
+        closeExperiment();
         List<Task> tasks = new ArrayList<>(xps.size());
         for (String xp : xps) tasks.add(getCurrentJob(xp));
         Task.executeTasks(tasks, getUserInterface());
@@ -2734,7 +2734,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     private void compactLocalDBMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_compactLocalDBMenuItemActionPerformed
         if (this.localFileSystemDatabaseRadioButton.isSelected()) {
-            unsetXP();
+            closeExperiment();
             for (String xp : getSelectedExperiments()) {
                 DBMapMasterDAO dao = (DBMapMasterDAO)MasterDAOFactory.createDAO(xp, this.getHostNameOrDir(xp));
                 GUI.log("Compacting Experiment: "+xp);
@@ -2818,7 +2818,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (xps.size()<=1) {
             if (db!=null && (xps.size()==1 && xps.get(0).equals(this.db.getDBName())) || xps.isEmpty()) positions.addAll(getSelectedPositions(true));
             if (xps.isEmpty() && db!=null && db.getExperiment()!=null) xps.add(db.getDBName());
-        } else unsetXP();
+        } else closeExperiment();
         
         log("dumping: "+xps.size()+ " Experiment"+(xps.size()>1?"s":""));
         DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
@@ -2861,7 +2861,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         DefaultWorker.execute(t, xps.size());
     }
     private void unDumpObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unDumpObjectsMenuItemActionPerformed
-        unsetXP();
+        closeExperiment();
         final List<File> dumpedFiles = Utils.seachAll(experimentFolder.getText(), s->s.endsWith("_dump.zip"), 1);
         if (dumpedFiles==null) return;
         // remove xp already undumped
@@ -2891,7 +2891,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }//GEN-LAST:event_unDumpObjectsMenuItemActionPerformed
 
     private void localFileSystemDatabaseRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_localFileSystemDatabaseRadioButtonActionPerformed
-        unsetXP();
+        closeExperiment();
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
         PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
         experimentFolder.setText(PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, ""));
@@ -2902,7 +2902,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void compareToDumpFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_compareToDumpFileMenuItemActionPerformed
         final List<File> dumpedFiles = Utils.seachAll(experimentFolder.getText(), s->s.endsWith("_dump.zip"), 1);
         if (dumpedFiles==null) return;
-        unsetXP();
+        closeExperiment();
         // remove xp already undumped
         Map<String, File> dbFiles = DBUtil.listExperiments(experimentFolder.getText(), true, ProgressCallback.get(this));
         dumpedFiles.removeIf(f->!dbFiles.containsValue(f.getParentFile()));
@@ -3117,7 +3117,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                         }
                     }
                     if (!jobs.isEmpty()) {
-                        unsetXP(); // avoid lock problems
+                        closeExperiment(); // avoid lock problems
                         Task.executeTasks(jobs, getUserInterface());
                     }
                 }
@@ -3151,7 +3151,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, null);
                     File f = Utils.chooseFile("Choose local data folder", path, FileChooser.FileChooserOption.DIRECTORIES_ONLY, experimentFolder);
                     if (f!=null) {
-                        unsetXP();
+                        closeExperiment();
                         PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
                         PropertyUtils.addStringToList(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
                         experimentFolder.setText(f.getAbsolutePath());
@@ -3170,7 +3170,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     public void actionPerformed(ActionEvent e) {
                         File f = new File(s);
                         if (f.exists() && f.isDirectory()) {
-                            unsetXP();
+                            closeExperiment();
                             experimentFolder.setText(s);
                             PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, s);
                             localFileSystemDatabaseRadioButton.setSelected(true);
@@ -3229,6 +3229,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_CONFIG_DIR, config);
+        openExperiment(name, null, false);
+        if (this.db!=null) setSelectedExperiment(name);
     }//GEN-LAST:event_newXPFromTemplateMenuItemActionPerformed
 
     private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
@@ -3255,7 +3257,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             if (positions.size()==1) {
                 String position = positions.get(0);
                 JPopupMenu menu = new JPopupMenu();
-                Action openRaw = new AbstractAction("Open Raw Images") {
+                Action openRaw = new AbstractAction("Open Input Images") {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         db.getExperiment().flushImages(true, true, position);

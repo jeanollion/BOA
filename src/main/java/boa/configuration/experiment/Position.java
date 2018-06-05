@@ -60,7 +60,7 @@ import java.util.function.Consumer;
 public class Position extends SimpleContainerParameter implements ListElementErasable {
     
     private MultipleImageContainer sourceImages;
-    PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
+    PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing");
     FrameParameter defaultTimePoint = new FrameParameter("Default TimePoint", defaultTP, false);
     InputImagesImpl preProcessedImages;
     public static final int defaultTP = 50;
@@ -333,7 +333,7 @@ public class Position extends SimpleContainerParameter implements ListElementEra
         Object[] actions;
         public MicroscopyFieldUI() {
             actions = new Object[2];
-            openRawAllFrames = new JMenuItem("Open Raw Input Frames");
+            openRawAllFrames = new JMenuItem("Open Input Images");
             actions[0] = openRawAllFrames;
             openRawAllFrames.setAction(new AbstractAction(openRawAllFrames.getActionCommand()) {
                 @Override

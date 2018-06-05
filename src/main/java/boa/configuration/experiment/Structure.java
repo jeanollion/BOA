@@ -59,8 +59,7 @@ public class Structure extends SimpleContainerParameter {
     PluginParameter<ObjectSplitter> objectSplitter;
     PluginParameter<ManualSegmenter> manualSegmenter;
     PluginParameter<ProcessingScheme> processingScheme;
-    BooleanParameter brightObject = new BooleanParameter("Object Type", "Bright object over dark background", "Dark object over bright background", false);
-    BoundedNumberParameter manualObjectStrechThreshold = new BoundedNumberParameter("Manual Object Streching Threshold", 2, 0.5, 0, 1);
+    //BooleanParameter brightObject = new BooleanParameter("Object Type", "Bright object over dark background", "Dark object over bright background", false);
     BooleanParameter allowSplit = new BooleanParameter("Allow Split", "yes", "no", false);
     BooleanParameter allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false);
     NameEditorUI ui;
@@ -75,8 +74,7 @@ public class Structure extends SimpleContainerParameter {
         res.put("objectSplitter", objectSplitter.toJSONEntry());
         res.put("manualSegmenter", manualSegmenter.toJSONEntry());
         res.put("processingScheme", processingScheme.toJSONEntry());
-        res.put("brightObject", brightObject.toJSONEntry());
-        res.put("manualObjectStrechThreshold", manualObjectStrechThreshold.toJSONEntry());
+        //res.put("brightObject", brightObject.toJSONEntry());
         res.put("allowSplit", allowSplit.toJSONEntry());
         res.put("allowMerge", allowMerge.toJSONEntry());
         return res;
@@ -92,8 +90,7 @@ public class Structure extends SimpleContainerParameter {
         objectSplitter.initFromJSONEntry(jsonO.get("objectSplitter"));
         manualSegmenter.initFromJSONEntry(jsonO.get("manualSegmenter"));
         processingScheme.initFromJSONEntry(jsonO.get("processingScheme"));
-        brightObject.initFromJSONEntry(jsonO.get("brightObject"));
-        manualObjectStrechThreshold.initFromJSONEntry(jsonO.get("manualObjectStrechThreshold"));
+        //brightObject.initFromJSONEntry(jsonO.get("brightObject"));
         allowSplit.initFromJSONEntry(jsonO.get("allowSplit"));
         allowMerge.initFromJSONEntry(jsonO.get("allowMerge"));
     }
@@ -104,11 +101,11 @@ public class Structure extends SimpleContainerParameter {
     public Structure(String name, int parentStructure, int segmentationParentStructure, int channelImage) {
         super(name);
         this.parentStructure =  new ParentStructureParameter("Parent Structure", parentStructure, -1);
-        segmentationParent =  new ParentStructureParameter("Segmentation Parent", segmentationParentStructure, -1);
+        segmentationParent =  new ParentStructureParameter("Segmentation Parent", segmentationParentStructure, -1).setToolTipText("Parent structure from which perform segmentation if different from parent structure.");
         this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
-        objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true).setEmphasized(false);
+        objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true).setEmphasized(false).setToolTipText("Split algorithm used in split command in manual edition");
         processingScheme = new PluginParameter<>("Processing Scheme", ProcessingScheme.class, true).setEmphasized(false);
-        manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true).setEmphasized(false);
+        manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true).setEmphasized(false).setToolTipText("Segmentation algorithm used in create object command in manual edition");
         this.parentStructure.addListener((Parameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();
@@ -148,22 +145,7 @@ public class Structure extends SimpleContainerParameter {
     }
     @Override
     protected void initChildList() {
-        
-        initChildren(parentStructure, segmentationParent, channelImage, processingScheme, objectSplitter, manualSegmenter, allowMerge, allowSplit, brightObject, manualObjectStrechThreshold); 
-    }
-    public Structure setBrightObject(boolean bright) {
-        this.brightObject.setSelected(bright);
-        return this;
-    }
-    public Structure setManualObjectStrechThreshold(double threshold) {
-        this.manualObjectStrechThreshold.setValue(threshold);
-        return this;
-    }
-    public boolean isBrightObject() {
-        return this.brightObject.getSelected();
-    }
-    public double getManualObjectStrechThreshold() {
-        return this.manualObjectStrechThreshold.getValue().doubleValue();
+        initChildren(parentStructure, segmentationParent, channelImage, processingScheme, objectSplitter, manualSegmenter, allowMerge, allowSplit); //brightObject 
     }
     public boolean allowSplit() {
         return allowSplit.getSelected();

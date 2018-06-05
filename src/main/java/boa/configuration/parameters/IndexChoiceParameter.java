@@ -30,7 +30,7 @@ import boa.utils.Utils;
  * @author jollion
  */
 public abstract class IndexChoiceParameter extends SimpleParameter implements ChoosableParameter, ChoosableParameterMultiple {
-    protected int[] selectedIndicies;
+    protected int[] selectedIndices;
     protected boolean allowNoSelection, multipleSelection;
     //@Transient ParameterUI ui;
     
@@ -40,21 +40,21 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     
     public IndexChoiceParameter(String name, int selectedIndex, boolean allowNoSelection, boolean multipleSelection) {
         super(name);
-        if (selectedIndex<-1) this.selectedIndicies=new int[]{-1};
-        else this.selectedIndicies = new int[]{selectedIndex};
+        if (selectedIndex<0) this.selectedIndices=new int[0];
+        else this.selectedIndices = new int[]{selectedIndex};
         this.allowNoSelection=allowNoSelection;
         this.multipleSelection=multipleSelection;
     }
     
     public IndexChoiceParameter(String name, int[] selectedIndicies, boolean allowNoSelection) {
         super(name);
-        this.selectedIndicies = selectedIndicies;
+        this.selectedIndices = selectedIndicies;
         this.allowNoSelection=allowNoSelection;
         this.multipleSelection=true;
     }
     @Override 
     public boolean isValid() {
-        return allowNoSelection || selectedIndicies.length>0;
+        return allowNoSelection || (selectedIndices!=null && selectedIndices.length>0);
     }
     public <T extends IndexChoiceParameter> T setAllowNoSelection(boolean allowNoSelection) {
         this.allowNoSelection= allowNoSelection;
@@ -64,8 +64,8 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     public boolean sameContent(Parameter other) {
         if (other instanceof StructureParameter) {
             StructureParameter otherP = (StructureParameter) other;
-            if (!ParameterUtils.arraysEqual(selectedIndicies, otherP.selectedIndicies)) {
-                logger.debug("IndexChoiceParameter: {}!={} : {} vs {}", this, other, selectedIndicies, otherP.selectedIndicies);
+            if (!ParameterUtils.arraysEqual(selectedIndices, otherP.selectedIndices)) {
+                logger.debug("IndexChoiceParameter: {}!={} : {} vs {}", this, other, selectedIndices, otherP.selectedIndices);
                 return false;
             } else return true;
         } else return false;
@@ -75,7 +75,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
         if (other instanceof IndexChoiceParameter) {
             bypassListeners=true;
             IndexChoiceParameter otherP = (IndexChoiceParameter) other;
-            if (otherP.selectedIndicies!=null) this.setSelectedIndicies(Utils.copyArray(otherP.selectedIndicies));
+            if (otherP.selectedIndices!=null) this.setSelectedIndicies(Utils.copyArray(otherP.selectedIndices));
             else this.setSelectedIndex(-1);
             bypassListeners=false;
             //logger.debug("ICP: {} recieve from: {} -> {} ({})", name, otherP.getSelectedItems(), this.getSelectedItems(), this.getSelectedIndex());
@@ -83,8 +83,8 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     }
     @Override
     public int getSelectedIndex() {
-        if (selectedIndicies==null) return -1;
-        return selectedIndicies[0];
+        if (selectedIndices==null || selectedIndices.length==0) return -1;
+        return selectedIndices[0];
     }
     @Override
     public boolean isAllowNoSelection() {
@@ -93,12 +93,12 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     
     public void setMonoSelection(int selectedIndex) {
         this.multipleSelection=false;
-        this.selectedIndicies=new int[]{selectedIndex};
+        this.selectedIndices=new int[]{selectedIndex};
     }
     
     public void setMultipleSelection(int[] selectedIndicies) {
         this.multipleSelection=true;
-        this.selectedIndicies=selectedIndicies;
+        this.selectedIndices=selectedIndicies;
     }
     
     @Override 
@@ -111,8 +111,10 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     }
     
     public String[] getSelectedItemsNames() {
-        String[] res = new String[getSelectedItems().length];
-        for (int i = 0 ; i<res.length; ++i) res[i] = selectedIndicies[i]>=0?getChoiceList()[selectedIndicies[i]]:"void";
+        if (selectedIndices==null || selectedIndices.length==0) return new String[0];
+        String[] res = new String[selectedIndices.length];
+        String[] choices = this.getChoiceList();
+        for (int i = 0 ; i<res.length; ++i) res[i] = selectedIndices[i]>=0?choices[selectedIndices[i]]:getNoSelectionString();
         return res;
     }
     
@@ -131,14 +133,8 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     }
 
     public void setSelectedIndex(int selectedIndex) {
-        if (allowNoSelection) {
-            if (selectedIndex>=0) this.selectedIndicies = new int[]{selectedIndex};
-            else this.selectedIndicies=new int[]{-1};
-        }
-        else {
-            if (selectedIndex<0) this.selectedIndicies=new int[]{0};
-            else this.selectedIndicies = new int[]{selectedIndex};
-        }
+        if (selectedIndex>=0) this.selectedIndices = new int[]{selectedIndex};
+        else this.selectedIndices=new int[0];
         fireListeners();
     }
     
@@ -153,33 +149,31 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     // choosable parameter multiple
     @Override
     public void setSelectedIndicies(int[] selectedItems) {
-        this.selectedIndicies=selectedItems;
+        this.selectedIndices=selectedItems;
         fireListeners();
     }
     @Override
     public int[] getSelectedItems() {
-        if (selectedIndicies==null) {
+        /*if (selectedIndices==null) {
             String[] list = getChoiceList();
             if (!allowNoSelection && list!=null) { // select all
-                selectedIndicies = new int[list.length];
-                for (int i = 0; i<list.length; ++i) selectedIndicies[i]=i;
+                selectedIndices = new int[list.length];
+                for (int i = 0; i<list.length; ++i) selectedIndices[i]=i;
             } else {
-                selectedIndicies = new int[0];
+                selectedIndices = new int[0];
             }
-        }
-        return selectedIndicies;
+        }*/
+        return selectedIndices;
     }
     @Override
     public Object toJSONEntry() {
         JSONArray res = new JSONArray();
-        for (int i : selectedIndicies) res.add(i);
+        for (int i : selectedIndices) res.add(i);
         return res;
     }
 
     @Override
     public void initFromJSONEntry(Object jsonEntry) {
-        JSONArray source = (JSONArray)jsonEntry;
-        this.selectedIndicies=new int[source.size()];
-        for (int i = 0; i<source.size(); ++i) selectedIndicies[i] = ((Number)source.get(i)).intValue();
+        selectedIndices = ((JSONArray)jsonEntry).stream().mapToInt(n -> ((Number)n).intValue()).toArray();
     }
 }

@@ -49,7 +49,7 @@ public class TestSplit {
         int objectIdx = 1;
         int structureIdx = 1;
         //MasterDAO db = new MorphiumMasterDAO(dbName);
-        GUI.getInstance().setDBConnection(dbName, null, true);
+        GUI.getInstance().openExperiment(dbName, null, true);
         MasterDAO db = GUI.getDBConnection();
         LocalSNR.debug=true;
         testSplitOnSingleObject(null, db, fIdx, frame, structureIdx, mcIdx, objectIdx);

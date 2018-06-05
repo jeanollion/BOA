@@ -64,7 +64,7 @@ public class TestImageProcessingPlugin {
             logger.error("DB {} not found", dbName);
             return;
         }
-        GUI.getInstance().setDBConnection(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
+        GUI.getInstance().openExperiment(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
         MasterDAO db = GUI.getDBConnection();
         ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(1000);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();

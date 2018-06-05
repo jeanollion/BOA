@@ -141,7 +141,7 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
             
             String[] structureNames = objectNode.data.getExperiment().getStructuresAsString();
             
-            JMenu rawSubMenu = new JMenu("Open Raw Input Image");
+            JMenu rawSubMenu = new JMenu("Open Input Image");
             actions[0] = rawSubMenu;
             openRaw=new JMenuItem[structureNames.length];
             for (int i = 0; i < openRaw.length; i++) {

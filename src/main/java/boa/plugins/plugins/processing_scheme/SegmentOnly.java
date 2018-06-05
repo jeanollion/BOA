@@ -46,6 +46,7 @@ import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
+import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
@@ -65,7 +66,7 @@ import java.util.stream.Collectors;
  *
  * @author jollion
  */
-public class SegmentOnly implements ProcessingScheme {
+public class SegmentOnly implements ProcessingScheme, ToolTip {
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     protected TrackPreFilterSequence trackPreFilters = new TrackPreFilterSequence("Track Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
@@ -79,6 +80,10 @@ public class SegmentOnly implements ProcessingScheme {
     }
     protected SegmentOnly(PluginParameter<Segmenter> segmenter) {
         this.segmenter=segmenter;
+    }
+    @Override
+    public String getToolTipText() {
+        return "Performs only the segmentation (no tracking)";
     }
     @Override public SegmentOnly addPreFilters(PreFilter... preFilter) {
         preFilters.add(preFilter);

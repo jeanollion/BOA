@@ -52,11 +52,16 @@ import java.util.stream.Stream;
  * @author Jean Ollion
  */
 public class Duplicate extends SegmentThenTrack {
-    ParentStructureParameter dup = new ParentStructureParameter("Duplicate From");
+    ParentStructureParameter dup = new ParentStructureParameter("Duplicate From").setAllowNoSelection(false);
     public Duplicate() {
         super();
         parameters= new Parameter[]{dup, preFilters, trackPreFilters, tracker, trackPostFilters};
     }
+    @Override
+    public String getToolTipText() {
+        return "Duplicates the segmented objects of another Structure. Tracker and post-filter can be applied. If no tracker is set, source lineage is also duplicated";
+    }
+    
     @Override
     public Duplicate addPostFilters(PostFilter... postFilter) {
         throw new IllegalArgumentException("No post filters allowed for duplicate processing scheme");

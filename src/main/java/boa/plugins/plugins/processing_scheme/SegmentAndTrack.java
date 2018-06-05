@@ -36,6 +36,7 @@ import boa.plugins.PreFilter;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
+import boa.plugins.ToolTip;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.Tracker;
@@ -48,7 +49,7 @@ import boa.utils.Pair;
  *
  * @author jollion
  */
-public class SegmentAndTrack implements ProcessingSchemeWithTracking {
+public class SegmentAndTrack implements ProcessingSchemeWithTracking, ToolTip {
     int nThreads;
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     protected TrackPreFilterSequence trackPreFilters = new TrackPreFilterSequence("Track Pre-Filters");
@@ -62,6 +63,12 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
     public SegmentAndTrack(TrackerSegmenter tracker){
         this.tracker.setPlugin(tracker);
     }
+    
+    @Override
+    public String getToolTipText() {
+        return "Performs the segmentation and Tracking steps jointly";
+    }
+    
     public SegmentAndTrack addTrackPostFilters(TrackPostFilter... postFilter) {
         trackPostFilters.add(postFilter);
         return this;
@@ -159,4 +166,6 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking {
         if (t!=null) return t.getSegmenter();
         else return null;
     }
+
+    
 }

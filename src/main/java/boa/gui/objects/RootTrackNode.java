@@ -224,7 +224,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
         public RootTrackNodeUI() {
             this.actions = new JMenuItem[4];
             
-            openRawAllFrames = new JMenuItem("Open Raw Input Frames");
+            openRawAllFrames = new JMenuItem("Open Input Images");
             actions[0] = openRawAllFrames;
             openRawAllFrames.setAction(new AbstractAction(openRawAllFrames.getActionCommand()) {
                 @Override

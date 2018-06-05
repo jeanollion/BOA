@@ -56,7 +56,7 @@ public class TestTrackPreFilter {
             logger.error("DB {} not found", dbName);
             return;
         }
-        GUI.getInstance().setDBConnection(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
+        GUI.getInstance().openExperiment(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
         
         int structureIdx =1;
         int[] frames = new int[]{0, 1000};

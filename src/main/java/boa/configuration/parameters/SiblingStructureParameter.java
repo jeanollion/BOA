@@ -59,8 +59,8 @@ public class SiblingStructureParameter extends StructureParameter {
         if (selectedStructureIdx<0) return super.getSelectedIndex();
         else {
             int idx;
-            if (selectedIndicies==null) idx= -1;
-            else idx= selectedIndicies[0];
+            if (selectedIndices==null) idx= -1;
+            else idx= selectedIndices[0];
             if (idx==-1) {
                 getIndexStructureMap();
                 if (idxStructureMap!=null) {

@@ -259,11 +259,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     ObjectSplitter splitter = new FreeLineSplitter(selectedObjects, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints));
                     ManualEdition.splitObjects(GUI.getDBConnection(), objects, true, false, splitter);
                 }
-                if (strechObjects && r!=null && !selectedObjects.isEmpty()) {
+                /*if (strechObjects && r!=null && !selectedObjects.isEmpty()) {
                     Structure s = selectedObjects.get(0).key.getExperiment().getStructure(completionStructureIdx);
                     FloatPolygon p = r.getInterpolatedPolygon(-1, true);
                     ManualObjectStrecher.strechObjects(selectedObjects, completionStructureIdx, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints), s.getManualObjectStrechThreshold(), s.isBrightObject());
-                }
+                }*/
             }
 
             public void mouseEntered(MouseEvent e) {
