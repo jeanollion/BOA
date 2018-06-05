@@ -61,6 +61,7 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.gui.Shortcuts.ACTION;
 import boa.gui.Shortcuts.PRESET;
+import boa.gui.objects.StructureSelectorTree;
 import ij.ImageJ;
 import boa.image.Image;
 import java.awt.Color;
@@ -182,6 +183,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     DefaultListModel<String> actionPoolListModel = new DefaultListModel();
     DefaultListModel<String> actionMicroscopyFieldModel;
     DefaultListModel<Selection> selectionModel;
+    StructureSelectorTree structureSelectorTree;
     PythonGateway pyGtw;
     // shortcuts
     private Shortcuts shortcuts;
@@ -811,7 +813,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             return;
         }
         trackTreeController = new TrackTreeController(db);
-        setTrackTreeStructures(db.getExperiment().getStructuresAsString());
+        setTrackTreeStructures(db.getExperiment());
         resetSelectionHighlight();
     }
     
@@ -930,25 +932,39 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);*/
     }
     
-    private void setTrackTreeStructures(String[] structureNames) {
+    private void setTrackTreeStructures(Experiment xp) {
+        String[] structureNames= xp.getStructuresAsString();
         this.trackStructureJCB.removeAllItems();
         this.interactiveStructure.removeAllItems();
         interactiveStructure.addItem("Root");
         for (String s: structureNames) {
-            trackStructureJCB.addItem(s);
+            //trackStructureJCB.addItem(s);
             interactiveStructure.addItem(s);
         }
         if (structureNames.length>0) {
-            trackStructureJCB.setSelectedIndex(0);
+            //trackStructureJCB.setSelectedIndex(0);
             interactiveStructure.setSelectedIndex(1);
-            setStructure(0);
+            setTrackTreeStructure(0);
         }
+        trackTreeStructureSubPanel.removeAll();
+        structureSelectorTree = new StructureSelectorTree(xp, i -> setTrackTreeStructure(i));
+        logger.debug("structure selection tree: {}", structureSelectorTree.getTree().getRowCount());
+        trackTreeStructureSubPanel.add(structureSelectorTree.getTree());
+        trackTreeStructureSubPanel.revalidate();
+        trackTreeStructureSubPanel.repaint();
     }
     
-    private void setStructure(int structureIdx) {
+    private void setTrackTreeStructure(int structureIdx) {
         trackTreeController.setStructure(structureIdx);
         displayTrackTrees();
-        // highlight les nouveaux trees...
+    }
+    
+    public void setTrackStructureIdx(int structureIdx) {
+        if (this.structureSelectorTree!=null) structureSelectorTree.selectStructure(structureIdx);
+        this.setTrackTreeStructure(structureIdx);
+        trackStructureJCB.setSelectedIndex(structureIdx);
+        trackStructureJCBActionPerformed(null);
+        
     }
     
     public void displayTrackTrees() {
@@ -1063,6 +1079,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         resetLinksButton = new javax.swing.JButton();
         testSplitButton = new javax.swing.JButton();
         pruneTrackButton = new javax.swing.JButton();
+        trackTreeStructurePanel = new javax.swing.JPanel();
+        trackTreeStructureJSP = new javax.swing.JScrollPane();
+        trackTreeStructureSubPanel = new javax.swing.JPanel();
         consoleJSP = new javax.swing.JScrollPane();
         console = new javax.swing.JTextPane();
         mainMenu = new javax.swing.JMenuBar();
@@ -1255,7 +1274,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         trackPanel.setLayout(trackPanelLayout);
         trackPanelLayout.setHorizontalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 351, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 311, Short.MAX_VALUE)
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1287,7 +1306,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(createSelectionButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(selectionJSP, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addComponent(selectionJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 270, Short.MAX_VALUE)
         );
         selectionPanelLayout.setVerticalGroup(
             selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1296,7 +1315,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(selectionJSP))
+                .addComponent(selectionJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 145, Short.MAX_VALUE))
         );
 
         controlPanelJSP.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
@@ -1506,6 +1525,36 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         controlPanelJSP.setViewportView(ControlPanel);
 
+        trackTreeStructureJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Track Tree Structure"));
+
+        javax.swing.GroupLayout trackTreeStructureSubPanelLayout = new javax.swing.GroupLayout(trackTreeStructureSubPanel);
+        trackTreeStructureSubPanel.setLayout(trackTreeStructureSubPanelLayout);
+        trackTreeStructureSubPanelLayout.setHorizontalGroup(
+            trackTreeStructureSubPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 268, Short.MAX_VALUE)
+        );
+        trackTreeStructureSubPanelLayout.setVerticalGroup(
+            trackTreeStructureSubPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 136, Short.MAX_VALUE)
+        );
+
+        trackTreeStructureJSP.setViewportView(trackTreeStructureSubPanel);
+
+        javax.swing.GroupLayout trackTreeStructurePanelLayout = new javax.swing.GroupLayout(trackTreeStructurePanel);
+        trackTreeStructurePanel.setLayout(trackTreeStructurePanelLayout);
+        trackTreeStructurePanelLayout.setHorizontalGroup(
+            trackTreeStructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+            .addGroup(trackTreeStructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(trackTreeStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 282, Short.MAX_VALUE))
+        );
+        trackTreeStructurePanelLayout.setVerticalGroup(
+            trackTreeStructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 161, Short.MAX_VALUE)
+            .addGroup(trackTreeStructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(trackTreeStructureJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 161, Short.MAX_VALUE))
+        );
+
         javax.swing.GroupLayout dataPanelLayout = new javax.swing.GroupLayout(dataPanel);
         dataPanel.setLayout(dataPanelLayout);
         dataPanelLayout.setHorizontalGroup(
@@ -1513,7 +1562,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             .addGroup(dataPanelLayout.createSequentialGroup()
                 .addComponent(controlPanelJSP, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(selectionPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(trackTreeStructurePanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(trackPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -1522,9 +1573,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, dataPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(controlPanelJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 391, Short.MAX_VALUE)
-                    .addComponent(selectionPanel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(trackPanel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(controlPanelJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addComponent(trackPanel, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(dataPanelLayout.createSequentialGroup()
+                        .addComponent(trackTreeStructurePanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(selectionPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addGap(4, 4, 4))
         );
 
@@ -3323,7 +3377,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void trackStructureJCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackStructureJCBActionPerformed
         if (!checkConnection()) return;
         logger.debug("trackStructureJCBActionPerformed: selected index: {} action event: {}", trackStructureJCB.getSelectedIndex(), evt);
-        this.setStructure(this.trackStructureJCB.getSelectedIndex());
+        this.setTrackTreeStructure(this.trackStructureJCB.getSelectedIndex());
     }//GEN-LAST:event_trackStructureJCBActionPerformed
 
     private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
@@ -3453,10 +3507,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         interactiveStructureActionPerformed(null);
     }
     
-    public void setTrackStructureIdx(int structureIdx) {
-        trackStructureJCB.setSelectedIndex(structureIdx);
-        trackStructureJCBActionPerformed(null);
-    }
+    
     
     public static void setNavigationButtonNames(boolean selectionsSelected) {
         if (getInstance()==null) return;
@@ -3666,6 +3717,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JPanel trackPanel;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;
+    private javax.swing.JScrollPane trackTreeStructureJSP;
+    private javax.swing.JPanel trackTreeStructurePanel;
+    private javax.swing.JPanel trackTreeStructureSubPanel;
     private javax.swing.JMenuItem unDumpObjectsMenuItem;
     private javax.swing.JButton unlinkObjectsButton;
     private javax.swing.JButton updateRoiDisplayButton;
