@@ -56,12 +56,12 @@ public class StructureSelectorTree {
     final IntConsumer callBack;
     DefaultTreeModel treeModel;
     JTree tree;
-    public StructureSelectorTree(Experiment xp, IntConsumer callBack) {
+    public StructureSelectorTree(Experiment xp, IntConsumer callBack, int treeSelectionMode) {
         this.callBack=callBack;
-        setExperiment(xp);
+        setExperiment(xp, treeSelectionMode);
     }
     
-    private void setExperiment(Experiment xp) {
+    private void setExperiment(Experiment xp, int treeSelectionMode) {
         this.xp = xp;
         structureNamesMapIdx.clear();
         for (int sIdx = 0; sIdx<xp.getStructureCount(); sIdx++) {
@@ -69,25 +69,20 @@ public class StructureSelectorTree {
             structureNamesMapIdx.put(s.getName(), sIdx);
         }
         structureNamesMapIdx.put("Root", -1);
-        generateTree();
+        generateTree(treeSelectionMode);
     }
     
-    public void selectStructure(int structureIdx) {
-       String[] path = Arrays.stream(xp.getPathToRoot(structureIdx)).mapToObj(i->xp.getStructure(i).getName()).toArray(i->new String[i]);
-       DefaultMutableTreeNode[] nPath = new DefaultMutableTreeNode[path.length+1];
-       
-       DefaultMutableTreeNode currentNode= (DefaultMutableTreeNode)treeModel.getRoot();
-       nPath[0] = currentNode;
-       for (int i = 0; i<path.length; ++i) {
-           int ii = i;
-           nPath[i+1] = IntStream.range(0, currentNode.getChildCount())
-               .mapToObj(sIdx -> (DefaultMutableTreeNode)currentNode.getChildAt(sIdx))
-               .filter(n -> ((String)n.getUserObject()).equals(path[ii])).findFirst().get();
-       }
-       tree.setSelectionPath(new TreePath(nPath));
+    public IntStream getSelectedStructures() {
+        if (tree.getSelectionCount()==0) return IntStream.empty();
+        return Arrays.stream(tree.getSelectionPaths()).mapToInt(path -> getStructureIdx(path));
     }
     
-    private JTree generateTree() {
+    public void selectStructures(int... structureIdx) {
+        if (structureIdx==null || structureIdx.length==0) tree.setSelectionPaths(new TreePath[0]);
+        else tree.setSelectionPaths(Arrays.stream(structureIdx).mapToObj(i->getPath(i)).filter(p->p!=null).toArray(i->new TreePath[i]));
+    }
+    
+    private JTree generateTree(int treeSelectionMode) {
         IntFunction<List<DefaultMutableTreeNode>> getDirectChildren = sIdx -> IntStream.range(sIdx+1, xp.getStructureCount()).mapToObj(s->xp.getStructure(s)).filter(s->s.getParentStructure()==sIdx).map(s->new DefaultMutableTreeNode(s.getName())).collect(Collectors.toList());
         Function<List<DefaultMutableTreeNode>, List<DefaultMutableTreeNode>> getNextLevel = parentList -> parentList.stream().flatMap(p -> {
             if (p==null) return Stream.empty();
@@ -103,8 +98,8 @@ public class StructureSelectorTree {
         tree=new JTree(treeModel);
         //tree.setAlignmentY(TOP_ALIGNMENT);
         tree.setRootVisible(false);
-        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        //tree.setOpaque(false);
+        tree.getSelectionModel().setSelectionMode(treeSelectionMode);
+        tree.setOpaque(false);
         tree.setCellRenderer(new TransparentTreeCellRenderer());
         tree.setScrollsOnExpand(true);
         
@@ -114,8 +109,7 @@ public class StructureSelectorTree {
                 TreePath path = tree.getPathForLocation(e.getX(), e.getY());
                 if (path==null) return;
                 if (SwingUtilities.isLeftMouseButton(e)) { 
-                    String struct = (String)((DefaultMutableTreeNode)path.getLastPathComponent()).getUserObject();
-                    callBack.accept(structureNamesMapIdx.get(struct));
+                    callBack.accept(getStructureIdx(path));
                 }
             }
         });
@@ -125,5 +119,23 @@ public class StructureSelectorTree {
     }
     public JTree getTree() {
         return tree;
+    }
+    private int getStructureIdx(TreePath path) {
+        String struct = (String)((DefaultMutableTreeNode)path.getLastPathComponent()).getUserObject();
+        return structureNamesMapIdx.get(struct);
+    }
+    private TreePath getPath(int structureIdx) {
+        String[] path = Arrays.stream(xp.getPathToRoot(structureIdx)).mapToObj(i->xp.getStructure(i).getName()).toArray(i->new String[i]);
+        if (path.length==0) return null;
+        DefaultMutableTreeNode[] nPath = new DefaultMutableTreeNode[path.length+1];
+
+        nPath[0] = (DefaultMutableTreeNode)treeModel.getRoot();
+        for (int i = 0; i<path.length; ++i) {
+            int ii = i;
+            nPath[i+1] = IntStream.range(0, nPath[ii].getChildCount())
+                .mapToObj(sIdx -> (DefaultMutableTreeNode)nPath[ii].getChildAt(sIdx))
+                .filter(n -> ((String)n.getUserObject()).equals(path[ii])).findFirst().get();
+        }
+        return new TreePath(nPath);
     }
 }

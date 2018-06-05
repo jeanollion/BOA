@@ -563,7 +563,7 @@
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" max="-2" attributes="0">
                               <Component id="experimentJSP" max="32767" attributes="0"/>
-                              <Component id="hostName" max="32767" attributes="0"/>
+                              <Component id="experimentFolder" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" max="-2" attributes="0">
@@ -594,7 +594,7 @@
                                   <Component id="actionStructureJSP" min="-2" pref="194" max="-2" attributes="0"/>
                               </Group>
                               <Group type="102" attributes="0">
-                                  <Component id="hostName" min="-2" max="-2" attributes="0"/>
+                                  <Component id="experimentFolder" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="experimentJSP" max="32767" attributes="0"/>
                               </Group>
@@ -604,8 +604,11 @@
                 </DimensionLayout>
               </Layout>
               <SubComponents>
-                <Component class="javax.swing.JTextField" name="hostName">
+                <Component class="javax.swing.JTextField" name="experimentFolder">
                   <Properties>
+                    <Property name="background" type="java.awt.Color" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                      <Connection code="new Color(getBackground().getRGB())" type="code"/>
+                    </Property>
                     <Property name="text" type="java.lang.String" value="localhost"/>
                     <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                       <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
@@ -614,12 +617,15 @@
                     </Property>
                   </Properties>
                   <Events>
-                    <EventHandler event="mousePressed" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="hostNameMousePressed"/>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="hostNameActionPerformed"/>
+                    <EventHandler event="mousePressed" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="experimentFolderMousePressed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="experimentFolderActionPerformed"/>
                   </Events>
                 </Component>
                 <Container class="javax.swing.JScrollPane" name="actionStructureJSP">
                   <Properties>
+                    <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                      <Color blue="f6" green="f6" red="f7" type="rgb"/>
+                    </Property>
                     <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                       <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
                         <TitledBorder title="Structures"/>
@@ -628,15 +634,6 @@
                   </Properties>
 
                   <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
-                  <SubComponents>
-                    <Component class="javax.swing.JList" name="structureList">
-                      <Properties>
-                        <Property name="model" type="javax.swing.ListModel" editor="org.netbeans.modules.form.editors2.ListModelEditor">
-                          <StringArray count="0"/>
-                        </Property>
-                      </Properties>
-                    </Component>
-                  </SubComponents>
                 </Container>
                 <Container class="javax.swing.JScrollPane" name="actionMicroscopyFieldJSP">
                   <Properties>
@@ -651,8 +648,21 @@
                   <SubComponents>
                     <Component class="javax.swing.JList" name="microscopyFieldList">
                       <Properties>
+                        <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="f6" green="f6" red="f7" type="rgb"/>
+                        </Property>
                         <Property name="model" type="javax.swing.ListModel" editor="org.netbeans.modules.form.editors2.ListModelEditor">
                           <StringArray count="0"/>
+                        </Property>
+                        <Property name="cellRenderer" type="javax.swing.ListCellRenderer" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                          <Connection code="new TransparentListCellRenderer()" type="code"/>
+                        </Property>
+                        <Property name="opaque" type="boolean" value="false"/>
+                        <Property name="selectionBackground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="8a" green="69" red="39" type="rgb"/>
+                        </Property>
+                        <Property name="selectionForeground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="fe" green="ff" red="ff" type="rgb"/>
                         </Property>
                       </Properties>
                       <Events>
@@ -677,6 +687,9 @@
                   <SubComponents>
                     <Component class="javax.swing.JList" name="runActionList">
                       <Properties>
+                        <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="f6" green="f6" red="f7" type="rgb"/>
+                        </Property>
                         <Property name="model" type="javax.swing.ListModel" editor="org.netbeans.modules.form.editors2.ListModelEditor">
                           <StringArray count="7">
                             <StringItem index="0" value="Pre-Processing"/>
@@ -687,6 +700,16 @@
                             <StringItem index="5" value="Extract Measurements"/>
                             <StringItem index="6" value="Export Data"/>
                           </StringArray>
+                        </Property>
+                        <Property name="cellRenderer" type="javax.swing.ListCellRenderer" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                          <Connection code="new TransparentListCellRenderer()" type="code"/>
+                        </Property>
+                        <Property name="opaque" type="boolean" value="false"/>
+                        <Property name="selectionBackground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="8a" green="69" red="39" type="rgb"/>
+                        </Property>
+                        <Property name="selectionForeground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="fe" green="ff" red="ff" type="rgb"/>
                         </Property>
                       </Properties>
                     </Component>
@@ -709,13 +732,23 @@
                     <Component class="javax.swing.JList" name="experimentList">
                       <Properties>
                         <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-                          <Color blue="fe" green="fe" red="fe" type="rgb"/>
+                          <Color blue="f6" green="f6" red="f7" type="rgb"/>
                         </Property>
                         <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                           <Border info="null"/>
                         </Property>
                         <Property name="model" type="javax.swing.ListModel" editor="org.netbeans.modules.form.editors2.ListModelEditor">
                           <StringArray count="0"/>
+                        </Property>
+                        <Property name="cellRenderer" type="javax.swing.ListCellRenderer" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                          <Connection code="new TransparentListCellRenderer()" type="code"/>
+                        </Property>
+                        <Property name="opaque" type="boolean" value="false"/>
+                        <Property name="selectionBackground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="8a" green="69" red="39" type="rgb"/>
+                        </Property>
+                        <Property name="selectionForeground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="fe" green="ff" red="ff" type="rgb"/>
                         </Property>
                       </Properties>
                       <Events>
@@ -737,8 +770,21 @@
                   <SubComponents>
                     <Component class="javax.swing.JList" name="actionPoolList">
                       <Properties>
+                        <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="f6" green="f6" red="f7" type="rgb"/>
+                        </Property>
                         <Property name="model" type="javax.swing.ListModel" editor="org.netbeans.modules.form.editors2.ListModelEditor">
                           <StringArray count="0"/>
+                        </Property>
+                        <Property name="cellRenderer" type="javax.swing.ListCellRenderer" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                          <Connection code="new TransparentListCellRenderer()" type="code"/>
+                        </Property>
+                        <Property name="opaque" type="boolean" value="false"/>
+                        <Property name="selectionBackground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="8a" green="69" red="39" type="rgb"/>
+                        </Property>
+                        <Property name="selectionForeground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="fe" green="ff" red="ff" type="rgb"/>
                         </Property>
                       </Properties>
                       <Events>
@@ -775,6 +821,11 @@
               </Layout>
               <SubComponents>
                 <Container class="javax.swing.JScrollPane" name="configurationJSP">
+                  <Properties>
+                    <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                      <Color blue="f6" green="f6" red="f7" type="rgb"/>
+                    </Property>
+                  </Properties>
 
                   <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
                 </Container>
@@ -894,11 +945,12 @@
                         <Component class="javax.swing.JList" name="selectionList">
                           <Properties>
                             <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
-                              <Color blue="d6" green="d6" red="d6" type="rgb"/>
+                              <Color blue="f6" green="f6" red="f7" type="rgb"/>
                             </Property>
                             <Property name="model" type="javax.swing.ListModel" editor="org.netbeans.modules.form.editors2.ListModelEditor">
                               <StringArray count="0"/>
                             </Property>
+                            <Property name="opaque" type="boolean" value="false"/>
                           </Properties>
                         </Component>
                       </SubComponents>
@@ -949,7 +1001,6 @@
                       <Layout>
                         <DimensionLayout dim="0">
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="trackStructureJCB" max="32767" attributes="0"/>
                               <Component id="selectAllTracksButton" alignment="0" max="32767" attributes="0"/>
                               <Component id="nextTrackErrorButton" max="32767" attributes="0"/>
                               <Component id="mergeObjectsButton" alignment="0" max="32767" attributes="0"/>
@@ -972,10 +1023,7 @@
                                   </Group>
                               </Group>
                               <Group type="102" attributes="0">
-                                  <Group type="103" groupAlignment="0" attributes="0">
-                                      <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
-                                      <Component id="jLabel2" alignment="0" min="-2" max="-2" attributes="0"/>
-                                  </Group>
+                                  <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                               </Group>
                               <Component id="pruneTrackButton" alignment="0" max="32767" attributes="0"/>
@@ -988,11 +1036,7 @@
                                   <Component id="jLabel1" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="interactiveStructure" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="jLabel2" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="trackStructureJCB" min="-2" max="-2" attributes="0"/>
-                                  <EmptySpace max="-2" attributes="0"/>
+                                  <EmptySpace min="-2" max="-2" attributes="0"/>
                                   <Component id="updateRoiDisplayButton" min="-2" pref="25" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
                                   <Component id="selectAllObjectsButton" min="-2" pref="25" max="-2" attributes="0"/>
@@ -1030,16 +1074,6 @@
                         </DimensionLayout>
                       </Layout>
                       <SubComponents>
-                        <Component class="javax.swing.JComboBox" name="trackStructureJCB">
-                          <Properties>
-                            <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-                              <StringArray count="0"/>
-                            </Property>
-                          </Properties>
-                          <Events>
-                            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="trackStructureJCBActionPerformed"/>
-                          </Events>
-                        </Component>
                         <Component class="javax.swing.JButton" name="selectAllTracksButton">
                           <Properties>
                             <Property name="text" type="java.lang.String" value="Select All Tracks (Q)"/>
@@ -1144,11 +1178,6 @@
                             <Property name="text" type="java.lang.String" value="Interactive Structure:"/>
                           </Properties>
                         </Component>
-                        <Component class="javax.swing.JLabel" name="jLabel2">
-                          <Properties>
-                            <Property name="text" type="java.lang.String" value="Track-tree Structure:"/>
-                          </Properties>
-                        </Component>
                         <Component class="javax.swing.JButton" name="unlinkObjectsButton">
                           <Properties>
                             <Property name="text" type="java.lang.String" value="Unlink Objects (U)"/>
@@ -1208,31 +1237,20 @@
                   <SubComponents>
                     <Container class="javax.swing.JScrollPane" name="trackTreeStructureJSP">
                       <Properties>
+                        <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="f6" green="f6" red="f7" type="rgb"/>
+                        </Property>
                         <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                           <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
                             <TitledBorder title="Track Tree Structure"/>
                           </Border>
                         </Property>
+                        <Property name="foreground" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
+                          <Color blue="3c" green="3c" red="3c" type="rgb"/>
+                        </Property>
                       </Properties>
 
                       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
-                      <SubComponents>
-                        <Container class="javax.swing.JPanel" name="trackTreeStructureSubPanel">
-
-                          <Layout>
-                            <DimensionLayout dim="0">
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <EmptySpace min="0" pref="268" max="32767" attributes="0"/>
-                              </Group>
-                            </DimensionLayout>
-                            <DimensionLayout dim="1">
-                              <Group type="103" groupAlignment="0" attributes="0">
-                                  <EmptySpace min="0" pref="136" max="32767" attributes="0"/>
-                              </Group>
-                            </DimensionLayout>
-                          </Layout>
-                        </Container>
-                      </SubComponents>
                     </Container>
                   </SubComponents>
                 </Container>
@@ -1242,6 +1260,9 @@
         </Container>
         <Container class="javax.swing.JScrollPane" name="consoleJSP">
           <Properties>
+            <Property name="background" type="java.awt.Color" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+              <Connection code="new Color(getBackground().getRGB())" type="code"/>
+            </Property>
             <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
               <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
                 <TitledBorder title="Console:"/>
@@ -1250,6 +1271,7 @@
             <Property name="minimumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
               <Dimension value="[32, 100]"/>
             </Property>
+            <Property name="opaque" type="boolean" value="false"/>
           </Properties>
           <AuxValues>
             <AuxValue name="autoScrollPane" type="java.lang.Boolean" value="true"/>
@@ -1265,13 +1287,15 @@
             <Component class="javax.swing.JTextPane" name="console">
               <Properties>
                 <Property name="editable" type="boolean" value="false"/>
+                <Property name="background" type="java.awt.Color" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
+                  <Connection code="new Color(getBackground().getRGB())" type="code"/>
+                </Property>
                 <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                   <Border info="null"/>
                 </Property>
                 <Property name="font" type="java.awt.Font" editor="org.netbeans.beaninfo.editors.FontEditor">
-                  <Font name="TeXGyreCursor" size="12" style="0"/>
+                  <Font name="Courier 10 Pitch" size="12" style="0"/>
                 </Property>
-                <Property name="opaque" type="boolean" value="false"/>
               </Properties>
               <AuxValues>
                 <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="JPopupMenu consoleMenu = new JPopupMenu();&#xa;Action copy = new DefaultEditorKit.CopyAction();&#xa;copy.putValue(Action.NAME, &quot;Copy&quot;);&#xa;copy.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(&quot;control C&quot;));&#xa;consoleMenu.add( copy );&#xa;Action selectAll = new TextAction(&quot;Select All&quot;) {&#xa;    @Override public void actionPerformed(ActionEvent e) {&#xa;        JTextComponent component = getFocusedComponent();&#xa;        component.selectAll();&#xa;        component.requestFocusInWindow();&#xa;    }&#xa;};&#xa;consoleMenu.add( selectAll );&#xa;Action clear = new TextAction(&quot;Clear&quot;) {&#xa;    @Override public void actionPerformed(ActionEvent e) {&#xa;        JTextComponent component = getFocusedComponent();&#xa;        component.setText(null);&#xa;        component.requestFocusInWindow();&#xa;    }&#xa;};&#xa;consoleMenu.add( clear );&#xa;console.setComponentPopupMenu( consoleMenu );"/>

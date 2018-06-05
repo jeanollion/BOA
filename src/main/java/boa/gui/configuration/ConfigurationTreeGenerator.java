@@ -125,7 +125,7 @@ public class ConfigurationTreeGenerator {
         renderer.setClosedIcon(personIcon);
         renderer.setOpenIcon(personIcon);
         tree.setCellRenderer(renderer);
-        
+        tree.setOpaque(false);
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {

@@ -39,7 +39,7 @@ public class SelectionRenderer extends JLabel implements ListCellRenderer<Select
         setText(selection.toString());
         setForeground(isSelected ? list.getSelectionForeground() : selection.getColor(false));
         setBackground(isSelected ? selection.getColor(false) : list.getBackground());
-        this.setOpaque(true);
+        this.setOpaque(isSelected);
         //57/105/138
         return this;
     }
