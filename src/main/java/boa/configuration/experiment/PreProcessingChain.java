@@ -64,10 +64,10 @@ public class PreProcessingChain extends SimpleContainerParameter {
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("Scale XY", 5, 1, 0.00001, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("Scale Z", 5, 1, 0.00001, null);
     ConditionalParameter imageScaleCond = new ConditionalParameter(useImageScale).setActionParameters("Custom Calibration", new Parameter[]{scaleXY, scaleZ});
-    BoundedNumberParameter frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null);
-    FrameParameter trimFramesStart = new FrameParameter("Trim Frames Start Position", 0, true);
-    FrameParameter trimFramesEnd = new FrameParameter("Trim Frames Stop Position (0=no trimming)", 0, true);
-    SimpleListParameter<TransformationPluginParameter<Transformation>> transformations = new SimpleListParameter<>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
+    BoundedNumberParameter frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null).setToolTipText("This parameter is used when no Frame duration is found in image meta data");
+    FrameParameter trimFramesStart = new FrameParameter("Trim Frames Start", 0, true).setToolTipText("First frame to be pre-processed");
+    FrameParameter trimFramesEnd = new FrameParameter("Trim Frames Stop", 0, true).setToolTipText("Last frame to be pre-processed (0=no trimming)");
+    SimpleListParameter<TransformationPluginParameter<Transformation>> transformations = new SimpleListParameter<>("Transformations", new TransformationPluginParameter<>("Transformation", Transformation.class, false));
     
     @Override
     public JSONObject toJSONEntry() {
