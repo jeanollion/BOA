@@ -49,13 +49,9 @@ import boa.utils.Pair;
  *
  * @author jollion
  */
-public class SegmentAndTrack implements ProcessingSchemeWithTracking, ToolTip {
+public class SegmentAndTrack extends SegmentationAndTrackingProcessingScheme<SegmentAndTrack> implements ToolTip {
     int nThreads;
-    protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
-    protected TrackPreFilterSequence trackPreFilters = new TrackPreFilterSequence("Track Pre-Filters");
-    protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     PluginParameter<TrackerSegmenter> tracker = new PluginParameter<>("Tracker", TrackerSegmenter.class, true);
-    protected TrackPostFilterSequence trackPostFilters = new TrackPostFilterSequence("Track Post-Filters");
     Parameter[] parameters= new Parameter[]{preFilters, trackPreFilters, tracker, postFilters, trackPostFilters};
     
     public SegmentAndTrack(){}
@@ -67,56 +63,6 @@ public class SegmentAndTrack implements ProcessingSchemeWithTracking, ToolTip {
     @Override
     public String getToolTipText() {
         return "Performs the segmentation and Tracking steps jointly";
-    }
-    
-    public SegmentAndTrack addTrackPostFilters(TrackPostFilter... postFilter) {
-        trackPostFilters.add(postFilter);
-        return this;
-    }
-    
-    public SegmentAndTrack addTrackPostFilters(Collection<TrackPostFilter> postFilter) {
-        trackPostFilters.add(postFilter);
-        return this;
-    }
-    @Override
-    public SegmentAndTrack addPreFilters(PreFilter... preFilter) {
-        preFilters.add(preFilter);
-        return this;
-    }
-    @Override
-    public SegmentAndTrack addPostFilters(PostFilter... postFilter) {
-        postFilters.add(postFilter);
-        return this;
-    }
-    @Override public SegmentAndTrack addTrackPreFilters(TrackPreFilter... trackPreFilter) {
-        trackPreFilters.add(trackPreFilter);
-        return this;
-    }
-    @Override public SegmentAndTrack addTrackPreFilters(Collection<TrackPreFilter> trackPreFilter) {
-        trackPreFilters.add(trackPreFilter);
-        return this;
-    }
-    @Override public SegmentAndTrack addPreFilters(Collection<PreFilter> preFilter) {
-        preFilters.add(preFilter);
-        return this;
-    }
-    @Override public SegmentAndTrack addPostFilters(Collection<PostFilter> postFilter){
-        postFilters.add(postFilter);
-        return this;
-    }
-    @Override public PreFilterSequence getPreFilters() {
-        return preFilters;
-    }
-    @Override public TrackPreFilterSequence getTrackPreFilters(boolean addPreFilters) {
-        if (addPreFilters && !preFilters.isEmpty()) return trackPreFilters.duplicate().addAtFirst(new PreFilters().add(preFilters));
-        return trackPreFilters;
-    }
-    @Override public PostFilterSequence getPostFilters() {
-        return postFilters;
-    }
-    @Override
-    public TrackPostFilterSequence getTrackPostFilters() {
-        return trackPostFilters;
     }
     
     @Override

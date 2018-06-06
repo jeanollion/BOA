@@ -21,17 +21,16 @@ package boa.plugins.plugins.processing_scheme;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParentStructureParameter;
 import boa.configuration.parameters.PluginParameter;
-import boa.configuration.parameters.PostFilterSequence;
-import boa.configuration.parameters.PreFilterSequence;
-import boa.configuration.parameters.TrackPostFilterSequence;
-import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
+import boa.plugins.MultiThreaded;
+import static boa.plugins.Plugin.logger;
 import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
+import boa.plugins.ToolTip;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.Tracker;
@@ -51,17 +50,16 @@ import java.util.stream.Stream;
  *
  * @author Jean Ollion
  */
-public class Duplicate extends SegmentThenTrack {
+public class Duplicate extends SegmentationAndTrackingProcessingScheme<Duplicate> implements  ToolTip {
+    protected PluginParameter<Tracker> tracker = new PluginParameter<>("Tracker", Tracker.class, true);
     ParentStructureParameter dup = new ParentStructureParameter("Duplicate From").setAllowNoSelection(false);
-    public Duplicate() {
-        super();
-        parameters= new Parameter[]{dup, preFilters, trackPreFilters, tracker, trackPostFilters};
-    }
+    protected Parameter[] parameters = new Parameter[]{dup, preFilters, trackPreFilters, tracker, trackPostFilters};
+
     @Override
     public String getToolTipText() {
         return "Duplicates the segmented objects of another Structure. Tracker and post-filter can be applied. If no tracker is set, source lineage is also duplicated";
     }
-    
+    public Tracker getTracker() {return tracker.instanciatePlugin();}
     @Override
     public Duplicate addPostFilters(PostFilter... postFilter) {
         throw new IllegalArgumentException("No post filters allowed for duplicate processing scheme");
@@ -80,6 +78,20 @@ public class Duplicate extends SegmentThenTrack {
         trackPostFilters.filter(structureIdx, parentTrack);
     }
     @Override
+    public void trackOnly(final int structureIdx, List<StructureObject> parentTrack) {
+        if (!tracker.isOnePluginSet()) {
+            logger.info("No tracker set for structure: {}", structureIdx);
+            return;
+        }
+        for (StructureObject parent : parentTrack) {
+            for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks(true, true);
+        }
+        
+        Tracker t = tracker.instanciatePlugin();
+        if (t instanceof MultiThreaded) ((MultiThreaded)t).setMultithread(true);
+        t.track(structureIdx, parentTrack);
+        
+    }
     public void segmentOnly(final int structureIdx, final List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         int parentStorage = parentTrack.get(0).getExperiment().getStructure(structureIdx).getParentStructure();
@@ -120,5 +132,8 @@ public class Duplicate extends SegmentThenTrack {
         }
         getTrackPreFilters(true).filter(structureIdx, parentTrack);
     }
-    
+    @Override
+    public Parameter[] getParameters() {
+        return parameters;
+    }
 }

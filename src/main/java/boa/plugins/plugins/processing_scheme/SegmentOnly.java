@@ -66,10 +66,7 @@ import java.util.stream.Collectors;
  *
  * @author jollion
  */
-public class SegmentOnly implements ProcessingScheme, ToolTip {
-    protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
-    protected TrackPreFilterSequence trackPreFilters = new TrackPreFilterSequence("Track Pre-Filters");
-    protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
+public class SegmentOnly extends SegmentationProcessingScheme<SegmentOnly> implements ToolTip {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
     Parameter[] parameters = new Parameter[]{preFilters, trackPreFilters, segmenter, postFilters};
     
@@ -85,52 +82,7 @@ public class SegmentOnly implements ProcessingScheme, ToolTip {
     public String getToolTipText() {
         return "Performs only the segmentation (no tracking)";
     }
-    @Override public SegmentOnly addPreFilters(PreFilter... preFilter) {
-        preFilters.add(preFilter);
-        return this;
-    }
-    @Override public SegmentOnly addTrackPreFilters(TrackPreFilter... trackPreFilter) {
-        trackPreFilters.add(trackPreFilter);
-        return this;
-    }
-    @Override public SegmentOnly addTrackPreFilters(Collection<TrackPreFilter> trackPreFilter) {
-        trackPreFilters.add(trackPreFilter);
-        return this;
-    }
-    @Override public SegmentOnly addPostFilters(PostFilter... postFilter) {
-        postFilters.add(postFilter);
-        return this;
-    }
-    @Override public SegmentOnly addPreFilters(Collection<PreFilter> preFilter) {
-        preFilters.add(preFilter);
-        return this;
-    }
-    @Override public SegmentOnly addPostFilters(Collection<PostFilter> postFilter){
-        postFilters.add(postFilter);
-        return this;
-    }
-    public SegmentOnly setPreFilters(PreFilterSequence preFilters) {
-        this.preFilters=preFilters;
-        return this;
-    }
-    public SegmentOnly setTrackPreFilters(TrackPreFilterSequence trackPreFilters) {
-        this.trackPreFilters=trackPreFilters;
-        return this;
-    }
-    public SegmentOnly setPostFilters(PostFilterSequence postFilters) {
-        this.postFilters=postFilters;
-        return this;
-    }
-    @Override public PreFilterSequence getPreFilters() {
-        return preFilters;
-    }
-    @Override public TrackPreFilterSequence getTrackPreFilters(boolean addPreFilters) {
-        if (addPreFilters && !preFilters.isEmpty()) return trackPreFilters.duplicate().addAtFirst(new PreFilters().add(preFilters));
-        return trackPreFilters;
-    }
-    @Override public PostFilterSequence getPostFilters() {
-        return postFilters;
-    }
+    
     @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
         getTrackPreFilters(true).filter(structureIdx, parentTrack); // set preFiltered images to structureObjects
         TrackParametrizer apply=TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin());

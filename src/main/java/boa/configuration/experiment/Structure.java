@@ -100,8 +100,8 @@ public class Structure extends SimpleContainerParameter {
     }
     public Structure(String name, int parentStructure, int segmentationParentStructure, int channelImage) {
         super(name);
-        this.parentStructure =  new ParentStructureParameter("Parent Structure", parentStructure, -1);
-        segmentationParent =  new ParentStructureParameter("Segmentation Parent", segmentationParentStructure, -1).setToolTipText("Parent structure from which perform segmentation if different from parent structure.");
+        this.parentStructure =  new ParentStructureParameter("Parent Structure", parentStructure, -1).setToolTipText("In the processing step, pre-filters, segmentation, tracking and post-filters will be run from each branches of this structure");
+        segmentationParent =  new ParentStructureParameter("Segmentation Parent", segmentationParentStructure, -1).setToolTipText("If different from parent structure, allows to perform segmentation from objects of another strucutre contained in the object of the parent structure. Pre-filters, tracking and post-filters will still be run from the branch of the parent structure.");
         this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
         objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true).setEmphasized(false).setToolTipText("Split algorithm used in split command in manual edition");
         processingScheme = new PluginParameter<>("Processing Scheme", ProcessingScheme.class, true).setEmphasized(false);

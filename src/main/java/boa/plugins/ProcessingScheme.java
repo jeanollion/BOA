@@ -31,18 +31,17 @@ import boa.utils.Pair;
  *
  * @author jollion
  */
-public interface ProcessingScheme extends Plugin { //Multithreaded
-    public ProcessingScheme addPreFilters(PreFilter... preFilters);
-    public ProcessingScheme addPostFilters(PostFilter... postFilters);
-    public ProcessingScheme addTrackPreFilters(TrackPreFilter... trackPreFilters);
-    public ProcessingScheme addPreFilters(Collection<PreFilter> preFilters);
-    public ProcessingScheme addPostFilters(Collection<PostFilter> postFilters);
-    public ProcessingScheme addTrackPreFilters(Collection<TrackPreFilter> trackPreFilters);
+public interface ProcessingScheme<T extends ProcessingScheme> extends Plugin { //Multithreaded
+    public  T addPreFilters(PreFilter... preFilters);
+    public  T addPostFilters(PostFilter... postFilters);
+    public  T addTrackPreFilters(TrackPreFilter... trackPreFilters);
+    public  T addPreFilters(Collection<PreFilter> preFilters);
+    public  T addPostFilters(Collection<PostFilter> postFilters);
+    public  T addTrackPreFilters(Collection<TrackPreFilter> trackPreFilters);
     public TrackPreFilterSequence getTrackPreFilters(boolean addPreFilters);
     public PreFilterSequence getPreFilters();
     public PostFilterSequence getPostFilters();
     public Segmenter getSegmenter();
-    //public void segmentThenTrack(int structureIdx, List<StructureObject> parentTrack);
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack);
     public void trackOnly(int structureIdx, List<StructureObject> parentTrack);
 }
