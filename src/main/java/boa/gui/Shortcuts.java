@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.swing.Action;
 import javax.swing.JMenu;
+import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
 
 /**
@@ -144,45 +145,52 @@ public class Shortcuts {
         JMenu selection = new JMenu("Selections");
         menu.add(selection);
         selection.add("Active selections are set through right-clik menu on selections");
+        selection.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of active selection (or selected selection if no active selection is set)"));
+        selection.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of active selection (or selected selection if no active selection is set)"));
+        selection.add(new JSeparator());
         selection.add(getMenuLabelFor(ACTION.TOGGLE_DISPLAY_SEL0, "Toggle Display Objects for active selection group 0"));
         selection.add(getMenuLabelFor(ACTION.ADD_TO_SEL0, "Add selected object(s) to active selection group 0"));
         selection.add(getMenuLabelFor(ACTION.REM_FROM_SEL0, "Remove selected object(s) from active selection group 0"));
-        selection.add(getMenuLabelFor(ACTION.REM_ALL_FROM_SEL0, "Remove all objects contained in active image from active selection group 1"));
+        selection.add(getMenuLabelFor(ACTION.REM_ALL_FROM_SEL0, "Remove all objects contained in active image from active selection group 0"));
+        selection.add(new JSeparator());
         selection.add(getMenuLabelFor(ACTION.TOGGLE_DISPLAY_SEL1, "Toggle Display Objects for active selection group 1"));
         selection.add(getMenuLabelFor(ACTION.ADD_TO_SEL1, "Add selected object(s) to active selection group 1"));
         selection.add(getMenuLabelFor(ACTION.REM_FROM_SEL1, "Remove selected object(s) from active selection group 1"));
         selection.add(getMenuLabelFor(ACTION.REM_ALL_FROM_SEL1, "Remove all objects contained in active image from active selection group 1"));
-        selection.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of active selection (or selected selection if no active selection is set)"));
-        selection.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of active selection (or selected selection if no active selection is set)"));
+        
         
         JMenu nav = new JMenu("Navigation/Display");
         menu.add(nav);
         nav.add("Shift + mouse wheel mouve: fast scroll");
-        nav.add(getMenuLabelFor(ACTION.TOGGLE_LOCAL_ZOOM, "Toggle local zoom"));
-        nav.add(getMenuLabelFor(ACTION.SELECT_ALL_OBJECTS, "Display all objects on active image"));
-        nav.add(getMenuLabelFor(ACTION.SELECT_ALL_TRACKS, "Display all tracks on active image"));
         nav.add("Navigation selection is set through right-click menu on selections");
         nav.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of active selection (or selected selection if no active selection is set)"));
         nav.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of active selection (or selected selection if no active selection is set)"));
         nav.add(getMenuLabelFor(ACTION.OPEN_NEXT, "Display next image"));
         nav.add(getMenuLabelFor(ACTION.OPEN_PREV, "Display previous image"));
-        nav.add(getMenuLabelFor(ACTION.TOGGLE_SELECT_MODE, "Toggle display object/track on click"));
+        nav.add(new JSeparator());
+        nav.add(getMenuLabelFor(ACTION.SELECT_ALL_OBJECTS, "Display all objects on active image"));
+        nav.add(getMenuLabelFor(ACTION.SELECT_ALL_TRACKS, "Display all tracks on active image"));
+        nav.add(getMenuLabelFor(ACTION.TOGGLE_SELECT_MODE, "Toggle display object/branch"));
         nav.add(getMenuLabelFor(ACTION.CHANGE_INTERACTIVE_STRUCTURE, "Change interactive structure"));
+        nav.add(new JSeparator());
+        nav.add(getMenuLabelFor(ACTION.TOGGLE_LOCAL_ZOOM, "Toggle local zoom"));
         
         JMenu objectModif = new JMenu("Object/Lineage Edition");
         menu.add(objectModif);
         objectModif.add("All action are performed on objects selected on active image");
         objectModif.add(getMenuLabelFor(ACTION.DELETE, "Delete object(s)"));
         objectModif.add(getMenuLabelFor(ACTION.PRUNE, "Prune track starting from selected object(s)"));
-        objectModif.add(getMenuLabelFor(ACTION.SPLIT, "Split object(s)"));
-        objectModif.add(getMenuLabelFor(ACTION.MERGE, "Merge objects"));
         objectModif.add(getMenuLabelFor(ACTION.TOGGLE_CREATION_TOOL, "Switch to object creation tool / rectangle selection tool"));
         objectModif.add(getMenuLabelFor(ACTION.CREATE, "Create object(s) from selected point(s)"));
+        objectModif.add(getMenuLabelFor(ACTION.MERGE, "Merge objects"));
+        objectModif.add(getMenuLabelFor(ACTION.SPLIT, "Split object(s)"));
+        objectModif.add("Ctrl + freehand line: manual split objects");
+        objectModif.add(new JSeparator());
         objectModif.add(getMenuLabelFor(ACTION.RESET_LINKS, "Reset lineage of selected object(s)"));
         objectModif.add(getMenuLabelFor(ACTION.LINK, "Link selected objects"));
         objectModif.add(getMenuLabelFor(ACTION.UNLINK, "Unlink selected objects"));
         objectModif.add(getMenuLabelFor(ACTION.CREATE_BRANCH, "Create branch at selected object(s)"));
-        objectModif.add("Ctrl + freehand line: manual split objects");
+        
         //objectModif.add("Ctrl + straight line: strech objects");
     }
     private String getMenuLabelFor(ACTION action, String desc) {
