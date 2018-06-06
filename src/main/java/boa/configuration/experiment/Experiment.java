@@ -165,12 +165,12 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     /**
      * 
-     * @param fieldName name of the MicroscopyField
-     * @return a new MicroscopyField if no MicroscopyField named {@param fieldName} are already existing, null if not. 
+     * @param positionName name of the MicroscopyField
+     * @return a new Position if no Position named {@param fieldName} are already existing, else null. 
      */
-    public Position createPosition(String fieldName) {
-        if (getPosition(fieldName)!=null) return null;
-        Position res =positions.createChildInstance(fieldName);
+    public Position createPosition(String positionName) {
+        if (getPosition(positionName)!=null) return null;
+        Position res =positions.createChildInstance(positionName);
         positions.insert(res);
         res.setPreProcessingChains(template);
         return res;

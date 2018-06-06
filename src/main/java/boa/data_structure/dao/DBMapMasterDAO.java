@@ -65,7 +65,6 @@ public class DBMapMasterDAO implements MasterDAO {
         configDir = dir;
         new File(configDir).mkdirs();
         this.dbName = dbName;
-        //lockXP();
     }
 
     public boolean xpFileLock() {

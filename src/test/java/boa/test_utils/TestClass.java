@@ -17,6 +17,8 @@
  */
 package boa.test_utils;
 
+import boa.configuration.experiment.Experiment;
+import boa.core.Task;
 import static boa.test_utils.TestUtils.logger;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.image.io.ImportImageUtils;
@@ -56,11 +58,7 @@ import net.imglib2.Localizable;
  */
 public class TestClass {
     public static void main(String[] args) {
-        Pair<String, int[]> p1 = new Pair("bla", new int[]{1, 2});
-        Pair<String, int[]> p2 = new Pair("bla", new int[]{1, 2});
-        Pair<String, int[]> p3 = new Pair("bla", new int[]{1, 3});
         
-        logger.debug("p1==p2 {} p1==p3: {}, int[] equals: {}", p1.equals(p2), p1.equals(p3), Arrays.equals(new int[]{1, 2}, new int[]{1, 2}));
     }
     private static <T extends Localizable> void toString(List<T> loc) {
         for (T t: loc) logger.debug("elem: {}", t);

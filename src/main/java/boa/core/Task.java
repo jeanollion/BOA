@@ -18,6 +18,7 @@
  */
 package boa.core;
 
+import boa.configuration.experiment.Experiment;
 import boa.ui.Console;
 import boa.ui.DBUtil;
 import static boa.ui.DBUtil.searchForLocalDir;
@@ -75,7 +76,9 @@ import boa.utils.JSONUtils;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.Comparator;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -102,17 +105,17 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             JSONObject res=  new JSONObject();
             res.put("dbName", dbName); 
             if (this.dir!=null) res.put("dir", dir); // put dbPath ?
-            res.put("preProcess", preProcess);
-            res.put("segmentAndTrack", segmentAndTrack);
-            res.put("trackOnly", trackOnly);
-            res.put("measurements", measurements);
-            res.put("generateTrackImages", generateTrackImages);
-            res.put("exportPreProcessedImages", exportPreProcessedImages);
-            res.put("exportTrackImages", exportTrackImages);
-            res.put("exportObjects", exportObjects);
-            res.put("exportSelections", exportSelections);
-            res.put("exportConfig", exportConfig);
-            if (positions!=null) res.put("positions", positions);
+            if (preProcess) res.put("preProcess", preProcess);
+            if (segmentAndTrack) res.put("segmentAndTrack", segmentAndTrack);
+            if (trackOnly) res.put("trackOnly", trackOnly);
+            if (measurements) res.put("measurements", measurements);
+            if (generateTrackImages) res.put("generateTrackImages", generateTrackImages);
+            if (exportPreProcessedImages) res.put("exportPreProcessedImages", exportPreProcessedImages);
+            if (exportTrackImages) res.put("exportTrackImages", exportTrackImages);
+            if (exportObjects) res.put("exportObjects", exportObjects);
+            if (exportSelections) res.put("exportSelections", exportSelections);
+            if (exportConfig) res.put("exportConfig", exportConfig);
+            if (positions!=null) res.put("positions", JSONUtils.toJSONArray(positions));
             if (structures!=null) res.put("structures", JSONUtils.toJSONArray(structures));
             JSONArray ex = new JSONArray();
             for (Pair<String, int[]> p : extractMeasurementDir) {
@@ -121,7 +124,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 o.put("s", JSONUtils.toJSONArray(p.value));
                 ex.add(o);
             }
-            res.put("extractMeasurementDir", ex);
+            if (!ex.isEmpty()) res.put("extractMeasurementDir", ex);
             return res;
         }
         public Task fromJSON(JSONObject data) {
@@ -155,6 +158,92 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             return this;
         }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 59 * hash + Objects.hashCode(this.dbName);
+        hash = 59 * hash + Objects.hashCode(this.dir);
+        hash = 59 * hash + (this.preProcess ? 1 : 0);
+        hash = 59 * hash + (this.segmentAndTrack ? 1 : 0);
+        hash = 59 * hash + (this.trackOnly ? 1 : 0);
+        hash = 59 * hash + (this.measurements ? 1 : 0);
+        hash = 59 * hash + (this.generateTrackImages ? 1 : 0);
+        hash = 59 * hash + (this.exportPreProcessedImages ? 1 : 0);
+        hash = 59 * hash + (this.exportTrackImages ? 1 : 0);
+        hash = 59 * hash + (this.exportObjects ? 1 : 0);
+        hash = 59 * hash + (this.exportSelections ? 1 : 0);
+        hash = 59 * hash + (this.exportConfig ? 1 : 0);
+        hash = 59 * hash + (this.exportData ? 1 : 0);
+        hash = 59 * hash + Objects.hashCode(this.positions);
+        hash = 59 * hash + Arrays.hashCode(this.structures);
+        hash = 59 * hash + Objects.hashCode(this.extractMeasurementDir);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Task other = (Task) obj;
+        if (this.preProcess != other.preProcess) {
+            return false;
+        }
+        if (this.segmentAndTrack != other.segmentAndTrack) {
+            return false;
+        }
+        if (this.trackOnly != other.trackOnly) {
+            return false;
+        }
+        if (this.measurements != other.measurements) {
+            return false;
+        }
+        if (this.generateTrackImages != other.generateTrackImages) {
+            return false;
+        }
+        if (this.exportPreProcessedImages != other.exportPreProcessedImages) {
+            return false;
+        }
+        if (this.exportTrackImages != other.exportTrackImages) {
+            return false;
+        }
+        if (this.exportObjects != other.exportObjects) {
+            return false;
+        }
+        if (this.exportSelections != other.exportSelections) {
+            return false;
+        }
+        if (this.exportConfig != other.exportConfig) {
+            return false;
+        }
+        if (this.exportData != other.exportData) {
+            return false;
+        }
+        if (!Objects.equals(this.dbName, other.dbName)) {
+            return false;
+        }
+        if (!Objects.equals(this.dir, other.dir)) {
+            return false;
+        }
+        if (!Objects.equals(this.positions, other.positions)) {
+            return false;
+        }
+        if (!Arrays.equals(this.structures, other.structures)) {
+            return false;
+        }
+        if (!Objects.equals(this.extractMeasurementDir, other.extractMeasurementDir)) {
+            return false;
+        }
+        return true;
+    }
+        
         public Task setUI(UserInterface ui) {
             if (ui==null) this.ui=null;
             else {
@@ -292,7 +381,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         
         public Task setStructures(int... structures) {
-            if (structures!=null && structures.length>0) this.structures=structures;
+            this.structures=structures;
             return this;
         }
         
@@ -301,23 +390,25 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this.extractMeasurementDir.add(new Pair(dir, extractStructures));
             return this;
         }
-        private void ensurePositions() {
-            if (positions!=null) return;
-            initDB();
-            positions = Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+        private void ensurePositionAndStructures(boolean positions, boolean structures) {
+            if ((!positions || this.positions!=null) && (!structures || this.structures!=null)) return;
+            boolean closeDB = false;
+            if (db==null) {
+                closeDB = true;
+                initDB();
+                db.setReadOnly(true);
+            }
+            if (positions && this.positions==null) this.positions = Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+            if (structures && this.structures==null) this.structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
         }
-        private void ensureStructures() {
-            if (structures!=null) return; 
-            initDB();
-            structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
-        }
+
         public boolean isValid() {
             boolean initDB = db==null;
-            if (initDB) initDB();
-            if (db.isReadOnly()) { // except if only extract measurement or data
-                publish("db is read only! task cannot be run");
-                return false;
+            if (initDB) {
+                initDB();
+                db.setReadOnly(true);
             }
+            
             if (db.getExperiment()==null) {
                 errors.addExceptions(new Pair(dbName, new Exception("DB: "+ dbName+ " not found")));
                 printErrors();
@@ -327,7 +418,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (structures!=null) checkArray(structures, db.getExperiment().getStructureCount(), "Invalid structure: ");
             if (positions!=null) checkArray(positions, db.getExperiment().getPositionCount(), "Invalid position: ");
             if (preProcess) { // compare pre processing to template
-                ensurePositions();
+                ensurePositionAndStructures(true, false);
                 PreProcessingChain template = db.getExperiment().getPreProcessingTemplate();
                 for (int p : positions) {
                     PreProcessingChain pr = db.getExperiment().getPosition(p).getPreProcessingChain();
@@ -345,11 +436,11 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty() &&!generateTrackImages && !exportData) errors.addExceptions(new Pair(dbName, new Exception("No action to run!")));
             // check parametrization
             if (preProcess) {
-                ensurePositions();
+                ensurePositionAndStructures(true, false);
                 for (int p : positions) if (!db.getExperiment().getPosition(p).isValid()) errors.addExceptions(new Pair(dbName, new Exception("Configuration error @ Position: "+ db.getExperiment().getPosition(p).getName())));
             }
             if (segmentAndTrack || trackOnly) {
-                ensureStructures();
+                ensurePositionAndStructures(false, true);
                 for (int s : structures) if (!db.getExperiment().getStructure(s).isValid()) errors.addExceptions(new Pair(dbName, new Exception("Configuration error @ Structure: "+ db.getExperiment().getStructure(s).getName())));
             }
             if (measurements) {
@@ -357,7 +448,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             for (Pair<String, Throwable> e : errors.getExceptions()) publish("Invalid Task Error @"+e.key+" "+(e.value==null?"null":e.value.getLocalizedMessage()));
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
-            db.clearCache(); // unlock if (unlock) 
+            if (initDB) {
+                db.clearCache();
+                db=null;
+            }
             return errors.isEmpty();
         }
         private void checkArray(int[] array, int maxValue, String message) {
@@ -373,9 +467,12 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             for (Pair<String, ? extends Throwable> e : errors.getExceptions()) logger.error(e.key, e.value);
         }
         public int countSubtasks() {
-            initDB();
-            ensurePositions();
-            ensureStructures();
+            boolean initDB = db==null;
+            if (db==null) {
+                initDB();
+                db.setReadOnly(true);
+            }
+            ensurePositionAndStructures(true, true);
             int count=0;
             // preProcess: 
             if (preProcess) count += positions.size();
@@ -388,7 +485,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             count+=extractMeasurementDir.size();
             if (this.exportObjects || this.exportPreProcessedImages || this.exportTrackImages) count+=positions.size();
-            db.clearCache(); // avoid lock issues
+            if (initDB) {
+                db.clearCache();
+                db = null;
+            }
             return count;
         }
         public void setSubtaskNumber(int[] taskCounter) {
@@ -537,24 +637,23 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         return res;
     }
     @Override public String toString() {
-        String res =  "db: "+dbName+"/dir:"+dir;
-        if (preProcess) res+="/preProcess/";
-        if (segmentAndTrack) res+="/segmentAndTrack/";
-        else if (trackOnly) res+="/trackOnly/";
-        if (measurements) res+="/measurements/";
-        if (structures!=null) res+="/structures:"+ArrayUtils.toString(structures)+"/";
-        if (positions!=null) res+="/positions:"+ArrayUtils.toString(positions)+"/";
+        String res =  "db: "+dbName+";dir:"+dir;
+        if (preProcess) res+=";preProcess";
+        if (segmentAndTrack) res+=";segmentAndTrack";
+        else if (trackOnly) res+=";trackOnly";
+        if (measurements) res+=";measurements";
+        if (structures!=null) res+=";structures:"+ArrayUtils.toString(structures);
+        if (positions!=null) res+=";positions:"+ArrayUtils.toString(positions);
         if (!extractMeasurementDir.isEmpty()) {
-            res+= "/Extract: ";
+            res+= ";Extract: ";
             for (Pair<String, int[]> p : this.extractMeasurementDir) res+=(p.key==null?dir:p.key)+ "="+ArrayUtils.toString(p.value);
-            res+="/";
         }
         if (exportData) {
-            if (exportPreProcessedImages) res+="/ExportPPImages/";
-            if (exportTrackImages) res+="/ExportTrackImages/";
-            if (exportObjects) res+="/ExportObjects/";
-            if (exportConfig) res+="/ExportConfig/";
-            if (exportSelections) res+="/ExportSelection/";
+            if (exportPreProcessedImages) res+=";ExportPPImages";
+            if (exportTrackImages) res+=";ExportTrackImages";
+            if (exportObjects) res+=";ExportObjects";
+            if (exportConfig) res+=";ExportConfig";
+            if (exportSelections) res+=";ExportSelection";
         }
         return res;
     }
@@ -667,28 +766,20 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     public static void executeTask(Task t, UserInterface ui, Runnable... endOfWork) {
         executeTasks(new ArrayList<Task>(1){{add(t);}}, ui, endOfWork);
     }
-    public static Stream<Task> splitPosition(Task task) {
-        boolean dbWasNull = task.db==null;
-        task.ensurePositions();
-        if (dbWasNull) {
-            task.db.clearCache();
-            task.db = null;
-        }
-        JSONObject taskObject = task.toJSON();
+    private static Stream<Task> splitByPosition(Task task) {
+        task.ensurePositionAndStructures(true, true);
         Function<Integer, Task> subTaskCreator = p -> {
-            Task res = new Task().fromJSON(taskObject).setPositions(p);
-            // also ensure no global task
-            res.exportConfig = false;
-            res.exportData = false;
-            res.exportObjects = false;
-            res.exportPreProcessedImages = false;
-            res.exportSelections = false;
-            res.exportTrackImages = false;
-            res.extractMeasurementDir.clear();
+            Task res = new Task(task.dbName, task.getDir()).setPositions(p).setStructures(task.structures);
+            if (task.preProcess) res.preProcess = true;
+            res.setStructures(task.structures);
+            res.segmentAndTrack = task.segmentAndTrack;
+            res.trackOnly = task.trackOnly;
+            if (task.measurements) res.measurements = true;
             return res;
         };
         return task.positions.stream().map(subTaskCreator);
     }
+    
     // check that no 2 xp with same name and different dirs
     private static void checkXPNameDir(List<Task> tasks) {
         boolean[] haveDup = new boolean[1];
@@ -711,28 +802,85 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             
             return t1;
         };
-        return tasks.stream().flatMap(t -> splitPosition(t)) // split by db / position
+        Map<XP_POS, List<Task>> res = tasks.stream().flatMap(t -> splitByPosition(t)) // split by db / position
                 .collect(Collectors.groupingBy(t->new XP_POS_S(t.dbName, t.dir, t.positions.get(0), new StructureArray(t.structures)))) // group including structures;
-                .entrySet().stream().map(e -> e.getValue().stream().reduce(taskMerger).get()). // merge all tasks from same group
-                collect(Collectors.groupingBy(t->new XP_POS(t.dbName, t.dir, t.positions.get(0)))); // merge without including structures
+                .entrySet().stream().map(e -> e.getValue().stream().reduce(taskMerger).get()) // merge all tasks from same group
+                .collect(Collectors.groupingBy(t->new XP_POS(t.dbName, t.dir, t.positions.get(0)))); // merge without including structures
+        Function<Task, Stream<Task>> splitByStructure = t -> {
+            return Arrays.stream(t.structures).mapToObj(s->  new Task(t.dbName, t.getDir()).setActions(false, t.segmentAndTrack, t.trackOnly, false).setPositions(t.positions.get(0)).setStructures(s));
+        };
+        Comparator<Task> subTComp = (t1, t2)-> {
+            int sC = Integer.compare(t1.structures[0], t2.structures[0]);
+            if (sC!=0) return sC;
+            if (t1.segmentAndTrack && t2.segmentAndTrack) return 0;
+            if (t1.segmentAndTrack && !t2.segmentAndTrack) return -1;
+            else return 1;
+        };
+        res.entrySet().stream().filter(e->e.getValue().size()>1).forEach(e-> { // remove redundent tasks
+            boolean meas = false, pp = false;
+            for (Task t : e.getValue()) {
+                if (t.measurements) {
+                    meas = true;
+                    t.measurements=false;
+                }
+                if (t.preProcess) {
+                    pp = true;
+                    t.preProcess=false;
+                }
+            }
+            Task ta = e.getValue().get(0);
+            e.getValue().removeIf(t->!t.segmentAndTrack && !t.trackOnly);
+            if (e.getValue().isEmpty() && (meas || pp) ) e.getValue().add(ta);
+            else { // tasks are only segment / track : reduce tasks in minimal number
+                // split in one task per structure
+                List<Task> subT = e.getValue().stream().flatMap(splitByStructure).distinct().sorted(subTComp).collect(Collectors.toList());
+                logger.debug("subtT: {}", subT);
+                // remove redondent tasks
+                BiPredicate<Task, Task> removeNext = (t1, t2) -> t1.structures[0] == t2.structures[0] && t2.trackOnly; // sorted tasks
+                for (int i = 0; i<subT.size()-1; ++i) { 
+                    while(subT.size()>i+1 && removeNext.test(subT.get(i), subT.get(i+1))) subT.remove(i+1);
+                }
+                logger.debug("subtT after remove: {}", subT);
+                // merge per segment
+                BiPredicate<Task, Task> mergeNext = (t1, t2) -> t1.segmentAndTrack == t2.segmentAndTrack && t1.trackOnly == t2.trackOnly ;
+                BiConsumer<Task, Task> merge = (t1, t2) -> {
+                    List<Integer> allS = Utils.toList(t1.structures);
+                    allS.addAll(Utils.toList(t2.structures));
+                    Utils.removeDuplicates(allS, false);
+                    Collections.sort(allS);
+                    t1.setStructures(Utils.toArray(allS, false));
+                };
+                for (int i = 0; i<subT.size()-1; ++i) {
+                    while(subT.size()>i+1 && mergeNext.test(subT.get(i), subT.get(i+1))) merge.accept(subT.get(i), subT.remove(i+1));
+                }
+                logger.debug("subtT after merge: {}", subT);
+                e.setValue(subT);
+            }
+            if (pp) e.getValue().get(0).preProcess=true;
+            if (meas) e.getValue().get(e.getValue().size()-1).measurements = true;
+        });
+        return res;
     }
     public static Map<XP, List<Task>> getGlobalTasksByExperiment(List<Task> tasks) {
         //checkXPNameDir(tasks);
         Function<Task, Task> getGlobalTask = t -> {
             if (!t.exportConfig && !t.exportData && !t.exportObjects && !t.exportPreProcessedImages && !t.exportSelections && !t.exportTrackImages && t.extractMeasurementDir.isEmpty()) return null;
-            Task res = new Task().fromJSON(t.toJSON());
-            // also ensure no processing tasks
-            res.measurements = false;
-            res.preProcess = false;
-            res.segmentAndTrack = false;
-            res.trackOnly = false;            
+            Task res = new Task(t.dbName, t.getDir());
+            res.extractMeasurementDir.addAll(t.extractMeasurementDir);
+            res.exportConfig = t.exportConfig;
+            res.exportData = t.exportData;
+            res.exportObjects = t.exportObjects;
+            res.exportPreProcessedImages = t.exportPreProcessedImages;
+            res.exportSelections = t.exportSelections;
+            res.exportTrackImages = t.exportTrackImages;
+            res.setPositions(Utils.toArray(t.positions, false));
             return res;
         };
         return tasks.stream().map(getGlobalTask).filter(t->t!=null).collect(Collectors.groupingBy(t->new XP(t.dbName, t.dir)));
     }
     // utility classes for task split & merge
     public static class XP {
-        final String dbName, dir;
+        public final String dbName, dir;
 
         public XP(String dbName, String dir) {
             this.dbName = dbName;
@@ -771,7 +919,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
     
     public static class XP_POS extends XP {
-        final int position;
+        public final int position;
         
         public XP_POS(String dbName, String dir, int position) {
             super(dbName, dir);
@@ -893,9 +1041,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         public int compareTo(StructureArray o) {
             if (structures==null) {
                 if (o.structures==null) return 0;
-                else return -1;
+                else return o.structures[0] == 0 ? 0 : -1;
             } else {
-                if (o.structures==null) return 1;
+                if (o.structures==null) return structures[0] == 0 ? 0 : 1;
                 else return Integer.compare(structures[0], o.structures[0]); // structures is a sorted array
             }
         }

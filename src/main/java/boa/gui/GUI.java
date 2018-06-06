@@ -3060,6 +3060,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             };
             menu.add(save);
             save.setEnabled(!actionPoolListModel.isEmpty());
+            Action saveProc = new AbstractAction("Save Processing Jobs per Position") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    File out = Utils.chooseFile("Choose Folder", experimentFolder.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, jLabel1);
+                    if (out==null || !out.isDirectory()) return;
+                    String outDir = out.getAbsolutePath();
+                    List<Task> tasks = Collections.list(actionPoolListModel.elements()).stream().map(s->JSONUtils.parse(s)).map(j->new Task().fromJSON(j)).collect(Collectors.toList());
+                    Task.getProcessingTasksByPosition(tasks).entrySet().forEach(en -> {
+                        String fileName = outDir + File.separator + en.getKey().dbName + "_P"+en.getKey().position+".json";
+                        FileIO.writeToFile(fileName, en.getValue(), t->t.toJSON().toJSONString());
+                    });
+                    
+                }
+            };
+            menu.add(saveProc);
+            saveProc.setEnabled(!actionPoolListModel.isEmpty());
+            
             Action load = new AbstractAction("Load from File") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
