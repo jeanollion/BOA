@@ -571,15 +571,10 @@ public class BacteriaSpineFactory {
                 double norm = p.getContent1().norm();
                 int vectSize= (int) (norm/2.0+0.5);
                 Vector dir = p.getContent1().duplicate().normalize();
-                Point cur = p.duplicate().translateRev(off).translateRev(dir.duplicate().multiply(norm/4d));
-                dir.multiply(1d/zoomFactor);
-                double spineVectLabel = drawDistance ? (spineDirIdx ? spineIdx : p.getContent2()) : 2;
-                for (int i = 0; i<vectSize*zoomFactor; ++i) {
-                    cur.translate(dir);
-                    vox.x = (int)(cur.get(0)*zoomFactor+add);
-                    vox.y = (int)(cur.get(1)*zoomFactor+add);
-                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, spineVectLabel);
-                }
+                Point cur = p.duplicate().translateRev(dir.duplicate().multiply(norm/4d));
+                dir.multiply(vectSize);
+                float spineVectLabel = drawDistance ? (spineDirIdx ? (float)spineIdx : p.getContent2().floatValue()) : 2f;
+                drawVector(spineImage, cur, dir, zoomFactor, spineVectLabel);
                 spineIdx++;
             }
             // draw central line
@@ -591,18 +586,23 @@ public class BacteriaSpineFactory {
                 PointContainer2<Vector, Double> p = spine[i-1];
                 PointContainer2<Vector, Double> p2 = spine[i];
                 Vector dir = Vector.vector2D(p, p2);
-                double vectSize = dir.norm();
-                dir.multiply(1/(vectSize*zoomFactor));
-                Point cur = p.duplicate().translateRev(off);
-                for (int j = 0; j<vectSize*zoomFactor; ++j) {
-                    cur.translate(dir);
-                    vox.x = (int)(cur.get(0)*zoomFactor+add);
-                    vox.y = (int)(cur.get(1)*zoomFactor+add);
-                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, drawDistance ? p2.getContent2().floatValue() : 3);
-                }
+                drawVector(spineImage, p, dir, zoomFactor, drawDistance ? p2.getContent2().floatValue() : 3);
             }
         }
         return spineImage;
+    }
+    public static void drawVector(Image output, Point start, Vector dir, int zoomFactor, float value) {
+        double vectSize = dir.norm();
+        dir.multiply(1/(vectSize*zoomFactor));
+        Point cur = start.duplicate().translateRev(output);
+        Voxel vox = new Voxel(0, 0, 0);
+        int add = zoomFactor > 1 ? 1 : 0;
+        for (int j = 0; j<vectSize*zoomFactor; ++j) {
+            cur.translate(dir);
+            vox.x = (int)(cur.get(0)*zoomFactor+add);
+            vox.y = (int)(cur.get(1)*zoomFactor+add);
+            if (output.contains(vox.x, vox.y, 0)) output.setPixel(vox.x, vox.y, 0, value);
+        }
     }
     private static class SlidingVector  {
         final int n;
