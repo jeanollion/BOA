@@ -27,18 +27,19 @@ import boa.image.ImageInteger;
 import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.plugins.MultiThreaded;
 
 /**
  *
  * @author jollion
  */
-public class BinaryOpen implements PostFilter {
+public class BinaryOpen implements PostFilter, MultiThreaded {
     ScaleXYZParameter scale = new ScaleXYZParameter("Opening Radius", 3, 1, true);
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Neighborhood n = Filters.getNeighborhood(scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parent.getMask());
         for (Region o : childPopulation.getRegions()) {
-            ImageInteger closed = Filters.binaryOpen(o.getMaskAsImageInteger(), null, n);
+            ImageInteger closed = Filters.binaryOpen(o.getMaskAsImageInteger(), null, n, parallele);
             o.setMask(closed);
         }
         return childPopulation;
@@ -48,5 +49,9 @@ public class BinaryOpen implements PostFilter {
     public Parameter[] getParameters() {
         return new Parameter[]{scale};
     }
-    
+    boolean parallele;
+    @Override
+    public void setMultithread(boolean parallele) {
+        this.parallele=parallele;
+    }
 }

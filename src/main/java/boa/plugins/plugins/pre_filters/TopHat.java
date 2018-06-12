@@ -63,13 +63,13 @@ public class TopHat implements PreFilter, Filter {
     public TopHat() { }
     @Override
     public Image runPreFilter(Image input, ImageMask mask) {
-        return filter(input, radius.getScaleXY(), radius.getScaleZ(mask.getScaleXY(), mask.getScaleZ()), darkBackground.getSelected(), smooth.getSelected());
+        return filter(input, radius.getScaleXY(), radius.getScaleZ(mask.getScaleXY(), mask.getScaleZ()), darkBackground.getSelected(), smooth.getSelected(), false);
     }
     
-    public static Image filter(Image input, double radiusXY, double radiusZ, boolean darkBackground, boolean smooth) {
+    public static Image filter(Image input, double radiusXY, double radiusZ, boolean darkBackground, boolean smooth, boolean parallele) {
         Neighborhood n = Filters.getNeighborhood(radiusXY, radiusZ, input);
         Image smoothed = smooth ? ImageFeatures.gaussianSmooth(input, 1.5, false) : input ;
-        Image bck =darkBackground ? open(smoothed, smooth ? smoothed : null, n) : close(smoothed, smooth ? smoothed : null, n);
+        Image bck =darkBackground ? open(smoothed, smooth ? smoothed : null, n, parallele) : close(smoothed, smooth ? smoothed : null, n, parallele);
         ImageOperations.addImage(input, bck, bck, -1); //1-bck
         bck.resetOffset().translate(input);
         return bck;
@@ -80,7 +80,7 @@ public class TopHat implements PreFilter, Filter {
     }
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return filter(image, radius.getScaleXY(), radius.getScaleZ(image.getScaleXY(), image.getScaleZ()), darkBackground.getSelected(), smooth.getSelected()); 
+        return filter(image, radius.getScaleXY(), radius.getScaleZ(image.getScaleXY(), image.getScaleZ()), darkBackground.getSelected(), smooth.getSelected(), true); 
     }
     
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {

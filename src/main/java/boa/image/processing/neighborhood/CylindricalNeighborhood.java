@@ -48,6 +48,9 @@ public class CylindricalNeighborhood extends DisplacementNeighborhood {
     public CylindricalNeighborhood(double radiusXY, double heightZ, boolean excludeCenter) {
         this(radiusXY, heightZ, heightZ, excludeCenter);
     }
+    @Override public CylindricalNeighborhood duplicate() {
+        return new CylindricalNeighborhood(radius, radiusZUp, radiusZDown, !(dx[0]==0 && dy[0] == 0 && dz[0]==0));
+    }
     public CylindricalNeighborhood(double radiusXY, double heightZDown, double heightZUp, boolean excludeCenter) {
         this.radius=radiusXY;
         this.radiusZUp=heightZUp;

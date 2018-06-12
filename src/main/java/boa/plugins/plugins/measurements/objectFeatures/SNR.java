@@ -103,7 +103,7 @@ public class SNR extends IntensityMeasurement {
                 Region oDil = o;
                 if (dilRad>0)  {
                     ImageInteger oMask = o.getMaskAsImageInteger();
-                    oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilRad, dilRad, oMask), false, true);
+                    oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilRad, dilRad, oMask), false, true, false);
                     oDil = new Region(oMask, 1, o.is2D()).setIsAbsoluteLandmark(o.isAbsoluteLandMark());
                 }
                 backgroundMapForeground.getAndCreateIfNecessary(p).add(new Pair(o, oDil));
@@ -119,7 +119,7 @@ public class SNR extends IntensityMeasurement {
                 ImageByte mask  = TypeConverter.toByteMask(ref, null, 1).setName("SNR mask");
                 for (Pair<Region, Region> o : backgroundMapForeground.get(backgroundRegion)) o.value.draw(mask, 0, foregorundOffset);// was with offset: absolute = 0 / relative = parent
                 if (erodeRad>0) {
-                    ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(erodeRad, erodeRad, mask), true); // erode mask // TODO dilate objects?
+                    ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(erodeRad, erodeRad, mask), true, false); // erode mask // TODO dilate objects?
                     if (maskErode.count()>0) mask = maskErode;
                 }
                 Region modifiedBackgroundRegion = new Region(mask, 1, backgroundRegion.is2D()).setIsAbsoluteLandmark(true);

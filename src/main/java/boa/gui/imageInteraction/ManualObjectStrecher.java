@@ -129,8 +129,8 @@ public class ManualObjectStrecher {
             if (yMin<=Math.max(leftUp.y, rightUp.y)+1) {
                 strechMap = thlded;
                 // Regularisation of object
-                Filters.close(strechMap, strechMap, Filters.getNeighborhood(2, 1, strechMap));
-                Filters.open(strechMap, strechMap, Filters.getNeighborhood(2, 1, strechMap));
+                Filters.close(strechMap, strechMap, Filters.getNeighborhood(2, 1, strechMap), true);
+                Filters.open(strechMap, strechMap, Filters.getNeighborhood(2, 1, strechMap), true);
                 //ImageWindowManagerFactory.showImage(strechMap.duplicate("after close"));
             }
             offset.reverseOffset();

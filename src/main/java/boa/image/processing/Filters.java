@@ -40,6 +40,8 @@ import java.util.Comparator;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.utils.ArrayUtil;
+import boa.utils.HashMapGetCreate;
+import boa.utils.ThreadRunner;
 
 /**
  *
@@ -49,66 +51,66 @@ public class Filters {
     public static Neighborhood getNeighborhood(double radiusXY, ImageProperties image) {return image.sizeZ()>1 ?getNeighborhood(radiusXY, image.getScaleXY()/image.getScaleZ(), image) : getNeighborhood(radiusXY, 1, image);}
     public static Neighborhood getNeighborhood(double radiusXY, double radiusZ, ImageProperties image) {return image.sizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
       
-    public static <T extends Image<T>> T mean(Image image, T output, Neighborhood neighborhood) {
-        return applyFilter(image, output, new Mean(), neighborhood);
+    public static <T extends Image<T>> T mean(Image image, T output, Neighborhood neighborhood, boolean parallele) {
+        return applyFilter(image, output, new Mean(), neighborhood, parallele);
     }
-    public static <T extends Image<T>> T sigma(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T sigma(Image image, T output, Neighborhood neighborhood, boolean parallele) {
         if (output==null) output = (T)new ImageFloat(Sigma.class.getSimpleName()+" of: "+image.getName(), image);
-        return applyFilter(image, output, new Sigma(), neighborhood);
+        return applyFilter(image, output, new Sigma(), neighborhood, parallele);
     }
-    public static <T extends Image<T>> T sigmaMu(Image image, T output, Neighborhood neighborhood) {
+    public static <T extends Image<T>> T sigmaMu(Image image, T output, Neighborhood neighborhood, boolean parallele) {
         if (output==null) output = (T)new ImageFloat(SigmaMu.class.getSimpleName()+" of: "+image.getName(), image);
-        return applyFilter(image, output, new SigmaMu(), neighborhood);
+        return applyFilter(image, output, new SigmaMu(), neighborhood, parallele);
     }
     
-    public static <T extends Image<T>> T median(Image image, T output, Neighborhood neighborhood) {
-        return applyFilter(image, output, new Median(), neighborhood);
+    public static <T extends Image<T>> T median(Image image, T output, Neighborhood neighborhood, boolean parallele) {
+        return applyFilter(image, output, new Median(), neighborhood, parallele);
     }
     
-    public static <T extends Image<T>> T max(Image image, T output, Neighborhood neighborhood) {
-        return applyFilter(image, output, new Max(), neighborhood);
+    public static <T extends Image<T>> T max(Image image, T output, Neighborhood neighborhood, boolean parallele) {
+        return applyFilter(image, output, new Max(), neighborhood, parallele);
     }
     
-    public static <T extends Image<T>> T min(Image image, T output, Neighborhood neighborhood) {
-        return applyFilter(image, output, new Min(), neighborhood);
+    public static <T extends Image<T>> T min(Image image, T output, Neighborhood neighborhood, boolean parallele) {
+        return applyFilter(image, output, new Min(), neighborhood, parallele);
     }
     
-    public static <T extends ImageInteger<T>, I extends ImageInteger<I>> T binaryMax(I image, T output, Neighborhood neighborhood, boolean outOfBoundIsNonNull, boolean extendImage) {
+    public static <T extends ImageInteger<T>, I extends ImageInteger<I>> T binaryMax(I image, T output, Neighborhood neighborhood, boolean outOfBoundIsNonNull, boolean extendImage, boolean parallele) {
         if (extendImage) image =  image.extend(neighborhood.getBoundingBox());
-        return applyFilter(image, output, new BinaryMax(outOfBoundIsNonNull), neighborhood);
+        return applyFilter(image, output, new BinaryMax(outOfBoundIsNonNull), neighborhood, parallele);
     }
     
-    public static <T extends ImageInteger<T>> T binaryMin(ImageInteger image, T output, Neighborhood neighborhood, boolean outOfBoundIsNull) {
-        return applyFilter(image, output, new BinaryMin(outOfBoundIsNull), neighborhood);
+    public static <T extends ImageInteger<T>> T binaryMin(ImageInteger image, T output, Neighborhood neighborhood, boolean outOfBoundIsNull, boolean parallele) {
+        return applyFilter(image, output, new BinaryMin(outOfBoundIsNull), neighborhood, parallele);
     }
     
-    public static <T extends Image<T>> T open(Image image, T output, Neighborhood neighborhood) {
-        ImageFloat min = applyFilter(image, new ImageFloat("", 0, 0, 0), new Min(), neighborhood);
+    public static <T extends Image<T>> T open(Image image, T output, Neighborhood neighborhood, boolean parallele) {
+        ImageFloat min = applyFilter(image, new ImageFloat("", 0, 0, 0), new Min(), neighborhood, parallele);
         //if (output == image) output = Image.createEmptyImage("open", output, output);
-        return applyFilter(min, output, new Max(), neighborhood);
+        return applyFilter(min, output, new Max(), neighborhood, parallele);
     }
     
-    public static <T extends Image<T>> T close(Image image, T output, Neighborhood neighborhood) {
-        ImageFloat max = applyFilter(image, new ImageFloat("", 0, 0, 0), new Max(), neighborhood);
-        return applyFilter(max, output, new Min(), neighborhood);
+    public static <T extends Image<T>> T close(Image image, T output, Neighborhood neighborhood, boolean parallele) {
+        ImageFloat max = applyFilter(image, new ImageFloat("", 0, 0, 0), new Max(), neighborhood, parallele);
+        return applyFilter(max, output, new Min(), neighborhood, parallele);
     }
     
-    public static <T extends ImageInteger<T>> T binaryOpen(ImageInteger image, T output, Neighborhood neighborhood) {
-        ImageByte min = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMin(true), neighborhood);
+    public static <T extends ImageInteger<T>> T binaryOpen(ImageInteger image, T output, Neighborhood neighborhood, boolean parallele) {
+        ImageByte min = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMin(true), neighborhood, parallele);
         //if (output == image) output = Image.createEmptyImage("binary open", output, output);
-        return applyFilter(min, output, new BinaryMax(false), neighborhood);
+        return applyFilter(min, output, new BinaryMax(false), neighborhood, parallele);
     }
 
-    public static <T extends ImageInteger<T>> T binaryCloseExtend(ImageInteger<T> image, Neighborhood neighborhood) {
+    public static <T extends ImageInteger<T>> T binaryCloseExtend(ImageInteger<T> image, Neighborhood neighborhood, boolean parallele) {
         MutableBoundingBox extent = neighborhood.getBoundingBox();
         T resized =  image.extend(extent);
-        ImageByte max = applyFilter(resized, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
-        T min = applyFilter(max, resized, new BinaryMin(false), neighborhood);
+        ImageByte max = applyFilter(resized, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood, parallele);
+        T min = applyFilter(max, resized, new BinaryMin(false), neighborhood, parallele);
         return min.crop(image.getBoundingBox().resetOffset().translate(extent.duplicate().reverseOffset()));
     }
-    public static <T extends ImageInteger<T>> T binaryClose(ImageInteger image, T output, Neighborhood neighborhood) {
-        ImageByte max = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
-        return applyFilter(max, output, new BinaryMin(false), neighborhood);
+    public static <T extends ImageInteger<T>> T binaryClose(ImageInteger image, T output, Neighborhood neighborhood, boolean parallele) {
+        ImageByte max = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood, parallele);
+        return applyFilter(max, output, new BinaryMin(false), neighborhood, parallele);
     }
     /*public static <T extends ImageInteger> T labelWiseBinaryCloseExtend(T image, Neighborhood neighborhood) {
         BoundingBox extent = neighborhood.getBoundingBox();
@@ -117,22 +119,22 @@ public class Filters {
         T min = applyFilter(max, resized, new BinaryMinLabelWise(false), neighborhood);
         return min.crop(image.getBoundingBox().translateToOrigin().translate(extent.duplicate().reverseOffset()));
     }*/
-    public static <T extends Image<T>> T tophat(Image image, Image imageForBackground, T output, Neighborhood neighborhood) {
-        T open =open(imageForBackground, output, neighborhood).setName("Tophat of: "+image.getName());
+    public static <T extends Image<T>> T tophat(Image image, Image imageForBackground, T output, Neighborhood neighborhood, boolean parallele) {
+        T open =open(imageForBackground, output, neighborhood, parallele).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, open, open, -1); //1-open
         open.resetOffset().translate(image);
         return open;
     }
     
-    public static <T extends Image<T>> T tophat(Image image, T output, Neighborhood neighborhood) {
-        T open =open(image, output, neighborhood).setName("Tophat of: "+image.getName());
+    public static <T extends Image<T>> T tophat(Image image, T output, Neighborhood neighborhood, boolean parallele) {
+        T open =open(image, output, neighborhood, parallele).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, open, open, -1); //1-open
         open.resetOffset().translate(image);
         return open;
     }
     
-    public static <T extends Image<T>> T tophatInv(Image image, T output, Neighborhood neighborhood) {
-        T close =close(image, output, neighborhood).setName("Tophat of: "+image.getName());
+    public static <T extends Image<T>> T tophatInv(Image image, T output, Neighborhood neighborhood, boolean parallele) {
+        T close =close(image, output, neighborhood, parallele).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, close, close, -1); //1-close
         close.resetOffset().translate(image);
         return close;
@@ -170,8 +172,11 @@ public class Filters {
         Filter filter = maxLocal?new LocalMaxThreshold(threshold, mask):new LocalMinThreshold(threshold, mask);
         return applyFilter(image, res, filter, neighborhood);
     }
-    
     public static <T extends Image<T>, F extends Filter> T applyFilter(Image image, T output, F filter, Neighborhood neighborhood) {
+        return applyFilter(image, output, filter, neighborhood, false);
+    }
+    public static <T extends Image<T>, F extends Filter> T applyFilter(Image image, T output, F filter, Neighborhood neighborhood, boolean parallele) {
+        // TODO TEST parallele -> hashmapgetCreate<Thread, Neighborhood> + loop parallele
         if (filter==null) throw new IllegalArgumentException("Apply Filter Error: Filter cannot be null");
         //if (neighborhood==null) throw new IllegalArgumentException("Apply Filter ("+filter.getClass().getSimpleName()+") Error: Neighborhood cannot be null");
         T res;
@@ -180,11 +185,23 @@ public class Filters {
         else if (!output.sameDimensions(image) || output==image) res = Image.createEmptyImage(name, output, image);
         else res = (T)output.setName(name);
         float round=res instanceof ImageFloat ? 0: 0.5f;
-        filter.setUp(image, neighborhood);
-        LoopFunction loopFunc = (x, y, z)->res.setPixel(x, y, z, filter.applyFilter(x, y, z)+round);
+        
+        
         //if (Context.getThreadNumber(true)>1) BoundingBox.loopParallele(res.getBoundingBox().resetOffset(), loopFunc); // neiborhood is not thread safe. Todo: use reusable queue with copies of neighborhood
         //else BoundingBox.loop(res.getBoundingBox().resetOffset(), loopFunc);
-        BoundingBox.loop(res.getBoundingBox().resetOffset(), loopFunc);
+        if (parallele && Runtime.getRuntime().availableProcessors()>1) {
+            HashMapGetCreate<Thread, Filter> nMap = new HashMapGetCreate<>(t -> {
+                Filter f = filter.duplicate();
+                f.setUp(image, neighborhood.duplicate());
+                return f;
+            });
+            LoopFunction loopFunc = (x, y, z)->res.setPixel(x, y, z, nMap.getAndCreateIfNecessarySyncOnKey(Thread.currentThread()).applyFilter(x, y, z)+round);
+            BoundingBox.loop(res, loopFunc, parallele);
+        } else  {
+            filter.setUp(image, neighborhood);
+            LoopFunction loopFunc = (x, y, z)->res.setPixel(x, y, z, filter.applyFilter(x, y, z)+round);
+            BoundingBox.loop(res.getBoundingBox().resetOffset(), loopFunc);
+        }
         res.resetOffset().translate(image);
         res.setCalibration(image);
         return res;
@@ -195,12 +212,16 @@ public class Filters {
         protected Neighborhood neighborhood;
         public void setUp(Image image, Neighborhood neighborhood) {this.image=image; this.neighborhood=neighborhood;}
         public abstract float applyFilter(int x, int y, int z);
+        public abstract Filter duplicate();
     }
     public static class Mean extends Filter {
         public Mean() {}
         ImageMask mask;
         public Mean(ImageMask mask) {
             this.mask = mask;
+        }
+        @Override public Mean duplicate() {
+            return new Mean(mask);
         }
         @Override public float applyFilter(int x, int y, int z) {
             neighborhood.setPixels(x, y, z, image, mask);
@@ -215,6 +236,9 @@ public class Filters {
         ImageMask mask;
         public Sigma(ImageMask mask) {
             this.mask = mask;
+        }
+        @Override public Sigma duplicate() {
+            return new Sigma(mask);
         }
         @Override public float applyFilter(int x, int y, int z) {
             neighborhood.setPixels(x, y, z, image, mask);
@@ -236,6 +260,9 @@ public class Filters {
         public Variance(ImageMask mask) {
             this.mask = mask;
         }
+        @Override public Variance duplicate() {
+            return new Variance(mask);
+        }
         @Override public float applyFilter(int x, int y, int z) {
             neighborhood.setPixels(x, y, z, image, mask);
             if (neighborhood.getValueCount()==0) return 0;
@@ -251,6 +278,9 @@ public class Filters {
         }
     }
     private static class SigmaMu extends Filter {
+        @Override public SigmaMu duplicate() {
+            return new SigmaMu();
+        }
         @Override public float applyFilter(int x, int y, int z) {
             neighborhood.setPixels(x, y, z, image, null);
             if (neighborhood.getValueCount()==0) return 0;
@@ -271,6 +301,9 @@ public class Filters {
         public Median(ImageMask mask){
             this.mask = mask;
         };
+        @Override public Median duplicate() {
+            return new Median(mask);
+        }
         @Override public float applyFilter(int x, int y, int z) {
             neighborhood.setPixels(x, y, z, image, mask);
             if (neighborhood.getValueCount()==0) return 0;
@@ -321,14 +354,21 @@ public class Filters {
         }
     }*/
     private static class Max extends Filter {
+        @Override public Max duplicate() {
+            return new Max();
+        }
         @Override public float applyFilter(int x, int y, int z) {
             return neighborhood.getMax(x, y, z, image);
         }
     }
     public static class LocalMax extends Filter {
+        
         final ImageMask mask;
         public LocalMax(ImageMask mask) {
             this.mask = mask;
+        }
+        @Override public LocalMax duplicate() {
+            return new LocalMax(mask);
         }
         @Override public float applyFilter(int x, int y, int z) {
             if (mask!=null && !mask.insideMask(x, y, z)) return 0;
@@ -351,6 +391,9 @@ public class Filters {
             this.threshold=threshold;
             this.mask=mask;
         }
+        @Override public LocalMaxThreshold duplicate() {
+            return new LocalMaxThreshold(threshold, mask);
+        }
         @Override public float applyFilter(int x, int y, int z) {
             if (mask!=null && !mask.insideMask(x, y, z)) return 0;
             if (image.getPixel(x, y, z)<threshold) return 0;
@@ -365,6 +408,9 @@ public class Filters {
         final ImageMask mask;
         public LocalMin(ImageMask mask) {
             this.mask = mask;
+        }
+        @Override public LocalMin duplicate() {
+            return new LocalMin(mask);
         }
         @Override public float applyFilter(int x, int y, int z) {
             if (mask!=null && !mask.insideMask(x, y, z)) return 0;
@@ -382,6 +428,9 @@ public class Filters {
             this.threshold=threshold;
             this.mask=mask;
         }
+        @Override public LocalMinThreshold duplicate() {
+            return new LocalMinThreshold(threshold, mask);
+        }
         @Override public float applyFilter(int x, int y, int z) {
             if (mask!=null && !mask.insideMask(x, y, z)) return 0;
             if (image.getPixel(x, y, z)>threshold) return 0;
@@ -396,11 +445,17 @@ public class Filters {
         @Override public float applyFilter(int x, int y, int z) {
             return neighborhood.getMin(x, y, z, image);
         }
+        @Override public Min duplicate() {
+            return new Min();
+        }
     }
     private static class BinaryMin extends Filter {
         final boolean outOfBoundIsNull;
         public BinaryMin(boolean outOfBoundIsNull) {
             this.outOfBoundIsNull=outOfBoundIsNull;
+        }
+        @Override public BinaryMin duplicate() {
+            return new BinaryMin(outOfBoundIsNull);
         }
         @Override public float applyFilter(int x, int y, int z) {
             if (image.getPixel(x, y, z)==0) return 0;
@@ -411,6 +466,9 @@ public class Filters {
         final boolean outOfBoundIsNonNull;
         public BinaryMax(boolean outOfBoundIsNonNull) {
             this.outOfBoundIsNonNull=outOfBoundIsNonNull;
+        }
+        @Override public BinaryMax duplicate() {
+            return new BinaryMax(outOfBoundIsNonNull);
         }
         @Override public float applyFilter(int x, int y, int z) {
             if (image.getPixel(x, y, z)!=0) return 1;
@@ -423,6 +481,9 @@ public class Filters {
         public BinaryMaxLabelWise setMask(ImageMask mask) {
             this.mask=mask;
             return this;
+        }
+        @Override public BinaryMaxLabelWise duplicate() {
+            return new BinaryMaxLabelWise().setMask(mask);
         }
         @Override
         public void setUp(Image image, Neighborhood neighborhood) {

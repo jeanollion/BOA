@@ -32,7 +32,11 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
     HashMap<Integer, Neighborhood>  neighborhoodZ;
     Neighborhood defaultNeighborhood;
     Neighborhood currentNeighborhood;
-    
+    @Override public ConditionalNeighborhoodZ duplicate() {
+        ConditionalNeighborhoodZ res = new ConditionalNeighborhoodZ(defaultNeighborhood.duplicate());
+        neighborhoodZ.forEach((z, n) -> res.setNeighborhood(z, n.duplicate()));
+        return res;
+    }
     public ConditionalNeighborhoodZ(Neighborhood  defaultNeighborhood) {
         this.defaultNeighborhood=defaultNeighborhood;
         neighborhoodZ=new HashMap<>();

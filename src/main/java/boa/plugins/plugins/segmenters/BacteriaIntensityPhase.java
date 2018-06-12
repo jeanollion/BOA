@@ -309,7 +309,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         if (!performLocalThreshold.getSelected()) return pop;
         double dilRadius = callFromSplit ? 0 : 2;
         Image smooth = smoothScale.getValue().doubleValue()<1 ? parent.getRawImage(structureIdx) : ImageFeatures.gaussianSmooth(parent.getRawImage(structureIdx), smoothScale.getValue().doubleValue(), false);
-        Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), parent.getMask(), 3, 1, smoothScale.getValue().doubleValue(), 1);
+        Image edgeMap = Sigma.filter(parent.getRawImage(structureIdx), parent.getMask(), 3, 1, smoothScale.getValue().doubleValue(), 1, false);
         Consumer<Image> imageDisp = TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent);
         if (imageDisp!=null) { //| (callFromSplit && splitVerbose)
             imageDisp.accept(smooth.setName("local threshold intensity map"));

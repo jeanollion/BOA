@@ -24,8 +24,6 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.Voxel;
-import boa.image.BlankMask;
-import static boa.image.BoundingBox.loopParallele;
 import static boa.image.BoundingBox.loop;
 import boa.image.Image;
 import boa.image.ImageFloat;
@@ -87,21 +85,21 @@ public class RemoveDeadPixels implements ConfigurableTransformation {
                     if (removeElement!=null && addElement!=null) {
                         loop(accumulator.value.getBoundingBox().resetOffset(), (x, y, z)->{
                             accumulator.value.setPixel(x, y, z, accumulator.value.getPixel(x, y, z)+(addElement.getPixel(x, y, z)-removeElement.getPixel(x, y, z))/fRd);
-                        });
+                        }, true);
                     }else if (addElement!=null) {
                         loop(accumulator.value.getBoundingBox().resetOffset(), (x, y, z)->{
                             accumulator.value.setPixel(x, y, z, accumulator.value.getPixel(x, y, z)+addElement.getPixel(x, y, z)/fRd);
-                        });
+                        }, true);
                     } else if (removeElement!=null) {
                         loop(accumulator.value.getBoundingBox().resetOffset(), (x, y, z)->{
                             accumulator.value.setPixel(x, y, z, accumulator.value.getPixel(x, y, z)-removeElement.getPixel(x, y, z)/fRd);
-                        });
+                        }, true);
                     }
                 }
                 accumulator.key = accumulator.key+1; /// keep track of current frame
             }
             @Override public Void compute(Pair<Integer, Image> accumulator) {   
-                Filters.median(accumulator.value, median, n);
+                Filters.median(accumulator.value, median, n, true);
                 //Filters.median(inputImages.getImage(channelIdx, accumulator.key), median, n);
                 if (testMode) {
                     testMeanTC[accumulator.key][0] = accumulator.value.duplicate();
@@ -117,7 +115,7 @@ public class RemoveDeadPixels implements ConfigurableTransformation {
                             //synchronized (set) {set.add(v);}
                         }
                     }
-                });
+                });  // not parallele
                 return null;
             }
         };

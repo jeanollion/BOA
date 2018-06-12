@@ -21,6 +21,7 @@ package boa.image;
 import boa.image.processing.ImageOperations.Axis;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
+import static boa.utils.Utils.parallele;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.stream.Stream;
 /**
  *
  * @author jollion
+ * @param <T>
  */
 public interface BoundingBox<T> extends Offset<T> {
     public int xMax();
@@ -138,56 +140,39 @@ public interface BoundingBox<T> extends Offset<T> {
         bounds.forEach(b->res.union(b));
         return res;
     }
-    public static void loopParallele(BoundingBox bb, LoopFunction function) {
-        int nCPU = ThreadRunner.getMaxCPUs();
-        if (nCPU <=1) loop(bb, function);
-        // search for the min dimension closest to ~2x nCPU
-        List<Pair<Integer, Integer>> dimList = new ArrayList<Pair<Integer, Integer>>(3) {{add(new Pair<>(0, bb.sizeX()-2*nCPU)); add(new Pair<>(1, bb.sizeY()-2*nCPU));add(new Pair<>(2, bb.sizeZ()-2*nCPU));}};
-        dimList.removeIf(p->p.value<-nCPU);
-        if (dimList.isEmpty()) {
-            loopParallele(bb, Axis.Z, function);
+    public static void loop(BoundingBox bb, LoopFunction function, LoopPredicate predicate, boolean parallele) {
+        if (!parallele) {
+            loop(bb, function, predicate);
             return;
         }
-        int dim = Collections.min(dimList, (p1, p2)->Integer.compare(p1.value, p2.value)).key;
-        loopParallele(bb, Axis.get(dim), function);
-    }
-    public static void loopParallele(BoundingBox bb, Axis paralleleAxis, LoopFunction function) {
-        if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();
-        switch (paralleleAxis) {
-            case X:
-            default:
-                IntStream.rangeClosed(bb.xMin(), bb.xMax()).parallel().forEach(x->{
-                    for (int z = bb.zMin(); z<=bb.zMax(); ++z) {
-                        for (int y = bb.yMin(); y<=bb.yMax(); ++y) {
-                            function.loop(x, y, z);
-                        }
-                    }
-                });
-                break;
-            case Y:
-                IntStream.rangeClosed(bb.yMin(), bb.yMax()).parallel().forEach(y->{
-                    for (int z = bb.zMin(); z<=bb.zMax(); ++z) {
-                        for (int x = bb.xMin(); x<=bb.xMax(); ++x) {
-                            function.loop(x, y, z);
-                        }
-                    }
-                });
-                break;
-            case Z:
-                IntStream.rangeClosed(bb.zMin(), bb.zMax()).parallel().forEach(z->{
-                    for (int y = bb.yMin(); y<=bb.yMax(); ++y) {
-                        for (int x = bb.xMin(); x<=bb.xMax(); ++x) {
-                            function.loop(x, y, z);
-                        }
-                    }
-                });
-                break;
+        if (predicate==null) {
+            loop(bb, function, parallele);
+            return;
         }
-        if (function instanceof LoopFunction2) ((LoopFunction2)function).tearDown();
+        int sXY = bb.sizeX() * bb.sizeY();
+        int sX = bb.sizeX();
+        IntStream.range(0, sXY*bb.sizeZ()).parallel().forEach(i-> {
+            int xy = i%sXY;
+            int z = i/sXY;
+            int x = xy%sX;
+            int y = xy/sX;
+            if (predicate.test(x, y, z)) function.loop(x, y, z);
+        });
+    }
+    public static void loop(BoundingBox bb, LoopFunction function, boolean parallele) {
+        if (!parallele) {
+            loop(bb, function);
+            return;
+        }
+        int sXY = bb.sizeX() * bb.sizeY();
+        int sX = bb.sizeX();
+        parallele(IntStream.range(0, sXY*bb.sizeZ()), parallele).forEach(i-> {
+            int xy = i%sXY;
+            function.loop(xy%sX, xy/sX, i/sXY);
+        });
     }
     
     public static void loop(BoundingBox bb, LoopFunction function) {
-        if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();
         for (int z = bb.zMin(); z<=bb.zMax(); ++z) {
             for (int y = bb.yMin(); y<=bb.yMax(); ++y) {
                 for (int x=bb.xMin(); x<=bb.xMax(); ++x) {
@@ -195,14 +180,12 @@ public interface BoundingBox<T> extends Offset<T> {
                 }
             }
         }
-        if (function instanceof LoopFunction2) ((LoopFunction2)function).tearDown();
     }
     public static void loop(BoundingBox bb, LoopFunction function, LoopPredicate predicate) {
         if (predicate==null) {
             loop(bb, function);
             return;
         }
-        if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();
         for (int z = bb.zMin(); z<=bb.zMax(); ++z) {
             for (int y = bb.yMin(); y<=bb.yMax(); ++y) {
                 for (int x=bb.xMin(); x<=bb.xMax(); ++x) {
@@ -210,13 +193,8 @@ public interface BoundingBox<T> extends Offset<T> {
                 }
             }
         }
-        if (function instanceof LoopFunction2) ((LoopFunction2)function).tearDown();
     }
     
-    public static interface LoopFunction2 extends LoopFunction {
-        public void setUp();
-        public void tearDown();
-    }
     public static interface LoopFunction {
         public void loop(int x, int y, int z);
     }

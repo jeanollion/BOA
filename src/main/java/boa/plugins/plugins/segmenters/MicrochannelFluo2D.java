@@ -137,7 +137,7 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
         if (testMode)  Plugin.logger.debug("crop micochannels threshold : {}", thld);
         ImageInteger mask = thresholdedImage == null ? ImageOperations.threshold(image, thld, true, true) : thresholdedImage;
         // remove small objects
-        Filters.binaryClose(mask, mask, Filters.getNeighborhood(1, 0, image)); // case of low intensity signal -> noisy. // remove small objects?
+        Filters.binaryClose(mask, mask, Filters.getNeighborhood(1, 0, image), false); // case of low intensity signal -> noisy. // remove small objects?
         List<Region> bacteria = ImageOperations.filterObjects(mask, mask, (Region o) -> o.size() < minObjectSize);
         // selected filled microchannels
         float[] xProj = ImageOperations.meanProjection(mask, ImageOperations.Axis.X, null);

@@ -35,9 +35,8 @@ import java.util.List;
  * @author jollion
  */
 public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
-    double radius;
-    double radiusZ;
-
+    final protected double radius;
+    final protected  double radiusZ;
     /**
      * 3D Elipsoidal Neighbourhood around a voxel
      * @param radius in pixel in the XY-axis
@@ -46,10 +45,10 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
      * return an array of diplacement from the center
      */
     public EllipsoidalNeighborhood(double radius, double radiusZ, boolean excludeCenter) {
+        this.radius = radius;
+        this.radiusZ = radiusZ;
         if (radiusZ<=0) init2D(radius, excludeCenter);
         else {
-            this.radius=radius;
-            this.radiusZ=radiusZ;
             is3D=radiusZ>0;
             double r = radiusZ>0 ? (double) radius / radiusZ : 0;
             int rad = (int) (radius + 0.5f);
@@ -93,11 +92,11 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
      * @param excludeCenter if true, central point can excluded
      */
     public EllipsoidalNeighborhood(double radius, boolean excludeCenter) { 
+        this.radius = radius;
+        this.radiusZ=0;
         init2D(radius, excludeCenter);
     }
     private void init2D(double radius, boolean excludeCenter) {
-        this.radius = radius;
-        this.radiusZ=0;
         is3D=false;
         int rad = (int) (radius + 0.5f);
         List<double[]> coordsXYD = new ArrayList<>();
@@ -127,7 +126,9 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
             distances[i] = (float)c[2];
         }
     }
-
+    @Override public EllipsoidalNeighborhood duplicate() {
+        return new EllipsoidalNeighborhood(radius, radiusZ, !(dx[0]==0 && dy[0] == 0 && dz[0]==0));
+    }
     public double getRadiusXY() {
         return radius;
     }

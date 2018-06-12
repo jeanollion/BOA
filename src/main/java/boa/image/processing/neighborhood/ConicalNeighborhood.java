@@ -51,7 +51,9 @@ public class ConicalNeighborhood extends DisplacementNeighborhood {
         }
         return res;
     }
-    
+    @Override public ConicalNeighborhood duplicate() {
+        return new ConicalNeighborhood(radius, radiusZDown, radiusZUp, !(dx[0]==0 && dy[0] == 0 && dz[0]==0));
+    }
     /**
      * 3D Conical Neighbourhood around a voxel
      * @param radius in pixel in the XY-axis

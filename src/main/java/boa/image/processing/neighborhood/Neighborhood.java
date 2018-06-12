@@ -51,5 +51,6 @@ public interface Neighborhood {
     public float[] getDistancesToCenter();
     public int getValueCount();
     public boolean is3D();
+    public Neighborhood duplicate();
     // float[] getCoefficientValue();
 }

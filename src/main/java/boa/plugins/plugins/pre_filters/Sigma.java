@@ -63,15 +63,15 @@ public class Sigma implements PreFilter, Filter {
     }
     @Override
     public Image runPreFilter(Image input, ImageMask mask) {
-        return filter(input, mask, radius.getScaleXY(), radius.getScaleZ(input.getScaleXY(), input.getScaleZ()), medianRadius.getScaleXY(), medianRadius.getScaleZ(input.getScaleXY(), input.getScaleZ()));
+        return filter(input, mask, radius.getScaleXY(), radius.getScaleZ(input.getScaleXY(), input.getScaleZ()), medianRadius.getScaleXY(), medianRadius.getScaleZ(input.getScaleXY(), input.getScaleZ()), false);
     }
     
-    public static Image filter(Image input, double radiusXY, double radiusZ, double medianXY, double medianZ) {
-        return filter(input, null, radiusXY, radiusZ, medianXY, medianZ);
+    public static Image filter(Image input, double radiusXY, double radiusZ, double medianXY, double medianZ, boolean parallele) {
+        return filter(input, null, radiusXY, radiusZ, medianXY, medianZ, parallele);
     }
-    public static Image filter(Image input, ImageMask mask, double radiusXY, double radiusZ, double medianXY, double medianZ) {
-        if (medianXY>1)  input = applyFilter(input, new ImageFloat("sigma", input), new Filters.Median(mask), Filters.getNeighborhood(medianXY, medianZ, input));
-        return applyFilter(input, new ImageFloat("sigma", input), new Filters.Sigma(mask), Filters.getNeighborhood(radiusXY, radiusZ, input));
+    public static Image filter(Image input, ImageMask mask, double radiusXY, double radiusZ, double medianXY, double medianZ, boolean parallele) {
+        if (medianXY>1)  input = applyFilter(input, new ImageFloat("sigma", input), new Filters.Median(mask), Filters.getNeighborhood(medianXY, medianZ, input), parallele);
+        return applyFilter(input, new ImageFloat("sigma", input), new Filters.Sigma(mask), Filters.getNeighborhood(radiusXY, radiusZ, input), parallele);
     }
     @Override
     public Parameter[] getParameters() {
@@ -79,8 +79,8 @@ public class Sigma implements PreFilter, Filter {
     }
 
     @Override 
-    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return runPreFilter(image, null);
+    public Image applyTransformation(int channelIdx, int timePoint, Image input) {
+        return filter(input, null, radius.getScaleXY(), radius.getScaleZ(input.getScaleXY(), input.getScaleZ()), medianRadius.getScaleXY(), medianRadius.getScaleZ(input.getScaleXY(), input.getScaleZ()), true);
     }
 
     boolean testMode;

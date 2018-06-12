@@ -58,7 +58,7 @@ public class TestThreadExecutorFrameWork {
     public static String runTask(String name, int taskNumber, ProgressCallback pcb) {
         long t0 = System.currentTimeMillis();
         Image im = new ImageFloat("", 500, 500, 10);
-        Filters.open(im, im, Filters.getNeighborhood(3, 2, im));
+        Filters.open(im, im, Filters.getNeighborhood(3, 2, im), false);
         long t1 = System.currentTimeMillis();
         String message = name+":"+taskNumber+":"+(t1-t0)+"ms";
         if (pcb!=null) pcb.log(message);

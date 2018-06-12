@@ -49,7 +49,7 @@ public class TestResize {
         Image resized  = ImageOperations.resizeXY(image,  (int) (image.sizeX()*factor), (int) (image.sizeY()*factor), ImageOperations.IJInterpolation.BICUBIC);
         //ImageWindowManagerFactory.showImage(resized.setName("resized "+factor));
         
-        Image filt = Sigma.filter(resized, 3 * factor, 1, 0 * factor, 1);
+        Image filt = Sigma.filter(resized, 3 * factor, 1, 0 * factor, 1, true);
         //Image filtOriginal = ImageOperations.resizeXY(filt, image.sizeX(), image.sizeY(), ImageOperations.IJInterpolation.BICUBIC);
         //ImageWindowManagerFactory.showImage(filt.setName(" filt resized "+factor));
         ImageWindowManagerFactory.showImage(filt.setName(" filt "+factor));

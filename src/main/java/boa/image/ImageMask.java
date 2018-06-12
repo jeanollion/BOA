@@ -31,14 +31,10 @@ public interface ImageMask<I extends ImageMask> extends ImageProperties<I> {
     public boolean insideMaskWithOffset(int xy, int z);
     public int count();
     public static void loop(ImageMask mask, LoopFunction function) {
-        if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();
         BoundingBox.loop(new SimpleBoundingBox(mask).resetOffset(), (x, y, z)-> {if (mask.insideMask(x, y, z)) function.loop(x, y, z);});
-        if (function instanceof LoopFunction2) ((LoopFunction2)function).tearDown();
     }
     public static void loopWithOffset(ImageMask mask, LoopFunction function) {
-        if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();
         BoundingBox.loop(mask, (x, y, z)-> {if (mask.insideMaskWithOffset(x, y, z)) function.loop(x, y, z);});
-        if (function instanceof BoundingBox.LoopFunction2) ((LoopFunction2)function).tearDown();
     }
     public ImageMask duplicateMask();
     public static LoopPredicate insideMask(final ImageMask mask, boolean withOffset) {

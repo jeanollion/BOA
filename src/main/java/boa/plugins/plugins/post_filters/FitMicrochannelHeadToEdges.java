@@ -214,9 +214,9 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         partition.translate(cut, true);
         ImageInteger mcMask = partition.getLabelMap();
         // CLOSE & OPEN 
-        if (morphoRadius<marginUp && morphoRadius<marginL && morphoRadius<marginR) Filters.binaryClose(mcMask, mcMask, Filters.getNeighborhood(morphoRadius, mcMask));
-        else mcMask=Filters.binaryCloseExtend(mcMask, Filters.getNeighborhood(morphoRadius,mcMask));
-        Filters.binaryOpen(mcMask, mcMask, Filters.getNeighborhood(morphoRadius,mcMask));
+        if (morphoRadius<marginUp && morphoRadius<marginL && morphoRadius<marginR) Filters.binaryClose(mcMask, mcMask, Filters.getNeighborhood(morphoRadius, mcMask), false);
+        else mcMask=Filters.binaryCloseExtend(mcMask, Filters.getNeighborhood(morphoRadius,mcMask), false);
+        Filters.binaryOpen(mcMask, mcMask, Filters.getNeighborhood(morphoRadius,mcMask), false);
         
         trimUpperPixels(mcMask, trimUpperPixelRadius); // avoid strong top border artefact 
         

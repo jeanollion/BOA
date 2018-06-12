@@ -502,7 +502,7 @@ public class Region {
         return false;
     }
     public void erode(Neighborhood neigh) {
-        mask = Filters.min(getMaskAsImageInteger(), null, neigh);
+        mask = Filters.min(getMaskAsImageInteger(), null, neigh, false);
         voxels = null; // reset voxels
         // TODO reset bounds?
     }

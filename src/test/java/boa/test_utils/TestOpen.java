@@ -36,9 +36,9 @@ public class TestOpen {
         
         ImageInteger im = (ImageInteger)ImageReader.openIJTif("/data/Images/MOP/ThldPlaneF268bis.tif");
         Neighborhood n = Filters.getNeighborhood(2.5, 1, im);
-        ImageInteger min = Filters.binaryMin(im, null, n, true);
+        ImageInteger min = Filters.binaryMin(im, null, n, true, true);
         
-        ImageInteger open = Filters.binaryMax(min, null, n, false, false);
+        ImageInteger open = Filters.binaryMax(min, null, n, false, false, true);
         Image xor = ImageOperations.xor(open, im, null);
         ImageWindowManagerFactory.showImage(im);
         ImageWindowManagerFactory.showImage(min);

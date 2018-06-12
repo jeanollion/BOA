@@ -216,14 +216,6 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         for (int y = 0; y<proj.length; ++y) image.setPixel(x, y, 0, proj[y]);
     }
     
-    private static void filter(double scale, float[] data) {
-        ImageFloat im = new ImageFloat("", data.length, new float[][]{data});
-        im = boa.image.processing.Filters.median(im, im, new EllipsoidalNeighborhood(2, false));
-        im = boa.image.processing.Filters.tophat(im, im, new EllipsoidalNeighborhood(scale, false));
-        float[] data2 = im.getPixelArray()[0];
-        for (int i = 0; i<data.length; ++i) data[i] = data2[i];
-    }
-    
     public static enum SearchMethod {
         MAXVAR("Fluo Microchannel"), // cherche le maximum variance. necessite de supprimer le bruit de fond
         MAXARTEFACT("Phase Microchannel Artifact"); // se base sur l'artecfact d'imagerie, cherche la valeur max qui est a +90. 

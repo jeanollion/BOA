@@ -49,11 +49,11 @@ public class Median implements PreFilter, Filter {
     }
     @Override
     public Image runPreFilter(Image input, ImageMask mask) {
-        return filter(input, radius.getScaleXY(), radius.getScaleZ(input.getScaleXY(), input.getScaleZ()));
+        return filter(input, radius.getScaleXY(), radius.getScaleZ(input.getScaleXY(), input.getScaleZ()), false);
     }
     
-    public static Image filter(Image input, double radiusXY, double radiusZ) {
-        return Filters.median(input, null, Filters.getNeighborhood(radiusXY, radiusZ, input));
+    public static Image filter(Image input, double radiusXY, double radiusZ, boolean parallele) {
+        return Filters.median(input, null, Filters.getNeighborhood(radiusXY, radiusZ, input), parallele);
     }
     @Override
     public Parameter[] getParameters() {
@@ -66,7 +66,7 @@ public class Median implements PreFilter, Filter {
     
     @Override 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return runPreFilter(image, null);
+        return filter(image, radius.getScaleXY(), radius.getScaleZ(image.getScaleXY(), image.getScaleZ()), true);
     }
 
     boolean testMode;
