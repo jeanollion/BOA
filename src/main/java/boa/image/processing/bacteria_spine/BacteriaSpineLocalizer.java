@@ -443,5 +443,5 @@ public class BacteriaSpineLocalizer {
         //logger.debug("proj div: {} -> {}", c, res==null ? null : destination.getSpineCoord(res));
         return res;
     }
-    public static enum PROJECTION {PROPORTIONAL, NEAREST_POLE};
+    public enum PROJECTION {PROPORTIONAL, NEAREST_POLE};
 }

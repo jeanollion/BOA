@@ -542,23 +542,21 @@ public class BacteriaSpineFactory {
     public static <T extends RealLocalizable> Image drawSpine(BoundingBox bounds, PointContainer2<Vector, Double>[] spine, CircularNode<T> circularContour, int zoomFactor, boolean drawDistance) { 
         boolean spineDirIdx = false;
         if (zoomFactor%2==0) throw new IllegalArgumentException("Zoom Factory should be uneven");
-        int add = zoomFactor > 1 ? 1 : 0;
         ImageProperties props = new SimpleImageProperties(new SimpleBoundingBox(0, bounds.sizeX()*zoomFactor-1, 0, bounds.sizeY()*zoomFactor-1, 0, 0), 1, 1);
         Image spineImage = drawDistance ? new ImageFloat("", props) : new ImageByte("", props);
         spineImage.translate(bounds);
         spineImage.setCalibration(1d/zoomFactor, 1);
         Offset off = bounds;
-        Voxel vox = new Voxel(0, 0, 0);
+        List<int[]> bucket = new ArrayList<>(4);
         // draw contour of bacteria
         int startLabel = drawDistance && spine!=null ? Math.max(spine[spine.length-1].getContent2().intValue(), spine.length) +10 : 1;
         if (circularContour!=null) {
             EllipsoidalNeighborhood neigh = new EllipsoidalNeighborhood(zoomFactor/2d, false);
             int[] lab = new int[]{startLabel};
             CircularNode.apply(circularContour, c->{
+                drawNeighborhood(spineImage, c.element, neigh, zoomFactor, lab[0]);
                 for (int i = 0; i<neigh.getSize(); ++i) {
-                    vox.x = (int)Math.round((c.element.getDoublePosition(0)-off.xMin())*zoomFactor+add+neigh.dx[i]);
-                    vox.y = (int)Math.round((c.element.getDoublePosition(1)-off.yMin())*zoomFactor+add+neigh.dy[i]);
-                    if (spineImage.contains(vox.x, vox.y, 0)) spineImage.setPixel(vox.x, vox.y, 0, lab[0]);
+                    drawPixel(spineImage, Point.asPoint2D(c.element).translateRev(off).translate(new Vector(((float)neigh.dx[i])/zoomFactor, ((float)neigh.dy[i])/zoomFactor)), zoomFactor, lab[0], bucket);
                 }
                 //++lab[0];
             }, true);
@@ -574,36 +572,62 @@ public class BacteriaSpineFactory {
                 Point cur = p.duplicate().translateRev(dir.duplicate().multiply(norm/4d));
                 dir.multiply(vectSize);
                 float spineVectLabel = drawDistance ? (spineDirIdx ? (float)spineIdx : p.getContent2().floatValue()) : 2f;
-                drawVector(spineImage, cur, dir, zoomFactor, spineVectLabel);
+                drawVector(spineImage, cur, dir, zoomFactor, spineVectLabel, true, 1);
                 spineIdx++;
             }
             // draw central line
-            PointContainer2<Vector, Double> p0 = spine[0];
-            vox.x = (int)((p0.get(0)-off.xMin())*zoomFactor+add);
-            vox.y = (int)((p0.get(1)-off.yMin())*zoomFactor+add);
-            spineImage.setPixel(vox.x, vox.y, 0,  drawDistance ? Float.MIN_VALUE : 3 );
+            drawPixel(spineImage, spine[0].duplicate().translateRev(spineImage), zoomFactor, drawDistance ? Float.MIN_VALUE : 3, bucket);
             for (int i = 1; i<spine.length; ++i) { 
                 PointContainer2<Vector, Double> p = spine[i-1];
                 PointContainer2<Vector, Double> p2 = spine[i];
                 Vector dir = Vector.vector2D(p, p2);
-                drawVector(spineImage, p, dir, zoomFactor, drawDistance ? p2.getContent2().floatValue() : 3);
+                drawVector(spineImage, p, dir, zoomFactor, drawDistance ? p2.getContent2().floatValue() : 3, false, 1);
             }
         }
         return spineImage;
     }
-    public static void drawVector(Image output, Point start, Vector dir, int zoomFactor, float value) {
+    public static void drawVector(Image output, Point start, Vector dir, int zoomFactor, float value, boolean drawFirstPoint, int size) {
+        List<int[]> bucket = new ArrayList<>(4);
         double vectSize = dir.norm();
-        dir.multiply(1/(vectSize*zoomFactor));
+        dir.multiply(1/(1*vectSize*zoomFactor));
+        Vector per = dir.duplicate().rotateXY90().multiply(1/3d);
         Point cur = start.duplicate().translateRev(output);
-        Voxel vox = new Voxel(0, 0, 0);
-        int add = zoomFactor > 1 ? 1 : 0;
-        for (int j = 0; j<vectSize*zoomFactor; ++j) {
-            cur.translate(dir);
-            vox.x = (int)(cur.get(0)*zoomFactor+add);
-            vox.y = (int)(cur.get(1)*zoomFactor+add);
-            if (output.contains(vox.x, vox.y, 0)) output.setPixel(vox.x, vox.y, 0, value);
+        for (int j = 0; j<1*vectSize*zoomFactor; ++j) {
+            drawPixel(output, cur.translate(dir), zoomFactor, value, bucket);
+            if (size>1) {
+                Point cur1 = cur.duplicate();
+                Point cur2 = cur.duplicate();
+                for (int i = 1; i<3*size; ++i) {
+                    drawPixel(output, cur1.translate(per), zoomFactor, value, bucket);
+                    drawPixel(output, cur2.translateRev(per), zoomFactor, value, bucket);
+                }
+            }
         }
     }
+    
+    private static void drawPixel(Image output, Point p, int zoomFactor, float value, List<int[]> bucket) {
+        double x = p.get(0)*zoomFactor+ (zoomFactor > 1 ? 1 : 0);
+        double y = p.get(1)*zoomFactor+ (zoomFactor > 1 ? 1 : 0);
+        bucket.clear();
+        bucket.add(new int[]{(int)Math.round(x), (int)Math.round(y)});
+        if (x-(int)x==0.5) {
+            bucket.add(new int[]{(int)Math.round(x)-1, (int)Math.round(y)});
+            if (y-(int)y==0.5) bucket.add(new int[]{(int)Math.round(x)-1, (int)Math.round(y)-1});
+        } else if (y-(int)y==0.5) bucket.add(new int[]{(int)Math.round(x), (int)Math.round(y)-1});
+        bucket.stream().filter(c-> output.contains(c[0], c[1], 0)).forEach(c->output.setPixel(c[0], c[1], 0, value));
+    }
+        
+    public static void drawNeighborhood(Image output,  RealLocalizable p, EllipsoidalNeighborhood neigh, int zoomFactor, float value) {
+        Point cur = Point.asPoint2D(p).translateRev(output);
+        List<int[]> bucket = new ArrayList<>(4);
+        for (int i = 0; i<neigh.getSize(); ++i) {
+            drawPixel(output, cur.duplicate().translate(new Vector(((float)neigh.dx[i])/zoomFactor, ((float)neigh.dy[i])/zoomFactor)), zoomFactor, value, bucket);
+        }
+    }
+    
+    
+    
+    
     private static class SlidingVector  {
         final int n;
         Vector sum;
