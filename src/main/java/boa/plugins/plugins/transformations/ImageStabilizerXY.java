@@ -62,6 +62,7 @@ import static boa.plugins.plugins.transformations.ImageStabilizerCore.gradient;
 import boa.image.processing.ImageTransformation;
 import boa.plugins.ConfigurableTransformation;
 import boa.plugins.MultichannelTransformation;
+import boa.plugins.ToolTip;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.ReusableQueue;
@@ -74,7 +75,7 @@ import boa.utils.Utils;
  *
  * @author nasique
  */
-public class ImageStabilizerXY implements ConfigurableTransformation, MultichannelTransformation {
+public class ImageStabilizerXY implements ConfigurableTransformation, MultichannelTransformation, ToolTip {
     public final static Logger logger = LoggerFactory.getLogger(ImageStabilizerXY.class);
     ChoiceParameter transformationType = new ChoiceParameter("Transformation", new String[]{"Translation"}, "Translation", false); //, "Affine"
     ChoiceParameter pyramidLevel = new ChoiceParameter("Pyramid Level", new String[]{"0", "1", "2", "3", "4"}, "1", false);
@@ -96,7 +97,10 @@ public class ImageStabilizerXY implements ConfigurableTransformation, Multichann
         this.maxIter.setValue(maxIterations);
         this.segmentLength.setValue(segmentLength);
     }
-    
+    @Override
+    public String getToolTipText() {
+        return "XY-registration in time axis by image correlation";
+    }
     public ImageStabilizerXY setCropper(Cropper cropper) {
         this.cropper.setPlugin(cropper);
         return this;

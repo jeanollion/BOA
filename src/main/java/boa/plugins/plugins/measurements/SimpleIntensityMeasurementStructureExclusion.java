@@ -93,7 +93,7 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
     @Override public void performMeasurement(StructureObject object) {
         StructureObject parent = object.isRoot() ? object : object.getParent();
         Image image = parent.getRawImage(structureImage.getSelectedStructureIdx());
-        double[] meanSd = ImageOperations.getMeanAndSigmaWithOffset(image, getMask(object, excludedStructure.getSelectedStructureIdx(), dilateExcluded.getValue().doubleValue(), erodeBorders.getValue().doubleValue()), null);
+        double[] meanSd = ImageOperations.getMeanAndSigmaWithOffset(image, getMask(object, excludedStructure.getSelectedStructureIdx(), dilateExcluded.getValue().doubleValue(), erodeBorders.getValue().doubleValue()), null, false);
         object.getMeasurements().setValue(prefix.getValue()+"Mean", meanSd[0]);
         object.getMeasurements().setValue(prefix.getValue()+"Sigma", meanSd[1]);
         object.getMeasurements().setValue(prefix.getValue()+"PixCount", meanSd[2]);

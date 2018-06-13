@@ -55,9 +55,10 @@ public class DrawSpineProjection {
     static final double WIDTH = 1;
     static final Color CONTOUR_COLOR = Color.YELLOW;
     static final Color SPINE_COLOR = Color.BLUE;
-    static final Color PROJ_COLOR = Color.RED;
+    static final Color SOURCE_COORD_COLOR = Color.RED;
+    static final Color SOURCE_COLOR = Color.ORANGE;
     static final Color TARGET_COLOR = new Color(0, 150, 0);
-    static final double trimSpine = 0.3333d;
+    static final double TRIM_SPINE_FACTOR = 0.3333d;
     public static void main(String[] args) {
         new ImageJ();
         String dbName = "fluo160501_uncorr_TestParam";
@@ -80,17 +81,17 @@ public class DrawSpineProjection {
         
         BacteriaSpineLocalizer loc = new BacteriaSpineLocalizer(bact.getRegion());
         BacteriaSpineCoord coord = loc.getSpineCoord(mut.getRegion().getCenter());
-        Overlay spine = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc.spine, trimSpine), mic.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
+        Overlay spine = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc.spine, TRIM_SPINE_FACTOR), mic.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
         drawCoord(spine, mic.getBounds(), loc.spine, coord, mut.getRegion().getCenter());
-        drawPoint(spine, mic.getBounds(), mut.getRegion().getCenter(), PROJ_COLOR);
+        drawPoint(spine, mic.getBounds(), mut.getRegion().getCenter(), SOURCE_COLOR);
         
         BacteriaSpineLocalizer loc2 = new BacteriaSpineLocalizer(bact2.getRegion());
         BacteriaSpineCoord coord2 = loc2.getSpineCoord(mut2.getRegion().getCenter());
         BacteriaSpineCoord coordProj2 = coord.duplicate().setSpineCoord(coord.getProjectedSpineCoord(loc2.getLength(), BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL));
         Point mutProj2 = loc2.project(coord, BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL);
-        Overlay spine2 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc2.spine, trimSpine), mic2.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
+        Overlay spine2 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc2.spine, TRIM_SPINE_FACTOR), mic2.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
         drawCoord(spine2, mic2.getBounds(), loc2.spine, coordProj2, mutProj2);
-        drawPoint(spine2, mic2.getBounds(), mutProj2, PROJ_COLOR);
+        drawPoint(spine2, mic2.getBounds(), mutProj2, SOURCE_COLOR);
         drawPoint(spine2, mic2.getBounds(), mut2.getRegion().getCenter(), TARGET_COLOR);
         //drawArrow(spine2, mic2.getBounds(), mutProj2, mut2.getRegion().getCenter(), TARGET_COLOR);
         
@@ -103,11 +104,11 @@ public class DrawSpineProjection {
         logger.debug("coord: {} coord div: {}, div length: {}+{}", coord2, coordDiv, loc31.getLength(), loc32.getLength());
         logger.debug("target coord: {}", loc32.getSpineCoord(mut3.getRegion().getCenter()));
         logger.debug("target: {} projDiv: {}", mut3.getRegion().getCenter(), mutProj3);
-        Overlay spine31 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc31.spine, trimSpine), mic3.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
+        Overlay spine31 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc31.spine, TRIM_SPINE_FACTOR), mic3.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
         drawCoord(spine31, mic3.getBounds(), loc31.spine, coord2.duplicate().setSpineCoord(loc31.getLength()*2).setSpineLength(loc31.getLength()), null); // draw whole spine on bact 31
-        Overlay spine32 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc32.spine, trimSpine), mic3.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
+        Overlay spine32 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc32.spine, TRIM_SPINE_FACTOR), mic3.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
         drawCoord(spine32, mic3.getBounds(), loc32.spine, coordDivProj, mutProj3); // normal draw on bact 32
-        drawPoint(spine32, mic3.getBounds(), mutProj3,PROJ_COLOR);
+        drawPoint(spine32, mic3.getBounds(), mutProj3, SOURCE_COLOR);
         drawPoint(spine32, mic3.getBounds(), mut3.getRegion().getCenter(), TARGET_COLOR);
         //drawArrow(spine32, mic3.getBounds(), mutProj3, mut3.getRegion().getCenter(), TARGET_COLOR);
         IntStream.range(0, spine31.size()).forEach(i->spine32.add(spine31.get(i)));
@@ -130,13 +131,13 @@ public class DrawSpineProjection {
                 dir.normalize().multiply(newL);
                 spineIntersection = p.duplicate().translate(dir);
             }
-            overlay.add(drawLine(p.duplicate().translateRev(offset), dir, PROJ_COLOR, WIDTH));
+            overlay.add(drawLine(p.duplicate().translateRev(offset), dir, SOURCE_COORD_COLOR, WIDTH));
             if (last) break;
         }
         
         // draw radial coordinate
         if (spineIntersection!=null && target!=null) {
-            overlay.add(drawLine(spineIntersection.duplicate().translateRev(offset), Vector.vector(spineIntersection, target), PROJ_COLOR, WIDTH));
+            overlay.add(drawLine(spineIntersection.duplicate().translateRev(offset), Vector.vector(spineIntersection, target), SOURCE_COORD_COLOR, WIDTH));
         }
         
     }

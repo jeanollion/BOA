@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.SimpleThresholder;
+import boa.plugins.ToolTip;
 import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.utils.Utils;
 import java.util.stream.IntStream;
@@ -49,7 +50,7 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class RemoveStripesSignalExclusion implements ConfigurableTransformation {
+public class RemoveStripesSignalExclusion implements ConfigurableTransformation, ToolTip {
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new BackgroundFit(5), false); //new ConstantValue(150)
     BooleanParameter signalExclusionBool2 = new BooleanParameter("Second Signal Exclusion", false);
@@ -65,6 +66,10 @@ public class RemoveStripesSignalExclusion implements ConfigurableTransformation 
     
     public RemoveStripesSignalExclusion(int signalExclusion) {
         if (signalExclusion>=0) this.signalExclusion.setSelectedIndex(signalExclusion);
+    }
+    @Override
+    public String getToolTipText() {
+        return "Removes banding noise. Noise is computed line-wise (so this transformation should be set before any rotation) and outside foreground, defined by the <em>Signal Exclusion</em> parameters.";
     }
     public RemoveStripesSignalExclusion setAddGlobalMean(boolean addGlobalMean) {
         this.addGlobalMean.setSelected(addGlobalMean);

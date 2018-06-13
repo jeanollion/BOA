@@ -18,10 +18,13 @@
  */
 package boa.data_structure.input_image;
 
+import boa.image.Histogram;
+import boa.image.HistogramFactory;
 import boa.image.Image;
 import static boa.image.Image.logger;
 import boa.image.ImageFloat;
 import boa.image.processing.ImageOperations;
+import boa.plugins.plugins.thresholders.BackgroundFit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -68,13 +71,11 @@ public interface InputImages {
         // signal is measured with BackgroundThresholder
         long t0 = System.currentTimeMillis();
         double sTot = images.get(0).sizeXYZ();
-        List<Pair<Integer, Double>> signal = IntStream.range(0, images.size()).parallel().mapToObj((int i) -> {
-            double[] count = new double[3];
-            BackgroundThresholder.runThresholder(images.get(i), null, 2.5, 4, 2, Double.MAX_VALUE, count);
-            return new Pair<>(i, (sTot - count[2]) /  sTot );
-        }).collect(Collectors.toList());
-        Collections.sort(signal, (p1, p2)->Double.compare(p1.value, p2.value));       
-        
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(images).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+        double thld = BackgroundFit.backgroundFit(histo, 3);
+        List<Pair<Integer, Double>> signal = IntStream.range(0, images.size()).parallel()
+                .mapToObj((int i) ->  new Pair<>(i, images.get(i).stream().filter(v->v>thld).count() /  sTot))
+                .sorted((p1, p2)->-Double.compare(p1.value, p2.value)).collect(Collectors.toList());
         if (n==1) return Arrays.asList(new Integer[]{signal.get(0).key});
         // choose n frames among the X frames with most signal
         int candidateNumber = Math.max(images.size()/4, n);

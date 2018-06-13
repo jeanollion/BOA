@@ -282,7 +282,7 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
     }
     public abstract DoubleStream streamPlane(int z);
     public DoubleStream stream(ImageMask mask, boolean maskHasAbsoluteOffset) {
-        if (mask==null || mask instanceof BlankMask) return stream();
+        if (mask==null) return stream();
         int minZ = maskHasAbsoluteOffset? Math.max(zMin, mask.zMin()) : mask.zMin();
         int maxZ = maskHasAbsoluteOffset ? Math.min(zMin+sizeZ, mask.zMin()+mask.sizeZ()) : Math.min(sizeZ, mask.sizeZ()+mask.zMin());
         if (minZ>=maxZ) return DoubleStream.empty();

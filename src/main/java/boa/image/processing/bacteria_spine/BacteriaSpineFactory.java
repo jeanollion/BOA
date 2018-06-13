@@ -123,7 +123,7 @@ public class BacteriaSpineFactory {
         }
     }
     public static SpineResult createSpine(Region bacteria) {
-        return createSpine(bacteria, 1);
+        return createSpine(bacteria, 2);
     }
     public static SpineResult createSpine(Region bacteria, double contourSmoothSigma) {
         if (!bacteria.is2D()) throw new IllegalArgumentException("Only works on 2D regions");
@@ -143,9 +143,10 @@ public class BacteriaSpineFactory {
         long t4 = System.currentTimeMillis();
         circContour = (CircularNode)CircularContourFactory.getCircularContour((Set)contour);
         long t5 = System.currentTimeMillis();
-        circContour = (CircularNode)CircularContourFactory.smoothContour2D(circContour,contourSmoothSigma);
+        circContour = (CircularNode)CircularContourFactory.smoothContour2D(circContour,0.5);
         long t6 = System.currentTimeMillis();
-        CircularContourFactory.resampleContour((CircularNode)circContour, 1);
+        CircularContourFactory.resampleContour((CircularNode)circContour,0.5);
+        circContour = (CircularNode)CircularContourFactory.smoothContour2D(circContour,contourSmoothSigma);
         long t7 = System.currentTimeMillis();
         //CircularNode.apply(circContour, c->logger.debug("{} after smooth {}", count[0]++, c.element), true);
         contour = (Set)CircularContourFactory.getSet(circContour);

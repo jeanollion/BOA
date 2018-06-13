@@ -68,7 +68,7 @@ public class TestSpine {
         //String dbName = "WT_180318_Fluo";
         //String dbName = "WT_150609";
         String dbName = "fluo160501_uncorr_TestParam";
-        int postition= 19, frame=175, mc=5, b=0;
+        int postition= 0, frame=220, mc=8, b=0;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1

@@ -41,6 +41,7 @@ import boa.image.SimpleBoundingBox;
 import boa.image.SimpleOffset;
 import boa.image.TypeConverter;
 import static boa.image.processing.ImageOperations.Axis.*;
+import boa.utils.DoubleStatistics;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -58,6 +59,7 @@ import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.DoublePredicate;
+import java.util.stream.DoubleStream;
 
 /**
  *
@@ -834,8 +836,12 @@ public class ImageOperations {
         return new double[]{mean, Math.sqrt(values2 - mean * mean), count};
     }
     
-    public static double[] getMeanAndSigma(Image image, ImageMask mask) {
-        if (mask==null) mask = new BlankMask(image);
+    public static double[] getMeanAndSigma(Image image, ImageMask mask, DoublePredicate useValue, boolean parallele) {
+        DoubleStream stream = parallele(image.stream(mask, false), parallele);
+        if (useValue!=null) stream = stream.filter(useValue);
+        DoubleStatistics stats = DoubleStatistics.getStats(stream);
+        return new double[]{stats.getAverage(), stats.getStandardDeviation()};
+        /*if (mask==null) mask = new BlankMask(image);
         else if (!mask.sameDimensions(image)) throw new IllegalArgumentException("Mask should be of same size as image");
         double mean = 0;
         double count = 0;
@@ -853,11 +859,15 @@ public class ImageOperations {
         }
         mean /= count;
         values2 /= count;
-        return new double[]{mean, Math.sqrt(values2 - mean * mean), count};
+        return new double[]{mean, Math.sqrt(values2 - mean * mean), count};*/
     }
     
-    public static double[] getMeanAndSigmaWithOffset(Image image, ImageMask mask, DoublePredicate useValue) {
-        if (mask==null) mask = new BlankMask(image);
+    public static double[] getMeanAndSigmaWithOffset(Image image, ImageMask mask, DoublePredicate useValue, boolean parallele) {
+        DoubleStream stream = parallele(image.stream(mask, true), parallele);
+        if (useValue!=null) stream = stream.filter(useValue);
+        DoubleStatistics stats = DoubleStatistics.getStats(stream);
+        return new double[]{stats.getAverage(), stats.getStandardDeviation()};
+        /*if (mask==null) mask = new BlankMask(image);
         final ImageMask mask2 = mask;
         double[] vv2c = new double[3];
         BoundingBox intersect = BoundingBox.getIntersection(mask, image);
@@ -884,7 +894,7 @@ public class ImageOperations {
         }
         double mean = vv2c[0] / vv2c[2];
         double values2 = vv2c[1] / vv2c[2];
-        return new double[]{mean, Math.sqrt(values2 - mean * mean), vv2c[2]};
+        return new double[]{mean, Math.sqrt(values2 - mean * mean), vv2c[2]};*/
     }
     
     /**

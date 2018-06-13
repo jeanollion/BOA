@@ -29,12 +29,13 @@ import java.util.ArrayList;
 import boa.image.processing.ImageTransformation;
 import boa.image.processing.ImageTransformation.Axis;
 import boa.plugins.MultichannelTransformation;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class Flip implements MultichannelTransformation {
+public class Flip implements MultichannelTransformation, ToolTip {
     
     ChoiceParameter direction = new ChoiceParameter("Flip Axis Direction", new String[]{Axis.X.toString(), Axis.Y.toString(), Axis.Z.toString()}, Axis.Y.toString(), false);
     Parameter[] p = new Parameter[]{direction};
@@ -42,6 +43,10 @@ public class Flip implements MultichannelTransformation {
     
     public Flip(Axis axis) {
         direction.setSelectedItem(axis.toString());
+    }
+    @Override
+    public String getToolTipText() {
+        return "Filp all images along a user-defined axis";
     }
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {

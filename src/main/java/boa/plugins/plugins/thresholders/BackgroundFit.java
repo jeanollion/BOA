@@ -124,6 +124,9 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
             }
         }
     }
+    public static double backgroundFit(Histogram histo, double sigmaFactor) {
+        return backgroundFit(histo, sigmaFactor, null, false); 
+    }
     public static double backgroundFit(Histogram histo, double sigmaFactor, double[] meanSigma) {
         return backgroundFit(histo, sigmaFactor, meanSigma, false); 
     }

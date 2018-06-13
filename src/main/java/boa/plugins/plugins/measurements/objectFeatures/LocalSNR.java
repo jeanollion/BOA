@@ -74,7 +74,7 @@ public class LocalSNR extends SNR {
         localBackgroundMask.translate(offset); // so that local background mask is in absolute landmark
         localBackgroundMask = Filters.binaryMax(localBackgroundMask, null, Filters.getNeighborhood(localBackgroundRadius.getValue().doubleValue(), localBackgroundMask), false, true, false);
         ImageOperations.andWithOffset(localBackgroundMask, backgroundObject.getMask(), localBackgroundMask); // do not dilate outside backgorund mask
-        double[] meanSdBck = ImageOperations.getMeanAndSigmaWithOffset(intensityMap, localBackgroundMask, null);
+        double[] meanSdBck = ImageOperations.getMeanAndSigmaWithOffset(intensityMap, localBackgroundMask, null, false);
         IntensityMeasurements fore = super.core.getIntensityMeasurements(object);
         
         double d = getValue(getForeValue(fore), meanSdBck[0], meanSdBck[1]);

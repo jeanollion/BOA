@@ -32,13 +32,14 @@ import boa.image.processing.ImageOperations;
 import java.util.ArrayList;
 import java.util.List;
 import boa.plugins.ConfigurableTransformation;
+import boa.plugins.ToolTip;
 import boa.plugins.plugins.thresholders.BackgroundFit;
 
 /**
  *
  * @author jollion
  */
-public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransformation {
+public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransformation, ToolTip {
     NumberParameter maxSignalProportion = new BoundedNumberParameter("Maximum Saturated Signal Amount Proportion", 5, 0.02, 0, 1).setToolTipText("Condition on amount of signal for detection of hyperfluo. bacteria: <br />Total amount of foreground signal / amount of Hyperfluo signal &lt; this threshold"); 
     NumberParameter minSignalRatio = new BoundedNumberParameter("Minimum Signal Ratio", 2, 10, 2, null).setToolTipText("Condition on signal value for detection of hyperfluo. bacteria: <br />Mean Hyperfluo signal / Mean Foreground signal > this threshold");
     
@@ -51,7 +52,10 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
         this.minSignalRatio.setValue(minSignalRatio);
         return this;
     }
-    
+    @Override
+    public String getToolTipText() {
+        return "Automatically detected presence of images containing very high signal compared to median signal, and saturates all images of the channel";
+    }
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         List<Image> allImages = new ArrayList<>();

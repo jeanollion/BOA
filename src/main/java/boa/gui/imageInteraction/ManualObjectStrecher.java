@@ -114,7 +114,7 @@ public class ManualObjectStrecher {
             
             ImageInteger outsideChildrenMask = p.key.getObjectPopulation(structureIdx).getLabelMap();
             ImageOperations.not(outsideChildrenMask, outsideChildrenMask);
-            double meanIntensityOutsideObject = ImageOperations.getMeanAndSigma(intensityMap, outsideChildrenMask)[0];
+            double meanIntensityOutsideObject = ImageOperations.getMeanAndSigma(intensityMap, outsideChildrenMask, null, true)[0];
             double thld = meanIntensityContour * thresholdQuantile + meanIntensityOutsideObject *(1-thresholdQuantile);
             logger.debug("mean int thld: {}, contour: {}, meanOutside : {}", thld,  meanIntensityContour, meanIntensityOutsideObject);
             

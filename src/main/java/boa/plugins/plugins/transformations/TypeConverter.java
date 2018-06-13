@@ -30,21 +30,26 @@ import boa.image.ImageFloat;
 import boa.image.ImageShort;
 import boa.plugins.ConfigurableTransformation;
 import boa.plugins.MultichannelTransformation;
+import boa.plugins.ToolTip;
 import boa.utils.Utils;
 
 /**
  *
  * @author Jean Ollion
  */
-public class TypeConverter implements MultichannelTransformation {
+public class TypeConverter implements MultichannelTransformation, ToolTip {
 
     public enum METHOD {LIMIT_TO_16}
-    ChoiceParameter method = new ChoiceParameter("Method", Utils.toStringArray(METHOD.values()), METHOD.LIMIT_TO_16.toString(), false).setToolTipText("<ul><li><b>"+METHOD.LIMIT_TO_16.toString()+"</b>: Only 32-bit Images are converted to 16-bits </li><</ul>");
-    NumberParameter constantValue = new BoundedNumberParameter("Add value", 0, 0, 0, Short.MAX_VALUE).setToolTipText("Adds this value to all images. This is useful to avoid trimming negative during convertion to 16-bit. No check is done to enshure values will be within 16-bit range");
+    ChoiceParameter method = new ChoiceParameter("Method", Utils.toStringArray(METHOD.values()), METHOD.LIMIT_TO_16.toString(), false).setToolTipText("<ul><li><b>"+METHOD.LIMIT_TO_16.toString()+"</b>: Only 32-bit Images are converted to 16-bits</li><</ul>");
+    NumberParameter constantValue = new BoundedNumberParameter("Add value", 0, 0, 0, Short.MAX_VALUE).setToolTipText("Adds this value to all images. This is useful to avoid trimming negative during convertion from 32-bit to 8-bit or 16-bit. No check is done to enshure values will be within 16-bit range");
     ConditionalParameter cond = new ConditionalParameter(method).setActionParameters(METHOD.LIMIT_TO_16.toString(), constantValue);
     Parameter[] parameters = new Parameter[]{cond};
     
     public TypeConverter() {
+    }
+    @Override
+    public String getToolTipText() {
+        return "Converts bit-depth of all images";
     }
     public TypeConverter setLimitTo16(short addValue) {
         this.method.setSelectedItem(METHOD.LIMIT_TO_16.toString());

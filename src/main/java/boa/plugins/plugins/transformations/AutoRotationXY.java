@@ -46,6 +46,7 @@ import static boa.image.processing.RadonProjection.radonProject;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.plugins.ConfigurableTransformation;
 import boa.plugins.MultichannelTransformation;
+import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import java.util.stream.Collectors;
@@ -54,7 +55,7 @@ import java.util.stream.Collectors;
  *
  * @author jollion
  */
-public class AutoRotationXY implements MultichannelTransformation, ConfigurableTransformation {
+public class AutoRotationXY implements MultichannelTransformation, ConfigurableTransformation, ToolTip {
     NumberParameter minAngle = new BoundedNumberParameter("Minimal Angle for search", 2, -10, -90, 90);
     NumberParameter maxAngle = new BoundedNumberParameter("Maximal Angle for search", 2, 10, -90, 90);
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);
@@ -77,6 +78,7 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         this.searchMethod.setSelectedItem(method.getName());
         //this.backgroundSubtractionRadius.setValue(backgroundSubtractionRadius);
     }
+    
     public AutoRotationXY setPrefilters(boa.plugins.Filter... filters) {
         prefilters.add(filters);
         return this;
@@ -130,7 +132,6 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
             sinogram1Test = new ArrayList<>();
             sinogram2Test = new ArrayList<>();
         }
-        // TODO search for best image to Rotate ... better dispertion of signal ? using spatial moments? average     on several frames ?
         int fn = Math.min(frameNumber.getValue().intValue(), inputImages.getFrameNumber());
         List<Integer> frames;
         if (fn<=1) frames = new ArrayList<Integer>(1){{add(inputImages.getDefaultTimePoint());}};
@@ -153,7 +154,7 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
             sinogram2Test.clear();
         }
         rotationAngle = ArrayUtil.median(angles);
-        logger.debug("autorotation: median angle: {} among: {}", rotationAngle, Utils.toStringList(Utils.toList(ArrayUtil.generateIntegerArray(fn)), i->"f:"+frames.get(i)+"->"+angles.get(i)));
+        logger.info("AutoRotationXY: median angle: {} among: {}", rotationAngle, Utils.toStringList(Utils.toList(ArrayUtil.generateIntegerArray(fn)), i->"f:"+frames.get(i)+"->"+angles.get(i)));
     }
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
@@ -214,6 +215,11 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
     
     private static void paste(float[] proj, ImageFloat image, int x) {
         for (int y = 0; y<proj.length; ++y) image.setPixel(x, y, 0, proj[y]);
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Align Microchannel sides along Y-axis";
     }
     
     public static enum SearchMethod {

@@ -267,9 +267,9 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
                         bRight.contract(parentBounds);
                         bLeft2.contract(parentBounds);
                         Image r = o.getParent().getRawImage(structureIdx);
-                        double valueLeft = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft.getBlankMask(), null)[0];
-                        double valueLeft2 = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft2.getBlankMask(), null)[0];
-                        double valueRight = ImageOperations.getMeanAndSigmaWithOffset(r, bRight.getBlankMask(), null)[0];
+                        double valueLeft = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft.getBlankMask(), null, false)[0];
+                        double valueLeft2 = ImageOperations.getMeanAndSigmaWithOffset(r, bLeft2.getBlankMask(), null, false)[0];
+                        double valueRight = ImageOperations.getMeanAndSigmaWithOffset(r, bRight.getBlankMask(), null, false)[0];
                         if (valueLeft2>valueRight && valueLeft2>valueLeft) offX=(int)offXd-1;
                         else if (valueRight>valueLeft && valueRight>valueLeft2) offX=(int)offXd+1;
                         else offX=(int)offXd;

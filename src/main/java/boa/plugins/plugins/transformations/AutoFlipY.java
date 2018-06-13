@@ -53,6 +53,7 @@ import boa.image.processing.ImageTransformation;
 import boa.plugins.ConfigurableTransformation;
 import boa.plugins.MultichannelTransformation;
 import boa.plugins.ToolTip;
+import boa.plugins.plugins.thresholders.BackgroundFit;
 import static boa.plugins.plugins.transformations.AutoFlipY.AutoFlipMethod.PHASE;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
@@ -80,9 +81,9 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
             return null;
         }
     }
-    String toolTip = "Methods for flipping image along Y-axis in order to set the close-end of channel at the top of the image. Should be set after the rotation";
+    String toolTip = "Methods for flipping image along Y-axis in order to set the close-end of channel at the top of the image. <br />Should be set after the rotation";
     ChoiceParameter method = new ChoiceParameter("Method", Utils.transform(AutoFlipMethod.values(), new String[AutoFlipMethod.values().length], f->f.name), FLUO_HALF_IMAGE.name, false);
-    PluginParameter<SimpleThresholder> fluoThld = new PluginParameter<>("Threshold for bacteria Segmentation", SimpleThresholder.class, new BackgroundThresholder(4, 5, 3), false); 
+    PluginParameter<SimpleThresholder> fluoThld = new PluginParameter<>("Threshold for bacteria Segmentation", SimpleThresholder.class, new BackgroundFit(5), false); 
     NumberParameter minObjectSize = new BoundedNumberParameter("Minimal Object Size", 1, 100, 10, null).setToolTipText("Object under this size (in pixels) will be removed");
     NumberParameter microchannelLength = new BoundedNumberParameter("Microchannel Length", 0, 400, 100, null).setToolTipText("Typical Microchannel Length");
     ConditionalParameter cond = new ConditionalParameter(method).setActionParameters("Bacteria Fluo", new Parameter[]{fluoThld, minObjectSize}).setActionParameters("Phase Contrast Optical Aberration", new Parameter[]{microchannelLength});
@@ -133,12 +134,12 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
                     lowerObjectsTest.clear();
                 }
                 flip = countFlip>countNoFlip;
-                logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
+                logger.info("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
                 break;
             }
             case FLUO_HALF_IMAGE: {
                 // compares signal in upper half & lower half -> signal should be in upper half
-                List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 1);
+                List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, 20);
                 List<Boolean> flips = frames.stream().parallel().map(f->{
                     Image<? extends Image> image = inputImages.getImage(channelIdx, f);
                     if (image.sizeZ()>1) {
@@ -152,7 +153,7 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
                 long countNoFlip = flips.stream().filter(b->b!=null && !b).count();
 
                 flip = countFlip>countNoFlip;
-                logger.debug("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
+                logger.info("AutoFlipY: {} (flip:{} vs:{})", flip, countFlip, countNoFlip);
                 break;
             } case PHASE: {
                 int length = microchannelLength.getValue().intValue();
@@ -183,7 +184,7 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
                 double varUpper = ArrayUtil.meanSigma(xProjUpper, getFirstNonNanIdx(xProjUpper, true), getFirstNonNanIdx(xProjUpper, false)+1, null)[1];
                 double varLower = ArrayUtil.meanSigma(xProjLower, getFirstNonNanIdx(xProjLower, true), getFirstNonNanIdx(xProjLower, false)+1, null)[1];
                 flip = varLower>varUpper;
-                logger.debug("AutoFlipY: {} (var upper: {}, var lower: {} aberration: [{};{};{}]", flip, varLower, varUpper,startOfPeakIdx, peakIdx, endOfPeakIdx );
+                logger.info("AutoFlipY: {} (var upper: {}, var lower: {} aberration: [{};{};{}]", flip, varLower, varUpper,startOfPeakIdx, peakIdx, endOfPeakIdx );
                 break;
             }
         }
@@ -206,8 +207,8 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
         */
         ImageMask upper = new BlankMask( image.sizeX(), image.sizeY()/2, image.sizeZ(), image.xMin(), image.yMin(), image.zMin(), image.getScaleXY(), image.getScaleZ());
         ImageMask lower = new BlankMask( image.sizeX(), image.sizeY()/2, image.sizeZ(), image.xMin(), image.yMin()+image.sizeY()/2, image.zMin(), image.getScaleXY(), image.getScaleZ());
-        double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null)[0];
-        double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null)[0];
+        double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null, true)[0];
+        double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null, true)[0];
         if (testMode) logger.debug("AutoFlipY: upper half mean {} lower: {}", upperMean, lowerMean);
         if (upperMean>lowerMean) return false;
         else if (lowerMean>upperMean) return true;
@@ -216,8 +217,8 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
     private Boolean isFlipFluoUpperHalf(Image image) {
         ImageMask upper = new BlankMask( image.sizeX(), image.sizeY()/2, image.sizeZ(), image.xMin(), image.yMin(), image.zMin(), image.getScaleXY(), image.getScaleZ());
         ImageMask lower = new BlankMask( image.sizeX(), image.sizeY()/2, image.sizeZ(), image.xMin(), image.yMin()+image.sizeY()/2, image.zMin(), image.getScaleXY(), image.getScaleZ());
-        double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null)[0];
-        double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null)[0];
+        double upperMean = ImageOperations.getMeanAndSigmaWithOffset(image, upper, null, true)[0];
+        double lowerMean = ImageOperations.getMeanAndSigmaWithOffset(image, lower, null, true)[0];
         if (testMode) logger.debug("AutoFlipY: upper half mean {} lower: {}", upperMean, lowerMean);
         if (upperMean>lowerMean) return false;
         else if (lowerMean>upperMean) return true;
