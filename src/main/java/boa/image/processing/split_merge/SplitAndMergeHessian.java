@@ -76,7 +76,9 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
         this.hessian = hessian;
         return this;
     }
-    
+    public Image drawInterfaceValues(RegionPopulation pop) {
+        return RegionCluster.drawInterfaceValues(new RegionCluster<>(pop, true, getFactory()), i->{i.updateInterface(); return i.value;});
+    }
     public SplitAndMergeHessian setWatershedMap(Image wsMap, boolean isEdgeMap) {
         this.watershedMap = wsMap;
         this.wsMapIsEdgeMap=isEdgeMap;
@@ -135,14 +137,15 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
         @Override
         public boolean checkFusion() {
             // criterion = - hessian @ border / intensity @ border < threshold
+            
             if (addTestImage!=null) logger.debug("check fusion: {}+{}, size: {}, value: {}, threhsold: {}, fusion: {}", e1.getLabel(), e2.getLabel(), voxels.size(), value, splitThresholdValue, value<splitThresholdValue);
             return value<splitThresholdValue;
         }
 
         @Override
         public void addPair(Voxel v1, Voxel v2) {
-            if (foregroundMask==null || !foregroundMask.contains(v1.x, v1.y, v1.z)) duplicatedVoxels.add(v2);
-            else  voxels.add(v1);
+            if (foregroundMask!=null && !foregroundMask.contains(v1.x, v1.y, v1.z)) duplicatedVoxels.add(v2);
+            else voxels.add(v1);
             voxels.add(v2);
         }
 

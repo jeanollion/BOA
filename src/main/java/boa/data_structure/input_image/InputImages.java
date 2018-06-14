@@ -61,14 +61,28 @@ public interface InputImages {
         for (int f = fMin; f<fMax; ++f) imagesToAv.add(images.getImage(channelIdx, f));
         return ImageOperations.meanZProjection(Image.mergeZPlanes(imagesToAv));
     }
+    /**
+     * See {@link #chooseNImagesWithSignal(java.util.List, int) }
+     * @param images
+     * @param channelidx
+     * @param n
+     * @return 
+     */
     public static List<Integer> chooseNImagesWithSignal(InputImages images, int channelidx, int n) {
         List<Image> imagesByFrame = new ArrayList<>(images.getFrameNumber());
         for (int i = 0; i<images.getFrameNumber(); ++i) imagesByFrame.add(images.getImage(channelidx, i));
         return chooseNImagesWithSignal(imagesByFrame, n);
+
     }
+    /**
+     * Measure amount of signal in each image by counting number of pixel above  a threshold computed by {@link boa#plugins#plugins#thresholder#BackgroundFit} method with parameter = 3.
+     * @param images
+     * @param n number of indices to return
+     * @return list of image indexed from {@param images} list paired with signal measurement
+     */
     public static List<Integer> chooseNImagesWithSignal(List<Image> images, int n) {
         if (n>=images.size()) return Utils.toList(ArrayUtil.generateIntegerArray(images.size()));
-        // signal is measured with BackgroundThresholder
+        // signal is measured as number of 
         long t0 = System.currentTimeMillis();
         double sTot = images.get(0).sizeXYZ();
         Histogram histo = HistogramFactory.getHistogram(()->Image.stream(images).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);

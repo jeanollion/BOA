@@ -301,7 +301,10 @@ public class DBMapMasterDAO implements MasterDAO {
         if (xp!=null && cfg!=null) {
             try {
                 FileIO.write(cfg, xp.toJSONEntry().toJSONString(), false);
-                if (this.experimentChanged()) logger.debug("update not done!");
+                if (this.experimentChangedFromFile()) {
+                    GUI.log("Could not save XP");
+                    logger.debug("update not done!");
+                }
                 else logger.debug("Update done!");
             } catch (IOException ex) {
                 GUI.log("Could not update XP");
@@ -322,7 +325,7 @@ public class DBMapMasterDAO implements MasterDAO {
     }
     
     @Override 
-    public boolean experimentChanged() {
+    public boolean experimentChangedFromFile() {
         Experiment xpFile = getXPFromFile();
         return xpFile==null || !xpFile.sameContent(xp);
     }

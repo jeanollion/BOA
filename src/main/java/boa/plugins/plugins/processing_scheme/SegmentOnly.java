@@ -105,11 +105,8 @@ public class SegmentOnly extends SegmentationProcessingScheme<SegmentOnly> imple
         final boolean ref2D= !allParents.isEmpty() && allParents.get(0).is2D() && parentTrack.get(0).getRawImage(structureIdx).sizeZ()>1;
         long t0 = System.currentTimeMillis();
         long t1 = System.currentTimeMillis();
-        //if (useMaps) errors.addAll(ThreadRunner.execute(parentTrack, false, (p, idx) -> subMaps.getAndCreateIfNecessarySyncOnKey(p), executor, null));
         long t2 = System.currentTimeMillis();
-        //RegionPopulation[] pops = new RegionPopulation[allParents.size()];
         List<RegionPopulation> pops = allParents.stream().parallel().map(subParent -> {
-        //ThreadRunner.execute(allParents, false, (subParent, idx) -> {
             StructureObject globalParent = subParent.getParent(parentStructureIdx);
             Segmenter seg = segmenter.instanciatePlugin();
             if (applyToSegmenter!=null) applyToSegmenter.apply(globalParent, seg);
@@ -119,9 +116,7 @@ public class SegmentOnly extends SegmentationProcessingScheme<SegmentOnly> imple
             pop = postFilters.filter(pop, structureIdx, subParent);
             if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);
             return pop;
-        //    pops[idx] = pop;
-        //}, executor, null);
-        }).collect(Collectors.toList()); // no better perfs with stream compared to executor fixed  thread pool
+        }).collect(Collectors.toList()); 
         
         long t3 = System.currentTimeMillis();
         if (subSegmentation) { // collect if necessary and set to parent

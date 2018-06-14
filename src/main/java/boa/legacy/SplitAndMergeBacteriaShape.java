@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.image.processing.split_merge;
+package boa.legacy;
 
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
@@ -41,7 +41,8 @@ import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.localthickness.LocalThickness;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
-import boa.image.processing.split_merge.SplitAndMergeBacteriaShape.InterfaceLocalShape;
+import boa.image.processing.split_merge.SplitAndMerge;
+import boa.legacy.SplitAndMergeBacteriaShape.InterfaceLocalShape;
 import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 import boa.measurement.BasicMeasurements;
 import boa.measurement.GeometricalMeasurements;
@@ -59,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import net.imglib2.KDTree;
 import net.imglib2.Point;
@@ -118,8 +120,8 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         distanceMap = EDT.transform(mask, true, 1, mask.getScaleZ()/mask.getScaleXY(), 1);
     }
     
-    @Override
-    public RegionPopulation merge(RegionPopulation popWS, int objectMergeLimit) {
+    /*@Override
+    public RegionPopulation merge(RegionPopulation popWS, Function<RegionCluster<InterfaceLocalShape>, Boolean> stopCondition) {
         if (distanceMap == null && (useThicknessCriterion || curvaturePerCluster)) setDistanceMap(popWS.getLabelMap());
         popWS.smoothRegions(2, true, null);
         RegionCluster<InterfaceLocalShape> c = new RegionCluster(popWS, true, getFactory());
@@ -128,7 +130,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         if (minSizeFusion>0) c.mergeSmallObjects(minSizeFusion, objectMergeLimit, null);
         if (ignoreEndOfChannelRegionWhenMerginSmallRegions && !popWS.getRegions().isEmpty()) yLimLastObject = Collections.max(popWS.getRegions(), (o1, o2)->Double.compare(o1.getBounds().yMax(), o2.getBounds().yMax())).getBounds().yMax();
         if (curvaturePerCluster) updateCurvature(c.getClusters(), popWS.getLabelMap());
-        c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
+        c.mergeSort(true, 0, objectMergeLimit);
         if (minSizeFusion>0) {
             BiFunction<Region, Set<Region>, Region> noInterfaceCase = (smallO, set) -> {
                 if (set.isEmpty()) return null;
@@ -144,12 +146,12 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         popWS.relabel(true);
         distanceMap = null;
         return popWS;
-    }
+    }*/
     @Override
     public Image getSeedCreationMap() {
         return getEDM();
     }
-    @Override
+    /*@Override
     public RegionPopulation splitAndMerge(ImageMask segmentationMask, int minSizePropagation, int objectMergeLimit) {
         setDistanceMap(segmentationMask);
         WatershedConfiguration config = new WatershedConfiguration().lowConectivity(true);
@@ -167,7 +169,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         }
         
         return merge(popWS, objectMergeLimit);
-    }
+    }*/
     
     public void updateCurvature(List<Set<Region>> clusters, ImageProperties props) { // need to be called in order to use curvature in Interface is not per this
         curvatureMap.clear();

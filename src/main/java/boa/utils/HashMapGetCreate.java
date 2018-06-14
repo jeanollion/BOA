@@ -18,12 +18,15 @@
  */
 package boa.utils;
 
+import static boa.utils.Utils.parallele;
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -38,6 +41,16 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
     public HashMapGetCreate(int initialCapacity, Factory<K, V> factory) {
         super(initialCapacity);
         this.factory=factory;
+    }
+    /**
+     * Enshure keys are present in the map
+     * @param keys
+     * @param parallele wheter values should be computed in parallele
+     * @return the same map for convinience
+     */
+    public synchronized HashMapGetCreate<K, V> enshure(Set<K> keys, boolean parallele) {
+        putAll(parallele(Sets.difference(keys, this.keySet()).stream(), parallele).collect(Collectors.toMap(k->k, k->factory.create(k))));
+        return this;
     }
     public V getAndCreateIfNecessary(Object key) {
         V v = super.get(key);

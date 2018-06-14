@@ -70,7 +70,7 @@ import java.util.function.Consumer;
  */
 public class EdgeDetector implements Segmenter, ToolTip {
     public static enum THLD_METHOD {
-        INTENSITY_MAP("Intensity Map"), VALUE_MAP("Value Map"), SECONDARY_MAP("Secondary Map"), NO_THRESHOLDING("No thresholding");
+        INTENSITY_MAP("Intensity Map"), VALUE_MAP("Value Map"), NO_THRESHOLDING("No thresholding");
         String name;
         private THLD_METHOD(String name) {
             this.name = name;
@@ -87,8 +87,7 @@ public class EdgeDetector implements Segmenter, ToolTip {
     protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map");
     public PluginParameter<SimpleThresholder> threshold = new PluginParameter("Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setToolTipText("Threshold method used to remove background regions");
     ChoiceParameter thresholdMethod = new ChoiceParameter("Remove background method", Utils.transform(THLD_METHOD.values(), i->new String[i], e->e.getName()), THLD_METHOD.VALUE_MAP.getName(), false).setToolTipText("<html>Intensity Map: compute threshold on raw intensity map and removes regions whose median value is under the threhsold<br />Value Map: same as Intensity map but threshold is computed on an image where all pixels values are replaced by the median value of each region<br /><pre>Secondary Map: This method is designed to robustly threshold foreground objects and regions located between foreground objects. Does only work in case forground objects are of comparable intensities<br />1) Ostus's method is applied on on the image where pixels values are replaced by median value of eache region. <br />2) Ostus's method is applied on on the image where pixels values are replaced by median value of secondary map of each region. Typically using Hessian Max this allows to select regions in between two foreground objects or directly connected to foreground <br />3) A map with regions that are under threshold in 1) and over threshold in 2) ie regions that are not foreground but are either in between two objects or connected to one objects. The histogram of this map is computed and threshold is set in the middle of the largest histogram zone without objects</pre> </html>");
-    protected PreFilterSequence scondaryThresholdMap = new PreFilterSequence("Secondary Threshold Map").add(new ImageFeature().setFeature(ImageFeature.Feature.HessianMax).setScale(2)).setToolTipText("A map used that allows to selected regions in between two foreground objects or directly connected to a foreground object");
-    ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod).setDefaultParameters(new Parameter[]{threshold}).setActionParameters("Secondary Map", new Parameter[]{scondaryThresholdMap});
+    ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod).setDefaultParameters(new Parameter[]{threshold});
     NumberParameter seedRadius = new BoundedNumberParameter("Seed Radius", 1, 1.5, 1, null);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Min Size Propagation", 0, 0, 0, null);
     BooleanParameter darkBackground = new BooleanParameter("Dark Background", true);
@@ -98,7 +97,6 @@ public class EdgeDetector implements Segmenter, ToolTip {
     // variables
     Image wsMap;
     ImageInteger seedMap;
-    Image secondaryThresholdMap;
     Image watershedPriorityMap;
     String toolTip = "<html>Segment region at maximal values of the watershed map; <br />"
             + "1) Partition of the whole image using classical watershed seeded on all regional minima of the watershed map. <br />"
@@ -150,20 +148,6 @@ public class EdgeDetector implements Segmenter, ToolTip {
         return this;
     }
     
-    public EdgeDetector setSecondaryThresholdMap(Image secondaryThresholdMap) {
-        this.secondaryThresholdMap = secondaryThresholdMap;
-        if (secondaryThresholdMap!=null) this.thresholdMethod.setSelectedIndex(2);
-        return this;
-    }
-    public Image getSecondaryThresholdMap(Image input,  ImageMask mask) {
-        if (scondaryThresholdMap==null) {
-            if (!scondaryThresholdMap.isEmpty()) {
-                if (scondaryThresholdMap.sameContent(this.watershedMap)) secondaryThresholdMap = getWsMap(input, mask);
-                else secondaryThresholdMap = scondaryThresholdMap.filter(input, mask);
-            }
-        }
-        return secondaryThresholdMap; // todo test if prefilter differs from ws map to avoid processing 2 times same image
-    }
     public Image getWsPriorityMap(Image input, StructureObjectProcessing parent) {
         if (this.watershedPriorityMap==null) watershedPriorityMap = ImageFeatures.gaussianSmooth(input, 2, false); // TODO parameter?
         return watershedPriorityMap;
@@ -229,46 +213,6 @@ public class EdgeDetector implements Segmenter, ToolTip {
                     return;
             } case NO_THRESHOLDING: { 
                 return;
-            }  case SECONDARY_MAP: {
-                    // use of secondary map to select border regions and compute thld
-                    Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(input)));
-                    Image valueMap = generateRegionValueMap(input, values);
-                    double thld1 = IJAutoThresholder.runThresholder(valueMap, mask, AutoThresholder.Method.Otsu);
-                    if (addTestImage!=null) addTestImage.accept(valueMap.duplicate("EdgeDetector: Primary thld value map"));
-                    Map<Region, Double> values2 = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(getSecondaryThresholdMap(input, mask))));
-                    Image valueMap2 = generateRegionValueMap(input , values2);
-                    double thld2 = IJAutoThresholder.runThresholder(valueMap2, mask, AutoThresholder.Method.Otsu);
-                    // select objects under thld2 | above thld -> foreground, interface ou backgruond. Others are interface or border (majority) and set value to thld on valueMap
-                    if (darkBackground.getSelected()) {
-                        for (Region o : pop.getRegions()) {
-                            if (values.get(o)>=thld1 || values2.get(o)<thld2) o.draw(valueMap, thld1);
-                        }
-                    } else {
-                        for (Region o : pop.getRegions()) {
-                            if (values.get(o)<=thld1 || values2.get(o)<thld2) o.draw(valueMap, thld1);
-                        }
-                    }       
-                    Histogram h = HistogramFactory.getHistogram(()->valueMap.stream(mask, true), thld2);
-                    int sMax = 0, eMax = 0;
-                    for (int s = 0; s<h.data.length-2; ++s) {
-                        if (h.data[s]!=0) continue;
-                        int e = s;
-                        while(e<h.data.length-2 && h.data[e+1]==0) ++e;
-                        if (e-s>eMax-sMax) {
-                            eMax = e;
-                            sMax = s;
-                        }
-                    }       double thld  = h.getValueFromIdx((eMax+sMax)/2.0);
-                    //double thld = BackgroundThresholder.runThresholder(valueMap, parent.getMask(), 4, 4, 1, thld1); // run background thlder with thld1 as limit to select border form interfaces
-                    if (addTestImage!=null) {
-                        addTestImage.accept(valueMap2.setName("EdgeDetector: Secondary thld value map"));
-                        addTestImage.accept(valueMap.setName("EdgeDetector: Value map"));
-                    }       
-                    if (darkBackground.getSelected()) values.entrySet().removeIf(e->e.getValue()>=thld);
-                    else values.entrySet().removeIf(e->e.getValue()<=thld);
-                    pop.getRegions().removeAll(values.keySet());
-                    pop.relabel(true);
-                    return;
             }
         }
     } 

@@ -51,7 +51,6 @@ public class TrackAssigner {
     private Function<Region, Double> sizeRatioFunction;
     final BiFunction<Region, Region, Boolean> areFromSameLine, haveSamePreviousObjects;
     final List<Region> prev, next;
-    final int idxPrevLim, idxNextLim;
     final protected List<Assignment> assignments = new ArrayList();
     protected Assignment currentAssignment;
     double[] baseSizeRatio;
@@ -61,8 +60,6 @@ public class TrackAssigner {
     protected TrackAssigner(List<Region> prev, List<Region> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Collection<Region>, Double> sizeFunction, Function<Region, Double> sizeRatioFunction, BiFunction<Region, Region, Boolean> areFromSameLine, BiFunction<Region, Region, Boolean> haveSamePreviousObjects) {
         this.prev= prev!=null ? prev : Collections.EMPTY_LIST;
         this.next= next!=null ? next : Collections.EMPTY_LIST;
-        idxPrevLim = this.prev.size();
-        idxNextLim = this.next.size();
         this.sizeFunction = sizeFunction;
         this.sizeRatioFunction=sizeRatioFunction;
         if (sizeRatioFunction==null) mode = AssignerMode.RANGE;
@@ -153,8 +150,8 @@ public class TrackAssigner {
         for (Assignment ass : assignments) res+=ass.getErrorCount();
         if (truncatedChannel && !assignments.isEmpty()) {
             Assignment last = assignments.get(assignments.size()-1);
-            if (last.idxPrevEnd()<idxPrevLim-1) res+=idxPrevLim-1 - last.idxPrevEnd(); // # of unlinked cells @F-1, except the last one
-            if (last.idxNextEnd()<idxNextLim) res+=idxNextLim - last.idxNextEnd(); // #of unlinked cells @t
+            if (last.idxPrevEnd()<prev.size()-1) res+=prev.size()-1 - last.idxPrevEnd(); // # of unlinked cells @F-1, except the last one
+            if (last.idxNextEnd()<next.size()) res+=next.size() - last.idxNextEnd(); // #of unlinked cells @t
         }
         return res;
     }
@@ -165,7 +162,7 @@ public class TrackAssigner {
      * @return true if there is at least 1 remaining object @ timePoint & timePoint -1
      */
     public boolean nextTrack() {
-        if (currentAssignment!=null && (currentAssignment.idxPrevEnd()==idxPrevLim || currentAssignment.idxNextEnd()==idxNextLim)) return false;
+        if (currentAssignment!=null && (currentAssignment.idxPrevEnd()==prev.size() || currentAssignment.idxNextEnd()==next.size())) return false;
         currentAssignment = new Assignment(this, currentAssignment==null?0:currentAssignment.idxPrevEnd(), currentAssignment==null?0:currentAssignment.idxNextEnd());
         currentScore=null;
         assignments.add(currentAssignment);
@@ -202,7 +199,7 @@ public class TrackAssigner {
 
     public double[] getCurrentScore() {
         if (currentScore==null) {
-            currentScore = getScoreForCurrentAndNextAssignments(idxPrevLim, idxNextLim);
+            currentScore = getScoreForCurrentAndNextAssignments(prev.size(), next.size());
         } return currentScore;
     }
     
@@ -230,8 +227,8 @@ public class TrackAssigner {
         score[1] /=count;
         // # of unlinked cells, except the last one if truncatedChannel
         int trunc = truncatedChannel ? 1 : 0;
-        if (idxPrevLimit==idxPrevLim && currentAssignment.idxPrevEnd()<idxPrevLim-trunc) score[0]+=idxPrevLim-trunc - currentAssignment.idxPrevEnd(); 
-        if (idxLimit==idxNextLim && currentAssignment.idxNextEnd()<idxNextLim-trunc) score[0]+=idxNextLim-trunc - currentAssignment.idxNextEnd();
+        if (idxPrevLimit==prev.size() && currentAssignment.idxPrevEnd()<prev.size()-trunc) score[0]+=prev.size()-trunc - currentAssignment.idxPrevEnd(); 
+        if (idxLimit==prev.size() && currentAssignment.idxNextEnd()<next.size()-trunc) score[0]+=next.size()-trunc - currentAssignment.idxNextEnd();
 
         // revert to previous state
         verboseLevel--;

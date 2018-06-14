@@ -61,7 +61,7 @@ import java.util.TreeMap;
 public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametrizable<MicrochannelFluo2D>, ToolTip {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height", 0, 430, 5, null).setToolTipText("Height of microchannel in pixels");
-    NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width", 0, 40, 5, null);
+    NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width", 0, 60, 5, null);
     NumberParameter yShift = new BoundedNumberParameter("y-shift (start of microchannel)", 0, 20, 0, null).setToolTipText("Translation of the microchannel in upper direction");
     PluginParameter<boa.plugins.SimpleThresholder> threshold= new PluginParameter<>("Threshold", boa.plugins.SimpleThresholder.class, new BackgroundFit(10), false); //new BackgroundThresholder(3, 6, 3) when background is removed and images saved in 16b, half of background is trimmed -> higher values
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.3, 0.05, 1).setToolTipText("Fill proportion = y-length of bacteria / height of microchannel. If proportion is under this value, the object won't be segmented. Allows to avoid segmenting islated bacteria in central channel");

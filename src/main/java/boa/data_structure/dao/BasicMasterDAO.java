@@ -74,7 +74,7 @@ public class BasicMasterDAO implements MasterDAO {
     }
 
     @Override 
-    public boolean experimentChanged() {
+    public boolean experimentChangedFromFile() {
         return false;
     }
     

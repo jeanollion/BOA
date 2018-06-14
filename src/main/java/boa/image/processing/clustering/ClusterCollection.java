@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.util.Arrays;
+import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
 /**
@@ -49,16 +51,16 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
     public static boolean verbose;
     public static final Logger logger = LoggerFactory.getLogger(ClusterCollection.class);
     final Comparator<? super E> elementComparator;
-    Set<I> interfaces;
+    final TreeSet<I> interfaces;
     final HashMapGetCreate<E, Set<I>> interfaceByElement;
-    Collection<E> allElements;
+    final Collection<E> allElements;
     InterfaceFactory<E, I> interfaceFactory;
     
     public ClusterCollection(Collection<E> elements, Comparator<? super E> clusterComparator, InterfaceFactory<E, I> interfaceFactory) {
         this.elementComparator=clusterComparator;
-        interfaceByElement = new HashMapGetCreate<E, Set<I>>(elements.size(), new HashMapGetCreate.SetFactory());
+        interfaceByElement = new HashMapGetCreate<>(elements.size(), new HashMapGetCreate.SetFactory());
         this.allElements=elements;
-        this.interfaces = new HashSet<I>();
+        this.interfaces = new TreeSet<>();
         this.interfaceFactory=interfaceFactory;
     }
     
@@ -175,12 +177,27 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         if (this.forbidFusion!=null) this.forbidFusion = this.forbidFusion.or(forbidFusion);
         else this.forbidFusion=forbidFusion;
     }
-    public List<E> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfElementsToKeep) {
-        if (verbose) logger.debug("MERGE SORT check: {}, interfacesToKeep: {}, elements to keep: {}", checkCriterion, numberOfInterfacesToKeep, numberOfElementsToKeep);
+    public BooleanSupplier interfaceNumberStopCondition(int numberOfInterfacesToKeep) {
+        return () -> interfaces.size()<=numberOfInterfacesToKeep;
+    }
+    public BooleanSupplier elementNumberStopCondition(int numberOfElementsToKeep) {
+        return () -> allElements.size()<=numberOfElementsToKeep;
+    }
+    public static BooleanSupplier or(BooleanSupplier... condition) {
+        switch(condition.length) {
+            case 0:
+                return () -> true;
+            case 1:
+                return condition[0];
+            default:
+                return () -> Arrays.stream(condition).anyMatch(b->b.getAsBoolean());
+        }
+    }
+    public List<E> mergeSort(boolean checkCriterion, BooleanSupplier stopCondition) {
+        if (stopCondition==null) stopCondition = () -> false;
         long t0 = System.currentTimeMillis();
         for (I i : interfaces) i.updateInterface();
         int interSize = interfaces.size();
-        interfaces = new TreeSet(interfaces);
         if (verbose) {
             for (I i : interfaces) logger.debug("interface: {}", i);
             for (E e : interfaceByElement.keySet()) logger.debug("Element: {}, interfaces: {}", e, interfaceByElement.get(e));
@@ -189,7 +206,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         //List<I> interfaces = new ArrayList<>(this.interfaces);
         //Collections.sort(interfaces);
         Iterator<I> it = interfaces.iterator();
-        while (it.hasNext() && interfaces.size()>numberOfInterfacesToKeep && allElements.size()>numberOfElementsToKeep) {
+        while (it.hasNext() && !stopCondition.getAsBoolean()) {
             I i = it.next();
             if (forbidFusion!=null && forbidFusion.test(i)) continue; // do not remove interface as the test could change after fusions
             if (!checkCriterion || i.checkFusion() ) {

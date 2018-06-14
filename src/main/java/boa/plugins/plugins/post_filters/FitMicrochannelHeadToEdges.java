@@ -204,7 +204,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
                 //sm.setTestMode(verbose && object.getLabel()==debugLabel); // TODO ADD A MISC TEST VALUE THAT CHECKS IF OBJECTS OVERLAY
                 sm.addForbidFusionForegroundBackground(r->r==bck1||r==bck2, r->!Collections.disjoint(r.getVoxels(), foregroundVox));
                 if (bck1!=bck2) sm.addForbidFusion(i->(i.getE1()==bck1&&i.getE2()==bck2) || (i.getE1()==bck1&&i.getE2()==bck2)); // to be able to know how many region we want in the end. somtimes bck1 & bck2 can't merge
-                partition = sm.merge(partition, bck1==bck2 ? 2 :3); // keep 3 regions = background on both sides & foreground
+                partition = sm.merge(partition, sm.objectNumberLimitCondition(bck1==bck2 ? 2 :3)); // keep 3 regions = background on both sides & foreground
             }
             if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(partition.getLabelMap().duplicate("after ws transf"));
             partition.getRegions().removeIf(o->o.contains(cornerL) || o.contains(cornerR)); // remove background

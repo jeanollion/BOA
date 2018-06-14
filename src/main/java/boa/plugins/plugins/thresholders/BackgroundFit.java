@@ -78,9 +78,12 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
     public BackgroundFit(double sigmaFactor) {
         this.sigmaFactor.setValue(sigmaFactor);
     }
+    public double getSigmaFactor() {
+        return sigmaFactor.getValue().doubleValue();
+    }
     @Override
     public String getToolTipText() {
-        return "Fits a gaussian on the lower half of the mode's peak of the histogram to extract its parameters: Mean & Std. <br />Resulting Threshold = Mean + <em>Sigma Factor</em> * Std<br /> Supposes that the mode corresponds to the background values and that the lower half of the background peak is not too far from a gaussian distribution";
+        return "Fits a gaussian on the lower half of the mode's peak of the histogram to extract its 2 first moments: Mean & Standard deviation (Std). <br />Resulting Threshold = Mean + <em>Sigma Factor</em> * Std<br /> <br />Assumes that the mode corresponds to the background values and that the lower half of the background peak is not too far from a gaussian distribution";
     }
     
     

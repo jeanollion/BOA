@@ -567,7 +567,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (trackTreeController!=null) this.trackTreeController.setEnabled(!running);
         if (trackTreeStructureSelector!=null) this.trackTreeStructureSelector.getTree().setEnabled(!running);
         tabs.setEnabledAt(2, !running);
-        updateDisplayRelatedToXPSet();
+        //updateDisplayRelatedToXPSet();
     }
     // gui interface method
     @Override
@@ -713,7 +713,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             GUI.log("WARNING: current modification cannot be saved");
             //return;
         }
-        if (db.experimentChanged()) {
+        if (db.experimentChangedFromFile()) {
             if (db.isReadOnly()) {
                 this.setMessage("Configuration have changed but canno't be saved in read-only mode");
             } else {
@@ -2645,7 +2645,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
         if (!checkConnection()) return;
-        logger.debug("will run ... unsaved changes in config: {}", db==null? false : db.experimentChanged());
+        logger.debug("will run ... unsaved changes in config: {}", db==null? false : db.experimentChangedFromFile());
         promptSaveUnsavedChanges();
         
         Task t = getCurrentJob(null);

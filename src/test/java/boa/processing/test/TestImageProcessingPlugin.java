@@ -48,17 +48,19 @@ public class TestImageProcessingPlugin {
         new ImageJ();
         //String dbName = "MF1_180509";
         //String dbName = "fluo160501_uncorr_TestParam";
+        String dbName = "WT_180504";
+        //String dbName = "MF1_180509";
         //String dbName = "MutH_151220";
         //String dbName = "WT_150616";
         //String dbName = "WT_180318_Fluo";
         //String dbName = "Aya_170324";
-        String dbName = "Aya_180315";
+        //String dbName = "Aya_180315";
         //String dbName = "170919_glyc_lac";
         int pIdx =0;
-        int mcIdx =6;
-        int structureIdx =0;
+        int mcIdx =0;
+        int structureIdx =1;
         boolean segAndTrack = true;
-        int[] frames = new int[]{0,0}; //{215, 237};
+        int[] frames = new int[]{149,149}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);

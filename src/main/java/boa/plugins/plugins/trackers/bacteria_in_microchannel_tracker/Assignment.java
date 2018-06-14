@@ -148,7 +148,7 @@ public class Assignment {
             }
         }
         public boolean incrementPrev() {
-            if (idxPrevEnd()<ta.idxPrevLim) {
+            if (idxPrevEnd()<ta.prev.size()) {
                 Region o = ta.prev.get(idxPrevEnd());
                 prevObjects.add(o);
                 sizePrev=ta.sizeFunction.apply(prevObjects);
@@ -158,7 +158,7 @@ public class Assignment {
             } else return false;
         }
         public boolean incrementNext() {
-            if (idxNextEnd()<ta.idxNextLim) {
+            if (idxNextEnd()<ta.next.size()) {
                 Region o = ta.next.get(idxNextEnd());
                 nextObjects.add(o);
                 sizeNext=ta.sizeFunction.apply(nextObjects);
@@ -334,7 +334,7 @@ public class Assignment {
             return ta.verifyInequality(sizePrev, sizeNext);
         }
         public boolean truncatedEndOfChannel() {
-            return (ta.truncatedChannel && idxNextEnd()==ta.idxNextLim   && 
+            return (ta.truncatedChannel && idxNextEnd()==ta.next.size()   && 
                     (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE && !Double.isNaN(getPreviousSizeRatio()) ? getPreviousSizeRatio()-sizeNext/sizePrev>significativeSRErrorThld : sizePrev * ta.baseSizeRatio[0] > sizeNext) ); //&& idxEnd-idx==1 // && idxPrevEnd-idxPrev==1
         }
         public boolean needCorrection() {
@@ -348,7 +348,7 @@ public class Assignment {
          * @return a length 2 array holing the error count (see {@link #getErrorCount() } and the difference between size increment and expected size increment from previous frames when available, NaN when not available
          */
         protected double[] getScore() {
-            if (this.nextObjects.isEmpty() && idxNextEnd()<ta.idxNextLim) return new double[]{getErrorCount(), 0}; // cell death scenario
+            if (this.nextObjects.isEmpty() && idxNextEnd()<ta.next.size()) return new double[]{getErrorCount(), 0}; // cell death scenario
             double prevSizeRatio = ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE ? getPreviousSizeRatio() : Double.NaN;
             if (Double.isNaN(prevSizeRatio)) return new double[]{getErrorCount(), Double.NaN};
             if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignement score: prevSI: {}, SI: {}", ta.verboseLevel, prevSizeRatio, sizeNext/sizePrev);

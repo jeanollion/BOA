@@ -46,6 +46,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import java.util.Iterator;
+import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 
 /**
@@ -146,11 +147,16 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
     
     public static <I extends InterfaceRegion<I>> void mergeSort(RegionPopulation population, InterfaceFactory<Region, I> interfaceFactory, boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
         RegionCluster<I> c = new RegionCluster<>(population, null, true, interfaceFactory);
-        c.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
+        c.mergeSort(checkCriterion, ClusterCollection.or(c.elementNumberStopCondition(numberOfObjecsToKeep), c.interfaceNumberStopCondition(numberOfInterfacesToKeep)));
     }
     
     public static <I extends InterfaceRegion<I>> void mergeSort(RegionPopulation population, InterfaceFactory<Region, I> interfaceFactory) {
         mergeSort(population, interfaceFactory, true, 0, 0);
+    }
+    
+    public static void mergeUntil(RegionPopulation pop, int objectLimit, int interfaceLimit) {
+        RegionCluster<SimpleInterfaceVoxelSet> c = new RegionCluster<>(pop, false, SimpleInterfaceVoxelSet.interfaceFactory());
+        c.mergeSort(false, ClusterCollection.or(c.elementNumberStopCondition(objectLimit), c.interfaceNumberStopCondition(interfaceLimit)));
     }
     
     public void setUnmergeablePoints(final List<Region> points) {
@@ -175,10 +181,10 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         }
         return null;
     }
-    @Override public List<Region> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
+    @Override public List<Region> mergeSort(boolean checkCriterion, BooleanSupplier stopCondition) {
         int nInit = population.getRegions().size();
         if (backgroundRegion!=null) allElements.add(backgroundRegion); // so that is it taken into acount in counts
-        super.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
+        super.mergeSort(checkCriterion, stopCondition);
         if (backgroundRegion!=null) allElements.remove(backgroundRegion); // part of it is out-of-bound
         if (nInit > population.getRegions().size()) population.relabel(true);
         return population.getRegions();
@@ -241,11 +247,9 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         ImageFloat im = new ImageFloat("Interface Values", cluster.population.getImageProperties());
         for (I i : cluster.interfaces) {
             double val = value.apply(i);
-            for (Voxel v : i.getVoxels()) {
-                if (!cluster.population.getLabelMap().contains(v.x, v.y, v.z)) continue; // case of background pixels -> can be out of bound
-                if (cluster.population.getLabelMap().getPixelInt(v.x, v.y, v.z)==i.getE1().getLabel()) im.setPixel(v.x, v.y, v.z, val);
-                else im.setPixel(v.x, v.y, v.z, val);
-            }
+            i.getVoxels().stream()
+                .filter((v) -> cluster.population.getLabelMap().contains(v.x, v.y, v.z)) // case of background pixels -> can be out of bound
+                .forEach((v) -> im.setPixel(v.x, v.y, v.z, val));
         }
         return im;
     }
@@ -254,8 +258,5 @@ public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollecti
         public Collection<Voxel> getVoxels();
     }
     
-    public static void mergeUntil(RegionPopulation pop, int objectLimit, int interfaceLimit) {
-        RegionCluster<SimpleInterfaceVoxelSet> cluster = new RegionCluster<>(pop, false, SimpleInterfaceVoxelSet.interfaceFactory());
-        cluster.mergeSort(false, interfaceLimit, objectLimit);
-    }
+    
 }

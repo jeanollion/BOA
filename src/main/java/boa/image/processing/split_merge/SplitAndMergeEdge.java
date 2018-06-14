@@ -40,6 +40,7 @@ import boa.image.processing.clustering.RegionCluster;
 import boa.measurement.BasicMeasurements;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -51,8 +52,7 @@ import java.util.stream.Stream;
  */
 public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface> {
     final Image edge;
-    public ImageByte tempSplitMask;
-    public final double splitThresholdValue;
+    public double splitThresholdValue;
     Function<Interface, Double> interfaceValue;
 
     public SplitAndMergeEdge(Image edgeMap, Image intensityMap, double splitThreshold, boolean normalizeEdgeValues) {
@@ -65,6 +65,10 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
     public BiFunction<? super Interface, ? super Interface, Integer> compareMethod=null;
     public Image drawInterfaceValues(RegionPopulation pop) {
         return RegionCluster.drawInterfaceValues(new RegionCluster<>(pop, true, getFactory()), i->{i.updateInterface(); return i.value;});
+    }
+    public SplitAndMergeEdge setThresholdValue(double splitThreshold) {
+        this.splitThresholdValue = splitThreshold;
+        return this;
     }
     public SplitAndMergeEdge setInterfaceValue(double quantile, boolean normalizeEdgeValues) {
         interfaceValue = i-> {
@@ -94,11 +98,6 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
     public Image getSeedCreationMap() {
         return edge;
     }
-
-    public ImageByte getSplitMask() {
-        if (tempSplitMask==null) tempSplitMask = new ImageByte("split mask", edge);
-        return tempSplitMask;
-    }
     
     @Override
     protected ClusterCollection.InterfaceFactory<Region, Interface> createFactory() {
@@ -107,8 +106,8 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
     
     public class Interface extends InterfaceRegionImpl<Interface> implements RegionCluster.InterfaceVoxels<Interface> {
         public double value;
-        Set<Voxel> voxels; // to allow duplicate values from background
-        Set<Voxel> duplicatedVoxels;
+        Set<Voxel> voxels; 
+        Set<Voxel> duplicatedVoxels; // to allow duplicate values from background
         public Interface(Region e1, Region e2) {
             super(e1, e2);
             voxels = new HashSet<>();
@@ -134,14 +133,14 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
 
         @Override
         public boolean checkFusion() {
-            if (voxels.size()<=5) return false;
             if (addTestImage!=null) logger.debug("check fusion: {}+{}, size: {}, value: {}, threhsold: {}, fusion: {}", e1.getLabel(), e2.getLabel(), voxels.size(), value, splitThresholdValue, value<splitThresholdValue);
+            if (voxels.size()+duplicatedVoxels.size()<=2 && Math.min(getE1().size(), getE2().size())>10) return false;
             return value<splitThresholdValue;
         }
 
         @Override
         public void addPair(Voxel v1, Voxel v2) {
-            if (foregroundMask==null || !foregroundMask.contains(v1.x, v1.y, v1.z)) duplicatedVoxels.add(v2);
+            if (foregroundMask!=null && !foregroundMask.contains(v1.x, v1.y, v1.z)) duplicatedVoxels.add(v2);
             else  voxels.add(v1);
             voxels.add(v2);
         }

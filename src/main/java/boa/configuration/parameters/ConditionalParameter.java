@@ -44,11 +44,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
     public Object toJSONEntry() {
         JSONObject res = new JSONObject();
         res.put("action", action.toJSONEntry());
-        //if (defaultParameters!=null && !defaultParameters.isEmpty()) res.put("def", JSONUtils.toJSONArrayMap(defaultParameters));
-        JSONObject params = new JSONObject();
-        //for (Entry<String, List<Parameter>> e : parameters.entrySet()) params.put(e.getKey(), JSONUtils.toJSONArrayMap(e.getValue()));
-        if (getCurrentParameters()!=null && currentValue!=null) params.put(currentValue, JSONUtils.toJSONArrayMap(getCurrentParameters())); // only the currently used parameters
-        res.put("params", params);
+        if (getCurrentParameters()!=null) res.put("params", JSONUtils.toJSONArrayMap(getCurrentParameters()));
         return res;
     }
 
@@ -57,16 +53,10 @@ public class ConditionalParameter extends SimpleContainerParameter {
         if (json instanceof JSONObject) {
             JSONObject jsonO = (JSONObject)json;
             action.initFromJSONEntry(jsonO.get("action"));
-            if (jsonO.containsKey("def") && defaultParameters!=null) {
-                if (JSONUtils.isJSONArrayMap(jsonO.get("def"))) JSONUtils.fromJSONArrayMap(defaultParameters, (JSONArray)jsonO.get("def"));
-                else JSONUtils.fromJSON(defaultParameters, (JSONArray)jsonO.get("def"));
-            }
-            JSONObject params = (JSONObject)jsonO.get("params");
-            for (Entry<String, List<Parameter>> e : parameters.entrySet()) {
-                if (params.containsKey(e.getKey())) {
-                    if (JSONUtils.isJSONArrayMap(params.get(e.getKey()))) JSONUtils.fromJSONArrayMap(e.getValue(), (JSONArray)params.get(e.getKey()));
-                    else JSONUtils.fromJSON(e.getValue(), (JSONArray)params.get(e.getKey()));
-                }
+            currentValue = action.getValue();
+            if (jsonO.containsKey("params") && getCurrentParameters()!=null) {
+                JSONArray params =  jsonO.get("params") instanceof JSONArray ? (JSONArray) jsonO.get("params") :  (JSONArray)((JSONObject)jsonO.get("params")).get(currentValue);
+                JSONUtils.fromJSONArrayMap(getCurrentParameters(), params);
             }
         } else if (json instanceof String && action instanceof ChoiceParameter && Arrays.asList(((ChoiceParameter)action).listChoice).contains((String)json)) { // only action
             action.initFromJSONEntry(json);

@@ -101,7 +101,7 @@ public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeReg
         }
         
     }
-
+    
     public BiFunction<? super Interface, ? super Interface, Integer> compareMethod=null;
     
     public SplitAndMergeRegionCriterion setInterfaceValue(Function<Interface, Double> interfaceValue) {
@@ -115,7 +115,7 @@ public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeReg
     public Image getSeedCreationMap() {
         return wsMap;
     }
-
+    
     @Override
     protected ClusterCollection.InterfaceFactory<Region, Interface> createFactory() {
         return (Region e1, Region e2) -> new Interface(e1, e2);

@@ -940,7 +940,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             double score1 = Math.abs(taCur1.getSize()/taPrev1.getSize()-sizeRatio1);
             double scoreDiv = Math.abs((taCur1.getSize()+taCur2.getSize())/taPrev1.getSize()-sizeRatio1);
 
-            boolean endOfChannel = a.idxPrevEnd()==a.ta.idxPrevLim; // idxEnd==idxLim ||  // if end of channel : assignement only from start 
+            boolean endOfChannel = a.idxPrevEnd()==a.ta.prev.size(); // idxEnd==idxLim ||  // if end of channel : assignement only from start 
             TrackAttribute taCurEnd1, taCurEnd2, taPrevEnd;
             double scoreEnd1=Double.POSITIVE_INFINITY, scoreEndDiv=Double.POSITIVE_INFINITY;
             if (!endOfChannel) {
@@ -989,7 +989,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         } else if (a.objectCountPrev()==1 && a.objectCountNext()==0) { // end of lineage
             TrackAttribute ta = getAttribute(frame-1, a.idxPrev);
             ta.resetTrackAttributes(false, true);
-            if (a.idxPrev<a.ta.idxPrevLim-1 && ta.getLineageSizeRatio(true)>SRQuiescentThld) ta.errorCur=true; // no error if cell is not growing
+            if (a.idxPrev<a.ta.prev.size()-1 && ta.getLineageSizeRatio(true)>SRQuiescentThld) ta.errorCur=true; // no error if cell is not growing
         } else if (a.objectCountNext()==1 && a.objectCountPrev()==0) {
             TrackAttribute ta = getAttribute(frame, a.idxNext);
             ta.resetTrackAttributes(true, false);

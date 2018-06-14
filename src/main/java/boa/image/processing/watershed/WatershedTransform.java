@@ -214,14 +214,14 @@ public class WatershedTransform {
             Voxel v = heap.pollFirst();
             if (segmentedMap.getPixelInt(v.x, v.y, v.z)>0) continue; //already segmented
             score.setUp(v);
-            for (int i = 0; i<neigh.getSize(); ++i) {
+            for (int i = 0; i<neigh.getSize(); ++i) { // check all neighbors
                 Voxel n = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]) ;
                 if (segmentedMap.contains(n.x, n.y, n.z) && mask.insideMask(n.x, n.y, n.z)) {
                     int nextLabel = segmentedMap.getPixelInt(n.x, n.y, n.z);
-                    if (nextLabel>0) {
-                        if (surroundingLabels!=null) surroundingLabels.add(nextLabel);
-                        score.add(n, nextLabel);
-                    } else {
+                    if (nextLabel>0) { // if already segmented
+                        if (surroundingLabels!=null) surroundingLabels.add(nextLabel); // add to surrounding labels for fusion cirterion
+                        score.add(n, nextLabel); // add candidate spot for segmentation
+                    } else { // else -> add to propagation heap
                         n.value = watershedMap.getPixel(n.x, n.y, n.z);
                         nextProp.add(n);
                     }
@@ -294,6 +294,7 @@ public class WatershedTransform {
             //return new MaxSeedPriority();
         } 
         return new MaxDiffWsMap(); // for WS map = EDGE map
+        //return new MinDiffWsMap();
     }
     private interface Score {
         public abstract void setUp(Voxel center);
@@ -302,7 +303,7 @@ public class WatershedTransform {
     }
     private class MinDiffWsMap implements Score {
         double centerV = 0;
-        double curDiff = -Double.MAX_VALUE;
+        double curDiff = Double.POSITIVE_INFINITY;
         int curLabel;
         @Override
         public void add(Voxel v, int label) {
@@ -324,10 +325,10 @@ public class WatershedTransform {
             curLabel=0;
         }
     }
-    private class MaxDiffWsMap implements Score {
+    private class MaxDiffWsMap implements Score { // assign to adjacent spot with maximal difference in watershed map
         double centerV = 0;
-        double curDiff = -Double.MAX_VALUE;
-        int curLabel;
+        double curDiff = Double.NEGATIVE_INFINITY; // reset
+        int curLabel = 0;
         @Override
         public void add(Voxel v, int label) {
             //double diff=!decreasingPropagation ? watershedMap.getPixel(v.x, v.y, v.z) : -watershedMap.getPixel(v.x, v.y, v.z);

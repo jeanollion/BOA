@@ -94,13 +94,13 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
     
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{watershedMap, thldCond, splitThreshold , minSize, hessianScale, filterBorderArtefacts,ltCond, sigmaThldForVoidMC};
+        return new Parameter[]{edgeMap, thldCond, splitThreshold , minSize, hessianScale, filterBorderArtefacts,ltCond, sigmaThldForVoidMC};
     }
     public BacteriaIntensityPhase() {
         this.splitThreshold.setValue(0.10); // 0.15 for scale = 3
         this.minSize.setValue(100);
         this.hessianScale.setValue(2);
-        this.watershedMap.removeAll().add(new Sigma(3).setMedianRadius(2));
+        this.edgeMap.removeAll().add(new Sigma(3).setMedianRadius(2));
         thresholdMethod.setSelectedIndex(1);
         localThresholdFactor.setToolTipText("Factor defining the local threshold. <br />Lower value of this factor will yield in smaller cells. <br />Threshold = mean_w - sigma_w * (this factor), <br />with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
         localThresholdFactor.setValue(1);
@@ -196,7 +196,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
             SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS);
             //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getRawImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS_INV); // TODO TRY WITH RAW INTENSITIES
             sm.addForbidFusion(i->foregroundL.contains(i.getE1())==foregroundL.contains(i.getE2()));
-            sm.merge(pop, -1);
+            sm.merge(pop, null);
             if (stores!=null) imageDisp.accept(pop.getLabelMap().duplicate("after merge undetermined regions with foregorund foreground"));
             relabeled= true;
         }
@@ -223,7 +223,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
                 sm.addForbidFusionForegroundBackground(r->r==background, r->r==foreground);
                 //sm.addForbidFusionForegroundBackground(r->backgroundL.contains(r), r->foregroundL.contains(r));
                 sm.setTestMode(imageDisp);
-                sm.merge(pop, 2); // merge intertermined until 2 categories in the image
+                sm.merge(pop, sm.objectNumberLimitCondition(2)); // merge intertermined until 2 categories in the image
                 pop.getRegions().remove(background);
                 //pop.getRegions().removeAll(backgroundL);
                 pop.relabel(true);
@@ -347,7 +347,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         }
         splitAndMerge.setTestMode(TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent));
         splitAndMerge.setInterfaceValue(i->-(double)i.getVoxels().size()); // split @ smallest interface ? 
-        RegionPopulation res = splitAndMerge.splitAndMerge(mask, object.size()/4, 2);
+        RegionPopulation res = splitAndMerge.splitAndMerge(mask, object.size()/4, splitAndMerge.objectNumberLimitCondition(2));
         setInterfaceValue(input, splitAndMerge); // for interface value computation
         //res =  localThreshold(input, res, parent, structureIdx, true); 
         if (object.isAbsoluteLandMark()) res.translate(parent.getBounds(), true);
