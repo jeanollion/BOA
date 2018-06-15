@@ -40,6 +40,7 @@ import loci.formats.FormatException;
 import loci.formats.meta.IMetadata;
 import loci.formats.services.OMEXMLService;
 import loci.plugins.util.ImageProcessorReader;
+import loci.plugins.in.ImagePlusReader;
 import loci.plugins.util.LociPrefs;
 import ome.units.quantity.Length;
 import static boa.image.Image.logger;
