@@ -218,13 +218,13 @@ public class MutableBoundingBox extends SimpleBoundingBox<MutableBoundingBox>  {
      * @param properties 
      * @return  current modified boundingbox object
      */
-    public MutableBoundingBox trim(MutableBoundingBox properties) {
-        if (xMin<properties.xMin) xMin=properties.xMin;
-        if (yMin<properties.yMin) yMin=properties.yMin;
-        if (zMin<properties.zMin) zMin=properties.zMin;
-        if (xMax>properties.xMax) xMax=properties.xMax;
-        if (yMax>properties.yMax) yMax=properties.yMax;
-        if (zMax>properties.zMax) zMax=properties.zMax;
+    public MutableBoundingBox trim(BoundingBox properties) {
+        if (xMin<properties.xMin()) xMin=properties.xMin();
+        if (yMin<properties.yMin()) yMin=properties.yMin();
+        if (zMin<properties.zMin()) zMin=properties.zMin();
+        if (xMax>properties.xMax()) xMax=properties.xMax();
+        if (yMax>properties.yMax()) yMax=properties.yMax();
+        if (zMax>properties.zMax()) zMax=properties.zMax();
         return this;
     }
     

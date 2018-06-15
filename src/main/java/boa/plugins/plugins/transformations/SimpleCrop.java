@@ -22,19 +22,21 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.StructureObjectPreProcessing;
+import boa.image.BoundingBox;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.plugins.ConfigurableTransformation;
 import java.util.ArrayList;
 import boa.plugins.Cropper;
 import boa.plugins.MultichannelTransformation;
+import boa.plugins.ToolTip;
 import boa.plugins.Transformation;
 
 /**
  *
  * @author jollion
  */
-public class SimpleCrop implements MultichannelTransformation, ConfigurableTransformation {
+public class SimpleCrop implements MultichannelTransformation, ToolTip {
     NumberParameter xMin = new NumberParameter("X-Min", 0, 0);
     NumberParameter yMin = new NumberParameter("Y-Min", 0, 0);
     NumberParameter zMin = new NumberParameter("Z-Min", 0, 0);
@@ -72,7 +74,7 @@ public class SimpleCrop implements MultichannelTransformation, ConfigurableTrans
         if (bounds.length>4) zMin.setValue(bounds[4]);
         if (bounds.length>5) zLength.setValue(bounds[5]);
     }
-    @Override
+    /*@Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
        return bounds!=null;
     }
@@ -87,12 +89,25 @@ public class SimpleCrop implements MultichannelTransformation, ConfigurableTrans
         zMin.getValue().intValue(), zMin.getValue().intValue()+zLength.getValue().intValue()-1);
         bounds.trim(input.getBoundingBox());
         
-    }
+    }*/
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
+        enshureValidBounds(image);
         return image.crop(bounds);
     }
 
+    private void enshureValidBounds(BoundingBox bb) {
+        if (bounds!=null && bounds.getSizeXYZ()!=0) return;
+        else synchronized (this) {
+            if (bounds == null) bounds = new MutableBoundingBox(xMin.getValue().intValue(), yMin.getValue().intValue(), zMin.getValue().intValue());
+            bounds.setxMax(xLength.getValue().intValue()==0 ? bb.xMax() : bounds.xMin()+xLength.getValue().intValue());
+            bounds.setyMax(yLength.getValue().intValue()==0 ? bb.yMax() : bounds.yMin()+yLength.getValue().intValue());
+            bounds.setzMax(zLength.getValue().intValue()==0 ? bb.zMax() : bounds.zMin()+zLength.getValue().intValue());
+            bounds.trim(bb);
+        }
+        
+    }
+    
     @Override
     public Parameter[] getParameters() {
         return parameters;
@@ -104,6 +119,11 @@ public class SimpleCrop implements MultichannelTransformation, ConfigurableTrans
 
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
+
+    @Override
+    public String getToolTipText() {
+        return "Crop All preprocessed image within a constant bounding box";
+    }
 
     
 }

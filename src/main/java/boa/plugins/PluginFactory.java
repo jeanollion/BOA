@@ -18,6 +18,7 @@
  */
 package boa.plugins;
 
+import com.sun.javafx.util.Utils;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
@@ -108,15 +109,19 @@ public class PluginFactory {
 
             Enumeration<URL> resources = classLoader.getResources(path);
 
-            List<File> dirs = new ArrayList<File>();
-            List<String> pathToJars = new ArrayList<String>();
+            List<File> dirs = new ArrayList<>();
+            List<String> pathToJars = new ArrayList<>();
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
                 String p = resource.getPath();
-                if (p.contains("!")) pathToJars.add(p.substring(p.indexOf("file:")+5, p.indexOf("!")));
+                if (p.contains("!")) {
+                    p = p.substring(p.indexOf("file:")+5, p.indexOf("!"));
+                    if (Utils.isUnix()) p = p.replaceAll("%20", " ");// space char replacement ... TODO test that this is valid for all unix system + test on windows
+                    pathToJars.add(p);
+                }
                 else dirs.add(new File(resource.getFile()));
             }
-            ArrayList<Class> classes = new ArrayList<Class>();
+            List<Class> classes = new ArrayList<>();
             for (File directory : dirs) findClasses(directory, packageName, classes);
             for (String pathToJar : pathToJars) findClassesFromJar(pathToJar, classes);
             //logger.info("looking for plugin in package: {}, path: {}, #dirs: {}, dir0: {}, #classes: {}", packageName, path, dirs.size(), !dirs.isEmpty()?dirs.get(0).getAbsolutePath():"", classes.size());
