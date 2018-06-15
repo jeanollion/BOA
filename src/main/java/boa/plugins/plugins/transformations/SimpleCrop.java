@@ -122,7 +122,7 @@ public class SimpleCrop implements MultichannelTransformation, ToolTip {
 
     @Override
     public String getToolTipText() {
-        return "Crop All preprocessed image within a constant bounding box";
+        return "Crop All preprocessed image within a constant bounding box.";
     }
 
     
