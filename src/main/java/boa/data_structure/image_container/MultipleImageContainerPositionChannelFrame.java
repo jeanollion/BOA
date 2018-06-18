@@ -47,7 +47,7 @@ import boa.utils.Pair;
  * @author jollion
  */
 public class MultipleImageContainerPositionChannelFrame extends MultipleImageContainer { // one file per channel & per frame
-    
+    byte[][] bufferStore = new byte[1][];
     String inputDir, extension, positionKey, timeKeyword;
     int frameNumber;
     String[] channelKeywords;
@@ -224,17 +224,13 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     }
 
     @Override
-    public Image getImage(int frame, int channel) {
+    public synchronized Image getImage(int frame, int channel) { // synchronized if use of buffer
         if (fileCT==null) {
-            synchronized(this) {
+            //synchronized(this) {
                 if (fileCT==null) createFileMap();
-            }
+            //}
         }
-        /*if (timePoint==0) {
-            logger.debug("fileMap: {} x {}", fileCT.size(), fileCT.get(0).size());
-            logger.debug("file: {}", fileCT.get(channel).get(timePoint));
-        }*/
-        return ImageReader.openImage(fileCT.get(channel).get(frame));
+        return ImageReader.openImage(fileCT.get(channel).get(frame), new ImageIOCoordinates(), bufferStore);
     }
     
     
@@ -246,12 +242,13 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
                 if (fileCT==null) createFileMap();
             }
         }
-        return ImageReader.openImage(fileCT.get(channel).get(frame), new ImageIOCoordinates(0, 0, 0, bounds));
+        return ImageReader.openImage(fileCT.get(channel).get(frame), new ImageIOCoordinates(0, 0, 0, bounds), bufferStore);
     }
 
     @Override
     public void flush() {
         fileCT=null;
+        bufferStore[0] = null;
     }
 
     @Override

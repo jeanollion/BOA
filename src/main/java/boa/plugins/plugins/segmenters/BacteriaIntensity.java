@@ -99,6 +99,7 @@ import java.util.stream.Stream;
 public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityPhase>, SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ToolTip, TestableProcessingPlugin {
     public static boolean verbose = false;
     public enum FOREGROUND_SELECTION_METHOD {SIMPLE_THRESHOLDING, HYSTERESIS_THRESHOLDING, EDGE_FUSION};
+    public enum THRESHOLD_COMPUTATION {CURRENT_FRAME, PARENT_TRACK, EDGE_FUSION};
     protected double threshold=Double.NaN;
     protected double minThld = Double.NaN;
     // configuration-related attributes

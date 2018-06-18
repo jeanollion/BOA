@@ -46,6 +46,7 @@ public class TestImageProcessingPlugin {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
+        
         //String dbName = "MF1_180509";
         //String dbName = "fluo160501_uncorr_TestParam";
         String dbName = "WT_180504";
@@ -60,7 +61,7 @@ public class TestImageProcessingPlugin {
         int mcIdx =0;
         int structureIdx =1;
         boolean segAndTrack = true;
-        int[] frames = new int[]{149,149}; //{215, 237};
+        int[] frames = new int[]{190,200}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);

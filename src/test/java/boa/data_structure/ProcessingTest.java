@@ -31,7 +31,6 @@ import boa.image.ImageByte;
 import boa.image.io.ImageFormat;
 import boa.image.io.ImageWriter;
 import boa.image.TypeConverter;
-import boa.image.ImageIOTest;
 import java.io.File;
 import java.util.logging.Level;
 import static org.junit.Assert.assertEquals;

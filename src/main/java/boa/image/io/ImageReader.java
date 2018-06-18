@@ -18,38 +18,35 @@
  */
 package boa.image.io;
 
-import boa.image.BoundingBox;
 import boa.image.MutableBoundingBox;
 import boa.image.IJImageWrapper;
 import boa.image.Image;
 import static boa.image.io.ImportImageUtils.paseDVLogFile;
 import ij.ImagePlus;
-import ij.ImageStack;
 import ij.io.FileInfo;
-import ij.io.FileOpener;
 import ij.io.Opener;
 import ij.io.TiffDecoder;
-import ij.process.ImageProcessor;
 import java.io.File;
 import java.io.IOException;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
-import loci.formats.ChannelSeparator;
 import loci.formats.FormatException;
 import loci.formats.meta.IMetadata;
 import loci.formats.services.OMEXMLService;
-import loci.plugins.util.ImageProcessorReader;
-import loci.plugins.in.ImagePlusReader;
-import loci.plugins.util.LociPrefs;
 import ome.units.quantity.Length;
 import static boa.image.Image.logger;
+import boa.image.ImageByte;
+import boa.image.ImageFloat;
+import boa.image.ImageInt;
+import boa.image.ImageShort;
 import boa.utils.Pair;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.stream.IntStream;
+import loci.common.DataTools;
+import loci.formats.FormatTools;
 import loci.formats.IFormatReader;
 import org.joda.time.DateTimeZone;
 
@@ -64,7 +61,7 @@ public class ImageReader {
     private String fullPath;
     List<Double> timePoints;
     //BioFormats
-    ImageProcessorReader reader;
+    IFormatReader reader;
     IMetadata meta;
     boolean invertTZ;
     boolean supportView;
@@ -122,8 +119,8 @@ public class ImageReader {
         if (!new File(getImagePath()).exists()) logger.error("File: {} was not found", getImagePath());
         //logger.debug("init reader: {}", getImagePath());
         //ifr = LociPrefs.makeImageReader();
-        reader = new ImageProcessorReader(new ChannelSeparator(LociPrefs.makeImageReader()));
-        
+        //reader = new ImageProcessorReader(new ChannelSeparator(LociPrefs.makeImageReader()));
+        reader = new loci.formats.ImageReader();
         ServiceFactory factory;
         try {
             factory = new ServiceFactory();
@@ -155,6 +152,7 @@ public class ImageReader {
     }
     
     public void closeReader() {
+        buffer = null;
         if (reader==null) return;
         try {
             reader.close();
@@ -164,7 +162,7 @@ public class ImageReader {
     }
     
     public Image openChannel() {
-        return openImage(new ImageIOCoordinates());
+        return ImageReader.this.openImage(new ImageIOCoordinates());
     }
     public Image openImage(ImageIOCoordinates coords) {
         if (reader==null) return null;
@@ -193,18 +191,16 @@ public class ImageReader {
             zMin=0; zMax=sizeZ-1;
         }
         //logger.debug("open image: {}, sizeX: {}, sizeY: {}, sizeZ: {}, zMin: {}, zMax: {}", this.getImagePath(), sizeX, sizeY, sizeZ, zMin, zMax);
-        ImageStack stack = new ImageStack(sizeX, sizeY);
+        List<Image> planes = new ArrayList<>(zMax - zMin+1);
         for (int z = zMin; z <= zMax; z++) {
             int idx = getIndex(coords.getChannel(), coords.getTimePoint(), z);
-            ImageProcessor ip;
             try {
                 if (coords.getBounds()==null || !supportView) {
-                    ip = reader.openProcessors(idx)[0];
+                    planes.add(openImage(idx, 0, 0, sizeX, sizeY));
                 } else {
-                    ip = reader.openProcessors(idx, coords.getBounds().xMin(), coords.getBounds().yMin(), coords.getBounds().sizeX(), coords.getBounds().sizeY())[0];
+                    planes.add(openImage(idx, coords.getBounds().xMin(), coords.getBounds().yMin(), coords.getBounds().sizeX(), coords.getBounds().sizeY()));
                 }
-                stack.addSlice("" + (z + 1), ip);
-                res = IJImageWrapper.wrap(new ImagePlus("", stack));
+                res = Image.mergeZPlanes(planes);
                 if (!supportView && coords.getBounds()!=null) { // crop
                     MutableBoundingBox bounds = new MutableBoundingBox(coords.getBounds());
                     bounds.setzMin(0);
@@ -219,6 +215,79 @@ public class ImageReader {
             }
         }
         return res;
+    }
+    // code from loci.plugins.uti.ImageProcessorReader
+    private byte[] buffer;
+    private Image openImage(int no, int x, int y, int w, int h) throws FormatException, IOException {
+        // read byte array
+        int c = reader.getRGBChannelCount();
+        if (c>1) throw new IllegalArgumentException("RGB image not supported!");
+        int type = reader.getPixelType();
+        int bpp = FormatTools.getBytesPerPixel(type);
+        boolean interleave = reader.isInterleaved();
+        int bufLength = w * h * c * bpp;
+        buffer = (buffer!=null && buffer.length==bufLength) ? reader.openBytes(no, buffer, x, y, w, h) : reader.openBytes(no, x, y, w, h);
+        if (buffer.length != w * h * c * bpp && buffer.length != w * h * bpp) throw new FormatException("Invalid byte array length: " + buffer.length + " (expected w=" + w + ", h=" + h + ", c=" + c + ", bpp=" + bpp + ")");
+       
+        // convert byte array to appropriate primitive array type
+        boolean isFloat = FormatTools.isFloatingPoint(type);
+        boolean isLittle = reader.isLittleEndian();
+        boolean isSigned = FormatTools.isSigned(type);
+
+        //byte[] channel = ImageTools.splitChannels(buffer, 0, c, bpp, false, interleave);
+        byte[] channel = buffer;
+        Object pixels = DataTools.makeDataArray(channel, bpp, isFloat, isLittle);
+        if (pixels instanceof byte[]) {
+            byte[] q = (byte[]) pixels;
+            if (q.length != w * h) {
+                byte[] tmp = q;
+                q = new byte[w * h];
+                System.arraycopy(tmp, 0, q, 0, Math.min(q.length, tmp.length));
+            }
+            if (isSigned) q = DataTools.makeSigned(q);
+            if (q==buffer) buffer = null; // avoid reusing buffer later
+            return new ImageByte("", w, q);
+        }
+        else if (pixels instanceof short[]) {
+            short[] q = (short[]) pixels;
+            if (q.length != w * h) {
+                short[] tmp = q;
+                q = new short[w * h];
+                System.arraycopy(tmp, 0, q, 0, Math.min(q.length, tmp.length));
+            }
+            if (isSigned) q = DataTools.makeSigned(q);
+            return new ImageShort("", w, q);
+        }
+        else if (pixels instanceof int[]) {
+            int[] q = (int[]) pixels;
+            if (q.length != w * h) {
+                int[] tmp = q;
+                q = new int[w * h];
+                System.arraycopy(tmp, 0, q, 0, Math.min(q.length, tmp.length));
+            }
+            return new ImageInt("", w, q);
+        }
+        else if (pixels instanceof float[]) {
+            float[] q = (float[]) pixels;
+            if (q.length != w * h) {
+                float[] tmp = q;
+                q = new float[w * h];
+                System.arraycopy(tmp, 0, q, 0, Math.min(q.length, tmp.length));
+            }
+            return new ImageFloat("", w, q);
+        }
+        else if (pixels instanceof double[]) {
+            double[] q = (double[]) pixels;
+            if (q.length != w * h) {
+                double[] tmp = q;
+                q = new double[w * h];
+                System.arraycopy(tmp, 0, q, 0, Math.min(q.length, tmp.length));
+            }
+            float[] pix = new float[q.length];
+            double[] src = q;
+            IntStream.range(0, q.length).forEach(i->pix[i] = (float)src[i]);
+            return new ImageFloat("", w, pix);
+        } else throw new RuntimeException("Unrecognized pixel type");
     }
     
     private int getIndex(int c, int t, int z) {
@@ -320,10 +389,13 @@ public class ImageReader {
     }
     
     public static Image openImage(String filePath) {
-        return ImageReader.openImage(filePath, new ImageIOCoordinates());
+        return openImage(filePath, new ImageIOCoordinates());
     }
     
     public static Image openImage(String filePath, ImageIOCoordinates ioCoords) {
+        return openImage(filePath, ioCoords, null);
+    }
+    public static Image openImage(String filePath, ImageIOCoordinates ioCoords, byte[][] buffer) {
         if (filePath.endsWith(".tif")) { // try with faster IJ's method
             if (ioCoords.getSerie()==0 && ioCoords.getChannel()==0 && ioCoords.getTimePoint()==0) {
                 Image res= openIJTif(filePath);
@@ -334,7 +406,9 @@ public class ImageReader {
             }
         }
         ImageReader reader = new ImageReader(filePath);
+        if (buffer!=null) reader.buffer = buffer[0];
         Image im = reader.openImage(ioCoords);
+        if (buffer!=null) buffer[0] = reader.buffer;
         reader.closeReader();
         return im;
     }

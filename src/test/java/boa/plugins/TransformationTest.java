@@ -19,7 +19,6 @@ package boa.plugins;
 
 import boa.test_utils.TestUtils;
 import boa.image.ImageByte;
-import boa.image.ImageIOTest;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import boa.image.processing.ImageTransformation;
