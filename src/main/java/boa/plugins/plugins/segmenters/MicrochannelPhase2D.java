@@ -19,8 +19,8 @@
 package boa.plugins.plugins.segmenters;
 
 import boa.plugins.MicrochannelSegmenter;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.ConditionalParameter;
@@ -76,24 +76,23 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
 
     
     public enum X_DER_METHOD {CONSTANT, RELATIVE_TO_INTENSITY}
-    NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Typical Width (pixels)", 0, 20, 5, null);
-    NumberParameter channelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
-    NumberParameter channelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
-    NumberParameter closedEndYAdjustWindow = new BoundedNumberParameter("Closed-end Y Adjust Window (pixels)", 0, 5, 0, null).setToolTipText("Window (in pixels) within which y-coordinate of the closed-end of microchannel will be refined, by searching for the first local maximum of the Y-derivate within the window: [y-this value; y+this value]");
+    NumberParameter channelWidth = new BoundedNumberParameter("Typical Width", 0, 20, 5, null).setToolTipText("Typical width of microchannels, in pixels");
+    NumberParameter channelWidthMin = new BoundedNumberParameter("Min Width", 0, 15, 5, null).setToolTipText("Minimal width of microchannels, in pixels");
+    NumberParameter channelWidthMax = new BoundedNumberParameter("Max Width", 0, 28, 5, null).setToolTipText("Maximal width of microchannels, in pixels");
+    NumberParameter closedEndYAdjustWindow = new BoundedNumberParameter("Closed-end Y Adjust Window", 0, 5, 0, null).setToolTipText("Window (in pixels) within which y-coordinate of the closed-end of microchannel will be refined, by searching for the first local maximum of the Y-derivate within the window: [y-this value; y+this value]");
     ChoiceParameter xDerPeakThldMethod = new ChoiceParameter("X-Derivative Threshold Method", Utils.toStringArray(X_DER_METHOD.values()), X_DER_METHOD.RELATIVE_TO_INTENSITY.toString(), false);
-    NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 3, 10, 0, null).setToolTipText("<html>Threshold for Microchannel border detection (peaks of 1st derivative in X-axis). <br />This parameter will depend on the intensity of the image and should be adjusted if microchannels are poorly detected. <br />A higher value if too many channels are detected and a lower value in the contrary</html>");
-    NumberParameter relativeDerThld = new BoundedNumberParameter("X-Derivative Ratio", 3, 40, 1, null).setToolTipText("Decrease this value if too many microchannels are detected. <br />To compute x-derivative threshold for peaks, the signal range is computed range = the median signal value - mean backgroud value. X-derivative threshold = signal range / this ratio");
+    NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold", 3, 10, 0, null).setToolTipText("<html>Threshold for Microchannel border detection (peaks of 1st derivative in X-axis). <br />This parameter will depend on the intensity of the image and should be adjusted if microchannels are poorly detected. <br />A higher value if too many channels are detected and a lower value in the contrary</html>");
+    NumberParameter relativeDerThld = new BoundedNumberParameter("X-Derivative Ratio", 3, 40, 1, null).setToolTipText("To compute x-derivative threshold for peaks, the signal range is computed range = the median signal value - mean backgroud value. X-derivative threshold = signal range / this ratio.<br />Decrease this value if too many microchannels are detected.");
     ConditionalParameter xDerPeakThldCond = new ConditionalParameter(xDerPeakThldMethod).setActionParameters(X_DER_METHOD.CONSTANT.toString(), localDerExtremaThld).setActionParameters(X_DER_METHOD.RELATIVE_TO_INTENSITY.toString(), relativeDerThld);
     Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, xDerPeakThldCond}; //sigmaThreshold
     public final static double PEAK_RELATIVE_THLD = 0.6;
     public static boolean debug = false;
     public static int debugIdx = -1;
-    protected String toolTip = "<html><b>Microchannel Segmentation in phase-contrast images:</b>"
-            + "<ol><li>Search for optical aberration  y coordinate -> yAberration</li>"
-            + "<li>Search for global closed-end y-coordinate of Microchannels: global max of the Y-proj of d/dy -> yEnd</li>"
-            + "<li>Search of x-positions of microchannels using X-projection (y in [ yEnd; yAberration]) of d/dx image & peak detection: <br />"
-            + "(detection of positive peask & negative peaks over \"X-derivative Threshold\" separated by a distance closest to channelWidth and in the range [widthMin; widthMax]</li>"
-            + "<li>Adjust yStart for each channel: first local max of d/dy image in the range [yEnd-  AdjustWindow ; yEnd+ AdjustWindow]</li></ol></html>";
+    protected String toolTip = "<b>Microchannel Segmentation in phase-contrast images:</b>"
+            + "<ol><li>Search for global closed-end y-coordinate of Microchannels: global max of the Y-proj of d/dy (requires no optical aberration is present on the image)</li>"
+            + "<li>Search of x-positions of microchannels using X-projection of d/dx image & peak detection: <br />"
+            + "(detection of positive peask & negative peaks with amplitude over <em>X-derivative Threshold</em> separated by a distance as close as possible to <em>Typical Width</em> and in the range [widthMin; widthMax]</li>"
+            + "<li>Adjust yStart for each channel: first local max of d/dy image in the range [yEnd-  AdjustWindow ; yEnd+ AdjustWindow]</li></ol>";
 
     public MicrochannelPhase2D() {}
 

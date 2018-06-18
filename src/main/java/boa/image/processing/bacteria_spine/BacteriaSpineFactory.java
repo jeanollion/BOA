@@ -20,7 +20,7 @@ package boa.image.processing.bacteria_spine;
 
 import boa.data_structure.Region;
 import boa.data_structure.Voxel;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.BoundingBox;
 import boa.image.IJImageWrapper;
 import boa.image.Image;

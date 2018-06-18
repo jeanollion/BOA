@@ -28,7 +28,7 @@ import boa.ui.LogUserInterface;
 import boa.ui.MultiUserInterface;
 import boa.ui.UserInterface;
 import boa.ui.PropertyUtils;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import static boa.core.TaskRunner.logger;
 import boa.configuration.experiment.PreProcessingChain;
 import static boa.core.Processor.deleteObjects;

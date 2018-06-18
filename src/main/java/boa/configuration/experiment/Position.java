@@ -19,7 +19,7 @@
 package boa.configuration.experiment;
 
 import boa.gui.GUI;
-import boa.gui.imageInteraction.IJVirtualStack;
+import boa.gui.image_interaction.IJVirtualStack;
 import boa.configuration.parameters.ListElementErasable;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.SimpleContainerParameter;

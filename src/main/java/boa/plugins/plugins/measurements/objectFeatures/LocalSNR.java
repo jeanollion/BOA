@@ -18,8 +18,8 @@
  */
 package boa.plugins.plugins.measurements.objectFeatures;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.SiblingStructureParameter;

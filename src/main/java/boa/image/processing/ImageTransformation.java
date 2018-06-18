@@ -18,7 +18,7 @@
  */
 package boa.image.processing;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import static boa.image.Image.logger;

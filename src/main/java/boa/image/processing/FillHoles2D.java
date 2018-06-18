@@ -18,8 +18,8 @@
  */
 package boa.image.processing;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageDisplayer;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.image.BlankMask;

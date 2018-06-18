@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui.imageInteraction;
+package boa.gui.image_interaction;
 
 import boa.core.DefaultWorker;
 import boa.core.DefaultWorker.WorkerTask;
@@ -58,20 +58,20 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public abstract class TrackMask extends ImageObjectInterface {
+public abstract class Kymograph extends InteractiveImage {
 
-    public static TrackMask generateTrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
+    public static Kymograph generateTrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
         //setAllChildren(parentTrack, childStructureIdx); // if set -> tracking test cannot work ?
         BoundingBox bb = parentTrack.get(0).getBounds();
-        return bb.sizeY() >= bb.sizeX() ? new TrackMaskX(parentTrack, childStructureIdx, false) : new TrackMaskY(parentTrack, childStructureIdx);
+        return bb.sizeY() >= bb.sizeX() ? new KymographX(parentTrack, childStructureIdx, false) : new KymographY(parentTrack, childStructureIdx);
     }
     BoundingBox[] trackOffset;
-    StructureObjectMask[] trackObjects;
+    SimpleInteractiveImage[] trackObjects;
     static final int updateImageFrequency=50;
     static final int interval=0; 
     static final float displayMinMaxFraction = 0.9f;
     Map<Image, Predicate<BoundingBox>> imageCallback = new HashMap<>();
-    public TrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
+    public Kymograph(List<StructureObject> parentTrack, int childStructureIdx) {
         super(parentTrack, childStructureIdx);
     }
     
@@ -79,13 +79,13 @@ public abstract class TrackMask extends ImageObjectInterface {
         return this.parents;
     }
     
-    @Override public ImageObjectInterfaceKey getKey() {
-        return new ImageObjectInterfaceKey(parents, childStructureIdx, true);
+    @Override public InteractiveImageKey getKey() {
+        return new InteractiveImageKey(parents, childStructureIdx, true);
     }
     
     @Override
     public void reloadObjects() {
-        for (StructureObjectMask m : trackObjects) m.reloadObjects();
+        for (SimpleInteractiveImage m : trackObjects) m.reloadObjects();
     }
     
     public abstract int getClosestFrame(int x, int y);
@@ -124,9 +124,9 @@ public abstract class TrackMask extends ImageObjectInterface {
         track.removeIf(o -> o.key.getFrame()<tpMin || o.key.getFrame()>tpMax);
     }
     public abstract Image generateEmptyImage(String name, Image type);
-    @Override public <T extends ImageObjectInterface> T setDisplayPreFilteredImages(boolean displayPreFilteredImages) {
+    @Override public <T extends InteractiveImage> T setDisplayPreFilteredImages(boolean displayPreFilteredImages) {
         super.setDisplayPreFilteredImages(displayPreFilteredImages);
-        for (StructureObjectMask m : trackObjects) m.setDisplayPreFilteredImages(displayPreFilteredImages);
+        for (SimpleInteractiveImage m : trackObjects) m.setDisplayPreFilteredImages(displayPreFilteredImages);
         return (T)this;
     }
     
@@ -242,7 +242,7 @@ public abstract class TrackMask extends ImageObjectInterface {
     @Override
     public ArrayList<Pair<StructureObject, BoundingBox>> getObjects() {
         ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<>();
-        for (StructureObjectMask m : trackObjects) res.addAll(m.getObjects());
+        for (SimpleInteractiveImage m : trackObjects) res.addAll(m.getObjects());
         return res;
     }
     

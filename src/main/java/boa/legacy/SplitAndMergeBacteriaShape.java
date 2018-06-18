@@ -21,7 +21,7 @@ package boa.legacy;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import static boa.image.BoundingBox.getDistance;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;

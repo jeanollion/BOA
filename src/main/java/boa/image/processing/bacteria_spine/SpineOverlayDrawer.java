@@ -18,7 +18,7 @@
  */
 package boa.image.processing.bacteria_spine;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.image.Image;
 import boa.image.ImageMask;
 import boa.image.Offset;

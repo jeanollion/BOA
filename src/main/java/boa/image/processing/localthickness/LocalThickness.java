@@ -18,8 +18,8 @@
  */
 package boa.image.processing.localthickness;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;

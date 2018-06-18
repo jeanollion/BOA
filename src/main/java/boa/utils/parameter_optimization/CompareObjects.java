@@ -19,7 +19,7 @@
 package boa.utils.parameter_optimization;
 
 import static boa.ui.DBUtil.searchForLocalDir;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.core.Processor;
 import boa.core.Task;

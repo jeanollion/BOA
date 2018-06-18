@@ -21,7 +21,7 @@ package boa.image.processing.split_merge;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;

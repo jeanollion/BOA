@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui.imageInteraction;
+package boa.gui.image_interaction;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
@@ -50,10 +50,10 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class TrackMaskX extends TrackMask {
+public class KymographX extends Kymograph {
     int maxParentSizeY, maxParentSizeZ;
     
-    public TrackMaskX(List<StructureObject> parentTrack, int childStructureIdx, boolean middleYZ) {
+    public KymographX(List<StructureObject> parentTrack, int childStructureIdx, boolean middleYZ) {
         super(parentTrack, childStructureIdx);
         maxParentSizeY = parentTrack.stream().mapToInt(p->p.getBounds().sizeY()).max().getAsInt();
         maxParentSizeZ = parentTrack.stream().mapToInt(p->p.getBounds().sizeZ()).max().getAsInt();
@@ -71,7 +71,7 @@ public class TrackMaskX extends TrackMask {
         }
         long t1 = System.currentTimeMillis();
         StructureObjectUtils.setAllChildren(parentTrack, childStructureIdx);
-        trackObjects = IntStream.range(0, trackOffset.length).mapToObj(i-> new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i])).peek(m->m.getObjects()).toArray(l->new StructureObjectMask[l]);
+        trackObjects = IntStream.range(0, trackOffset.length).mapToObj(i-> new SimpleInteractiveImage(parentTrack.get(i), childStructureIdx, trackOffset[i])).peek(m->m.getObjects()).toArray(l->new SimpleInteractiveImage[l]);
         long t2 = System.currentTimeMillis();
         logger.debug("TrackMaskX creation: offset: {}, objects: {}", t1-t0, t2-t1);
     }
@@ -109,7 +109,7 @@ public class TrackMaskX extends TrackMask {
     @Override
     public ImageInteger generateLabelImage() {
         int maxLabel = 0; 
-        for (StructureObjectMask o : trackObjects) {
+        for (SimpleInteractiveImage o : trackObjects) {
             int label = o.getMaxLabel();
             if (label>maxLabel) maxLabel = label;
         }

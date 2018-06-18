@@ -16,14 +16,14 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui.imageInteraction;
+package boa.gui.image_interaction;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import boa.gui.ManualEdition;
-import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
-import boa.gui.imageInteraction.IJImageWindowManager.TrackRoi;
-import static boa.gui.imageInteraction.ImageWindowManager.displayTrackMode;
+import boa.gui.image_interaction.IJImageWindowManager.Roi3D;
+import boa.gui.image_interaction.IJImageWindowManager.TrackRoi;
+import static boa.gui.image_interaction.ImageWindowManager.displayTrackMode;
 import boa.configuration.experiment.Structure;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
@@ -164,7 +164,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 boolean addToSelection = e.isShiftDown() && (!freeHandSplit || !strechObjects);
                 boolean displayTrack = displayTrackMode;
                 //logger.debug("button ctrl: {}, shift: {}, alt: {}, meta: {}, altGraph: {}, alt: {}", e.isControlDown(), e.isShiftDown(), e.isAltDown(), e.isMetaDown(), e.isAltGraphDown(), displayTrackMode);
-                ImageObjectInterface i = getImageObjectInterface(image);
+                InteractiveImage i = getImageObjectInterface(image);
                 int completionStructureIdx=-1;
                 if (strechObjects) { // select parents
                     completionStructureIdx = i.getChildStructureIdx();

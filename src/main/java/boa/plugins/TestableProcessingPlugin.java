@@ -22,9 +22,9 @@ import static boa.configuration.parameters.Parameter.logger;
 import boa.data_structure.Selection;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import boa.gui.imageInteraction.TrackMask;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.Kymograph;
 import boa.image.Image;
 import boa.image.TypeConverter;
 import boa.utils.HashMapGetCreate;
@@ -97,14 +97,14 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
         }
     }
     
-    public static Pair<ImageObjectInterface, List<Image>> buildIntermediateImages(Collection<TestDataStore> stores, int parentStructureIdx) {
+    public static Pair<InteractiveImage, List<Image>> buildIntermediateImages(Collection<TestDataStore> stores, int parentStructureIdx) {
         if (stores.isEmpty()) return null;
         int childStructure = stores.stream().findAny().get().parent.getStructureIdx();
         
         Set<String> allImageNames = stores.stream().map(s->s.images.keySet()).flatMap(Set::stream).collect(Collectors.toSet());
         List<StructureObject> parents = stores.stream().map(s->s.parent.getParent(parentStructureIdx)).distinct().sorted().collect(Collectors.toList());
         StructureObjectUtils.enshureContinuousTrack(parents);
-        TrackMask ioi = TrackMask.generateTrackMask(parents, childStructure);
+        Kymograph ioi = Kymograph.generateTrackMask(parents, childStructure);
         List<Image> images = new ArrayList<>();
         allImageNames.forEach(name -> {
             int maxBitDepth = stores.stream().filter(s->s.images.containsKey(name)).mapToInt(s->s.images.get(name).getBitDepth()).max().getAsInt();

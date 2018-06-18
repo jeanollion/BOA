@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui.imageInteraction;
+package boa.gui.image_interaction;
 
 import boa.data_structure.StructureObject;
 import java.util.List;
@@ -26,19 +26,19 @@ import java.util.Map;
  *
  * @author jollion
  */
-public class ImageObjectInterfaceKey {
+public class InteractiveImageKey {
     public final boolean timeImage;
     public final List<StructureObject> parent;
     public final int displayedStructureIdx;
 
-    public ImageObjectInterfaceKey(List<StructureObject> parent, int displayedStructureIdx, boolean timeImage) {
+    public InteractiveImageKey(List<StructureObject> parent, int displayedStructureIdx, boolean timeImage) {
         this.timeImage = timeImage;
         this.parent = parent;
         this.displayedStructureIdx = displayedStructureIdx;
     }
     
-    public ImageObjectInterfaceKey getKey(int childStructureIdx) {
-        return new ImageObjectInterfaceKey(parent, childStructureIdx, timeImage);
+    public InteractiveImageKey getKey(int childStructureIdx) {
+        return new InteractiveImageKey(parent, childStructureIdx, timeImage);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class ImageObjectInterfaceKey {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final ImageObjectInterfaceKey other = (ImageObjectInterfaceKey) obj;
+        final InteractiveImageKey other = (InteractiveImageKey) obj;
         if (this.timeImage != other.timeImage) return false;
         if (this.displayedStructureIdx!=other.displayedStructureIdx) return false;
         return !(this.parent != other.parent && (this.parent == null || !this.parent.equals(other.parent)));
@@ -77,7 +77,7 @@ public class ImageObjectInterfaceKey {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final ImageObjectInterfaceKey other = (ImageObjectInterfaceKey) obj;
+        final InteractiveImageKey other = (InteractiveImageKey) obj;
         if (this.timeImage != other.timeImage) {
             return false;
         }
@@ -86,8 +86,8 @@ public class ImageObjectInterfaceKey {
         }
         return true;
     }
-    public static <T> T getOneElementIgnoreStructure(ImageObjectInterfaceKey key, Map<ImageObjectInterfaceKey, T> map) {
-        for (ImageObjectInterfaceKey k : map.keySet()) {
+    public static <T> T getOneElementIgnoreStructure(InteractiveImageKey key, Map<InteractiveImageKey, T> map) {
+        for (InteractiveImageKey k : map.keySet()) {
             if (k.equalsIgnoreStructure(key)) return map.get(k);
         }
         return null;

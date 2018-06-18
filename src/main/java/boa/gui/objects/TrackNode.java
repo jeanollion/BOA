@@ -20,8 +20,8 @@ package boa.gui.objects;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.Processor;
 import boa.configuration.experiment.Experiment;
 import boa.core.Task;
@@ -243,7 +243,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             //int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             //trackNode.loadAllTrackObjects(path);
                             int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(getTrack(), structureIdx);
+                            InteractiveImage i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(getTrack(), structureIdx);
                             if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generatemage(structureIdx, true), i, structureIdx, true);
                             GUI.getInstance().setInteractiveStructureIdx(structureIdx);
                             GUI.getInstance().setTrackStructureIdx(structureIdx);

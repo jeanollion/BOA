@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.transformations;
 
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;

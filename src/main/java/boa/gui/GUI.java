@@ -19,15 +19,15 @@
 package boa.gui;
 
 import boa.gui.configuration.ConfigurationTreeGenerator;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.IJImageWindowManager;
-import boa.gui.imageInteraction.IJVirtualStack;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageObjectInterfaceKey;
-import boa.gui.imageInteraction.ImageObjectListener;
-import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import static boa.gui.imageInteraction.ImageWindowManagerFactory.getImageManager;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageWindowManager;
+import boa.gui.image_interaction.IJVirtualStack;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.InteractiveImageKey;
+import boa.gui.image_interaction.ImageObjectListener;
+import boa.gui.image_interaction.ImageWindowManager;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
+import static boa.gui.image_interaction.ImageWindowManagerFactory.getImageManager;
 import boa.configuration.experiment.Experiment;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeController;
@@ -608,7 +608,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     //public StructureObjectTreeGenerator getObjectTree() {return this.objectTreeGenerator;}
     public TrackTreeController getTrackTrees() {return this.trackTreeController;}
     
-    public static void updateRoiDisplay(ImageObjectInterface i) {
+    public static void updateRoiDisplay(InteractiveImage i) {
         if (instance==null) return;
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (iwm==null) return;
@@ -647,7 +647,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         //iwm.displayLabileTracks(image);
     }
     
-    public static void updateRoiDisplayForSelections(Image image, ImageObjectInterface i) {
+    public static void updateRoiDisplayForSelections(Image image, InteractiveImage i) {
         if (instance==null) return;
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (iwm==null) return;
@@ -2085,7 +2085,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 IJVirtualStack.openVirtual(db.getExperiment(), nextPosition, pp);
             }
         } else  { // interactive: if IOI found
-            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
+            InteractiveImage i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
             if (i==null) return;
             // get next parent
             StructureObject nextParent = null;
@@ -2093,7 +2093,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             List<StructureObject> siblings = i.getParent().getSiblings();
             int idx = siblings.indexOf(i.getParent());
             // current image structure: 
-            ImageObjectInterfaceKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage2());
+            InteractiveImageKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage2());
             int currentImageStructure = key ==null ? i.getChildStructureIdx() : key.displayedStructureIdx;
             if (i.getChildStructureIdx() == currentImageStructure) idx += (next ? 1 : -1) ; // only increment if same structure
             logger.debug("current inter: {}, current image child: {}",interactiveStructure.getSelectedIndex()-1, currentImageStructure);
@@ -2125,12 +2125,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         Selection sel = getNavigatingSelection();
         if (sel==null) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
         else {
-            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
+            InteractiveImage i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
             if (i!=null && i.getParent().getExperiment()!=db.getExperiment()) i=null;
             if (structureDisplay==-1 && i!=null) {
                 Image im = ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage2();
                 if (im!=null) {
-                    ImageObjectInterfaceKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(im);
+                    InteractiveImageKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(im);
                     if (key!=null) {
                         structureDisplay = key.displayedStructureIdx;
                     }
@@ -2190,7 +2190,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                     logger.debug("next parent: {}", nextParent);
                     List track = db.getDao(nextParent.getPositionName()).getTrack(nextParent);
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-                    ImageObjectInterface nextI = iwm.getImageTrackObjectInterface(track, sel.getStructureIdx());
+                    InteractiveImage nextI = iwm.getImageTrackObjectInterface(track, sel.getStructureIdx());
                     Image im = iwm.getImage(nextI);
                     boolean newImage = im==null;
                     if (im==null) {

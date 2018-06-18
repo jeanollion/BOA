@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui.imageInteraction;
+package boa.gui.image_interaction;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
@@ -43,28 +43,28 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class StructureObjectMask extends ImageObjectInterface {
+public class SimpleInteractiveImage extends InteractiveImage {
 
     BoundingBox[] offsets;
     List<StructureObject> objects;
     final StructureObject parent;
     BoundingBox additionalOffset;
     
-    public StructureObjectMask(StructureObject parent, int childStructureIdx) {
+    public SimpleInteractiveImage(StructureObject parent, int childStructureIdx) {
         super(new ArrayList<StructureObject>(1){{add(parent);}}, childStructureIdx);
         this.parent= parent;
         this.additionalOffset = new MutableBoundingBox(0, 0, 0);
     }
 
-    public StructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox additionalOffset) {
+    public SimpleInteractiveImage(StructureObject parent, int childStructureIdx, BoundingBox additionalOffset) {
         super(new ArrayList<StructureObject>(1){{add(parent);}}, childStructureIdx);
         this.parent= parent;
         this.additionalOffset = additionalOffset;
     }
 
     @Override
-    public ImageObjectInterfaceKey getKey() {
-        return new ImageObjectInterfaceKey(parents, childStructureIdx, false);
+    public InteractiveImageKey getKey() {
+        return new InteractiveImageKey(parents, childStructureIdx, false);
     }
 
     public BoundingBox[] getOffsets() {

@@ -20,8 +20,8 @@ package boa.gui.objects;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.Processor;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -165,15 +165,14 @@ public class StructureNode implements TreeNode, UIContainer {
             openRaw=new JMenuItem[structureNames.length];
             for (int i = 0; i < openRaw.length; i++) {
                 openRaw[i] = new JMenuItem(structureNames[i]);
-                openRaw[i].setAction(
-                    new AbstractAction(structureNames[i]) {
+                openRaw[i].setAction(new AbstractAction(structureNames[i]) {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
                             int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), structureIdx);
                             parent.loadAllChildObjects(path, 0);
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw), true);
+                            InteractiveImage i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw), true);
                             ImageWindowManagerFactory.getImageManager().addImage(i.generatemage(structureIdx, true), i, structureIdx, true);
                             GUI.getInstance().setInteractiveStructureIdx(structureIdx);
                         }

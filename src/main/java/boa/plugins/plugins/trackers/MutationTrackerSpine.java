@@ -18,8 +18,8 @@
  */
 package boa.plugins.plugins.trackers;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.InteractiveImage;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.GroupParameter;
@@ -34,7 +34,7 @@ import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectTracker;
 import boa.data_structure.StructureObjectUtils;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import fiji.plugin.trackmate.Spot;
 import boa.image.Image;
 import boa.image.ImageFloat;

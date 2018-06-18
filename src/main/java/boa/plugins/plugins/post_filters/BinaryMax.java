@@ -23,7 +23,7 @@ import boa.configuration.parameters.ScaleXYZParameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.ImageInteger;
 import boa.plugins.PostFilter;
 import boa.image.processing.Filters;

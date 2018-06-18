@@ -19,8 +19,8 @@
 package boa.plugins;
 
 import boa.data_structure.StructureObject;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import boa.gui.imageInteraction.TrackMaskX;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.KymographX;
 import boa.image.BlankMask;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;

@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.measurements;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.StructureParameter;
 import boa.data_structure.Region;

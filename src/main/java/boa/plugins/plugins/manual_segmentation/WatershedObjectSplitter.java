@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.manual_segmentation;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;

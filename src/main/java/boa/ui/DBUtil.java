@@ -19,7 +19,7 @@
 package boa.ui;
 
 import static boa.gui.GUI.logger;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.ProgressCallback;
 import boa.data_structure.dao.MasterDAO;
 import java.io.File;

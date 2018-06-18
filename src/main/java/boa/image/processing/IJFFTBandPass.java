@@ -18,7 +18,7 @@
  */
 package boa.image.processing;
 
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import ij.ImagePlus;
 import ij.process.ImageProcessor;
 import boa.image.IJImageWrapper;

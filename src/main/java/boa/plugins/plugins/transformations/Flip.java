@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.transformations;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;

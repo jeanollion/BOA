@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui.imageInteraction;
+package boa.gui.image_interaction;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
@@ -47,12 +47,12 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class TrackMaskY extends TrackMask {
+public class KymographY extends Kymograph {
     int maxParentX, maxParentZ;
-    public TrackMaskY(List<StructureObject> parentTrack, int childStructureIdx) {
+    public KymographY(List<StructureObject> parentTrack, int childStructureIdx) {
         this(parentTrack, childStructureIdx, false);
     }
-    public TrackMaskY(List<StructureObject> parentTrack, int childStructureIdx, boolean middleXZ) {
+    public KymographY(List<StructureObject> parentTrack, int childStructureIdx, boolean middleXZ) {
         super(parentTrack, childStructureIdx);
         maxParentX = parentTrack.stream().mapToInt(p->p.getBounds().sizeX()).max().getAsInt();
         maxParentZ = parentTrack.stream().mapToInt(p->p.getBounds().sizeZ()).max().getAsInt();
@@ -66,7 +66,7 @@ public class TrackMaskY extends TrackMask {
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetY);
         }
         StructureObjectUtils.setAllChildren(parentTrack, childStructureIdx);
-        trackObjects = IntStream.range(0, trackOffset.length).mapToObj(i-> new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i])).peek(m->m.getObjects()).toArray(l->new StructureObjectMask[l]);
+        trackObjects = IntStream.range(0, trackOffset.length).mapToObj(i-> new SimpleInteractiveImage(parentTrack.get(i), childStructureIdx, trackOffset[i])).peek(m->m.getObjects()).toArray(l->new SimpleInteractiveImage[l]);
     }
     
     
@@ -102,7 +102,7 @@ public class TrackMaskY extends TrackMask {
     @Override
     public ImageInteger generateLabelImage() {
         int maxLabel = 0; 
-        for (StructureObjectMask o : trackObjects) {
+        for (SimpleInteractiveImage o : trackObjects) {
             int label = o.getMaxLabel();
             if (label>maxLabel) maxLabel = label;
         }

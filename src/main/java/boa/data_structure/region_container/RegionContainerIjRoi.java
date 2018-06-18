@@ -18,12 +18,12 @@
  */
 package boa.data_structure.region_container;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.IJImageWindowManager;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageWindowManager;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.gui.GUI;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.BlankMask;
 import ij.ImagePlus;
 import ij.ImageStack;

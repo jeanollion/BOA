@@ -19,7 +19,7 @@
 package boa.plugins.plugins.segmenters;
 
 import boa.plugins.MicrochannelSegmenter;
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
@@ -28,7 +28,7 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import ij.process.AutoThresholder;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;

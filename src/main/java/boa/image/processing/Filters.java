@@ -19,8 +19,8 @@
 package boa.image.processing;
 
 import boa.core.Context;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.data_structure.Voxel;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;

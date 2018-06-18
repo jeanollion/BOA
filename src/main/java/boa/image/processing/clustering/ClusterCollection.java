@@ -18,7 +18,7 @@
  */
 package boa.image.processing.clustering;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.data_structure.Voxel;
 import java.util.ArrayList;
 import java.util.Collection;

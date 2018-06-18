@@ -19,8 +19,8 @@
 package boa.core;
 
 import boa.gui.GUI;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.TransformationPluginParameter;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Position;
@@ -33,7 +33,7 @@ import boa.data_structure.dao.ObjectDAO;
 import boa.data_structure.Selection;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
-import boa.gui.imageInteraction.TrackMask;
+import boa.gui.image_interaction.Kymograph;
 import boa.image.Image;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -362,7 +362,7 @@ public class Processor {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(dao.getRoots(), parentStructureIdx);
         if (pcb!=null) pcb.log("Generating Image for structure: "+parentStructureIdx+". #tracks: "+allTracks.size()+", child structures: "+Utils.toStringArray(childStructureIdx));
         ThreadRunner.execute(allTracks.values(), false, (List<StructureObject> track, int idx) -> {
-            ImageObjectInterface i = TrackMask.generateTrackMask(track, parentStructureIdx);
+            InteractiveImage i = Kymograph.generateTrackMask(track, parentStructureIdx);
             for (int childSIdx : cSI) {
                 //GUI.log("Generating Image for track:"+track.get(0)+", structureIdx:"+childSIdx+" ...");
                 Image im = i.generatemage(childSIdx, false);

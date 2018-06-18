@@ -17,8 +17,8 @@
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
 package boa.image.processing;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.IJImageWindowManager;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageWindowManager;
 import boa.data_structure.Voxel;
 import boa.data_structure.region_container.RegionContainerIjRoi;
 import boa.image.BoundingBox.LoopFunction;

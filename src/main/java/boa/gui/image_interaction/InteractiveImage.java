@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui.imageInteraction;
+package boa.gui.image_interaction;
 
 import boa.gui.GUI;
 import boa.data_structure.StructureObject;
@@ -34,7 +34,7 @@ import boa.utils.Pair;
  *
  * @author jollion
  */
-public abstract class ImageObjectInterface {
+public abstract class InteractiveImage {
     final protected List<StructureObject> parents;
     final protected int parentStructureIdx;
     final protected int childStructureIdx;
@@ -42,7 +42,7 @@ public abstract class ImageObjectInterface {
     protected boolean guiMode = true;
     boolean displayPreFilteredImages= false;
     
-    public ImageObjectInterface(List<StructureObject> parents, int childStructureIdx) {
+    public InteractiveImage(List<StructureObject> parents, int childStructureIdx) {
         if (parents.isEmpty()) throw new IllegalArgumentException("Empty parent list");
         parentStructureIdx = parents.get(0).getStructureIdx();
         //if (parents.size()>1) for (StructureObject p : parents) if (p.getStructureIdx()!=parentStructureIdx) throw new IllegalArgumentException("Parents must be of same structure");
@@ -60,7 +60,7 @@ public abstract class ImageObjectInterface {
     }
     public StructureObject getParent() {return parents.get(0);}
     public List<StructureObject> getParents() {return parents;}
-    public abstract ImageObjectInterfaceKey getKey();
+    public abstract InteractiveImageKey getKey();
     public abstract void reloadObjects();
     public abstract Pair<StructureObject, BoundingBox> getClickedObject(int x, int y, int z);
     public abstract void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list);
@@ -79,7 +79,7 @@ public abstract class ImageObjectInterface {
         }
         return res;
     }
-    public <T extends ImageObjectInterface> T setDisplayPreFilteredImages(boolean displayPreFilteredImages) {
+    public <T extends InteractiveImage> T setDisplayPreFilteredImages(boolean displayPreFilteredImages) {
         this.displayPreFilteredImages = displayPreFilteredImages;
         return (T)this;
     }
@@ -92,7 +92,7 @@ public abstract class ImageObjectInterface {
     }
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ImageObjectInterface) return ((ImageObjectInterface)o).parents.equals(parents) && ((ImageObjectInterface)o).childStructureIdx==childStructureIdx;
+        if (o instanceof InteractiveImage) return ((InteractiveImage)o).parents.equals(parents) && ((InteractiveImage)o).childStructureIdx==childStructureIdx;
         else return false;
     }
 

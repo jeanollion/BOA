@@ -25,7 +25,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Image;

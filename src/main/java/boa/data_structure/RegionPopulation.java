@@ -18,9 +18,9 @@
  */
 package boa.data_structure;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import static boa.data_structure.Region.logger;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import static ij.process.AutoThresholder.Method.Otsu;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;

@@ -18,7 +18,7 @@
  */
 package boa.image;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.measure.Calibration;

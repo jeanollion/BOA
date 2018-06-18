@@ -18,8 +18,8 @@
  */
 package boa.image.processing;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.IJImageWindowManager;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageWindowManager;
 import static boa.core.Processor.logger;
 import boa.data_structure.Region;
 import boa.data_structure.Voxel;

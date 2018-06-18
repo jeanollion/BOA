@@ -31,7 +31,7 @@ import boa.data_structure.RegionPopulation.ContactBorderMask;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.BoundingBox;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;

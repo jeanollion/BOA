@@ -18,7 +18,7 @@
  */
 package boa.image.processing;
 
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import ij.IJ;
 import ij.ImageStack;
 import ij.process.FloatProcessor;

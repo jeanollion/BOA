@@ -33,11 +33,11 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.image_container.MemoryImageContainer;
 import boa.data_structure.input_image.InputImagesImpl;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import static boa.gui.imageInteraction.ImageWindowManagerFactory.getImageManager;
-import boa.gui.imageInteraction.TrackMask;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManager;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
+import static boa.gui.image_interaction.ImageWindowManagerFactory.getImageManager;
+import boa.gui.image_interaction.Kymograph;
 import boa.image.Image;
 import boa.plugins.ConfigurableTransformation;
 import boa.plugins.ImageProcessingPlugin;
@@ -205,7 +205,7 @@ public class PluginConfigurationUtils {
         int parentStructureIdx = stores.values().stream().findAny().get().getParent().getExperiment().getStructure(structureIdx).getParentStructure();
         int segParentStrutureIdx = stores.values().stream().findAny().get().getParent().getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
         
-        Pair<ImageObjectInterface, List<Image>> res = buildIntermediateImages(stores.values(), parentStructureIdx);
+        Pair<InteractiveImage, List<Image>> res = buildIntermediateImages(stores.values(), parentStructureIdx);
         ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(Math.max(ImageWindowManagerFactory.getImageManager().getDisplayImageLimit(), res.value.size()+1));
         res.value.forEach((image) -> {
             iwm.addImage(image, res.key, structureIdx, true);

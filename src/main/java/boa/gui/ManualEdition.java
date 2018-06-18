@@ -20,10 +20,10 @@ package boa.gui;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageObjectInterfaceKey;
-import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.InteractiveImageKey;
+import boa.gui.image_interaction.ImageWindowManager;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.gui.objects.ObjectNode;
 import boa.gui.objects.StructureNode;
 import boa.data_structure.SelectionUtils;
@@ -425,7 +425,7 @@ public class ManualEdition {
                 return;
             }
         }
-        ImageObjectInterfaceKey key =  iwm.getImageObjectInterfaceKey(image);
+        InteractiveImageKey key =  iwm.getImageObjectInterfaceKey(image);
         if (key==null) {
             logger.warn("Current image is not registered");
             return;
@@ -507,7 +507,7 @@ public class ManualEdition {
                 }
             }
             // selected newly segmented objects on image
-            ImageObjectInterface i = iwm.getImageObjectInterface(image);
+            InteractiveImage i = iwm.getImageObjectInterface(image);
             if (i!=null) {
                 iwm.displayObjects(image, i.pairWithOffset(segmentedObjects), Color.ORANGE, true, false);
                 GUI.updateRoiDisplayForSelections(image, i);
@@ -605,7 +605,7 @@ public class ManualEdition {
                     }
                 //}
                 // update selection
-                ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, structureIdx);
+                InteractiveImage i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, structureIdx);
                 if (i!=null) {
                     newObjects.addAll(objects);
                     Utils.removeDuplicates(newObjects, false);
@@ -691,7 +691,7 @@ public class ManualEdition {
             //Update all opened images & objectImageInteraction
             for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, e.getKey(), false);
             // update selection
-            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, e.getKey());
+            InteractiveImage i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, e.getKey());
             logger.debug("display : {} objects from structure: {}, IOI null ? {}", e.getValue().size(), e.getKey(), i==null);
             if (i!=null) {
                 ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(e.getValue()), Color.orange, true, false);

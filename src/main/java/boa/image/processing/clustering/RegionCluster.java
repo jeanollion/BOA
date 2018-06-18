@@ -18,11 +18,11 @@
  */
 package boa.image.processing.clustering;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.Voxel;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.BlankMask;
 import static boa.image.BoundingBox.isIncluded;
 import static boa.image.BoundingBox.isIncluded2D;

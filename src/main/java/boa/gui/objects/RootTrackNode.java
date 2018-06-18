@@ -20,10 +20,10 @@ package boa.gui.objects;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.IJVirtualStack;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.IJVirtualStack;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.DefaultWorker;
 import boa.core.Processor;
 import boa.configuration.experiment.Position;
@@ -259,7 +259,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                         public void actionPerformed(ActionEvent ae) {
                             int structureIdx = generator.getExperiment().getStructureIdx(ae.getActionCommand());
                             if (logger.isDebugEnabled()) logger.debug("opening track raw image for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(generator.db.getDao(position).getRoots(), structureIdx);
+                            InteractiveImage i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(generator.db.getDao(position).getRoots(), structureIdx);
                             if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generatemage(structureIdx, true), i, structureIdx, true);
                             GUI.getInstance().setInteractiveStructureIdx(structureIdx);
                             GUI.getInstance().setTrackStructureIdx(structureIdx);

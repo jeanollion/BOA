@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.segmenters;
 
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;

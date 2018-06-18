@@ -20,7 +20,7 @@ package boa.data_structure.input_image;
 
 import boa.data_structure.dao.ImageDAO;
 import boa.data_structure.image_container.MultipleImageContainer;
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import static boa.core.Processor.logger;
 import boa.image.BlankMask;
 import boa.image.Image;

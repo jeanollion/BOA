@@ -20,9 +20,9 @@ package boa.data_structure;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManager;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
@@ -104,7 +104,7 @@ public class SelectionUtils {
         return !Utils.transform(sel, s->s.getName()).contains(name);
     }
     
-    public static List<StructureObject> getStructureObjects(ImageObjectInterface i, List<Selection> selections) {
+    public static List<StructureObject> getStructureObjects(InteractiveImage i, List<Selection> selections) {
         if (i==null) ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
         if (i==null) return Collections.EMPTY_LIST;
         String fieldName = i.getParent().getPositionName();
@@ -249,7 +249,7 @@ public class SelectionUtils {
         Utils.removeDuplicates(parents, false);
         return parents;
     }
-    public static ImageObjectInterface fixIOI(ImageObjectInterface i, int structureIdx) {
+    public static InteractiveImage fixIOI(InteractiveImage i, int structureIdx) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i!=null && i.getChildStructureIdx()!=structureIdx) {
             Image im = iwm.getImage(i);
@@ -258,7 +258,7 @@ public class SelectionUtils {
         if (i==null) i = iwm.getImageObjectInterface(null, structureIdx);
         return i;
     }
-    public static void displayObjects(Selection s, ImageObjectInterface i) {
+    public static void displayObjects(Selection s, InteractiveImage i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         i = fixIOI(i, s.getStructureIdx());
         if (i!=null) {
@@ -272,7 +272,7 @@ public class SelectionUtils {
         }
     }
     
-    public static void hideObjects(Selection s, ImageObjectInterface i) {
+    public static void hideObjects(Selection s, InteractiveImage i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         i = fixIOI(i, s.getStructureIdx());
         if (i!=null) {
@@ -284,7 +284,7 @@ public class SelectionUtils {
             }
         }
     }
-    public static void displayTracks(Selection s, ImageObjectInterface i) {
+    public static void displayTracks(Selection s, InteractiveImage i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         i = fixIOI(i, s.getStructureIdx());
         if (i!=null) {
@@ -298,7 +298,7 @@ public class SelectionUtils {
             }
         }
     }
-    public static void hideTracks(Selection s, ImageObjectInterface i) {
+    public static void hideTracks(Selection s, InteractiveImage i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         i = fixIOI(i, s.getStructureIdx());
         if (i!=null) {
@@ -318,7 +318,7 @@ public class SelectionUtils {
         List<StructureObject> parentList = new ArrayList<>(parents);
         Collections.sort(parentList);
         
-        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentList, s.getStructureIdx());
+        InteractiveImage i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentList, s.getStructureIdx());
         ImageWindowManagerFactory.getImageManager().addImage(i.generatemage(displayStructureIdx, true), i, displayStructureIdx, true);
     }
         
@@ -541,7 +541,7 @@ public class SelectionUtils {
         }
     }
     public static void removeAllCurrentImageObjectsFromSelections(Collection<Selection> selections, SelectionDAO dao) {
-        ImageObjectInterface ioi = ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
+        InteractiveImage ioi = ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
         if (ioi==null) return;
         List<StructureObject> parents = ioi.getParents();
         for (Selection s : selections ) {
