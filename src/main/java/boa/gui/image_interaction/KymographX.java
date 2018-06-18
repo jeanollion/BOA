@@ -66,7 +66,7 @@ public class KymographX extends Kymograph {
         for (int i = 0; i<parentTrack.size(); ++i) {
             if (middleYZ) trackOffset[i].translate(new SimpleOffset(currentOffsetX, (int)((maxParentSizeY-1)/2.0-(trackOffset[i].sizeY()-1)/2.0), (int)((maxParentSizeZ-1)/2.0-(trackOffset[i].sizeZ()-1)/2.0))); // Y & Z middle of parent track
             else trackOffset[i].translate(new SimpleOffset(currentOffsetX, 0, 0)); // Y & Z up of parent track
-            currentOffsetX+=interval+trackOffset[i].sizeX();
+            currentOffsetX+=INTERVAL_PIX+trackOffset[i].sizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
         long t1 = System.currentTimeMillis();

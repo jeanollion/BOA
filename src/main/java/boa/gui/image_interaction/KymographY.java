@@ -62,7 +62,7 @@ public class KymographY extends Kymograph {
         for (int i = 0; i<parentTrack.size(); ++i) {
             if (middleXZ) trackOffset[i].translate(new SimpleOffset((int)((maxParentX-1)/2.0-(trackOffset[i].sizeX()-1)/2.0), currentOffsetY , (int)((maxParentZ-1)/2.0-(trackOffset[i].sizeZ()-1)/2.0))); // Y & Z middle of parent track
             else trackOffset[i].translate(new SimpleOffset(0, currentOffsetY, 0)); // X & Z up of parent track
-            currentOffsetY+=interval+trackOffset[i].sizeY();
+            currentOffsetY+=INTERVAL_PIX+trackOffset[i].sizeY();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetY);
         }
         StructureObjectUtils.setAllChildren(parentTrack, childStructureIdx);

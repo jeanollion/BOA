@@ -18,7 +18,7 @@
 package boa.processing.test;
 
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.configuration.parameters.TransformationPluginParameter;
 import boa.core.Processor;
 import static boa.core.Processor.setTransformations;

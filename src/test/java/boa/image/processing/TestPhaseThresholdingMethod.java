@@ -24,7 +24,7 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.ObjectDAO;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;
 import boa.image.Image;

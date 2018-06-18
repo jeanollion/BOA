@@ -22,7 +22,7 @@ import boa.configuration.experiment.Position;
 import boa.core.Task;
 import boa.data_structure.StructureObject;
 import boa.data_structure.dao.MasterDAO;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.plugins.plugins.pre_filters.Sigma;
 import ij.ImageJ;

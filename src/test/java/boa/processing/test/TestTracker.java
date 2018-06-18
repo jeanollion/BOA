@@ -19,9 +19,9 @@ package boa.processing.test;
 
 import static boa.test_utils.TestUtils.logger;
 import boa.gui.GUI;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManager;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.Processor;
 import boa.core.Task;
 import boa.configuration.experiment.Experiment;
@@ -152,7 +152,7 @@ public class TestTracker {
 
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         logger.debug("generating TOI");
-        ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
+        InteractiveImage i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
         // display preFilteredImages
         if (displayOnFilteredImages) for (StructureObject p : parentTrack) p.setRawImage(structureIdx, p.getPreFilteredImage(structureIdx));
         
@@ -208,7 +208,7 @@ public class TestTracker {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         for (String name : BacteriaClosedMicrochannelTrackerLocalCorrections.stepParents.keySet()) {
             List<StructureObject> pt = BacteriaClosedMicrochannelTrackerLocalCorrections.stepParents.get(name);
-            ImageObjectInterface i = iwm.getImageTrackObjectInterface(pt, structureIdx);
+            InteractiveImage i = iwm.getImageTrackObjectInterface(pt, structureIdx);
             Image im = i.generatemage(structureIdx, true).duplicate(name); // duplicate if not hascode collapse in case of trackImage
             //im.setName(name);
             iwm.addImage(im, i, structureIdx, true);

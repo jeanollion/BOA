@@ -25,8 +25,8 @@ import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.ObjectDAO;
 import boa.gui.GUI;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import boa.gui.imageInteraction.TrackMaskX;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.KymographX;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
@@ -86,7 +86,7 @@ public class TestTrackPreFilter {
             parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, 0), o->o.getIdx()==mcIdx&& o.getFrame()<=frames[1]);
             parentTrack.removeIf(o -> o.getFrame()<frames[0] || o.getFrame()>frames[1]);
             ps.getTrackPreFilters(true).filter(structureIdx, parentTrack);
-            TrackMaskX tm = new TrackMaskX(parentTrack, structureIdx, false);
+            KymographX tm = new KymographX(parentTrack, structureIdx, false);
             tm.setDisplayPreFilteredImages(true);
             //ImageWindowManagerFactory.showImage(tm.generatemage(structureIdx, false).setName("track:"+parentTrack.get(0)));
         }

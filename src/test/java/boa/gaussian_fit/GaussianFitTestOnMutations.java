@@ -18,7 +18,7 @@
 package boa.gaussian_fit;
 
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.core.Task;
 import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;

@@ -20,7 +20,7 @@ package boa.image.processing;
 
 import boa.core.Task;
 import boa.data_structure.dao.MasterDAO;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;
 import boa.image.Image;

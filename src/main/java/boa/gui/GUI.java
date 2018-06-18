@@ -62,6 +62,7 @@ import boa.data_structure.StructureObjectUtils;
 import boa.gui.Shortcuts.ACTION;
 import boa.gui.Shortcuts.PRESET;
 import boa.gui.configuration.TransparentListCellRenderer;
+import boa.gui.image_interaction.Kymograph;
 import boa.gui.objects.StructureSelectorTree;
 import ij.ImageJ;
 import boa.image.Image;
@@ -194,6 +195,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     // enable/disable components
     private ProgressIcon progressBar;
     private NumberParameter openedImageLimit = new BoundedNumberParameter("Limit", 0, 5, 0, null);
+    private NumberParameter kymographInterval = new NumberParameter("Kymograph Interval", 0, 0).setToolTipText("Interval between images, in pixels");
     private NumberParameter localZoomFactor = new BoundedNumberParameter("Local Zoom Factor", 1, 4, 2, null);
     private NumberParameter localZoomArea = new BoundedNumberParameter("Local Zoom Area", 0, 35, 15, null);
     private NumberParameter threadNumber = new BoundedNumberParameter("Max Thread Number", 0, System.getProperty("os.name").toLowerCase().indexOf("win")>=0 ? 1 : ThreadRunner.getMaxCPUs(), 1, ThreadRunner.getMaxCPUs());
@@ -268,6 +270,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(openedImageLimit.getValue().intValue());
         openedImageLimit.addListener(p->ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(openedImageLimit.getValue().intValue()));
         ConfigurationTreeGenerator.addToMenu(openedImageLimit.getName(), openedImageLimit.getUI().getDisplayComponent(), openedImageNumberLimitMenu);
+        // kymograph interval
+        PropertyUtils.setPersistant(kymographInterval, "kymograph_interval");
+        Kymograph.INTERVAL_PIX = kymographInterval.getValue().intValue();
+        kymographInterval.addListener(p->Kymograph.INTERVAL_PIX = kymographInterval.getValue().intValue());
+        ConfigurationTreeGenerator.addToMenu(kymographInterval.getName(), kymographInterval.getUI().getDisplayComponent(), kymographMenu);
         // local zoom
         PropertyUtils.setPersistant(localZoomFactor, "local_zoom_factor");
         PropertyUtils.setPersistant(localZoomArea, "local_zoom_area");
@@ -1142,6 +1149,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         clearPPImageMenuItem = new javax.swing.JMenuItem();
         openedImageNumberLimitMenu = new javax.swing.JMenu();
         localZoomMenu = new javax.swing.JMenu();
+        kymographMenu = new javax.swing.JMenu();
         logMenu = new javax.swing.JMenu();
         setLogFileMenuItem = new javax.swing.JMenuItem();
         activateLoggingMenuItem = new javax.swing.JCheckBoxMenuItem();
@@ -1984,6 +1992,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
         localZoomMenu.setText("Local Zoom");
         miscMenu.add(localZoomMenu);
+
+        kymographMenu.setText("Kymograph");
+        miscMenu.add(kymographMenu);
 
         logMenu.setText("Log");
 
@@ -3686,6 +3697,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JMenu jMenu2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JSplitPane jSplitPane3;
+    private javax.swing.JMenu kymographMenu;
     private javax.swing.JButton linkObjectsButton;
     private javax.swing.JMenu localDBMenu;
     private javax.swing.JRadioButtonMenuItem localFileSystemDatabaseRadioButton;

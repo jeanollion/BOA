@@ -22,7 +22,7 @@ import boa.image.processing.ImageOperations;
 import boa.image.processing.Filters;
 import boa.test_utils.TestUtils;
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;

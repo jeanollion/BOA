@@ -18,8 +18,8 @@
 package boa.processing.test;
 
 import boa.gui.GUI;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.data_structure.SelectionUtils;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.Selection;

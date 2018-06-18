@@ -18,10 +18,10 @@
 package boa.processing.test;
 
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.IJImageWindowManager;
-import boa.gui.imageInteraction.ImageDisplayer;
-import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageWindowManager;
+import boa.gui.image_interaction.ImageDisplayer;
+import boa.gui.image_interaction.InteractiveImage;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.core.Task;

@@ -18,15 +18,15 @@
 package boa.processing.test;
 
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageDisplayer;
 import boa.core.Task;
 import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import ij.ImageJ;
 import boa.image.Image;
 import boa.image.ImageMask;

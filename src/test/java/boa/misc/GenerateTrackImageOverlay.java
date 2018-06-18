@@ -17,10 +17,10 @@
  */
 package boa.misc;
 
-import boa.gui.imageInteraction.IJImageWindowManager;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageWindowManager;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManager;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.Task;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.ObjectDAO;
@@ -69,7 +69,7 @@ public class GenerateTrackImageOverlay {
         mcTrack.removeIf(o -> o.getFrame()<tStart||o.getFrame()>tEnd);
         IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();
         
-        ImageObjectInterface i = iwm.getImageTrackObjectInterface(mcTrack, 1);
+        InteractiveImage i = iwm.getImageTrackObjectInterface(mcTrack, 1);
         Image imBact = i.generatemage(1, false);
         Image imMut = i.generatemage(2, false);
         MutableBoundingBox crop = new MutableBoundingBox(0, imBact.sizeX()-1, 0, yMax, 0, 0);

@@ -19,8 +19,8 @@ package boa.misc;
 
 import static boa.test_utils.TestUtils.logger;
 
-import boa.gui.imageInteraction.IJImageWindowManager;
-import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.image_interaction.IJImageWindowManager;
+import boa.gui.image_interaction.InteractiveImage;
 import boa.core.Task;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.Region;
@@ -28,9 +28,9 @@ import boa.data_structure.dao.ObjectDAO;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageWindowManager;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -121,7 +121,7 @@ public class SaveAndRetriveSegmentationData {
         for (StructureObject th : mcTH) {
             List<StructureObject> track = dao.getTrack(th);
             logger.debug("processing: {}", th);
-            ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
+            InteractiveImage i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
             Image im = i.generatemage(structureIdx, true);
             if (roiStructureIdx!=null) {
@@ -157,7 +157,7 @@ public class SaveAndRetriveSegmentationData {
         IJImageWindowManager windowManager = new IJImageWindowManager(null, disp);
         for (StructureObject th : mcTH) {
             List<StructureObject> track = dao.getTrack(th);
-            ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
+            InteractiveImage i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
             List<Pair<StructureObject, BoundingBox>> so = i.getObjects();
             ArrayList<Region> o3DList = new ArrayList<Region>(so.size());

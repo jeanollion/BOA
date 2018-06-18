@@ -17,7 +17,7 @@
  */
 package boa.test_utils;
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.io.ImageReader;
 import boa.image.wrappers.ImgLib2ImageWrapper;

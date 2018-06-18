@@ -18,8 +18,8 @@
 package boa.image.processing;
 
 import boa.image.processing.EDT;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.ImageByte;
 import boa.image.ImageFloat;
 import static org.junit.Assert.assertEquals;

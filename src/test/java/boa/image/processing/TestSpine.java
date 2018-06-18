@@ -17,7 +17,7 @@
  */
 package boa.image.processing;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
 import boa.core.Task;
 import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
@@ -25,7 +25,7 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
 import boa.data_structure.dao.ObjectDAO;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageByte;
 import boa.image.Offset;

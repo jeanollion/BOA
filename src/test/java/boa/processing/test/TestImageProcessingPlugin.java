@@ -27,7 +27,7 @@ import boa.data_structure.dao.ObjectDAO;
 import boa.gui.GUI;
 import static boa.gui.PluginConfigurationUtils.displayIntermediateImages;
 import static boa.gui.PluginConfigurationUtils.testImageProcessingPlugin;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.plugins.PluginFactory;
 import boa.plugins.ProcessingScheme;
 import boa.plugins.TestableProcessingPlugin;

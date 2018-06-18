@@ -17,7 +17,7 @@
  */
 package boa.test_utils;
 
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;

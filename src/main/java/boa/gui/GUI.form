@@ -436,6 +436,11 @@
                 <Property name="text" type="java.lang.String" value="Local Zoom"/>
               </Properties>
             </Menu>
+            <Menu class="javax.swing.JMenu" name="kymographMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Kymograph"/>
+              </Properties>
+            </Menu>
             <Menu class="javax.swing.JMenu" name="logMenu">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Log"/>

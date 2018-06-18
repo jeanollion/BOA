@@ -18,9 +18,9 @@
 package boa.misc;
 
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageDisplayer;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageDisplayer;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.Task;
 import boa.configuration.experiment.Position;
 import boa.core.Processor;

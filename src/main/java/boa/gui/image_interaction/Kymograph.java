@@ -68,9 +68,11 @@ public abstract class Kymograph extends InteractiveImage {
     BoundingBox[] trackOffset;
     SimpleInteractiveImage[] trackObjects;
     static final int updateImageFrequency=50;
-    static final int interval=0; 
+    public static int INTERVAL_PIX=0; 
     static final float displayMinMaxFraction = 0.9f;
+    
     Map<Image, Predicate<BoundingBox>> imageCallback = new HashMap<>();
+    
     public Kymograph(List<StructureObject> parentTrack, int childStructureIdx) {
         super(parentTrack, childStructureIdx);
     }

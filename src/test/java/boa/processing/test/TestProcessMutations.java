@@ -18,8 +18,8 @@
 package boa.processing.test;
 
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageDisplayer;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageDisplayer;
 import boa.configuration.parameters.PostFilterSequence;
 import boa.core.Task;
 import boa.configuration.experiment.Position;

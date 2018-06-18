@@ -20,7 +20,7 @@ package boa.test_utils;
 import boa.configuration.experiment.Experiment;
 import boa.core.Task;
 import static boa.test_utils.TestUtils.logger;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.io.ImportImageUtils;
 import boa.data_structure.Voxel;
 import ij.ImageJ;

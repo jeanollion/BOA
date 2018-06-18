@@ -19,11 +19,11 @@ package boa.processing.test;
 
 import static boa.test_utils.TestUtils.logger;
 import boa.gui.GUI;
-import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.imageInteraction.ImageDisplayer;
-import boa.gui.imageInteraction.ImageObjectInterface;
-import boa.gui.imageInteraction.ImageWindowManager;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.image_interaction.IJImageDisplayer;
+import boa.gui.image_interaction.ImageDisplayer;
+import boa.gui.image_interaction.InteractiveImage;
+import boa.gui.image_interaction.ImageWindowManager;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.Task;
 import boa.configuration.experiment.Position;
 import boa.data_structure.dao.MasterDAO;
@@ -125,7 +125,7 @@ public class TestProcessBacteriaPhase {
         //if (true) return;
         GUI.getInstance(); // for hotkeys...
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, bacteriaStructureIdx);
+        InteractiveImage i = iwm.getImageTrackObjectInterface(parentTrack, bacteriaStructureIdx);
         Image im = i.generatemage(bacteriaStructureIdx, true);
         iwm.addImage(im, i, bacteriaStructureIdx, true);
         i.setDisplayPreFilteredImages(true);
