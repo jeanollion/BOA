@@ -76,6 +76,7 @@ import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.pre_filters.Median;
 import boa.plugins.plugins.pre_filters.Sigma;
 import boa.plugins.plugins.segmenters.BacteriaIntensity.FOREGROUND_SELECTION_METHOD;
+import boa.plugins.plugins.segmenters.BacteriaIntensity.THRESHOLD_COMPUTATION;
 import static boa.plugins.plugins.segmenters.EdgeDetector.valueFunction;
 import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.plugins.plugins.thresholders.CompareThresholds;
@@ -99,21 +100,26 @@ import java.util.stream.Stream;
 public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityPhase>, SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ToolTip, TestableProcessingPlugin {
     public static boolean verbose = false;
     public enum FOREGROUND_SELECTION_METHOD {SIMPLE_THRESHOLDING, HYSTERESIS_THRESHOLDING, EDGE_FUSION};
-    public enum THRESHOLD_COMPUTATION {CURRENT_FRAME, PARENT_TRACK, EDGE_FUSION};
+    public enum THRESHOLD_COMPUTATION {CURRENT_FRAME, PARENT_BRANCH, ROOT_BRANCH};
     protected double threshold=Double.NaN;
     protected double minThld = Double.NaN;
     // configuration-related attributes
     PreFilterSequence edgeMap = new PreFilterSequence("Edge Map").add(new ImageFeature().setFeature(ImageFeature.Feature.GAUSS).setScale(1.5), new Sigma(2).setMedianRadius(0)).setToolTipText("Filters used to define edge map used in first watershed step. <br />Max eigen value of Structure tensor is a good option<br />Median/Gaussian + Sigma is more suitable for noisy images (involve less derivation)<br />Gradient magnitude is another option");  // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2) //new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)
     
-    PluginParameter<ThresholderHisto> globalMinThresholder = new PluginParameter<>("Global Background Threshold", ThresholderHisto.class, new BackgroundFit(10), false).setToolTipText("Threshold for foreground region selection after watershed partitioning on edge map. All regions with median value under this value are considered background. Computed on the whole parent track, except if selected plugin is BackgroundFit, it will be computed on raw pre-processed images (so prefiltering will not be taken into acount in the threshold value).").setEmphasized(true);
+    PluginParameter<SimpleThresholder> localMinThresholder = new PluginParameter<>("Local Background Threshold", SimpleThresholder.class, new BackgroundFit(10), false).setToolTipText("Threshold for foreground region selection after watershed partitioning on edge map. All regions with median value under this value are considered background").setEmphasized(true);
+    PluginParameter<ThresholderHisto> globalMinThresholder = new PluginParameter<>("Global Background Threshold", ThresholderHisto.class, new BackgroundFit(10), false).setToolTipText("Threshold for foreground region selection after watershed partitioning on edge map. All regions with median value under this value are considered background. Computed on the whole parent track/ root track.").setEmphasized(true);
+    ChoiceParameter minThresholdMethod=  new ChoiceParameter("Min Threshold", Utils.toStringArray(THRESHOLD_COMPUTATION.values()), THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), false);
+    ConditionalParameter minThldCond = new ConditionalParameter(minThresholdMethod).setActionParameters(THRESHOLD_COMPUTATION.CURRENT_FRAME.toString(), localMinThresholder).setActionParameters(THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), globalMinThresholder).setActionParameters(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString(), globalMinThresholder).setToolTipText("Higher threshold for foreground region selection after watershed partitioning on edge map. All regions with median value over this value are considered foreground. <br />If <em>CURRENT_FRAME</em> is selected, threshold will be computed at each frame. If <em>PARENT_BRANCH</em> is selected, threshold will be computed on the whole parent branch. If <em>ROOT_BRANCH</em> is selected, threshold will be computed on the whole root branch on raw images (no prefilters).");
+    
     PluginParameter<SimpleThresholder> localThresholder = new PluginParameter<>("Local Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setEmphasized(true);
-    PluginParameter<ThresholderHisto> globalThresholder = new PluginParameter<>("Global Threshold", ThresholderHisto.class, new BackgroundFit(20), false).setEmphasized(true).setToolTipText("Threshold for foreground region selection, use depend on the method. Computed on the whole parent-track, except if selected plugin is BackgroundFit, it will be computed on raw pre-processed images (so prefiltering will not be taken into acount in the threshold value).");
-    ChoiceParameter thresholdMethod=  new ChoiceParameter("Threshold Method", new String[]{"Local Threshold", "Global Threshold"}, "Global Threshold", false);
-    ConditionalParameter thldCond = new ConditionalParameter(thresholdMethod).setActionParameters("Local Threshold", localThresholder).setActionParameters("Global Threshold", globalThresholder).setToolTipText("Higher threshold for foreground region selection after watershed partitioning on edge map. All regions with median value over this value are considered foreground. <br />If <em>Local Threshold</em> is selected, threshold will be computed at each frame. If <em>Global Threshold</em> is selected, threshold will be computed on the whole parent track.");
+    PluginParameter<ThresholderHisto> globalThresholder = new PluginParameter<>("Global Threshold", ThresholderHisto.class, new BackgroundFit(20), false).setEmphasized(true).setToolTipText("Threshold for foreground region selection, use depend on the method. Computed on the whole parent-track/root track.");
+    ChoiceParameter thresholdMethod=  new ChoiceParameter("Threshold", Utils.toStringArray(THRESHOLD_COMPUTATION.values()), THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), false);
+    ConditionalParameter thldCond = new ConditionalParameter(thresholdMethod).setActionParameters(THRESHOLD_COMPUTATION.CURRENT_FRAME.toString(), localMinThresholder).setActionParameters(THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), globalMinThresholder).setActionParameters(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString(), globalMinThresholder).setToolTipText("Higher threshold for foreground region selection after watershed partitioning on edge map. All regions with median value over this value are considered foreground. <br />If <em>CURRENT_FRAME</em> is selected, threshold will be computed at each frame. If <em>PARENT_BRANCH</em> is selected, threshold will be computed on the whole parent branch. If <em>ROOT_BRANCH</em> is selected, threshold will be computed on the whole root branch, on raw images (no prefilters).");
+    
     NumberParameter backgroundEdgeFusionThld = new BoundedNumberParameter("Background Edge Fusion Threshold", 4, 4, 0, null).setEmphasized(true).setToolTipText("Threshold for background edge partition fusion. 2 adjacent partitions are merged if the 10% quantile edge value @ interface / background sigma < this value.<br />Sensible to sharpness of edges (decrease smoothing in edge map to increase sharpness) ");
     NumberParameter foregroundEdgeFusionThld = new BoundedNumberParameter("Foreground Edge Fusion Threshold", 4, 0.2, 0, null).setEmphasized(true).setToolTipText("Threshold for foreground edge partition fusion. 2 adjacent partitions are merged if the mean edge value @ interface / mean value @ regions < this value<br />Sensible to sharpness of edges (decrease smoothing in edge map to increase sharpness)");
     ChoiceParameter foregroundMethod=  new ChoiceParameter("Foreground Selection Method", Utils.toStringArray(FOREGROUND_SELECTION_METHOD.values()), FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), false);
-    ConditionalParameter foregroundCond = new ConditionalParameter(foregroundMethod).setActionParameters(FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString(), thldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString(), globalMinThresholder, thldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), backgroundEdgeFusionThld,foregroundEdgeFusionThld, globalMinThresholder).setEmphasized(true).setToolTipText("Foreground selection after watershed partitioning on <em>Edge Map</em><br /><ol><li>"+FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString()+": All regions with median value inferior to threshold defined in <em>Threshold Method</em> are erased. No suitable when fluorescence expression is highly variable among bacteria</li><li>"+FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString()+": Regions with median value under <em>Global Background Threshold</em> are background, all regions over threshold defined in <em>Threshold Method</em> are foreground. Undetermined regions are fused to the adjacent region that has lower edge value at interface. Then background regions are removed</li><li>"+FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString()+": </li>Foreground selection is performed in 3 steps:<ol><li>All adjacent regions that verify condition defined in <em>Background Edge Fusion Threshold</em> are merged. This mainly merges background regions </li><li>All adjacent regions that verify condition defined in <em>Foreground Edge Fusion Threshold</em> are merged. This mainly merges foreground regions </li><li>All regions with median value inferior to threshold defined in <em>Threshold Method</em> are erased</li></ol>This method is more suitable when foreground fluorescence expression is higly variable</ol>");
+    ConditionalParameter foregroundCond = new ConditionalParameter(foregroundMethod).setActionParameters(FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString(), thldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString(), minThldCond, thldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), backgroundEdgeFusionThld,foregroundEdgeFusionThld, minThldCond).setEmphasized(true).setToolTipText("Foreground selection after watershed partitioning on <em>Edge Map</em><br /><ol><li>"+FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString()+": All regions with median value inferior to threshold defined in <em>Threshold Method</em> are erased. No suitable when fluorescence expression is highly variable among bacteria</li><li>"+FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString()+": Regions with median value under <em>Global Background Threshold</em> are background, all regions over threshold defined in <em>Threshold Method</em> are foreground. Undetermined regions are fused to the adjacent region that has lower edge value at interface. Then background regions are removed</li><li>"+FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString()+": </li>Foreground selection is performed in 3 steps:<ol><li>All adjacent regions that verify condition defined in <em>Background Edge Fusion Threshold</em> are merged. This mainly merges background regions </li><li>All adjacent regions that verify condition defined in <em>Foreground Edge Fusion Threshold</em> are merged. This mainly merges foreground regions </li><li>All regions with median value inferior to threshold defined in <em>Threshold Method</em> are erased</li></ol>This method is more suitable when foreground fluorescence expression is higly variable</ol>");
     
     NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.3, 0, null).setEmphasized(true).setToolTipText("Lower value splits more. At step 2) regions are merge if sum(hessian)|interface / sum(raw intensity)|interface < (this parameter)");
     NumberParameter localThresholdFactor = new BoundedNumberParameter("Local Threshold Factor", 2, 1.25, 0, null).setToolTipText("Factor defining the local threshold.  Lower value of this factor will yield in smaller cells. T = median value - (inter-quartile) * (this factor).");
@@ -601,10 +607,10 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         Function<HistogramFactory.BIN_SIZE_METHOD, Histogram> createHisto = bin -> HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), bin);
         boolean needToComputeGlobalMin = this.foregroundMethod.getSelectedIndex()>0;
         boolean needToComputeGlobalMax = this.foregroundMethod.getSelectedIndex()<2 && this.thresholdMethod.getSelectedIndex()==1;
+        if (!needToComputeGlobalMin && !needToComputeGlobalMin) return new double[]{Double.NaN, Double.NaN};
         boolean IJAutoMin = needToComputeGlobalMin && globalMinThresholder.instanciatePlugin() instanceof IJAutoThresholder;
         boolean IJAutoMax = needToComputeGlobalMax && globalThresholder.instanciatePlugin() instanceof IJAutoThresholder;
-        if (!needToComputeGlobalMin && !needToComputeGlobalMin) return new double[]{Double.NaN, Double.NaN};
-        // special case: if thresholder is background fit -> use global value on roots
+        
         boolean needToComputeHisto = (needToComputeGlobalMin && !(globalMinThresholder.instanciatePlugin() instanceof BackgroundFit)) 
                 || (needToComputeGlobalMax && !(globalThresholder.instanciatePlugin() instanceof BackgroundFit));
         Histogram histo = needToComputeHisto ? createHisto.apply(IJAutoMin ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256 : HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS) : null;
@@ -631,12 +637,39 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         }
         
     }
+    // IF THERE ARE PRE-FILTERS -> VALUES WILL NOT BE COHERENT WITH ROOT MEAN & SIGMA
     private static double[] getGlobalThreshold(List<StructureObject> parent, int structureIdx) {
         double[] ms = getRootBckMeanAndSigma(parent, structureIdx);
         double thld = ms[0] + 10 * ms[1];
         return new double[]{ms[0], ms[1], thld};
     }
-    // IF THERE ARE PRE-FILTERS -> VALUES WILL NOT BE COHERENT WITH ROOT MEAN & SIGMA
+    private double getRootThreshold(List<StructureObject> parents, int structureIdx, Histogram[] histoStore, boolean min) {
+        String key = min ? globalMinThresholder.toJSONEntry().toJSONString() : globalThresholder.toJSONEntry().toJSONString();
+        if (parents.get(0).getRoot().getAttributes().containsKey(key)) {
+            return parents.get(0).getRoot().getAttribute(key, Double.NaN);
+        } else {
+            synchronized(parents.get(0).getRoot()) {
+                if (parents.get(0).getRoot().getAttributes().containsKey(key)) {
+                    return parents.get(0).getRoot().getAttribute(key, Double.NaN);
+                } else {
+                    List<Image> im = parents.stream().map(p->p.getRoot()).map(p->p.getRawImage(structureIdx)).collect(Collectors.toList());
+                    ThresholderHisto thlder = (min ? globalMinThresholder:globalThresholder).instanciatePlugin();
+                    boolean auto256 = thlder instanceof IJAutoThresholder;
+                    Histogram histo;
+                    if (histoStore!=null && histoStore[0]!=null && (!auto256 || histoStore[0].data.length==256)) histo = histoStore[0];
+                    else {
+                        histo = HistogramFactory.getHistogram(()->Image.stream(im).parallel(), auto256 ? BIN_SIZE_METHOD.NBINS_256 : BIN_SIZE_METHOD.AUTO) ;
+                        if (histoStore!=null) histoStore[0] = histo;
+                    }
+                    double thld = thlder.runThresholderHisto(histo);
+                    parents.get(0).getRoot().setAttribute(key, thld);
+                    logger.debug("computing thld: {} on root: {} -> {}", key, parents.get(0).getRoot(), thld);
+                    return thld;
+                }
+            }
+        }
+    }
+    
     private static double[] getRootBckMeanAndSigma(List<StructureObject> parents, int structureIdx) {
         String meanK = "backgroundMean_"+structureIdx;
         String stdK = "backgroundStd_"+structureIdx;

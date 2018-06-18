@@ -101,7 +101,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         this.minSize.setValue(100);
         this.hessianScale.setValue(2);
         this.edgeMap.removeAll().add(new Sigma(3).setMedianRadius(2));
-        thresholdMethod.setSelectedIndex(1);
+        thresholdMethod.setSelectedItem(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString());
         localThresholdFactor.setToolTipText("Factor defining the local threshold. <br />Lower value of this factor will yield in smaller cells. <br />Threshold = mean_w - sigma_w * (this factor), <br />with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
         localThresholdFactor.setValue(1);
         globalThresholder.setPlugin(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu));
