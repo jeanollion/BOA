@@ -89,6 +89,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -101,8 +102,7 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
     public static boolean verbose = false;
     public enum FOREGROUND_SELECTION_METHOD {SIMPLE_THRESHOLDING, HYSTERESIS_THRESHOLDING, EDGE_FUSION};
     public enum THRESHOLD_COMPUTATION {CURRENT_FRAME, PARENT_BRANCH, ROOT_BRANCH};
-    protected double threshold=Double.NaN;
-    protected double minThld = Double.NaN;
+    
     // configuration-related attributes
     PreFilterSequence edgeMap = new PreFilterSequence("Edge Map").add(new ImageFeature().setFeature(ImageFeature.Feature.GAUSS).setScale(1.5), new Sigma(2).setMedianRadius(0)).setToolTipText("Filters used to define edge map used in first watershed step. <br />Max eigen value of Structure tensor is a good option<br />Median/Gaussian + Sigma is more suitable for noisy images (involve less derivation)<br />Gradient magnitude is another option");  // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2) //new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)
     
@@ -114,12 +114,12 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
     PluginParameter<SimpleThresholder> foreThresholderFrame = new PluginParameter<>("Method", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setEmphasized(true);
     PluginParameter<ThresholderHisto> foreThresholder = new PluginParameter<>("Method", ThresholderHisto.class, new BackgroundFit(20), false).setEmphasized(true).setToolTipText("Threshold for foreground region selection, use depend on the method. Computed on the whole parent-track/root track.");
     ChoiceParameter foreThresholdMethod=  new ChoiceParameter("Foreground Threshold", Utils.toStringArray(THRESHOLD_COMPUTATION.values()), THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), false);
-    ConditionalParameter foreThldCond = new ConditionalParameter(foreThresholdMethod).setActionParameters(THRESHOLD_COMPUTATION.CURRENT_FRAME.toString(), bckThresholderFrame).setActionParameters(THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), bckThresholder).setActionParameters(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString(), bckThresholder).setToolTipText("Higher threshold for foreground region selection after watershed partitioning on edge map. All regions with median value over this value are considered foreground. <br />If <em>CURRENT_FRAME</em> is selected, threshold will be computed at each frame. If <em>PARENT_BRANCH</em> is selected, threshold will be computed on the whole parent branch. If <em>ROOT_BRANCH</em> is selected, threshold will be computed on the whole root branch, on raw images (no prefilters).");
+    ConditionalParameter foreThldCond = new ConditionalParameter(foreThresholdMethod).setActionParameters(THRESHOLD_COMPUTATION.CURRENT_FRAME.toString(), foreThresholderFrame).setActionParameters(THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), foreThresholder).setActionParameters(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString(), foreThresholder).setToolTipText("Threshold for foreground region selection after watershed partitioning on edge map. All regions with median value over this value are considered foreground. <br />If <em>CURRENT_FRAME</em> is selected, threshold will be computed at each frame. If <em>PARENT_BRANCH</em> is selected, threshold will be computed on the whole parent branch. If <em>ROOT_BRANCH</em> is selected, threshold will be computed on the whole root branch, on raw images (no prefilters).");
     
     NumberParameter backgroundEdgeFusionThld = new BoundedNumberParameter("Background Edge Fusion Threshold", 4, 4, 0, null).setEmphasized(true).setToolTipText("Threshold for background edge partition fusion. 2 adjacent partitions are merged if the 10% quantile edge value @ interface / background sigma < this value.<br />Sensible to sharpness of edges (decrease smoothing in edge map to increase sharpness) ");
     NumberParameter foregroundEdgeFusionThld = new BoundedNumberParameter("Foreground Edge Fusion Threshold", 4, 0.2, 0, null).setEmphasized(true).setToolTipText("Threshold for foreground edge partition fusion. 2 adjacent partitions are merged if the mean edge value @ interface / mean value @ regions < this value<br />Sensible to sharpness of edges (decrease smoothing in edge map to increase sharpness)");
-    ChoiceParameter foregroundMethod=  new ChoiceParameter("Foreground Selection Method", Utils.toStringArray(FOREGROUND_SELECTION_METHOD.values()), FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), false);
-    ConditionalParameter foregroundCond = new ConditionalParameter(foregroundMethod).setActionParameters(FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString(), bckThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString(), bckThldCond, foreThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), backgroundEdgeFusionThld,foregroundEdgeFusionThld, bckThldCond).setEmphasized(true).setToolTipText("Foreground selection after watershed partitioning on <em>Edge Map</em><br /><ol><li>"+FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString()+": All regions with median value inferior to threshold defined in <em>Threshold Method</em> are erased. No suitable when fluorescence expression is highly variable among bacteria</li><li>"+FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString()+": Regions with median value under <em>Global Background Threshold</em> are background, all regions over threshold defined in <em>Threshold Method</em> are foreground. Undetermined regions are fused to the adjacent region that has lower edge value at interface. Then background regions are removed</li><li>"+FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString()+": </li>Foreground selection is performed in 3 steps:<ol><li>All adjacent regions that verify condition defined in <em>Background Edge Fusion Threshold</em> are merged. This mainly merges background regions </li><li>All adjacent regions that verify condition defined in <em>Foreground Edge Fusion Threshold</em> are merged. This mainly merges foreground regions </li><li>All regions with median value inferior to threshold defined in <em>Threshold Method</em> are erased</li></ol>This method is more suitable when foreground fluorescence expression is higly variable</ol>");
+    ChoiceParameter foregroundSelectionMethod=  new ChoiceParameter("Foreground Selection Method", new String[]{FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString(), FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString()}, FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString(), false);
+    ConditionalParameter foregroundSelectionCond = new ConditionalParameter(foregroundSelectionMethod).setActionParameters(FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString(), bckThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString(), bckThldCond, foreThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), backgroundEdgeFusionThld,foregroundEdgeFusionThld, bckThldCond).setEmphasized(true).setToolTipText("Foreground selection after watershed partitioning on <em>Edge Map</em><br /><ol><li>"+FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString()+": All regions with median value inferior to threshold defined in <em>Threshold Method</em> are erased. No suitable when fluorescence expression is highly variable among bacteria</li><li>"+FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString()+": Regions with median value under <em>Global Background Threshold</em> are background, all regions over threshold defined in <em>Threshold Method</em> are foreground. Undetermined regions are fused to the adjacent region that has lower edge value at interface. Then background regions are removed</li><li>"+FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString()+": </li>Foreground selection is performed in 3 steps:<ol><li>All adjacent regions that verify condition defined in <em>Background Edge Fusion Threshold</em> are merged. This mainly merges background regions </li><li>All adjacent regions that verify condition defined in <em>Foreground Edge Fusion Threshold</em> are merged. This mainly merges foreground regions </li><li>All regions with median value inferior to threshold defined in <em>Threshold Method</em> are erased</li></ol>This method is more suitable when foreground fluorescence expression is higly variable</ol>");
     
     NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.3, 0, null).setEmphasized(true).setToolTipText("Lower value splits more. At step 2) regions are merge if sum(hessian)|interface / sum(raw intensity)|interface < (this parameter)");
     NumberParameter localThresholdFactor = new BoundedNumberParameter("Local Threshold Factor", 2, 1.25, 0, null).setToolTipText("Factor defining the local threshold.  Lower value of this factor will yield in smaller cells. T = median value - (inter-quartile) * (this factor).");
@@ -131,7 +131,7 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
     
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{sigmaThldForVoidMC, edgeMap, foregroundCond, splitThreshold, minSize, smoothScale, hessianScale, localThresholdFactor};
+        return new Parameter[]{sigmaThldForVoidMC, edgeMap, foregroundSelectionCond, splitThreshold, minSize, smoothScale, hessianScale, localThresholdFactor};
     }
     private final String toolTip = "<b>Intensity-based 2D segmentation:</b>"
             + "<ol><li>Foreground detection: image is partitioned using by watershed on the edge map. Foreground partition are the selected depending on the method chosen in <em>Foreground Selection Method</em></li>"
@@ -228,10 +228,10 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
             int pSIdx = ((StructureObject)parent).getExperiment().getStructure(structureIdx).getParentStructure();
             stores.get(parent).addMisc("Display Thresholds", l->{
                 if (l.stream().map(o->o.getParent(pSIdx)).anyMatch(o->o==parent)) {
-                    GUI.log("Global Min Threshold: "+this.minThld);
-                    logger.info("Global Min Threshold: "+this.minThld);
-                    GUI.log("Global Threshold: "+this.threshold);
-                    logger.info("Global Threshold: {}", threshold);
+                    GUI.log("Background Threshold: "+this.bckThld);
+                    logger.info("Background Threshold: "+this.bckThld);
+                    GUI.log("Foreground Threshold: "+this.foreThld);
+                    logger.info("Foreground Threshold: {}", foreThld);
                     GUI.log("Background Mean: "+this.globalBackgroundLevel+" Sigma: "+globalBackgroundSigma);
                     logger.info("Background Mean: {} Sigma: {}", globalBackgroundLevel, globalBackgroundSigma);
                 }
@@ -239,13 +239,21 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         }
         return res;
     }
+    private void ensureThresholds(StructureObjectProcessing parent, int structureIdx, boolean bck, boolean fore) {
+        if (bck && Double.isNaN(bckThld) && bckThresholdMethod.getSelectedIndex()==0) {
+            bckThld = bckThresholderFrame.instanciatePlugin().runSimpleThresholder(parent.getPreFilteredImage(structureIdx), parent.getMask());
+        } 
+        if (bck && Double.isNaN(bckThld)) throw new RuntimeException("Bck Threshold not computed");
+        if (fore && Double.isNaN(foreThld) && foreThresholdMethod.getSelectedIndex()==0) {
+            foreThld = foreThresholderFrame.instanciatePlugin().runSimpleThresholder(parent.getPreFilteredImage(structureIdx), parent.getMask());
+        } 
+        if (fore && Double.isNaN(foreThld)) throw new RuntimeException("Fore Threshold not computed");        
+    }
     protected RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        switch(FOREGROUND_SELECTION_METHOD.valueOf(foregroundMethod.getValue())) {
+        switch(FOREGROUND_SELECTION_METHOD.valueOf(foregroundSelectionMethod.getValue())) {
             case SIMPLE_THRESHOLDING:
-                if (Double.isNaN(threshold) || foreThresholdMethod.getSelectedIndex()==0) {
-                    threshold = foreThresholderFrame.instanciatePlugin().runSimpleThresholder(parent.getPreFilteredImage(structureIdx), parent.getMask());
-                }
-                pop.getRegions().removeIf(r->valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)<=threshold);
+                ensureThresholds(parent, structureIdx, true, false);
+                pop.getRegions().removeIf(r->valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)<=bckThld);
                 return pop;
             case HYSTERESIS_THRESHOLDING:
                 return filterRegionsAfterEdgeDetectorHysteresis(parent, structureIdx, pop);
@@ -295,8 +303,8 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         if (stores!=null) imageDisp.accept(sm.drawInterfaceValues(pop).setName("Interface Values for Foreground Partition Fusion"));
         sm.merge(pop, null);
         if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Foreground Parition Fusion"));
-        
-        pop.getRegions().removeIf(r->valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)<=minThld); // remove regions with low intensity
+        ensureThresholds(parent, structureIdx, true, false);
+        pop.getRegions().removeIf(r->valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)<=bckThld); // remove regions with low intensity
 
         pop.relabel(true);
         return pop;
@@ -312,24 +320,22 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
             return cRight>0;
         };
     }
+    
     // hysteresis thresholding
     protected RegionPopulation filterRegionsAfterEdgeDetectorHysteresis(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
         // perform hysteresis thresholding : define foreground & backgroun + merge indeterminded regions to the closest neighbor in therms of intensity
         Consumer<Image> imageDisp = TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent);
-        if (Double.isNaN(threshold) || this.foreThresholdMethod.getSelectedIndex()==0) {
-            threshold = this.foreThresholderFrame.instanciatePlugin().runSimpleThresholder(parent.getPreFilteredImage(structureIdx), parent.getMask());
-        }
-        double foreThld = threshold;
+        ensureThresholds(parent, structureIdx, true, true);
         Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(parent.getPreFilteredImage(structureIdx))));
         Predicate<Region> touchSides = touchSides(parent.getMask());
-        Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<=minThld || touchSides.test(r) ).collect(Collectors.toSet());
-        if (foreThld==minThld) { // simple thresholding
+        Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<=bckThld || touchSides.test(r) ).collect(Collectors.toSet());
+        if (foreThld==bckThld) { // simple thresholding
             pop.getRegions().removeAll(backgroundL);
             pop.relabel(true);
             return pop;
         }
         Set<Region> foregroundL = pop.getRegions().stream().filter(r->!backgroundL.contains(r) && values.get(r)>=foreThld).collect(Collectors.toSet());
-        if (stores!=null) logger.debug("min thld: {} max thld: {}, background: {}, foreground: {}, unknown: {}", minThld, foreThld, backgroundL.size(), foregroundL.size(), pop.getRegions().size()-backgroundL.size()-foregroundL.size());
+        if (stores!=null) logger.debug("min thld: {} max thld: {}, background: {}, foreground: {}, unknown: {}", bckThld, foreThld, backgroundL.size(), foregroundL.size(), pop.getRegions().size()-backgroundL.size()-foregroundL.size());
         if (pop.getRegions().size()>foregroundL.size()+backgroundL.size()) { // merge indetermined regions with either background or foreground
             pop.getRegions().removeAll(backgroundL);
             pop.getRegions().removeAll(foregroundL);
@@ -343,26 +349,26 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
                 } else {
                     int size = i.getVoxels().size()+i.getDuplicatedVoxels().size();
                     double val= ArrayUtil.quantile(Stream.concat(i.getVoxels().stream(), i.getDuplicatedVoxels().stream()).mapToDouble(v->sm.getWatershedMap().getPixel(v.x, v.y, v.z)).sorted(), size, 0.1);
-                    double mean1 = BasicMeasurements.getMeanValue(i.getE1(), sm.getIntensityMap());
+                    /*double mean1 = BasicMeasurements.getMeanValue(i.getE1(), sm.getIntensityMap());
                     double mean2 = BasicMeasurements.getMeanValue(i.getE2(), sm.getIntensityMap());
                     double mean = (mean1 + mean2) / 2d;
                     //double sum = BasicMeasurements.getSum(i.getE1(), sm.getIntensityMap())+BasicMeasurements.getSum(i.getE2(), sm.getIntensityMap());
                     //double mean = sum /(double)(i.getE1().size()+i.getE2().size());
-                    val= val/(mean-globalBackgroundLevel);
+                    val= val/(mean-globalBackgroundLevel);*/
                     return val;
                 }
             });
             if (stores!=null) imageDisp.accept(sm.drawInterfaceValues(pop).setName("Interface Values for Hysteresis"));
-            sm.setTestMode(imageDisp);
+            //sm.setTestMode(imageDisp);
             //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS);
             sm.addForbidFusion(i->{
                 int r1 = backgroundL.contains(i.getE1()) ? -1 : (foregroundL.contains(i.getE1()) ? 1 : 0);
                 int r2 = backgroundL.contains(i.getE2()) ? -1 : (foregroundL.contains(i.getE2()) ? 1 : 0);
-                return r1*r2==0; // only merge is at least one is not foreground or background
+                return r1*r2==0; // only merge if at least one is not foreground or background
             });
             sm.merge(pop, sm.objectNumberLimitCondition(backgroundL.size()+foregroundL.size()));
             if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Values After Hysteresis"));
-            pop.getRegions().removeIf(r->touchSides.test(r) || valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)<=minThld); // remove regions with low intensity (do not remove backgroundL)
+            pop.getRegions().removeIf(r->touchSides.test(r) || valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)<=bckThld); // remove regions with low intensity (do not remove backgroundL)
         } else pop.getRegions().removeAll(backgroundL);
         pop.relabel(true);
         return pop;
@@ -513,20 +519,20 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
     // apply to segmenter from whole track information (will be set prior to call any other methods)
     
     boolean isVoid = false;
-    double globalThreshold = Double.NaN, localThreshold = Double.NaN, globalBackgroundLevel=0, globalBackgroundSigma=1;
+    protected double bckThld = Double.NaN, foreThld = Double.NaN;
+    private double globalBackgroundLevel=0, globalBackgroundSigma=1;
     @Override
     public TrackParametrizable.TrackParametrizer<BacteriaIntensity> run(int structureIdx, List<StructureObject> parentTrack) {
         double[] backgroundMeanAndSigma = new double[2];
         Set<StructureObject> voidMC = getVoidMicrochannels(structureIdx, parentTrack, backgroundMeanAndSigma);
         
-        double[] minAndGlobalThld = getGlobalMinAndGlobalThld(parentTrack, structureIdx, voidMC);
+        double[] thlds = getBranchThresholds(parentTrack, structureIdx, voidMC);
         return (p, s) -> {
             if (voidMC.contains(p)) s.isVoid=true; 
-            s.minThld=minAndGlobalThld[0];
+            s.bckThld=thlds[0];
+            s.foreThld = thlds[1];
             s.globalBackgroundLevel = backgroundMeanAndSigma[0];
             s.globalBackgroundSigma = backgroundMeanAndSigma[1];
-            s.globalThreshold = minAndGlobalThld[1];
-            if (foreThresholdMethod.getSelectedIndex()>=1) s.threshold = minAndGlobalThld[1]; // global threshold
         };
         
     }
@@ -586,14 +592,11 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
             return new HashSet<>(parentTrack);
         }
         // 2) criterion for void microchannels : low intensity value
-        // intensity criterion based on global otsu threshold
-        double[] globalThld = getGlobalThreshold(parentTrack, structureIdx);
-        if (backgroundMeanAndSigmaStore!=null) {
-            backgroundMeanAndSigmaStore[0] = globalThld[0];
-            backgroundMeanAndSigmaStore[1] = globalThld[1];
-        }
+        // intensity criterion based on global threshold (otsu for phase, backgroundFit(10) for fluo
+        double globalThld = getGlobalThreshold(parentTrack, structureIdx, null, backgroundMeanAndSigmaStore);
+
         Set<StructureObject> outputVoidMicrochannels = IntStream.range(0, parentTrack.size())
-                .filter(idx -> meanF_meanR_sigmaR.get(idx)[0]<globalThld[2])  // test on mean value is because when mc is very full, sigma can be low enough
+                .filter(idx -> meanF_meanR_sigmaR.get(idx)[0]<globalThld)  // test on mean value is because when mc is very full, sigma can be low enough
                 .filter(idx -> meanF_meanR_sigmaR.get(idx)[2]/(meanF_meanR_sigmaR.get(idx)[1]-meanF_meanR_sigmaR.get(idx)[3])<globalVoidThldSigmaMu) // test on sigma/mu value because when mc is nearly void, mean can be low engough
                 .mapToObj(idx -> parentTrack.get(idx))
                 .collect(Collectors.toSet());
@@ -601,50 +604,49 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         //logger.debug("s/mu : {}", Utils.toStringList(meanF_meanR_sigmaR.subList(10, 15), f->"mu="+f[0]+" muR="+f[1]+"sR="+f[2]+ " sR/muR="+f[2]/f[1]));
         return outputVoidMicrochannels;
     }
-    protected double[] getGlobalMinAndGlobalThld(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
+    protected double[] getBranchThresholds(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
         if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
-        
-        Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!voidMC.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
-        Function<HistogramFactory.BIN_SIZE_METHOD, Histogram> createHisto = bin -> HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), bin);
-        
+        Histogram[] histoRoot=new Histogram[1], histoParent=new Histogram[1];
+        Supplier<Histogram> getHistoParent = () -> {
+            if (histoParent[0]==null) { 
+                Map<Image, ImageMask> imageMapMask = parentTrack.stream().filter(p->!voidMC.contains(p)).collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
+                histoParent[0] = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO);
+            }
+            return histoParent[0];
+        };
         boolean needToComputeGlobalMin = this.bckThresholdMethod.getSelectedIndex()>0;
-        boolean needToComputeGlobalMax = this.foregroundMethod.getSelectedIndex()==1 && this.foreThresholdMethod.getSelectedIndex()>0;
+        boolean needToComputeGlobalMax = this.foregroundSelectionMethod.getSelectedIndex()==1 && this.foreThresholdMethod.getSelectedIndex()>0;
         if (!needToComputeGlobalMin && !needToComputeGlobalMin) return new double[]{Double.NaN, Double.NaN};
-        boolean IJAutoMin = needToComputeGlobalMin && bckThresholder.instanciatePlugin() instanceof IJAutoThresholder;
-        boolean IJAutoMax = needToComputeGlobalMax && foreThresholder.instanciatePlugin() instanceof IJAutoThresholder;
-        
-        boolean needToComputeHisto = (needToComputeGlobalMin && !(bckThresholder.instanciatePlugin() instanceof BackgroundFit)) 
-                || (needToComputeGlobalMax && !(foreThresholder.instanciatePlugin() instanceof BackgroundFit));
-        
-        Histogram histo = needToComputeHisto ? createHisto.apply(IJAutoMin ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256 : HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS) : null;
-        double minThreshold = Double.NaN;
+        double bckThld = Double.NaN, foreThld = Double.NaN;
         if (needToComputeGlobalMin) {
             ThresholderHisto thlder = bckThresholder.instanciatePlugin();
-            if (thlder instanceof BackgroundFit) {
-                double[] ms = getRootBckMeanAndSigma(parentTrack, structureIdx);
-                minThreshold = ms[0] + ((BackgroundFit)thlder).getSigmaFactor() * ms[1];
-            } else  minThreshold = thlder.runThresholderHisto(histo);
+            if (bckThresholdMethod.getSelectedIndex()==2) { // root threshold
+                if (thlder instanceof BackgroundFit) {
+                    double[] ms = getRootBckMeanAndSigma(parentTrack, structureIdx, histoRoot);
+                    bckThld = ms[0] + ((BackgroundFit)thlder).getSigmaFactor() * ms[1];
+                } else bckThld = getRootThreshold(parentTrack, structureIdx, histoRoot, true);
+            } else bckThld = thlder.runThresholderHisto(getHistoParent.get());  // parent threshold
         }
         if (needToComputeGlobalMax) { // global threshold on this track
-            if (IJAutoMin!=IJAutoMax) histo = createHisto.apply(IJAutoMax ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256 : HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
             ThresholderHisto thlder = foreThresholder.instanciatePlugin();
-            double globalThld;
-            if (thlder instanceof BackgroundFit) {
-                double[] ms = getRootBckMeanAndSigma(parentTrack, structureIdx);
-                globalThld = ms[0] + ((BackgroundFit)thlder).getSigmaFactor() * ms[1];
-            } else  globalThld = thlder.runThresholderHisto(histo);
-            logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), minThreshold, globalThld);
-            return new double[]{minThreshold, globalThld}; 
-        } else {
-            return new double[]{minThreshold, Double.NaN}; 
-        }
-        
+            if (foreThresholdMethod.getSelectedIndex()==2) { // root threshold
+                if (thlder instanceof BackgroundFit) {
+                    double[] ms = getRootBckMeanAndSigma(parentTrack, structureIdx, histoRoot);
+                    foreThld = ms[0] + ((BackgroundFit)thlder).getSigmaFactor() * ms[1];
+                } else foreThld = getRootThreshold(parentTrack, structureIdx, histoRoot, false);
+            } else foreThld = thlder.runThresholderHisto(getHistoParent.get());  // parent threshold
+        } 
+        logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), bckThld, foreThld);
+        return new double[]{bckThld, foreThld}; 
     }
     // IF THERE ARE PRE-FILTERS -> VALUES WILL NOT BE COHERENT WITH ROOT MEAN & SIGMA
-    private static double[] getGlobalThreshold(List<StructureObject> parent, int structureIdx) {
-        double[] ms = getRootBckMeanAndSigma(parent, structureIdx);
-        double thld = ms[0] + 10 * ms[1];
-        return new double[]{ms[0], ms[1], thld};
+    protected double getGlobalThreshold(List<StructureObject> parent, int structureIdx, Histogram[] histoStore, double[] meanAndSigmaStore) {
+        double[] ms = getRootBckMeanAndSigma(parent, structureIdx, histoStore);
+        if (meanAndSigmaStore!=null) {
+            meanAndSigmaStore[0] = ms[0];
+            meanAndSigmaStore[1] = ms[1];
+        }
+        return ms[0] + 5 * ms[1]; // was 10
     }
     private double getRootThreshold(List<StructureObject> parents, int structureIdx, Histogram[] histoStore, boolean min) {
         // cas particulier si BackgroundFit -> call 
@@ -658,11 +660,10 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
                 } else {
                     List<Image> im = parents.stream().map(p->p.getRoot()).map(p->p.getRawImage(structureIdx)).collect(Collectors.toList());
                     ThresholderHisto thlder = (min ? bckThresholder:foreThresholder).instanciatePlugin();
-                    boolean auto256 = thlder instanceof IJAutoThresholder;
                     Histogram histo;
-                    if (histoStore!=null && histoStore[0]!=null && (!auto256 || histoStore[0].data.length==256)) histo = histoStore[0];
+                    if (histoStore!=null && histoStore[0]!=null ) histo = histoStore[0];
                     else {
-                        histo = HistogramFactory.getHistogram(()->Image.stream(im).parallel(), auto256 ? BIN_SIZE_METHOD.NBINS_256 : BIN_SIZE_METHOD.AUTO) ;
+                        histo = HistogramFactory.getHistogram(()->Image.stream(im).parallel(), BIN_SIZE_METHOD.AUTO) ;
                         if (histoStore!=null) histoStore[0] = histo;
                     }
                     double thld = thlder.runThresholderHisto(histo);
@@ -674,22 +675,28 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         }
     }
     
-    private static double[] getRootBckMeanAndSigma(List<StructureObject> parents, int structureIdx) {
+    private static double[] getRootBckMeanAndSigma(List<StructureObject> parents, int structureIdx, Histogram[] histoStore) {
         String meanK = "backgroundMean_"+structureIdx;
         String stdK = "backgroundStd_"+structureIdx;
         if (parents.get(0).getRoot().getAttributes().containsKey(meanK)) {
-            return new double[]{parents.get(0).getRoot().getAttribute(meanK, 0), parents.get(0).getRoot().getAttribute(stdK, 1)};
+            return new double[]{parents.get(0).getRoot().getAttribute(meanK, 0d), parents.get(0).getRoot().getAttribute(stdK, 1d)};
         } else {
             synchronized(parents.get(0).getRoot()) {
                 if (parents.get(0).getRoot().getAttributes().containsKey(meanK)) {
-                    return new double[]{parents.get(0).getRoot().getAttribute(meanK, 0), parents.get(0).getRoot().getAttribute(stdK, 1)};
+                    return new double[]{parents.get(0).getRoot().getAttribute(meanK, 0d), parents.get(0).getRoot().getAttribute(stdK, 1d)};
                 } else {
-                    List<Image> im = parents.stream().map(p->p.getRoot()).map(p->p.getRawImage(structureIdx)).collect(Collectors.toList());
-                    Histogram histo = HistogramFactory.getHistogram(()->Image.stream(im).parallel(), BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+                    Histogram histo;
+                    if (histoStore!=null && histoStore[0]!=null) histo = histoStore[0];
+                    else {
+                        List<Image> im = parents.stream().map(p->p.getRoot()).map(p->p.getRawImage(structureIdx)).collect(Collectors.toList());
+                        histo = HistogramFactory.getHistogram(()->Image.stream(im).parallel(), BIN_SIZE_METHOD.AUTO);
+                        if (histoStore!=null) histoStore[0] = histo;
+                    }
                     double[] ms = new double[2];
                     BackgroundFit.backgroundFit(histo, 10, ms);
-                    parents.get(0).setAttribute(meanK, ms[0]);
-                    parents.get(0).setAttribute(stdK, ms[1]);
+                    parents.get(0).getRoot().setAttribute(meanK, ms[0]);
+                    parents.get(0).getRoot().setAttribute(stdK, ms[1]);
+                    logger.debug("compute root {} mean {}, sigma: {}", parents.get(0), ms[0], ms[1]);
                     return ms;
                 }
             }

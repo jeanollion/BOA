@@ -109,6 +109,17 @@ public class ConditionalParameter extends SimpleContainerParameter {
     } 
 
     @Override
+    public boolean isValid() {
+        return action.isValid() && super.isValid();
+    }
+    
+    @Override
+    public boolean isEmphasized() {
+        if (action.isEmphasized()) return true;
+        return super.isEmphasized();
+    }
+    
+    @Override
     public boolean sameContent(Parameter other) {
         if (other instanceof ConditionalParameter) {
             if (!((ConditionalParameter)other).getActionableParameter().sameContent(getActionableParameter())) {

@@ -164,13 +164,13 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         if (pop.getRegions().isEmpty()) return pop;
         Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(parent.getPreFilteredImage(structureIdx))));
         Consumer<Image> imageDisp = TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent);
-        if (Double.isNaN(threshold)) { // if need to compute thld -> compute thld
+        if (Double.isNaN(foreThld)) { // if need to compute thld -> compute thld
             Image valueMap = EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values);
-            threshold = this.foreThresholderFrame.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
+            foreThld = this.foreThresholderFrame.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
             if (stores!=null) imageDisp.accept(valueMap.setName("value map"));
         } else if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values).setName("value map"));
-        if (!Double.isNaN(minThld)) threshold = Math.max(minThld, threshold);
-        if (Double.isNaN(globalThreshold)) globalThreshold = threshold;
+        if (!Double.isNaN(bckThld)) foreThld = Math.max(bckThld, foreThld);
+        
         // define 3 categories: background / forground / unknown
         // foreground -> high intensity, foreground -> low intensity -> merge them
         Function<Region, Integer> artefactFunc = getFilterBorderArtefacts(parent, structureIdx);
@@ -179,8 +179,8 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
             imageDisp.accept(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), valuesArt).setName("artefact map"));
             imageDisp.accept(pop.getLabelMap().duplicate("region before artefact filter"));
         }
-        Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<minThld || artefactFunc.apply(r)==-1).collect(Collectors.toSet());
-        Set<Region> foregroundL = pop.getRegions().stream().filter(r->values.get(r)>Math.max(globalThreshold, threshold) && !backgroundL.contains(r) && artefactFunc.apply(r)==1).collect(Collectors.toSet());
+        Set<Region> backgroundL = pop.getRegions().stream().filter(r->values.get(r)<bckThld || artefactFunc.apply(r)==-1).collect(Collectors.toSet());
+        Set<Region> foregroundL = pop.getRegions().stream().filter(r->values.get(r)>foreThld && !backgroundL.contains(r) && artefactFunc.apply(r)==1).collect(Collectors.toSet());
         if (foregroundL.isEmpty()) {
             pop.getRegions().clear();
             pop.relabel(true);
@@ -244,7 +244,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
      */
     protected RegionPopulation filterBorderArtefacts(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
         Function<Region, Integer> artifactFunc  = getFilterBorderArtefacts(parent, structureIdx);
-        pop.filter(r->artifactFunc.apply(r)>=0 && (Double.isNaN(minThld) || splitAndMerge.getMedianValues().getAndCreateIfNecessary(r)>minThld));
+        pop.filter(r->artifactFunc.apply(r)>=0 && (Double.isNaN(bckThld) || splitAndMerge.getMedianValues().getAndCreateIfNecessary(r)>bckThld));
         return pop;
     }
     /**
@@ -356,7 +356,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
     }
     
     @Override
-    protected double[] getGlobalMinAndGlobalThld(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
+    protected double[] getBranchThresholds(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
         if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         // 1) get global otsu thld for images with foreground
         double globalThld = getGlobalOtsuThreshold(parentTrack.stream().filter(p->!voidMC.contains(p)), structureIdx);
@@ -379,9 +379,13 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
 
         return new double[]{minThreshold, globalThld}; 
     }
+    @Override 
+    protected double getGlobalThreshold(List<StructureObject> parent, int structureIdx, Histogram[] histoStore, double[] meanAndSigmaStore) {
+        return getGlobalOtsuThreshold(parent.stream(), structureIdx);
+    }
     protected static double  getGlobalOtsuThreshold(Stream<StructureObject> parent, int structureIdx) { // TODO : remplacer par background fit. attention si image normalisée -> bin pas 1, sinon bin = 1. Calcult auto des bin ? ou en deux temps ? 
         Map<Image, ImageMask> imageMapMask = parent.collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
-        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), 256);
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO);
         return IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
         
     }

@@ -208,7 +208,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         Iterator<I> it = interfaces.iterator();
         while (it.hasNext() && !stopCondition.getAsBoolean()) {
             I i = it.next();
-            if (forbidFusion!=null && forbidFusion.test(i)) continue; // do not remove interface as the test could change after fusions
+            if (forbidFusion!=null && forbidFusion.test(i)) continue; // test each time & do not remove interface as the test could change after fusions
             if (!checkCriterion || i.checkFusion() ) {
                 if (verbose) logger.debug("fusion {}", i);
                 it.remove();
