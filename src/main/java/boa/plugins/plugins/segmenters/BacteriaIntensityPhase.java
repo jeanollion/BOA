@@ -94,17 +94,17 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
     
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{edgeMap, thldCond, splitThreshold , minSize, hessianScale, filterBorderArtefacts,ltCond, sigmaThldForVoidMC};
+        return new Parameter[]{edgeMap, foreThldCond, splitThreshold , minSize, hessianScale, filterBorderArtefacts,ltCond, sigmaThldForVoidMC};
     }
     public BacteriaIntensityPhase() {
         this.splitThreshold.setValue(0.10); // 0.15 for scale = 3
         this.minSize.setValue(100);
         this.hessianScale.setValue(2);
         this.edgeMap.removeAll().add(new Sigma(3).setMedianRadius(2));
-        thresholdMethod.setSelectedItem(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString());
+        foreThresholdMethod.setSelectedItem(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString());
         localThresholdFactor.setToolTipText("Factor defining the local threshold. <br />Lower value of this factor will yield in smaller cells. <br />Threshold = mean_w - sigma_w * (this factor), <br />with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. ");
         localThresholdFactor.setValue(1);
-        globalThresholder.setPlugin(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu));
+        foreThresholder.setPlugin(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu));
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         if (isVoid) return null;
@@ -166,7 +166,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         Consumer<Image> imageDisp = TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent);
         if (Double.isNaN(threshold)) { // if need to compute thld -> compute thld
             Image valueMap = EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values);
-            threshold = this.localThresholder.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
+            threshold = this.foreThresholderFrame.instanciatePlugin().runSimpleThresholder(valueMap, parent.getMask());
             if (stores!=null) imageDisp.accept(valueMap.setName("value map"));
         } else if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(parent.getPreFilteredImage(structureIdx), values).setName("value map"));
         if (!Double.isNaN(minThld)) threshold = Math.max(minThld, threshold);

@@ -34,7 +34,11 @@ import boa.image.ImageMask;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
 import boa.plugins.ThresholderHisto;
+import boa.plugins.ops.ImgLib2HistogramWrapper;
 import boa.utils.Utils;
+import net.imagej.ops.threshold.AbstractComputeThresholdHistogram;
+import net.imglib2.histogram.Histogram1d;
+import net.imglib2.type.numeric.RealType;
 
 /**
  *
@@ -70,16 +74,75 @@ public class IJAutoThresholder implements SimpleThresholder, ThresholderHisto {
     public static double runThresholder(Image input, ImageMask mask, MutableBoundingBox limits, Method method) {
         Histogram histo = HistogramFactory.getHistogram(()->mask==null ? input.stream(): input.stream(mask, true), 256);
         histo.removeSaturatingValue(4, true);
-        AutoThresholder at = new AutoThresholder();
-        double thld = at.getThreshold(method, histo.data);
-        return histo.getValueFromIdx(thld);
+        return runThresholder(method, histo);
     }
     
     public static double runThresholder(Method method, Histogram histo) {
         if (method==null) return Double.NaN;
-        AutoThresholder at = new AutoThresholder();
-        double thld = at.getThreshold(method, histo.data);
-        return histo.getValueFromIdx(thld);
+        if (histo.data.length!=256) return runThresholderIJ2(method, histo);
+        else {
+            AutoThresholder at = new AutoThresholder();
+            double thld = at.getThreshold(method, histo.data);
+            return histo.getValueFromIdx(thld);
+        }
+        
+    }
+    
+    public static double runThresholderIJ2(Method method, Histogram histo) {
+        Histogram1d histoIJ2 = ImgLib2HistogramWrapper.wrap(histo);
+        AbstractComputeThresholdHistogram thlder=null;
+        switch(method) {
+            case Otsu:
+                thlder = new net.imagej.ops.threshold.otsu.ComputeOtsuThreshold();
+                break;
+            case Huang:
+                thlder = new net.imagej.ops.threshold.huang.ComputeHuangThreshold<>();
+                break;
+            case Intermodes:
+                thlder = new net.imagej.ops.threshold.intermodes.ComputeIntermodesThreshold<>();
+                break;
+            case IsoData:
+                thlder = new net.imagej.ops.threshold.isoData.ComputeIsoDataThreshold<>();
+                break;
+            case Li:
+                thlder = new net.imagej.ops.threshold.li.ComputeLiThreshold<>();
+                break;
+            case MaxEntropy:
+                thlder = new net.imagej.ops.threshold.maxEntropy.ComputeMaxEntropyThreshold<>();
+                break;
+            case Mean:
+                thlder = new net.imagej.ops.threshold.mean.ComputeMeanThreshold<>();
+                break;
+            case MinError:
+                thlder = new net.imagej.ops.threshold.minError.ComputeMinErrorThreshold<>();
+                break;
+            case Minimum:
+                thlder = new net.imagej.ops.threshold.minimum.ComputeMinimumThreshold<>();
+                break;
+            case Moments:
+                thlder = new net.imagej.ops.threshold.moments.ComputeMomentsThreshold<>();
+                break;
+            case Percentile:
+                thlder = new net.imagej.ops.threshold.percentile.ComputePercentileThreshold<>();
+                break;
+            case RenyiEntropy:
+                thlder = new net.imagej.ops.threshold.renyiEntropy.ComputeRenyiEntropyThreshold<>();
+                break;
+            case Shanbhag:
+                thlder = new net.imagej.ops.threshold.shanbhag.ComputeShanbhagThreshold<>();
+                break;
+            case Triangle:
+                thlder = new net.imagej.ops.threshold.triangle.ComputeTriangleThreshold<>();
+                break;
+            case Yen:
+                thlder = new net.imagej.ops.threshold.yen.ComputeYenThreshold<>();
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid threshold method");
+        }
+        RealType res = thlder.createOutput(histoIJ2);
+        thlder.compute1(histoIJ2, res); 
+        return res.getRealDouble();
     }
     
     @Override    

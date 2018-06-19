@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import thredds.filesystem.FileSystemProto;
 import boa.utils.Utils;
+import java.util.ArrayList;
 
 /**
  *
@@ -38,19 +39,22 @@ import boa.utils.Utils;
  */
 public class OpHelpers {
     // need further version of IJ2 to work
-    /*
+    
     public static final Logger logger = LoggerFactory.getLogger(OpHelpers.class);
     final OpService service;
     public OpHelpers(OpService service) {
         this.service=service;
     }
+    public static List<ModuleItem<?>> inputs(OpInfo info) {
+        List<ModuleItem<?>> inputs = new ArrayList<>();
+        for (ModuleItem<?> i : info.cInfo().inputs()) inputs.add(i);
+        return inputs;
+    }
     public static OpParameter[] getParameters(OpInfo info) {
-        
-        List<ModuleItem<?>> params = info.inputs();
-        params.removeIf(p->!p.isPersisted()||p.getIOType()!=ItemIO.INPUT);
-        List<OpParameter> res = Utils.transform(params, p->mapParameter(p));
-        res.removeIf(o->o==null);
-        return res.toArray(new OpParameter[res.size()]);
+        return inputs(info).stream()
+                .filter(p -> p.getIOType()==ItemIO.INPUT)
+                .map(p->mapParameter(p)).filter(p->p!=null)
+                .toArray(l->new OpParameter[l]);
     }
     public static OpParameter mapParameter(ModuleItem<?> param) {
         OpParameter res=null;
@@ -78,8 +82,8 @@ public class OpHelpers {
     // TODO: make populate arguments, including non parameters (input). 
     // TODO: make a function for filters (Binary), thresholds (Unary), segmenters? (Binary)
     
-    public static boolean isImage(ModuleItem<?> param) {
+    public static boolean isImageInput(ModuleItem<?> param) {
         return RandomAccessible.class.isAssignableFrom(param.getType());
     }
-    */
+    
 }
