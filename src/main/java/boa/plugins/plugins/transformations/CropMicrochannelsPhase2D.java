@@ -45,10 +45,13 @@ import java.util.Map;
  */
 public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolTip {
     public static boolean debug = false;
-    protected String toolTip = "Based on detection of optical aberration (shadow of opened-end of microchannels in phase contrast imaging) as the max of Y mean profile. End of peak is determined using the <em>peak proportion</em> parameter and height using the <em>channel length</em> parameter";
-    NumberParameter abberationPeakProp = new BoundedNumberParameter("Optical aberration peak proportion", 3, 0.25, 0.1, 1).setToolTipText("The end of optical aberration is determined as the first y index (in y-mean projection values) towards closed-end of microchanel that reach: this value * peak height<br />Depending on phase-contrast setup, the optical aberration can different tail profile. <br /> A lower value will keep more tail, a higher value will remove tail. A too low value can lead to unstable results over frames");
+    protected String toolTip = "<b>Microchannel Detection in phase-contrast images</b><br />"
+            + "Based on detection of optical aberration (shadow of opened-end of microchannels in phase contrast imaging) as the max of Y mean profile. End of peak is determined using the <em>peak proportion</em> parameter and height using the <em>channel length</em> parameter. <br />Supposes optical aberration is the highest peak. Refer to plot <em>Peak Detection</em><br />"
+            + "Closed-end of microchannels is detected as the highest peak of dI/dy (refer to graph <em>Closed-end detection</em>) after excluding the optical aberration.<br />"
+            + "If a previous rotation has added null values to the image corners, the final bounding box is ensured to exclude them";
+    NumberParameter abberationPeakProp = new BoundedNumberParameter("Optical aberration peak proportion", 3, 0.25, 0.1, 1).setEmphasized(true).setToolTipText("The end of optical aberration is determined as the first y index (in y-mean projection values) towards closed-end of microchanel that reach: this value * peak height<br />Depending on phase-contrast setup, the optical aberration can different tail profile. <br /> A lower value will keep more tail, a higher value will remove tail. A too low value can lead to unstable results over frames.<br />Refer to plot <em>Peak Detection</em>");
     NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 60, 0, null).setToolTipText("Additional margin added between open-end of microchannels and optical aberration in Y direction");
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, abberationPeakProp, yEndMargin, boundGroup};
+    Parameter[] parameters = new Parameter[]{abberationPeakProp, yEndMargin, cropMarginY, boundGroup};
     @Override public String getToolTipText() {return toolTip;}
     public CropMicrochannelsPhase2D(int cropMarginY) {
         this();
@@ -57,14 +60,13 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
     public CropMicrochannelsPhase2D() {
         this.referencePoint.setSelectedIndex(1);
         this.frameNumber.setValue(0);
-        channelHeight.setToolTipText("This value is used to determine the upper y bound of the crop<br />This value can be approximative. ");
     }
     
     @Override public MutableBoundingBox getBoundingBox(Image image) {
-        return getBoundingBox(image, cropMarginY.getValue().intValue(), channelHeight.getValue().intValue(),xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), yEndMargin.getValue().intValue());
+        return getBoundingBox(image, cropMarginY.getValue().intValue(),xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), yEndMargin.getValue().intValue());
     }
     
-    public MutableBoundingBox getBoundingBox(Image image, int cropMargin, int channelHeight,  int xStart, int xStop, int yStart, int yStop, int yMarginEndChannel) {
+    public MutableBoundingBox getBoundingBox(Image image, int cropMargin,  int xStart, int xStop, int yStart, int yStop, int yMarginEndChannel) {
         if (debug) testMode = true;
         int yMax =  searchYLimWithOpticalAberration(image, abberationPeakProp.getValue().doubleValue(), yMarginEndChannel, testMode) ;
         if (yMax<0) throw new RuntimeException("No optical aberration found");
@@ -74,7 +76,7 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
         Image imCrop = image.crop(nonNullBound);
         Image imDerY = ImageFeatures.getDerivative(imCrop, 2, 0, 1, 0, true);
         float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
-        if (testMode) Utils.plotProfile("y - derivative Proj", yProj, nonNullBound.yMin());
+        if (testMode) Utils.plotProfile("Closed-end detection", yProj, nonNullBound.yMin(), "y", "dI/dy");
         // when optical aberration is very extended, actual length of micro-channels can be way smaller than the parameter -> no check
         //if (yProj.length-1<channelHeight/10) throw new RuntimeException("No microchannels found in image. Out-of-Focus image ?");
         int yMin = ArrayUtil.max(yProj, 0, yProj.length-1) + nonNullBound.yMin();
@@ -119,8 +121,8 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
         // TODO -> get peak width using the half width on the side opposed to microchannels -> remove 2 x half width
         int startOfMicroChannel = endOfPeakYIdx - margin;
         if (testMode) {
-            ImageWindowManagerFactory.showImage(image);
-            Utils.plotProfile("yProj", yProj);
+            ImageWindowManagerFactory.showImage(image.setName("Peak detection Input Image"));
+            Utils.plotProfile("Peak Detection: detected at y = "+peakIdx+" peak end:"+endOfPeakYIdx+" end of microchannels:"+startOfMicroChannel, yProj, "Y", "Mean Intensity projection along X");
             //Utils.plotProfile("Sliding sigma", slidingSigma);
             Plugin.logger.debug("Optical Aberration detection: start mc / end peak/ peak: idx: [{};{};{}], values: [{};{};{}]", startOfMicroChannel, endOfPeakYIdx, peakIdx, median, thld, yProj[peakIdx]);
         }

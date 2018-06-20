@@ -61,7 +61,7 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
     protected NumberParameter xStop = new BoundedNumberParameter("X stop (0 for image width)", 0, 0, 0, null);
     protected NumberParameter yStart = new BoundedNumberParameter("Y start", 0, 0, 0, null);
     protected NumberParameter yStop = new BoundedNumberParameter("Y stop (0 for image heigth)", 0, 0, 0, null);
-    protected GroupParameter boundGroup = new GroupParameter("Bound constraint", xStart, xStop, yStart, yStop);
+    protected GroupParameter boundGroup = new GroupParameter("Bound constraint", xStart, xStop, yStart, yStop).setToolTipText("Constant bound additional constaint");
     //protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 0, 0, null).setToolTipText("Microchannels closer to X-border (left or right) than this value will be removed");
     protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 410, 0, null);
     protected NumberParameter cropMarginY = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null).setToolTipText("The y-start point will be shifted of this value towards upper direction");

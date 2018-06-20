@@ -557,10 +557,10 @@ public class Utils {
         for (int i = 0; i<x.length; ++i) x[i]=i;
         new Plot(title, "coord", "value", x, doubleValues).show();
     }
-    public static void plotProfile(String title, float[] values) {
-        plotProfile(title, values, 0);
+    public static void plotProfile(String title, float[] values, String... axisLabels) {
+        plotProfile(title, values, 0, axisLabels);
     }
-    public static void plotProfile(String title, float[] values, int xOffset) {
+    public static void plotProfile(String title, float[] values, int xOffset, String... axisLabels) {
         if (values.length<=1) return;
         float v = values[0];
         int idx = 0; 
@@ -568,10 +568,10 @@ public class Utils {
         if (idx==values.length) return;
         float[] x=new float[values.length];
         for (int i = 0; i<x.length; ++i) x[i]=i+xOffset;
-        new Plot(title, "coord", "value", x, values).show();
+        new Plot(title, axisLabels.length>0 ? axisLabels[0] : "coord", axisLabels.length>1 ? axisLabels[1] : "value", x, values).show();
     }
     
-    public static void plotProfile(String title, double[] values) {
+    public static void plotProfile(String title, double[] values, String... axisLabels) {
         if (values.length<=1) return;
         double v = values[0];
         int idx = 0; 
@@ -579,7 +579,7 @@ public class Utils {
         if (idx==values.length) return; // cannot be ploted if one single value
         double[] x=new double[values.length];
         for (int i = 0; i<x.length; ++i) x[i]=i;
-        new Plot(title, "coord", "value", x, values).show();
+        new Plot(title, axisLabels.length>0 ? axisLabels[0] : "coord", axisLabels.length>1 ? axisLabels[1] : "value", x, values).show();
     }
     public static void plotProfile(String title, double[] values1, double[] values2, boolean sort) {
         if (values1.length<=1) return;
