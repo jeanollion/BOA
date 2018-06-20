@@ -127,13 +127,14 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum Size (propagation)", 0, 50, 1, null).setToolTipText("Minimal size of region at watershed partitioning. Only used for split objects during tracking or manual edition");
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 0, 5).setToolTipText("Scale (pixels) for gaussian filtering for the local thresholding step");
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6).setToolTipText("In pixels. Used in step 2). Lower value -> finner split, more sentitive to noise. Influences the value of split threshold parameter. <br />Configuration Hint: tune this value using the intermediate image <em>Hessian</em>");
-    NumberParameter sigmaThldForVoidMC = new BoundedNumberParameter("Sigma/Mu thld for void channels", 3, 0.085, 0, null).setToolTipText("Parameter to look for void microchannels, at track pre-filter step: <br /> To assess if whole microchannel track is void: sigma / mu of raw images is computed on whole track, in the central line of each microchannel (1/3 of the width). If sigma / mu < this value, the whole track is considered to be void. <br />If the track is not void, a global otsu threshold is computed on the prefiltered signal. A channel is considered as void if its value of sigma / mu of raw signal is inferior to this threshold and is its mean value of prefiltered signal is superior to the global threshold");
+    NumberParameter vcThldForVoidMC = new BoundedNumberParameter("Variation coefficient threshold", 3, 0.085, 0, null).setToolTipText("Parameter to look for void microchannels, at track pre-filter step: <br /> To assess if whole microchannel track is void: sigma / mu of raw images is computed on whole track, in the central line of each microchannel (1/3 of the width). If sigma / mu < this value, the whole track is considered to be void. <br />If the track is not void, a global otsu threshold is computed on the prefiltered signal. A channel is considered as void if its value of sigma / mu of raw signal is inferior to this threshold and is its mean value of prefiltered signal is superior to the global threshold");
     
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{sigmaThldForVoidMC, edgeMap, foregroundSelectionCond, hessianScale, splitThreshold, smoothScale, localThresholdFactor, minSize};
+        return new Parameter[]{vcThldForVoidMC, edgeMap, foregroundSelectionCond, hessianScale, splitThreshold, smoothScale, localThresholdFactor, minSize};
     }
     private final String toolTip = "<b>Intensity-based 2D segmentation:</b>"
+            +"<li>Void microchannels are detected prior to segmentation step using information on the whole microchannel track. See <em>Variation coefficient threshold</em> parameter"
             + "<ol><li>Foreground detection: image is partitioned using by watershed on the edge map. Foreground partition are the selected depending on the method chosen in <em>Foreground Selection Method</em></li>"
             + "<li>Forground is split by applying a watershed transform on the maximal hessian eigen value, regions are then merged, using a criterion described in <em>Split Threshold</em> parameter</li>"
             + "<li>A local threshold is applied to each region. Mostly because inter-forground regions may be segmented in step 1). Threshold is set as described in <em>Local Threshold Factor</em> parameter. <br /> "
@@ -541,7 +542,7 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
     }
     /**
      * Detected whether all microchannels are void, only part of it or none
-     * All microchannels are void if sigma/mu of raw sigal is inferior to the corresponding parameter value (~0.08)
+     * All microchannels are void if vc (sigma/mu) of raw sigal is inferior to the corresponding parameter value (~0.08)
      * If not global otsu threshold is computed on all prefiltered images, if mean prefiltered value < thld microchannel is considered void
      * @param structureIdx
      * @param parentTrack
@@ -549,7 +550,7 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
      * @return void microchannels
      */
     protected Set<StructureObject> getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack, double[] backgroundMeanAndSigmaStore) {
-        double globalVoidThldSigmaMu = sigmaThldForVoidMC.getValue().doubleValue();
+        double globalVoidThldSigmaMu = vcThldForVoidMC.getValue().doubleValue();
         // get sigma in the middle line of each MC
         double[] globalSum = new double[4];
         globalSum[3] = Double.POSITIVE_INFINITY;
@@ -595,7 +596,7 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
             return new HashSet<>(parentTrack);
         }
         // 2) criterion for void microchannels : low intensity value
-        // intensity criterion based on global threshold (otsu for phase, backgroundFit(10) for fluo
+        // intensity criterion based on global threshold (otsu for phase, backgroundFit(5) for fluo
         double globalThld = getGlobalThreshold(parentTrack, structureIdx, null, backgroundMeanAndSigmaStore);
 
         Set<StructureObject> outputVoidMicrochannels = IntStream.range(0, parentTrack.size())

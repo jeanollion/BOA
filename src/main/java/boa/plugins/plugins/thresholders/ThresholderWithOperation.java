@@ -18,9 +18,13 @@
  */
 package boa.plugins.plugins.thresholders;
 
+import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
+import boa.configuration.parameters.ChoiceParameter;
+import boa.configuration.parameters.ConditionalParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
+import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.StructureObjectProcessing;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;
@@ -30,30 +34,43 @@ import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
 import boa.plugins.ThresholderHisto;
 import boa.plugins.ToolTip;
+import boa.utils.Utils;
 
 /**
  *
  * @author Jean Ollion
  */
-public class ForegroundQuantile implements ThresholderHisto, SimpleThresholder, ToolTip {
-    NumberParameter quantile = new BoundedNumberParameter("Foreground quantile", 5, 0.25, 0, 1);
-    NumberParameter sigmaParameter = new BoundedNumberParameter("Background Fit Sigma Parameter", 5, 5, 1, null);
+public class ThresholderWithOperation implements ThresholderHisto, SimpleThresholder, ToolTip {
+    PluginParameter<ThresholderHisto> thresholder = new PluginParameter<>("Thresholder", ThresholderHisto.class, new BackgroundFit(10), false).setToolTipText("Threshold method");
+    NumberParameter quantile = new BoundedNumberParameter("Quantile", 5, 0.25, 0, 1);
+    BooleanParameter overThld = new BooleanParameter("Perform stat over threshold", true);
+    enum STAT {MEAN, QUANTILE};
+    ChoiceParameter stat = new ChoiceParameter("Statistics", Utils.toStringArray(STAT.values()), STAT.QUANTILE.toString(), false);
+    ConditionalParameter cond = new ConditionalParameter(stat).setActionParameters(STAT.QUANTILE.toString(), overThld,quantile ).setActionParameters(STAT.MEAN.toString(), overThld);
     
     @Override
     public String getToolTipText() {
-        return "Use BackgroundFit thresholder to assess which part of the value distribution is foreground. Return the quantile value of foreground distribution";
+        return "First compute a threshold using <em>Thresholder<em> method. Then compute a statistics relative to this threshold, defined in <em>Statistics</em>";
     }
     
     @Override
     public double runThresholderHisto(Histogram histogram) {
-        double thld = BackgroundFit.backgroundFit(histogram, sigmaParameter.getValue().doubleValue());
-        Histogram fore = histogram.duplicate((int)histogram.getIdxFromValue(thld), histogram.data.length);
-        return fore.getQuantiles(quantile.getValue().doubleValue())[0];
+        double thld =thresholder.instanciatePlugin().runThresholderHisto(histogram);
+        int idx = (int)histogram.getIdxFromValue(thld);
+        Histogram hist = overThld.getSelected() ? histogram.duplicate(idx, histogram.data.length): histogram.duplicate(0, idx);
+        switch(STAT.valueOf(stat.getSelectedItem())) {
+            case QUANTILE:
+            default :
+                return hist.getQuantiles(quantile.getValue().doubleValue())[0];
+            case MEAN:
+                return hist.getValueFromIdx(hist.getMeanIdx(0, hist.data.length));
+        }
+        
     }
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{sigmaParameter, quantile};
+        return new Parameter[]{thresholder, cond};
     }
 
     @Override
