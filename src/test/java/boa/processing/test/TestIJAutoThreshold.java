@@ -20,9 +20,11 @@ package boa.processing.test;
 
 import boa.core.Task;
 import boa.data_structure.dao.MasterDAO;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;
 import boa.image.Image;
+import boa.image.processing.ImageFeatures;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import static boa.test_utils.TestUtils.logger;
 import ij.process.AutoThresholder;
@@ -47,5 +49,6 @@ public class TestIJAutoThreshold {
         double thldAutoIJ2 = IJAutoThresholder.runThresholderIJ2(AutoThresholder.Method.Otsu, histoAuto);
         long t3 = System.currentTimeMillis();
         logger.debug("IJ1: {} ({}ms), IJ2: {} ({}ms), IJ2 Auto: {} ({}ms)", thld256, t1-t0, thld256IJ2, t2-t1, thldAutoIJ2, t3-t2);
+        
     }
 }
