@@ -58,6 +58,7 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
     protected Image intensityMap;
     boolean wsMapIsEdgeMap = true, localMinOnSeedMap=true;
     ImageMask foregroundMask;
+    protected Consumer<Region> regionChanged = r -> {if (medianValues!=null) medianValues.remove(r);};
     public void setTestMode(Consumer<Image> addTestImage) {
         this.addTestImage = addTestImage;
     }
@@ -141,8 +142,6 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
         RegionCluster<I> c = new RegionCluster<>(popWS, foregroundMask, true, getFactory());
         c.addForbidFusionPredicate(forbidFusion);
         c.mergeSort(stopCondition==null, stopCondition==null ? () -> false : () -> stopCondition.apply(c));
-        //if (testMode) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
-        popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         if (addTestImage!=null) addTestImage.accept(popWS.getLabelMap().duplicate("Split&Merge: regions after merge"));
         return popWS;
     }
@@ -192,8 +191,9 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
             return largerFirst ? Integer.compare(s2, s1) : Integer.compare(s1, s2);
         };*/
     }
-    protected void regionChanged(Region r) {
-        if (medianValues!=null) medianValues.remove(r);
+    public SplitAndMerge addRegionChangedCallBack(Consumer<Region> regionChanged) {
+        this.regionChanged = regionChanged.andThen(regionChanged);
+        return this;
     }
     
     public BiFunction<? super I, ? super I, Integer> compareByMedianIntensity(boolean highIntensityFisrt) {

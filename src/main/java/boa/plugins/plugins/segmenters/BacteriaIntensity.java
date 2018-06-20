@@ -349,26 +349,24 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
                 } else {
                     int size = i.getVoxels().size()+i.getDuplicatedVoxels().size();
                     double val= ArrayUtil.quantile(Stream.concat(i.getVoxels().stream(), i.getDuplicatedVoxels().stream()).mapToDouble(v->sm.getWatershedMap().getPixel(v.x, v.y, v.z)).sorted(), size, 0.1);
-                    /*double mean1 = BasicMeasurements.getMeanValue(i.getE1(), sm.getIntensityMap());
-                    double mean2 = BasicMeasurements.getMeanValue(i.getE2(), sm.getIntensityMap());
-                    double mean = (mean1 + mean2) / 2d;
-                    //double sum = BasicMeasurements.getSum(i.getE1(), sm.getIntensityMap())+BasicMeasurements.getSum(i.getE2(), sm.getIntensityMap());
-                    //double mean = sum /(double)(i.getE1().size()+i.getE2().size());
-                    val= val/(mean-globalBackgroundLevel);*/
                     return val;
                 }
             });
             if (stores!=null) imageDisp.accept(sm.drawInterfaceValues(pop).setName("Interface Values for Hysteresis"));
             //sm.setTestMode(imageDisp);
             //SplitAndMergeRegionCriterion sm = new SplitAndMergeRegionCriterion(null, parent.getPreFilteredImage(structureIdx), -Double.MIN_VALUE, SplitAndMergeRegionCriterion.InterfaceValue.ABSOLUTE_DIFF_MEDIAN_BTWN_REGIONS);
-            sm.addForbidFusion(i->{
+            sm.addForbidFusionForegroundBackground(r->backgroundL.contains(r), r->foregroundL.contains(r));
+            /*sm.addForbidFusion(i->{
                 int r1 = backgroundL.contains(i.getE1()) ? -1 : (foregroundL.contains(i.getE1()) ? 1 : 0);
                 int r2 = backgroundL.contains(i.getE2()) ? -1 : (foregroundL.contains(i.getE2()) ? 1 : 0);
-                return r1*r2==0; // only merge if at least one is not foreground or background
-            });
+                return r1*r2!=0; // forbid merge if both are foreground or background
+            });*/
+            
             sm.merge(pop, sm.objectNumberLimitCondition(backgroundL.size()+foregroundL.size()));
-            if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Values After Hysteresis"));
-            pop.getRegions().removeIf(r->touchSides.test(r) || valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)<=bckThld); // remove regions with low intensity (do not remove backgroundL)
+            if (stores!=null) {
+                imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Values After Hysteresis"));
+            }
+            pop.getRegions().removeAll(backgroundL);
         } else pop.getRegions().removeAll(backgroundL);
         pop.relabel(true);
         return pop;
@@ -477,6 +475,7 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         }
         if (stores!=null) splitAndMerge.setTestMode(TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent));
         RegionPopulation res = splitAndMerge.splitAndMerge(mask, minSizePropagation.getValue().intValue(), splitAndMerge.objectNumberLimitCondition(2));
+        res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         //res =  localThreshold(input, res, parent, structureIdx, true); 
         if (object.isAbsoluteLandMark()) res.translate(parent.getBounds(), true);
         if (res.getRegions().size()>2) RegionCluster.mergeUntil(res, 2, 0); // merge most connected until 2 objects remain
@@ -501,6 +500,7 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
             for(Region so : seedObjects ) if (o.intersect(so)) return true;
             return false;
         });
+        pop.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         localThreshold(input, pop, parent, structureIdx, false);
         //RegionPopulation pop =  WatershedTransform.watershed(splitAndMerge.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(getNormalizedHessian(input), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
         

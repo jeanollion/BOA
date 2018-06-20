@@ -127,8 +127,8 @@ public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeReg
             super(e1, e2);
         }
         @Override public void performFusion() {
-            SplitAndMergeRegionCriterion.this.regionChanged(e1);
-            SplitAndMergeRegionCriterion.this.regionChanged(e2);
+            SplitAndMergeRegionCriterion.this.regionChanged.accept(e1);
+            SplitAndMergeRegionCriterion.this.regionChanged.accept(e2);
             super.performFusion();
         }
         @Override public void updateInterface() {

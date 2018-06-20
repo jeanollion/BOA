@@ -196,7 +196,10 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
     public List<E> mergeSort(boolean checkCriterion, BooleanSupplier stopCondition) {
         if (stopCondition==null) stopCondition = () -> false;
         long t0 = System.currentTimeMillis();
-        for (I i : interfaces) i.updateInterface();
+        Set<I> allInterfaces = new HashSet<>(interfaces);
+        for (I i : allInterfaces) i.updateInterface();
+        interfaces.clear();
+        interfaces.addAll(allInterfaces); // update sort values...
         int interSize = interfaces.size();
         if (verbose) {
             for (I i : interfaces) logger.debug("interface: {}", i);

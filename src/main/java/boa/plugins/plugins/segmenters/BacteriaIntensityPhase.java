@@ -58,6 +58,7 @@ import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.pre_filters.Sigma;
 import static boa.plugins.plugins.segmenters.EdgeDetector.valueFunction;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
+import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.utils.ArrayUtil;
 import boa.utils.DoubleStatistics;
 import boa.utils.Utils;
@@ -352,6 +353,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         //res =  localThreshold(input, res, parent, structureIdx, true); 
         if (object.isAbsoluteLandMark()) res.translate(parent.getBounds(), true);
         if (res.getRegions().size()>2) RegionCluster.mergeUntil(res, 2, 0); // merge most connected until 2 objects remain
+        res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         return res;
     }
     

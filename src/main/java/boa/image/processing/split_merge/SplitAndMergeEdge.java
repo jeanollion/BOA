@@ -37,6 +37,7 @@ import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.image.processing.clustering.ClusterCollection;
 import boa.image.processing.clustering.InterfaceRegionImpl;
 import boa.image.processing.clustering.RegionCluster;
+import boa.legacy.SplitAndMergeBacteriaShape;
 import boa.measurement.BasicMeasurements;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
@@ -114,8 +115,8 @@ public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface
             duplicatedVoxels = new HashSet<>();
         }
         @Override public void performFusion() {
-            SplitAndMergeEdge.this.regionChanged(e1);
-            SplitAndMergeEdge.this.regionChanged(e2);
+            SplitAndMergeEdge.this.regionChanged.accept(e1);
+            SplitAndMergeEdge.this.regionChanged.accept(e2);
             super.performFusion();
         }
         @Override public void updateInterface() {

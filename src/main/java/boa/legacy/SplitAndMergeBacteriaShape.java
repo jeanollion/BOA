@@ -274,8 +274,8 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         }
         @Override
         public void performFusion() {
-            SplitAndMergeBacteriaShape.this.regionChanged(e1);
-            SplitAndMergeBacteriaShape.this.regionChanged(e2);
+            SplitAndMergeBacteriaShape.this.regionChanged.accept(e1);
+            SplitAndMergeBacteriaShape.this.regionChanged.accept(e2);
             super.performFusion();
         }
         @Override 
