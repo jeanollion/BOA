@@ -27,6 +27,7 @@ import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.input_image.InputImages;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
+import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;
@@ -54,9 +55,16 @@ import boa.plugins.plugins.thresholders.BackgroundFit;
 import static boa.image.processing.ImageOperations.threshold;
 import boa.measurement.BasicMeasurements;
 import boa.plugins.ThresholderHisto;
+import boa.plugins.ToolTip;
+import static boa.plugins.plugins.segmenters.MicrochannelFluo2D.FILL_TOOL_TIP;
+import static boa.plugins.plugins.segmenters.MicrochannelFluo2D.SIZE_TOOL_TIP;
+import static boa.plugins.plugins.segmenters.MicrochannelFluo2D.THLD_TOOL_TIP;
+import static boa.plugins.plugins.segmenters.MicrochannelFluo2D.TOOL_TIP;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.utils.ArrayUtil;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -64,11 +72,10 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class CropMicrochannelsFluo2D extends CropMicroChannels {
-    
-    NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
-    NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.5, 0.05, 1);
-    PluginParameter<ThresholderHisto> thresholder = new PluginParameter<>("Intensity Threshold", ThresholderHisto.class, new BackgroundFit(10), false);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
+public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTip {
+    NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null).setToolTipText(SIZE_TOOL_TIP);
+    NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.5, 0.05, 1).setToolTipText(FILL_TOOL_TIP);
+    PluginParameter<ThresholderHisto> thresholder = new PluginParameter<>("Threshold", ThresholderHisto.class, new BackgroundFit(10), false).setToolTipText(THLD_TOOL_TIP);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     
     Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, minObjectSize, thresholder, fillingProportion, boundGroup};
     double threshold = Double.NaN;
@@ -80,6 +87,11 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
         this.referencePoint.setSelectedIndex(0);
         this.frameNumber.setValue(0);
         //frameNumber.setValue(FrameNumber);
+    }
+    
+    @Override
+    public String getToolTipText() {
+        return "Crop input image around microchannels. Supposes that microchannels are aligned with Y-axis and that closed-end is located at the top of the image. Microchannels are detected as follow:<br />"+TOOL_TIP;
     }
     
     public CropMicrochannelsFluo2D() {
@@ -118,7 +130,9 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
     
     public MutableBoundingBox getBoundingBox(Image image, ImageInteger thresholdedImage, double threshold) {
         if (debug) testMode = true;
-        Result r = MicrochannelFluo2D.segmentMicroChannels(image, thresholdedImage, 0, 0, this.channelHeight.getValue().intValue(), this.fillingProportion.getValue().doubleValue(), threshold, this.minObjectSize.getValue().intValue(), testMode);
+        Consumer<Image> dispImage = testMode ? i->ImageWindowManagerFactory.showImage(i) : null;
+        BiConsumer<String, Consumer<List<StructureObject>>> miscDisp = testMode ? (s, c)->c.accept(Collections.EMPTY_LIST) : null;
+        Result r = MicrochannelFluo2D.segmentMicroChannels(image, thresholdedImage, 0, 0, this.channelHeight.getValue().intValue(), this.fillingProportion.getValue().doubleValue(), threshold, this.minObjectSize.getValue().intValue(), dispImage, miscDisp);
         if (r == null) return null;
         int cropMargin = this.cropMarginY.getValue().intValue();
         int xStart = this.xStart.getValue().intValue();
@@ -134,7 +148,6 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
         //xStart = Math.max(xStart, r.getXMin()-cropMargin);
         //xStop = Math.min(xStop, r.getXMax() + cropMargin);
         
-        if (testMode) logger.debug("Xmin: {}, Xmax: {}", r.getXMin(), r.getXMax());
         return new MutableBoundingBox(xStart, xStop, yStart, yStop, 0, image.sizeZ()-1);
         
     }
@@ -161,6 +174,8 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels {
     @Override public Parameter[] getParameters() {
         return parameters;
     }
+
+    
     
     
 }

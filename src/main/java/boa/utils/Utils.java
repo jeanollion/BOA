@@ -525,7 +525,7 @@ public class Utils {
     
     private static double incrementColor(double h, double goldenRatioConjugate) {return (h+goldenRatioConjugate)%1;}
     
-    public static void plotProfile(Image image, int z, int coord, boolean alongX) {
+    public static void plotProfile(Image image, int z, int coord, boolean alongX, String... axisLabels) {
         double[] x;
         double[] y;
         if (alongX) {
@@ -543,7 +543,7 @@ public class Utils {
                 y[i]=image.getPixel(coord, i, z);
             }
         }
-        new Plot(image.getName(), "coord", "value", x, y).show();
+        new Plot(image.getName(), axisLabels.length>0 ? axisLabels[0] : (alongX?"x":"y"), axisLabels.length>1 ? axisLabels[1] : "value", x, y).show();
     }
     
     public static void plotProfile(String title, int[] values) {

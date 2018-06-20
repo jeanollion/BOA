@@ -42,6 +42,7 @@ import boa.image.processing.ImageOperations.Axis;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.plugins.ConfigurableTransformation;
+import boa.plugins.ToolTip;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.SlidingOperator;
@@ -51,9 +52,9 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class RemoveDeadPixels implements ConfigurableTransformation {
-    NumberParameter threshold = new BoundedNumberParameter("Local Threshold", 5, 30, 0, null).setToolTipText("Difference between pixels and median transform (radius 1 pix.) is computed. If difference is higer than this threshold pixel is considered as dead and will be replaced by the median value");
-    NumberParameter frameRadius = new BoundedNumberParameter("Frame Radius", 0, 4, 1, null).setToolTipText("Number of frame to average");
+public class RemoveDeadPixels implements ConfigurableTransformation, ToolTip {
+    NumberParameter threshold = new BoundedNumberParameter("Local Threshold", 5, 30, 0, null).setToolTipText("Difference between pixels and median of the direct neighbors is computed. If difference is higer than this threshold pixel is considered as dead and will be replaced by the median value");
+    NumberParameter frameRadius = new BoundedNumberParameter("Frame Radius", 0, 4, 1, null).setToolTipText("Number of frame to average. Set 1 to perform transformation Frame by Frame. A higher value will average previous frames");
     HashMapGetCreate<Integer, Set<Voxel>> configMapF;
     public RemoveDeadPixels(){}
     public RemoveDeadPixels(double threshold, int frameRadius) {
@@ -79,7 +80,7 @@ public class RemoveDeadPixels implements ConfigurableTransformation {
                 return new Pair(-1, new ImageFloat("", median));
             }
             @Override public void slide(Image removeElement, Image addElement, Pair<Integer, Image> accumulator) {
-                if (frameRadius<=1) {
+                if (frameRadius<=1) { // no averaging in time
                     accumulator.value=addElement;
                 } else {
                     if (removeElement!=null && addElement!=null) {
@@ -173,6 +174,11 @@ public class RemoveDeadPixels implements ConfigurableTransformation {
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{threshold, frameRadius};
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Removes pixels that have much higer values than their surroundings (in space & time)";
     }
     
 }

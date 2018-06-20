@@ -39,6 +39,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.DoubleFunction;
 import java.util.function.Function;
@@ -60,6 +61,12 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
                 stores.get(parent).addMisc("Show Image", l -> {ImageWindowManagerFactory.showImage(i);});
             }
         };
+    }
+    public static BiConsumer<String, Consumer<List<StructureObject>>> getMiscConsumer(Map<StructureObject, TestDataStore> stores, StructureObject parent) {
+        if (stores==null) return null;
+        TestDataStore store = stores.get(parent);
+        if (store==null) return null;
+        return (s, c) -> store.addMisc(s, c);
     }
     
     public static class TestDataStore {

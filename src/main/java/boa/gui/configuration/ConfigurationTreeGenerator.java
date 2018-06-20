@@ -103,11 +103,11 @@ public class ConfigurationTreeGenerator {
                             if (t2!=null) {
                                 if (t==null) return formatToolTip(t2);
                                 else {
-                                    if (t2.startsWith("<html>")) t2.replace("<html>", "");
+                                    if (t2.startsWith("<html>")) t2 = t2.replace("<html>", "");
                                     if (!t2.endsWith("</html>")) t2=t2+"</html>";
-                                    if (t.endsWith("</html>")) t.replace("</html>", "");
-                                    if (!t2.startsWith("</html>")) t="</html>"+t;
-                                    return formatToolTip(t+"<br />Current Plugin:<br />"+t2);
+                                    if (t.endsWith("</html>"))t= t.replace("</html>", "");
+                                    if (!t.startsWith("<html>")) t="<html>"+t;
+                                    return formatToolTip(t+"<br /> <br /><b>Current Plugin:</b><br />"+t2);
                                 }
                             }
                         }
