@@ -263,7 +263,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             nodesByPosition.forEach((p, l) -> {
                                 l.forEach(n -> {
                                     logger.debug("run seg & track on : {}, structure: {}", n.trackHead, structureIdx);
-                                    GUI.log("RUN Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx);
+                                    GUI.log("RUN Segmentation & Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx);
                                     try {
                                         Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
                                     } catch (MultipleException me) {
@@ -301,8 +301,8 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             Map<String, List<TrackNode>> nodesByPosition = root.generator.getSelectedTrackNodes().stream().collect(Collectors.groupingBy(n->n.root.position));
                             nodesByPosition.forEach((p, l) -> {
                                 l.forEach(n -> {
-                                    logger.debug("Running Segmentation & Tracking on : {}, structure: {}", n.trackHead, structureIdx);
-                                    GUI.log("RUN Seg & track on track: "+n.trackHead+ " structureIdx: "+structureIdx);
+                                    logger.debug("Running Tracking on : {}, structure: {}", n.trackHead, structureIdx);
+                                    GUI.log("RUN Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx);
                                     try {
                                         Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
                                     } catch (MultipleException me) {

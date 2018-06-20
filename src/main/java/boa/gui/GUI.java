@@ -358,6 +358,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 logger.debug("D pressed: " + e);
             }
         });
+        actionMap.put(ACTION.DELETE_AFTER_FRAME, new AbstractAction("Delete") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (Utils.promptBoolean("Delete All Objects after selected Frame ? ", null)) ManualEdition.deleteAllObjectsFromFrame(db, true);
+                logger.debug("D pressed: " + e);
+            }
+        });
+        
         actionMap.put(ACTION.CREATE_BRANCH, new AbstractAction("Prune Track") {
             @Override
             public void actionPerformed(ActionEvent e) {

@@ -59,7 +59,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         JSONObject res= new JSONObject();
         res.put("pluginName", pluginName);
         //res.put("pluginTypeName", pluginTypeName);
-        res.put("activated", activated);
+        if (!activated) res.put("activated", activated);
         if (additionalParameters!=null && !additionalParameters.isEmpty()) res.put("addParams", JSONUtils.toJSONArrayMap(additionalParameters)); // was: toJSON
         if (pluginParameters!=null && !pluginParameters.isEmpty()) res.put("params", JSONUtils.toJSONArrayMap(pluginParameters)); // was: toJSON
         return res;
@@ -68,7 +68,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jsonO = (JSONObject)jsonEntry;
         setPlugin((String)jsonO.get("pluginName"));
-        activated = (Boolean)jsonO.get("activated");
+        activated = (Boolean)jsonO.getOrDefault("activated", true);
         if (jsonO.containsKey("addParams") && additionalParameters!=null) {
             Object o = jsonO.get("addParams");
             boolean addParamSet;

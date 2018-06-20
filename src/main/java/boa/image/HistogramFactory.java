@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 public class HistogramFactory {
     public final static Logger logger = LoggerFactory.getLogger(HistogramFactory.class);
     public static int MIN_N_BINS = 256;
-    public static int MAX_N_BINS = 2000;
+    public static int MAX_N_BINS = 5000;
 
     public enum BIN_SIZE_METHOD {
         NBINS_256,
@@ -95,7 +95,7 @@ public class HistogramFactory {
                     // enshure histogram will respect nbins range
                     int nBins = getNBins(stats[5], stats[6], binSize);
                     if (nBins<MIN_N_BINS) binSize = getBinSize(stats[5], stats[6], MIN_N_BINS); 
-                    if (nBins>MAX_N_BINS)binSize = getBinSize(stats[5], stats[6], MAX_N_BINS);
+                    if (nBins>MAX_N_BINS) binSize = getBinSize(stats[5], stats[6], MAX_N_BINS);
                 }
                 break;
         }

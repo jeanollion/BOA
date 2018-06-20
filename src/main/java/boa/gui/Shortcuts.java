@@ -37,7 +37,7 @@ import javax.swing.KeyStroke;
 public class Shortcuts {
     public enum PRESET {QWERTY, AZERTY}
     public enum ACTION {LINK, UNLINK, RESET_LINKS, CREATE_BRANCH,
-        DELETE, PRUNE, MERGE, SPLIT, CREATE, TOGGLE_CREATION_TOOL,
+        DELETE, DELETE_AFTER_FRAME, PRUNE, MERGE, SPLIT, CREATE, TOGGLE_CREATION_TOOL,
         SELECT_ALL_OBJECTS, SELECT_ALL_TRACKS, TOGGLE_SELECT_MODE, TOGGLE_LOCAL_ZOOM, CHANGE_INTERACTIVE_STRUCTURE,
         NAV_NEXT, NAV_PREV, OPEN_NEXT, OPEN_PREV,
         ADD_TO_SEL0, REM_FROM_SEL0, REM_ALL_FROM_SEL0, TOGGLE_DISPLAY_SEL0,
@@ -79,6 +79,7 @@ public class Shortcuts {
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_B, KeyEvent.CTRL_DOWN_MASK), ACTION.CREATE_BRANCH);
                 
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK), ACTION.DELETE);
+                keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.ALT_DOWN_MASK), ACTION.DELETE_AFTER_FRAME);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_DOWN_MASK), ACTION.PRUNE);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_M, KeyEvent.CTRL_DOWN_MASK), ACTION.MERGE);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), ACTION.SPLIT);
@@ -111,6 +112,7 @@ public class Shortcuts {
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_B, KeyEvent.CTRL_DOWN_MASK), ACTION.CREATE_BRANCH);
                 
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK), ACTION.DELETE);
+                keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.ALT_DOWN_MASK), ACTION.DELETE_AFTER_FRAME);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_DOWN_MASK), ACTION.PRUNE);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_M, KeyEvent.CTRL_DOWN_MASK), ACTION.MERGE);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), ACTION.SPLIT);
@@ -179,6 +181,7 @@ public class Shortcuts {
         menu.add(objectModif);
         objectModif.add("All action are performed on objects selected on active image");
         objectModif.add(getMenuLabelFor(ACTION.DELETE, "Delete object(s)"));
+        objectModif.add(getMenuLabelFor(ACTION.DELETE_AFTER_FRAME, "Delete all object(s) after first selected object"));
         objectModif.add(getMenuLabelFor(ACTION.PRUNE, "Prune track starting from selected object(s)"));
         objectModif.add(getMenuLabelFor(ACTION.TOGGLE_CREATION_TOOL, "Switch to object creation tool / rectangle selection tool"));
         objectModif.add(getMenuLabelFor(ACTION.CREATE, "Create object(s) from selected point(s)"));

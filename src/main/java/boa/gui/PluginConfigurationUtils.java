@@ -159,12 +159,13 @@ public class PluginConfigurationUtils {
     public static List<JMenuItem> getTestCommand(ImageProcessingPlugin plugin, Experiment xp, int structureIdx) {
         Consumer<Boolean> performTest = b-> {
             List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-            if ((sel == null || sel.isEmpty()) && GUI.getInstance().getSelectedPositions(false).isEmpty()) {
-                GUI.log("No selected objects : test will be run on first object");
+            if ((sel == null || sel.isEmpty()) ) {
+                GUI.log("No selected objects : select parent objects on a kymograph first");
+                return;
             }
-            String pos = GUI.getInstance().getSelectedPositions(false).isEmpty() ? GUI.getDBConnection().getExperiment().getPosition(0).getName() : GUI.getInstance().getSelectedPositions(false).get(0);
-            if (sel==null) sel = new ArrayList<>(1);
-            if (sel.isEmpty()) sel.add(GUI.getDBConnection().getDao(pos).getRoot(0));
+            //String pos = GUI.getInstance().getSelectedPositions(false).isEmpty() ? GUI.getDBConnection().getExperiment().getPosition(0).getName() : GUI.getInstance().getSelectedPositions(false).get(0);
+            //if (sel==null) sel = new ArrayList<>(1);
+            //if (sel.isEmpty()) sel.add(GUI.getDBConnection().getDao(pos).getRoot(0));
 
             Map<StructureObject, TestDataStore> stores = testImageProcessingPlugin(plugin, xp, structureIdx, sel, b);
             if (stores!=null) displayIntermediateImages(stores, structureIdx);
