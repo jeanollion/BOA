@@ -27,6 +27,7 @@ import java.util.List;
 import boa.measurement.GeometricalMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
+import boa.plugins.DevPlugin;
 import boa.plugins.Measurement;
 import boa.utils.geom.Point;
 
@@ -34,7 +35,7 @@ import boa.utils.geom.Point;
  *
  * @author jollion
  */
-public class ChromaticShiftBeads implements Measurement{
+public class ChromaticShiftBeads implements Measurement, DevPlugin{
     protected StructureParameter structure = new StructureParameter("Structure 1", 0, false, false);
     protected StructureParameter structure2 = new StructureParameter("Structure 2", 1, false, false);
     protected Parameter[] parameters = new Parameter[]{structure, structure2};

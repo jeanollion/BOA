@@ -105,7 +105,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
         localThresholdFactor.setToolTipText("Factor defining the local threshold. <br />Lower value of this factor will yield in smaller cells. <br />Threshold = mean_w - sigma_w * (this factor), <br />with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. Refer to images: <em>Local Threshold edge map</em> and <em>Local Threshold intensity map</em>");
         localThresholdFactor.setValue(1);
         
-        foreThresholdMethod.setSelectedItem(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString());
+        foreThresholdMethod.setSelectedItem(THRESHOLD_COMPUTATION.PARENT_TRACK.toString());
         foreThresholder.setPlugin(new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)).setEmphasized(false);
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
@@ -352,7 +352,7 @@ public class BacteriaIntensityPhase extends BacteriaIntensity {
     }
     
     @Override
-    protected double[] getBranchThresholds(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
+    protected double[] getTrackThresholds(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
         if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         // 1) get global otsu thld for images with foreground
         //double globalThld = getGlobalOtsuThreshold(parentTrack.stream().filter(p->!voidMC.contains(p)), structureIdx);

@@ -101,20 +101,20 @@ import java.util.stream.Stream;
 public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityPhase>, SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ToolTip, TestableProcessingPlugin {
     public static boolean verbose = false;
     public enum FOREGROUND_SELECTION_METHOD {SIMPLE_THRESHOLDING, HYSTERESIS_THRESHOLDING, EDGE_FUSION};
-    public enum THRESHOLD_COMPUTATION {CURRENT_FRAME, PARENT_BRANCH, ROOT_BRANCH};
+    public enum THRESHOLD_COMPUTATION {CURRENT_FRAME, PARENT_TRACK, ROOT_TRACK};
     
     // configuration-related attributes
     PreFilterSequence edgeMap = new PreFilterSequence("Edge Map").add(new ImageFeature().setFeature(ImageFeature.Feature.GAUSS).setScale(1.5), new Sigma(2).setMedianRadius(0)).setToolTipText("Filters used to define edge map used in first watershed step. <br />Max eigen value of Structure tensor is a good option<br />Median/Gaussian + Sigma is more suitable for noisy images (involve less derivation)<br />Gradient magnitude is another option. <br />Configuration Hint: tune this value using the intermediate images <em>Edge Map for Partitioning</em> and <em>Region Values after partitioning</em>");  // min scale = 1 (noisy signal:1.5), max = 2 min smooth scale = 1.5 (noisy / out of focus: 2) //new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(2)
     
     PluginParameter<SimpleThresholder> bckThresholderFrame = new PluginParameter<>("Method", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setToolTipText("Threshold for foreground region selection after watershed partitioning on edge map. All regions with median value under this value are considered background").setEmphasized(true);
     PluginParameter<ThresholderHisto> bckThresholder = new PluginParameter<>("Method", ThresholderHisto.class, new BackgroundFit(10), false).setToolTipText("Threshold for foreground region selection after watershed partitioning on edge map. All regions with median value under this value are considered background. Computed on the whole parent track/ root track.").setEmphasized(true);
-    ChoiceParameter bckThresholdMethod=  new ChoiceParameter("Background Threshold", Utils.toStringArray(THRESHOLD_COMPUTATION.values()), THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), false);
-    ConditionalParameter bckThldCond = new ConditionalParameter(bckThresholdMethod).setActionParameters(THRESHOLD_COMPUTATION.CURRENT_FRAME.toString(), bckThresholderFrame).setActionParameters(THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), bckThresholder).setActionParameters(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString(), bckThresholder).setToolTipText("Threshold for background region filtering after watershed partitioning on edge map. All regions with median value under this value are considered background. <br />If <em>CURRENT_FRAME</em> is selected, threshold will be computed at each frame. If <em>PARENT_BRANCH</em> is selected, threshold will be computed on the whole parent branch. If <em>ROOT_BRANCH</em> is selected, threshold will be computed on the whole root branch on raw images (no prefilters). <br />Configuration Hint: value is displayed on right click menu: <em>display thresholds</em> command. Tune the value using intermediate image <em>Region Values after partitioning</em>, only background partitions should be under this value");
+    ChoiceParameter bckThresholdMethod=  new ChoiceParameter("Background Threshold", Utils.toStringArray(THRESHOLD_COMPUTATION.values()), THRESHOLD_COMPUTATION.ROOT_TRACK.toString(), false);
+    ConditionalParameter bckThldCond = new ConditionalParameter(bckThresholdMethod).setActionParameters(THRESHOLD_COMPUTATION.CURRENT_FRAME.toString(), bckThresholderFrame).setActionParameters(THRESHOLD_COMPUTATION.ROOT_TRACK.toString(), bckThresholder).setActionParameters(THRESHOLD_COMPUTATION.PARENT_TRACK.toString(), bckThresholder).setToolTipText("Threshold for background region filtering after watershed partitioning on edge map. All regions with median value under this value are considered background. <br />If <em>CURRENT_FRAME</em> is selected, threshold will be computed at each frame. If <em>PARENT_BRANCH</em> is selected, threshold will be computed on the whole parent track. If <em>ROOT_TRACK</em> is selected, threshold will be computed on the whole root track on raw images (no prefilters). <br />Configuration Hint: value is displayed on right click menu: <em>display thresholds</em> command. Tune the value using intermediate image <em>Region Values after partitioning</em>, only background partitions should be under this value");
     
     PluginParameter<SimpleThresholder> foreThresholderFrame = new PluginParameter<>("Method", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false).setEmphasized(true);
     PluginParameter<ThresholderHisto> foreThresholder = new PluginParameter<>("Method", ThresholderHisto.class, new BackgroundFit(20), false).setEmphasized(true).setToolTipText("Threshold for foreground region selection, use depend on the method. Computed on the whole parent-track/root track.");
-    ChoiceParameter foreThresholdMethod=  new ChoiceParameter("Foreground Threshold", Utils.toStringArray(THRESHOLD_COMPUTATION.values()), THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), false);
-    ConditionalParameter foreThldCond = new ConditionalParameter(foreThresholdMethod).setActionParameters(THRESHOLD_COMPUTATION.CURRENT_FRAME.toString(), foreThresholderFrame).setActionParameters(THRESHOLD_COMPUTATION.ROOT_BRANCH.toString(), foreThresholder).setActionParameters(THRESHOLD_COMPUTATION.PARENT_BRANCH.toString(), foreThresholder).setToolTipText("Threshold for foreground region selection after watershed partitioning on edge map. All regions with median value over this value are considered foreground. <br />If <em>CURRENT_FRAME</em> is selected, threshold will be computed at each frame. If <em>PARENT_BRANCH</em> is selected, threshold will be computed on the whole parent branch. If <em>ROOT_BRANCH</em> is selected, threshold will be computed on the whole root branch, on raw images (no prefilters).<br />Configuration Hint: value is displayed on right click menu: <em>display thresholds</em> command. Tune the value using intermediate image <em>Region Values after partitioning</em>, only foreground partitions should be over this value");
+    ChoiceParameter foreThresholdMethod=  new ChoiceParameter("Foreground Threshold", Utils.toStringArray(THRESHOLD_COMPUTATION.values()), THRESHOLD_COMPUTATION.ROOT_TRACK.toString(), false);
+    ConditionalParameter foreThldCond = new ConditionalParameter(foreThresholdMethod).setActionParameters(THRESHOLD_COMPUTATION.CURRENT_FRAME.toString(), foreThresholderFrame).setActionParameters(THRESHOLD_COMPUTATION.ROOT_TRACK.toString(), foreThresholder).setActionParameters(THRESHOLD_COMPUTATION.PARENT_TRACK.toString(), foreThresholder).setToolTipText("Threshold for foreground region selection after watershed partitioning on edge map. All regions with median value over this value are considered foreground. <br />If <em>CURRENT_FRAME</em> is selected, threshold will be computed at each frame. If <em>PARENT_BRANCH</em> is selected, threshold will be computed on the whole parent track. If <em>ROOT_TRACK</em> is selected, threshold will be computed on the whole root track, on raw images (no prefilters).<br />Configuration Hint: value is displayed on right click menu: <em>display thresholds</em> command. Tune the value using intermediate image <em>Region Values after partitioning</em>, only foreground partitions should be over this value");
     
     NumberParameter backgroundEdgeFusionThld = new BoundedNumberParameter("Background Edge Fusion Threshold", 4, 2, 0, null).setEmphasized(true).setToolTipText("Threshold for background edge partition fusion. 2 adjacent partitions are merged if the 10% quantile edge value @ interface / background sigma < this value.<br />Sensible to sharpness of edges (decrease smoothing in edge map to increase sharpness)<br />Configuration Hint: Tune the value using intermediate image <em>Interface Values for Background Fusion</em>, no interface between foreground and background partitions should have a value under this threshold");
     NumberParameter foregroundEdgeFusionThld = new BoundedNumberParameter("Foreground Edge Fusion Threshold", 4, 0.2, 0, null).setEmphasized(true).setToolTipText("Threshold for foreground edge partition fusion. 2 adjacent partitions are merged if the mean edge value @ interface / mean value @ regions < this value<br />Sensible to sharpness of edges (decrease smoothing in edge map to increase sharpness).<br />Configuration Hint: Tune the value using intermediate image <em>Interface Values for Foreground Fusion</em>, no interface between foreground and background partitions should have a value under this threshold");
@@ -530,7 +530,7 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         double[] backgroundMeanAndSigma = new double[2];
         Set<StructureObject> voidMC = getVoidMicrochannels(structureIdx, parentTrack, backgroundMeanAndSigma);
         
-        double[] thlds = getBranchThresholds(parentTrack, structureIdx, voidMC);
+        double[] thlds = getTrackThresholds(parentTrack, structureIdx, voidMC);
         return (p, s) -> {
             if (voidMC.contains(p)) s.isVoid=true; 
             s.bckThld=thlds[0];
@@ -608,7 +608,7 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         //logger.debug("s/mu : {}", Utils.toStringList(meanF_meanR_sigmaR.subList(10, 15), f->"mu="+f[0]+" muR="+f[1]+"sR="+f[2]+ " sR/muR="+f[2]/f[1]));
         return outputVoidMicrochannels;
     }
-    protected double[] getBranchThresholds(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
+    protected double[] getTrackThresholds(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
         if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         Histogram[] histoRoot=new Histogram[1], histoParent=new Histogram[1];
         Supplier<Histogram> getHistoParent = () -> {
@@ -647,15 +647,15 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
     protected double getGlobalThreshold(List<StructureObject> parent, int structureIdx, Histogram[] histoStore, double[] meanAndSigmaStore) {
         double sigmaFactor = 5; // was 10
         if (parent.get(0).getRawImage(structureIdx)==parent.get(0).getPreFilteredImage(structureIdx)) { // no prefilter -> perform on root
-            logger.debug("no prefilters detected: global mean & sigma on root branch");
+            logger.debug("no prefilters detected: global mean & sigma on root track");
             double[] ms = getRootBckMeanAndSigma(parent, structureIdx, histoStore);
             if (meanAndSigmaStore!=null) {
                 meanAndSigmaStore[0] = ms[0];
                 meanAndSigmaStore[1] = ms[1];
             }
             return ms[0] + sigmaFactor * ms[1];
-        } else { // prefilters -> perform on parent branch
-            logger.debug("prefilters detected: global mean & sigma on parent branch");
+        } else { // prefilters -> perform on parent track
+            logger.debug("prefilters detected: global mean & sigma on parent track");
             Map<Image, ImageMask> imageMapMask = parent.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
             Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
             return BackgroundFit.backgroundFit(histo, 5, meanAndSigmaStore);

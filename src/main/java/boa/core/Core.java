@@ -18,6 +18,7 @@
  */
 package boa.core;
 
+import boa.plugins.PluginFactory;
 import net.imagej.ImageJ;
 import net.imagej.ops.OpService;
 
@@ -29,14 +30,27 @@ public class Core {
     private static ImageJ ij;
     private static OpService opService;
     private static Core core;
-    private Core() { }
+    private static Object lock = new Object();
+    public static Core getCore() {
+        if (core==null) {
+            synchronized(lock) {
+                if (core==null) {
+                    core = new Core();
+                }
+            }
+        }
+        return core;
+    }
+    private Core() {
+        initIJ2();
+        PluginFactory.findPlugins("boa.plugins.plugins", false);
+    }
     
     private static void initIJ2() {
         ij = new ImageJ();
         opService = ij.op();
     }
     public static OpService getOpService() {
-        if (opService==null) initIJ2();
         return opService;
     }
     // TODO: thread safe -> init starting GUI or console or plugin ? 

@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
+import boa.plugins.DevPlugin;
 import boa.plugins.Measurement;
 import boa.plugins.plugins.transformations.SelectBestFocusPlane;
 
@@ -34,7 +35,7 @@ import boa.plugins.plugins.transformations.SelectBestFocusPlane;
  *
  * @author jollion
  */
-public class XZSlope implements Measurement {
+public class XZSlope implements Measurement, DevPlugin {
     protected StructureParameter microchannel = new StructureParameter("Microchannel Structure", 0, false, false);
     @Override
     public int getCallStructure() {

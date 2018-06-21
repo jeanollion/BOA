@@ -105,4 +105,13 @@ public class SpineOverlayDrawer {
         for (int i = 0; i<finalSize; ++i) newSpine[i] = spine.spine[(int) (i* (spine.spine.length-1)/(double)(finalSize-1)+0.5)];
         return new SpineResult().setSpine(newSpine).setCircContour(spine.circContour);
     }
+
+    public static void drawArrow(Overlay overlay, Offset offset, Point p1, Point p2, Color color, double width) {
+        overlay.add(SpineOverlayDrawer.drawArrow(p1.duplicate().translateRev(offset), Vector.vector(p1, p2), color, width));
+    }
+
+    public static void drawPoint(Overlay overlay, Offset offset, Point p, Color color, double width) {
+        overlay.add(SpineOverlayDrawer.drawPoint(p.duplicate().translateRev(offset), color, width, 3, 3));
+    }
+
 }

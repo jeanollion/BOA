@@ -28,13 +28,14 @@ import java.util.ArrayList;
 import java.util.List;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
+import boa.plugins.DevPlugin;
 import boa.plugins.Measurement;
 
 /**
  *
  * @author jollion
  */
-public class GetAttribute implements Measurement {
+public class GetAttribute implements Measurement, DevPlugin {
     StructureParameter structure = new StructureParameter("Structure", -1, false, false);
     BooleanParameter parseArraysAsCoordinates = new BooleanParameter("Parse arrays as coordinates", true);
     SimpleListParameter<TextParameter> attributes = new SimpleListParameter("Attributes", new TextParameter("Attribute Key", "", false));

@@ -18,6 +18,7 @@
  */
 package boa.plugins;
 
+import boa.ui.GUI;
 import com.sun.javafx.util.Utils;
 import java.io.File;
 import java.io.IOException;
@@ -48,18 +49,23 @@ public class PluginFactory {
 
     private final static TreeMap<String, Class> PLUGINS = new TreeMap<>();
     private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
-    private final static Map<String, String> OLD_NAMES_MAP_NEW = new HashMap<String, String>(){{put("MutationTrackerSpine", "");put("MutationSegmenter", "SpotSegmenter");}};
-    
+    private final static Map<String, String> OLD_NAMES_MAP_NEW = new HashMap<String, String>(){{put("MutationTrackerSpine", "NestedSpotTracker");put("MutationSegmenter", "SpotSegmenter");}};
     public static void findPlugins(String packageName) {
+        findPlugins(packageName, false);
+    }
+    public static void findPlugins(String packageName, boolean includeDev) {
         logger.info("looking for plugins in package: {}", packageName);
         try {
             for (Class c : getClasses(packageName)) {
                 //Class<?> clazz = Class.forName(c);
-                if (Plugin.class.isAssignableFrom(c) && !Modifier.isAbstract( c.getModifiers() )) { // ne check pas l'heritage indirect!!
+                if (Plugin.class.isAssignableFrom(c) && !Modifier.isAbstract( c.getModifiers()) && (includeDev || !DevPlugin.class.isAssignableFrom(c)) ) { // ne check pas l'heritage indirect!!
                     if (!PLUGINS.containsKey(c.getSimpleName())) PLUGINS.put(c.getSimpleName(), c);
                     else {
                         Class otherC = PLUGINS.get(c.getSimpleName());
-                        if (!otherC.equals(c)) logger.warn("Duplicate class name: {} & {}", otherC.getName(), c.getName());
+                        if (!otherC.equals(c)) {
+                            logger.warn("Duplicate class name: {} & {}", otherC.getName(), c.getName());
+                            GUI.log("Duplicate class name: "+otherC.getName()+" & "+c.getName());
+                        }
                     }
                     //logger.debug("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
                 } //else logger.trace("class is not a plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());

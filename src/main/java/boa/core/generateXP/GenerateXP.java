@@ -44,7 +44,6 @@ import boa.plugins.PluginFactory;
 import boa.plugins.Transformation;
 import boa.plugins.plugins.measurements.BacteriaFluoMeasurements;
 import boa.plugins.plugins.measurements.BacteriaLineageMeasurements;
-import boa.plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
 import boa.plugins.plugins.measurements.BacteriaPhaseMeasurements;
 import boa.plugins.plugins.measurements.GrowthRate;
 import boa.plugins.plugins.measurements.ObjectFeatures;

@@ -49,6 +49,7 @@ import boa.configuration.experiment.PreProcessingChain;
 import boa.configuration.experiment.Structure;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
+import boa.core.Core;
 import boa.data_structure.dao.ImageDAO;
 import boa.data_structure.dao.BasicMasterDAO;
 import boa.data_structure.dao.DBMapMasterDAO;
@@ -164,7 +165,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     // check if mapDB is present
     public static final String DBprefix = "boa_";
     public String currentDBPrefix = "";
-    private static GUI instance;
+    private static GUI INSTANCE;
     
     // db-related attributes
     private MasterDAO db;
@@ -209,14 +210,53 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
      * Creates new form GUI
      */
     public GUI() {
-        PluginFactory.findPlugins("boa.plugins.plugins");
         //logger.info("DBMaker: {}", checkClass("org.mapdb.DBMaker"));
+        logger.info("Creating GUI instance...");
+        this.INSTANCE=this;
+        initComponents();
+        //updateMongoDBBinActions();
+        progressBar = new ProgressIcon(Color.darkGray, tabs);
+        Component progressComponent =  new ColorPanel(progressBar);
+        tabs.addTab("Progress: ", progressBar, progressComponent);
+        tabs.addChangeListener(new ChangeListener() {
+            int lastSelTab=0;
+            @Override public void stateChanged(ChangeEvent e) {
+                if (tabs.getSelectedComponent()==progressComponent) {
+                    logger.debug("pb");
+                    tabs.setSelectedIndex(lastSelTab);
+                } else lastSelTab=tabs.getSelectedIndex();
+                if (reloadObjectTrees && tabs.getSelectedComponent()==dataPanel) {
+                    reloadObjectTrees=false;
+                    loadObjectTrees();
+                    displayTrackTrees();
+                } else if (tabs.getSelectedComponent()==dataPanel) {
+                    setTrackTreeStructures();
+                }
+                if (tabs.getSelectedComponent()==actionPanel) {
+                    populateActionStructureList();
+                    populateActionMicroscopyFieldList();
+                }
+            }
+        });
+        // selections
+        selectionModel = new DefaultListModel<>();
+        this.selectionList.setModel(selectionModel);
+        this.selectionList.setCellRenderer(new SelectionRenderer());
+        setMouseAdapter(selectionList);
+        // CLOSE -> clear cache properly
+        addWindowListener(new WindowAdapter() {
+            @Override 
+            public void windowClosing(WindowEvent evt) {
+                if (db!=null) db.clearCache();
+                logger.debug("Closed successfully");
+            }
+        });
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        toFront();
+        
+        // tool tips
         ToolTipManager.sharedInstance().setInitialDelay(100);
         ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
-        logger.info("Creating GUI instance...");
-        this.instance=this;
-        initComponents();
-        // tool tips
         trackPanel.setToolTipText("Element displayed are segmented tracks for each object type. Right click for actions like display kymograph...");
         trackTreeStructureJSP.setToolTipText("<html>Object type to be displayed in the <em>Segmentation & Tracking</em> panel</html>");
         interactiveObjectPanel.setToolTipText("Object type that will be displayed and edited on interactive images");
@@ -224,26 +264,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         actionStructureJSP.setToolTipText("Objects types of the opened experiment. Tasks will be run only on selected objects types, or on all object types if none is selected");
         experimentJSP.setToolTipText("List of all experiments contained in the current experiment folder");
         actionPositionJSP.setToolTipText("Positions of the opened experiment. Tasks will be run only on selected position, or on all position if no position is selected");
-        logger.debug("frame fore: {} , back: {}, hostName: {}", this.getForeground(), this.getBackground(), experimentFolder.getBackground());
-        logger.debug("JSP size: {} controlPanel SIze: {}", controlPanelJSP.getSize(), this.editPanel.getSize());
-        //this.controlPanelJSP.setSize(this.ControlPanel.getSize());
+        deleteObjectsButton.setToolTipText("Right-click for more delete commands");
         
-        this.addWindowListener(new WindowAdapter() {
-            @Override 
-            public void windowClosing(WindowEvent evt) {
-                if (db!=null) db.clearCache();
-                logger.debug("Closed successfully");
-            }
-        });
+        // disable componenets when run action
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
         relatedToReadOnly = new ArrayList<Component>() {{add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
+        populateExperimentList();
+        updateDisplayRelatedToXPSet();
         
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        toFront();
-
-        // set properties
+        // persistent properties
         setLogFile(PropertyUtils.get(PropertyUtils.LOG_FILE));
         deleteMeasurementsCheckBox.setSelected(PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, true));
         ButtonGroup dbGroup = new ButtonGroup();
@@ -253,8 +284,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             currentDBPrefix=GUI.DBprefix;
             MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
             localDBMenu.setEnabled(false);
-        }
-        else if (dbType.equals(MasterDAOFactory.DAOType.DBMap.toString())) {
+        } else if (dbType.equals(MasterDAOFactory.DAOType.DBMap.toString())) {
             currentDBPrefix="";
             localFileSystemDatabaseRadioButton.setSelected(true);
             String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
@@ -273,7 +303,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         PropertyUtils.setPersistant(exportObjectsMenuItem, "export_objects", true);
         PropertyUtils.setPersistant(exportPPImagesMenuItem, "export_ppimages", true);
         PropertyUtils.setPersistant(exportTrackImagesMenuItem, "export_trackImages", true);
-        
+        // image display limit
         PropertyUtils.setPersistant(openedImageLimit, "limit_disp_images");
         ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(openedImageLimit.getValue().intValue());
         openedImageLimit.addListener(p->ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(openedImageLimit.getValue().intValue()));
@@ -292,45 +322,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         pyGtw = new PythonGateway();
         pyGtw.startGateway();
         
-        // selections
-        selectionModel = new DefaultListModel<>();
-        this.selectionList.setModel(selectionModel);
-        this.selectionList.setCellRenderer(new SelectionRenderer());
-        setMouseAdapter(selectionList);
-        
-        populateExperimentList();
-        updateDisplayRelatedToXPSet();
-        //updateMongoDBBinActions();
-        progressBar = new ProgressIcon(Color.darkGray, tabs);
-        Component progressComponent =  new ColorPanel(progressBar);
-        tabs.addTab("Progress: ", progressBar, progressComponent);
-        //tabs.setEnabledAt(3, false);
-        //progressBar = new javax.swing.JProgressBar(0, 100);
-        //progressBar.setValue(0);
-        //progressBar.setStringPainted(true);
-        //tabs.setComponentAt(progressBarTabIndex, progressBar);
-        tabs.addChangeListener(new ChangeListener() {
-            int lastSelTab=0;
-            public void stateChanged(ChangeEvent e) {
-                if (tabs.getSelectedComponent()==progressComponent) {
-                    logger.debug("pb");
-                    tabs.setSelectedIndex(lastSelTab);
-                } else lastSelTab=tabs.getSelectedIndex();
-                if (reloadObjectTrees && tabs.getSelectedComponent()==dataPanel) {
-                    reloadObjectTrees=false;
-                    loadObjectTrees();
-                    displayTrackTrees();
-                } else if (tabs.getSelectedComponent()==dataPanel) {
-                    setTrackTreeStructures();
-                }
-                if (tabs.getSelectedComponent()==actionPanel) {
-                    populateActionStructureList();
-                    populateActionMicroscopyFieldList();
-                }
-            }
-        });
-        Map<ACTION, Action> actionMap = new HashMap<>();
         // KEY shortcuts
+        Map<ACTION, Action> actionMap = new HashMap<>();
         actionMap.put(ACTION.LINK, new AbstractAction("Link") {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -373,14 +366,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 logger.debug("D pressed: " + e);
             }
         });
-        
-        actionMap.put(ACTION.CREATE_BRANCH, new AbstractAction("Prune Track") {
+        actionMap.put(ACTION.PRUNE, new AbstractAction("Create Branch") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pruneTrackButtonActionPerformed(e);
+            }
+        });
+        actionMap.put(ACTION.CREATE_TRACK, new AbstractAction("Create Track") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!checkConnection()) return;
                 List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-                if (selList.isEmpty()) logger.warn("Select at least one object to Create branch from first!");
-                else if (selList.size()<=10 || Utils.promptBoolean("Create "+selList.size()+ " new branches ? ", null)) ManualEdition.createBranches(db, selList, true);
+                if (selList.isEmpty()) logger.warn("Select at least one object to Create track from first!");
+                else if (selList.size()<=10 || Utils.promptBoolean("Create "+selList.size()+ " new tracks ? ", null)) ManualEdition.createTracks(db, selList, true);
             }
         });
         actionMap.put(ACTION.MERGE, new AbstractAction("Merge") {
@@ -536,6 +534,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 toggleDisplaySelection(1);
             }
         });
+        
         ChoiceParameter shortcutPreset = new ChoiceParameter("Shortcut preset", Utils.toStringArray(PRESET.values()), PRESET.AZERTY.toString(), false);
         PropertyUtils.setPersistant(shortcutPreset, "shortcut_preset");
         ConfigurationTreeGenerator.addToMenu(shortcutPreset.getName(), shortcutPreset.getUI().getDisplayComponent(), this.shortcutPresetMenu);
@@ -632,7 +631,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     public TrackTreeController getTrackTrees() {return this.trackTreeController;}
     
     public static void updateRoiDisplay(InteractiveImage i) {
-        if (instance==null) return;
+        if (INSTANCE==null) return;
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (iwm==null) return;
         Image image=null;
@@ -651,7 +650,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (i==null) return;
         
         // look in track list
-        TrackTreeGenerator gen = instance.trackTreeController.getLastTreeGenerator();
+        TrackTreeGenerator gen = INSTANCE.trackTreeController.getLastTreeGenerator();
         if (gen!=null) {
             List<List<StructureObject>> tracks = gen.getSelectedTracks(true);
             iwm.displayTracks(image, i, tracks, true);
@@ -671,7 +670,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     }
     
     public static void updateRoiDisplayForSelections(Image image, InteractiveImage i) {
-        if (instance==null) return;
+        if (INSTANCE==null) return;
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (iwm==null) return;
         if (i==null) {
@@ -687,7 +686,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         }
         ImageWindowManagerFactory.getImageManager().hideAllRois(image, false, true);
         //logger.debug("updateSelectionsDisplay");
-        Enumeration<Selection> sels = instance.selectionModel.elements();
+        Enumeration<Selection> sels = INSTANCE.selectionModel.elements();
         while (sels.hasMoreElements()) {
             Selection s = sels.nextElement();
             //logger.debug("selection: {}", s);
@@ -917,12 +916,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     
     
     public static GUI getInstance() {
-        if (instance==null) instance=new GUI();
-        return instance;
+        if (INSTANCE==null) INSTANCE=new GUI();
+        return INSTANCE;
     }
     
     public static boolean hasInstance() {
-        return instance!=null;
+        return INSTANCE!=null;
     }
     
     // ImageObjectListener implementation
@@ -1015,7 +1014,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                             } else {
                                 trackTreeController.clearTreesFromIdx(trackTreeController.getTreeIdx(entry.getKey()) + 1);
                             }
-                            instance.displayTrackTrees();
+                            INSTANCE.displayTrackTrees();
                             if (trackTreeController.isUpdateRoiDisplayWhenSelectionChange()) {
                                 logger.debug("updating display: number of selected tracks: {}", tree.getSelectionCount());
                                 GUI.updateRoiDisplay(null);
@@ -2402,7 +2401,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             ZipWriter w = new ZipWriter(dir+File.separator+mDAO.getDBName()+".zip");
             ImportExportJSON.exportConfig(w, mDAO);
             ImportExportJSON.exportSelections(w, mDAO);
-            ImportExportJSON.exportPositions(w, mDAO, true, true, true, ProgressCallback.get(instance));
+            ImportExportJSON.exportPositions(w, mDAO, true, true, true, ProgressCallback.get(INSTANCE));
             w.close();
             mDAO.clearCache();
         }
@@ -2420,7 +2419,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
         ImportExportJSON.exportConfig(w, db);
         ImportExportJSON.exportSelections(w, db);
-        ImportExportJSON.exportPositions(w, db, true, true, true, sel, ProgressCallback.get(instance, sel.size()));
+        ImportExportJSON.exportPositions(w, db, true, true, true, sel, ProgressCallback.get(INSTANCE, sel.size()));
         w.close();
         /*
         int[] sel  = getSelectedMicroscopyFields();
@@ -2468,7 +2467,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             @Override
             public String run(int i) {
                 GUI.getInstance().setRunning(true);
-                ProgressCallback pcb = ProgressCallback.get(instance);
+                ProgressCallback pcb = ProgressCallback.get(INSTANCE);
                 pcb.log("Will import objects from file: "+f);
                 boolean error = false;
                 try {
@@ -2868,8 +2867,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 try {
                     ZipWriter w = new ZipWriter(file);
                     if (objects || preProcessedImages || trackImages) {
-                        if (positions.isEmpty()) ImportExportJSON.exportPositions(w, mDAO, objects, preProcessedImages, trackImages ,  ProgressCallback.get(instance, mDAO.getExperiment().getPositionCount()));
-                        else ImportExportJSON.exportPositions(w, mDAO, objects, preProcessedImages, trackImages , positions, ProgressCallback.get(instance, positions.size()));
+                        if (positions.isEmpty()) ImportExportJSON.exportPositions(w, mDAO, objects, preProcessedImages, trackImages ,  ProgressCallback.get(INSTANCE, mDAO.getExperiment().getPositionCount()));
+                        else ImportExportJSON.exportPositions(w, mDAO, objects, preProcessedImages, trackImages , positions, ProgressCallback.get(INSTANCE, positions.size()));
                     }
                     if (config) ImportExportJSON.exportConfig(w, mDAO);
                     if (selections) ImportExportJSON.exportSelections(w, mDAO);
@@ -2912,7 +2911,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 log("undumpig: "+dbName);
                 logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
                 MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
-                ImportExportJSON.importFromZip(dump.getAbsolutePath(), dao, true, true, true, false, false, ProgressCallback.get(instance));
+                ImportExportJSON.importFromZip(dump.getAbsolutePath(), dao, true, true, true, false, false, ProgressCallback.get(INSTANCE));
                 if (i==dumpedFiles.size()-1) {
                     GUI.getInstance().setRunning(false);
                     GUI.getInstance().populateExperimentList();
@@ -2956,9 +2955,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
                 dao.setReadOnly(true);
                 MasterDAO daoDump = new BasicMasterDAO();
-                ImportExportJSON.importFromZip(dump.getAbsolutePath(), daoDump, true, true, true, false, false, ProgressCallback.get(instance));
+                ImportExportJSON.importFromZip(dump.getAbsolutePath(), daoDump, true, true, true, false, false, ProgressCallback.get(INSTANCE));
                 try {
-                    MasterDAO.compareDAOContent(dao, daoDump, true, true, true, ProgressCallback.get(instance));
+                    MasterDAO.compareDAOContent(dao, daoDump, true, true, true, ProgressCallback.get(INSTANCE));
                 } catch (Exception|Error e) {
                     throw e;
                 }
@@ -2992,7 +2991,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             @Override
             public String run(int i) {
                 GUI.getInstance().setRunning(true);
-                ProgressCallback pcb = ProgressCallback.get(instance);
+                ProgressCallback pcb = ProgressCallback.get(INSTANCE);
                 pcb.log("Will import data from file: "+f);
                 boolean error = false;
                 try {
@@ -3296,7 +3295,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         }
         MasterDAO mDAO = MasterDAOFactory.createDAO(name, this.getHostNameOrDir(name));
         mDAO.deleteAllObjects();
-        ImportExportJSON.importFromFile(config, mDAO, true, false, false, false, false, ProgressCallback.get(instance));
+        ImportExportJSON.importFromFile(config, mDAO, true, false, false, false, false, ProgressCallback.get(INSTANCE));
         
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_CONFIG_DIR, config);
@@ -3613,7 +3612,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         //</editor-fold>
         /* Create and display the form */
         new ImageJ();
-        
+        Core.getCore();
         java.awt.EventQueue.invokeLater(() -> {
             new GUI().setVisible(true);
         });

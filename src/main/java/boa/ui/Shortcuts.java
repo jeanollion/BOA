@@ -36,7 +36,7 @@ import javax.swing.KeyStroke;
  */
 public class Shortcuts {
     public enum PRESET {QWERTY, AZERTY}
-    public enum ACTION {LINK, UNLINK, RESET_LINKS, CREATE_BRANCH,
+    public enum ACTION {LINK, UNLINK, RESET_LINKS, CREATE_TRACK,
         DELETE, DELETE_AFTER_FRAME, PRUNE, MERGE, SPLIT, CREATE, TOGGLE_CREATION_TOOL,
         SELECT_ALL_OBJECTS, SELECT_ALL_TRACKS, TOGGLE_SELECT_MODE, TOGGLE_LOCAL_ZOOM, CHANGE_INTERACTIVE_STRUCTURE,
         NAV_NEXT, NAV_PREV, OPEN_NEXT, OPEN_PREV,
@@ -76,7 +76,7 @@ public class Shortcuts {
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK), ACTION.LINK);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_U, KeyEvent.CTRL_DOWN_MASK), ACTION.UNLINK);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK), ACTION.RESET_LINKS);
-                keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_B, KeyEvent.CTRL_DOWN_MASK), ACTION.CREATE_BRANCH);
+                keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_B, KeyEvent.CTRL_DOWN_MASK), ACTION.CREATE_TRACK);
                 
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK), ACTION.DELETE);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.ALT_DOWN_MASK), ACTION.DELETE_AFTER_FRAME);
@@ -109,7 +109,7 @@ public class Shortcuts {
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK), ACTION.LINK);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_U, KeyEvent.CTRL_DOWN_MASK), ACTION.UNLINK);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK), ACTION.RESET_LINKS);
-                keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_B, KeyEvent.CTRL_DOWN_MASK), ACTION.CREATE_BRANCH);
+                keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_B, KeyEvent.CTRL_DOWN_MASK), ACTION.CREATE_TRACK);
                 
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK), ACTION.DELETE);
                 keyMapAction.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.ALT_DOWN_MASK), ACTION.DELETE_AFTER_FRAME);
@@ -172,7 +172,7 @@ public class Shortcuts {
         nav.add(new JSeparator());
         nav.add(getMenuLabelFor(ACTION.SELECT_ALL_OBJECTS, "Display all objects on active image"));
         nav.add(getMenuLabelFor(ACTION.SELECT_ALL_TRACKS, "Display all tracks on active image"));
-        nav.add(getMenuLabelFor(ACTION.TOGGLE_SELECT_MODE, "Toggle display object/branch"));
+        nav.add(getMenuLabelFor(ACTION.TOGGLE_SELECT_MODE, "Toggle display object/track"));
         nav.add(getMenuLabelFor(ACTION.CHANGE_INTERACTIVE_STRUCTURE, "Change interactive structure"));
         nav.add(new JSeparator());
         nav.add(getMenuLabelFor(ACTION.TOGGLE_LOCAL_ZOOM, "Toggle local zoom"));
@@ -192,7 +192,7 @@ public class Shortcuts {
         objectModif.add(getMenuLabelFor(ACTION.RESET_LINKS, "Reset lineage of selected object(s)"));
         objectModif.add(getMenuLabelFor(ACTION.LINK, "Link selected objects"));
         objectModif.add(getMenuLabelFor(ACTION.UNLINK, "Unlink selected objects"));
-        objectModif.add(getMenuLabelFor(ACTION.CREATE_BRANCH, "Create branch at selected object(s)"));
+        objectModif.add(getMenuLabelFor(ACTION.CREATE_TRACK, "Create track starting from selected object(s)"));
         
         //objectModif.add("Ctrl + straight line: strech objects");
     }

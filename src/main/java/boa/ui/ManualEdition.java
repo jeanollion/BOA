@@ -325,7 +325,7 @@ public class ManualEdition {
         }
     }
     
-    public static void createBranches(MasterDAO db, Collection<StructureObject> futureTrackHeads, boolean updateDisplay) {
+    public static void createTracks(MasterDAO db, Collection<StructureObject> futureTrackHeads, boolean updateDisplay) {
         if (futureTrackHeads.isEmpty()) return;
         if (updateDisplay) ImageWindowManagerFactory.getImageManager().removeTracks(StructureObjectUtils.getTrackHeads(futureTrackHeads));
         for (Entry<String, List<StructureObject>> e : StructureObjectUtils.splitByPosition(futureTrackHeads).entrySet()) {

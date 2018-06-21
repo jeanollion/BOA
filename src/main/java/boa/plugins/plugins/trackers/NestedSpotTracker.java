@@ -34,12 +34,16 @@ import boa.gui.image_interaction.ImageWindowManagerFactory;
 import fiji.plugin.trackmate.Spot;
 import boa.image.Image;
 import boa.image.ImageFloat;
+import boa.image.processing.bacteria_spine.BacteriaSpineCoord;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import static boa.image.processing.bacteria_spine.BacteriaSpineFactory.verboseZoomFactor;
 import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.project;
+import boa.image.processing.bacteria_spine.SpineOverlayDrawer;
+import static boa.image.processing.bacteria_spine.SpineOverlayDrawer.trimSpine;
+import static boa.measurement.MeasurementExtractor.numberFormater;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -63,6 +67,7 @@ import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.Mutation
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface;
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface.SpotFactory;
 import static boa.plugins.plugins.trackers.trackmate.TrackMateInterface.logger;
+import boa.ui.GUI;
 import boa.utils.ArrayFileWriter;
 import boa.utils.HashMapGetCreate;
 import boa.utils.MultipleException;
@@ -72,6 +77,8 @@ import boa.utils.SymetricalPair;
 import boa.utils.Utils;
 import static boa.utils.Utils.parallele;
 import boa.utils.geom.Point;
+import ij.gui.Overlay;
+import java.awt.Color;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -81,19 +88,20 @@ import java.util.stream.Collectors;
  * @author jollion
  */
 public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPlugin, ToolTip {
+    private static final String CONF_HINT = "<br />Configuration hint: to display distance between two spots, select the two spots on test images and choose <em>Diplay Spine</em> from right-click menu. Distance will be logged in the console and projection of source spot to destination bacteria displayed";
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new SpotSegmenter(), false);
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", -1, false, false).setToolTipText("Structure of bacteria objects.");
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5).setEmphasized(true).setToolTipText("Spot with quality parameter over this threshold are considered as high quality spots, others as low quality spots");
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null).setEmphasized(true).setToolTipText("Maximum frame gap for spot linking: if two spots are separated by more frame than this value they cannot be linked together directly");
-    NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together");
-    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Maximum Linking Distance", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for theglobal linking step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together. An additional cost proportional to the gap is added to the distance between spots (see <em>gap penalty</em>");
+    NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together."+CONF_HINT);
+    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Maximum Linking Distance", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for theglobal linking step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together. An additional cost proportional to the gap is added to the distance between spots (see <em>gap penalty</em>"+CONF_HINT);
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null).setEmphasized(true).setToolTipText("When two spots are separated by a gap, an additional distance is added to their distance: this value x number of frame of the gap");
     NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance", 2, 0.8, 0, null).setToolTipText("The algorithm performs a global optimization minimizing the global cost. Cost are the distance between spots. Alternative distance represent the cost of being linked with no other spot. If this value is too low, the algorithm won't link any spot, it should be superior to the linking distance threshold");
-    ChoiceParameter projectionType = new ChoiceParameter("Projection type", Utils.toStringArray(BacteriaSpineLocalizer.PROJECTION.values()), PROPORTIONAL.toString(), false ).setToolTipText("Spine projection for distance calculation: spine coordinate of source spots are first computed and then projected in destination bacteria. <ol><li>"+PROPORTIONAL+": spine coordinate is multiplied by the ratio of the spine length of the two bacteria</li><li>"+NEAREST_POLE+": distance (in terms of path along the spine) to nearest pole is conseverd</li></ol>");
+    ChoiceParameter projectionType = new ChoiceParameter("Projection type", Utils.toStringArray(BacteriaSpineLocalizer.PROJECTION.values()), PROPORTIONAL.toString(), false ).setToolTipText("Spine projection for distance calculation: spine coordinate of source spots are first computed and then projected in destination bacteria. <ol><li>"+PROPORTIONAL+": spine coordinate is multiplied by the ratio of the spine length of the two bacteria</li><li>"+NEAREST_POLE+": distance (in terms of path along the spine) to nearest pole is conseverd</li></ol><br />"+CONF_HINT);
     Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, projectionType, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
     String toolTip = "<b>Tracker for spots moving within bacteria</b> using <em>TrackMate (https://imagej.net/TrackMate)</em> <br />"
             + "<ul><li>Distance between spots is computed using spine coordinates in order to take into acount bacteria growth and movements</li>"
-            + "<li>Bacteria lineage is honoured: two spots can only be linked if they are contained in bacteria from the same branch or connected branches (after division events)</li>"
+            + "<li>Bacteria lineage is honoured: two spots can only be linked if they are contained in bacteria from the same track or connected tracks (after division events)</li>"
             + "<li>If segmentation and tracking are performed jointly, a first step of removal of low-quality (LQ) spots (spot that can be either false-negative or true-positive) will be applied: only LQ spots that can be linked (directly or indirectly) to high-quality (HQ) spots (ie spots that are true-positives) are kept, allowing a better selection of true-positives spots of low intensity. HQ/LQ definition depends on the parameter <em>Spot Quality Threshold</em> and depends on the quality parameter defined by the segmenter</li>"
             + "<li>A global linking procedure - allowing gaps (if <em>Maximum frame gap</em> is >0) - is applied among remaining spots</li></ul>";
     // multithreaded interface
@@ -260,7 +268,7 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
 
         logger.debug("Mutation Tracker: {}, total processing time: {}, create spots: {}, remove LQ: {}, link: {}", parentTrack.get(0), t3-t0, t1-t0, t2-t1, t3-t2);
         
-        // test mode 
+        // DISPLAY SPINE ON TEST IMAGE THROUGH RIGHT-CLICK
         if (stores!=null) {
             BiConsumer<List<StructureObject>, Boolean> displayDistance =  (l, drawDistances) -> {
                 if (l.size()==2 && l.get(0).getStructureIdx()==structureIdx && l.get(1).getStructureIdx()==structureIdx) {
@@ -294,9 +302,39 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                     
                     logger.info("spot: {} center: {}, bact coords: {} (other : {})", l.get(1), l.get(1).getRegion().getCenter().duplicate().translateRev(l.get(1).getBounds()), bsl2.getSpineCoord(l.get(1).getRegion().getCenter()));
                     
+                    // draw source with point
+                    StructureObject mc1 = b1.getParent();
+                    BacteriaSpineCoord coord = bsl1.getSpineCoord(l.get(0).getRegion().getCenter());
+                    Overlay spineSource = SpineOverlayDrawer.getSpineOverlay(trimSpine(bsl1.spine, 0.3), mc1.getBounds(), Color.BLUE, Color.YELLOW, 0.5);
+                    SpineOverlayDrawer.drawPoint(spineSource, mc1.getBounds(), l.get(0).getRegion().getCenter(), Color.ORANGE, 1);
+                    
+                    // draw dest with point
+                    StructureObject mc2 = b2.getParent();
+                    BacteriaSpineCoord coord2 = bsl2.getSpineCoord(l.get(1).getRegion().getCenter());
+                    Overlay spineDest = SpineOverlayDrawer.getSpineOverlay(trimSpine(bsl2.spine, 0.3), mc2.getBounds(), Color.BLUE, Color.YELLOW, 0.5);
+                    SpineOverlayDrawer.drawPoint(spineDest, mc2.getBounds(), l.get(1).getRegion().getCenter(), new Color(0, 150, 0), 1);
+                    
                     // actual projection
                     distParams.includeLQ = true;
+                    NestedSpot s1 = new NestedSpot(l.get(0).getRegion(), b1, localizerMap, distParams);
+                    NestedSpot s2 = new NestedSpot(l.get(1).getRegion(), b2, localizerMap, distParams);
+                    Point proj = project(l.get(0).getRegion().getCenter(), b1, b2, distParams.projectionType, localizerMap, true);
+                    SpineOverlayDrawer.drawPoint(spineDest, mc2.getBounds(), proj, Color.ORANGE, 1);
                     
+                    // display
+                    SpineOverlayDrawer.display("Source", mc1.getRawImage(l.get(0).getStructureIdx()), spineSource);
+                    SpineOverlayDrawer.display("Destination", mc2.getRawImage(l.get(0).getStructureIdx()), spineDest);
+                    
+                    // also add to object attributes
+                    l.get(0).setAttribute("Spine Coordinate", numberFormater.apply(coord.spineCoord(false))+"/"+numberFormater.apply(coord.spineLength()));
+                    l.get(0).setAttribute("Spine Radial Coordinate", numberFormater.apply(coord.distFromSpine(false))+"/"+numberFormater.apply(coord.spineRadius()));
+                    l.get(1).setAttribute("Spine Coordinate", numberFormater.apply(coord2.spineCoord(false))+"/"+numberFormater.apply(coord2.spineLength()));
+                    l.get(1).setAttribute("Spine Radial Coordinate", numberFormater.apply(coord2.distFromSpine(false))+"/"+numberFormater.apply(coord2.spineRadius()));
+                    
+                    // log distance
+                    GUI.log("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter()));
+                    logger.info("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter()));
+                    /*
                     Image spine1 = bsl1.spine.drawSpine(verboseZoomFactor, drawDistances).setName("Source Spine: "+b1);
                     BacteriaSpineLocalizer.drawPoint(l.get(0).getRegion().getCenter(), spine1, verboseZoomFactor, 1000);
                     spine1.setCalibration(spine1.getScaleXY() * l.get(0).getScaleXY(), 1);
@@ -314,11 +352,13 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                     } else logger.info("Could not project point");
                     
                     ImageWindowManagerFactory.showImage(spine2);
+                    */
+                    
                 }
             };
             parentTrack.forEach((p) -> {
                 stores.get(p).addMisc("Display Spine", l->displayDistance.accept(l, false));
-                stores.get(p).addMisc("Display Spine With Distance", l->displayDistance.accept(l, true));
+                //stores.get(p).addMisc("Display Spine With Distance", l->displayDistance.accept(l, true));
             });
         }
     }
