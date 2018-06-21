@@ -30,7 +30,7 @@ import java.util.List;
 import boa.plugins.ObjectFeature;
 import boa.plugins.objectFeature.ObjectFeatureCore;
 import boa.plugins.objectFeature.ObjectFeatureWithCore;
-import boa.plugins.plugins.measurements.SimpleObjectFeature;
+import boa.plugins.plugins.measurements.objectFeatures.SimpleObjectFeature;
 
 /**
  *

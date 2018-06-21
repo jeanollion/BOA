@@ -20,16 +20,14 @@ package boa.plugins.plugins.measurements.objectFeatures;
 
 import boa.plugins.objectFeature.IntensityMeasurement;
 import boa.data_structure.Region;
-import boa.data_structure.Voxel;
-import boa.image.MutableBoundingBox;
-import boa.image.Image;
 import boa.measurement.BasicMeasurements;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class MeanAtBorder extends IntensityMeasurement {
+public class MeanAtBorder extends IntensityMeasurement implements ToolTip {
     @Override
     public double performMeasurement(Region object) {
         return BasicMeasurements.getMeanValue(object.getContour(), core.getIntensityMap(true), object.isAbsoluteLandMark());
@@ -38,5 +36,8 @@ public class MeanAtBorder extends IntensityMeasurement {
     public String getDefaultName() {
         return "MeanIntensityBorder";
     }
-    
+    @Override
+    public String getToolTipText() {
+        return "Average intensity value at the border of the object";
+    }
 }

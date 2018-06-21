@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2018 Jean Ollion
  *
  * This File is part of BOA
@@ -16,28 +16,12 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements;
-
-import boa.configuration.parameters.Parameter;
-import boa.data_structure.RegionPopulation;
-import boa.data_structure.StructureObject;
-import boa.plugins.ObjectFeature;
+package boa.plugins;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
-public abstract class SimpleObjectFeature implements ObjectFeature {
-    protected StructureObject parent;
-    protected int childStructureIdx;
-    @Override public Parameter[] getParameters() {
-        return new Parameter[0];
-    }
-
-    @Override public SimpleObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
-        this.parent=parent;
-        this.childStructureIdx=childStructureIdx;
-        return this;
-    }
+public interface GeometricalFeature extends ObjectFeature {
     
 }

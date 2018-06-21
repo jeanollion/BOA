@@ -33,6 +33,7 @@ import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
 import boa.image.processing.ImageFeatures;
+import boa.plugins.DevPlugin;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import java.util.Set;
@@ -41,7 +42,7 @@ import java.util.Set;
  *
  * @author jollion
  */
-public class Focus implements Measurement {
+public class Focus implements Measurement, DevPlugin {
     StructureParameter structure = new StructureParameter("Structure");
     NumberParameter scale = new BoundedNumberParameter("Gradient Scale", 1, 2, 1, null);
     

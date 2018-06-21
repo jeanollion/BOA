@@ -32,8 +32,7 @@ public interface ToolTip{
     public String getToolTipText();
     public static int TOOL_TIP_BOX_WIDTH = 750;
     public static String formatToolTip(String toolTip) {
-        if (toolTip.startsWith("<html>")) toolTip = toolTip.replace("<html>", "");
-        if (toolTip.endsWith("</html>")) toolTip = toolTip.replace("</html>", "");
+        toolTip = toolTip.replace("<html>", "").replace("</html>", "");
         return "<html><div style=\"width:"+TOOL_TIP_BOX_WIDTH+"px\">" + toolTip + "</div></html>";
     }
 }

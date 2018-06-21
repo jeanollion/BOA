@@ -56,7 +56,7 @@ public class TrackLength implements Measurement {
     @Override
     public List<MeasurementKey> getMeasurementKeys() {
         ArrayList<MeasurementKey> res = new ArrayList<>(4);
-        res.add(new MeasurementKeyObject("TrackFrameLength", structure.getSelectedIndex()));
+        res.add(new MeasurementKeyObject("TrackLength", structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("TrackObjectCount", structure.getSelectedIndex()));
         return res;
     }
@@ -64,7 +64,7 @@ public class TrackLength implements Measurement {
     @Override
     public void performMeasurement(StructureObject object) {
         List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
-        object.getMeasurements().setValue("TrackFrameLength", track.get(track.size()-1).getFrame() - track.get(0).getFrame() +1 );
+        object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getFrame() - track.get(0).getFrame() +1 );
         object.getMeasurements().setValue("TrackObjectCount", track.size() );
     }
 

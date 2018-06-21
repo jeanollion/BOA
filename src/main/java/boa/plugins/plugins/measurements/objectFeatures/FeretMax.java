@@ -25,14 +25,17 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.MutableBoundingBox;
 import boa.measurement.GeometricalMeasurements;
+import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
+import boa.plugins.ToolTip;
+import static boa.plugins.plugins.measurements.objectFeatures.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class FeretMax implements ObjectFeature {
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Unit", false);
+public class FeretMax implements GeometricalFeature, ToolTip {
+    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Unit", false).setToolTipText(SCALED_TT);;
     public FeretMax setScale(boolean unit) {
         scaled.setSelectedIndex(unit?1:0);
         return this;
@@ -58,5 +61,8 @@ public class FeretMax implements ObjectFeature {
     public String getDefaultName() {
         return "Length";
     }
-    
+    @Override
+    public String getToolTipText() {
+        return "Maximal distance between two points of the contour";
+    }
 }

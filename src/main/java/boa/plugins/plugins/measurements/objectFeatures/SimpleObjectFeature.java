@@ -18,22 +18,26 @@
  */
 package boa.plugins.plugins.measurements.objectFeatures;
 
-import boa.plugins.objectFeature.IntensityMeasurement;
-import boa.data_structure.Region;
-import boa.image.MutableBoundingBox;
+import boa.configuration.parameters.Parameter;
+import boa.data_structure.RegionPopulation;
+import boa.data_structure.StructureObject;
+import boa.plugins.ObjectFeature;
 
 /**
  *
  * @author jollion
  */
-public class Sd extends IntensityMeasurement {
-
-    public double performMeasurement(Region object) {
-        return core.getIntensityMeasurements(object).sd;
+public abstract class SimpleObjectFeature implements ObjectFeature {
+    protected StructureObject parent;
+    protected int childStructureIdx;
+    @Override public Parameter[] getParameters() {
+        return new Parameter[0];
     }
 
-    public String getDefaultName() {
-        return "sd";
+    @Override public SimpleObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
+        this.parent=parent;
+        this.childStructureIdx=childStructureIdx;
+        return this;
     }
     
 }

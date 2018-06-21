@@ -24,12 +24,13 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.MutableBoundingBox;
 import boa.plugins.ObjectFeature;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class Quality implements ObjectFeature {
+public class Quality implements ObjectFeature, ToolTip {
     @Override
     public Parameter[] getParameters() {
         return new Parameter[0];
@@ -50,5 +51,10 @@ public class Quality implements ObjectFeature {
     @Override
     public String getDefaultName() {
         return "Quality";
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Quality attribute of the object, if defined by the segmenter, NA if not";
     }
 }

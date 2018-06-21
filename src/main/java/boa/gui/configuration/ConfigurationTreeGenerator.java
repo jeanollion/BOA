@@ -29,6 +29,8 @@ import boa.configuration.parameters.ui.ChoiceParameterUI;
 import boa.configuration.parameters.ui.MultipleChoiceParameterUI;
 import boa.configuration.experiment.PreProcessingChain.PreProcessingChainUI;
 import boa.configuration.parameters.PluginParameter;
+import boa.measurement.MeasurementKey;
+import boa.plugins.Measurement;
 import boa.plugins.Plugin;
 import boa.plugins.ToolTip;
 import static boa.plugins.ToolTip.formatToolTip;
@@ -38,6 +40,7 @@ import java.awt.Rectangle;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 import javax.swing.Action;
 import javax.swing.DropMode;
 import javax.swing.Icon;
@@ -96,23 +99,26 @@ public class ConfigurationTreeGenerator {
                 Object node = curPath.getLastPathComponent();
                 if (node instanceof ToolTip) {
                     String t = ((ToolTip)node).getToolTipText();
+                    if (t==null) t = "";
                     if (node instanceof PluginParameter) {
                         Plugin p = ((PluginParameter)node).instanciatePlugin();
                         if (p instanceof ToolTip) {
                             String t2 = ((ToolTip)p).getToolTipText();
-                            if (t2!=null) {
-                                if (t==null) return formatToolTip(t2);
-                                else {
-                                    if (t2.startsWith("<html>")) t2 = t2.replace("<html>", "");
-                                    if (!t2.endsWith("</html>")) t2=t2+"</html>";
-                                    if (t.endsWith("</html>"))t= t.replace("</html>", "");
-                                    if (!t.startsWith("<html>")) t="<html>"+t;
-                                    return formatToolTip(t+"<br /> <br /><b>Current Plugin:</b><br />"+t2);
-                                }
+                            if (t2!=null && t2.length()>0) {
+                                if (t.length()>0) t = t+"<br /> <br />";
+                                t = t+"<b>Current Plugin:</b><br />"+t2;
+                            }
+                        }
+                        if (p instanceof Measurement) { // also display measurement keys
+                            List<MeasurementKey> keys = ((Measurement)p).getMeasurementKeys();
+                            if (!keys.isEmpty()) {
+                                if (t.length()>0) t= t+"<br /> <br />";
+                                t = t+ "<b>Measurement Keys (column names in extracted data and associated object type):</b><br />";
+                                for (MeasurementKey k : keys) t=t+k.getKey()+ (k.getStoreStructureIdx()>=0 ? " ("+rootParameter.getStructure(k.getStoreStructureIdx()).getName()+")":"")+"<br />";
                             }
                         }
                     }
-                    if (t!=null) return formatToolTip(t);
+                    if (t!=null && t.length()>0) return formatToolTip(t);
                 }
                 return null;
             }

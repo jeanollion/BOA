@@ -26,6 +26,7 @@ import boa.data_structure.StructureObject;
 import boa.image.processing.ImageTransformation;
 import boa.image.processing.ImageTransformation.MainAxis;
 import boa.measurement.GeometricalMeasurements;
+import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
 import boa.plugins.ToolTip;
 import boa.utils.Utils;
@@ -34,7 +35,7 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class ThicknessAxis implements ObjectFeature, ToolTip {
+public class ThicknessAxis implements GeometricalFeature, ToolTip {
     ChoiceParameter axis = new ChoiceParameter("Axis", Utils.toStringArray(MainAxis.values()), ImageTransformation.MainAxis.X.toString(), false);
     ChoiceParameter statistics = new ChoiceParameter("Statistics", new String[]{"Mean", "Median", "Max"}, "Mean", false);
     String toolTip = "Estimates the thickness of a region along a given axis (X, Y or Z)";

@@ -39,6 +39,7 @@ import java.util.Set;
 import boa.measurement.GeometricalMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
+import boa.plugins.GeometricalFeature;
 import boa.plugins.Measurement;
 import boa.plugins.MultiThreaded;
 import boa.plugins.ObjectFeature;
@@ -60,13 +61,13 @@ import java.util.stream.Collectors;
  */
 public class GrowthRate implements Measurement, MultiThreaded {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
-    protected PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, new Size(), false).setToolTipText("Object Feature used to compute Growth Rate");
+    protected PluginParameter<GeometricalFeature> feature = new PluginParameter<>("Feature", GeometricalFeature.class, new Size(), false).setToolTipText("Geometrical Feature of object used to compute Growth Rate");
     protected TextParameter suffix = new TextParameter("Suffix", "", false).setToolTipText("Suffix added to measurement keys");
     protected BooleanParameter residuals = new BooleanParameter("Save Residuals", false);
     protected BooleanParameter intersection = new BooleanParameter("Save Intersection", false);
     protected BooleanParameter saveFeature = new BooleanParameter("Save Feature", false);
-    protected TextParameter featureKey = new TextParameter("Feature Name", "", false).setToolTipText("Name given to feature in measurement");
-    protected ConditionalParameter saveFeatureCond = new ConditionalParameter(saveFeature).setActionParameters("true", featureKey);
+    protected TextParameter featureKey = new TextParameter("Feature Name", "", false).setToolTipText("Name given to geometrical feature in measurements");
+    protected ConditionalParameter saveFeatureCond = new ConditionalParameter(saveFeature).setActionParameters("true", featureKey).setToolTipText("Whether value of geometrical feature should be saved to measurements");
     protected Parameter[] parameters = new Parameter[]{structure, feature, suffix, saveFeatureCond, residuals, intersection};
     
     public GrowthRate() {
@@ -87,7 +88,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
         this.suffix.setValue(suffix);
         return this;
     }
-    public GrowthRate setFeature(ObjectFeature f) {
+    public GrowthRate setFeature(GeometricalFeature f) {
         this.feature.setPlugin(f);
         this.suffix.setValue(f.getDefaultName());
         this.featureKey.setValue(f.getDefaultName());

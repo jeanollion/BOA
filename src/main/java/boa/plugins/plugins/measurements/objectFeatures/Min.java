@@ -21,12 +21,13 @@ package boa.plugins.plugins.measurements.objectFeatures;
 import boa.plugins.objectFeature.IntensityMeasurement;
 import boa.data_structure.Region;
 import boa.image.MutableBoundingBox;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class Min extends IntensityMeasurement {
+public class Min extends IntensityMeasurement implements ToolTip {
 
     @Override public double performMeasurement(Region object) {
         return core.getIntensityMeasurements(object).min;
@@ -34,6 +35,11 @@ public class Min extends IntensityMeasurement {
 
     @Override public String getDefaultName() {
         return "Min";
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Minimal intensity value within object";
     }
     
 }

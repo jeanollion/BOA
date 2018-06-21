@@ -31,6 +31,7 @@ import java.util.List;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
+import boa.plugins.ToolTip;
 import static boa.plugins.plugins.measurements.RelativePosition.REF_POINT.MASS_CENTER;
 import boa.utils.ArrayUtil;
 import boa.utils.geom.Point;
@@ -40,7 +41,7 @@ import java.util.Arrays;
  *
  * @author jollion
  */
-public class RelativePosition implements Measurement {
+public class RelativePosition implements Measurement, ToolTip {
     public enum REF_POINT {
         MASS_CENTER("Mass Center"), GEOM_CENTER("Geometrical Center"), FROM_SEGMENTATION("From segmentation"), UPPER_LEFT_CORNER("Upper Left Corner");
         public final String name;
@@ -52,13 +53,23 @@ public class RelativePosition implements Measurement {
             return Arrays.stream(REF_POINT.values()).map(s->s.name).toArray(l->new String[l]);
         }
     };
-    protected StructureParameter objects = new StructureParameter("Structure", -1, false, false);
-    protected StructureParameter reference = new StructureParameter("Reference Structure", -1, true, false);
-    ChoiceParameter objectCenter= new ChoiceParameter("Object Point", REF_POINT.names(), MASS_CENTER.name, false);
-    ChoiceParameter refPoint = new ChoiceParameter("Reference Point", REF_POINT.names(), MASS_CENTER.name, false).setToolTipText("If no reference structure is selected the reference point will automatically be the upper left corner of the image");;
+    protected StructureParameter objects = new StructureParameter("Objects", -1, false, false);
+    protected StructureParameter reference = new StructureParameter("Reference Objects", -1, true, false).setToolTipText("If no reference structure is selected the reference point will automatically be the upper left corner of the image");
+    private final static String REF_POINT_TT = "<ol>"
+            + "<li>"+REF_POINT.UPPER_LEFT_CORNER.toString()+": Upper left corner of the bounding box of the object</li>"
+            + "<li>"+REF_POINT.GEOM_CENTER.toString()+": Geometrical center of the object</li>"
+            + "<li>"+REF_POINT.MASS_CENTER.toString()+": Intensity barycenter of the object</li>"
+            + "<li>"+REF_POINT.FROM_SEGMENTATION.toString()+": Center defined by segmenter if exists. If not will thow an error</li></ol>";
+    ChoiceParameter objectCenter= new ChoiceParameter("Object Point", REF_POINT.names(), MASS_CENTER.name, false).setToolTipText("What point of the object should be used?<br />"+REF_POINT_TT);
+    ChoiceParameter refPoint = new ChoiceParameter("Reference Point", REF_POINT.names(), MASS_CENTER.name, false).setToolTipText("What point of the reference object should be used?<br />"+REF_POINT_TT);
     TextParameter key = new TextParameter("Key Name", "RelativeCoord", false);
     //ConditionalParameter refCond = new ConditionalParameter(reference); structure param not actionable...
     protected Parameter[] parameters = new Parameter[]{objects, reference, objectCenter, refPoint, key};
+    
+    @Override
+    public String getToolTipText() {
+        return "Computed the XYZ coordinates of object relative to another type of objects";
+    }
     
     public RelativePosition() {}
     

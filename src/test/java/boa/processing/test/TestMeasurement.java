@@ -29,8 +29,6 @@ import java.util.List;
 import boa.plugins.Measurement;
 import boa.plugins.PluginFactory;
 import boa.plugins.plugins.measurements.ObjectFeatures;
-import boa.plugins.plugins.measurements.SimpleIntensityMeasurement;
-import boa.plugins.plugins.measurements.SimpleIntensityMeasurementStructureExclusion;
 import boa.plugins.plugins.measurements.objectFeatures.LocalSNR;
 
 /**

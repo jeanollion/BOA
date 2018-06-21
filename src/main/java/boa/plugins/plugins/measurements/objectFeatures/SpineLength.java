@@ -25,14 +25,17 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.measurement.GeometricalMeasurements;
+import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
+import boa.plugins.ToolTip;
+import static boa.plugins.plugins.measurements.objectFeatures.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class SpineLength implements ObjectFeature {
-    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false);
+public class SpineLength implements GeometricalFeature, ToolTip {
+    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false).setToolTipText(SCALED_TT);
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{scaled};
@@ -56,6 +59,11 @@ public class SpineLength implements ObjectFeature {
     @Override
     public String getDefaultName() {
         return "SpineLength";
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Length of the spine (skeleton): takes into acount rippling deformation. Only valid for bacteria-like shapes";
     }
     
 }

@@ -21,23 +21,19 @@ package boa.plugins.plugins.measurements.objectFeatures;
 import boa.plugins.objectFeature.IntensityMeasurement;
 import boa.data_structure.Region;
 import boa.image.MutableBoundingBox;
-import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class Mean extends IntensityMeasurement implements ToolTip {
-    @Override
-    public double performMeasurement(Region object) {
-        return core.getIntensityMeasurements(object).mean;
+public class Std extends IntensityMeasurement {
+
+    @Override public double performMeasurement(Region object) {
+        return core.getIntensityMeasurements(object).sd;
     }
-    @Override
-    public String getDefaultName() {
-        return "MeanIntensity";
+
+    @Override public String getDefaultName() {
+        return "std";
     }
-    @Override
-    public String getToolTipText() {
-        return "Average intensity value within object";
-    }
+    
 }

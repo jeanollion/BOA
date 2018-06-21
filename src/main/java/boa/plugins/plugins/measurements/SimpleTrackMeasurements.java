@@ -43,7 +43,7 @@ import boa.utils.Utils;
  * @author jollion
  */
 public class SimpleTrackMeasurements implements Measurement {
-    protected StructureParameter structure = new StructureParameter("Structure", -1, false, false);
+    protected StructureParameter structure = new StructureParameter("Objects", -1, false, false);
     protected Parameter[] parameters = new Parameter[]{structure};
     
     

@@ -25,14 +25,17 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.MutableBoundingBox;
 import boa.measurement.GeometricalMeasurements;
+import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
+import boa.plugins.ToolTip;
+import static boa.plugins.plugins.measurements.objectFeatures.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class LocalThickness implements ObjectFeature {
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false);
+public class LocalThickness implements GeometricalFeature, ToolTip {
+    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false).setToolTipText(SCALED_TT);
     public LocalThickness setScale(boolean unit) {
         this.scaled.setSelectedIndex(unit?1:0);
         return this;
@@ -57,6 +60,11 @@ public class LocalThickness implements ObjectFeature {
     @Override
     public String getDefaultName() {
         return "LocalThickness";
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Estimation of thickness: median value of local thickness within object. <br />Local thickness at a given voxel is the radius of the largest circle (sphere) center on this voxel that can fit within the object";
     }
     
 }

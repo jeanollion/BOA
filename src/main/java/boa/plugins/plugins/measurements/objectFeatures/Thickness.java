@@ -25,14 +25,17 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.MutableBoundingBox;
 import boa.measurement.GeometricalMeasurements;
+import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
+import boa.plugins.ToolTip;
+import static boa.plugins.plugins.measurements.objectFeatures.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class Thickness implements ObjectFeature {
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false);
+public class Thickness implements GeometricalFeature, ToolTip {
+    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false).setToolTipText(SCALED_TT);
     public Thickness setScale(boolean unit) {
         this.scaled.setSelectedIndex(unit?1:0);
         return this;
@@ -57,6 +60,11 @@ public class Thickness implements ObjectFeature {
     @Override
     public String getDefaultName() {
         return "Thickness";
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Estimation of thickness using euclidean distance map: median value of local maxima of the EDM";
     }
     
 }

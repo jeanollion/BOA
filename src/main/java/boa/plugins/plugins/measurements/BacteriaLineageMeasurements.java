@@ -37,6 +37,7 @@ import boa.measurement.GeometricalMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
+import boa.plugins.ToolTip;
 import boa.utils.HashMapGetCreate;
 import boa.utils.LinearRegression;
 import boa.utils.MultipleException;
@@ -46,7 +47,7 @@ import boa.utils.Pair;
  *
  * @author jollion
  */
-public class BacteriaLineageMeasurements implements Measurement {
+public class BacteriaLineageMeasurements implements Measurement, ToolTip {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
     protected TextParameter keyName = new TextParameter("Lineage Index Name", "LineageIndex", false);
     protected Parameter[] parameters = new Parameter[]{structure, keyName};
@@ -61,6 +62,11 @@ public class BacteriaLineageMeasurements implements Measurement {
     public BacteriaLineageMeasurements(int structureIdx, String keyName) {
         structure.setSelectedIndex(structureIdx);
         this.keyName.setValue(keyName);
+    }
+    
+    @Override
+    public String getToolTipText() {
+        return "Lineage Index for Bacteria.<br />Index starts with any letter except H and T. At each division, H is added to the upper daughter cell track and T to the lower daugther cell track.<br />In case of division with more than 2 cells, letter I to S are added track of other daughter cell<br />This measurement also computes the frame of previous and next divisions";
     }
     
     @Override
@@ -159,4 +165,6 @@ public class BacteriaLineageMeasurements implements Measurement {
         if (mod>0) return String.valueOf(c)+mod;
         else return String.valueOf(c);
     }
+
+    
 }

@@ -21,12 +21,13 @@ package boa.plugins.plugins.measurements.objectFeatures;
 import boa.plugins.objectFeature.IntensityMeasurement;
 import boa.data_structure.Region;
 import boa.image.MutableBoundingBox;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class Max extends IntensityMeasurement {
+public class Max extends IntensityMeasurement implements ToolTip {
 
     @Override public double performMeasurement(Region object) {
         return core.getIntensityMeasurements(object).max;
@@ -35,5 +36,8 @@ public class Max extends IntensityMeasurement {
     @Override public String getDefaultName() {
         return "Max";
     }
-    
+    @Override
+    public String getToolTipText() {
+        return "Maximal intensity value within object";
+    }
 }

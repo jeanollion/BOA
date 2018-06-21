@@ -24,14 +24,17 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.MutableBoundingBox;
+import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class Size implements ObjectFeature {
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false);
+public class Size implements GeometricalFeature, ToolTip {
+    public final static String SCALED_TT = "When Unit is chosen, the size is multiplied by the size of a voxel in unit, depending on the calibration of the image";
+    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false).setToolTipText(SCALED_TT);
     public Size setScale(boolean unit) {
         scaled.setSelectedIndex(unit?1:0);
         return this;
@@ -59,6 +62,11 @@ public class Size implements ObjectFeature {
     @Override
     public String getDefaultName() {
         return "Size";
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Size is estimated by counting the number of voxels of an object.";
     }
     
 }

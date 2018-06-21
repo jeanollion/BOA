@@ -37,7 +37,7 @@ import boa.image.ImageMask;
 import java.awt.Color;
 import java.awt.Rectangle;
 import org.scijava.vecmath.Vector2d;
-import boa.plugins.plugins.measurements.SimpleObjectFeature;
+import boa.plugins.plugins.measurements.objectFeatures.SimpleObjectFeature;
 
 /**
  *

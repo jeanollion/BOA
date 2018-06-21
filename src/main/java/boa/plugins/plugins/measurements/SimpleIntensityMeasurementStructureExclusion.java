@@ -39,12 +39,13 @@ import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
 import boa.plugins.plugins.measurements.objectFeatures.SNR;
 import boa.image.processing.Filters;
+import boa.plugins.DevPlugin;
 
 /**
  *
  * @author jollion
  */
-public class SimpleIntensityMeasurementStructureExclusion implements Measurement {
+public class SimpleIntensityMeasurementStructureExclusion implements Measurement, DevPlugin {
     protected StructureParameter structureObject = new StructureParameter("Object", -1, false, false);
     protected StructureParameter excludedStructure = new StructureParameter("Excluded Structure", -1, false, false);
     protected StructureParameter structureImage = new StructureParameter("Image", -1, false, false);

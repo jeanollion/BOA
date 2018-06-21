@@ -271,8 +271,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         experimentList.setModel(experimentModel);
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
         relatedToReadOnly = new ArrayList<Component>() {{add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
-        populateExperimentList();
-        updateDisplayRelatedToXPSet();
         
         // persistent properties
         setLogFile(PropertyUtils.get(PropertyUtils.LOG_FILE));
@@ -318,6 +316,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         PropertyUtils.setPersistant(localZoomArea, "local_zoom_area");
         ConfigurationTreeGenerator.addToMenu(localZoomFactor.getName(), localZoomFactor.getUI().getDisplayComponent(), localZoomMenu);
         ConfigurationTreeGenerator.addToMenu(localZoomArea.getName(), localZoomArea.getUI().getDisplayComponent(), localZoomMenu);
+        
+        // load xp after persistent props loaded
+        populateExperimentList();
+        updateDisplayRelatedToXPSet();
+        
         
         pyGtw = new PythonGateway();
         pyGtw.startGateway();

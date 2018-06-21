@@ -24,14 +24,17 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.measurement.GeometricalMeasurements;
+import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
+import boa.plugins.ToolTip;
+import static boa.plugins.plugins.measurements.objectFeatures.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class SpineWidth implements ObjectFeature {
-    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false);
+public class SpineWidth implements GeometricalFeature, ToolTip {
+    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false).setToolTipText(SCALED_TT);;
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{scaled};
@@ -56,5 +59,8 @@ public class SpineWidth implements ObjectFeature {
     public String getDefaultName() {
         return "SpineWidth";
     }
-    
+    @Override
+    public String getToolTipText() {
+        return "Median value of the spine radii. Only valid for bacteria-like shapes";
+    }
 }

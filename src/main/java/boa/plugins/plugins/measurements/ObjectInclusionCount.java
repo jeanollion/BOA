@@ -34,18 +34,25 @@ import java.util.Set;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class ObjectInclusionCount implements Measurement {
-    protected StructureParameter structureContainer = new StructureParameter("Containing Structure", -1, false, false);
-    protected StructureParameter structureToCount = new StructureParameter("Structure to count", -1, false, false);
-    protected BooleanParameter onlyTrackHeads = new BooleanParameter("Count Only TrackHeads", false);
-    protected BoundedNumberParameter percentageInclusion = new BoundedNumberParameter("Minimum percentage of inclusion", 0, 100, 0, 100);
+public class ObjectInclusionCount implements Measurement, ToolTip {
+    protected StructureParameter structureContainer = new StructureParameter("Containing Objects", -1, false, false).setToolTipText("Objects to perform measurement on");
+    protected StructureParameter structureToCount = new StructureParameter("Objects to count", -1, false, false).setToolTipText("Objects to count when included in <em>Containing Objects</em>");
+    protected BooleanParameter onlyTrackHeads = new BooleanParameter("Count Only TrackHeads", false).setToolTipText("Whether only head of tracks or all objects should be counted");
+    protected BoundedNumberParameter percentageInclusion = new BoundedNumberParameter("Minimum percentage of inclusion", 0, 100, 0, 100).setToolTipText("Inclusion criterion: minimal percentage of volume of objects to count that should be included in the container to consider it is included");
     protected TextParameter inclusionText = new TextParameter("Inclusion Key Name", "ObjectCount", false);
     protected Parameter[] parameters = new Parameter[]{structureContainer, structureToCount, percentageInclusion, onlyTrackHeads, inclusionText};
+    
+    
+    @Override
+    public String getToolTipText() {
+        return "Counts the number of included objects";
+    }
     
     public ObjectInclusionCount() {}
     
@@ -66,7 +73,6 @@ public class ObjectInclusionCount implements Measurement {
     public int getCallStructure() {
         return structureContainer.getFirstCommonParentStructureIdx(structureToCount.getSelectedIndex());
     }
-    // TODO: only track heads
     @Override
     public void performMeasurement(StructureObject object) {
         double p = percentageInclusion.getValue().doubleValue()/100d;
@@ -79,13 +85,11 @@ public class ObjectInclusionCount implements Measurement {
                 c.getMeasurements().setValue(inclusionText.getValue(), count(c, toCount, p, onlyTrackHeads.getSelected()));
             }
         }
-        
-        
     }
     
     @Override 
     public ArrayList<MeasurementKey> getMeasurementKeys() {
-        ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>(1);
+        ArrayList<MeasurementKey> res = new ArrayList<>(1);
         res.add(new MeasurementKeyObject(inclusionText.getValue(), structureContainer.getSelectedIndex()));
         return res;
     }
@@ -120,7 +124,7 @@ public class ObjectInclusionCount implements Measurement {
         return count(container, toCount, proportionInclusion, onlyTrackHeads);
         
     }
-    
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
@@ -128,9 +132,10 @@ public class ObjectInclusionCount implements Measurement {
     public boolean does3D() {
         return true;
     }
-
+    @Override
     public boolean callOnlyOnTrackHeads() {
         return false;
     }
+
     
 }
