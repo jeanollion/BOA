@@ -128,7 +128,10 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         if (trackHead==null) return "tracking should be re-run";
         getTrack();
         int tl = track!=null ? track.get(track.size()-1).getFrame()-track.get(0).getFrame()+1:-1;
-        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getFrame()+" length: "+(track!=null?track.size():".........")+(track!=null && tl!=track.size() ? " (gaps: "+(tl-track.size())+")" : ""); 
+        return getStructureName()+": #"+trackHead.getIdx()+ " Frames: ["+trackHead.getFrame()+";"+(track!=null?track.get(track.size()-1).getFrame():"???")+"] (N="+(track!=null?track.size():".........")+")"+(track!=null && tl!=track.size() ? " (Gaps="+(tl-track.size())+")" : ""); 
+    }
+    private String getStructureName() {
+        return this.root.generator.getExperiment().getStructure(trackHead.getStructureIdx()).getName();
     }
     
     @Override public TrackNode getChildAt(int childIndex) {
@@ -203,12 +206,12 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         JMenuItem[] createSelection;
         JMenuItem delete;
         JMenuItem addToSelection, removeFromSelection;
+        boolean noChildStructure;
         public TrackNodeUI(TrackNode tn) {
             this.trackNode=tn;
             String[] childStructureNames = trackNode.trackHead.getExperiment().getChildStructuresAsString(trackNode.trackHead.getStructureIdx());
+            noChildStructure = childStructureNames.length==0;
             this.actions = new JMenuItem[7];
-            JMenu segSubMenu = new JMenu("Open Segmented Track Image");
-            //actions[0] = segSubMenu;
             JMenu rawSubMenu = new JMenu("Open Kymograph");
             actions[0] = rawSubMenu;
             String[] structureNames = trackNode.trackHead.getExperiment().getStructuresAsString();
@@ -383,9 +386,15 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
             });
         }
         public Object[] getDisplayComponent(boolean multipleSelection) {
-            if (multipleSelection) {
-                return new JMenuItem[]{actions[1], actions[2], actions[3], actions[4], actions[5], actions[6]};
-            } else return actions;
+            if (noChildStructure) {
+                if (multipleSelection) {
+                    return new JMenuItem[]{actions[4], actions[5], actions[6]};
+                } else return new JMenuItem[]{actions[0], actions[4], actions[5], actions[6]};
+            } else {
+                if (multipleSelection) {
+                    return new JMenuItem[]{actions[1], actions[2], actions[3], actions[4], actions[5], actions[6]};
+                } else return actions;
+            }
         }
         private int getStructureIdx(String name, JMenuItem[] actions) {
             for (int i = 0; i<actions.length; ++i) if (actions[i].getActionCommand().equals(name)) return i;

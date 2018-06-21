@@ -432,9 +432,9 @@ public class GenerateXP {
         else xp.setImportImageMethod(importMethod);
         xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
         xp.setOutputDirectory(outputDir);
-        Structure mc = new Structure("Microchannel", -1, 0);
+        Structure mc = new Structure("Microchannels", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
-        Structure mutation = new Structure("Mutation", 0, 1, 1);
+        Structure mutation = new Structure("Spots", 0, 1, 1);
         xp.getStructures().insert(mc, bacteria, mutation);
         setParametersFluo(xp, true, mutationHighBck, true);
         
@@ -528,7 +528,7 @@ public class GenerateXP {
         xp.setImportImageMethod(importMethod==null ? Experiment.ImportImageMethod.SINGLE_FILE : importMethod);
         xp.getChannelImages().insert(new ChannelImage("PhaseContrast", ""));
         xp.setOutputDirectory(outputDir);
-        Structure mc = new Structure("Microchannel", -1, 0);
+        Structure mc = new Structure("Microchannels", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);
         setParametersPhase(xp, true, true);

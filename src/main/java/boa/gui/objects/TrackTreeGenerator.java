@@ -166,7 +166,8 @@ public class TrackTreeGenerator {
     private void generateTree(TreeNode root) {
         treeModel = new StructureObjectTreeModel(root);
         tree=new JTree(treeModel);
-        if (root instanceof TrackExperimentNode) tree.setRootVisible(false);
+        tree.setRootVisible(false);
+        //if (root instanceof TrackExperimentNode) tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         tree.setOpaque(false);
         tree.setCellRenderer(new TrackTreeCellRenderer(this));
