@@ -73,10 +73,10 @@ public class RelativePosition implements Measurement, ToolTip {
     
     public RelativePosition() {}
     
-    public RelativePosition(int objectStructure, int referenceStructure, REF_POINT objectCenter, REF_POINT refPoint) {
+    public RelativePosition(int objectStructure, int referenceStructure, REF_POINT objectPoint, REF_POINT refPoint) {
         this.objects.setSelectedStructureIdx(objectStructure);
         this.reference.setSelectedStructureIdx(referenceStructure);
-        this.objectCenter.setSelectedItem(objectCenter.name);
+        this.objectCenter.setSelectedItem(objectPoint.name);
         this.refPoint.setSelectedItem(refPoint.name);
     }
     

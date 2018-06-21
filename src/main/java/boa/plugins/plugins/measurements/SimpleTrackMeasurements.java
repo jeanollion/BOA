@@ -36,13 +36,14 @@ import boa.measurement.GeometricalMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
+import boa.plugins.ToolTip;
 import boa.utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class SimpleTrackMeasurements implements Measurement {
+public class SimpleTrackMeasurements implements Measurement, ToolTip {
     protected StructureParameter structure = new StructureParameter("Objects", -1, false, false);
     protected Parameter[] parameters = new Parameter[]{structure};
     
@@ -84,6 +85,11 @@ public class SimpleTrackMeasurements implements Measurement {
 
     @Override public Parameter[] getParameters() {
         return parameters;
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Measures the track length (frame of last object - frame of first object + 1 ), the number of object in the track and the indices of the track head";
     }
         
 }
