@@ -61,7 +61,7 @@ import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
-import boa.plugins.plugins.processing_scheme.SegmentOnly;
+import boa.plugins.plugins.processing_pipeline.SegmentOnly;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
 import boa.plugins.plugins.trackers.nested_spot_tracker.DistanceComputationParameters;
 import boa.plugins.plugins.trackers.nested_spot_tracker.NestedSpot;

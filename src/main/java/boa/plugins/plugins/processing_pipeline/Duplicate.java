@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.processing_scheme;
+package boa.plugins.plugins.processing_pipeline;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParentStructureParameter;
@@ -27,8 +27,6 @@ import boa.plugins.MultiThreaded;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
-import boa.plugins.ProcessingScheme;
-import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackPostFilter;
@@ -45,12 +43,14 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import boa.plugins.ProcessingPipeline;
+import boa.plugins.ProcessingPipelineWithTracking;
 
 /**
  *
  * @author Jean Ollion
  */
-public class Duplicate extends SegmentationAndTrackingProcessingScheme<Duplicate> implements  ToolTip {
+public class Duplicate extends SegmentationAndTrackingProcessingPipeline<Duplicate> implements  ToolTip {
     protected PluginParameter<Tracker> tracker = new PluginParameter<>("Tracker", Tracker.class, true);
     ParentStructureParameter dup = new ParentStructureParameter("Duplicate From").setAllowNoSelection(false);
     protected Parameter[] parameters = new Parameter[]{dup, preFilters, trackPreFilters, tracker, trackPostFilters};

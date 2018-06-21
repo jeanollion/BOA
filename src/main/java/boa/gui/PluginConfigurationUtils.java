@@ -43,8 +43,6 @@ import boa.plugins.ConfigurableTransformation;
 import boa.plugins.ImageProcessingPlugin;
 import boa.plugins.MultichannelTransformation;
 import boa.plugins.Plugin;
-import boa.plugins.ProcessingScheme;
-import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.TestableProcessingPlugin.TestDataStore;
@@ -53,9 +51,9 @@ import boa.plugins.TrackParametrizable;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.Transformation;
-import boa.plugins.plugins.processing_scheme.SegmentAndTrack;
-import boa.plugins.plugins.processing_scheme.SegmentOnly;
-import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
+import boa.plugins.plugins.processing_pipeline.SegmentAndTrack;
+import boa.plugins.plugins.processing_pipeline.SegmentOnly;
+import boa.plugins.plugins.processing_pipeline.SegmentThenTrack;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
@@ -77,6 +75,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import boa.plugins.ProcessingPipeline;
+import boa.plugins.ProcessingPipelineWithTracking;
 
 /**
  *
@@ -85,7 +85,7 @@ import java.util.function.Function;
 public class PluginConfigurationUtils {
     
     public static Map<StructureObject, TestDataStore> testImageProcessingPlugin(final ImageProcessingPlugin plugin, Experiment xp, int structureIdx, List<StructureObject> parentSelection, boolean trackOnly) {
-        ProcessingScheme psc=xp.getStructure(structureIdx).getProcessingScheme();
+        ProcessingPipeline psc=xp.getStructure(structureIdx).getProcessingScheme();
         
         // get parent objects -> create graph cut
         StructureObject o = parentSelection.get(0);
@@ -149,7 +149,7 @@ public class PluginConfigurationUtils {
                 //((TrackerSegmenter)plugin).segmentAndTrack(structureIdx, parentTrackDup, psc.getTrackPreFilters(true), psc.getPostFilters());
             } else {
                 ((Tracker)plugin).track(structureIdx, parentTrackDup);
-                TrackPostFilterSequence tpf= (psc instanceof ProcessingSchemeWithTracking) ? ((ProcessingSchemeWithTracking)psc).getTrackPostFilters() : null;
+                TrackPostFilterSequence tpf= (psc instanceof ProcessingPipelineWithTracking) ? ((ProcessingPipelineWithTracking)psc).getTrackPostFilters() : null;
                 if (tpf!=null) tpf.filter(structureIdx, parentTrackDup);
             }
             

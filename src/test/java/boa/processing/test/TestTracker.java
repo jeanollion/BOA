@@ -44,8 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import boa.plugins.PluginFactory;
-import boa.plugins.ProcessingScheme;
-import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.plugins.track_post_filter.AverageMask;
 import boa.plugins.plugins.track_post_filter.RemoveTracksStartingAfterFrame;
@@ -56,6 +54,8 @@ import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 import boa.utils.Pair;
 import boa.utils.Utils;
 import java.util.Map.Entry;
+import boa.plugins.ProcessingPipeline;
+import boa.plugins.ProcessingPipelineWithTracking;
 
 /**
  *
@@ -93,7 +93,7 @@ public class TestTracker {
         GUI.getInstance().openExperiment(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
         MasterDAO db = GUI.getDBConnection();
         ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(1000);
-        ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
+        ProcessingPipeline ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         AverageMask.debug=true;
         AverageMask.debugIdx = 5;
         MicrochannelTracker.debug=true;
@@ -106,14 +106,14 @@ public class TestTracker {
         testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
     }
-    public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
+    public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingPipeline ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);
     }
-    public static void testTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
+    public static void testTracking(ObjectDAO dao, ProcessingPipeline ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, true, structureIdx, mcIdx, tStart, tEnd);
     }
     
-    public static void test(ObjectDAO dao, ProcessingScheme ps, boolean trackOnly, int structureIdx, int mcIdx, int tStart, int tEnd) {
+    public static void test(ObjectDAO dao, ProcessingPipeline ps, boolean trackOnly, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = Processor.getOrCreateRootTrack(dao);
         int parentSIdx = dao.getExperiment().getStructure(structureIdx).getParentStructure();
         List<StructureObject> parentTrack=null;
@@ -138,8 +138,8 @@ public class TestTracker {
         logger.debug("parent track: {}", parentTrack.size());
         if (parentTrack.isEmpty()) return;
         
-        if (ps instanceof ProcessingSchemeWithTracking && structureIdx==0) {
-            TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)ps).getTrackPostFilters();
+        if (ps instanceof ProcessingPipelineWithTracking && structureIdx==0) {
+            TrackPostFilterSequence tpf = ((ProcessingPipelineWithTracking)ps).getTrackPostFilters();
             for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) {
                 if (pp.instanciatePlugin() instanceof TrackLengthFilter) pp.setActivated(false);
                 else if (pp.instanciatePlugin() instanceof RemoveTracksStartingAfterFrame) pp.setActivated(false);
@@ -179,7 +179,7 @@ public class TestTracker {
         
     }
     
-    public static void testBCMTLCStep(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
+    public static void testBCMTLCStep(ObjectDAO dao, ProcessingPipeline ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = Processor.getOrCreateRootTrack(dao);
         int parentSIdx = dao.getExperiment().getStructure(structureIdx).getParentStructure();
         List<StructureObject> parentTrack=null;

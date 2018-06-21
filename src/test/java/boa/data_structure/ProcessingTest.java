@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
-import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
+import boa.plugins.plugins.processing_pipeline.SegmentThenTrack;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.plugins.plugins.transformations.SimpleTranslation;
 import boa.image.processing.ImageTransformation;

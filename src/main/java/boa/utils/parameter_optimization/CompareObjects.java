@@ -49,7 +49,6 @@ import java.util.logging.Logger;
 import boa.measurement.GeometricalMeasurements;
 import org.slf4j.LoggerFactory;
 import boa.plugins.PluginFactory;
-import boa.plugins.ProcessingScheme;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
 import boa.plugins.plugins.segmenters.MutationSegmenter;
@@ -64,6 +63,7 @@ import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import boa.plugins.ProcessingPipeline;
 
 /**
  *
@@ -278,7 +278,7 @@ public class CompareObjects {
     }
     protected void setQuality(String positionName) { // specific for mutation segmenter !! get config from current db
         Map<StructureObject, List<StructureObject>> parentTrackRef = StructureObjectUtils.getAllTracks(dbRef.getDao(positionName).getRoots(), parentStructureIdx);
-        ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
+        ProcessingPipeline ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         TrackPreFilterSequence tpf = ps.getTrackPreFilters(true);
         MutationSegmenter seg = (MutationSegmenter)ps.getSegmenter();
         Map<StructureObject, TrackParametrizer> pthMapParametrizer = new HashMap<>();

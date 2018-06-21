@@ -16,23 +16,24 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.processing_scheme;
+package boa.plugins.plugins.processing_pipeline;
 
 import boa.configuration.parameters.PostFilterSequence;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
-import boa.plugins.ProcessingScheme;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
 import java.util.Collection;
+import boa.plugins.ProcessingPipeline;
 
 /**
  *
  * @author Jean Ollion
+ * @param <T>
  */
-public abstract class SegmentationProcessingScheme<T extends SegmentationProcessingScheme> implements ProcessingScheme<T> {
+public abstract class SegmentationProcessingPipeline<T extends SegmentationProcessingPipeline> implements ProcessingPipeline<T> {
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters").setToolTipText("Pre-filters performed from each parent on raw image of the structure's channel (frame independent)");
     protected TrackPreFilterSequence trackPreFilters = new TrackPreFilterSequence("Track Pre-Filters").setToolTipText("Track-Pre-filters performed after pre-filters, on the whole parent track");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").setToolTipText("Post-filters run on each segmented population (frame-independent), after segmentation and before tracking");

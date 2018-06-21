@@ -27,7 +27,7 @@ import boa.plugins.PluginFactory;
 import boa.plugins.plugins.measurements.ChromaticShiftBeads;
 import boa.plugins.plugins.post_filters.SizeFilter;
 import boa.plugins.plugins.pre_filters.Median;
-import boa.plugins.plugins.processing_scheme.SegmentOnly;
+import boa.plugins.plugins.processing_pipeline.SegmentOnly;
 import boa.plugins.plugins.segmenters.ProcessingChain;
 import boa.plugins.plugins.segmenters.SimpleThresholder;
 

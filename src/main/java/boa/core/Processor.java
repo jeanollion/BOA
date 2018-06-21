@@ -54,12 +54,11 @@ import org.slf4j.LoggerFactory;
 import boa.plugins.Measurement;
 import boa.plugins.MultiThreaded;
 import boa.plugins.ObjectSplitter;
-import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackCorrector;
 import boa.plugins.Tracker;
 import boa.plugins.Transformation;
-import boa.plugins.plugins.processing_scheme.SegmentOnly;
+import boa.plugins.plugins.processing_pipeline.SegmentOnly;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.StreamConcatenation;
@@ -67,6 +66,7 @@ import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
 import java.util.stream.Stream;
+import boa.plugins.ProcessingPipeline;
 
 /**
  *
@@ -198,7 +198,7 @@ public class Processor {
         if (parentTrack.isEmpty()) return ;
         final ObjectDAO dao = parentTrack.get(0).getDAO();
         Experiment xp = parentTrack.get(0).getExperiment();
-        final ProcessingScheme ps = xp.getStructure(structureIdx).getProcessingScheme();
+        final ProcessingPipeline ps = xp.getStructure(structureIdx).getProcessingScheme();
         int directParentStructure = xp.getStructure(structureIdx).getParentStructure();
         if (trackOnly && ps instanceof SegmentOnly) return  ;
         StructureObjectUtils.setAllChildren(parentTrack, structureIdx);
@@ -243,7 +243,7 @@ public class Processor {
         if (me!=null) throw me;
     }
     
-    private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {
+    private static void execute(ProcessingPipeline ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {
         if (!trackOnly && deleteChildren) dao.deleteChildren(parentTrack, structureIdx);
         if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
         else {

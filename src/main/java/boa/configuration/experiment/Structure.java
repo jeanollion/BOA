@@ -37,15 +37,15 @@ import org.json.simple.JSONObject;
 import boa.plugins.ManualSegmenter;
 import boa.plugins.ObjectSplitter;
 import boa.plugins.PreFilter;
-import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackCorrector;
 import boa.plugins.Tracker;
 import boa.plugins.plugins.manual_segmentation.WatershedManualSegmenter;
 import boa.plugins.plugins.manual_segmentation.WatershedObjectSplitter;
 import boa.plugins.plugins.pre_filters.ImageFeature;
-import boa.plugins.plugins.processing_scheme.Duplicate;
+import boa.plugins.plugins.processing_pipeline.Duplicate;
 import boa.utils.Utils;
+import boa.plugins.ProcessingPipeline;
 
 /**
  *
@@ -58,7 +58,7 @@ public class Structure extends SimpleContainerParameter {
     ChannelImageParameter channelImage;
     PluginParameter<ObjectSplitter> objectSplitter;
     PluginParameter<ManualSegmenter> manualSegmenter;
-    PluginParameter<ProcessingScheme> processingScheme;
+    PluginParameter<ProcessingPipeline> processingScheme;
     //BooleanParameter brightObject = new BooleanParameter("Object Type", "Bright object over dark background", "Dark object over bright background", false);
     BooleanParameter allowSplit = new BooleanParameter("Allow Split", "yes", "no", false);
     BooleanParameter allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false);
@@ -104,7 +104,7 @@ public class Structure extends SimpleContainerParameter {
         segmentationParent =  new ParentStructureParameter("Segmentation Parent", segmentationParentStructure, -1).setToolTipText("If different from parent structure, allows to perform segmentation from objects of another strucutre contained in the object of the parent structure. Pre-filters, tracking and post-filters will still be run from the branch of the parent structure.");
         this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
         objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true).setEmphasized(false).setToolTipText("Split algorithm used in split command in manual edition");
-        processingScheme = new PluginParameter<>("Processing Pipeline", ProcessingScheme.class, true).setEmphasized(false);
+        processingScheme = new PluginParameter<>("Processing Pipeline", ProcessingPipeline.class, true).setEmphasized(false);
         manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true).setEmphasized(false).setToolTipText("Segmentation algorithm used in create object command in manual edition");
         this.parentStructure.addListener((Parameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
@@ -165,18 +165,18 @@ public class Structure extends SimpleContainerParameter {
         return this;
     }
     
-    public ProcessingScheme getProcessingScheme() {
+    public ProcessingPipeline getProcessingScheme() {
         return processingScheme.instanciatePlugin();
     }
     
-    public void setProcessingScheme(ProcessingScheme ps) {
+    public void setProcessingScheme(ProcessingPipeline ps) {
         this.processingScheme.setPlugin(ps);
     }
     
     public ObjectSplitter getObjectSplitter() {
         ObjectSplitter res = objectSplitter.instanciatePlugin();
         if (res == null) {
-            ProcessingScheme ps = this.processingScheme.instanciatePlugin();
+            ProcessingPipeline ps = this.processingScheme.instanciatePlugin();
             if (ps!=null) {
                 Segmenter s = ps.getSegmenter();
                 if (s instanceof ObjectSplitter) return (ObjectSplitter)s;
@@ -188,7 +188,7 @@ public class Structure extends SimpleContainerParameter {
     public ManualSegmenter getManualSegmenter() {
         ManualSegmenter res= manualSegmenter.instanciatePlugin();
         if (res == null) {
-            ProcessingScheme ps = this.processingScheme.instanciatePlugin();
+            ProcessingPipeline ps = this.processingScheme.instanciatePlugin();
             if (ps!=null) {
                 Segmenter s = ps.getSegmenter();
                 if (s instanceof ManualSegmenter) return (ManualSegmenter)s;

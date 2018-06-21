@@ -16,39 +16,27 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.processing_scheme;
+package boa.plugins.plugins.processing_pipeline;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
-import boa.configuration.parameters.PostFilterSequence;
-import boa.configuration.parameters.PreFilterSequence;
-import boa.configuration.parameters.TrackPostFilterSequence;
-import boa.configuration.parameters.TrackPreFilterSequence;
-import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
-import boa.image.Image;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import boa.plugins.MultiThreaded;
 import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
-import boa.plugins.ProcessingScheme;
-import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.Tracker;
-import boa.plugins.plugins.track_pre_filters.PreFilters;
 
 /**
  *
  * @author jollion
  */
-public class SegmentThenTrack extends SegmentationAndTrackingProcessingScheme<SegmentThenTrack> implements ToolTip {
+public class SegmentThenTrack extends SegmentationAndTrackingProcessingPipeline<SegmentThenTrack> implements ToolTip {
     protected PluginParameter<Tracker> tracker = new PluginParameter<>("Tracker", Tracker.class, true);
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
     protected Parameter[] parameters = new Parameter[]{preFilters, trackPreFilters, segmenter, postFilters, tracker, trackPostFilters};
@@ -65,6 +53,7 @@ public class SegmentThenTrack extends SegmentationAndTrackingProcessingScheme<Se
     
     @Override
     public Segmenter getSegmenter() {return segmenter.instanciatePlugin();}
+    
     public Tracker getTracker() {return tracker.instanciatePlugin();}
 
     @Override

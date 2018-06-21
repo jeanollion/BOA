@@ -29,7 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 import boa.dummy_plugins.DummySegmenter;
 import boa.plugins.PluginFactory;
-import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
+import boa.plugins.plugins.processing_pipeline.SegmentThenTrack;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 
 /**

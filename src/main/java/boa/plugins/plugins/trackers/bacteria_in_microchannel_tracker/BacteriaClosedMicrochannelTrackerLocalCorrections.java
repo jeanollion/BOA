@@ -71,7 +71,7 @@ import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.plugins.processing_scheme.SegmentOnly;
+import boa.plugins.plugins.processing_pipeline.SegmentOnly;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;

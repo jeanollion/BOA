@@ -48,7 +48,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import boa.plugins.PluginFactory;
 import boa.plugins.plugins.measurements.ObjectInclusionCount;
-import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
+import boa.plugins.plugins.processing_pipeline.SegmentThenTrack;
 import boa.plugins.plugins.segmenters.SimpleThresholder;
 import boa.plugins.plugins.thresholders.ConstantValue;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;

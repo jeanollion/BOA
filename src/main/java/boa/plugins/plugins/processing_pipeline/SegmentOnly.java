@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.processing_scheme;
+package boa.plugins.plugins.processing_pipeline;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
@@ -44,7 +44,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
-import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
@@ -61,12 +60,13 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
 import java.util.stream.Collectors;
+import boa.plugins.ProcessingPipeline;
 
 /**
  *
  * @author jollion
  */
-public class SegmentOnly extends SegmentationProcessingScheme<SegmentOnly> implements ToolTip {
+public class SegmentOnly extends SegmentationProcessingPipeline<SegmentOnly> implements ToolTip {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);
     Parameter[] parameters = new Parameter[]{preFilters, trackPreFilters, segmenter, postFilters};
     

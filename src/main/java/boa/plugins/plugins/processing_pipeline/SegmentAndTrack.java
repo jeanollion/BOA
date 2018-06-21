@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.processing_scheme;
+package boa.plugins.plugins.processing_pipeline;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
@@ -33,8 +33,6 @@ import java.util.concurrent.ExecutorService;
 import boa.plugins.MultiThreaded;
 import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
-import boa.plugins.ProcessingScheme;
-import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackPostFilter;
@@ -44,12 +42,14 @@ import boa.plugins.TrackerSegmenter;
 import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
+import boa.plugins.ProcessingPipeline;
+import boa.plugins.ProcessingPipelineWithTracking;
 
 /**
  *
  * @author jollion
  */
-public class SegmentAndTrack extends SegmentationAndTrackingProcessingScheme<SegmentAndTrack> implements ToolTip {
+public class SegmentAndTrack extends SegmentationAndTrackingProcessingPipeline<SegmentAndTrack> implements ToolTip {
     int nThreads;
     PluginParameter<TrackerSegmenter> tracker = new PluginParameter<>("Tracker", TrackerSegmenter.class, true);
     Parameter[] parameters= new Parameter[]{preFilters, trackPreFilters, tracker, postFilters, trackPostFilters};
@@ -63,6 +63,10 @@ public class SegmentAndTrack extends SegmentationAndTrackingProcessingScheme<Seg
     @Override
     public String getToolTipText() {
         return "Performs the segmentation and Tracking steps jointly";
+    }
+    
+    public TrackerSegmenter getTracker() {
+        return tracker.instanciatePlugin();
     }
     
     @Override

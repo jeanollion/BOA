@@ -23,7 +23,8 @@ import boa.configuration.parameters.TrackPostFilterSequence;
 /**
  *
  * @author jollion
+ * @param <T>
  */
-public interface ProcessingSchemeWithTracking<T extends ProcessingSchemeWithTracking> extends ProcessingScheme<T> {
+public interface ProcessingPipelineWithTracking<T extends ProcessingPipelineWithTracking> extends ProcessingPipeline<T> {
     public TrackPostFilterSequence getTrackPostFilters();
 }

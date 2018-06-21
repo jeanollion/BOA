@@ -34,8 +34,6 @@ import boa.image.Image;
 import java.util.ArrayList;
 import java.util.Arrays;
 import boa.plugins.PluginFactory;
-import boa.plugins.ProcessingScheme;
-import boa.plugins.ProcessingSchemeWithTracking;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
@@ -43,6 +41,8 @@ import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
 import boa.plugins.plugins.track_post_filter.AverageMask;
 import boa.plugins.plugins.track_post_filter.RemoveTracksStartingAfterFrame;
 import boa.plugins.plugins.track_post_filter.TrackLengthFilter;
+import boa.plugins.ProcessingPipeline;
+import boa.plugins.ProcessingPipelineWithTracking;
 
 /**
  *
@@ -89,8 +89,8 @@ public class TestProcessMicrochannelsPhase {
         root.setChildrenObjects(pop, 0);
         logger.debug("{} objects found", pop.getRegions().size());
         FitMicrochannelHeadToEdges.debug=true;
-        if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
-            TrackPostFilterSequence tpf = ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters();
+        if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingPipelineWithTracking) {
+            TrackPostFilterSequence tpf = ((ProcessingPipelineWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters();
             for (PluginParameter<TrackPostFilter> pp : tpf.getChildren()) if (pp.instanciatePlugin() instanceof TrackLengthFilter || pp.instanciatePlugin() instanceof AverageMask || pp.instanciatePlugin() instanceof RemoveTracksStartingAfterFrame) pp.setActivated(false);
             tpf.filter(0, Arrays.asList(new StructureObject[]{root}));
             pop = root.getObjectPopulation(0);
@@ -115,8 +115,8 @@ public class TestProcessMicrochannelsPhase {
         RegionPopulation pop = root.getObjectPopulation(0);
         ImageWindowManagerFactory.showImage(pop.getLabelMap());
         FitMicrochannelHeadToEdges.debug=true;
-        if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingSchemeWithTracking) {
-            ((ProcessingSchemeWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters().filter(0, Arrays.asList(new StructureObject[]{root}));
+        if (mDAO.getExperiment().getStructure(0).getProcessingScheme() instanceof ProcessingPipelineWithTracking) {
+            ((ProcessingPipelineWithTracking)mDAO.getExperiment().getStructure(0).getProcessingScheme()).getTrackPostFilters().filter(0, Arrays.asList(new StructureObject[]{root}));
             pop = root.getObjectPopulation(0);
         } else return;
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);

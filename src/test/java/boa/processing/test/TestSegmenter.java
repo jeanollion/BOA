@@ -31,11 +31,11 @@ import ij.ImageJ;
 import java.util.List;
 import java.util.Map;
 import boa.plugins.PluginFactory;
-import boa.plugins.ProcessingScheme;
 import boa.plugins.Segmenter;
-import boa.plugins.plugins.processing_scheme.SegmentOnly;
+import boa.plugins.plugins.processing_pipeline.SegmentOnly;
 import boa.plugins.plugins.segmenters.WatershedSegmenter;
 import boa.utils.Utils;
+import boa.plugins.ProcessingPipeline;
 
 /**
  *
@@ -60,10 +60,10 @@ public class TestSegmenter {
         GUI.getInstance().openExperiment(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
         MasterDAO db = GUI.getDBConnection();
         
-        ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
+        ProcessingPipeline ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         testProcessing(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frame);
     }
-    public static void testProcessing(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int frame) {
+    public static void testProcessing(ObjectDAO dao, ProcessingPipeline ps, int structureIdx, int mcIdx, int frame) {
         List<StructureObject> roots = Processor.getOrCreateRootTrack(dao);
         List<StructureObject> parentTrack=null;
         if (structureIdx==0) {

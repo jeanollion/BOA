@@ -27,7 +27,6 @@ import boa.data_structure.dao.ObjectDAO;
 import boa.gui.GUI;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.gui.image_interaction.KymographX;
-import boa.plugins.ProcessingScheme;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
 import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
@@ -38,6 +37,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import boa.plugins.ProcessingPipeline;
 
 /**
  *
@@ -62,7 +62,7 @@ public class TestTrackPreFilter {
         int[] frames = new int[]{0, 1000};
         MasterDAO db = GUI.getDBConnection();
         ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(1000);
-        ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
+        ProcessingPipeline ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         ObjectDAO dao = db.getDao(db.getExperiment().getPosition(pIdx).getName());
         //SubtractBackgroundMicrochannels.debug=true;
         int mcCount = StructureObjectUtils.getAllTracks(Processor.getOrCreateRootTrack(dao), 0).size();
@@ -74,7 +74,7 @@ public class TestTrackPreFilter {
         });
         
     }
-    public static void test(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int[] frames) {
+    public static void test(ObjectDAO dao, ProcessingPipeline ps, int structureIdx, int mcIdx, int[] frames) {
         List<StructureObject> roots = Processor.getOrCreateRootTrack(dao);
         List<StructureObject> parentTrack=null;
         if (structureIdx==0) {

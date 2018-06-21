@@ -46,7 +46,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
-import boa.plugins.plugins.processing_scheme.SegmentThenTrack;
+import boa.plugins.plugins.processing_pipeline.SegmentThenTrack;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.dummy_plugins.DummySegmenter;
 import static boa.utils.Utils.toStringArray;

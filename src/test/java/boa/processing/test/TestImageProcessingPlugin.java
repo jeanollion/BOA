@@ -28,8 +28,8 @@ import boa.gui.GUI;
 import static boa.gui.PluginConfigurationUtils.displayIntermediateImages;
 import static boa.gui.PluginConfigurationUtils.testImageProcessingPlugin;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
+import boa.plugins.ImageProcessingPlugin;
 import boa.plugins.PluginFactory;
-import boa.plugins.ProcessingScheme;
 import boa.plugins.TestableProcessingPlugin;
 import static boa.processing.test.TestTracker.trackPrefilterRange;
 import static boa.test_utils.TestUtils.logger;
@@ -37,6 +37,8 @@ import boa.utils.Utils;
 import ij.ImageJ;
 import java.util.List;
 import java.util.Map;
+import boa.plugins.ProcessingPipeline;
+import boa.plugins.plugins.processing_pipeline.SegmentationAndTrackingProcessingPipeline;
 
 /**
  *
@@ -46,9 +48,9 @@ public class TestImageProcessingPlugin {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        String dbName = "RecA_180606";
+        //String dbName = "RecA_180606";
         //String dbName = "MF1_180509";
-        //String dbName = "fluo160501_uncorr_TestParam";
+        String dbName = "fluo160501_uncorr_TestParam";
        // String dbName = "WT_180504";
         //String dbName = "MF1_180509";
         //String dbName = "MutH_151220";
@@ -57,12 +59,15 @@ public class TestImageProcessingPlugin {
         //String dbName = "Aya_170324";
         //String dbName = "Aya_180315";
         //String dbName = "170919_glyc_lac";
+        boolean segmentation = true;
+        boolean track = false;
+        int structureIdx =2;
+        
         int pIdx =0;
         int mcIdx =0;
-        int structureIdx =1;
-        boolean segAndTrack = true;
-        int[] frames = new int[]{0,100}; //{215, 237};
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
+        int[] frames = new int[]{0,10}; //{215, 237};
+        
+//BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
             return;
@@ -70,7 +75,7 @@ public class TestImageProcessingPlugin {
         GUI.getInstance().openExperiment(dbName, new Task(dbName).getDir(), true); // so that manual correction shortcuts work
         MasterDAO db = GUI.getDBConnection();
         ImageWindowManagerFactory.getImageManager().setDisplayImageLimit(1000);
-        ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
+        ProcessingPipeline ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         ObjectDAO dao = db.getDao(db.getExperiment().getPosition(pIdx).getName());
         List<StructureObject> roots = Processor.getOrCreateRootTrack(dao);
         int parentSIdx = dao.getExperiment().getStructure(structureIdx).getParentStructure();
@@ -83,8 +88,8 @@ public class TestImageProcessingPlugin {
             parentTrack = Utils.getFirst(StructureObjectUtils.getAllTracks(roots, parentSIdx), o->o.getIdx()==mcIdx&& o.getFrame()<=frames[1]);
             parentTrack.removeIf(o -> o.getFrame()<frames[0] || o.getFrame()>frames[1]);
         }
-        
-        Map<StructureObject, TestableProcessingPlugin.TestDataStore> stores = testImageProcessingPlugin(ps.getSegmenter(), db.getExperiment(), structureIdx, parentTrack, segAndTrack);
+        ImageProcessingPlugin p = track && (ps instanceof SegmentationAndTrackingProcessingPipeline) ? ((SegmentationAndTrackingProcessingPipeline)ps).getTracker() : ps.getSegmenter(); 
+        Map<StructureObject, TestableProcessingPlugin.TestDataStore> stores = testImageProcessingPlugin(p, db.getExperiment(), structureIdx, parentTrack, track && !segmentation);
         if (stores!=null) displayIntermediateImages(stores, structureIdx);
     }
 }

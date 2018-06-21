@@ -30,8 +30,9 @@ import boa.utils.Pair;
 /**
  *
  * @author jollion
+ * @param <T> type of ProcessingScheme
  */
-public interface ProcessingScheme<T extends ProcessingScheme> extends Plugin { //Multithreaded
+public interface ProcessingPipeline<T extends ProcessingPipeline> extends Plugin { //Multithreaded
     public  T addPreFilters(PreFilter... preFilters);
     public  T addPostFilters(PostFilter... postFilters);
     public  T addTrackPreFilters(TrackPreFilter... trackPreFilters);
