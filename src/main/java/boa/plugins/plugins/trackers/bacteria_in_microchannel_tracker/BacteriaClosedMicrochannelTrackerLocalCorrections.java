@@ -65,7 +65,6 @@ import java.util.function.Function;
 import boa.measurement.GeometricalMeasurements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import boa.plugins.MultiThreaded;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
@@ -89,7 +88,7 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter, MultiThreaded, ToolTip {
+public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter, ToolTip {
     public final static Logger logger = LoggerFactory.getLogger(BacteriaClosedMicrochannelTrackerLocalCorrections.class);
     
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
@@ -102,12 +101,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BoundedNumberParameter endOfChannelContactThreshold = new BoundedNumberParameter("End of channel contact Threshold", 2, 0.45, 0, 1).setToolTipText("A cell is considered to be partially outside the channel if the contact with the open-end of the channel divided by its thickness is superior to this value");
     Parameter[] parameters = new Parameter[]{segmenter, sizeFeature, minSR, maxSR, costLimit, cumCostLimit, endOfChannelContactThreshold};
 
-    // multithreaded interface
-    boolean multithreaded;
-    @Override
-    public void setMultithread(boolean multithreaded) {
-        this.multithreaded=multithreaded;
-    }
     // tooltip interface
     String toolTip = "<b>Bacteria Tracker in closed-end channel</b> "
             + "<ul><li>Tracking is done only using rank and growth rate information (no localization within microchannel), and is thus adapted to moving cells, but detects poorly cell death</li>"
@@ -261,7 +254,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             for (int f = 0; f<minF+1; ++f) errorCount.add(0d);
             for (int f = minF+1; f<maxFExcluded; ++f) errorCount.add((double)setAssignmentToTrackAttributes(f, false));
             
-            // Limit correction where there are no too many errors
+            // NO correction where there are no too many errors
             List<Double> errorCountMean = performSlide(errorCount, 3, slidingMean());
             if (debugCorr) Utils.plotProfile("Error Rate per Frame (sliding mean on 7 frames)", errorCountMean.stream().mapToDouble(d->d.doubleValue()).toArray());
             int[] lowErrorFrames = IntStream.range(minF+1, maxFExcluded).filter(i -> errorCountMean.get(i)<=maxErrorRate).toArray();
@@ -275,6 +268,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         .entrySet().stream().peek(e->FrameRange.ensureContinuousRanges(e.getValue(), e.getKey()))
                         .flatMap(e->e.getValue().stream()).sorted().collect(Collectors.toList());
             }
+            // TODO merge ranges if too close to avoid concurrent modifications
             if (debugCorr) logger.debug("Correction ranges: {}", subLowErrorRanges);
             
             if (correctionStep) {
@@ -282,7 +276,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (correctionStepLimit<=1) return;
             }
             
-            parallele(subLowErrorRanges.stream(), multithreaded).forEach(range -> { // TODO Solve concurent exeption on population between restore & getNext (getLineageSR)
+            parallele(subLowErrorRanges.stream(), true).forEach(range -> { // TODO Solve concurent exeption on population between restore & getNext (getLineageSR)
                 List<FrameRange> corrRanges = new ArrayList<>();
                 List<FrameRange> subCorrRanges = new ArrayList<>(1);
                 int idxMax=0;

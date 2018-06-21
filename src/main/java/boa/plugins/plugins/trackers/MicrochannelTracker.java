@@ -54,9 +54,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import boa.plugins.MultiThreaded;
-import boa.plugins.Segmenter;
-import boa.plugins.Thresholder;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackerSegmenter;
@@ -85,7 +82,7 @@ import java.util.stream.IntStream;
  *
  * @author jollion
  */
-public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, ToolTip {
+public class MicrochannelTracker implements TrackerSegmenter, ToolTip {
     protected PluginParameter<MicrochannelSegmenter> segmenter = new PluginParameter<>("Segmentation algorithm", MicrochannelSegmenter.class, new MicrochannelPhase2D(), false);
     NumberParameter maxShiftGC = new BoundedNumberParameter("Maximal Distance for Gap-Closing procedure", 0, 100, 1, null).setToolTipText("<html>Maximal Distance (in pixels) used for for the gap-closing step<br /> Increase the value to take into acound XY shift between two successive frames due to stabilization issues, but not too much to avoid connecting distinct microchannels</html>");
     NumberParameter maxDistanceFTFWidthFactor = new BoundedNumberParameter("Maximal Distance Factor for Frame-to-Frame Tracking", 1, 1, 0, null).setToolTipText("<html>The distance threshold for Frame-to-Frame tracking procedure will be this value multiplied by the mean width of microchannels.<br />If two microchannels between two successive frames are separated by a distance superior to this threshold they can't be linked. <br />Increase the value to take into acound XY shift between two successive frames due to stabilization issues, but not too much to avoid connecting distinct microchannels</html>");
@@ -194,7 +191,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
             else parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(parent.getPreFilteredImage(structureIdx), false), structureIdx); // no Y - shift here because the mean shift is added afterwards
             //parent.setPreFilteredImage(null, structureIdx); // save memory
         };
-        ThreadRunner.executeAndThrowErrors(parallele(IntStream.range(0, parentTrack.size()).mapToObj(i->(Integer)i), multithreaded), exe);
+        ThreadRunner.executeAndThrowErrors(parallele(IntStream.range(0, parentTrack.size()).mapToObj(i->(Integer)i), true), exe);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
         
@@ -479,12 +476,6 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded, Too
         return parameters;
     }
     
-    // multithreaded interface
-    boolean multithreaded;
-    @Override
-    public void setMultithread(boolean multithreaded) {
-        this.multithreaded=multithreaded;
-    }
     // tool tip interface
     @Override
     public String getToolTipText() {

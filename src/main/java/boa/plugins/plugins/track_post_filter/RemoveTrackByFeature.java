@@ -35,9 +35,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import boa.plugins.MultiThreaded;
 import boa.plugins.ObjectFeature;
 import boa.plugins.TrackPostFilter;
 import boa.utils.ArrayUtil;
@@ -53,7 +50,7 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
+public class RemoveTrackByFeature implements TrackPostFilter {
     PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, false);
     ChoiceParameter statistics = new ChoiceParameter("Statistics", new String[]{"Mean", "Median", "Quantile"}, "mean", false);
     NumberParameter quantile = new BoundedNumberParameter("Quantile", 3, 0.5, 0, 1);
@@ -98,7 +95,7 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
                 valueMap.putAll(locValueMap);
             }
         };
-        ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
+        ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), true), exe);
         // compute one value per track
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         List<StructureObject> objectsToRemove = new ArrayList<>();
@@ -129,11 +126,5 @@ public class RemoveTrackByFeature implements TrackPostFilter, MultiThreaded {
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{feature, statCond, threshold, keepOverThreshold, mergePolicy};
-    }
-    // multithreaded interface
-    boolean multithreaded;
-    @Override
-    public void setMultithread(boolean multithreaded) {
-        this.multithreaded=multithreaded;
     }
 }

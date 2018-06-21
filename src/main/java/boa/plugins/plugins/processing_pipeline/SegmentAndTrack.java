@@ -20,30 +20,12 @@ package boa.plugins.plugins.processing_pipeline;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
-import boa.configuration.parameters.PostFilterSequence;
-import boa.configuration.parameters.PreFilterSequence;
-import boa.configuration.parameters.TrackPostFilterSequence;
 import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.StructureObject;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import boa.plugins.MultiThreaded;
-import boa.plugins.PostFilter;
-import boa.plugins.PreFilter;
 import boa.plugins.Segmenter;
 import boa.plugins.ToolTip;
-import boa.plugins.TrackPostFilter;
-import boa.plugins.TrackPreFilter;
-import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
-import boa.plugins.plugins.track_pre_filters.PreFilters;
-import boa.utils.MultipleException;
-import boa.utils.Pair;
-import boa.plugins.ProcessingPipeline;
-import boa.plugins.ProcessingPipelineWithTracking;
 
 /**
  *
@@ -78,7 +60,6 @@ public class SegmentAndTrack extends SegmentationAndTrackingProcessingPipeline<S
         if (parentTrack.isEmpty()) return;
         //logger.debug("segmentAndTrack: # prefilters: {}", preFilters.getChildCount());
         TrackerSegmenter t = tracker.instanciatePlugin();
-        if (t instanceof MultiThreaded) ((MultiThreaded)t).setMultithread(true);
         TrackPreFilterSequence tpf = getTrackPreFilters(true);
         t.segmentAndTrack(structureIdx, parentTrack, tpf, postFilters);
         logger.debug("executing #{} trackPostFilters for parents track: {} structure: {}", trackPostFilters.getChildren().size(), parentTrack.get(0), structureIdx);
@@ -97,7 +78,6 @@ public class SegmentAndTrack extends SegmentationAndTrackingProcessingPipeline<S
             for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks(true, true);
         }
         TrackerSegmenter t = tracker.instanciatePlugin();
-        if (t instanceof MultiThreaded) ((MultiThreaded)t).setMultithread(true);
         t.track(structureIdx, parentTrack);
         trackPostFilters.filter(structureIdx, parentTrack); 
     }

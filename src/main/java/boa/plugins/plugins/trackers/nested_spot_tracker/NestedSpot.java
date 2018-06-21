@@ -72,8 +72,8 @@ public class NestedSpot extends SpotWithQuality {
     public double squareDistanceTo( final Spot s ) {
         if (s instanceof NestedSpot) {
             NestedSpot ss= (NestedSpot)s;
-            if (!distanceParameters.includeLQ && (lowQuality || ss.lowQuality)) return Double.POSITIVE_INFINITY;
             if (this.frame()>ss.frame()) return ss.squareDistanceTo(this);
+            if (!distanceParameters.includeLQ && (lowQuality || ss.lowQuality)) return Double.POSITIVE_INFINITY;
             if (ss.frame()-frame()>distanceParameters.maxFrameDiff) return Double.POSITIVE_INFINITY;
             double distSq = BacteriaSpineLocalizer.distanceSq(spineCoord, ss.region.getCenter(), parent, ss.parent, distanceParameters.projectionType, localizerMap, false);
             distSq+=distanceParameters.getSquareDistancePenalty(distSq, this, ss);

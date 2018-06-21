@@ -53,10 +53,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.plugins.Measurement;
 import boa.plugins.MultiThreaded;
-import boa.plugins.ObjectSplitter;
-import boa.plugins.Segmenter;
-import boa.plugins.TrackCorrector;
-import boa.plugins.Tracker;
 import boa.plugins.Transformation;
 import boa.plugins.plugins.processing_pipeline.SegmentOnly;
 import boa.utils.MultipleException;
@@ -306,7 +302,7 @@ public class Processor {
             ThreadRunner.executeAndThrowErrors(actionPool.parallelStream(), p->p.key.performMeasurement(p.value));
             
             // parallele measurement on tracks
-            int paralleleMeasCount = (int)e.getValue().stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded)).count();
+            int paralleleMeasCount = (int)e.getValue().stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded) ).count(); 
             if (pcb!=null && paralleleMeasCount>0) pcb.log("Executing: #"+ paralleleMeasCount * allParentTracks.size()+" multithreaded track measurements");
             allParentTracks.keySet().forEach(pt -> {
                 dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded)).forEach(m-> {

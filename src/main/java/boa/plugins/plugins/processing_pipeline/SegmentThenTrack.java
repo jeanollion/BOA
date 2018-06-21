@@ -22,10 +22,6 @@ import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.StructureObject;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import boa.plugins.MultiThreaded;
-import boa.plugins.PostFilter;
-import boa.plugins.PreFilter;
 import boa.plugins.Segmenter;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackPostFilter;
@@ -95,9 +91,7 @@ public class SegmentThenTrack extends SegmentationAndTrackingProcessingPipeline<
         for (StructureObject parent : parentTrack) {
             for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks(true, true);
         }
-        
         Tracker t = tracker.instanciatePlugin();
-        if (t instanceof MultiThreaded) ((MultiThreaded)t).setMultithread(true);
         t.track(structureIdx, parentTrack);
         
     }

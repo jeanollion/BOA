@@ -23,7 +23,6 @@ import boa.configuration.parameters.ParentStructureParameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
-import boa.plugins.MultiThreaded;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
@@ -86,9 +85,7 @@ public class Duplicate extends SegmentationAndTrackingProcessingPipeline<Duplica
         for (StructureObject parent : parentTrack) {
             for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks(true, true);
         }
-        
         Tracker t = tracker.instanciatePlugin();
-        if (t instanceof MultiThreaded) ((MultiThreaded)t).setMultithread(true);
         t.track(structureIdx, parentTrack);
         
     }

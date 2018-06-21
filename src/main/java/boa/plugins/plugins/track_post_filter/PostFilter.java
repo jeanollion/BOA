@@ -32,8 +32,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import boa.plugins.MultiThreaded;
 import boa.plugins.TrackPostFilter;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
@@ -47,7 +45,7 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class PostFilter implements TrackPostFilter, MultiThreaded {
+public class PostFilter implements TrackPostFilter {
     PluginParameter<boa.plugins.PostFilter> filter = new PluginParameter<>("Filter",boa.plugins.PostFilter.class, false);
     final static String[] METHODS = new String[]{"Delete single objects", "Delete whole track", "Prune Track"};
     ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", METHODS, METHODS[0], false);
@@ -111,7 +109,7 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
             if (parent.getChildren(structureIdx)!=null) parent.getChildren(structureIdx).stream().forEachOrdered((o) -> { o.objectHasBeenModified(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
             
         };
-        ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
+        ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), true), exe);
         if (!objectsToRemove.isEmpty()) { 
             //logger.debug("delete method: {}, objects to delete: {}", this.deleteMethod.getSelectedItem(), objectsToRemove.size());
             BiPredicate<StructureObject, StructureObject> mergePredicate = MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;
@@ -137,12 +135,6 @@ public class PostFilter implements TrackPostFilter, MultiThreaded {
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{filter, deleteMethod, mergePolicy};
-    }
-    // multithreaded interface
-    boolean multithreaded;
-    @Override
-    public void setMultithread(boolean multithreaded) {
-        this.multithreaded=multithreaded;
     }
     
 }

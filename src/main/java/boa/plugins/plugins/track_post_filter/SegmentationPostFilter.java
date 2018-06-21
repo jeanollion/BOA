@@ -32,8 +32,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import boa.plugins.MultiThreaded;
 import boa.plugins.PostFilter;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.plugins.track_post_filter.PostFilter.MERGE_POLICY;
@@ -49,7 +47,7 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
+public class SegmentationPostFilter implements TrackPostFilter {
     final static String[] methods = new String[]{"Delete single objects", "Delete whole track", "Prune Track"};
     ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", methods, methods[0], false);
     PostFilterSequence postFilters = new PostFilterSequence("Filter");
@@ -98,7 +96,7 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
             if (parent.getChildren(structureIdx)!=null) parent.getChildren(structureIdx).stream().forEachOrdered((o) -> { o.objectHasBeenModified(); }); // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
             
         };
-        ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), multithreaded), exe);
+        ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), true), exe);
         
         if (!objectsToRemove.isEmpty()) { 
             BiPredicate<StructureObject, StructureObject> mergePredicate = boa.plugins.plugins.track_post_filter.PostFilter.MERGE_POLICY.valueOf(mergePolicy.getSelectedItem()).mergePredicate;
@@ -126,11 +124,5 @@ public class SegmentationPostFilter implements TrackPostFilter, MultiThreaded {
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{deleteMethod, mergePolicy, postFilters};
-    }
-    // multithreaded interface
-    boolean multithreaded;
-    @Override
-    public void setMultithread(boolean multithreaded) {
-        this.multithreaded=multithreaded;
     }
 }

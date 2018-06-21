@@ -74,7 +74,7 @@ import boa.plugins.plugins.transformations.SimpleCrop;
 import boa.plugins.plugins.transformations.SimpleTranslation;
 import boa.image.processing.ImageTransformation;
 import static boa.core.generateXP.GenerateXP.generateXPPhase;
-import boa.plugins.plugins.trackers.MutationTrackerSpine;
+import boa.plugins.plugins.trackers.NestedSpotTracker;
 
 /**
  *
@@ -177,7 +177,7 @@ public class GenerateMutationDynamicsXP {
         //bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
         bacteria.setProcessingScheme(new SegmentThenTrack(new BacteriaIntensity(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
         mutation.setProcessingScheme(new SegmentAndTrack(
-                new MutationTrackerSpine().setCompartimentStructure(1).setSegmenter(new SpotSegmenter(0.65, 0.5, 0.55).setScale(2.5) 
+                new NestedSpotTracker().setCompartimentStructure(1).setSegmenter(new SpotSegmenter(0.65, 0.5, 0.55).setScale(2.5) 
                 ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.4, 0.41).setGapParameters(0.4, 0.1, 3)
         ).addPreFilters(new BandPass(0, 8, 0, 5) // was 10
         ).addPostFilters(new FeatureFilter(new Quality(), 0.6, true, true))); 

@@ -24,21 +24,9 @@ import boa.data_structure.StructureObjectPreProcessing;
 import boa.image.Image;
 import boa.image.ImageMask;
 import boa.image.ImageProperties;
-import boa.plugins.MultiThreaded;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
-import boa.plugins.TrackPreFilter;
-import boa.utils.MultipleException;
-import boa.utils.Pair;
-import boa.utils.ThreadRunner;
-import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
-import java.util.Map.Entry;
-import java.util.TreeMap;
-import java.util.concurrent.ExecutorService;
 
 /**
  *

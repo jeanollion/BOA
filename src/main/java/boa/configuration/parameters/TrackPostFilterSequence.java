@@ -22,10 +22,6 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import boa.plugins.MultiThreaded;
-import boa.plugins.PostFilter;
-import boa.plugins.PreFilter;
 import boa.plugins.TrackPostFilter;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
@@ -45,7 +41,6 @@ public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter
         if (parentTrack.isEmpty()) return;
         int count=0;
         for (TrackPostFilter p : this.get()) {
-            if (p instanceof MultiThreaded) ((MultiThreaded)p).setMultithread(true);
             p.filter(structureIdx, parentTrack);
             logger.debug("track post-filter: {}/{} done", ++count, this.getChildCount());
         }

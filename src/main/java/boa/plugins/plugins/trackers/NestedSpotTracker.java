@@ -18,16 +18,12 @@
  */
 package boa.plugins.plugins.trackers;
 
-import boa.gui.image_interaction.IJImageDisplayer;
-import boa.gui.image_interaction.InteractiveImage;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
-import boa.configuration.parameters.GroupParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PostFilterSequence;
-import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.parameters.StructureParameter;
 import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.Region;
@@ -41,6 +37,8 @@ import boa.image.ImageFloat;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import static boa.image.processing.bacteria_spine.BacteriaSpineFactory.verboseZoomFactor;
 import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
+import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE;
+import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.project;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,11 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Function;
-import org.apache.commons.lang.ArrayUtils;
 import org.jgrapht.graph.DefaultWeightedEdge;
-import boa.plugins.MultiThreaded;
 import boa.plugins.Segmenter;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.TestableProcessingPlugin;
@@ -86,49 +80,44 @@ import java.util.stream.Collectors;
  *
  * @author jollion
  */
-public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, TestableProcessingPlugin, ToolTip {
+public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPlugin, ToolTip {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new SpotSegmenter(), false);
-    StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", 1, false, false).setToolTipText("Structure of bacteria objects.");
+    StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", -1, false, false).setToolTipText("Structure of bacteria objects.");
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5).setEmphasized(true).setToolTipText("Spot with quality parameter over this threshold are considered as high quality spots, others as low quality spots");
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null).setEmphasized(true).setToolTipText("Maximum frame gap for spot linking: if two spots are separated by more frame than this value they cannot be linked together directly");
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together");
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Maximum Linking Distance", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for theglobal linking step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together. An additional cost proportional to the gap is added to the distance between spots (see <em>gap penalty</em>");
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null).setEmphasized(true).setToolTipText("When two spots are separated by a gap, an additional distance is added to their distance: this value x number of frame of the gap");
     NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance", 2, 0.8, 0, null).setToolTipText("The algorithm performs a global optimization minimizing the global cost. Cost are the distance between spots. Alternative distance represent the cost of being linked with no other spot. If this value is too low, the algorithm won't link any spot, it should be superior to the linking distance threshold");
-    ChoiceParameter projectionType = new ChoiceParameter("Projection type", Utils.toStringArray(BacteriaSpineLocalizer.PROJECTION.values()), BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL.toString(), false );
+    ChoiceParameter projectionType = new ChoiceParameter("Projection type", Utils.toStringArray(BacteriaSpineLocalizer.PROJECTION.values()), PROPORTIONAL.toString(), false ).setToolTipText("Spine projection for distance calculation: spine coordinate of source spots are first computed and then projected in destination bacteria. <ol><li>"+PROPORTIONAL+": spine coordinate is multiplied by the ratio of the spine length of the two bacteria</li><li>"+NEAREST_POLE+": distance (in terms of path along the spine) to nearest pole is conseverd</li></ol>");
     Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, projectionType, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
-    String toolTip = "<b>Mutation tracking within bacteria</b> using <em>TrackMate (https://imagej.net/TrackMate)</em> <br />"
-            + "<ul><li>Distance between spots is relative to the nearest bacteria pole (or division point for dividing bacteria) in order to take into acount bacteria growth</li>"
-            + "<li>Bacteria lineage is honoured: two spots can only be linked if they are contained in bacteria from the same line</li>"
-            + "<li>If segmentation and tracking is run at the same time, a first step of removal of low-quality (LQ) spots (spot that can be either false-negative or true-positive) will be applied: only LQ spots that can be linked (directly or indirectly) to high-quality (HQ) spots (ie spots that are true-positive for sure) are kept, allowing a better selection of true-positives spots of low intensity. HQ/LQ definition depends on the parameter <em>Spot Quality Threshold</em> and depends on the quality defined by the segmenter</li>"
+    String toolTip = "<b>Tracker for spots moving within bacteria</b> using <em>TrackMate (https://imagej.net/TrackMate)</em> <br />"
+            + "<ul><li>Distance between spots is computed using spine coordinates in order to take into acount bacteria growth and movements</li>"
+            + "<li>Bacteria lineage is honoured: two spots can only be linked if they are contained in bacteria from the same branch or connected branches (after division events)</li>"
+            + "<li>If segmentation and tracking are performed jointly, a first step of removal of low-quality (LQ) spots (spot that can be either false-negative or true-positive) will be applied: only LQ spots that can be linked (directly or indirectly) to high-quality (HQ) spots (ie spots that are true-positives) are kept, allowing a better selection of true-positives spots of low intensity. HQ/LQ definition depends on the parameter <em>Spot Quality Threshold</em> and depends on the quality parameter defined by the segmenter</li>"
             + "<li>A global linking procedure - allowing gaps (if <em>Maximum frame gap</em> is >0) - is applied among remaining spots</li></ul>";
     // multithreaded interface
-    boolean multithreaded;
-    @Override
-    public void setMultithread(boolean multithreaded) {
-        this.multithreaded=multithreaded;
-    }
-    
-    public MutationTrackerSpine setCompartimentStructure(int compartimentStructureIdx) {
+        
+    public NestedSpotTracker setCompartimentStructure(int compartimentStructureIdx) {
         this.compartirmentStructure.setSelectedStructureIdx(compartimentStructureIdx);
         return this;
     }
-    public MutationTrackerSpine setLinkingMaxDistance(double maxDist, double alternativeLinking) {
+    public NestedSpotTracker setLinkingMaxDistance(double maxDist, double alternativeLinking) {
         maxLinkingDistance.setValue(maxDist);
         alternativeDistance.setValue(alternativeLinking);
         return this;
     }
-    public MutationTrackerSpine setGapParameters(double maxDistGapClosing, double gapPenalty, int maxFrameGap) {
+    public NestedSpotTracker setGapParameters(double maxDistGapClosing, double gapPenalty, int maxFrameGap) {
         this.maxLinkingDistanceGC.setValue(maxDistGapClosing);
         this.gapPenalty.setValue(gapPenalty);
         this.maxGap.setValue(maxFrameGap);
         return this;
     }
-    public MutationTrackerSpine setSpotQualityThreshold(double threshold) {
+    public NestedSpotTracker setSpotQualityThreshold(double threshold) {
         this.spotQualityThreshold.setValue(threshold);
         return this;
     }
-    public MutationTrackerSpine setSegmenter(Segmenter s) {
+    public NestedSpotTracker setSegmenter(Segmenter s) {
         
         segmenter.setPlugin(s);
         return this;
@@ -199,7 +188,7 @@ public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, Te
                 }
             }
         });
-        Map<StructureObject, BacteriaSpineLocalizer> lMap = parallele(parentWithSpine.stream(), multithreaded).collect(Collectors.toMap(b->b, b->new BacteriaSpineLocalizer(b.getRegion()))); // spine is long to compute: better performance when computed all at once
+        Map<StructureObject, BacteriaSpineLocalizer> lMap = parallele(parentWithSpine.stream(), true).collect(Collectors.toMap(b->b, b->new BacteriaSpineLocalizer(b.getRegion()))); // spine is long to compute: better performance when computed all at once
         final HashMapGetCreate<StructureObject, BacteriaSpineLocalizer> localizerMap = HashMapGetCreate.getRedirectedMap((StructureObject s) -> new BacteriaSpineLocalizer(s.getRegion()), HashMapGetCreate.Syncronization.SYNC_ON_KEY);
         localizerMap.putAll(lMap);
         TrackMateInterface<NestedSpot> tmi = new TrackMateInterface<>(new SpotFactory<NestedSpot>() {

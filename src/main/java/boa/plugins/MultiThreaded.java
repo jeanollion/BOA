@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (C) 2018 Jean Ollion
  *
  * This File is part of BOA
@@ -20,8 +20,8 @@ package boa.plugins;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface MultiThreaded {
-    public void setMultithread(boolean multithread);
+    public void setMultithread(boolean parallele);
 }

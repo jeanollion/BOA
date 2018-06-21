@@ -23,11 +23,6 @@ import boa.data_structure.StructureObject;
 import boa.image.Image;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import boa.plugins.MultiThreaded;
-import boa.plugins.PostFilter;
-import boa.plugins.PreFilter;
-import boa.plugins.TrackPostFilter;
 import boa.plugins.TrackPreFilter;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
@@ -65,7 +60,6 @@ public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter> 
         boolean first = true;
         TreeMap<StructureObject, Image> images = new TreeMap<>(parentTrack.stream().collect(Collectors.toMap(o->o, o->o.getRawImage(structureIdx))));
         for (TrackPreFilter p : this.get()) {
-            if (p instanceof MultiThreaded) ((MultiThreaded)p).setMultithread(true);
             p.filter(structureIdx, images, first);
             first = false;
         }

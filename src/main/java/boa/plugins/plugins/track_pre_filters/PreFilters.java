@@ -22,12 +22,8 @@ import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.data_structure.StructureObject;
 import boa.image.Image;
-import boa.plugins.MultiThreaded;
 import boa.plugins.PreFilter;
 import boa.plugins.TrackPreFilter;
-import boa.utils.MultipleException;
-import boa.utils.Pair;
-import boa.utils.ThreadRunner;
 import static boa.utils.Utils.parallele;
 import java.util.Collection;
 import java.util.List;
@@ -41,21 +37,14 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class PreFilters implements TrackPreFilter, MultiThreaded {
+public class PreFilters implements TrackPreFilter {
     PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
-    
-    // multithreaded interface
-    boolean multithreaded;
-    @Override
-    public void setMultithread(boolean multithreaded) {
-        this.multithreaded=multithreaded;
-    }
     
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         if (preFilters.isEmpty()) return;
         Consumer<Entry<StructureObject, Image>> c  = e->e.setValue(preFilters.filter(e.getValue(), e.getKey().getMask()));
-        parallele(preFilteredImages.entrySet().stream(), multithreaded).forEach(c);
+        parallele(preFilteredImages.entrySet().stream(), true).forEach(c);
     }
 
     @Override

@@ -51,7 +51,7 @@ public class TestImageProcessingPlugin {
         //String dbName = "RecA_180606";
         //String dbName = "MF1_180509";
         String dbName = "fluo160501_uncorr_TestParam";
-       // String dbName = "WT_180504";
+        //String dbName = "WT_180504";
         //String dbName = "MF1_180509";
         //String dbName = "MutH_151220";
         //String dbName = "WT_150616";
@@ -59,8 +59,8 @@ public class TestImageProcessingPlugin {
         //String dbName = "Aya_170324";
         //String dbName = "Aya_180315";
         //String dbName = "170919_glyc_lac";
-        boolean segmentation = true;
-        boolean track = false;
+        boolean segmentation = false;
+        boolean track = true;
         int structureIdx =2;
         
         int pIdx =0;

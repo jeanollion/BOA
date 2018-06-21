@@ -70,7 +70,7 @@ public class MutationTrackMeasurements implements Measurement {
     @Override
     public List<MeasurementKey> getMeasurementKeys() {
         int structureIdx = mutation.getSelectedStructureIdx();
-        ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>();
+        ArrayList<MeasurementKey> res = new ArrayList<>();
         res.add(new MeasurementKeyObject("IsTrackHead", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaIdx", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaIndices", structureIdx));

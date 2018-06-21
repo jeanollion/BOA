@@ -42,10 +42,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -81,7 +77,6 @@ public interface TrackParametrizable<P extends Plugin> {
     public static <P extends Plugin> TrackParametrizer<P> getTrackParametrizer(int structureIdx, List<StructureObject> parentTrack, P plugin) {
         if (plugin instanceof TrackParametrizable) {
             TrackParametrizable tp = (TrackParametrizable)plugin;
-            if (tp instanceof MultiThreaded) ((MultiThreaded)tp).setMultithread(true);
             return tp.run(structureIdx, parentTrack);
         }
         return null;

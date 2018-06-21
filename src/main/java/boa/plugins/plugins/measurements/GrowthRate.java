@@ -120,11 +120,11 @@ public class GrowthRate implements Measurement, MultiThreaded {
         List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
         parentTrack.stream().forEach(p->ofMap.getAndCreateIfNecessary(p));
         long t1 = System.currentTimeMillis();
-        Map<StructureObject, Double> logLengthMap = parallele(StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), bIdx), multithread).collect(Collectors.toMap(b->b, b->Math.log(ofMap.get(b.getParent()).performMeasurement(b.getRegion()))));
+        Map<StructureObject, Double> logLengthMap = parallele(StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), bIdx), true).collect(Collectors.toMap(b->b, b->Math.log(ofMap.get(b.getParent()).performMeasurement(b.getRegion()))));
         long t2 = System.currentTimeMillis();
         Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
         long t3 = System.currentTimeMillis();
-        parallele(bacteriaTracks.values().stream(), multithread).forEach(l-> {
+        parallele(bacteriaTracks.values().stream(), true).forEach(l-> {
             if (l.size()>=2) {
                 double[] frame = new double[l.size()];
                 double[] length = new double[frame.length];
@@ -184,9 +184,10 @@ public class GrowthRate implements Measurement, MultiThreaded {
         if (mod>0) return String.valueOf(c)+mod;
         else return String.valueOf(c);
     }
-    boolean multithread;
+
     @Override
-    public void setMultithread(boolean multithread) {
-        this.multithread=multithread;
+    public void setMultithread(boolean parallele) {
+        // always true
     }
+    
 }
