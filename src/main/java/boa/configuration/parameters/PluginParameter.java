@@ -21,7 +21,7 @@ package boa.configuration.parameters;
 import boa.configuration.parameters.ui.ChoiceParameterUI;
 import static boa.configuration.parameters.ui.ChoiceParameterUI.NO_SELECTION;
 import boa.configuration.experiment.Structure;
-import boa.gui.PluginConfigurationUtils;
+import boa.ui.PluginConfigurationUtils;
 import boa.plugins.ImageProcessingPlugin;
 import java.util.ArrayList;
 import java.util.HashMap;

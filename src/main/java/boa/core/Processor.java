@@ -18,7 +18,7 @@
  */
 package boa.core;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.gui.image_interaction.InteractiveImage;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.TransformationPluginParameter;

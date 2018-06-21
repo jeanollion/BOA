@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.ui;
+package boa.ui.logger;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -31,12 +31,12 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class LogUserInterface implements UserInterface {
+public class FileProgressLogger implements ProgressLogger {
     File logFile;
     FileLock xpFileLock;
     RandomAccessFile logFileWriter;
     boolean append;
-    public LogUserInterface(boolean append) {
+    public FileProgressLogger(boolean append) {
         this.append = append;
     }
     public void setAppend(boolean append) {

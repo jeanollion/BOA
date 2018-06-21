@@ -18,7 +18,7 @@
  */
 package boa.gui.selection;
 
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.data_structure.Selection;
 import java.awt.Color;
 import java.awt.Component;

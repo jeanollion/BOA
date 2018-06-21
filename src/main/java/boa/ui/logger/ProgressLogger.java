@@ -16,13 +16,13 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.ui;
+package boa.ui.logger;
 
 /**
  *
  * @author jollion
  */
-public interface UserInterface {
+public interface ProgressLogger {
     public void setProgress(int i);
     public void setMessage(String message);
     public void setRunning(boolean running);

@@ -18,7 +18,7 @@
  */
 package boa.configuration.parameters.ui;
 
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.ParameterUtils;

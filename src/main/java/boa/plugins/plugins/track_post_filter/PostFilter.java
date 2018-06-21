@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.track_post_filter;
 
-import boa.gui.ManualEdition;
+import boa.ui.ManualEdition;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;

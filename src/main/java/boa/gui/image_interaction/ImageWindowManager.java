@@ -18,8 +18,8 @@
  */
 package boa.gui.image_interaction;
 
-import boa.gui.GUI;
-import static boa.gui.GUI.logger;
+import boa.ui.GUI;
+import static boa.ui.GUI.logger;
 import boa.core.DefaultWorker;
 import static boa.data_structure.Measurements.asString;
 import boa.data_structure.StructureObject;

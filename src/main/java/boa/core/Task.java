@@ -20,13 +20,12 @@ package boa.core;
 
 import boa.configuration.experiment.Experiment;
 import boa.ui.Console;
-import boa.ui.DBUtil;
-import static boa.ui.DBUtil.searchForLocalDir;
-import static boa.ui.DBUtil.searchLocalDirForDB;
-import boa.gui.GUI;
-import boa.ui.LogUserInterface;
-import boa.ui.MultiUserInterface;
-import boa.ui.UserInterface;
+import boa.ui.logger.ExperimentSearchUtils;
+import static boa.ui.logger.ExperimentSearchUtils.searchForLocalDir;
+import static boa.ui.logger.ExperimentSearchUtils.searchLocalDirForDB;
+import boa.ui.GUI;
+import boa.ui.logger.FileProgressLogger;
+import boa.ui.logger.MultiProgressLogger;
 import boa.ui.PropertyUtils;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import static boa.core.TaskRunner.logger;
@@ -85,6 +84,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import boa.ui.logger.ProgressLogger;
 
 /**
  *
@@ -100,7 +100,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         MultipleException errors = new MultipleException();
         MasterDAO db;
         int[] taskCounter;
-        UserInterface ui;
+        ProgressLogger ui;
         public JSONObject toJSON() {
             JSONObject res=  new JSONObject();
             res.put("dbName", dbName); 
@@ -244,7 +244,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         return true;
     }
         
-        public Task setUI(UserInterface ui) {
+        public Task setUI(ProgressLogger ui) {
             if (ui==null) this.ui=null;
             else {
                 if (ui.equals(this.ui)) return this;
@@ -730,7 +730,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         publish(message);
     }
     
-    public static void executeTasks(List<Task> tasks, UserInterface ui, Runnable... endOfWork) {
+    public static void executeTasks(List<Task> tasks, ProgressLogger ui, Runnable... endOfWork) {
         int totalSubtasks = 0;
         for (Task t : tasks) {
             logger.debug("checking task: {}", t);
@@ -747,23 +747,23 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         for (Task t : tasks) t.setSubtaskNumber(taskCounter);
         DefaultWorker.execute(i -> {
             tasks.get(i).initDB();
-            Consumer<LogUserInterface> setLF = l->{if (l.getLogFile()==null) l.setLogFile(tasks.get(i).getDir()+File.separator+"Log.txt");};
-            Consumer<LogUserInterface> unsetLF = l->{l.setLogFile(null);};
-            if (ui instanceof MultiUserInterface) ((MultiUserInterface)ui).applyToLogUserInterfaces(setLF);
-            else if (ui instanceof LogUserInterface) setLF.accept((LogUserInterface)ui);
+            Consumer<FileProgressLogger> setLF = l->{if (l.getLogFile()==null) l.setLogFile(tasks.get(i).getDir()+File.separator+"Log.txt");};
+            Consumer<FileProgressLogger> unsetLF = l->{l.setLogFile(null);};
+            if (ui instanceof MultiProgressLogger) ((MultiProgressLogger)ui).applyToLogUserInterfaces(setLF);
+            else if (ui instanceof FileProgressLogger) setLF.accept((FileProgressLogger)ui);
             tasks.get(i).runTask();
             tasks.get(i).done();
             if (ui!=null) ui.setRunning(i<tasks.size()-1);
             if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
             tasks.get(i).db=null;
-            if (ui instanceof MultiUserInterface) ((MultiUserInterface)ui).applyToLogUserInterfaces(unsetLF);
-            else if (ui instanceof LogUserInterface) unsetLF.accept((LogUserInterface)ui);
+            if (ui instanceof MultiProgressLogger) ((MultiProgressLogger)ui).applyToLogUserInterfaces(unsetLF);
+            else if (ui instanceof FileProgressLogger) unsetLF.accept((FileProgressLogger)ui);
             
             return "";
         }, tasks.size()).setEndOfWork(
                 ()->{for (Runnable r : endOfWork) r.run();});
     }
-    public static void executeTask(Task t, UserInterface ui, Runnable... endOfWork) {
+    public static void executeTask(Task t, ProgressLogger ui, Runnable... endOfWork) {
         executeTasks(new ArrayList<Task>(1){{add(t);}}, ui, endOfWork);
     }
     private static Stream<Task> splitByPosition(Task task) {

@@ -18,7 +18,7 @@
  */
 package boa.gui.objects;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
 import boa.configuration.experiment.Experiment;
 import boa.data_structure.StructureObject;
@@ -36,7 +36,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.gui.configuration.TrackTreeCellRenderer;
 import boa.data_structure.SelectionUtils;
 import boa.data_structure.dao.MasterDAO;

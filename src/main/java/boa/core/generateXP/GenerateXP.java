@@ -18,8 +18,8 @@
  */
 package boa.core.generateXP;
 
-import boa.ui.DBUtil;
-import boa.gui.GUI;
+import boa.ui.logger.ExperimentSearchUtils;
+import boa.ui.GUI;
 import boa.configuration.parameters.TransformationPluginParameter;
 import boa.core.Processor;
 import boa.core.Processor;
@@ -404,10 +404,10 @@ public class GenerateXP {
         boolean performProcessing = false;
         
         String configDir = MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap) ? new File(outputDir).getParent() : "localhost";
-        if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) DBUtil.removePrefix(dbName, GUI.DBprefix);
+        if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) ExperimentSearchUtils.removePrefix(dbName, GUI.DBprefix);
         MasterDAO mDAO = MasterDAOFactory.createDAO(dbName, configDir);
         MasterDAO.deleteObjectsAndSelectionAndXP(mDAO);
-        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, true, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPPhase(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY); 
+        Experiment xp = fluo ? generateXPFluo(ExperimentSearchUtils.removePrefix(dbName, GUI.DBprefix), outputDir, true, true, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPPhase(ExperimentSearchUtils.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, null, inputDir);

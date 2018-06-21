@@ -18,6 +18,7 @@
  */
 package boa.ui;
 
+import boa.ui.logger.ConsoleProgressLogger;
 import boa.core.Task;
 import boa.plugins.PluginFactory;
 import boa.utils.FileIO;
@@ -40,7 +41,7 @@ public class processJobs {
         PluginFactory.findPlugins("boa.plugins.plugins");
         Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         root.setLevel(Level.INFO);
-        ConsoleUserInterface ui = new ConsoleUserInterface();
+        ConsoleProgressLogger ui = new ConsoleProgressLogger();
         if (args.length==0) {
             ui.setMessage("Missing argument: job list file");
             return;

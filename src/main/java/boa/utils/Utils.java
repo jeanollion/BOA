@@ -18,8 +18,8 @@
  */
 package boa.utils;
 
-import boa.gui.GUI;
-import static boa.gui.GUI.logger;
+import boa.ui.GUI;
+import static boa.ui.GUI.logger;
 import com.sun.management.UnixOperatingSystemMXBean;
 import boa.configuration.parameters.FileChooser;
 import ij.gui.Plot;

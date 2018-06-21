@@ -16,42 +16,40 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.ui;
+package boa.ui.logger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import static boa.core.TaskRunner.logger;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import boa.utils.FileIO;
+import boa.utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class MultiUserInterface  implements UserInterface {
-    List<UserInterface> uis = new ArrayList<>();
-    public MultiUserInterface(UserInterface... uis) {
-        this.uis.addAll(Arrays.asList(uis));
-    }
-    public MultiUserInterface addUIs(UserInterface... uis) {
-        this.uis.addAll(Arrays.asList(uis));
-        return this;
-    }
+public class ConsoleProgressLogger implements ProgressLogger {
+    
     @Override
     public void setProgress(int i) {
-        uis.stream().forEach((ui) -> {ui.setProgress(i);});
+        setMessage("Progress: "+i+"%");
     }
 
     @Override
     public void setMessage(String message) {
-        uis.stream().forEach((ui) -> {ui.setMessage(message);});
+        System.out.println(">"+message);
     }
 
     @Override
     public void setRunning(boolean running) {
-        uis.stream().forEach((ui) -> {ui.setRunning(running);});
+        
     }
-    public void applyToLogUserInterfaces(Consumer<LogUserInterface> function) {
-        uis.stream().filter((ui) -> (ui instanceof LogUserInterface)).forEach((ui) -> function.accept((LogUserInterface)ui));
-    }
+    
 }

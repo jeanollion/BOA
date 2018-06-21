@@ -18,7 +18,7 @@
  */
 package boa.gui.image_interaction;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.data_structure.StructureObject;
 import boa.image.BoundingBox;
 import boa.image.Image;

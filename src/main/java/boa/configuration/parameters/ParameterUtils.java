@@ -18,7 +18,7 @@
  */
 package boa.configuration.parameters;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.configuration.experiment.Experiment;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;

@@ -19,7 +19,7 @@
 package boa.gui.configuration;
 
 import boa.configuration.parameters.Parameter;
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import com.itextpdf.text.Font;
 import java.awt.Color;
 import java.awt.Component;

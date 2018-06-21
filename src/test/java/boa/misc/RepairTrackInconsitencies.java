@@ -18,7 +18,7 @@
 package boa.misc;
 
 
-import boa.gui.ManualEdition;
+import boa.ui.ManualEdition;
 import boa.core.Task;
 import boa.configuration.experiment.Experiment;
 import boa.data_structure.dao.MasterDAO;

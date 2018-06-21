@@ -19,7 +19,7 @@
 package boa.gui.objects;
 
 import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.gui.configuration.TransparentTreeCellRenderer;
 import boa.configuration.experiment.Experiment;
 import boa.data_structure.dao.MasterDAO;

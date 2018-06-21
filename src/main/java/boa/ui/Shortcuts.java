@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui;
+package boa.ui;
 
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;

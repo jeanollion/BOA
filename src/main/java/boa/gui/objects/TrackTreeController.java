@@ -18,8 +18,8 @@
  */
 package boa.gui.objects;
 
-import boa.gui.GUI;
-import static boa.gui.GUI.logger;
+import boa.ui.GUI;
+import static boa.ui.GUI.logger;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;

@@ -18,7 +18,7 @@
  */
 package boa.image.processing;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.input_image.InputImages;
 import ij.ImagePlus;

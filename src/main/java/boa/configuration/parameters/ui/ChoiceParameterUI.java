@@ -18,7 +18,7 @@
  */
 package boa.configuration.parameters.ui;
 
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.configuration.parameters.ActionableParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.ChoosableParameter;

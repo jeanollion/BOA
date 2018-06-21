@@ -28,7 +28,7 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import ij.process.AutoThresholder;
 import boa.image.BlankMask;

@@ -18,7 +18,7 @@
  */
 package boa.gui.configuration;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.utils.Utils;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;

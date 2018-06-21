@@ -18,7 +18,7 @@
  */
 package boa.gui.configuration;
 
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.parameters.ListParameter;
 import boa.configuration.parameters.ui.ListParameterUI;

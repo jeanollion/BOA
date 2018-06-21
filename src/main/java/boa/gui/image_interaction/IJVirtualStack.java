@@ -18,7 +18,7 @@
  */
 package boa.gui.image_interaction;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Position;
 import boa.data_structure.dao.ImageDAO;

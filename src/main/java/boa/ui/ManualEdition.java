@@ -16,10 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui;
+package boa.ui;
 
-import boa.gui.GUI;
-import static boa.gui.GUI.logger;
+import boa.ui.GUI;
+import static boa.ui.GUI.logger;
 import boa.gui.image_interaction.InteractiveImage;
 import boa.gui.image_interaction.InteractiveImageKey;
 import boa.gui.image_interaction.ImageWindowManager;

@@ -18,7 +18,7 @@
  */
 package boa.configuration.experiment;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.ContainerParameter;
 import boa.configuration.parameters.FileChooser;

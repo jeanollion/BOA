@@ -18,7 +18,7 @@
  */
 package boa.core;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.data_structure.SelectionUtils;
 import boa.data_structure.Selection;
 import java.util.HashMap;

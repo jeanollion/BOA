@@ -20,7 +20,7 @@ package boa.gui.objects;
 
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Structure;
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.gui.configuration.TransparentTreeCellRenderer;
 import static java.awt.Component.TOP_ALIGNMENT;
 import java.awt.event.MouseAdapter;

@@ -18,8 +18,7 @@
  */
 package boa.core;
 
-import boa.gui.GUI;
-import boa.ui.UserInterface;
+import boa.ui.GUI;
 import ij.IJ;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -27,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import javax.swing.SwingWorker;
 import boa.utils.ArrayUtil;
+import boa.ui.logger.ProgressLogger;
 
 /**
  *
@@ -36,11 +36,11 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
     protected final WorkerTask task;
     protected Runnable endOfWork;
     protected int[] taskIdx;
-    protected UserInterface gui;
+    protected ProgressLogger gui;
     public static DefaultWorker execute(WorkerTask t, int maxTaskIdx) {
         return execute(t, maxTaskIdx, GUI.hasInstance()?GUI.getInstance():null);
     }
-    public static DefaultWorker execute(WorkerTask t, int maxTaskIdx, UserInterface gui) {
+    public static DefaultWorker execute(WorkerTask t, int maxTaskIdx, ProgressLogger gui) {
         DefaultWorker res = new DefaultWorker(t, maxTaskIdx, gui);
         res.execute();
         return res;
@@ -48,7 +48,7 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
     public static void executeInForeground(WorkerTask t, int maxTaskIdx) {
         for (int i =0; i<maxTaskIdx; ++i) t.run(i);
     }
-    public DefaultWorker(WorkerTask task, int maxTaskIdx, UserInterface gui) {
+    public DefaultWorker(WorkerTask task, int maxTaskIdx, ProgressLogger gui) {
         this.task=task;
         this.gui=gui;
         taskIdx = ArrayUtil.generateIntegerArray(0, maxTaskIdx);

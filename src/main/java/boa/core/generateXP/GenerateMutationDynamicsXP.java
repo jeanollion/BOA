@@ -18,8 +18,8 @@
  */
 package boa.core.generateXP;
 
-import boa.ui.DBUtil;
-import boa.gui.GUI;
+import boa.ui.logger.ExperimentSearchUtils;
+import boa.ui.GUI;
 import boa.configuration.parameters.TransformationPluginParameter;
 import boa.core.Processor;
 import static boa.core.generateXP.GenerateXP.fillRange;
@@ -128,14 +128,14 @@ public class GenerateMutationDynamicsXP {
         boolean performProcessing = false;
         
         String configDir = MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap) ? new File(outputDir).getParent() : "localhost";
-        if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) DBUtil.removePrefix(dbName, GUI.DBprefix);
+        if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) ExperimentSearchUtils.removePrefix(dbName, GUI.DBprefix);
         MasterDAO mDAO = MasterDAOFactory.createDAO(dbName, configDir);
         
         if (onlyUpdateMeasurements) {
             setMeasurements(mDAO.getExperiment());
         } else {
             MasterDAO.deleteObjectsAndSelectionAndXP(mDAO);
-            Experiment xp = generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, cropXYdXdY);
+            Experiment xp = generateXPFluo(ExperimentSearchUtils.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, cropXYdXdY);
             mDAO.setExperiment(xp);
             Processor.importFiles(xp, true, null, inputDir);
             for (Position f : xp.getPositions()) f.setDefaultFrame(0);

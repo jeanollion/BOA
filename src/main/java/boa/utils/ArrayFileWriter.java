@@ -18,7 +18,7 @@
  */
 package boa.utils;
 
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;

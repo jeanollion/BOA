@@ -16,12 +16,13 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.ui;
+package boa.ui.logger;
 
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.ProgressCallback;
 import boa.data_structure.dao.MasterDAO;
+import boa.ui.PropertyUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,7 +40,7 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class DBUtil {
+public class ExperimentSearchUtils {
     
     
     

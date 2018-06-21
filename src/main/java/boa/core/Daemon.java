@@ -18,10 +18,9 @@
  */
 package boa.core;
 
-import boa.ui.ConsoleUserInterface;
-import static boa.gui.GUI.log;
-import boa.ui.LogUserInterface;
-import boa.ui.UserInterface;
+import boa.ui.logger.ConsoleProgressLogger;
+import static boa.ui.GUI.log;
+import boa.ui.logger.FileProgressLogger;
 import com.google.common.io.Files;
 import boa.core.DefaultWorker.WorkerTask;
 import java.io.File;
@@ -42,14 +41,15 @@ import org.json.simple.JSONObject;
 import boa.utils.FileIO;
 import boa.utils.HashMapGetCreate;
 import boa.utils.JSONUtils;
+import boa.ui.logger.ProgressLogger;
 
 /**
  *
  * @author jollion
  */
 public class Daemon {
-    UserInterface ui;
-    LogUserInterface logUI;
+    ProgressLogger ui;
+    FileProgressLogger logUI;
     String watchDir;
     File parsedJobDir, errorDir, logDir;
     boolean watching, running;
@@ -59,7 +59,7 @@ public class Daemon {
     final Map<Task, File> taskFileNameMap = new HashMap<>();
     final Map<File, Boolean> fileNameErrorMap = new HashMap<>();
     final Set<File> oneJobHasBeenRun = new HashSet<>();
-    public Daemon(UserInterface ui) {
+    public Daemon(ProgressLogger ui) {
         this.ui=ui;
     }
 

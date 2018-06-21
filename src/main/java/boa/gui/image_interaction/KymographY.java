@@ -18,8 +18,8 @@
  */
 package boa.gui.image_interaction;
 
-import boa.gui.GUI;
-import static boa.gui.GUI.logger;
+import boa.ui.GUI;
+import static boa.ui.GUI.logger;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import boa.data_structure.StructureObject;

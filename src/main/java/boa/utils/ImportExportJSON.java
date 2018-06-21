@@ -18,7 +18,7 @@
  */
 package boa.utils;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.core.ProgressCallback;
 import boa.configuration.experiment.Experiment;
 import boa.data_structure.dao.ImageDAO;

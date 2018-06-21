@@ -18,7 +18,7 @@
  */
 package boa.configuration.parameters.ui;
 
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.text.DecimalFormat;

@@ -18,7 +18,7 @@
  */
 package boa.data_structure.dao;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.configuration.experiment.Experiment;
 import java.io.File;
 import java.io.FileInputStream;

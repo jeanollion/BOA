@@ -21,7 +21,7 @@ package boa.configuration.parameters;
 import static boa.configuration.parameters.Parameter.logger;
 import boa.configuration.parameters.ui.ChoiceParameterUI;
 import boa.configuration.experiment.Position;
-import boa.gui.PluginConfigurationUtils;
+import boa.ui.PluginConfigurationUtils;
 import boa.plugins.ConfigurableTransformation;
 import boa.plugins.MultichannelTransformation;
 import boa.plugins.MultichannelTransformation.OUTPUT_SELECTION_MODE;

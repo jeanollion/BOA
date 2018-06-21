@@ -18,7 +18,7 @@
  */
 package boa.gui.image_interaction;
 
-import boa.gui.ManualEdition;
+import boa.ui.ManualEdition;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;

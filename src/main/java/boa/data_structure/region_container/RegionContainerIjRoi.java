@@ -22,7 +22,7 @@ import boa.gui.image_interaction.IJImageDisplayer;
 import boa.gui.image_interaction.IJImageWindowManager;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.BlankMask;
 import ij.ImagePlus;

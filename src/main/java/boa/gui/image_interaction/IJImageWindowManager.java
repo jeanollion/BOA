@@ -18,9 +18,9 @@
  */
 package boa.gui.image_interaction;
 
-import boa.gui.GUI;
-import static boa.gui.GUI.logger;
-import boa.gui.ManualEdition;
+import boa.ui.GUI;
+import static boa.ui.GUI.logger;
+import boa.ui.ManualEdition;
 import boa.gui.image_interaction.IJImageWindowManager.Roi3D;
 import boa.gui.image_interaction.IJImageWindowManager.TrackRoi;
 import static boa.gui.image_interaction.ImageWindowManager.displayTrackMode;

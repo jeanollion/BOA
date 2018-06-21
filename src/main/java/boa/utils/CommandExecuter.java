@@ -19,7 +19,7 @@
 package boa.utils;
 
 import boa.ui.PropertyUtils;
-import boa.ui.DBUtil;
+import boa.ui.logger.ExperimentSearchUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;

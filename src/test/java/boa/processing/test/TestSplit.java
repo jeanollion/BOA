@@ -17,7 +17,7 @@
  */
 package boa.processing.test;
 
-import boa.gui.GUI;
+import boa.ui.GUI;
 import boa.gui.image_interaction.InteractiveImage;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.data_structure.SelectionUtils;

@@ -18,6 +18,7 @@
  */
 package boa.ui;
 
+import boa.ui.logger.ConsoleProgressLogger;
 import boa.core.Daemon;
 import boa.core.Task;
 import ij.plugin.PlugIn;
@@ -45,7 +46,7 @@ import boa.utils.Utils;
 public class Console implements PlugIn {
     static final String WATCH_DIR_KEY = "watch_dir";
     Daemon d;
-    ConsoleUserInterface ui = new ConsoleUserInterface();
+    ConsoleProgressLogger ui = new ConsoleProgressLogger();
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);

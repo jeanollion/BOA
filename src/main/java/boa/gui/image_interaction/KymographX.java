@@ -18,8 +18,8 @@
  */
 package boa.gui.image_interaction;
 
-import boa.gui.GUI;
-import static boa.gui.GUI.logger;
+import boa.ui.GUI;
+import static boa.ui.GUI.logger;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import ij.plugin.filter.MaximumFinder;

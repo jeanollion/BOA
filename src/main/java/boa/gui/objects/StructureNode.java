@@ -18,8 +18,8 @@
  */
 package boa.gui.objects;
 
-import boa.gui.GUI;
-import static boa.gui.GUI.logger;
+import boa.ui.GUI;
+import static boa.ui.GUI.logger;
 import boa.gui.image_interaction.InteractiveImage;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.core.Processor;

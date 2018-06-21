@@ -32,7 +32,7 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
-import boa.gui.GUI;
+import boa.ui.GUI;
 import ij.process.AutoThresholder;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;

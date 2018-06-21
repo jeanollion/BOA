@@ -18,7 +18,7 @@
  */
 package boa.gui.objects;
 
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.gui.image_interaction.InteractiveImage;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.data_structure.RegionPopulation;

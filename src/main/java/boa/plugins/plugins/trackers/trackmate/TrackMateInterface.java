@@ -19,7 +19,7 @@
 package boa.plugins.plugins.trackers.trackmate;
 
 import boa.plugins.plugins.trackers.nested_spot_tracker.DistanceComputationParameters;
-import boa.gui.GUI;
+import boa.ui.GUI;
 import com.google.common.collect.Sets;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;

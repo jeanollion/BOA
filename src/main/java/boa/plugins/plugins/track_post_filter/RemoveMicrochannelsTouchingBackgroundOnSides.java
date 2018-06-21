@@ -18,7 +18,7 @@
  */
 package boa.plugins.plugins.track_post_filter;
 
-import boa.gui.ManualEdition;
+import boa.ui.ManualEdition;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;

@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.gui;
+package boa.ui;
 
 import boa.gui.configuration.ConfigurationTreeGenerator;
 import boa.gui.image_interaction.IJImageDisplayer;
@@ -59,8 +59,8 @@ import boa.data_structure.Selection;
 import boa.data_structure.dao.SelectionDAO;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
-import boa.gui.Shortcuts.ACTION;
-import boa.gui.Shortcuts.PRESET;
+import boa.ui.Shortcuts.ACTION;
+import boa.ui.Shortcuts.PRESET;
 import boa.gui.configuration.TransparentListCellRenderer;
 import boa.gui.image_interaction.Kymograph;
 import boa.gui.objects.StructureSelectorTree;
@@ -130,11 +130,10 @@ import org.slf4j.LoggerFactory;
 import boa.plugins.ManualSegmenter;
 import boa.plugins.ObjectSplitter;
 import boa.plugins.PluginFactory;
-import boa.ui.DBUtil;
-import boa.ui.LogUserInterface;
-import boa.ui.MultiUserInterface;
+import boa.ui.logger.ExperimentSearchUtils;
+import boa.ui.logger.FileProgressLogger;
+import boa.ui.logger.MultiProgressLogger;
 import boa.ui.PropertyUtils;
-import boa.ui.UserInterface;
 import static boa.plugins.PluginFactory.checkClass;
 import boa.utils.ArrayUtil;
 import boa.utils.CommandExecuter;
@@ -153,13 +152,14 @@ import java.awt.dnd.DropTarget;
 import java.util.function.Consumer;
 import javax.swing.ToolTipManager;
 import javax.swing.tree.TreeSelectionModel;
+import boa.ui.logger.ProgressLogger;
 
 
 /**
  *
  * @author jollion
  */
-public class GUI extends javax.swing.JFrame implements ImageObjectListener, UserInterface {
+public class GUI extends javax.swing.JFrame implements ImageObjectListener, ProgressLogger {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);
     // check if mapDB is present
     public static final String DBprefix = "boa_";
@@ -2263,10 +2263,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     }
     private static String createSubdir(String path, String dbName) {
         if (!new File(path).isDirectory()) return null;
-        File newDBDir = new File(path+File.separator+DBUtil.removePrefix(dbName, GUI.DBprefix));
+        File newDBDir = new File(path+File.separator+ExperimentSearchUtils.removePrefix(dbName, GUI.DBprefix));
         if (newDBDir.exists()) {
             logger.info("folder : {}, already exists", newDBDir.getAbsolutePath());
-            if (!DBUtil.listExperiments(newDBDir.getAbsolutePath(), false, null).isEmpty()) {
+            if (!ExperimentSearchUtils.listExperiments(newDBDir.getAbsolutePath(), false, null).isEmpty()) {
                 logger.info("folder : {}, already exists and contains xp", newDBDir.getAbsolutePath());
                 return null;
             } else {
@@ -2297,7 +2297,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void newXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPMenuItemActionPerformed
         String name = JOptionPane.showInputDialog("New XP name:");
         if (name==null) return;
-        name = DBUtil.addPrefix(name, currentDBPrefix);
+        name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("XP name already exists");
         else {
@@ -2333,7 +2333,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void duplicateXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_duplicateXPMenuItemActionPerformed
         String name = JOptionPane.showInputDialog("New DB name:", getSelectedExperiment());
-        name = DBUtil.addPrefix(name, currentDBPrefix);
+        name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("DB name already exists");
         else {
@@ -2516,12 +2516,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (dir==null) return;
         File directory = new File(dir);
         List<String> dbNames = getDBNames();
-        Map<String, File> allXps = DBUtil.listExperiments(directory.getAbsolutePath(), false, null);
+        Map<String, File> allXps = ExperimentSearchUtils.listExperiments(directory.getAbsolutePath(), false, null);
         //Map<String, File> allXps = ImportExportJSON.listExperiments(directory.getAbsolutePath());
         if (allXps.size()==1) {
             String name = JOptionPane.showInputDialog("New XP name:");
             if (name==null) return;
-            name = DBUtil.addPrefix(name, currentDBPrefix);
+            name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
             if (!Utils.isValid(name, false)) {
                 logger.error("Name should not contain special characters");
                 return;
@@ -2765,7 +2765,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void clearMemoryMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearMemoryMenuItemActionPerformed
         if (!checkConnection()) return;
-        DBUtil.clearMemory(db);
+        ExperimentSearchUtils.clearMemory(db);
     }//GEN-LAST:event_clearMemoryMenuItemActionPerformed
 
     private void extractSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extractSelectionMenuItemActionPerformed
@@ -2884,7 +2884,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         final List<File> dumpedFiles = Utils.seachAll(experimentFolder.getText(), s->s.endsWith("_dump.zip"), 1);
         if (dumpedFiles==null) return;
         // remove xp already undumped
-        Map<String, File> dbFiles = DBUtil.listExperiments(experimentFolder.getText(), true, ProgressCallback.get(this));
+        Map<String, File> dbFiles = ExperimentSearchUtils.listExperiments(experimentFolder.getText(), true, ProgressCallback.get(this));
         dumpedFiles.removeIf(f->dbFiles.containsValue(f.getParentFile()));
         log("undumping: "+dumpedFiles.size()+ " Experiment"+(dumpedFiles.size()>1?"s":""));
         
@@ -2923,7 +2923,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (dumpedFiles==null) return;
         closeExperiment();
         // remove xp already undumped
-        Map<String, File> dbFiles = DBUtil.listExperiments(experimentFolder.getText(), true, ProgressCallback.get(this));
+        Map<String, File> dbFiles = ExperimentSearchUtils.listExperiments(experimentFolder.getText(), true, ProgressCallback.get(this));
         dumpedFiles.removeIf(f->!dbFiles.containsValue(f.getParentFile()));
         // remove unselected xp if any
         Set<String> xpSel = new HashSet<>(getSelectedExperiments());
@@ -3122,7 +3122,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                         else {
                             Task t = new Task().fromJSON(o);
                             // look for dir in current directory
-                            String d = DBUtil.searchLocalDirForDB(xp, dir);
+                            String d = ExperimentSearchUtils.searchLocalDirForDB(xp, dir);
                             if (d==null) log("Error: Could not find directory of XP: "+xp);
                             else {
                                 t.setDBName(xp).setDir(d);
@@ -3164,11 +3164,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             menu.show(this.actionPoolList, evt.getX(), evt.getY());
         }
     }//GEN-LAST:event_actionPoolListMousePressed
-    private UserInterface getUserInterface() {
+    private ProgressLogger getUserInterface() {
         if (activateLoggingMenuItem.isSelected()) {
-            LogUserInterface logUI = new LogUserInterface(appendToFileMenuItem.isSelected());
+            FileProgressLogger logUI = new FileProgressLogger(appendToFileMenuItem.isSelected());
             if (logFile!=null) logUI.setLogFile(logFile);
-            return new MultiUserInterface(this, logUI);
+            return new MultiProgressLogger(this, logUI);
         } else return this;
     }
     private void experimentFolderActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_experimentFolderActionPerformed
@@ -3247,7 +3247,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         if (xp!=null) {
             name = JOptionPane.showInputDialog("New XP name:", Utils.removeExtension(new File(config).getName()));
             if (name==null) return;
-            name = DBUtil.addPrefix(name, currentDBPrefix);
+            name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
             if (!Utils.isValid(name, false)) {
                 log("Name should not contain special characters");
                 return;
@@ -3515,7 +3515,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     private List<String> getDBNames() {
         if (this.localFileSystemDatabaseRadioButton.isSelected()) {
-            dbFiles = DBUtil.listExperiments(experimentFolder.getText(), true, ProgressCallback.get(this));
+            dbFiles = ExperimentSearchUtils.listExperiments(experimentFolder.getText(), true, ProgressCallback.get(this));
             List<String> res = new ArrayList<>(dbFiles.keySet());
             Collections.sort(res);
             return res;

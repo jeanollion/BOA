@@ -21,7 +21,7 @@ package boa.ui;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Listenable;
 import boa.configuration.parameters.NumberParameter;
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.dao.MasterDAOFactory;
 import java.io.File;

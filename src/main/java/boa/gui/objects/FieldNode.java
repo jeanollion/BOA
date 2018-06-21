@@ -18,7 +18,7 @@
  */
 package boa.gui.objects;
 
-import static boa.gui.GUI.logger;
+import static boa.ui.GUI.logger;
 import boa.configuration.experiment.Position;
 import java.util.Arrays;
 import java.util.Collections;
