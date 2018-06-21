@@ -62,7 +62,7 @@ import boa.plugins.ToolTip;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.plugins.processing_pipeline.SegmentOnly;
-import boa.plugins.plugins.segmenters.MutationSegmenter;
+import boa.plugins.plugins.segmenters.SpotSegmenter;
 import boa.plugins.plugins.trackers.nested_spot_tracker.DistanceComputationParameters;
 import boa.plugins.plugins.trackers.nested_spot_tracker.NestedSpot;
 import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.MutationTrackPostProcessing;
@@ -87,7 +87,7 @@ import java.util.stream.Collectors;
  * @author jollion
  */
 public class MutationTrackerSpine implements TrackerSegmenter, MultiThreaded, TestableProcessingPlugin, ToolTip {
-    protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new MutationSegmenter(), false);
+    protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new SpotSegmenter(), false);
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", 1, false, false).setToolTipText("Structure of bacteria objects.");
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5).setEmphasized(true).setToolTipText("Spot with quality parameter over this threshold are considered as high quality spots, others as low quality spots");
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null).setEmphasized(true).setToolTipText("Maximum frame gap for spot linking: if two spots are separated by more frame than this value they cannot be linked together directly");

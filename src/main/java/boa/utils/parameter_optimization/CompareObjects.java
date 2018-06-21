@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 import boa.plugins.PluginFactory;
 import boa.plugins.TrackParametrizable;
 import boa.plugins.TrackParametrizable.TrackParametrizer;
-import boa.plugins.plugins.segmenters.MutationSegmenter;
+import boa.plugins.plugins.segmenters.SpotSegmenter;
 import boa.utils.ArrayUtil;
 import boa.utils.FileIO;
 import boa.utils.FileIO.TextFile;
@@ -280,7 +280,7 @@ public class CompareObjects {
         Map<StructureObject, List<StructureObject>> parentTrackRef = StructureObjectUtils.getAllTracks(dbRef.getDao(positionName).getRoots(), parentStructureIdx);
         ProcessingPipeline ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         TrackPreFilterSequence tpf = ps.getTrackPreFilters(true);
-        MutationSegmenter seg = (MutationSegmenter)ps.getSegmenter();
+        SpotSegmenter seg = (SpotSegmenter)ps.getSegmenter();
         Map<StructureObject, TrackParametrizer> pthMapParametrizer = new HashMap<>();
         for (Entry<StructureObject, List<StructureObject>> e : parentTrackRef.entrySet()) {
             tpf.filter(structureIdx, e.getValue());
@@ -294,7 +294,7 @@ public class CompareObjects {
             for (StructureObject parentB : parent.getChildObjects(1)) {
                 List<Region> objects = parentB.getRegion().getIncludedObjects(pop.getRegions());
                 if (objects.isEmpty()) continue;
-                MutationSegmenter currentSeg = (MutationSegmenter)ps.getSegmenter();
+                SpotSegmenter currentSeg = (SpotSegmenter)ps.getSegmenter();
                 if (!pthMapParametrizer.isEmpty()) pthMapParametrizer.get(parent.getTrackHead()).apply(parent, currentSeg);
                 currentSeg.setQuality(objects, parentB.getBounds(), parent.getPreFilteredImage(structureIdx).cropWithOffset(parentB.getBounds()), parent.getMask());
             }

@@ -40,7 +40,7 @@ import java.util.HashSet;
 import boa.plugins.ObjectFeature;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
-import boa.plugins.plugins.segmenters.MutationSegmenter;
+import boa.plugins.plugins.segmenters.SpotSegmenter;
 import boa.utils.Utils;
 
 /**
@@ -72,7 +72,7 @@ public class TestProcessMutations {
         Image localInput = input.sameDimensions(parentBounds.getBlankMask()) ? input : input.cropWithOffset(parentBounds);
         
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-        MutationSegmenter.debug=true;
+        SpotSegmenter.debug=true;
         //MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace().setIntensityThreshold(90);
         //if (parent.getIdx()==2) MutationSegmenter.debug=true;
         //else MutationSegmenter.debug=false;

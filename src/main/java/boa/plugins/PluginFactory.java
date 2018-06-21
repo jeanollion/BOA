@@ -48,7 +48,7 @@ public class PluginFactory {
 
     private final static TreeMap<String, Class> PLUGINS = new TreeMap<>();
     private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
-    private final static Map<String, String> refactoredNamesOldMapNew = new HashMap<String, String>(){{put("BacteriaFluo", "BacteriaIntensity");put("MicroChannelFluo2D", "MicrochannelFluo2D");put("LAPTracker", "MutationTracker");put("MutationSegmenter", "MutationSegmenter");put("CropMicroChannelBF2D", "CropMicrochannelsPhase2D");put("CropMicroChannelFluo2D", "CropMicrochannelsFluo2D");put("BacteriaTransMeasurements", "BacteriaPhaseMeasurements");}};
+    private final static Map<String, String> OLD_NAMES_MAP_NEW = new HashMap<String, String>(){{put("MutationSegmenter", "SpotSegmenter");}};
     
     public static void findPlugins(String packageName) {
         logger.info("looking for plugins in package: {}", packageName);
@@ -226,7 +226,7 @@ public class PluginFactory {
             Object res = null;
             if (PLUGINS.containsKey(s)) {
                 res = PLUGINS.get(s).newInstance();
-            } else if (refactoredNamesOldMapNew.containsKey(s)) return getPlugin(refactoredNamesOldMapNew.get(s));
+            } else if (OLD_NAMES_MAP_NEW.containsKey(s)) return getPlugin(OLD_NAMES_MAP_NEW.get(s));
             
             if (res != null && res instanceof Plugin) {
                 return ((Plugin) res);
@@ -240,13 +240,13 @@ public class PluginFactory {
     }
     public static <T extends Plugin> Class<T> getPluginClass(Class<T> clazz, String className) {
         Class plugClass = PLUGINS.get(className);
-        if (plugClass==null && refactoredNamesOldMapNew.containsKey(className)) plugClass = PLUGINS.get(refactoredNamesOldMapNew.get(className));
+        if (plugClass==null && OLD_NAMES_MAP_NEW.containsKey(className)) plugClass = PLUGINS.get(OLD_NAMES_MAP_NEW.get(className));
         return plugClass;
     }
     public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
         try {
             Class plugClass = PLUGINS.get(className);
-            if (plugClass==null && refactoredNamesOldMapNew.containsKey(className)) plugClass = PLUGINS.get(refactoredNamesOldMapNew.get(className));
+            if (plugClass==null && OLD_NAMES_MAP_NEW.containsKey(className)) plugClass = PLUGINS.get(OLD_NAMES_MAP_NEW.get(className));
             if (plugClass==null) {
                 logger.error("plugin: {} of class: {} not found", className, clazz);
                 return null;

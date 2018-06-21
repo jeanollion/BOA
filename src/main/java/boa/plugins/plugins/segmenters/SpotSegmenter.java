@@ -76,15 +76,9 @@ import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.plugins.thresholders.BackgroundFit;
-import boa.utils.DoubleStatistics;
-import boa.utils.HashMapGetCreate;
-import boa.utils.Pair;
 import boa.utils.StreamConcatenation;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
-import java.util.DoubleSummaryStatistics;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
@@ -92,14 +86,14 @@ import java.util.stream.DoubleStream;
  *
  * @author jollion
  */
-public class MutationSegmenter implements Segmenter, TrackParametrizable<MutationSegmenter>, ManualSegmenter, ObjectSplitter, TestableProcessingPlugin, ToolTip {
+public class SpotSegmenter implements Segmenter, TrackParametrizable<SpotSegmenter>, ManualSegmenter, ObjectSplitter, TestableProcessingPlugin, ToolTip {
     public static boolean debug = false;
-    ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true).setEmphasized(true);
-    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 5).setToolTipText("Scale (in pixels) for gaussian smooth");
-    NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null).setToolTipText("In pixels: spots under this size will be removed");
-    NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 2.25).setEmphasized(true).setToolTipText("Higher value will increase false negative and decrease false positives.<br /> Laplacian Threshold for seed selection");
-    NumberParameter thresholdLow = new NumberParameter("Threshold for propagation", 2, 1.63).setEmphasized(true).setToolTipText("Lower value will yield in larger spots.<br /> Laplacian Threshold for watershed propagation: propagation stops at this value.");
-    NumberParameter intensityThreshold = new NumberParameter("Intensity Threshold for Seeds", 2, 1.6).setEmphasized(true).setToolTipText("Higher value will increase false negative and decrease false positives.<br /> Laplacian Threshold for seed selection"); 
+    ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true).setEmphasized(true).setToolTipText("Scale for lapalcian transform. <br />Configuration hint: <em>Laplacian</em> image");
+    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 5).setToolTipText("Scale (in pixels) for gaussian smooth <br />Configuration hint: <em>smooth & scaled</em> image");
+    NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size", 0, 5, 1, null).setToolTipText("Spots under this size (in voxel number) will be removed");
+    NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 2.25).setEmphasized(true).setToolTipText("Laplacian Threshold for seed selection.<br />Higher values tend increase false negative and decrease false positives.<br /> Configuration hint: corresponds to value in <em>Laplacian</em> image");
+    NumberParameter thresholdLow = new NumberParameter("Threshold for propagation", 2, 1.63).setEmphasized(true).setToolTipText("Laplacian Threshold for watershed propagation: propagation stops at this value. <br />Lower value will yield in larger spots.<br />Configuration hint: corresponds to value in <em>Laplacian</em> image");
+    NumberParameter intensityThreshold = new NumberParameter("Intensity Threshold for Seeds", 2, 1.6).setEmphasized(true).setToolTipText("Intensity threshold for seed selection.<br /> Higher values tend to increase false negative and decrease false positives.<br />Configuration hint: corresponds to value of <em>smooth & scaled</em> image"); 
     boolean planeByPlane = false;
     Parameter[] parameters = new Parameter[]{scale, smoothScale, minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold};
     ProcessingVariables pv = new ProcessingVariables();
@@ -111,31 +105,31 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
             + "<li>Watershed propagation is done within the segmentation parent mask until laplacian values reach <em>Threshold for propagation</em></li>"
             + "<li>A quality parameter in computed as √(laplacian x gaussian) at the center of the spot</li><ul>";
     
-    public MutationSegmenter() {}
+    public SpotSegmenter() {}
     
-    public MutationSegmenter(double thresholdSeeds, double thresholdPropagation, double thresholdIntensity) {
+    public SpotSegmenter(double thresholdSeeds, double thresholdPropagation, double thresholdIntensity) {
         this.intensityThreshold.setValue(thresholdIntensity);
         this.thresholdHigh.setValue(thresholdSeeds);
         this.thresholdLow.setValue(thresholdPropagation);
     }
     
-    public MutationSegmenter setThresholdSeeds(double threshold) {
+    public SpotSegmenter setThresholdSeeds(double threshold) {
         this.thresholdHigh.setValue(threshold);
         return this;
     }
     
-    public MutationSegmenter setThresholdPropagation(double threshold) {
+    public SpotSegmenter setThresholdPropagation(double threshold) {
         //this.thresholdLow.setPlugin(new ConstantValue(threshold));
         this.thresholdLow.setValue(threshold);
         return this;
     }
     
-    public MutationSegmenter setIntensityThreshold(double threshold) {
+    public SpotSegmenter setIntensityThreshold(double threshold) {
         this.intensityThreshold.setValue(threshold);
         return this;
     }
     
-    public MutationSegmenter setScale(double... scale) {
+    public SpotSegmenter setScale(double... scale) {
         this.scale.setValue(scale);
         return this;
     }
@@ -440,7 +434,7 @@ public class MutationSegmenter implements Segmenter, TrackParametrizable<Mutatio
      * @return 
      */
     @Override
-    public TrackParametrizer<MutationSegmenter> run(int structureIdx, List<StructureObject> parentTrack) {
+    public TrackParametrizer<SpotSegmenter> run(int structureIdx, List<StructureObject> parentTrack) {
         Map<StructureObject, Image[]> parentMapImages = parentTrack.stream().parallel().collect(Collectors.toMap(p->p, p->computeMaps(p.getRawImage(structureIdx), p.getPreFilteredImage(structureIdx))));
         // get scaling per segmentation parent track
         int segParent = parentTrack.iterator().next().getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
