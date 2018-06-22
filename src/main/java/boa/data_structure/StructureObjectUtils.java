@@ -221,9 +221,9 @@ public class StructureObjectUtils {
         return res;
     }
     
-    public static StructureObject getInclusionParent(Region children, Collection<StructureObject> parents, Offset offset) {
-        if (parents.isEmpty() || children==null) return null;
-        Map<Region, StructureObject> soOMap = parents.stream().collect(Collectors.toMap(o->o.getRegion(), o->o));
+    public static StructureObject getContainer(Region children, Collection<StructureObject> potentialContainers, Offset offset) {
+        if (potentialContainers.isEmpty() || children==null) return null;
+        Map<Region, StructureObject> soOMap = potentialContainers.stream().collect(Collectors.toMap(o->o.getRegion(), o->o));
         Region parentObject = children.getContainer(soOMap.keySet(), offset, null); 
         return soOMap.get(parentObject);
     }
@@ -238,17 +238,17 @@ public class StructureObjectUtils {
         }
         int closestParentStructureIdx = o.getExperiment().getFirstCommonParentStructureIdx(o.getStructureIdx(), inclusionStructureIdx);
         for (StructureObject oo : objectsFromSameStructure) {
-            StructureObject i = getInclusionParent(oo.getRegion(), oo.getParent(closestParentStructureIdx).getChildren(inclusionStructureIdx), null);
+            StructureObject i = getContainer(oo.getRegion(), oo.getParent(closestParentStructureIdx).getChildren(inclusionStructureIdx), null);
             res.put(oo, i);
         }
         return res;
     }
     
-    public static Map<StructureObject, StructureObject> getInclusionParentMap(Collection<StructureObject> objectsFromSameStructure, Collection<StructureObject> inclusionObjects) {
+    public static Map<StructureObject, StructureObject> getInclusionParentMap(Collection<StructureObject> objectsFromSameStructure, Collection<StructureObject> containers) {
         if (objectsFromSameStructure.isEmpty()) return Collections.EMPTY_MAP;
         Map<StructureObject, StructureObject>  res= new HashMap<>();
         for (StructureObject oo : objectsFromSameStructure) {
-            StructureObject i = getInclusionParent(oo.getRegion(), inclusionObjects, null);
+            StructureObject i = getContainer(oo.getRegion(), containers, null);
             res.put(oo, i);
         }
         return res;
@@ -381,7 +381,9 @@ public class StructureObjectUtils {
         for (StructureObject o : l) res.add(o.getPositionName());
         return res;
     }
-    
+    public static List<StructureObject> getTrack(StructureObject trackHead) {
+        return getTrack(trackHead, false);
+    }
     public static List<StructureObject> getTrack(StructureObject trackHead, boolean extend) {
         if (trackHead==null) return Collections.EMPTY_LIST;
         trackHead = trackHead.getTrackHead();

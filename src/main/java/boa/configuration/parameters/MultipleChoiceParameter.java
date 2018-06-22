@@ -32,7 +32,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     int[] selectedItems;
     String[] listChoice;
     MultipleChoiceParameterUI ui;
-    int displayTrimSize=50; // for toString method
+     int displayTrimSize=50; // for toString method
     
     public MultipleChoiceParameter(String name, String[] listChoice, int[] selectedItems) {
         super(name);
@@ -79,13 +79,19 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
         if (selectedItems==null) selectedItems = new int[0];
         return selectedItems;
     }
-    
+    public boolean[] getSelectedItemsAsBoolean() {
+        boolean[] res = new boolean[listChoice.length];
+        for (int i : getSelectedItems()) res[i] = true;
+        return res;
+    }
+     
     public String[] getSelectedItemsNames() {
         String[] res = new String[getSelectedItems().length];
         for (int i = 0 ; i<res.length; ++i) res[i] = listChoice[selectedItems[i]];
         return res;
     }
-
+    
+    @Override
     public String[] getChoiceList() {
         return listChoice;
     }

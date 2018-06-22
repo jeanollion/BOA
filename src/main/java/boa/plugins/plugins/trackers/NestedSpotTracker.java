@@ -173,7 +173,7 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
         final Map<Region, StructureObject> mutationMapParentBacteria = StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), structureIdx)
                 .collect(Collectors.toMap(m->m.getRegion(), m->{
                     List<StructureObject> candidates = m.getParent().getChildren(compartimentStructure);
-                    return StructureObjectUtils.getInclusionParent(m.getRegion(), candidates, null); 
+                    return StructureObjectUtils.getContainer(m.getRegion(), candidates, null); 
                 }));
         final Map<StructureObject, List<Region>> bacteriaMapMutation = mutationMapParentBacteria.keySet().stream().collect(Collectors.groupingBy(m->mutationMapParentBacteria.get(m)));
         // get all potential spine localizer: for each bacteria with mutation look if there are bacteria with mutations in previous bacteria whithin gap range
@@ -327,9 +327,9 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                     
                     // also add to object attributes
                     l.get(0).setAttribute("Spine Coordinate", numberFormater.apply(coord.spineCoord(false))+"/"+numberFormater.apply(coord.spineLength()));
-                    l.get(0).setAttribute("Spine Radial Coordinate", numberFormater.apply(coord.distFromSpine(false))+"/"+numberFormater.apply(coord.spineRadius()));
+                    l.get(0).setAttribute("Spine Radial Coordinate", numberFormater.apply(coord.radialCoord(false))+"/"+numberFormater.apply(coord.spineRadius()));
                     l.get(1).setAttribute("Spine Coordinate", numberFormater.apply(coord2.spineCoord(false))+"/"+numberFormater.apply(coord2.spineLength()));
-                    l.get(1).setAttribute("Spine Radial Coordinate", numberFormater.apply(coord2.distFromSpine(false))+"/"+numberFormater.apply(coord2.spineRadius()));
+                    l.get(1).setAttribute("Spine Radial Coordinate", numberFormater.apply(coord2.radialCoord(false))+"/"+numberFormater.apply(coord2.spineRadius()));
                     
                     // log distance
                     GUI.log("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter()));

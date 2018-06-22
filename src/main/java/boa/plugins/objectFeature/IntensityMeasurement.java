@@ -57,21 +57,21 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
 
     @Override
     public void setUpOrAddCore(List<ObjectFeatureCore> availableCores, PreFilterSequence preFilters) {
-        IntensityMeasurementCore newCore = null;
+        IntensityMeasurementCore existingCore = null;
         if (availableCores!=null) {
             for (ObjectFeatureCore c : availableCores) {
                 if (c instanceof IntensityMeasurementCore && ((IntensityMeasurementCore)c).getIntensityMap(false)==intensityMap) {
-                    newCore=(IntensityMeasurementCore)c;
+                    existingCore=(IntensityMeasurementCore)c;
                     break;
                 }
             }
         }
-        if (newCore==null) {
+        if (existingCore==null) {
             if (core==null) {
                 core = new IntensityMeasurementCore();
                 core.setUp(intensityMap, parent.getMask(), preFilters);
             }
             if (availableCores!=null) availableCores.add(core);
-        } else core=newCore;
+        } else core=existingCore;
     }    
 }

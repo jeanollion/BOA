@@ -155,7 +155,11 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         return !NO_SELECTION.equals(pluginName) || pluginParameters!=null;
         //return (pluginName!=null && !NOPLUGIN.equals(pluginName));
     }
-    
+    @Override
+    public boolean isValid() {
+        if (!allowNoSelection && !isOnePluginSet()) return false;
+        return super.isValid();
+    }
     public void setPlugin(String pluginName) {
         //System.out.println(toString()+ ": set plugin: "+pluginName+ " currentStatus: pluginSet?"+pluginSet+" plugin name: "+pluginName);
         if (NO_SELECTION.equals(pluginName)) {

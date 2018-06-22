@@ -43,8 +43,7 @@ import boa.plugins.Transformation;
 import boa.plugins.plugins.measurements.BacteriaLineageMeasurements;
 import boa.plugins.plugins.measurements.GetAttribute;
 import boa.plugins.plugins.measurements.SimpleTrackMeasurements;
-import boa.plugins.plugins.measurements.ContainerObjectIdx;
-import boa.plugins.plugins.measurements.MutationTrackMeasurements;
+import boa.plugins.plugins.measurements.ContainerObject;
 import boa.plugins.plugins.measurements.ObjectFeatures;
 import boa.plugins.plugins.measurements.ObjectInclusionCount;
 import boa.plugins.plugins.measurements.SimpleIntensityMeasurementStructureExclusion;
@@ -203,7 +202,7 @@ public class GenerateMutationDynamicsXP {
         xp.clearMeasurements();
         xp.addMeasurement(new SimpleTrackMeasurements(1));
         xp.addMeasurement(new SimpleTrackMeasurements(2));
-        xp.addMeasurement(new ContainerObjectIdx(2, 1).setMeasurementName("BacteriaIdx"));
+        xp.addMeasurement(new ContainerObject(2, 1).setMeasurementName("BacteriaIdx"));
         xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationCount"));
         xp.addMeasurement(new GetAttribute(2).addAttributes("Quality"));
         xp.addMeasurement(new SimpleIntensityMeasurementStructureExclusion(0, 2, 1).setPrefix("YfpBactExcl").setRadii(2, 0));

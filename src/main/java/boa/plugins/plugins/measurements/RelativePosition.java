@@ -117,7 +117,7 @@ public class RelativePosition implements Measurement, ToolTip {
             if (object.getExperiment().isChildOf(reference.getSelectedStructureIdx(), objects.getSelectedStructureIdx()))  refObject = object.getParent(reference.getSelectedStructureIdx());
             else {
                 int refParent = reference.getFirstCommonParentStructureIdx(objects.getSelectedStructureIdx());
-                refObject = StructureObjectUtils.getInclusionParent(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
+                refObject = StructureObjectUtils.getContainer(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
             }
         }
         if (refObject == null && reference.getSelectedStructureIdx()>=0) return; // no reference object found

@@ -38,7 +38,6 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     boolean postLoaded = false;
     
     
-    
     public ChoiceParameter(String name, String[] listChoice, String selectedItem, boolean allowNoSelection) {
         super(name);
         this.listChoice=listChoice;

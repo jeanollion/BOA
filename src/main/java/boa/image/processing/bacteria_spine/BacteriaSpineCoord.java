@@ -53,7 +53,7 @@ public class BacteriaSpineCoord {
     public double spineLength() {
         return coords[2];
     }
-    public double distFromSpine(boolean normalized) {
+    public double radialCoord(boolean normalized) {
         return normalized ? coords[1]/coords[3] : coords[1];
     } 
     public double spineRadius() {
@@ -89,6 +89,6 @@ public class BacteriaSpineCoord {
     
     @Override
     public String toString() {
-        return new StringBuilder().append("along spine: ").append(spineCoord(false)).append("/").append(spineLength()).append(" distance from spine:").append(distFromSpine(false)).append("/").append(spineRadius()).toString();
+        return new StringBuilder().append("along spine: ").append(spineCoord(false)).append("/").append(spineLength()).append(" distance from spine:").append(radialCoord(false)).append("/").append(spineRadius()).toString();
     }
 }

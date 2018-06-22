@@ -44,7 +44,7 @@ import boa.utils.geom.Point;
  * @author jollion
  */
 public class BacteriaTrackingAttributes implements Measurement, ToolTip {
-    protected StructureParameter bacteria = new StructureParameter("Bacteria Structure", 1, false, false);
+    protected StructureParameter bacteria = new StructureParameter("Bacteria Structure", -1, false, false);
     protected Parameter[] parameters = new Parameter[]{bacteria};
     
     public BacteriaTrackingAttributes(){}

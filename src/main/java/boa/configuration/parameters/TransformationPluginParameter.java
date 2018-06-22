@@ -159,6 +159,12 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         return instance;
     }
     @Override
+    public boolean isValid() {
+        if (inputChannel!=null && inputChannel.getSelectedIndex()<0) return false; 
+        if (outputChannel!=null && outputChannel.getSelectedIndex()<0) return false; 
+        return super.isValid();
+    }
+    @Override
     public boolean sameContent(Parameter other) {
         if (!super.sameContent(other)) return false;
         if (other instanceof TransformationPluginParameter) {

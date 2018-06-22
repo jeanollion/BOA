@@ -128,7 +128,7 @@ public class BacteriaSpineLocalizer {
         if (c2==null && c1!=null) return c1;
         if (testMode && vPrev!=null && vNext!=null) logger.debug("compare two coords");
         if (c1==null && c2==null) return null; // unable to locate point -> concave contour ? 
-        return Math.abs(c1.distFromSpine(false))<Math.abs(c2.distFromSpine(false)) ? c1 : c2;
+        return Math.abs(c1.radialCoord(false))<Math.abs(c2.radialCoord(false)) ? c1 : c2;
     }
     /**
      * 
@@ -261,13 +261,13 @@ public class BacteriaSpineLocalizer {
             int ip = -idx-1;
             // border cases check if point is inside bacteria
             if (ip==spine.spine.length) {
-                Point p = projectFromVertebra(spine.spine[spine.spine.length-1],coord.distFromSpine(false));
+                Point p = projectFromVertebra(spine.spine[spine.spine.length-1],coord.radialCoord(false));
                 return p;
                 //if (bacteria.contains(p.asVoxel())) return p;
                 //else return null;
             } 
             if (ip == 0) {
-                Point p = projectFromVertebra(spine.spine[0],coord.distFromSpine(false));
+                Point p = projectFromVertebra(spine.spine[0],coord.radialCoord(false));
                 return p;
                 //if (bacteria.contains(p.asVoxel())) return p;
                 //else return null;
@@ -275,8 +275,8 @@ public class BacteriaSpineLocalizer {
             // project from 2 adjacent vertebras
             PointContainer2<Vector, Double> v1 = spine.spine[ip-1];
             PointContainer2<Vector, Double> v2 = spine.spine[ip];
-            return projectFrom2Vertebra(v1, v2, spineCoord, coord.distFromSpine(false));
-        } else return projectFromVertebra(spine.spine[idx],coord.distFromSpine(false));
+            return projectFrom2Vertebra(v1, v2, spineCoord, coord.radialCoord(false));
+        } else return projectFromVertebra(spine.spine[idx],coord.radialCoord(false));
     }
     private Point projectFromVertebra(PointContainer2<Vector, Double> vertebra, double distanceFromSpine) {
         if (testMode) logger.debug("projecting from single vertebra: {}", vertebra);

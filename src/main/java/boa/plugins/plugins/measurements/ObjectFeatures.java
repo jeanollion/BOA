@@ -32,6 +32,7 @@ import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
 import boa.plugins.ObjectFeature;
 import boa.plugins.PreFilter;
+import boa.plugins.ToolTip;
 import boa.plugins.objectFeature.ObjectFeatureCore;
 import boa.plugins.objectFeature.ObjectFeatureWithCore;
 
@@ -39,7 +40,7 @@ import boa.plugins.objectFeature.ObjectFeatureWithCore;
  *
  * @author jollion
  */
-public class ObjectFeatures implements Measurement {
+public class ObjectFeatures implements Measurement, ToolTip {
     StructureParameter structure = new StructureParameter("Structure", -1, false, false);
     PluginParameter<ObjectFeature> def = new PluginParameter<>("Feature", ObjectFeature.class, false).setAdditionalParameters(new TextParameter("Key", "", false));
     SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<>("Features", 0, def);
@@ -92,16 +93,16 @@ public class ObjectFeatures implements Measurement {
         return res;
     }
     @Override
-    public void performMeasurement(StructureObject object) {
+    public void performMeasurement(StructureObject parent) {
         int structureIdx = structure.getSelectedIndex();
         //logger.debug("performing features on object: {} (children: {})", object, object.getChildren(structureIdx).size());
         ArrayList<ObjectFeatureCore> cores = new ArrayList<>();
         for (PluginParameter<ObjectFeature> ofp : features.getActivatedChildren()) {
             ObjectFeature f = ofp.instanciatePlugin();
             if (f!=null) {
-                f.setUp(object, structureIdx, object.getObjectPopulation(structureIdx));
+                f.setUp(parent, structureIdx, parent.getObjectPopulation(structureIdx));
                 if (f instanceof ObjectFeatureWithCore) ((ObjectFeatureWithCore)f).setUpOrAddCore(cores, preFilters);
-                for (StructureObject o : object.getChildren(structureIdx)) {
+                for (StructureObject o : parent.getChildren(structureIdx)) {
                     double m = f.performMeasurement(o.getRegion()); 
                     o.getMeasurements().setValue(((TextParameter)ofp.getAdditionalParameters().get(0)).getValue(), m);
                 }
@@ -111,6 +112,11 @@ public class ObjectFeatures implements Measurement {
     @Override
     public Parameter[] getParameters() {
         return parameters;
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Computes features (scalar value) on single objects, such as intensity measurement (mean, min..) or geometrical features (length, size..).";
     }
     
 }

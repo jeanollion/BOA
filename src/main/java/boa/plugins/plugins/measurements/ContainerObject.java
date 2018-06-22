@@ -19,6 +19,8 @@
 package boa.plugins.plugins.measurements;
 
 import boa.configuration.experiment.Experiment;
+import boa.configuration.parameters.ChoiceParameter;
+import boa.configuration.parameters.MultipleChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.ParentStructureParameter;
@@ -37,33 +39,34 @@ import boa.plugins.ToolTip;
  *
  * @author jollion
  */
-public class ContainerObjectIdx implements Measurement, ToolTip {
+public class ContainerObject implements Measurement, ToolTip {
     protected StructureParameter objects = new StructureParameter("Objects", -1, false, false).setToolTipText("Objects to perform measurement on");
     protected StructureParameter reference = new StructureParameter("Container Object", -1, false, false).setToolTipText("Objects type that contain <em>Objects</em>");
-    TextParameter key = new TextParameter("Key Name: ", "ContainerObjectIdx", false);
-    protected Parameter[] parameters = new Parameter[]{objects, reference, key};
+    protected MultipleChoiceParameter returnAttributes = new MultipleChoiceParameter("Attribute of container to return", new String[]{"Simple Index", "Indices"}, true);
+    TextParameter key = new TextParameter("Key Name: ", "ContainerObject", false);
+    protected Parameter[] parameters = new Parameter[]{objects, reference, key, returnAttributes};
     @Override
     public String getToolTipText() {
-        return "For each object A of type defined in <em>Objects</em>, computes the index of the object B of type defined in <em>Container Object</em> that contains A, if B exists";
+        return "For each object A of type defined in <em>Objects</em>, looks for the the object B of type defined in <em>Container Object</em> that contains A. If B exists, return its index and/or full indice";
     }
     
-    public ContainerObjectIdx() {
+    public ContainerObject() {
         reference.addListener(p->{
             Experiment xp = ParameterUtils.getExperiment(p);
             if (xp==null) return;
             int sIdx = ((StructureParameter)p).getSelectedStructureIdx();
-            if (sIdx>=0) key.setValue(xp.getStructure(sIdx).getName()+"Idx");
+            if (sIdx>=0) key.setValue(xp.getStructure(sIdx).getName());
         });
     }
     
-    public ContainerObjectIdx(int structureIdx, int referenceStructureIdx) {
+    public ContainerObject(int structureIdx, int referenceStructureIdx) {
         this();
         this.objects.setSelectedStructureIdx(structureIdx);
         this.reference.setSelectedStructureIdx(referenceStructureIdx);
         
     }
     
-    public ContainerObjectIdx setMeasurementName(String name) {
+    public ContainerObject setMeasurementName(String name) {
         this.key.setValue(name);
         return this;
     }
@@ -81,7 +84,9 @@ public class ContainerObjectIdx implements Measurement, ToolTip {
     @Override
     public List<MeasurementKey> getMeasurementKeys() {
         ArrayList<MeasurementKey> res = new ArrayList<>();
-        res.add(new MeasurementKeyObject(key.getValue(), objects.getSelectedStructureIdx()));
+        boolean[] att = returnAttributes.getSelectedItemsAsBoolean();
+        if (att[0]) res.add(new MeasurementKeyObject(key.getValue()+"Idx", objects.getSelectedStructureIdx()));
+        if (att[1]) res.add(new MeasurementKeyObject(key.getValue()+"Indices", objects.getSelectedStructureIdx()));
         return res;
     }
 
@@ -91,10 +96,15 @@ public class ContainerObjectIdx implements Measurement, ToolTip {
         if (object.getExperiment().isChildOf(reference.getSelectedStructureIdx(), objects.getSelectedStructureIdx()))  refObject = object.getParent(reference.getSelectedStructureIdx());
         else {
             int refParent = reference.getFirstCommonParentStructureIdx(objects.getSelectedStructureIdx());
-            refObject = StructureObjectUtils.getInclusionParent(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
+            refObject = StructureObjectUtils.getContainer(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
         }
-        if (refObject == null) return;
-        object.getMeasurements().setValue(key.getValue(), refObject.getIdx());
+        boolean[] att = returnAttributes.getSelectedItemsAsBoolean();
+        if (refObject == null) {
+            att[0] = false;
+            att[1] = false;
+        }
+        object.getMeasurements().setValue(key.getValue()+"Idx", att[0]?refObject.getIdx():null);
+        object.getMeasurements().setStringValue(key.getValue()+"Indices", att[1]?StructureObjectUtils.getIndices(refObject):null);
     }
 
     @Override
