@@ -36,7 +36,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import boa.plugins.ObjectFeature;
+import boa.plugins.ToolTip;
 import boa.plugins.TrackPostFilter;
+import static boa.plugins.plugins.track_post_filter.PostFilter.MERGE_POLICY_TT;
 import boa.utils.ArrayUtil;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
@@ -50,15 +52,21 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class RemoveTrackByFeature implements TrackPostFilter {
-    PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, false);
+public class RemoveTrackByFeature implements TrackPostFilter, ToolTip {
+    PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, false).setToolTipText("Feature computed on each object of the track");
     ChoiceParameter statistics = new ChoiceParameter("Statistics", new String[]{"Mean", "Median", "Quantile"}, "mean", false);
     NumberParameter quantile = new BoundedNumberParameter("Quantile", 3, 0.5, 0, 1);
-    ConditionalParameter statCond = new ConditionalParameter(statistics).setActionParameters("Quantile", new Parameter[]{quantile});
+    ConditionalParameter statCond = new ConditionalParameter(statistics).setActionParameters("Quantile", quantile).setToolTipText("Statistics to summarize the distribution of computed features");
     NumberParameter threshold = new NumberParameter("Threshold", 4, 0);
-    BooleanParameter keepOverThreshold = new BooleanParameter("Keep over threshold", true);
-    ChoiceParameter mergePolicy = new ChoiceParameter("Merge Policy", Utils.toStringArray(PostFilter.MERGE_POLICY.values()), PostFilter.MERGE_POLICY.ALWAYS_MERGE.toString(), false).setToolTipText("When removing an object/track that has a previous object (p) that was linked to this object and one other object (n). p is now linked to one single object n. This parameter controls wheter / in which conditions should p's track and n's track be merged.<br/><ul><li>NEVER_MERGE: never merge tracks</li><li>ALWAYS_MERGE: always merge tracks</li><li>MERGE_TRACKS_SIZE_COND: merge tracks only if size(n)>0.8 * size(p) (useful for bacteria linking)</li></ul>");
-
+    BooleanParameter keepOverThreshold = new BooleanParameter("Keep over threshold", true).setToolTipText("If true, track will be removed if the statitics value is under the threshold");
+    ChoiceParameter mergePolicy = new ChoiceParameter("Merge Policy", Utils.toStringArray(PostFilter.MERGE_POLICY.values()), PostFilter.MERGE_POLICY.ALWAYS_MERGE.toString(), false).setToolTipText(MERGE_POLICY_TT);
+    
+    @Override
+    public String getToolTipText() {
+        return "Compute a feature on each object of a track, then a statistic on the distribution, and compare it to a threshold, in order to decided if the track should be removed or not";
+    }
+    
+    
     public RemoveTrackByFeature setMergePolicy(PostFilter.MERGE_POLICY policy) {
         mergePolicy.setSelectedItem(policy.toString());
         return this;
@@ -127,4 +135,6 @@ public class RemoveTrackByFeature implements TrackPostFilter {
     public Parameter[] getParameters() {
         return new Parameter[]{feature, statCond, threshold, keepOverThreshold, mergePolicy};
     }
+
+    
 }

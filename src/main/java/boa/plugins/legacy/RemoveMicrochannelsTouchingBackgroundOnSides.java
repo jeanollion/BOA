@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.track_post_filter;
+package boa.plugins.legacy;
 
 import boa.ui.ManualEdition;
 import boa.gui.image_interaction.ImageWindowManagerFactory;

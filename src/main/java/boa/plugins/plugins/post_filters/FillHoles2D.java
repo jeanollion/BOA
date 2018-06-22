@@ -22,12 +22,19 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.plugins.PostFilter;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class FillHoles2D implements PostFilter {
+public class FillHoles2D implements PostFilter, ToolTip {
+    
+    @Override
+    public String getToolTipText() {
+        return "Fills the holes in segmented regions";
+    }
+    
     public FillHoles2D() {}
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
@@ -39,5 +46,7 @@ public class FillHoles2D implements PostFilter {
     public Parameter[] getParameters() {
         return new Parameter[0];
     }
+
+    
     
 }

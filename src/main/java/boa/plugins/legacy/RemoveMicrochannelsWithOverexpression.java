@@ -16,12 +16,13 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.track_post_filter;
+package boa.plugins.legacy;
 
 import boa.ui.ManualEdition;
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.Parameter;
+import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import ij.process.AutoThresholder;
@@ -29,6 +30,7 @@ import boa.image.Histogram;
 import boa.image.Image;
 import boa.image.processing.ImageOperations;
 import boa.image.ThresholdMask;
+import boa.plugins.ThresholderHisto;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import boa.plugins.TrackPostFilter;
+import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.utils.ArrayUtil;
 import boa.utils.Utils;
@@ -44,13 +47,11 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class RemoveMicrochannelsWithOverexpression implements TrackPostFilter {
-    
-    BoundedNumberParameter intensityPercentile = new BoundedNumberParameter("Intensity Quantile", 2, 99, 90, 100).setToolTipText("(%) quantile of intensity withing microchannel");
-    BoundedNumberParameter interQuartileFactor = new BoundedNumberParameter("Inter-Quartile Factor", 2, 5, 0.5, null).setToolTipText("Threshold will be Median value + Inter-Quartile Range * Inter-Quartile Factor. Over this threshold a microchannel is consider to contain cells overexpressing the fluorescent protein");
+public class RemoveMicrochannelsWithOverexpression {/*implements TrackPostFilter {
+    PluginParameter<ThresholderHisto> satThld = new PluginParameter<>("Method", ThresholderHisto.class, new BackgroundFit(40), false);
     BooleanParameter trim = new BooleanParameter("Remove Method", "Trim Track", "Remove Whole Track", true);
     Parameter[] parameters = new Parameter[]{intensityPercentile, interQuartileFactor, trim};
-    final static int successiveSaturated = 3;
+    final static int SUCCESSIVE_SATURATED = 3;
     public RemoveMicrochannelsWithOverexpression() {}
     public RemoveMicrochannelsWithOverexpression(double intensityPercentile, double interQuartileFactor) {
         this.intensityPercentile.setValue(intensityPercentile);
@@ -64,7 +65,7 @@ public class RemoveMicrochannelsWithOverexpression implements TrackPostFilter {
     public void filter(int structureIdx, List<StructureObject> parentTrack) {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         double per = intensityPercentile.getValue().doubleValue()/100d;
-        Map<StructureObject, Double> value = Utils.flattenMap(allTracks).stream().collect(Collectors.toMap(o->o, o->ImageOperations.getQuantiles(o.getRawImage(structureIdx), o.getMask(), null, per)[0]));
+        Map<StructureObject, Double> value = Utils.flattenMap(allTracks).parallelStream().collect(Collectors.toMap(o->o, o->ImageOperations.getQuantiles(o.getRawImage(structureIdx), o.getMask(), null, per)[0]));
         List<Double> distribution = new ArrayList<>(value.values());
         double quart1 = ArrayUtil.quantile(distribution, 0.25);
         double quart2 = ArrayUtil.quantile(distribution, 0.5);
@@ -77,7 +78,7 @@ public class RemoveMicrochannelsWithOverexpression implements TrackPostFilter {
             int idx = 0;
             for (StructureObject o : e.getValue()) {
                 if (value.get(o)>thld) ++sat;
-                if (sat>=successiveSaturated) {
+                if (sat>=SUCCESSIVE_SATURATED) {
                     if (trim.getSelected()) {
                         int idxStart = idx-sat+1;
                         if (idxStart==1) idxStart = 0;
@@ -97,4 +98,5 @@ public class RemoveMicrochannelsWithOverexpression implements TrackPostFilter {
     }
     boolean testMode;
     public void setTestMode(boolean testMode) {this.testMode=testMode;}
+*/
 }

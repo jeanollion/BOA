@@ -19,8 +19,10 @@
 package boa.configuration.parameters;
 
 import boa.configuration.experiment.Structure;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.ObjIntConsumer;
+import java.util.function.ToIntFunction;
 
 
 /**
@@ -79,7 +81,7 @@ public class ParentStructureParameter extends StructureParameter<ParentStructure
         super.setSelectedIndex(structureIdx);
     }
     
-    public static ObjIntConsumer<ParentStructureParameter> defaultAutoConfigurationParent() {
-        return (p, s)->p.setMaxStructureIdx(s);
+    public static Consumer<ParentStructureParameter> defaultAutoConfigurationParent() {
+        return (p)-> p.setSelectedStructureIdx(StructureParameter.structureInParents().applyAsInt(p));
     }
 }

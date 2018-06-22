@@ -83,12 +83,7 @@ import boa.plugins.plugins.measurements.Focus;
 import boa.plugins.plugins.measurements.objectFeatures.MeanAtBorder;
 import boa.plugins.plugins.post_filters.RemoveEndofChannelBacteria;
 import boa.plugins.plugins.pre_filters.ImageFeature;
-import boa.plugins.plugins.thresholders.BackgroundThresholder;
-import boa.plugins.plugins.track_post_filter.RemoveMicrochannelsTouchingBackgroundOnSides;
-import boa.plugins.plugins.track_post_filter.RemoveMicrochannelsWithOverexpression;
-import boa.plugins.plugins.track_post_filter.RemoveSaturatedMicrochannels;
 import boa.plugins.plugins.track_post_filter.RemoveTrackByFeature;
-import boa.plugins.plugins.track_post_filter.SegmentationPostFilter;
 import boa.plugins.plugins.transformations.AutoFlipY;
 import boa.plugins.plugins.transformations.RemoveDeadPixels;
 import boa.image.processing.ImageTransformation;
@@ -106,7 +101,6 @@ import boa.plugins.plugins.post_filters.FillHoles2D;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.plugins.plugins.segmenters.BacteriaIntensityPhase;
 import boa.plugins.plugins.thresholders.BackgroundFit;
-import boa.plugins.plugins.track_post_filter.AverageMask;
 import boa.plugins.plugins.track_post_filter.PostFilter;
 import boa.plugins.plugins.track_pre_filters.NormalizeTrack;
 import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
@@ -485,15 +479,15 @@ public class GenerateXP {
             mc.setProcessingScheme(new SegmentAndTrack(
                     new MicrochannelTracker().setSegmenter(new MicrochannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05).setWidthQuantile(0.9)
-                    ).addTrackPostFilters(new RemoveMicrochannelsTouchingBackgroundOnSides(2),
-                            new RemoveMicrochannelsWithOverexpression(99, 5).setTrim(true),
+                    ).addTrackPostFilters(
+                            //new RemoveMicrochannelsWithOverexpression(99, 5).setTrim(true),
                             new TrackLengthFilter().setMinSize(5), 
                             new RemoveTracksStartingAfterFrame())
             );
             bacteria.setProcessingScheme(new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaIntensity()).setCostParameters(0.25, 1.25)
                     ).addTrackPostFilters(
-                            new SegmentationPostFilter().setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND).addPostFilters(new RemoveEndofChannelBacteria()), 
+                            new PostFilter(new RemoveEndofChannelBacteria()).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
                             new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND).setFeature(new Size(), 150, true).setQuantileValue(0.25)
                     )
             );
@@ -572,7 +566,7 @@ public class GenerateXP {
             mcpc.addTrackPostFilters(
                 new TrackLengthFilter().setMinSize(10),  
                 new RemoveTracksStartingAfterFrame(),
-                new SegmentationPostFilter().addPostFilters(new FitMicrochannelHeadToEdges().setResetBounds(true).setTrimUpperPixels(0))//,
+                new PostFilter(new FitMicrochannelHeadToEdges().setResetBounds(true).setTrimUpperPixels(0))
                 //new AverageMask()
             );
             
@@ -592,7 +586,7 @@ public class GenerateXP {
                             new BinaryClose(5),
                             new FillHoles2D()
                     ).addTrackPostFilters(
-                            new SegmentationPostFilter().setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND).addPostFilters(new RemoveEndofChannelBacteria().setContactSidesProportion(0)), 
+                            new PostFilter(new RemoveEndofChannelBacteria().setContactSidesProportion(0)).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
                             new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND).setFeature(new Size(), 10, true).setStatistics(2)
                     )
             );

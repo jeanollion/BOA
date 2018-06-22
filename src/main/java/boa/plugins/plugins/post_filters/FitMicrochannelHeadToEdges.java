@@ -46,6 +46,7 @@ import boa.image.processing.ImageFeatures;
 import boa.image.processing.watershed.WatershedTransform;
 import boa.image.processing.split_merge.SplitAndMergeEdge;
 import boa.image.processing.split_merge.SplitAndMergeRegionCriterion;
+import boa.plugins.ToolTip;
 import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.pre_filters.Sigma;
 import boa.plugins.plugins.segmenters.EdgeDetector;
@@ -60,16 +61,24 @@ import java.util.stream.Stream;
  *
  * @author jollion
  */
-public class FitMicrochannelHeadToEdges implements PostFilter {
+public class FitMicrochannelHeadToEdges implements PostFilter, ToolTip {
     protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new Sigma(3).setMedianRadius(2)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map"); //new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)
-    BoundedNumberParameter trimUpperPixels = new BoundedNumberParameter("Trim Upper Pixels", 0, 0, 0, null).setToolTipText("Erase Pixels of a region if they are closer than this value to the background in the upper y-direction");
+    BoundedNumberParameter trimUpperPixels = new BoundedNumberParameter("Trim Upper Pixels", 0, 0, 0, null).setToolTipText("Erase Pixels N upper pixels of each regions");
     BoundedNumberParameter fitMargin = new BoundedNumberParameter("Fit margin", 0, 9, 0, null).setToolTipText("Fit will be done in a window around segmented microchannel, with this margin on the left , right & upper sides");
     BoundedNumberParameter morphoRadius = new BoundedNumberParameter("Open / close radius", 1, 4, 0, null).setToolTipText("Radius for morpholical close (remove small invaginations) and open (remove small protuberances) <br /> 0 for no close & no open <br />Must but inferior to half of the width of channels");
-    BooleanParameter resetBounds = new BooleanParameter("Reset Bounds", true).setToolTipText("Whether bounds should be reset or not. <br />If average mask track-post-filter is set afterwards, bounds should not be reset so that regions can be aligned on their top-left-corner");
-    Parameter[] parameters = new Parameter[]{watershedMap, fitMargin, morphoRadius, trimUpperPixels, resetBounds};
+    BooleanParameter resetBounds = new BooleanParameter("Reset Bounds", true).setToolTipText("Set the bounds of microchannel to the bounds of fitted object<br />If average mask track-post-filter is set afterwards, bounds should not be reset so that regions can be aligned on their top-left-corner");
+    Parameter[] parameters = new Parameter[]{watershedMap, fitMargin, morphoRadius}; //trimUpperPixels, resetBounds
     public static boolean debug = false;
     public static int debugLabel =0;
     public boolean verbose = false;
+    
+    @Override
+    public String getToolTipText() {
+        return "This post-filter fit an existing region to edges. "
+                + "<br /> it first performs a watershed partitioning in a window aroung each microchannel. "
+                + "<br / >Partition  whose seeds are not included in the microchannel regions are removed ";
+    }
+    
     public FitMicrochannelHeadToEdges setResetBounds(boolean resetBounds) {
         this.resetBounds.setSelected(resetBounds);
         return this;
@@ -255,9 +264,14 @@ public class FitMicrochannelHeadToEdges implements PostFilter {
         List<Voxel> toErase = new ArrayList<>();
         ImageMask.loop(mask, (x, y, z)->{
             for (int dy = 1; dy<=radius; ++dy) {
-                if (y<dy || !mask.insideMask(x, y-dy, z)) toErase.add(new Voxel(x, y, z));
+                if (y<dy || !mask.insideMask(x, y-dy, z)) {
+                    toErase.add(new Voxel(x, y, z));
+                    break;
+                }
             }
         });
         for (Voxel v : toErase) mask.setPixel(v.x, v.y, v.z, 0);
     }
+
+    
 }

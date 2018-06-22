@@ -29,18 +29,24 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.plugins.ObjectFeature;
 import boa.plugins.PostFilter;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class FeatureFilter implements PostFilter {
+public class FeatureFilter implements PostFilter, ToolTip {
     PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, false);
     NumberParameter threshold = new NumberParameter("Threshold", 4, 0);
     BooleanParameter keepOverThreshold = new BooleanParameter("Keep over threshold", true);
     BooleanParameter strict = new BooleanParameter("Strict comparison with threshold", true);
     
     Parameter[] parameters = new Parameter[]{feature, threshold, keepOverThreshold, strict};
+    
+    @Override
+    public String getToolTipText() {
+        return "Filter regions according to a user-defined feature";
+    }
     
     public FeatureFilter() {}
     public FeatureFilter(ObjectFeature feature, double threshold, boolean keepOverThreshold, boolean strictComparison) {
@@ -64,5 +70,7 @@ public class FeatureFilter implements PostFilter {
     public Parameter[] getParameters() {
         return parameters;
     }
+
+    
     
 }

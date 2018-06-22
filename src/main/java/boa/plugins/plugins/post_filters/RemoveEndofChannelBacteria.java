@@ -31,17 +31,23 @@ import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
 import boa.measurement.GeometricalMeasurements;
 import boa.plugins.PostFilter;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class RemoveEndofChannelBacteria implements PostFilter {
+public class RemoveEndofChannelBacteria implements PostFilter, ToolTip {
     BoundedNumberParameter contactProportion = new BoundedNumberParameter("Contact Proportion", 3, 0.9, 0, 1).setToolTipText("contact = number of pixels in contact with open end of channel / median width of cell. If contact > this value, cell will be erased. If value = 0 -> this condition won't be tested");
     BoundedNumberParameter sizeLimit = new BoundedNumberParameter("Minimum Size", 0, 300, 0, null).setToolTipText("If cell is in contact with open end of channel and size (in pixels) is inferior to this value, it will be erased. O = no size limit");
     BooleanParameter doNotRemoveIfOnlyOne = new BooleanParameter("Do not remove if only one object", true).setToolTipText("If only one object is present in microchannel, it won't be removed");
     BoundedNumberParameter contactSidesProportion = new BoundedNumberParameter("Contact with Sides Proportion", 3, 0.6, 0, 1).setToolTipText("contact with sides = number of pixels in contact with left or right sides of microchannel / min(median size of cell along Y, median size of cell along X) . If contact > this value, cell will be erased. If value = 0 -> this condition won't be tested");
     Parameter[] parameters = new Parameter[]{doNotRemoveIfOnlyOne, contactProportion, sizeLimit, contactSidesProportion};
+    
+    @Override
+    public String getToolTipText() {
+        return "Removes bacteria in contact with open-end of microchannels";
+    }
     
     public RemoveEndofChannelBacteria(){}
     public RemoveEndofChannelBacteria setContactProportion(double prop) {
@@ -90,8 +96,10 @@ public class RemoveEndofChannelBacteria implements PostFilter {
         return null;
     }
 
-    public Parameter[] getParameters() {
+    @Override public Parameter[] getParameters() {
         return parameters;
     }
+
+    
     
 }

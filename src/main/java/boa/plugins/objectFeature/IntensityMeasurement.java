@@ -44,7 +44,9 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
         this.intensity.setSelectedStructureIdx(structureIdx);
         return this;
     }
-    
+    public int getIntensityStructure() {
+        return this.intensity.getSelectedStructureIdx();
+    }
     @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         super.setUp(parent, childStructureIdx, childPopulation);
         this.parent=parent;

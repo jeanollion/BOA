@@ -31,17 +31,23 @@ import boa.data_structure.StructureObjectProcessing;
 import boa.data_structure.Voxel;
 import boa.measurement.GeometricalMeasurements;
 import boa.plugins.PostFilter;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class MicrochannelPhaseArtifacts implements PostFilter {
+public class MicrochannelPhaseArtifacts implements PostFilter, ToolTip {
     BoundedNumberParameter XThickness = new BoundedNumberParameter("X-thickness", 1, 7, 0, null).setToolTipText("Thickness along X-axis should be under this threshold to erase object");
     BoundedNumberParameter XContactFraction = new BoundedNumberParameter("Minimum X contact", 2, 0.75, 0, 1).setToolTipText("Contact with X-border of channel divided by length should be higher than this value to erase object");
     BoundedNumberParameter YContactFraction = new BoundedNumberParameter("Minimum Y contact", 2, 0.90, 0, 1).setToolTipText("Contact with upper Y-border of channel divided by X-thickness should be higher than this value to erase object");
     BoundedNumberParameter cornerContactFraction = new BoundedNumberParameter("corner contact fraction", 2, 0.5, 0, 1).setToolTipText("Contact with X-border (left XOR right) & upper Y-border of channel divided by perimeter should be higher than this value to erase object");
     Parameter[] parameters = new Parameter[]{XThickness, XContactFraction, YContactFraction, cornerContactFraction};
+    
+    @Override
+    public String getToolTipText() {
+        return "Filter border artefacts usually generated in phase-contrast microscopy images in microchannels: thin regions touching microchannel borders";
+    }
     
     public MicrochannelPhaseArtifacts(){}
 
@@ -122,5 +128,7 @@ public class MicrochannelPhaseArtifacts implements PostFilter {
     public Parameter[] getParameters() {
         return parameters;
     }
+
+   
     
 }

@@ -29,13 +29,19 @@ import boa.image.MutableBoundingBox;
 import boa.image.SimpleBoundingBox;
 import boa.image.SimpleImageProperties;
 import boa.plugins.PostFilter;
+import boa.plugins.ToolTip;
 import java.util.Arrays;
 
 /**
  *
  * @author Jean Ollion
  */
-public class ExtendBounds implements PostFilter {
+public class ExtendBounds implements PostFilter, ToolTip {
+
+    @Override
+    public String getToolTipText() {
+        return "Extends the bouding box of a region of a user-defined size in each directions, and set a rectangular mask to the region";
+    }
     public enum OUT_OF_BOUNDS_CONDITION {
         TRIM("Trim"),
         KEEP_SIZE("Keep Global Size"),

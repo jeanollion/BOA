@@ -20,16 +20,19 @@ package boa.configuration.parameters;
 
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Structure;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
 import java.util.function.ObjIntConsumer;
+import java.util.function.ToIntFunction;
 
 /**
  *
  * @author nasique
  */
-public class StructureParameter<T extends StructureParameter> extends IndexChoiceParameter {
+public class StructureParameter<T extends StructureParameter<T>> extends IndexChoiceParameter {
     protected Experiment xp;
-    ObjIntConsumer<T> autoConfiguration;
+    Consumer<T> autoConfiguration;
     
     public StructureParameter(String name) {
         super(name);
@@ -42,18 +45,29 @@ public class StructureParameter<T extends StructureParameter> extends IndexChoic
         super(name, selectedStructures, allowNoSelection);
     }
     
-    public T setAutoConfiguration(ObjIntConsumer<T> autoConfiguration) {
+    public T setAutoConfiguration(Consumer<T> autoConfiguration) {
         this.autoConfiguration=autoConfiguration;
         return (T)this;
     }
-    public static ObjIntConsumer<StructureParameter> defaultAutoConfiguration() {
-        return (p, s)->p.setSelectedStructureIdx(s);
+    public static <T extends StructureParameter<T>> Consumer<T> defaultAutoConfiguration() {
+        return p -> p.setSelectedStructureIdx(structureInParents().applyAsInt(p));
+    }
+    public static ToIntFunction<StructureParameter> structureInParents() {
+        return p->{
+            Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, p, false);
+            int sIdx = (s!=null) ? s.getIndex(): -1;
+            return sIdx;
+        };
+    }
+    public static ToIntFunction<StructureParameter> structureParameterInParents() {
+        return p->{
+            StructureParameter s = ParameterUtils.getFirstParameterFromParents(StructureParameter.class, p, false);
+            int sIdx = (s!=null) ? s.getSelectedStructureIdx(): -1;
+            return sIdx;
+        };
     }
     protected void autoConfiguration() {
-        if (getXP()!=null && this.autoConfiguration!=null) {
-            Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
-            if (s!=null) autoConfiguration.accept((T)this, s.getIndex());
-        }
+        if (autoConfiguration!=null) autoConfiguration.accept((T)this);
     }
     
     protected Experiment getXP() {

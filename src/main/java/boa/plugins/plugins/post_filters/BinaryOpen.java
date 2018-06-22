@@ -28,13 +28,20 @@ import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.plugins.MultiThreaded;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class BinaryOpen implements PostFilter, MultiThreaded {
+public class BinaryOpen implements PostFilter, MultiThreaded, ToolTip {
     ScaleXYZParameter scale = new ScaleXYZParameter("Opening Radius", 3, 1, true);
+    
+    @Override
+    public String getToolTipText() {
+        return "Performs an opening operation on region masks<br />Useful to remove small protuberances<br />When several segmented regions are present, the filter is applied label-wise";
+    }
+    
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Neighborhood n = Filters.getNeighborhood(scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parent.getMask());

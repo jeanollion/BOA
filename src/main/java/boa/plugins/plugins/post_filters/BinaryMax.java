@@ -28,13 +28,19 @@ import boa.image.ImageInteger;
 import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
 import boa.image.processing.neighborhood.Neighborhood;
+import boa.plugins.MultiThreaded;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class BinaryMax implements PostFilter {
+public class BinaryMax implements PostFilter, MultiThreaded, ToolTip {
     ScaleXYZParameter scale = new ScaleXYZParameter("Radius", 5, 1, true);
+    @Override
+    public String getToolTipText() {
+        return "Performs an max operation on region masks<br />When several segmented regions are present, the filter is applied label-wise";
+    }
     public BinaryMax() {}
     public BinaryMax(double radius) {
         this.scale.setScaleXY(radius);
@@ -43,7 +49,7 @@ public class BinaryMax implements PostFilter {
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         Neighborhood n = Filters.getNeighborhood(scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parent.getMask());
         childPopulation.relabel(false); // ensure label are ordered
-        ImageInteger labelMap =  (ImageInteger)Filters.applyFilter(childPopulation.getLabelMap(), null, new Filters.BinaryMaxLabelWise(), n);
+        ImageInteger labelMap =  (ImageInteger)Filters.applyFilter(childPopulation.getLabelMap(), null, new Filters.BinaryMaxLabelWise(), n, parallele);
         RegionPopulation res = new RegionPopulation(labelMap, true);
         return res;
     }
@@ -52,5 +58,10 @@ public class BinaryMax implements PostFilter {
     public Parameter[] getParameters() {
         return new Parameter[]{scale};
     }
-    
+
+    boolean parallele;
+    @Override
+    public void setMultithread(boolean parallele) {
+        this.parallele=parallele;
+    }
 }

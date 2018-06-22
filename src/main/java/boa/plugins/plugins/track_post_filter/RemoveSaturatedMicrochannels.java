@@ -28,6 +28,7 @@ import boa.image.Histogram;
 import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.ThresholdMask;
+import boa.plugins.ToolTip;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -40,8 +41,11 @@ import boa.plugins.plugins.thresholders.IJAutoThresholder;
  *
  * @author jollion
  */
-public class RemoveSaturatedMicrochannels implements TrackPostFilter {
-    
+public class RemoveSaturatedMicrochannels implements TrackPostFilter, ToolTip {
+    @Override
+    public String getToolTipText() {
+        return "removes microchannels that contain saturated pixels. <br />Only valid if preprocessed images contain a saturation transformation on the channel image of microchannels";
+    }
     BoundedNumberParameter minPercentageOfSaturatedObjects = new BoundedNumberParameter("Min. percentage of track", 0, 10, 0, 100).setToolTipText("If the track has more than this proportion of saturated objects, it will be removed");
     BoundedNumberParameter minPercentageOfSaturatedPixels = new BoundedNumberParameter("Min. percentage of saturated pixel", 0, 10, 1, 100).setToolTipText("If an object has more than this proportion of saturated pixel it will be considered as a saturated object");
     Parameter[] parameters = new Parameter[]{minPercentageOfSaturatedPixels, minPercentageOfSaturatedObjects};
@@ -75,10 +79,10 @@ public class RemoveSaturatedMicrochannels implements TrackPostFilter {
     private boolean isSaturated(StructureObject o) {
         // get mask of bacteria using Otsu threshold
         Image image = o.getRawImage(o.getStructureIdx());
-        double thld = IJAutoThresholder.runThresholder(image, o.getMask(), AutoThresholder.Method.Otsu);
+        Histogram hist = HistogramFactory.getHistogram(()->image.stream(), HistogramFactory.BIN_SIZE_METHOD.AUTO);
+        double thld = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, hist);
         ThresholdMask mask = new ThresholdMask(image, thld, true, false);
         double stauratedPixelsThld =  mask.count() * minPercentageOfSaturatedPixels.getValue().doubleValue() / 100d;
-        Histogram hist = HistogramFactory.getHistogram(()->image.stream(mask, true), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         int i = hist.getMaxNonNullIdx();
         if (testMode) logger.debug("test saturated object: {}: total bact pixels: {} (thld: {}) sat pixel limit: {}, max value count: {} max value: {} ", o, mask.count(), thld, stauratedPixelsThld, i>0?hist.data[i]:0, hist.getValueFromIdx(i) );
         return (i>0 && hist.data[i]>stauratedPixelsThld);
@@ -90,4 +94,6 @@ public class RemoveSaturatedMicrochannels implements TrackPostFilter {
     }
     boolean testMode;
     public void setTestMode(boolean testMode) {this.testMode=testMode;}
+
+    
 }

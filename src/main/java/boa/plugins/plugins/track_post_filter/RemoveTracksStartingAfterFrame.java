@@ -24,11 +24,13 @@ import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
+import boa.plugins.ToolTip;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import boa.plugins.TrackPostFilter;
+import static boa.plugins.plugins.track_post_filter.PostFilter.MERGE_POLICY_TT;
 import boa.utils.Utils;
 import java.util.function.BiPredicate;
 
@@ -36,12 +38,17 @@ import java.util.function.BiPredicate;
  *
  * @author jollion
  */
-public class RemoveTracksStartingAfterFrame implements TrackPostFilter {
+public class RemoveTracksStartingAfterFrame implements TrackPostFilter, ToolTip {
     
     BoundedNumberParameter startFrame = new BoundedNumberParameter("Maximum starting frame", 0, 0, 0, null);
-    ChoiceParameter mergePolicy = new ChoiceParameter("Merge Policy", Utils.toStringArray(PostFilter.MERGE_POLICY.values()), PostFilter.MERGE_POLICY.ALWAYS_MERGE.toString(), false).setToolTipText("When removing an object/track that has a previous object (p) that was linked to this object and one other object (n). p is now linked to one single object n. This parameter controls wheter / in which conditions should p's track and n's track be merged.<br/><ul><li>NEVER_MERGE: never merge tracks</li><li>ALWAYS_MERGE: always merge tracks</li><li>MERGE_TRACKS_SIZE_COND: merge tracks only if size(n)>0.8 * size(p) (useful for bacteria linking)</li></ul>");
-    
+    ChoiceParameter mergePolicy = new ChoiceParameter("Merge Policy", Utils.toStringArray(PostFilter.MERGE_POLICY.values()), PostFilter.MERGE_POLICY.ALWAYS_MERGE.toString(), false).setToolTipText(MERGE_POLICY_TT);
     Parameter[] parameters = new Parameter[]{startFrame, mergePolicy};
+    
+    @Override
+    public String getToolTipText() {
+        return "Remove tracks that start after a user-defined frame";
+    }
+    
     public RemoveTracksStartingAfterFrame() {}
     
     public RemoveTracksStartingAfterFrame setMergePolicy(PostFilter.MERGE_POLICY policy) {
@@ -69,5 +76,7 @@ public class RemoveTracksStartingAfterFrame implements TrackPostFilter {
     public Parameter[] getParameters() {
         return parameters;
     }
+
+    
     
 }

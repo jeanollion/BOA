@@ -28,13 +28,20 @@ import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.plugins.MultiThreaded;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class BinaryClose implements PostFilter, MultiThreaded {
+public class BinaryClose implements PostFilter, MultiThreaded, ToolTip {
     ScaleXYZParameter scale = new ScaleXYZParameter("Radius", 5, 1, true);
+    
+    @Override
+    public String getToolTipText() {
+        return "Performs a close operation on region masks<br />Useful to fill invaginations<br />When several segmented regions are present, the filter is applied label-wise";
+    }
+    
     public BinaryClose() {}
     public BinaryClose(double radius) {
         this.scale.setScaleXY(radius);
@@ -58,5 +65,5 @@ public class BinaryClose implements PostFilter, MultiThreaded {
     public void setMultithread(boolean parallele) {
         this.parallele=parallele;
     }
-    
+
 }

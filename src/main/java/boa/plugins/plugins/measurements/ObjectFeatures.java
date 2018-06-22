@@ -33,6 +33,7 @@ import boa.plugins.Measurement;
 import boa.plugins.ObjectFeature;
 import boa.plugins.PreFilter;
 import boa.plugins.ToolTip;
+import boa.plugins.objectFeature.IntensityMeasurement;
 import boa.plugins.objectFeature.ObjectFeatureCore;
 import boa.plugins.objectFeature.ObjectFeatureWithCore;
 
@@ -46,6 +47,13 @@ public class ObjectFeatures implements Measurement, ToolTip {
     SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<>("Features", 0, def);
     PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters").setToolTipText("Pre-Filters that will be used by all intensity measurement");
     Parameter[] parameters = new Parameter[]{structure, preFilters, features};
+    
+    @Override
+    public String getToolTipText() {
+        return "Collection of features (scalar value) computed on single objects, such as intensity measurement (mean, min..) or geometrical features (length, size..).";
+    }
+    
+    
     public ObjectFeatures() {
         def.addListener((Parameter sourceParameter) -> {
             PluginParameter<ObjectFeature> s = (PluginParameter<ObjectFeature>)sourceParameter;
@@ -64,6 +72,10 @@ public class ObjectFeatures implements Measurement, ToolTip {
         for (ObjectFeature f : features) {
             PluginParameter<ObjectFeature> dup = def.duplicate().setPlugin(f);
             ((TextParameter)dup.getAdditionalParameters().get(0)).setValue(f.getDefaultName());
+            if (f instanceof IntensityMeasurement) { // autoconfiguration of intensity measurements
+                IntensityMeasurement im = ((IntensityMeasurement)f);
+                if (im.getIntensityStructure()<0) im.setIntensityStructure(structure.getSelectedStructureIdx());
+            }
             this.features.insert(dup);
         }
         return this;
@@ -114,9 +126,5 @@ public class ObjectFeatures implements Measurement, ToolTip {
         return parameters;
     }
 
-    @Override
-    public String getToolTipText() {
-        return "Computes features (scalar value) on single objects, such as intensity measurement (mean, min..) or geometrical features (length, size..).";
-    }
     
 }

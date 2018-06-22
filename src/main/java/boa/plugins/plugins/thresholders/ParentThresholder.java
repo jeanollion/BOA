@@ -26,6 +26,7 @@ import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.ParentStructureParameter;
 import boa.configuration.parameters.PluginParameter;
+import boa.configuration.parameters.StructureParameter;
 import boa.data_structure.Selection;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
@@ -50,7 +51,7 @@ import java.util.stream.Collectors;
  */
 public class ParentThresholder implements Thresholder {
     public ParentStructureParameter parent = new ParentStructureParameter("Run Thresholder On Parent:").setAutoConfiguration(ParentStructureParameter.defaultAutoConfigurationParent());
-    public ParentStructureParameter structureIdx = new ParentStructureParameter("Run Thresholder On Image:").setAutoConfiguration((p, s)->{p.setMaxStructureIdx(s+1); p.setSelectedIndex(s);}).setAllowNoSelection(false);
+    public ParentStructureParameter structureIdx = new ParentStructureParameter("Run Thresholder On Image:").setAutoConfiguration((p)->{int s = StructureParameter.structureInParents().applyAsInt(p); p.setMaxStructureIdx(s+1); p.setSelectedIndex(s);}).setAllowNoSelection(false);
     public BooleanParameter runThresholderOnWholeTrack = new BooleanParameter("Run On:", "Whole Track", "Each Object Separately", true);
     public PluginParameter<Thresholder> thresholder = new PluginParameter("Thresholder", Thresholder.class, false);
     public PluginParameter<ThresholderHisto> thresholderHisto = new PluginParameter("Thresholder", ThresholderHisto.class, false);
