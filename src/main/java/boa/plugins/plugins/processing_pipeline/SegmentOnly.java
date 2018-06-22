@@ -44,8 +44,6 @@ import boa.plugins.PreFilter;
 import boa.plugins.Segmenter;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.TrackPreFilter;
-import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.utils.HashMapGetCreate;
 import boa.utils.MultipleException;
 import boa.utils.Pair;

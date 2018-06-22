@@ -53,16 +53,14 @@ import boa.plugins.ProcessingPipeline;
  */
 
 public class Structure extends SimpleContainerParameter {
-    ParentStructureParameter parentStructure;
-    ParentStructureParameter segmentationParent;
-    ChannelImageParameter channelImage;
-    PluginParameter<ObjectSplitter> objectSplitter;
-    PluginParameter<ManualSegmenter> manualSegmenter;
-    PluginParameter<ProcessingPipeline> processingScheme;
-    //BooleanParameter brightObject = new BooleanParameter("Object Type", "Bright object over dark background", "Dark object over bright background", false);
-    BooleanParameter allowSplit = new BooleanParameter("Allow Split", "yes", "no", false);
-    BooleanParameter allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false);
-    NameEditorUI ui;
+    ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Object Type", -1, -1).setToolTipText("In the processing step: pre-filters, segmentation, tracking and post-filters will be run from each tracks of this object type");
+    ParentStructureParameter segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1).setToolTipText("If different from parent structure, allows to perform segmentation from objects of another structure contained in the object of the parent structure. Pre-filters, tracking and post-filters will still be run from the track of the parent structure.");
+    ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", -1).setToolTipText("Channel on which processing pipeline will be applied");
+    PluginParameter<ObjectSplitter> objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true).setEmphasized(false).setToolTipText("Split algorithm used in split command in manual edition. <br />If no algorith is defined here and segmenter is able to split objects, segmenter will be used instead");
+    PluginParameter<ManualSegmenter> manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true).setEmphasized(false).setToolTipText("Segmentation algorithm used in create object command in manual edition<br />If no algorith is defined here and segmenter is able to segment objects from user-defined points, segmenter will be used instead");
+    PluginParameter<ProcessingPipeline> processingPipeline = new PluginParameter<>("Processing Pipeline", ProcessingPipeline.class, true).setEmphasized(false);
+    BooleanParameter allowSplit = new BooleanParameter("Allow Split", "yes", "no", false).setToolTipText("Whether tracks can divide in several tracks");
+    BooleanParameter allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false).setToolTipText("Whether several tracks can merge in one single track");
     
     @Override
     public JSONObject toJSONEntry() {
@@ -73,7 +71,7 @@ public class Structure extends SimpleContainerParameter {
         res.put("channelImage", channelImage.toJSONEntry());
         res.put("objectSplitter", objectSplitter.toJSONEntry());
         res.put("manualSegmenter", manualSegmenter.toJSONEntry());
-        res.put("processingScheme", processingScheme.toJSONEntry());
+        res.put("processingScheme", processingPipeline.toJSONEntry());
         //res.put("brightObject", brightObject.toJSONEntry());
         res.put("allowSplit", allowSplit.toJSONEntry());
         res.put("allowMerge", allowMerge.toJSONEntry());
@@ -89,7 +87,7 @@ public class Structure extends SimpleContainerParameter {
         channelImage.initFromJSONEntry(jsonO.get("channelImage"));
         objectSplitter.initFromJSONEntry(jsonO.get("objectSplitter"));
         manualSegmenter.initFromJSONEntry(jsonO.get("manualSegmenter"));
-        processingScheme.initFromJSONEntry(jsonO.get("processingScheme"));
+        processingPipeline.initFromJSONEntry(jsonO.get("processingScheme"));
         //brightObject.initFromJSONEntry(jsonO.get("brightObject"));
         allowSplit.initFromJSONEntry(jsonO.get("allowSplit"));
         allowMerge.initFromJSONEntry(jsonO.get("allowMerge"));
@@ -100,18 +98,15 @@ public class Structure extends SimpleContainerParameter {
     }
     public Structure(String name, int parentStructure, int segmentationParentStructure, int channelImage) {
         super(name);
-        this.parentStructure =  new ParentStructureParameter("Parent Structure", parentStructure, -1).setToolTipText("In the processing step, pre-filters, segmentation, tracking and post-filters will be run from each tracks of this structure");
-        segmentationParent =  new ParentStructureParameter("Segmentation Parent", segmentationParentStructure, -1).setToolTipText("If different from parent structure, allows to perform segmentation from objects of another structure contained in the object of the parent structure. Pre-filters, tracking and post-filters will still be run from the track of the parent structure.");
-        this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
-        objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true).setEmphasized(false).setToolTipText("Split algorithm used in split command in manual edition");
-        processingScheme = new PluginParameter<>("Processing Pipeline", ProcessingPipeline.class, true).setEmphasized(false);
-        manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true).setEmphasized(false).setToolTipText("Segmentation algorithm used in create object command in manual edition");
+        this.parentStructure.setSelectedIndex(parentStructure);
+        this.segmentationParent.setSelectedIndex(segmentationParentStructure);
+        this.channelImage.setSelectedIndex(channelImage);
         this.parentStructure.addListener((Parameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();
             int parentIdx = s.parentStructure.getSelectedIndex();
             s.setParentStructure(parentIdx);
-            logger.debug("parent structure listener fired: parent: {}, seg parent: {}", s.parentStructure.getSelectedIndex(), s.segmentationParent.getSelectedIndex());
+            //logger.debug("parent structure listener fired: parent: {}, seg parent: {}", s.parentStructure.getSelectedIndex(), s.segmentationParent.getSelectedIndex());
             //update tree
             ConfigurationTreeModel model = ParameterUtils.getModel(s.segmentationParent);
             if (model!=null) model.nodeChanged(s.segmentationParent);
@@ -121,13 +116,13 @@ public class Structure extends SimpleContainerParameter {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();
             s.setSegmentationParentStructure(s.segmentationParent.getSelectedIndex());
-            logger.debug("segmentation parent structure listener fired: parent: {}, seg parent: {}", this.parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
+            //logger.debug("segmentation parent structure listener fired: parent: {}, seg parent: {}", this.parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
             //update tree
             ConfigurationTreeModel model = ParameterUtils.getModel(s.segmentationParent);
             if (model!=null) model.nodeChanged(s.segmentationParent);
             else logger.debug("no model found..");
         });
-        processingScheme.addListener((Parameter source) -> {
+        processingPipeline.addListener((Parameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();
         });
@@ -145,7 +140,7 @@ public class Structure extends SimpleContainerParameter {
     }
     @Override
     protected void initChildList() {
-        initChildren(parentStructure, segmentationParent, channelImage, processingScheme, objectSplitter, manualSegmenter, allowMerge, allowSplit); //brightObject 
+        initChildren(parentStructure, segmentationParent, channelImage, processingPipeline, objectSplitter, manualSegmenter, allowMerge, allowSplit); //brightObject 
     }
     public boolean allowSplit() {
         return allowSplit.getSelected();
@@ -166,17 +161,17 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public ProcessingPipeline getProcessingScheme() {
-        return processingScheme.instanciatePlugin();
+        return processingPipeline.instanciatePlugin();
     }
     
     public void setProcessingScheme(ProcessingPipeline ps) {
-        this.processingScheme.setPlugin(ps);
+        this.processingPipeline.setPlugin(ps);
     }
     
     public ObjectSplitter getObjectSplitter() {
         ObjectSplitter res = objectSplitter.instanciatePlugin();
         if (res == null) {
-            ProcessingPipeline ps = this.processingScheme.instanciatePlugin();
+            ProcessingPipeline ps = this.processingPipeline.instanciatePlugin();
             if (ps!=null) {
                 Segmenter s = ps.getSegmenter();
                 if (s instanceof ObjectSplitter) return (ObjectSplitter)s;
@@ -188,7 +183,7 @@ public class Structure extends SimpleContainerParameter {
     public ManualSegmenter getManualSegmenter() {
         ManualSegmenter res= manualSegmenter.instanciatePlugin();
         if (res == null) {
-            ProcessingPipeline ps = this.processingScheme.instanciatePlugin();
+            ProcessingPipeline ps = this.processingPipeline.instanciatePlugin();
             if (ps!=null) {
                 Segmenter s = ps.getSegmenter();
                 if (s instanceof ManualSegmenter) return (ManualSegmenter)s;
@@ -244,14 +239,13 @@ public class Structure extends SimpleContainerParameter {
         int idx = getIndex();
         parentStructure.setMaxStructureIdx(idx);
         segmentationParent.setMaxStructureIdx(idx);
-        if (processingScheme.isOnePluginSet() && processingScheme.instanciatePlugin() instanceof Duplicate) {
-            processingScheme.getParameters().stream().filter(p->p instanceof ParentStructureParameter).map(p->(ParentStructureParameter)p).forEach(p->p.setMaxStructureIdx(idx));
+        if (processingPipeline.isOnePluginSet() && processingPipeline.instanciatePlugin() instanceof Duplicate) {
+            processingPipeline.getParameters().stream().filter(p->p instanceof ParentStructureParameter).map(p->(ParentStructureParameter)p).forEach(p->p.setMaxStructureIdx(idx));
         }
     }
     
     @Override
     public ParameterUI getUI() {
-        if (ui==null) ui=new NameEditorUI(this, false);
-        return ui;
+        return new NameEditorUI(this, false);
     }
 }

@@ -20,8 +20,10 @@ package boa.plugins.plugins.track_pre_filters;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
+import boa.configuration.parameters.PreFilterSequence;
 import boa.data_structure.StructureObject;
 import boa.image.Image;
+import boa.plugins.ToolTip;
 import boa.plugins.TrackPreFilter;
 import static boa.utils.Utils.parallele;
 import java.util.Map;
@@ -33,16 +35,23 @@ import java.util.function.Consumer;
  *
  * @author Jean Ollion
  */
-public class PreFilter implements TrackPreFilter {
+public class PreFilter implements TrackPreFilter, ToolTip {
     
     PluginParameter<boa.plugins.PreFilter> filter = new PluginParameter<>("Filter",boa.plugins.PreFilter.class, false);
 
-    
     public PreFilter() {}
     public PreFilter(boa.plugins.PreFilter preFilter) {
         this.filter.setPlugin(preFilter);
     }
-
+    public PreFilter setFilter(PluginParameter<boa.plugins.PreFilter> filter) {
+        this.filter = filter;
+        return this;
+    }
+    public static PreFilter[] splitPreFilterSequence(PreFilterSequence preFilters) {
+        PreFilter[] pfs = new PreFilter[preFilters.getChildCount()];
+        for (int i = 0; i<pfs.length; ++i) pfs[i] = new PreFilter().setFilter(preFilters.getChildAt(i));
+        return pfs;
+    }
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         Consumer<Map.Entry<StructureObject, Image>> c  = e->e.setValue(filter.instanciatePlugin().runPreFilter(e.getValue(), e.getKey().getMask()));
@@ -52,6 +61,11 @@ public class PreFilter implements TrackPreFilter {
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{filter};
+    }
+
+    @Override
+    public String getToolTipText() {
+        return "Performs regular pre-filter at each frame of the track";
     }
     
 }

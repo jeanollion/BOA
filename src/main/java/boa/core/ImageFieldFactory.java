@@ -62,7 +62,7 @@ public class ImageFieldFactory {
         ArrayList<MultipleImageContainer> res = new ArrayList<>();
         if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.SINGLE_FILE)) {
             for (String p : path) ImageFieldFactory.importImagesSingleFile(new File(p), xp, res, pcb);
-        } else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD)) {
+        } else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_POSITION)) {
             // get keywords
             int nb = xp.getChannelImages().getChildCount();
             String[] keyWords = new String[nb];
@@ -70,7 +70,7 @@ public class ImageFieldFactory {
             for (ChannelImage i : xp.getChannelImages().getChildren()) keyWords[idx++] = i.getImportImageChannelKeyword();
             logger.debug("import image channel: keywords: {}", (Object)keyWords);
             for (String p : path) ImageFieldFactory.importImagesChannel(new File(p), xp, keyWords, res, pcb);
-        } else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION)) {
+        } else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_FRAME_POSITION)) {
             int nb = xp.getChannelImages().getChildCount();
             String[] keyWords = new String[nb];
             int idx = 0;

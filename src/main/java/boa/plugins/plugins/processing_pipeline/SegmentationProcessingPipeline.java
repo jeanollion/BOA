@@ -24,7 +24,6 @@ import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.plugins.PostFilter;
 import boa.plugins.PreFilter;
 import boa.plugins.TrackPreFilter;
-import boa.plugins.plugins.track_pre_filters.PreFilters;
 import java.util.Collection;
 import boa.plugins.ProcessingPipeline;
 
@@ -77,8 +76,8 @@ public abstract class SegmentationProcessingPipeline<T extends SegmentationProce
         return preFilters;
     }
     @Override public TrackPreFilterSequence getTrackPreFilters(boolean addPreFilters) {
-        if (addPreFilters && !preFilters.isEmpty()) return trackPreFilters.duplicate().addAtFirst(new PreFilters().add(preFilters));
-        return trackPreFilters;
+        if (addPreFilters && !preFilters.isEmpty()) return trackPreFilters.duplicate().addAtFirst(boa.plugins.plugins.track_pre_filters.PreFilter.splitPreFilterSequence(preFilters));
+        else return trackPreFilters;
     }
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;

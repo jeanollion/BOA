@@ -34,6 +34,7 @@ import boa.image.ImageInt;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
+import boa.plugins.DevPlugin;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,7 @@ import boa.plugins.TrackPostFilter;
  *
  * @author jollion
  */
-public class AverageMask implements TrackPostFilter{
+public class AverageMask implements TrackPostFilter, DevPlugin{
     public static boolean debug = false;
     public static int debugIdx = 0;
     ChoiceParameter referencePoint = new ChoiceParameter("Reference Point", new String[]{"Upper-left corner"}, "Upper-left corner", false);

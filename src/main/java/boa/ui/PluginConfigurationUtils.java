@@ -53,8 +53,6 @@ import boa.plugins.TrackerSegmenter;
 import boa.plugins.Transformation;
 import boa.plugins.plugins.processing_pipeline.SegmentAndTrack;
 import boa.plugins.plugins.processing_pipeline.SegmentOnly;
-import boa.plugins.plugins.processing_pipeline.SegmentThenTrack;
-import boa.plugins.plugins.track_pre_filters.PreFilters;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.Utils;

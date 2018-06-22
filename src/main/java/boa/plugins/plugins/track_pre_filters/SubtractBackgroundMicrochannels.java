@@ -40,6 +40,7 @@ import boa.image.processing.Filters;
 import boa.image.processing.Filters.Mean;
 import boa.image.processing.ImageOperations;
 import boa.image.processing.ImageTransformation;
+import boa.plugins.ToolTip;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.plugins.plugins.pre_filters.IJSubtractBackground.FILTER_DIRECTION;
@@ -53,12 +54,20 @@ import java.util.TreeMap;
  *
  * @author jollion
  */
-public class SubtractBackgroundMicrochannels implements TrackPreFilter{
+public class SubtractBackgroundMicrochannels implements TrackPreFilter, ToolTip{
     public static boolean debug = false;
     BooleanParameter isDarkBck = new BooleanParameter("Image Background", "Dark", "Light", false);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", false);
-    NumberParameter radius = new BoundedNumberParameter("Radius", 0, 1000, 1, null).setToolTipText("Lower value -> less homogeneity/faster. <br />Radius of the paraboloïd will be this value * sum Y size of microchannels");
+    NumberParameter radius = new BoundedNumberParameter("Radius", 0, 1000, 1, null).setToolTipText("Radius of the paraboloïd will be this value * sum Y size of microchannels.<br />Lower value -> less homogeneity/faster");
     Parameter[] parameters = new Parameter[]{radius, isDarkBck, smooth};
+    
+    @Override
+    public String getToolTipText() {
+        return "Subtract background on a whole microchannel track at once. "
+                + "<br />Builds an image with all microchannel images next to each other from top to bottom. "
+                + "<br />To avoid border effect, each microchannel image is mirrored on the x-axis and the whole image is also mirrored on the x-axis"
+                + "<br />Allows homogeneous background subtraction on the whole track, effective to remove border effect on some phase-contrast image of microchannels";
+    }
     @Override
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         //smooth.setSelected(true);
@@ -130,6 +139,8 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter{
     public Parameter[] getParameters() {
         return parameters;
     }
+
+    
     private static class TrackMaskYWithMirroring {
         int maxParentSizeX, maxParentSizeZ;
         SimpleBoundingBox[] trackOffset;

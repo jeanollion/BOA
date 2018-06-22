@@ -69,19 +69,25 @@ import java.util.stream.Stream;
  */
 
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
-    protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
-    protected FileChooser outputPath = new FileChooser("Output Path", FileChooserOption.DIRECTORIES_ONLY);
-    SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<>("Channel Images", 0 , ChannelImage.class);
-    SimpleListParameter<Structure> structures= new SimpleListParameter<>("Structures", -1 , Structure.class);
-    SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<>("Measurements", -1 , new PluginParameter<Measurement>("Measurements", Measurement.class, true));
-    SimpleListParameter<Position> positions= new SimpleListParameter<>("Positions", -1 , Position.class).setAllowMoveChildren(false);
-    PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
-    ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
-    TextParameter positionSeparator = new TextParameter("Position Separator", "xy", true);
-    ConditionalParameter importCond = new ConditionalParameter(importMethod).setActionParameters(ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION.getMethod(), new Parameter[]{positionSeparator});
+    SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<>("Channel Images", 0 , ChannelImage.class).setToolTipText("Channel of input images");
+    SimpleListParameter<Structure> structures= new SimpleListParameter<>("Object Types", -1 , Structure.class).setToolTipText("Types of objects to be analysed in this experiment. All processing is defined in this part of the configuration tree");
+    SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<>("Measurements", -1 , new PluginParameter<>("Measurements", Measurement.class, false)).setToolTipText("Measurement to be performed after processing");
+    SimpleListParameter<Position> positions= new SimpleListParameter<>("Positions", -1 , Position.class).setAllowMoveChildren(false).setToolTipText("Positions of the experiment. Preprocessing is defined for each position. Right-click menu allows to overwrite preprocessing to other position.");
+    PreProcessingChain template = new PreProcessingChain("Pre-Processing pipeline template").setToolTipText("Default preprocessing set to positions at import");
+    
+    protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY).setToolTipText("Directory where preprocessed images will be stored");
+    protected FileChooser outputPath = new FileChooser("Output Path", FileChooserOption.DIRECTORIES_ONLY).setToolTipText("Directory where segmentation & lineage results will be stored");
+    ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), null, false);
+    TextParameter positionSeparator = new TextParameter("Position Separator", "xy", true).setToolTipText("character sequence located directly before the position identifier in all image files");
+    ConditionalParameter importCond = new ConditionalParameter(importMethod).setActionParameters(ImportImageMethod.ONE_FILE_PER_CHANNEL_FRAME_POSITION.getMethod(), positionSeparator)
+            .setToolTipText("<b>Define here the input image organization</b><ol>"
+                    + "<li>"+ImportImageMethod.SINGLE_FILE.getMethod()+": A single file contains all frames, channels (and positions)</li>"
+                    + "<li>"+ImportImageMethod.ONE_FILE_PER_CHANNEL_POSITION.getMethod()+": For each position, there is one file per channel that contains all frames</li>"
+                    + "<li>"+ImportImageMethod.ONE_FILE_PER_CHANNEL_FRAME_POSITION.getMethod()+": There is one file for each position, channel and Frame</li></ol>");
+    
     ChannelImageParameter bestFocusPlaneChannel = new ChannelImageParameter("Channel", 0, true).setToolTipText("Channel for best focus plane computation");
     PluginParameter<Autofocus> autofocus = new PluginParameter<>("Algorithm", Autofocus.class, new SelectBestFocusPlane(), true);
-    GroupParameter bestFocusPlane = new GroupParameter("Best Focus plane computation", new Parameter[]{bestFocusPlaneChannel, autofocus});
+    GroupParameter bestFocusPlane = new GroupParameter("Best Focus plane computation", new Parameter[]{bestFocusPlaneChannel, autofocus}).setToolTipText("This algorithm will be used to select one plane in case a transformation that requires 2D images and 3D images are provided");
     
     public enum ImageDAOTypes {LocalFileSystem};
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
@@ -519,8 +525,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
 
     public enum ImportImageMethod {
         SINGLE_FILE("Single-file"),
-        ONE_FILE_PER_CHANNEL_AND_FIELD("One File Per Channel And Position"),
-        ONE_FILE_PER_CHANNEL_TIME_POSITION("One File Per Position, Channel And Frame");
+        ONE_FILE_PER_CHANNEL_POSITION("One File Per Channel And Position"),
+        ONE_FILE_PER_CHANNEL_FRAME_POSITION("One File Per Position, Channel And Frame");
         private final String name;
         ImportImageMethod(String name) {
             this.name=name;

@@ -61,7 +61,7 @@ public class Position extends SimpleContainerParameter implements ListElementEra
     
     private MultipleImageContainer sourceImages;
     PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing");
-    FrameParameter defaultTimePoint = new FrameParameter("Default TimePoint", defaultTP, false);
+    FrameParameter defaultTimePoint = new FrameParameter("Default TimePoint", defaultTP, false).setToolTipText("Frame used by default by transformations that requiers a single frame");
     InputImagesImpl preProcessedImages;
     public static final int defaultTP = 50;
     //ui: bouton droit = selectionner un champ?

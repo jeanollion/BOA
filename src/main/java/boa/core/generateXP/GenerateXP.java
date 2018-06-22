@@ -109,9 +109,6 @@ import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.plugins.plugins.track_post_filter.AverageMask;
 import boa.plugins.plugins.track_post_filter.PostFilter;
 import boa.plugins.plugins.track_pre_filters.NormalizeTrack;
-import boa.plugins.plugins.track_pre_filters.PreFilter;
-import boa.plugins.plugins.track_pre_filters.PreFilters;
-import boa.plugins.plugins.track_pre_filters.Saturate;
 import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
 import boa.plugins.plugins.trackers.NestedSpotTracker;
 import boa.plugins.plugins.transformations.TypeConverter;
@@ -147,7 +144,7 @@ public class GenerateXP {
         String outputDir = "/data/Images/Fluo/film170120_test/Output";
         boolean flip = false; 
         boolean fluo = true;
-        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_POSITION;
         
         /*String dbName = "boa_fluo170117_GammeMutTrack";
         String inputDir = "/data/Images/FastMutTrack/170117GammeMutTrack/input";
@@ -429,7 +426,7 @@ public class GenerateXP {
     public static Experiment generateXPFluo(String name, String outputDir, boolean setUpPreProcessing, boolean mutationHighBck, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
         
         Experiment xp = new Experiment(name);
-        if (importMethod==null) xp.setImportImageMethod(ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
+        if (importMethod==null) xp.setImportImageMethod(ImportImageMethod.ONE_FILE_PER_CHANNEL_POSITION);
         else xp.setImportImageMethod(importMethod);
         xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
         xp.setOutputDirectory(outputDir);

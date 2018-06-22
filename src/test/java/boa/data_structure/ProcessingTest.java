@@ -122,7 +122,7 @@ public class ProcessingTest {
         ImageWriter.writeToFile(folder2.getAbsolutePath(), title+"4_c2", format, images);
         
         Experiment xp = new Experiment("testXP", new Structure("structure"));
-        xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
+        xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_POSITION);
         xp.getChannelImages().insert(new ChannelImage("channel1", "_c1"), new ChannelImage("channel2", "_c2"));
         
         Processor.importFiles(xp, true, null, folder.getAbsolutePath());

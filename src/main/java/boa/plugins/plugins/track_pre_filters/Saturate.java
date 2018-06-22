@@ -27,6 +27,7 @@ import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
+import boa.plugins.DevPlugin;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
@@ -40,7 +41,7 @@ import java.util.TreeMap;
  *
  * @author jollion
  */
-public class Saturate implements TrackPreFilter, ToolTip {
+public class Saturate implements TrackPreFilter, ToolTip, DevPlugin {
     NumberParameter maxSat = new BoundedNumberParameter("Max Saturation proportion", 3, 0.03, 0, 1);
     String toolTip = "<html>Saturation of bright values in Bright Field images. <br />Performed on all images of a track are considered at once. <br />A threshold is computed on the histogram of all images, using the MaxEntropy method. <br />The proportion of saturated pixels should not be higer than indicated in the \"Max Saturation proportion\" parameter.</html>";
     

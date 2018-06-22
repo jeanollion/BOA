@@ -31,8 +31,6 @@ import boa.plugins.ToolTip;
 import boa.plugins.TrackPostFilter;
 import boa.plugins.TrackPreFilter;
 import boa.plugins.Tracker;
-import boa.plugins.TrackerSegmenter;
-import boa.plugins.plugins.track_pre_filters.PreFilters;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;

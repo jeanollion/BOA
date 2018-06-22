@@ -257,15 +257,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         // tool tips
         ToolTipManager.sharedInstance().setInitialDelay(100);
         ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
-        trackPanel.setToolTipText("Element displayed are segmented tracks for each object type. Right click for actions like display kymograph...");
+        trackPanel.setToolTipText("Element displayed are segmented tracks for each object type. Right click for actions on the track like display kymograph, run segmentation/tracking etc..");
         trackTreeStructureJSP.setToolTipText("<html>Object type to be displayed in the <em>Segmentation & Tracking</em> panel</html>");
         interactiveObjectPanel.setToolTipText("Object type that will be displayed and edited on interactive images");
-        editPanel.setToolTipText("Commands to edit segmentation/lineage of selected objects of the interactive objects on the currently active kymograph");
-        actionStructureJSP.setToolTipText("Objects types of the opened experiment. Tasks will be run only on selected objects types, or on all object types if none is selected");
+        editPanel.setToolTipText("<html>Commands to edit segmentation/lineage of selected objects of the interactive objects on the currently active kymograph<br />See <em>Shortcuts > Object/Lineage Edition</em> menu for while list of commands and description</html>");
+        actionStructureJSP.setToolTipText("Object types of the opened experiment. Tasks will be run only on selected objects types, or on all object types if none is selected");
         experimentJSP.setToolTipText("List of all experiments contained in the current experiment folder");
         actionPositionJSP.setToolTipText("Positions of the opened experiment. Tasks will be run only on selected position, or on all position if no position is selected");
         deleteObjectsButton.setToolTipText("Right-click for more delete commands");
-        
+        experimentFolder.setToolTipText("<html>Directory containing several experiments<br />Righ-click menu to access recent list and file browser</html>");
         // disable componenets when run action
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);

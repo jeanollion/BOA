@@ -27,6 +27,7 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.image.SimpleBoundingBox;
+import boa.plugins.ToolTip;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -45,10 +46,15 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class PostFilter implements TrackPostFilter {
+public class PostFilter implements TrackPostFilter, ToolTip {
     PluginParameter<boa.plugins.PostFilter> filter = new PluginParameter<>("Filter",boa.plugins.PostFilter.class, false);
     final static String[] METHODS = new String[]{"Delete single objects", "Delete whole track", "Prune Track"};
-    ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", METHODS, METHODS[0], false);
+    ChoiceParameter deleteMethod = new ChoiceParameter("Delete method", METHODS, METHODS[0], false)
+            .setToolTipText("How to cope with lineage break when post-filter deletes objects. <ol>"
+                    + "<li><em>Delete single objects</em>: will delete only the objects deleted by the post-filter, create a new branch starting from next object (if exist).</li>"
+                    + "<li><em>Delete whole track</em>: deleted every previous and next tracks</li>"
+                    + "<li><em>Prune Track</em>: delete the track from objects to be deleted plus the following connected tracks</li></ol>");
+
     public enum MERGE_POLICY {
         NERVER_MERGE(ManualEdition.NERVE_MERGE), 
         ALWAYS_MERGE(ManualEdition.ALWAYS_MERGE), 
@@ -59,7 +65,10 @@ public class PostFilter implements TrackPostFilter {
         }
     }
     ChoiceParameter mergePolicy = new ChoiceParameter("Merge Policy", Utils.toStringArray(MERGE_POLICY.values()), MERGE_POLICY.ALWAYS_MERGE.toString(), false).setToolTipText("When removing an object/track that has a previous object (p) that was linked to this object and one other object (n). p is now linked to one single object n. This parameter controls wheter / in which conditions should p's track and n's track be merged.<br/><ul><li>NEVER_MERGE: never merge tracks</li><li>ALWAYS_MERGE: always merge tracks</li><li>MERGE_TRACKS_SIZE_COND: merge tracks only if size(n)>0.8 * size(p) (useful for bacteria linking)</li></ul>");
-    
+    @Override
+    public String getToolTipText() {
+        return "Performs regular post-filter frame-by-frame and manage lineage breaks";
+    }
     public PostFilter setMergePolicy(PostFilter.MERGE_POLICY policy) {
         mergePolicy.setSelectedItem(policy.toString());
         return this;

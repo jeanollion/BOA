@@ -35,11 +35,11 @@ import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.GAUSS;
 import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.GRAD;
 import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.HessianDet;
 import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.HessianMax;
-import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.HessianMaxNorm;
 import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.HessianMin;
 import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.LoG;
 import static boa.plugins.plugins.pre_filters.ImageFeature.Feature.StructureMax;
 import boa.image.processing.ImageFeatures;
+import boa.plugins.ToolTip;
 import boa.utils.Utils;
 import java.util.Arrays;
 
@@ -47,7 +47,12 @@ import java.util.Arrays;
  *
  * @author jollion
  */
-public class ImageFeature implements PreFilter {
+public class ImageFeature implements PreFilter, ToolTip {
+
+    @Override
+    public String getToolTipText() {
+        return "Collection of features computed on image, such as Gaussian Smooth, Laplacian etc.. Uses ImageScience library (imagescience.org)";
+    }
     public static enum Feature {
         GAUSS("Gaussian Smooth"),
         GRAD("Gradient"), 
@@ -55,7 +60,6 @@ public class ImageFeature implements PreFilter {
         HessianDet("Hessian Det"), 
         HessianMax("Hessian Max"),
         HessianMin("Hessian Min"),
-        HessianMaxNorm("Normalized Hessian Max"), 
         StructureMax("Structure Max"),
         StructureDet("Structure Det");
         final String name;
@@ -69,8 +73,7 @@ public class ImageFeature implements PreFilter {
     ChoiceParameter feature = new ChoiceParameter("Feature", Utils.transform(Feature.values(), new String[Feature.values().length], f->f.name), Feature.GAUSS.name, false);
     ScaleXYZParameter scale = new ScaleXYZParameter("Scale", 2, 1, true);
     ScaleXYZParameter smoothScale = new ScaleXYZParameter("Smooth Scale", 2, 1, true);
-    BoundedNumberParameter normScale = new BoundedNumberParameter("Normalization Scale (pix)", 2, 3, 1, null);
-    ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setActionParameters(HessianMaxNorm.name, new Parameter[]{scale, normScale}).setActionParameters(StructureMax.name, new Parameter[]{scale, smoothScale});
+    ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setActionParameters(StructureMax.name, new Parameter[]{scale, smoothScale});
 
     public ImageFeature() {}
     public ImageFeature setFeature(Feature f) {
@@ -115,11 +118,6 @@ public class ImageFeature implements PreFilter {
             case HessianMin:
                 ImageFloat[] hess = ImageFeatures.getHessian(input, scaleXY, false);
                 return hess[hess.length-1];
-            case HessianMaxNorm:
-                Image hessian  = ImageFeatures.getHessian(input, scaleXY, false)[0];
-                Image norm = ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, false);
-                ImageOperations.divide(hessian, norm, hessian);
-                return hessian;
             case StructureMax:
                 return ImageFeatures.getStructure(input, smoothScale.getScaleXY(), scale.getScaleXY(), false)[0];
             case StructureDet:

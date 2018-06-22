@@ -79,7 +79,7 @@ import boa.plugins.plugins.trackers.NestedSpotTracker;
  */
 public class GenerateMutationDynamicsXP {
     static double scaleXY = Double.NaN;
-    static Experiment.ImportImageMethod importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
+    static Experiment.ImportImageMethod importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_POSITION;
     static boolean flip = false;
     static boolean singleChannel = false;
     static boolean invertChannels = false;
@@ -116,7 +116,7 @@ public class GenerateMutationDynamicsXP {
         String dbName = "boa_fluo170207_150ms";
         String inputDir = "/data/Images/MutationDynamics/170207/150ms_2scan";
         String outputDir = "/data/Images/MutationDynamics/170207/150ms_2scan_output";
-        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_POSITION;
         flipArray = fillRange(getBooleanArray(117, true), 0, 35, false);
         invertChannels = false;
         mutThld = 90;

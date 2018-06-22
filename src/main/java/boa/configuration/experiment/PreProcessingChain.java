@@ -60,14 +60,14 @@ import java.util.function.Consumer;
  * @author jollion
  */
 public class PreProcessingChain extends SimpleContainerParameter {
-    BooleanParameter useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true);
+    BooleanParameter useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true).setToolTipText("Voxel calibration (voxel size in x, y, z axis). If <em>Custom calibration</em> is set, the image calibration (if present) will be overriden");
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("Scale XY", 5, 1, 0.00001, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("Scale Z", 5, 1, 0.00001, null);
     ConditionalParameter imageScaleCond = new ConditionalParameter(useImageScale).setActionParameters("Custom Calibration", new Parameter[]{scaleXY, scaleZ});
-    BoundedNumberParameter frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null).setToolTipText("This parameter is used when no Frame duration is found in image meta data");
-    FrameParameter trimFramesStart = new FrameParameter("Trim Frames Start", 0, true).setToolTipText("First frame to be pre-processed");
+    BoundedNumberParameter frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null).setToolTipText("This parameter is only used when no Frame duration is found in image metadata");
+    FrameParameter trimFramesStart = new FrameParameter("Trim Frames Start", 0, true).setToolTipText("First frame to be pre-processed. Must be inferior to <em>Trim Frames Stop</em>");
     FrameParameter trimFramesEnd = new FrameParameter("Trim Frames Stop", 0, true).setToolTipText("Last frame to be pre-processed (0=no trimming)");
-    SimpleListParameter<TransformationPluginParameter<Transformation>> transformations = new SimpleListParameter<>("Transformations", new TransformationPluginParameter<>("Transformation", Transformation.class, false));
+    SimpleListParameter<TransformationPluginParameter<Transformation>> transformations = new SimpleListParameter<>("Pre-Processing pipeline", new TransformationPluginParameter<>("Transformation", Transformation.class, false));
     
     @Override
     public JSONObject toJSONEntry() {

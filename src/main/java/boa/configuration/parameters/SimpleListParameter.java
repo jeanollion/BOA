@@ -57,7 +57,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     protected ContainerParameter parent;
     protected Function<Integer, String> newInstanceNameFunction;
     boolean allowMoveChildren = true;
-    public <L extends SimpleListParameter> L setAllowMoveChildren(boolean allow) {
+    public <L extends SimpleListParameter<T>> L setAllowMoveChildren(boolean allow) {
         this.allowMoveChildren=allow;
         return (L)this;
     }
