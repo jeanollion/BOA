@@ -44,6 +44,7 @@ public class Core {
     private Core() {
         initIJ2();
         PluginFactory.findPlugins("boa.plugins.plugins", false);
+        PluginFactory.importIJ1Plugins();
     }
     
     private static void initIJ2() {

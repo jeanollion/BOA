@@ -34,6 +34,7 @@ import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.Tracker;
+import boa.utils.HashMapGetCreate;
 import boa.utils.JSONUtils;
 import boa.utils.Utils;
 import javax.swing.JMenuItem;
@@ -45,7 +46,7 @@ import javax.swing.JMenuItem;
  */
 public class PluginParameter<T extends Plugin> extends SimpleContainerParameter implements Deactivatable, ChoosableParameter {
     
-    private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
+    public final static HashMapGetCreate<Class<? extends Plugin>, List<String>> PLUGIN_NAMES=new HashMapGetCreate<Class<? extends Plugin>, List<String>>(c -> PluginFactory.getPluginNames(c));
     protected List<Parameter> pluginParameters;
     protected String pluginName=NO_SELECTION;
     private Class<T> pluginType;
@@ -111,7 +112,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     public PluginParameter<T> setAdditionalParameters(Parameter... additionalParameters) {
         if (additionalParameters.length==0) return this;
-        return setAdditionalParameters(new ArrayList<Parameter>(Arrays.asList(additionalParameters)));
+        return setAdditionalParameters(new ArrayList<>(Arrays.asList(additionalParameters)));
     }
     
     public List<Parameter> getAdditionalParameters() {
@@ -129,7 +130,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             if (parameters ==null) parameters = new Parameter[0];
             this.pluginParameters=new ArrayList<>(Arrays.asList(parameters));
             initChildList();
-            this.pluginName=pluginInstance.getClass().getSimpleName();
+            this.pluginName=PluginFactory.getPluginName(pluginInstance.getClass());
         }
         return this;
     }
@@ -137,7 +138,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     @Override
     protected void initChildList() {
         if (pluginParameters!=null && additionalParameters!=null) {
-            ArrayList<Parameter> al = new ArrayList<Parameter>(pluginParameters);
+            ArrayList<Parameter> al = new ArrayList<>(pluginParameters);
             al.addAll(additionalParameters);
             super.initChildren(al); 
         } else if (pluginParameters!=null) super.initChildren(pluginParameters);
@@ -255,15 +256,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         return res;
     }
     
-    private static synchronized ArrayList<String> getPluginNames(Class<? extends Plugin> clazz) {
-        ArrayList<String> res = pluginNames.get(clazz);
-        if (res==null) {
-            res=PluginFactory.getPluginNames(clazz);
-            pluginNames.put(clazz, res);
-        }
-        return res;
-    }
-    
     @Override
     public ChoiceParameterUI getUI(){
         ChoiceParameterUI ui =  new ChoiceParameterUI(this, "Plugins");
@@ -289,11 +281,11 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
     
     // deactivatable interface
-    public boolean isActivated() {
+    @Override public boolean isActivated() {
         return activated;
     }
 
-    public void setActivated(boolean activated) {
+    @Override public void setActivated(boolean activated) {
         this.activated=activated;
     }
     
@@ -304,13 +296,13 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         fireListeners();
     }
     
-    public ArrayList<String> getPluginNames() {
-        return getPluginNames(getPluginType());
+    public List<String> getPluginNames() {
+        return PLUGIN_NAMES.getAndCreateIfNecessarySync(getPluginType());
     }
 
     @Override
     public String[] getChoiceList() {
-        ArrayList<String> res = getPluginNames(getPluginType());
+        List<String> res = PLUGIN_NAMES.getAndCreateIfNecessarySync(getPluginType());
         return res.toArray(new String[res.size()]);
     }
 

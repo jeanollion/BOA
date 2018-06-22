@@ -50,6 +50,11 @@ public class OpHelpers {
         for (ModuleItem<?> i : info.cInfo().inputs()) inputs.add(i);
         return inputs;
     }
+    public static List<ModuleItem<?>> outputs(OpInfo info) {
+        List<ModuleItem<?>> inputs = new ArrayList<>();
+        for (ModuleItem<?> i : info.cInfo().outputs()) inputs.add(i);
+        return inputs;
+    }
     public static OpParameter[] getParameters(OpInfo info) {
         return inputs(info).stream()
                 .filter(p -> p.getIOType()==ItemIO.INPUT)

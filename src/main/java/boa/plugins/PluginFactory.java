@@ -26,6 +26,7 @@ import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -38,6 +39,7 @@ import java.util.Vector;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,9 +49,62 @@ import org.slf4j.LoggerFactory;
  */
 public class PluginFactory {
 
-    private final static TreeMap<String, Class> PLUGINS = new TreeMap<>();
+    private final static TreeMap<String, Class> PLUGIN_NAMES_MAP_CLASS = new TreeMap<>();
+    private final static Map<Class, String> CLASS_MAP_PLUGIN_NAME = new HashMap<>();
     private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
     private final static Map<String, String> OLD_NAMES_MAP_NEW = new HashMap<String, String>(){{put("MutationTrackerSpine", "NestedSpotTracker");put("MutationSegmenter", "SpotSegmenter");}};
+    public static void importIJ1Plugins() {
+        Hashtable<String, String> table = ij.Menus.getCommands();
+        if (table==null) {
+            logger.warn("IJ1 plugins could no be loaded!");
+            return;
+        }
+        ClassLoader loader = ij.IJ.getClassLoader();
+        Enumeration ks = table.keys();
+        while (ks.hasMoreElements()) {
+            String command = (String) ks.nextElement();
+            String className = table.get(command);
+            testIJ1Class(command, className, loader);
+        }
+    }
+    private static void testIJ1Class(String command, String className, ClassLoader loader) {
+        if (!className.startsWith("ij.")) {
+            if (className.endsWith("\")")) {
+                int argStart = className.lastIndexOf("(\"");
+                className = className.substring(0, argStart);
+            }
+            try {
+                Class c = loader.loadClass(className);
+                if (Plugin.class.isAssignableFrom(c)) {
+                    logger.info("adding ij1 plugin : command {}, class {}", command, c);
+                    addPlugin(command, c);
+                }
+            } catch (ClassNotFoundException e) {
+            } catch (NoClassDefFoundError e) {
+                int dotIndex = className.indexOf('.');
+                if (dotIndex >= 0) {
+                    testIJ1Class(command, className.substring(dotIndex + 1), loader);
+                }
+            }
+        }
+    }
+    private static void addPlugin(String command, Class c) {
+        if (PLUGIN_NAMES_MAP_CLASS.containsKey(command)) {
+            Class otherC = PLUGIN_NAMES_MAP_CLASS.get(c.getSimpleName());
+            if (!otherC.equals(c)) {
+                logger.warn("Duplicate class name: {} & {}", otherC.getName(), c.getName());
+                GUI.log("Duplicate class name: "+otherC.getName()+" & "+c.getName());
+            }
+        } else {
+            if (CLASS_MAP_PLUGIN_NAME.containsKey(c)) {
+                logger.warn("Duplicate command for class: {} -> {} & {}", c, command, CLASS_MAP_PLUGIN_NAME.get(c));
+                GUI.log("Duplicate command for class: "+c+" -> "+command+" & "+CLASS_MAP_PLUGIN_NAME.get(c));
+            } else {
+                PLUGIN_NAMES_MAP_CLASS.put(command, c);
+                CLASS_MAP_PLUGIN_NAME.put(c, command);
+            }
+        }
+    }
     public static void findPlugins(String packageName) {
         findPlugins(packageName, false);
     }
@@ -57,25 +112,16 @@ public class PluginFactory {
         logger.info("looking for plugins in package: {}", packageName);
         try {
             for (Class c : getClasses(packageName)) {
-                //Class<?> clazz = Class.forName(c);
                 if (Plugin.class.isAssignableFrom(c) && !Modifier.isAbstract( c.getModifiers()) && (includeDev || !DevPlugin.class.isAssignableFrom(c)) ) { // ne check pas l'heritage indirect!!
-                    if (!PLUGINS.containsKey(c.getSimpleName())) PLUGINS.put(c.getSimpleName(), c);
-                    else {
-                        Class otherC = PLUGINS.get(c.getSimpleName());
-                        if (!otherC.equals(c)) {
-                            logger.warn("Duplicate class name: {} & {}", otherC.getName(), c.getName());
-                            GUI.log("Duplicate class name: "+otherC.getName()+" & "+c.getName());
-                        }
-                    }
-                    //logger.debug("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
-                } //else logger.trace("class is not a plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
+                    addPlugin(c.getSimpleName(), c);
+                }
             }
         } catch (ClassNotFoundException ex) {
             logger.warn("find plugins", ex);
         } catch (IOException ex) {
             logger.warn("find plugins", ex);
         }
-        logger.info("total plugins found #{}", PLUGINS.size());
+        logger.info("total plugins found #{}", PLUGIN_NAMES_MAP_CLASS.size());
     }
     private static Iterator list(ClassLoader CL) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
         Class CL_class = CL.getClass();
@@ -95,7 +141,7 @@ public class PluginFactory {
         assert classLoader != null;
         
         if (packageName==null) { //look in classes that are already loaded
-            List<Class> classes = new ArrayList<Class>();
+            List<Class> classes = new ArrayList<>();
             while (classLoader != null) {
                 System.out.println("ClassLoader: " + classLoader);
                 try {
@@ -129,8 +175,8 @@ public class PluginFactory {
             }
             List<Class> classes = new ArrayList<>();
             for (File directory : dirs) findClasses(directory, packageName, classes);
-            for (String pathToJar : pathToJars) findClassesFromJar(pathToJar, classes);
-            //logger.info("looking for plugin in package: {}, path: {}, #dirs: {}, dir0: {}, #classes: {}", packageName, path, dirs.size(), !dirs.isEmpty()?dirs.get(0).getAbsolutePath():"", classes.size());
+            for (String pathToJar : pathToJars) findClassesFromJar(pathToJar, packageName, classes);
+            //logger.info("looking for plugin in package: {}, path: {}, #dirs: {}, #classes: {} 10 first : {}", packageName, path, dirs.size()+(!dirs.isEmpty()?"first: "+dirs.get(0).getAbsolutePath():""), classes.size(), classes.subList(0, Math.min(10, classes.size())));
             return classes;
         }
     }
@@ -153,7 +199,7 @@ public class PluginFactory {
         }
     }
     
-    private static void findClassesFromJar(String pathToJar, List<Class> list) {
+    private static void findClassesFromJar(String pathToJar, String packageName, List<Class> list) {
         try {
             //logger.info("loading classed from jar: {}", pathToJar);
             JarFile jarFile = new JarFile(pathToJar);
@@ -163,12 +209,12 @@ public class PluginFactory {
             while (e.hasMoreElements()) {
                 try {
                     JarEntry je = e.nextElement();
-                    if(je.isDirectory() || !je.getName().endsWith(".class")){
-                        continue;
-                    }
+                    if(je.isDirectory() || !je.getName().endsWith(".class")) continue;
                     // -6 because of .class
-                    String className = je.getName().substring(0,je.getName().length()-6);
-                    className = className.replace('/', '.');
+                    String className = je.getName().replace('/', '.');
+                    if (packageName!=null && packageName.length()>0 && !className.startsWith(packageName)) continue;
+                    className = className.substring(0,je.getName().length()-6);
+                    
                     Class c = cl.loadClass(className);
                     list.add(c);
                 } catch (ClassNotFoundException ex) {
@@ -192,7 +238,7 @@ public class PluginFactory {
                 testClassIJ(command, className, loader);
             }
             
-            logger.info("number of plugins found: " + PLUGINS.size());
+            logger.info("number of plugins found: " + PLUGIN_NAMES_MAP_CLASS.size());
         } catch (Exception ex) {
             logger.warn("find plugins IJ", ex);
         }
@@ -207,11 +253,7 @@ public class PluginFactory {
             try {
                 Class c = loader.loadClass(className);
                 if (Plugin.class.isAssignableFrom(c)) {
-                    //String simpleName = c.getSimpleName();
-                    String simpleName = command;
-                    if (Plugin.class.isAssignableFrom(c)) {
-                        PLUGINS.put(simpleName, c);
-                    }
+                    if (Plugin.class.isAssignableFrom(c)) PLUGIN_NAMES_MAP_CLASS.put(command, c);
                 }
             } catch (ClassNotFoundException ex) {
                 logger.warn("test class IJ", ex);
@@ -230,8 +272,8 @@ public class PluginFactory {
         }
         try {
             Object res = null;
-            if (PLUGINS.containsKey(s)) {
-                res = PLUGINS.get(s).newInstance();
+            if (PLUGIN_NAMES_MAP_CLASS.containsKey(s)) {
+                res = PLUGIN_NAMES_MAP_CLASS.get(s).newInstance();
             } else if (OLD_NAMES_MAP_NEW.containsKey(s)) return getPlugin(OLD_NAMES_MAP_NEW.get(s));
             
             if (res != null && res instanceof Plugin) {
@@ -244,39 +286,38 @@ public class PluginFactory {
         }
         return null;
     }
+    
     public static <T extends Plugin> Class<T> getPluginClass(Class<T> clazz, String className) {
-        Class plugClass = PLUGINS.get(className);
-        if (plugClass==null && OLD_NAMES_MAP_NEW.containsKey(className)) plugClass = PLUGINS.get(OLD_NAMES_MAP_NEW.get(className));
+        Class plugClass = PLUGIN_NAMES_MAP_CLASS.get(className);
+        if (plugClass==null && OLD_NAMES_MAP_NEW.containsKey(className)) plugClass = PLUGIN_NAMES_MAP_CLASS.get(OLD_NAMES_MAP_NEW.get(className));
         return plugClass;
     }
-    public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
+    public static <T extends Plugin> T getPlugin(Class<T> clazz, String pluginName) {
         try {
-            Class plugClass = PLUGINS.get(className);
-            if (plugClass==null && OLD_NAMES_MAP_NEW.containsKey(className)) plugClass = PLUGINS.get(OLD_NAMES_MAP_NEW.get(className));
+            Class plugClass = PLUGIN_NAMES_MAP_CLASS.get(pluginName);
+            if (plugClass==null && OLD_NAMES_MAP_NEW.containsKey(pluginName)) plugClass = PLUGIN_NAMES_MAP_CLASS.get(OLD_NAMES_MAP_NEW.get(pluginName));
             if (plugClass==null) {
-                logger.error("plugin: {} of class: {} not found", className, clazz);
+                logger.error("plugin: {} of class: {} not found", pluginName, clazz);
                 return null;
             }
             T instance = (T) plugClass.newInstance();
             return instance;
         } catch (InstantiationException ex) {
-            logger.error("plugin :{} of class: {} could not be instanciated, missing null constructor?", className, clazz, ex);
+            logger.error("plugin :{} of class: {} could not be instanciated, missing null constructor?", pluginName, clazz, ex);
         } catch (IllegalAccessException ex) {
-            logger.error("plugin :{} of class: {} could not be instanciated", className, clazz, ex);
+            logger.error("plugin :{} of class: {} could not be instanciated", pluginName, clazz, ex);
         }
         return null;
     }
 
-    public static <T extends Plugin> ArrayList<String> getPluginNames(Class<T> clazz) {
-        ArrayList<String> res = new ArrayList<String>();
-        for (Entry<String, Class> e : PLUGINS.entrySet()) {
-            if (clazz.isAssignableFrom(e.getValue())) {
-                res.add(e.getKey());
-            }
-        }
+    public static <T extends Plugin> List<String> getPluginNames(Class<T> clazz) {
+        List<String> res= PLUGIN_NAMES_MAP_CLASS.entrySet().stream().filter((e) -> (clazz.isAssignableFrom(e.getValue()))).map(e->e.getKey()).collect(Collectors.toList());
+        Collections.sort(res);
         return res;
     }
-    
+    public static <T extends Plugin> String getPluginName(Class<T> clazz) {
+        return CLASS_MAP_PLUGIN_NAME.get(clazz);
+    }
     public static boolean checkClass(String clazz) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         try {
