@@ -63,7 +63,7 @@ public class SpineLength implements GeometricalFeature, ToolTip {
 
     @Override
     public String getToolTipText() {
-        return "Length of the spine (skeleton): takes into acount rippling deformation. Only valid for bacteria-like shapes";
+        return "Length of the spine (skeleton): takes into acount rippling deformation. Only valid for rod shaped regions";
     }
     
 }

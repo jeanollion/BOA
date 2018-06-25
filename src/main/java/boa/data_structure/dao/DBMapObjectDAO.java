@@ -498,7 +498,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (readOnly) return;
         Pair<String, Integer> key = new Pair(object.getParentTrackHeadId(), object.getStructureIdx());
         if (object.hasMeasurementModifications()) upsertMeasurement(object);
-        object.updateObjectContainer();
+        object.updateRegionContainer();
         // get parent/pTh/next/prev ids ? 
         cache.getAndCreateIfNecessary(key).put(object.getId(), object);
         getDBMap(key).put(object.getId(), JSONUtils.serialize(object));
@@ -518,7 +518,7 @@ public class DBMapObjectDAO implements ObjectDAO {
             Map<String, StructureObject> cacheMap = cache.getAndCreateIfNecessary(key);
             HTreeMap<String, String> dbMap = getDBMap(key);
             long t0 = System.currentTimeMillis();
-            Map<String, String> toStoreMap = toStore.parallelStream().map(o->{o.updateObjectContainer(); return o;}).collect(Collectors.toMap(o->o.getId(), o->JSONUtils.serialize(o)));
+            Map<String, String> toStoreMap = toStore.parallelStream().map(o->{o.updateRegionContainer(); return o;}).collect(Collectors.toMap(o->o.getId(), o->JSONUtils.serialize(o)));
             long t1 = System.currentTimeMillis();
             dbMap.putAll(toStoreMap);
             long t2 = System.currentTimeMillis();

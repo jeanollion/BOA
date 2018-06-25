@@ -750,7 +750,7 @@ public class Region {
         return new Region(mask, 1, ref.is2D).setIsAbsoluteLandmark(ref.isAbsoluteLandMark());
     }
     
-    public RegionContainer getObjectContainer(StructureObject structureObject) {
+    public RegionContainer createRegionContainer(StructureObject structureObject) {
         if (mask instanceof BlankMask) return new RegionContainerBlankMask(structureObject);
         else if (!overVoxelSizeLimit()) return new RegionContainerVoxels(structureObject);
         else return new RegionContainerIjRoi(structureObject);

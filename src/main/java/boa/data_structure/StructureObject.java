@@ -80,8 +80,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected Map<String, Object> attributes;
     // object- and images-related attributes
     private transient Region object;
-    private transient boolean objectModified=false;
-    protected RegionContainer objectContainer;
+    private transient boolean regionModified=false;
+    protected RegionContainer regionContainer;
     protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
     protected transient SmallArray<Image> preFilteredImagesS=new SmallArray<>();
     protected transient SmallArray<Image> trackImagesC=new SmallArray<>();
@@ -385,7 +385,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         */
     }
     public void setIdx(int idx) {
-        if (objectContainer!=null) objectContainer.relabelObject(idx);
+        if (regionContainer!=null) regionContainer.relabelRegion(idx);
         if (this.object!=null) object.setLabel(idx+1);
         this.idx=idx;
     }
@@ -699,7 +699,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (otherO.getRegion()==null) logger.debug("merge: {}+{}, other object==null", this, other);
         getRegion().merge(otherO.getRegion()); 
         flushImages();
-        objectModified = true;
+        regionModified = true;
         // update links
         StructureObject prev = otherO.getPrevious();
         if (prev !=null && prev.getNext()!=null && prev.next==otherO) prev.setNext(this);
@@ -735,7 +735,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         // first object returned by splitter is updated to current structureObject
         if (!pop.isAbsoluteLandmark()) pop.translate(this.getBounds(), true); 
-        objectModified=true;
+        regionModified=true;
         this.object=pop.getRegions().get(0).setLabel(idx+1);
         flushImages();
         if (pop.getRegions().size()>2) pop.mergeWithConnected(pop.getRegions().subList(2, pop.getRegions().size()));
@@ -747,15 +747,15 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return res;
     }
     public boolean hasRegion() {return object!=null;}
-    public boolean objectHasBeenModified() {return objectModified=true;}
+    public boolean objectHasBeenModified() {return regionModified=true;}
     // object- and image-related methods
     @Override 
     public Region getRegion() {
         if (object==null) {
-            if (objectContainer==null) return null;
+            if (regionContainer==null) return null;
             synchronized(this) {
                 if (object==null) {
-                    object=objectContainer.getObject().setIsAbsoluteLandmark(true); 
+                    object=regionContainer.getRegion().setIsAbsoluteLandmark(true); 
                     if (attributes!=null) {
                         if (attributes.containsKey("Quality")) object.setQuality((Double)attributes.get("Quality"));
                         if (attributes.containsKey("Center")) object.setCenter(new Point(JSONUtils.fromFloatArray((List)attributes.get("Center")))); 
@@ -767,7 +767,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public void setRegion(Region o) {
         synchronized(this) {
-            objectContainer=null;
+            regionContainer=null;
             object=o;
             object.label=idx+1;
             flushImages();
@@ -789,22 +789,29 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public ImageProperties getMaskProperties() {return getRegion().getImageProperties();}
     @Override public ImageMask getMask() {return getRegion().getMask();}
     public BoundingBox getBounds() {return getRegion().getBounds();}
-    protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
-    public void updateObjectContainer(){
+    protected void createRegionContainer() {this.regionContainer=object.createRegionContainer(this);}
+    public boolean hasRegionContainer() {
+        return regionContainer!=null;
+    }
+    public RegionContainer getRegionContainer() {
+        updateRegionContainer();
+        return regionContainer;
+    }
+    public void updateRegionContainer(){
         //logger.debug("updating object for: {}, container null? {}, was modified? {}, flag: {}", this,objectContainer==null, objectModified, flag);
-        if (objectContainer==null) {
-            createObjectContainer();
-            objectContainer.updateObject();
-            objectModified=false;
-        } else if (objectModified) {
-            objectContainer.updateObject();
-            objectModified=false;
+        if (regionContainer==null) {
+            createRegionContainer();
+            regionContainer.update();
+            regionModified=false;
+        } else if (regionModified) {
+            regionContainer.update();
+            regionModified=false;
         }
         //logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
         
     }
     //public ObjectContainer getObjectContainer() {return objectContainer;}
-    public void deleteMask(){if (objectContainer!=null) objectContainer.deleteObject();};
+    public void deleteMask(){if (regionContainer!=null) regionContainer.deleteRegion();};
     public void setRawImage(int structureIdx, Image image) {
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
         rawImagesC.set(image, channelIdx);
@@ -1119,7 +1126,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (trackHeadId!=null) obj1.put("thId", trackHeadId);
         obj1.put("isTh", isTrackHead);
         if (attributes!=null && !attributes.isEmpty()) obj1.put("attributes", JSONUtils.toJSONObject(attributes));
-        if (objectContainer!=null) obj1.put("object", objectContainer.toJSON());
+        if (regionContainer!=null) obj1.put("object", regionContainer.toJSON());
         return obj1;
     }
     @Override
@@ -1147,7 +1154,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         } 
         if (json.containsKey("object")) {
             Map objectJ = (Map)json.get("object");
-            objectContainer = RegionContainer.createFromMap(this, objectJ);
+            regionContainer = RegionContainer.createFromJSON(this, objectJ);
         }
     }
     public StructureObject(Map json) {
@@ -1158,7 +1165,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public void postLoad() {
         //logger.debug("post load: {}", this);
-        if (objectContainer!=null) objectContainer.setStructureObject(this);
+        if (regionContainer!=null) regionContainer.setStructureObject(this);
     }
 
 }

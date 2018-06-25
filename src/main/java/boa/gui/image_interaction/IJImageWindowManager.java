@@ -57,6 +57,7 @@ import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.Offset;
 import boa.image.SimpleBoundingBox;
+import boa.image.SimpleOffset;
 import boa.image.TypeConverter;
 import java.awt.Canvas;
 import java.awt.Color;
@@ -355,8 +356,13 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     @Override
     public Roi3D generateObjectRoi(Pair<StructureObject, BoundingBox> object, Color color) {
         if (object.key.getMask().sizeZ()<=0 || object.key.getMask().sizeXY()<=0) logger.error("wrong object dim: o:{} {}", object.key, object.key.getBounds());
-        Roi3D r =  RegionContainerIjRoi.createRoi(object.key.getMask(), object.value, !object.key.is2D());
-        if (object.key.getAttribute(StructureObject.EDITED_SEGMENTATION, false)) { // adds an arrow
+        Roi3D r;       
+        if (object.key.hasRegionContainer() && object.key.getRegionContainer() instanceof RegionContainerIjRoi && ((RegionContainerIjRoi)object.key.getRegionContainer()).getRoi()!=null) { // look for existing ROI
+            r = ((RegionContainerIjRoi)object.key.getRegionContainer()).getRoi().duplicate()
+                    .translate(new SimpleOffset(object.value).translate(new SimpleOffset(object.key.getBounds()).reverseOffset()));
+            
+        } else r =  RegionContainerIjRoi.createRoi(object.key.getMask(), object.value, !object.key.is2D());
+        if (object.key.getAttribute(StructureObject.EDITED_SEGMENTATION, false)) { // also display when segmentation is edited
             double size = trackArrowStrokeWidth*1.5;
             Arrow arrow = new Arrow(object.value.xMin()-size, object.value.yMin()-size, object.value.xMin(), object.value.yMin());
             arrow.setStrokeColor(trackCorrectionColor);
@@ -514,6 +520,26 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         public boolean contained(Overlay o) {
             for (Roi r : values()) if (o.contains(r)) return true;
             return false;
+        }
+        public Roi3D translate(Offset off) {
+            if (off.zMin()!=0) { // need to clear map to update z-mapping
+                synchronized(this) {
+                    HashMap<Integer, Roi> temp = new HashMap<>(this);
+                    this.clear();
+                    temp.forEach((z, r)->put(z+off.zMin(), r));
+                }
+            }
+            forEach((z, r)-> {
+                Rectangle bds = r.getBounds();
+                r.setLocation(bds.x+off.xMin(), bds.y+off.yMin());
+                r.setPosition(r.getPosition()+off.zMin());
+            });
+            return this;
+        }
+        public Roi3D duplicate() {
+            Roi3D res = new Roi3D(this.size()).setIs2D(is2D);
+            super.forEach((z, r)->res.put(z, (Roi)r.clone()));
+            return res;
         }
         public void duplicateROIUntilZ(int zMax) {
             if (size()>1 || !containsKey(0)) return;

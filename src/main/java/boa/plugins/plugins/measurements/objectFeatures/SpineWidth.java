@@ -61,6 +61,6 @@ public class SpineWidth implements GeometricalFeature, ToolTip {
     }
     @Override
     public String getToolTipText() {
-        return "Median value of the spine radii. Only valid for bacteria-like shapes";
+        return "Median value of the spine radii. Only valid for rod shaped regions";
     }
 }

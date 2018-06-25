@@ -47,13 +47,13 @@ public abstract class RegionContainer {
     protected float getScaleXY() {return structureObject.getMicroscopyField().getScaleXY();}
     protected float getScaleZ() {return structureObject.getMicroscopyField().getScaleZ();}
     public boolean is2D() {return is2D;}
-    public abstract Region getObject();
-    public void updateObject() {
+    public abstract Region getRegion();
+    public void update() {
         is2D = structureObject.getRegion().is2D();
         bounds = new SimpleBoundingBox(structureObject.getRegion().getBounds());
     }
-    public abstract void deleteObject();
-    public abstract void relabelObject(int newIdx);
+    public abstract void deleteRegion();
+    public abstract void relabelRegion(int newIdx);
     public void initFromJSON(Map<String, Object> json) {
         JSONArray bds =  (JSONArray)json.get("bounds");
         this.bounds=new MutableBoundingBox();
@@ -68,11 +68,11 @@ public abstract class RegionContainer {
         return res;
     }
     protected RegionContainer() {}
-    public static RegionContainer createFromMap(StructureObject o, Map json) {
+    public static RegionContainer createFromJSON(StructureObject o, Map json) {
         RegionContainer res;
-        if (json.containsKey("x")) res = new RegionContainerVoxels();
+        if (json.containsKey("x")) res = new RegionContainerVoxels(); // coord list
         else if (json.containsKey("roi")||json.containsKey("roiZ")) res = new RegionContainerIjRoi();
-        else res = new RegionContainerBlankMask();
+        else res = new RegionContainerBlankMask(); // only bounds
         res.setStructureObject(o);
         res.initFromJSON(json);
         return res;

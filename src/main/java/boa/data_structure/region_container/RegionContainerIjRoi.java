@@ -22,6 +22,7 @@ import boa.gui.image_interaction.IJImageDisplayer;
 import boa.gui.image_interaction.IJImageWindowManager;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
+import boa.gui.image_interaction.IJImageWindowManager.Roi3D;
 import boa.ui.GUI;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.BlankMask;
@@ -41,6 +42,7 @@ import boa.image.ImageByte;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.Offset;
+import boa.image.SimpleImageProperties;
 import boa.image.TypeConverter;
 import boa.image.processing.ImageOperations;
 import ij.plugin.filter.ThresholdToSelection;
@@ -48,9 +50,11 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.stream.IntStream;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -60,7 +64,119 @@ import org.json.simple.JSONObject;
  */
 
 public class RegionContainerIjRoi extends RegionContainer {
+    List<byte[]> roiZ; // persists
+    Roi3D roi; // convention: location of ROI = location of object & postition starts from 1 // not persistant 
+    public RegionContainerIjRoi(StructureObject structureObject) {
+        super(structureObject);
+        createRoi(structureObject.getRegion());
+    }
 
+    @Override
+    public void update() {
+        super.update();
+        if (structureObject.getRegion().getMask() != null) createRoi(structureObject.getRegion());
+        else {
+            roiZ = null;
+            roi = null;
+        }
+    }
+
+    private void createRoi(Region object) {
+        roi = createRoi(object.getMask(), object.getBounds(), object.is2D());
+    }
+    private void encodeRoi() {
+        roiZ = new ArrayList<>(roi.size());
+        roi.entrySet().stream().sorted((e1, e2)->Integer.compare(e1.getKey(), e2.getKey()))
+                .forEach(e->roiZ.add(RoiEncoder.saveAsByteArray(e.getValue())));
+    }
+    /**
+     * 
+     * @return the ROI if existing null if not
+     */
+    public Roi3D getRoi() {
+        return roi;
+    }
+    private void decodeRoi() {
+        roi = new Roi3D(roiZ.size());
+        int z=0;
+        for (byte[] b : roiZ) {
+            Roi r = RoiDecoder.openFromByteArray(b);
+            r.setPosition(z+1+bounds.zMin());
+            r.setLocation(bounds.xMin(), bounds.yMin());
+            roi.put(z+bounds.zMin(), r);
+            ++z;
+        }
+    }
+    private synchronized ImageByte getMask() {
+        ImageStack stack = new ImageStack(bounds.sizeX(), bounds.sizeY(), bounds.sizeZ());
+        if (roi==null) decodeRoi();
+        IntStream.rangeClosed(bounds.zMin(), bounds.zMax()).forEachOrdered(z -> {
+            Roi r = roi.get(z);
+            r.setLocation(0, 0);
+            r.setPosition(z+1-bounds.zMin());
+            Rectangle bds = r.getBounds();
+            ImageProcessor mask = r.getMask();
+            if (mask.getWidth()!=stack.getWidth() || mask.getHeight()!=stack.getHeight()) { // need to paste image
+                logger.debug("past image during ij roi decoding");
+                ImageByte i = (ImageByte)IJImageWrapper.wrap(new ImagePlus("", mask));
+                ImageByte iOut = new ImageByte("", bounds.sizeX(), bounds.sizeY(), 1);
+                Image.pasteImage(i, iOut, new MutableBoundingBox(bds.x-bounds.xMin(), bds.y-bounds.yMin(), 0));
+                mask = IJImageWrapper.getImagePlus(iOut).getProcessor();
+            }
+            stack.setProcessor(mask, z-bounds.zMin()+1);
+            // reset default roi location
+            r.setLocation(bounds.xMin(), bounds.yMin());
+            r.setPosition(z);
+        });
+        ImageByte res = (ImageByte) IJImageWrapper.wrap(new ImagePlus("MASK", stack));
+        //logger.debug("creating object for: {}, scale: {}", structureObject, structureObject.getScaleXY());
+        res.setCalibration(new SimpleImageProperties(bounds, structureObject.getScaleXY(), structureObject.getScaleZ())).translate(bounds);
+        return res;
+    }
+
+    @Override
+    public Region getRegion() {
+        return new Region(getMask(), structureObject.getIdx() + 1, is2D);
+    }
+
+    @Override
+    public void deleteRegion() {
+        bounds = null;
+        roiZ = null;
+    }
+
+    @Override
+    public void relabelRegion(int newIdx) {
+    }
+    @Override
+    public void initFromJSON(Map json) {
+        super.initFromJSON(json);
+        if (json.containsKey("roi")) {
+            roiZ = new ArrayList<>(1);
+            roiZ.add(Base64.getDecoder().decode((String)json.get("roi")));
+        } else if (json.containsKey("roiZ")) {
+            JSONArray rois = (JSONArray)json.get(("roiZ"));
+            roiZ = new ArrayList<>(rois.size());
+            for (int i = 0; i<rois.size(); ++i) roiZ.add(Base64.getDecoder().decode((String)rois.get(i)));
+        }
+    }
+    @Override
+    public JSONObject toJSON() {
+        JSONObject res = super.toJSON();
+        if (roiZ ==null) encodeRoi();
+        if (roiZ.size()>1) {
+            JSONArray rois = new JSONArray();
+            for (byte[] bytes: this.roiZ) {
+                rois.add(Base64.getEncoder().encodeToString(bytes));
+            }
+            res.put("roiZ", rois);
+        } else if (roiZ.size()==1) {
+            res.put("roi", Base64.getEncoder().encodeToString(roiZ.get(0)));
+        }
+        return res;
+    }
+    protected RegionContainerIjRoi() {}
+    
     /**
      *
      * @param mask
@@ -68,7 +184,7 @@ public class RegionContainerIjRoi extends RegionContainer {
      * @param is3D
      * @return mapping of Roi to Z-slice (taking into account the provided offset)
      */
-    public static IJImageWindowManager.Roi3D createRoi(ImageMask mask, Offset offset, boolean is3D) {
+    public static Roi3D createRoi(ImageMask mask, Offset offset, boolean is3D) {
         if (offset == null) {
             GUI.logger.error("ROI creation : offset null for mask: {}", mask.getName());
             return null;
@@ -79,7 +195,7 @@ public class RegionContainerIjRoi extends RegionContainer {
                 Roi rect = new Roi(0, 0, mask.sizeX(), mask.sizeY());
                 rect.setLocation(offset.xMin(), offset.yMin());
                 if (is3D) {
-                    rect.setPosition(z + 1 + offset.zMin());
+                    rect.setPosition(z + 1+ offset.zMin());
                 }
                 res.put(z + mask.zMin(), rect);
             }
@@ -102,98 +218,10 @@ public class RegionContainerIjRoi extends RegionContainer {
                     continue;
                 }
                 roi.setLocation(bds.x + offset.xMin(), bds.y + offset.yMin());
-                if (is3D)  roi.setPosition(z + 1 + offset.zMin());
- 
+                if (is3D)  roi.setPosition(z + 1 + offset.zMin()); 
                 res.put(z + offset.zMin(), roi);
             }
         }
         return res;
     }
-    ArrayList<byte[]> roiZ;
-    
-    public RegionContainerIjRoi(StructureObject structureObject) {
-        super(structureObject);
-        createRoi(structureObject.getRegion());
-    }
-
-    @Override
-    public void updateObject() {
-        super.updateObject();
-        if (structureObject.getRegion().getMask() != null) createRoi(structureObject.getRegion());
-        else roiZ = null;
-    }
-
-    private void createRoi(Region object) {
-        Map<Integer, Roi> roiZTemp = createRoi(object.getMask(), object.getBounds(), object.is2D());
-        roiZ = new ArrayList<>(roiZTemp.size());
-        roiZTemp = new TreeMap<>(roiZTemp);
-        for (Entry<Integer, Roi> e : roiZTemp.entrySet()) roiZ.add(RoiEncoder.saveAsByteArray(e.getValue()));
-    }
-    
-    private ImageByte getMask() {
-        ImageStack stack = new ImageStack(bounds.sizeX(), bounds.sizeY(), bounds.sizeZ());
-        int z= 1;
-        for (byte[] b : roiZ) {
-            Roi r = RoiDecoder.openFromByteArray(b);
-            r.setPosition(z);
-            Rectangle bds = r.getBounds();
-            r.setLocation(bds.x-bounds.xMin(), bds.y-bounds.yMin());
-            ImageProcessor mask = r.getMask();
-            if (mask.getWidth()!=stack.getWidth() || mask.getHeight()!=stack.getHeight()) { // need to paste image
-                ImageByte i = (ImageByte)IJImageWrapper.wrap(new ImagePlus("", mask));
-                ImageByte iOut = new ImageByte("", bounds.sizeX(), bounds.sizeY(), 1);
-                Image.pasteImage(i, iOut, new MutableBoundingBox(bds.x-bounds.xMin(), bds.y-bounds.yMin(), 0));
-                mask = IJImageWrapper.getImagePlus(iOut).getProcessor();
-            }
-            stack.setProcessor(mask, z);
-            //logger.debug("Roi: Z: {}, bounds: {}", z-1, r.getBounds());
-            ++z;
-        }
-        ImageByte res = (ImageByte) IJImageWrapper.wrap(new ImagePlus("MASK", stack));
-        //logger.debug("creating object for: {}, scale: {}", structureObject, structureObject.getScaleXY());
-        res.setCalibration(bounds.getBlankMask(structureObject.getScaleXY(), structureObject.getScaleZ())).translate(bounds);
-        return res;
-    }
-
-    @Override
-    public Region getObject() {
-        return new Region(getMask(), structureObject.getIdx() + 1, is2D);
-    }
-
-    @Override
-    public void deleteObject() {
-        bounds = null;
-        roiZ = null;
-    }
-
-    @Override
-    public void relabelObject(int newIdx) {
-    }
-    @Override
-    public void initFromJSON(Map json) {
-        super.initFromJSON(json);
-        if (json.containsKey("roi")) {
-            roiZ = new ArrayList<>(1);
-            roiZ.add(Base64.getDecoder().decode((String)json.get("roi")));
-        } else if (json.containsKey("roiZ")) {
-            JSONArray rois = (JSONArray)json.get(("roiZ"));
-            roiZ = new ArrayList<>(rois.size());
-            for (int i = 0; i<rois.size(); ++i) roiZ.add(Base64.getDecoder().decode((String)rois.get(i)));
-        }
-    }
-    @Override
-    public JSONObject toJSON() {
-        JSONObject res = super.toJSON();
-        if (roiZ.size()>1) {
-            JSONArray rois = new JSONArray();
-            for (byte[] bytes: this.roiZ) {
-                rois.add(Base64.getEncoder().encodeToString(bytes));
-            }
-            res.put("roiZ", rois);
-        } else if (roiZ.size()==1) {
-            res.put("roi", Base64.getEncoder().encodeToString(roiZ.get(0)));
-        }
-        return res;
-    }
-    protected RegionContainerIjRoi() {}
 }

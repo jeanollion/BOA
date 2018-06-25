@@ -48,8 +48,8 @@ public class RegionContainerVoxels extends RegionContainer {
     }
 
     @Override
-    public void updateObject() {
-        super.updateObject();
+    public void update() {
+        super.update();
         if (structureObject.getRegion().getVoxels() != null) {
             createCoordsArrays(structureObject.getRegion());
         } else {
@@ -97,12 +97,12 @@ public class RegionContainerVoxels extends RegionContainer {
         return voxels;
     }
     @Override
-    public Region getObject() {
+    public Region getRegion() {
         return new Region(getVoxels(), structureObject.getIdx() + 1, bounds, is2D, structureObject.getScaleXY(), structureObject.getScaleZ());
     }
 
     @Override
-    public void deleteObject() {
+    public void deleteRegion() {
         bounds = null;
         x = null;
         y = null;
@@ -110,7 +110,7 @@ public class RegionContainerVoxels extends RegionContainer {
     }
 
     @Override
-    public void relabelObject(int newIdx) {
+    public void relabelRegion(int newIdx) {
     }
     
     @Override 

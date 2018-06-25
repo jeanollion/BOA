@@ -54,7 +54,7 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
     }
     @Override
     public String getToolTipText() {
-        return "Project the spot center in the spine (skeleton) coordinate system of the bacteria that contains the spot (if exists) and return the spine coordinates<br />To compute the spine, <em>Bacteria</em> must correspond to objects with bacteria-like shapes<br />Spot center is by default the center defined by the segmenter, if no center is defined, the mass center is used<br /><ol><li><em>SpineCoord</em> is the coordinate along the bacteria axis</li><li><em>SpineRadialCoord is the coordinate perpendicular to the radial axis (negative on the left side)</em></li><li><em>SpineLength is the total spine length</em></li><li><em>SpineRadiius is the width of the bacteria at the position of the spot</em></li></ol><>";
+        return "Project the spot center in the spine (skeleton) coordinate system of the bacteria that contains the spot (if exists) and return the spine coordinates<br />To compute the spine, <em>Bacteria</em> must correspond to objects with rod shapes<br />Spot center is by default the center defined by the segmenter, if no center is defined, the mass center is used<br /><ol><li><em>SpineCoord</em> is the coordinate along the bacteria axis</li><li><em>SpineRadialCoord is the coordinate perpendicular to the radial axis (negative on the left side)</em></li><li><em>SpineLength is the total spine length</em></li><li><em>SpineRadiius is the width of the bacteria at the position of the spot</em></li></ol><>";
     }
     
     @Override
