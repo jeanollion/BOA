@@ -3226,7 +3226,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     if (f!=null) {
                         closeExperiment();
                         PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
-                        PropertyUtils.addStringToList(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
+                        PropertyUtils.addFirstStringToList(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
                         experimentFolder.setText(f.getAbsolutePath());
                         localFileSystemDatabaseRadioButton.setSelected(true);
                         populateExperimentList();

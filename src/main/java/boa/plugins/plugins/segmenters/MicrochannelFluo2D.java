@@ -65,14 +65,14 @@ import java.util.function.Consumer;
  */
 public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametrizable<MicrochannelFluo2D>, ToolTip, TestableProcessingPlugin {
     
-    NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height", 0, 430, 5, null).setToolTipText("Expected height of microchannel in pixels");
+    NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height", 0, 320, 5, null).setToolTipText("Height of microchannels, in pixels");
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width", 0, 60, 5, null).setToolTipText("Width of microchannels in pixels");
-    NumberParameter yShift = new BoundedNumberParameter("y-shift (start of microchannel)", 0, 20, 0, null).setToolTipText("Top of the microchannel will be translated of this value (in pixels) towards upper direction");
+    NumberParameter yShift = new BoundedNumberParameter("y-Start Shift", 0, 20, 0, null).setToolTipText("Top of the microchannel will be translated of this value (in pixels) towards upper direction");
     public final static  String THLD_TOOL_TIP = "Threshold to segment bacteria. <br />Configuration hint: result of segmentation is the image <em>Thresholded Bacteria</em>";
     PluginParameter<boa.plugins.SimpleThresholder> threshold= new PluginParameter<>("Threshold", boa.plugins.SimpleThresholder.class, new BackgroundFit(10), false).setToolTipText(THLD_TOOL_TIP); //new BackgroundThresholder(3, 6, 3) when background is removed and images saved in 16b, half of background is trimmed -> higher values
     public final static  String FILL_TOOL_TIP = "Fill proportion = y-length of bacteria / height of microchannel. If proportion is under this value, the object won't be segmented. Allows to avoid segmenting islated bacteria in central channel.<br /> Configuration Hint: Refer to plot <em>Microchannel Fill proportion</em>: peaks over the filling proportion value are segmented. Decrease the value to included lower peaks";
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.3, 0.05, 1).setToolTipText(FILL_TOOL_TIP);
-    public final static String SIZE_TOOL_TIP = "To detect microchannel a rough semgentation of bacteria is performed by simple threshold. Object undier this size in pixels are removed, to avoid taking into account objects that are not bacteria. <br /> Refer to <em>Thresholded Bacteria</em> to assess the size of bacteria after removing small objects";
+    public final static String SIZE_TOOL_TIP = "To detect microchannel a rough semgentation of bacteria is performed by simple threshold. Object under this size in pixels are removed, to avoid taking into account objects that are not bacteria. <br /> Refer to <em>Thresholded Bacteria</em> to assess the size of bacteria after removing small objects";
     NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 200, 1, null).setToolTipText(SIZE_TOOL_TIP);
     Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yShift, threshold, fillingProportion, minObjectSize};
     public static boolean debug = false;
@@ -246,8 +246,8 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
             sortedMinMaxYShiftList.add(minMaxYShift);
         }
         Collections.sort(sortedMinMaxYShiftList, (int[] i1, int[] i2) -> Integer.compare(i1[0], i2[0]));
-        yMin = Math.max(0, yMin - yShift);
-        return new Result(sortedMinMaxYShiftList, yMin, yMin + channelHeight - 1);
+        int shift = Math.min(yMin, yShift);
+        return new Result(sortedMinMaxYShiftList, yMin-shift, yMin + channelHeight - 1);
     }
 
     @Override

@@ -132,15 +132,18 @@ public class PropertyUtils {
         List<String> allStrings = PropertyUtils.getStrings(key);
         boolean store = false;
         for (String v : values) {
-            if (!allStrings.contains(v)) {
-                allStrings.add(v);
-                store = true;
-            }
+            allStrings.remove(v);
+            allStrings.add(v);
         }
-        if (store) {
-            Collections.sort(allStrings);
-            PropertyUtils.setStrings(key, allStrings);
+        if (store) PropertyUtils.setStrings(key, allStrings);
+    }
+    public static void addFirstStringToList(String key, String... values) {
+        List<String> allStrings = PropertyUtils.getStrings(key);
+        for (String v : values) {
+            allStrings.remove(v);
+            allStrings.add(0, v);
         }
+        PropertyUtils.setStrings(key, allStrings);
     }
     public static List<String> getStrings(String key) {
         List<String> res = new ArrayList<>();
