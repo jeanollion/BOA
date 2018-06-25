@@ -19,6 +19,7 @@
 package boa.plugins;
 
 import boa.data_structure.StructureObject;
+import boa.data_structure.StructureObjectUtils;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.gui.image_interaction.KymographX;
 import boa.image.BlankMask;
@@ -77,7 +78,7 @@ public interface TrackParametrizable<P extends Plugin> {
     public static <P extends Plugin> TrackParametrizer<P> getTrackParametrizer(int structureIdx, List<StructureObject> parentTrack, P plugin) {
         if (plugin instanceof TrackParametrizable) {
             TrackParametrizable tp = (TrackParametrizable)plugin;
-            return tp.run(structureIdx, parentTrack);
+            return tp.run(structureIdx, StructureObjectUtils.getTrack(parentTrack.get(0).getTrackHead()));
         }
         return null;
     }

@@ -605,7 +605,7 @@ public class GenerateXP {
             xp.addMeasurement(new BacteriaTrackingAttributes(1));
             xp.addMeasurement(new SimpleTrackMeasurements(0));
             xp.addMeasurement(new RelativePosition(1, 0, RelativePosition.REF_POINT.GEOM_CENTER, RelativePosition.REF_POINT.UPPER_LEFT_CORNER).setMeasurementName("BacteriaCenter"));
-            xp.addMeasurement(new ObjectFeatures().addFeatures(new Thickness()));
+            xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Thickness()));
             xp.addMeasurement(new GrowthRate().setFeature(new Size()).setSuffix("Area"));
             xp.addMeasurement(new GrowthRate().setFeature(new FeretMax()).setSuffix("Length"));
             xp.addMeasurement(new GrowthRate().setFeature(new SpineLength()).setSuffix("SpineLength"));

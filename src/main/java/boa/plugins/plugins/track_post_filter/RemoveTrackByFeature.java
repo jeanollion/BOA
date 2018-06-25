@@ -45,8 +45,10 @@ import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.Utils;
 import static boa.utils.Utils.parallele;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -91,20 +93,17 @@ public class RemoveTrackByFeature implements TrackPostFilter, ToolTip {
     @Override
     public void filter(int structureIdx, List<StructureObject> parentTrack) throws MultipleException {
         if (!feature.isOnePluginSet()) return;
-        Map<Region, Double> valueMap = new HashMap<>();
+        Map<Region, Double> valueMap = new ConcurrentHashMap<>();
         // compute feature for each object, by parent
         Consumer<StructureObject> exe = parent -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             ObjectFeature f = feature.instanciatePlugin();
             f.setUp(parent, structureIdx, pop);
-            Map<Region, Double> locValueMap = new HashMap<>(pop.getRegions().size());
-            for (Region o : pop.getRegions()) locValueMap.put(o, f.performMeasurement(o));
-            synchronized(valueMap) {
-                valueMap.putAll(locValueMap);
-            }
+            Map<Region, Double> locValueMap = pop.getRegions().stream().collect(Collectors.toMap(o->o, o-> f.performMeasurement(o)));
+            valueMap.putAll(locValueMap);
         };
         ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), true), exe);
-        // compute one value per track
+        // resume in one value per track
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         List<StructureObject> objectsToRemove = new ArrayList<>();
         for (List<StructureObject> track : allTracks.values()) {

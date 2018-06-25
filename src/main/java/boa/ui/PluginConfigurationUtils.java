@@ -102,7 +102,7 @@ public class PluginConfigurationUtils {
 
 
         logger.debug("test processing: sel {}", parentSelection);
-        logger.debug("test processing: parent track: {}", parentTrackDup);
+        logger.debug("test processing: whole parent track: {} selection: {}", wholeParentTrackDup.size(), parentTrackDup.size());
         if (plugin instanceof Segmenter) { // case segmenter -> segment only & call to test method
 
             // run pre-filters on whole track -> some track preFilters need whole track to be effective. todo : parameter to limit ? 
@@ -110,7 +110,7 @@ public class PluginConfigurationUtils {
             if (runPreFiltersOnWholeTrack)  psc.getTrackPreFilters(true).filter(structureIdx, wholeParentTrackDup);
             else  psc.getTrackPreFilters(true).filter(structureIdx, parentTrackDup); // only segmentation pre-filter -> run only on parentTrack
             parentTrackDup.forEach(p->stores.get(p).addIntermediateImage("pre-filtered", p.getPreFilteredImage(structureIdx))); // add preFiltered image
-            
+            logger.debug("run prefilters on whole parent track: {}", runPreFiltersOnWholeTrack);
             TrackParametrizer  applyToSeg = TrackParametrizable.getTrackParametrizer(structureIdx, wholeParentTrackDup, (Segmenter)plugin);
             SegmentOnly so; 
             if (psc instanceof SegmentOnly) {
@@ -143,6 +143,7 @@ public class PluginConfigurationUtils {
                     psc.getTrackPreFilters(true).filter(structureIdx, wholeParentTrackDup);
                     psc.getTrackPreFilters(false).removeAll();
                 }
+                // need to be able to run track-parametrizable on while parentTrack....
                 psc.segmentAndTrack(structureIdx, parentTrackDup);
                 //((TrackerSegmenter)plugin).segmentAndTrack(structureIdx, parentTrackDup, psc.getTrackPreFilters(true), psc.getPostFilters());
             } else {

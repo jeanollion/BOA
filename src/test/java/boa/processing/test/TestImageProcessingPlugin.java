@@ -48,9 +48,10 @@ public class TestImageProcessingPlugin {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
+        String dbName = "140115";
         //String dbName = "RecA_180606";
         //String dbName = "MF1_180509";
-        String dbName = "fluo160501_uncorr_TestParam";
+        //String dbName = "fluo160501_uncorr_TestParam";
         //String dbName = "WT_180504";
         //String dbName = "MF1_180509";
         //String dbName = "MutH_151220";
@@ -59,13 +60,13 @@ public class TestImageProcessingPlugin {
         //String dbName = "Aya_170324";
         //String dbName = "Aya_180315";
         //String dbName = "170919_glyc_lac";
-        boolean segmentation = false;
+        boolean segmentation = true;
         boolean track = true;
-        int structureIdx =2;
+        int structureIdx =1;
         
         int pIdx =0;
-        int mcIdx =0;
-        int[] frames = new int[]{0,10}; //{215, 237};
+        int mcIdx =2;
+        int[] frames = new int[]{754,800}; //{215, 237};
         
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {

@@ -36,7 +36,7 @@ import boa.utils.Utils;
  * @author jollion
  */
 public class ThicknessAxis implements GeometricalFeature, ToolTip {
-    ChoiceParameter axis = new ChoiceParameter("Axis", Utils.toStringArray(MainAxis.values()), ImageTransformation.MainAxis.X.toString(), false);
+    ChoiceParameter axis = new ChoiceParameter("Axis", Utils.toStringArray(MainAxis.values()), null, false);
     ChoiceParameter statistics = new ChoiceParameter("Statistics", new String[]{"Mean", "Median", "Max"}, "Mean", false);
     String toolTip = "Estimates the thickness of a region along a given axis (X, Y or Z)";
     public ThicknessAxis setAxis(MainAxis axis) {

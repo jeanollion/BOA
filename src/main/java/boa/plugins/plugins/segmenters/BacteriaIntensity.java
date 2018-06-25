@@ -84,6 +84,7 @@ import boa.plugins.plugins.thresholders.ParentThresholder;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
+import boa.utils.Pair;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -592,13 +593,13 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
             double meanR2 = sumR[1]/sumR[2];
             return new float[]{(float)(sum[0]/sum[2]), (float)meanR, (float)Math.sqrt(meanR2 - meanR * meanR), (float)sumR[3]};
         };
-        List<float[]> meanF_meanR_sigmaR = parentTrack.stream().parallel().map(p->compute.apply(p)).collect(Collectors.toList());
+        List<float[]> meanF_meanR_sigmaR_minR = parentTrack.stream().parallel().map(p->compute.apply(p)).collect(Collectors.toList());
         // 1) criterion for void microchannel track
         double globalMean = globalSum[0]/globalSum[2];
         double globalMean2 = globalSum[1]/globalSum[2];
         double globalSigma = Math.sqrt(globalMean2 - globalMean * globalMean);
         if (globalSigma/(globalMean-globalSum[3])<globalVoidThldSigmaMu) {
-            logger.debug("parent: {} sigma: {}/{}={} all channels considered void: {}", parentTrack.get(0), globalSigma, globalMean, globalSigma/globalMean);
+            logger.debug("parent: {} sigma/mean: {}/{}={} all channels considered void: {}", parentTrack.get(0), globalSigma, globalMean, globalSigma/globalMean);
             return new HashSet<>(parentTrack);
         }
         // 2) criterion for void microchannels : low intensity value
@@ -606,11 +607,14 @@ public class BacteriaIntensity implements TrackParametrizable<BacteriaIntensityP
         double globalThld = getGlobalThreshold(parentTrack, structureIdx, null, backgroundMeanAndSigmaStore);
 
         Set<StructureObject> outputVoidMicrochannels = IntStream.range(0, parentTrack.size())
-                .filter(idx -> meanF_meanR_sigmaR.get(idx)[0]<globalThld)  // test on mean value is because when mc is very full, sigma can be low enough
-                .filter(idx -> meanF_meanR_sigmaR.get(idx)[2]/(meanF_meanR_sigmaR.get(idx)[1]-meanF_meanR_sigmaR.get(idx)[3])<globalVoidThldSigmaMu) // test on sigma/mu value because when mc is nearly void, mean can be low engough
+                .filter(idx -> meanF_meanR_sigmaR_minR.get(idx)[0]<globalThld)  // test on mean value is because when mc is very full, sigma can be low enough
+                .filter(idx -> meanF_meanR_sigmaR_minR.get(idx)[2]/(meanF_meanR_sigmaR_minR.get(idx)[1]-meanF_meanR_sigmaR_minR.get(idx)[3])<globalVoidThldSigmaMu) // test on sigma/mu value because when mc is nearly void, mean can be low engough
                 .mapToObj(idx -> parentTrack.get(idx))
                 .collect(Collectors.toSet());
-        logger.debug("parent: {} global sigma: {}/{}={} global thld: {} void mc {}/{}", parentTrack.get(0), globalSigma,globalMean, globalSigma/globalMean, globalThld,outputVoidMicrochannels.size(), parentTrack.size() );
+        logger.debug("parent: {} global Sigma/Mean {}/{}={} global thld: {} void mc {}/{}", parentTrack.get(0), globalSigma,globalMean, globalSigma/globalMean, globalThld,outputVoidMicrochannels.size(), parentTrack.size() );
+        logger.debug("10 frames lower std/mu: {}", IntStream.range(0, parentTrack.size()).mapToObj(idx -> new Pair<>(parentTrack.get(idx).getFrame(), meanF_meanR_sigmaR_minR.get(idx)[2]/(meanF_meanR_sigmaR_minR.get(idx)[1]-meanF_meanR_sigmaR_minR.get(idx)[3]))).sorted((p1, p2)->Double.compare(p1.value, p2.value)).limit(10).collect(Collectors.toList()));
+        logger.debug("10 frames upper std/mu: {}", IntStream.range(0, parentTrack.size()).mapToObj(idx -> new Pair<>(parentTrack.get(idx).getFrame(), meanF_meanR_sigmaR_minR.get(idx)[2]/(meanF_meanR_sigmaR_minR.get(idx)[1]-meanF_meanR_sigmaR_minR.get(idx)[3]))).sorted((p1, p2)->-Double.compare(p1.value, p2.value)).limit(10).collect(Collectors.toList()));
+        
         //logger.debug("s/mu : {}", Utils.toStringList(meanF_meanR_sigmaR.subList(10, 15), f->"mu="+f[0]+" muR="+f[1]+"sR="+f[2]+ " sR/muR="+f[2]/f[1]));
         return outputVoidMicrochannels;
     }
