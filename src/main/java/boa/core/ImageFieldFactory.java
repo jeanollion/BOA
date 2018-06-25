@@ -60,32 +60,40 @@ public class ImageFieldFactory {
     private final static List<String> ignoredExtensions = Arrays.asList(new String[]{".log"});
     public static List<MultipleImageContainer> importImages(String[] path, Experiment xp, ProgressCallback pcb) {
         ArrayList<MultipleImageContainer> res = new ArrayList<>();
-        if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.SINGLE_FILE)) {
-            for (String p : path) ImageFieldFactory.importImagesSingleFile(new File(p), xp, res, pcb);
-        } else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_POSITION)) {
-            // get keywords
-            int nb = xp.getChannelImages().getChildCount();
-            String[] keyWords = new String[nb];
-            int idx = 0;
-            for (ChannelImage i : xp.getChannelImages().getChildren()) keyWords[idx++] = i.getImportImageChannelKeyword();
-            logger.debug("import image channel: keywords: {}", (Object)keyWords);
-            for (String p : path) ImageFieldFactory.importImagesChannel(new File(p), xp, keyWords, res, pcb);
-        } else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_FRAME_POSITION)) {
-            int nb = xp.getChannelImages().getChildCount();
-            String[] keyWords = new String[nb];
-            int idx = 0;
-            int countBlank = 0;
-            for (ChannelImage i : xp.getChannelImages().getChildren()) {
-                keyWords[idx] = i.getImportImageChannelKeyword();
-                if ("".equals(keyWords[idx])) ++countBlank;
-                ++idx;
-            }
-            if (countBlank>1) {
-                if (pcb!=null) pcb.log("When Experiement has several channels, one must specify channel keyword for this import method");
-                logger.error("When Experiement has several channels, one must specify channel keyword for this import method");
-                return res;
-            }
-            for (String p : path) ImageFieldFactory.importImagesCTP(new File(p), xp, keyWords, res, pcb);
+        switch (xp.getImportImageMethod()) {
+            case SINGLE_FILE:
+                for (String p : path) ImageFieldFactory.importImagesSingleFile(new File(p), xp, res, pcb);
+                break;
+            case ONE_FILE_PER_CHANNEL_POSITION:
+                {
+                    // get keywords
+                    int nb = xp.getChannelImages().getChildCount();
+                    String[] keyWords = new String[nb];
+                    int idx = 0;
+                    for (ChannelImage i : xp.getChannelImages().getChildren()) keyWords[idx++] = i.getImportImageChannelKeyword();
+                    logger.debug("import image channel: keywords: {}", (Object)keyWords);
+                    for (String p : path) ImageFieldFactory.importImagesChannel(new File(p), xp, keyWords, res, pcb);
+                    break;
+                }
+            case ONE_FILE_PER_CHANNEL_FRAME_POSITION:
+                {
+                    int nb = xp.getChannelImages().getChildCount();
+                    String[] keyWords = new String[nb];
+                    int idx = 0;
+                    int countBlank = 0;
+                    for (ChannelImage i : xp.getChannelImages().getChildren()) {
+                        keyWords[idx] = i.getImportImageChannelKeyword();
+                        if ("".equals(keyWords[idx])) ++countBlank;
+                        ++idx;
+                    }       if (countBlank>1) {
+                        if (pcb!=null) pcb.log("When Experiement has several channels, one must specify channel keyword for this import method");
+                        logger.error("When Experiement has several channels, one must specify channel keyword for this import method");
+                        return res;
+                    }       for (String p : path) ImageFieldFactory.importImagesCTP(new File(p), xp, keyWords, res, pcb);
+                    break;
+                }
+            default:
+                break;
         }
         Collections.sort(res, (MultipleImageContainer arg0, MultipleImageContainer arg1) -> arg0.getName().compareToIgnoreCase(arg1.getName()));
         return res;
@@ -166,10 +174,10 @@ public class ImageFieldFactory {
         }
     }
     
-    private static String[] imageExtensions = new String[]{"tif", "tiff", "nd2", "png"};
-    public final static String[] timeKeywords = new String[]{"t"};
+    private static String[] IMAGE_EXTENSION_CTP = new String[]{"tif", "tiff", "nd2", "png"};
     protected static void importImagesCTP(File input, Experiment xp, String[] channelKeywords, ArrayList<MultipleImageContainer> containersTC, ProgressCallback pcb) {
         String posSep = xp.getImportImagePositionSeparator();
+        String frameSep = xp.getImportImageFrameSeparator();
         if (channelKeywords.length==0) return;
         if (!input.isDirectory()) return;
         File[] subDirs = input.listFiles(getDirectoryFilter()); // recursivity
@@ -183,10 +191,10 @@ public class ImageFieldFactory {
             int maxLength = Collections.max(filesByExtension.entrySet(), (e1, e2) -> e1.getValue().size() - e2.getValue().size()).getValue().size();
             filesByExtension.entrySet().removeIf(e -> e.getValue().size()<maxLength);
             if (filesByExtension.size()>1) { // keep extension in list
-                Set<String> contained = new HashSet<>(Arrays.asList(imageExtensions));
+                Set<String> contained = new HashSet<>(Arrays.asList(IMAGE_EXTENSION_CTP));
                 filesByExtension.entrySet().removeIf(e -> !contained.contains(e.getKey()));
                 if (filesByExtension.size()>1) {
-                    logger.warn("Folder: {} contains several image extension: {}", input.getAbsolutePath(), filesByExtension.keySet());
+                    logger.error("Folder: {} contains several image extension: {}", input.getAbsolutePath(), filesByExtension.keySet());
                     return;
                 } else if (filesByExtension.isEmpty()) return;
             }
@@ -195,7 +203,10 @@ public class ImageFieldFactory {
         if (filesByExtension.size()==1) {
             files = filesByExtension.entrySet().iterator().next().getValue();
             extension = filesByExtension.keySet().iterator().next();
-        } else return;
+        } else {
+            logger.error("Folder: {} contains several image extension: {}", input.getAbsolutePath(), filesByExtension.keySet());
+            return;
+        }
         logger.debug("extension: {}, #files: {}", extension, files.size());
         // get other channels
         
@@ -211,7 +222,7 @@ public class ImageFieldFactory {
         
         // 3 split by position / channel (check number) / frames (check same number between channels & continity)
         
-        Pattern timePattern = Pattern.compile(".*"+timeKeywords[0]+"(\\d+).*");
+        Pattern timePattern = Pattern.compile(".*"+frameSep+"(\\d+).*");
         Map<String, List<File>> filesByPosition=null;
         Pattern posPattern = Pattern.compile(".*("+posSep+"\\d+).*");
         try {filesByPosition = files.stream().collect(Collectors.groupingBy(f -> getAsString(f.getName(), posPattern)));}
@@ -260,7 +271,7 @@ public class ImageFieldFactory {
                             input.getAbsolutePath(), 
                             extension, 
                             positionFiles.getKey(), 
-                            timeKeywords[0], 
+                            frameSep, 
                             channelKeywords, 
                             frameNumber
                         ));

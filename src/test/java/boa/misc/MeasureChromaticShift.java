@@ -62,7 +62,7 @@ public class MeasureChromaticShift {
                 xp.addMeasurement(new ChromaticShiftBeads(s, s2));
             }
         }
-        xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
+        xp.setImportImageMethod(Experiment.IMPORT_METHOD.SINGLE_FILE);
         xp.setOutputDirectory(outputDirectory);
         Processor.importFiles(xp, true, null, inputDirectory);
         

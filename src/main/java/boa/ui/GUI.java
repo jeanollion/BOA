@@ -2704,7 +2704,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (!new File(defDir).exists()) defDir = PropertyUtils.get(PropertyUtils.LAST_IMPORT_IMAGE_DIR);
         File[] selectedFiles = Utils.chooseFiles("Choose images/directories to import (selected import method="+db.getExperiment().getImportImageMethod()+")", defDir, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
         if (selectedFiles!=null) {
-            if (Experiment.ImportImageMethod.SINGLE_FILE.equals(db.getExperiment().getImportImageMethod())) { // warning if a lot of files 
+            if (Experiment.IMPORT_METHOD.SINGLE_FILE.equals(db.getExperiment().getImportImageMethod())) { // warning if a lot of files 
                 for (File f : selectedFiles) {
                     File[] sub = f.listFiles();
                     if (sub!=null && sub.length>200) {

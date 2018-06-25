@@ -80,6 +80,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     }
     @Override 
     public boolean isValid() {
+        if (!super.isValid()) return false;
         return !(!allowNoSelection && this.selectedIndex<0);
     }
     @Override

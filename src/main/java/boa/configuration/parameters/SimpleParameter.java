@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
@@ -37,6 +38,7 @@ public abstract class SimpleParameter implements Parameter {
     protected String name;
     private ContainerParameter parent;
     protected boolean isEmphasized;
+    protected BooleanSupplier validationFunction = ()->true;
     
     protected SimpleParameter(String name) {
         this.name=name;
@@ -51,7 +53,15 @@ public abstract class SimpleParameter implements Parameter {
         this.toolTipText=txt;
         return (T)this;
     }
-    
+    public <T extends Parameter> T addValidationFunction(BooleanSupplier validationFunction) {
+        BooleanSupplier oldValidation = this.validationFunction;
+        this.validationFunction = () -> oldValidation.getAsBoolean() && validationFunction.getAsBoolean();
+        return (T)this;
+    }
+    @Override 
+    public boolean isValid() {
+        return validationFunction.getAsBoolean();
+    }
     @Override
     public String getName(){
         return name;

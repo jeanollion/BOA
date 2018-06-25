@@ -43,6 +43,7 @@ public class BoundedNumberParameter extends NumberParameter {
     }
     @Override 
     public boolean isValid() {
+        if (!super.isValid()) return false;
         return super.isValid() && (lowerBound==null || value.doubleValue()>=lowerBound.doubleValue()) && (upperBound==null || value.doubleValue()<=upperBound.doubleValue());
     }
     @Override public BoundedNumberParameter duplicate() {

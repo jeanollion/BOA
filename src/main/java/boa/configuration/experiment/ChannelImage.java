@@ -18,10 +18,15 @@
  */
 package boa.configuration.experiment;
 
+import boa.configuration.experiment.Experiment.IMPORT_METHOD;
+import static boa.configuration.experiment.Experiment.IMPORT_METHOD.ONE_FILE_PER_CHANNEL_POSITION;
+import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.SimpleContainerParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.configuration.parameters.ui.NameEditorUI;
 import boa.configuration.parameters.ui.ParameterUI;
+import java.util.List;
+import java.util.function.BooleanSupplier;
 import org.json.simple.JSONObject;
 
 /**
@@ -30,7 +35,16 @@ import org.json.simple.JSONObject;
  */
 public class ChannelImage extends SimpleContainerParameter {
     NameEditorUI ui;
-    TextParameter importKeyWord = new TextParameter("import file channel keyword", "", true);
+    BooleanSupplier kwValid = () -> {
+        Experiment xp = ParameterUtils.getExperiment(this);
+        if (xp!=null) {
+            IMPORT_METHOD method = xp.getImportImageMethod();
+            if (method==IMPORT_METHOD.ONE_FILE_PER_CHANNEL_POSITION && this.getParent().getIndex(this)==0 && this.getImportImageChannelKeyword().length()==0) return false; // first must be non null 
+            long distinctKW = xp.getChannelImages().getChildren().stream().map(c -> c.getImportImageChannelKeyword()).distinct().count();
+            return distinctKW == xp.getChannelImageCount();
+        } else return true;
+    };
+    TextParameter importKeyWord = new TextParameter("Channel keyword", "", true).addValidationFunction(kwValid).setToolTipText("Keyword allowing to distinguish the channel during image import. Filename of the channel must contain this keyword and only differ of this keyword. First channel must have a non-null keyword is import method is <em>"+ONE_FILE_PER_CHANNEL_POSITION.getMethod()+"</em>. All keywords should be distinct");
     
     public ChannelImage(String name) {
         super(name);
@@ -57,7 +71,6 @@ public class ChannelImage extends SimpleContainerParameter {
         if (ui==null) ui=new NameEditorUI(this, false);
         return ui;
     }
-
     @Override
     public Object toJSONEntry() {
         JSONObject res = new JSONObject();

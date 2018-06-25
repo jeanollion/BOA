@@ -77,13 +77,14 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY).setToolTipText("Directory where preprocessed images will be stored");
     protected FileChooser outputPath = new FileChooser("Output Path", FileChooserOption.DIRECTORIES_ONLY).setToolTipText("Directory where segmentation & lineage results will be stored");
-    ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), null, false);
+    ChoiceParameter importMethod = new ChoiceParameter("Import Method", IMPORT_METHOD.getChoices(), null, false);
     TextParameter positionSeparator = new TextParameter("Position Separator", "xy", true).setToolTipText("character sequence located directly before the position identifier in all image files");
-    ConditionalParameter importCond = new ConditionalParameter(importMethod).setActionParameters(ImportImageMethod.ONE_FILE_PER_CHANNEL_FRAME_POSITION.getMethod(), positionSeparator)
+    TextParameter frameSeparator = new TextParameter("Frame Separator", "t", true).setToolTipText("character sequence located directly before the frame number in all image files");
+    ConditionalParameter importCond = new ConditionalParameter(importMethod).setActionParameters(IMPORT_METHOD.ONE_FILE_PER_CHANNEL_FRAME_POSITION.getMethod(), positionSeparator, frameSeparator)
             .setToolTipText("<b>Define here the input image organization</b><ol>"
-                    + "<li>"+ImportImageMethod.SINGLE_FILE.getMethod()+": A single file contains all frames, channels (and positions)</li>"
-                    + "<li>"+ImportImageMethod.ONE_FILE_PER_CHANNEL_POSITION.getMethod()+": For each position, there is one file per channel that contains all frames</li>"
-                    + "<li>"+ImportImageMethod.ONE_FILE_PER_CHANNEL_FRAME_POSITION.getMethod()+": There is one file for each position, channel and Frame</li></ol>");
+                    + "<li>"+IMPORT_METHOD.SINGLE_FILE.getMethod()+": A single file contains all frames, channels (and positions)</li>"
+                    + "<li>"+IMPORT_METHOD.ONE_FILE_PER_CHANNEL_POSITION.getMethod()+": For each position, there is one file per channel that contains all frames<br /> File names must contain the user-defined channel keywords. For a given position file names only differ by their channel keyword</li>"
+                    + "<li>"+IMPORT_METHOD.ONE_FILE_PER_CHANNEL_FRAME_POSITION.getMethod()+": There is one file for each position, channel and Frame. <br />For a given folder, all file must have the same extension. <br /> File names must contain the user-defined channel keywords, the user-defined <em>position separator</em>, and contain the user-defined <em>frame separator</em> followed by the frame number. For a given position file names should only differ by channel keyword and frame number</li></ol>");
     
     ChannelImageParameter bestFocusPlaneChannel = new ChannelImageParameter("Channel", 0, true).setToolTipText("Channel for best focus plane computation");
     PluginParameter<Autofocus> autofocus = new PluginParameter<>("Algorithm", Autofocus.class, new SelectBestFocusPlane(), true);
@@ -152,7 +153,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         initChildList();
     }
     
-    public void setImportImageMethod(ImportImageMethod method) {this.importMethod.setValue(method.getMethod());}
+    public void setImportImageMethod(IMPORT_METHOD method) {this.importMethod.setValue(method.getMethod());}
     
     public void setImageDAOType(ImageDAOTypes type) {
         this.imageDAOType=type;
@@ -209,12 +210,16 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return channelImages;
     }
     
-    public ImportImageMethod getImportImageMethod() {
-        return ImportImageMethod.getValueOf(this.importMethod.getSelectedItem());
+    public IMPORT_METHOD getImportImageMethod() {
+        return IMPORT_METHOD.getValueOf(this.importMethod.getSelectedItem());
     }
     
     public String getImportImagePositionSeparator() {
         return positionSeparator.getValue();
+    }
+    
+    public String getImportImageFrameSeparator() {
+        return frameSeparator.getValue();
     }
     
     public String getOutputDirectory() {
@@ -523,26 +528,26 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         this.model=model;
     }
 
-    public enum ImportImageMethod {
+    public enum IMPORT_METHOD {
         SINGLE_FILE("Single-file"),
         ONE_FILE_PER_CHANNEL_POSITION("One File Per Channel And Position"),
         ONE_FILE_PER_CHANNEL_FRAME_POSITION("One File Per Position, Channel And Frame");
         private final String name;
-        ImportImageMethod(String name) {
+        IMPORT_METHOD(String name) {
             this.name=name;
         }
         @Override
         public String toString() {return name;}
         public String getMethod(){return name;}
         public static String[] getChoices() {
-            ImportImageMethod[] all = ImportImageMethod.values();
+            IMPORT_METHOD[] all = IMPORT_METHOD.values();
             String[] res = new String[all.length];
             int i = 0;
-            for (ImportImageMethod m : all) res[i++]=m.name;
+            for (IMPORT_METHOD m : all) res[i++]=m.name;
             return res;
         }
-        public static ImportImageMethod getValueOf(String method) {
-            for (ImportImageMethod m : ImportImageMethod.values()) if (m.getMethod().equals(method)) return m;
+        public static IMPORT_METHOD getValueOf(String method) {
+            for (IMPORT_METHOD m : IMPORT_METHOD.values()) if (m.getMethod().equals(method)) return m;
             return null;
         }
         /*public static ImportImageMethod getMethod(String name) {

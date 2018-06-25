@@ -58,6 +58,7 @@ public class TextParameter extends SimpleParameter {
     }
     @Override
     public boolean isValid() {
+        if (!super.isValid()) return false;
         if (!allowBlank && this.value.length()==0) return false;
         return !(!allowSpecialCharacters && DocumentFilterIllegalCharacters.containsIllegalCharacters(value));
     }

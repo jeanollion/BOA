@@ -74,6 +74,7 @@ public class FileChooser extends SimpleParameter implements Listenable {
     }
     @Override 
     public boolean isValid() {
+        if (!super.isValid()) return false;
         return !(!allowNoSelection && this.selectedFiles.length==0);
     }
     @Override

@@ -61,6 +61,7 @@ public class NumberParameter extends SimpleParameter implements Listenable, OpPa
     }
     @Override 
     public boolean isValid() {
+        if (!super.isValid()) return false;
         return value!=null;
     }
     @Override

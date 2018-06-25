@@ -54,6 +54,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     }
     @Override 
     public boolean isValid() {
+        if (!super.isValid()) return false;
         return allowNoSelection || (selectedIndices!=null && selectedIndices.length>0);
     }
     public <T extends IndexChoiceParameter> T setAllowNoSelection(boolean allowNoSelection) {
