@@ -91,19 +91,19 @@ public class SpotSegmenter implements Segmenter, TrackParametrizable<SpotSegment
     ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true).setEmphasized(true).setToolTipText("Scale for lapalcian transform. <br />Configuration hint: <em>Laplacian</em> image");
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 5).setToolTipText("Scale (in pixels) for gaussian smooth <br />Configuration hint: <em>smooth & scaled</em> image");
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size", 0, 5, 1, null).setToolTipText("Spots under this size (in voxel number) will be removed");
-    NumberParameter thresholdHigh = new NumberParameter("Threshold for Seeds", 2, 2.25).setEmphasized(true).setToolTipText("Laplacian Threshold for seed selection.<br />Higher values tend increase false negative and decrease false positives.<br /> Configuration hint: corresponds to value in <em>Laplacian</em> image");
-    NumberParameter thresholdLow = new NumberParameter("Threshold for propagation", 2, 1.63).setEmphasized(true).setToolTipText("Laplacian Threshold for watershed propagation: propagation stops at this value. <br />Lower value will yield in larger spots.<br />Configuration hint: corresponds to value in <em>Laplacian</em> image");
-    NumberParameter intensityThreshold = new NumberParameter("Intensity Threshold for Seeds", 2, 1.6).setEmphasized(true).setToolTipText("Intensity threshold for seed selection.<br /> Higher values tend to increase false negative and decrease false positives.<br />Configuration hint: corresponds to value of <em>smooth & scaled</em> image"); 
+    NumberParameter thresholdHigh = new NumberParameter("Seed Laplacian Threshold", 2, 2.25).setEmphasized(true).setToolTipText("Laplacian Threshold for seed selection.<br />Higher values tend increase false negative and decrease false positives.<br /> Configuration hint: corresponds to values in <em>Laplacian</em> image");
+    NumberParameter thresholdLow = new NumberParameter("Propagation Threshold", 2, 1.63).setEmphasized(true).setToolTipText("Laplacian Threshold for watershed propagation: propagation stops at this value. <br />Lower value will yield in larger spots.<br />Configuration hint: corresponds to values in <em>Laplacian</em> image");
+    NumberParameter intensityThreshold = new NumberParameter("Seed Threshold", 2, 1.6).setEmphasized(true).setToolTipText("Intensity threshold for seed selection.<br /> Higher values tend to increase false negative and decrease false positives.<br />Configuration hint: corresponds to values of <em>smooth & scaled</em> image"); 
     boolean planeByPlane = false;
     Parameter[] parameters = new Parameter[]{scale, smoothScale, minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold};
     ProcessingVariables pv = new ProcessingVariables();
     protected String toolTip = "<b>Spot Detection</b>. <br /> "
             + "<ul><li>Input image is scaled by removing the mean value and dividing by the standard-deviation value of the background signal within the segmentation parent</li>"
             + "<li>Spots are detected using a seeded watershed algorithm in the laplacian transform.</li> "
-            + "<li>Seeds are set on regional maxima of the laplacian transform, within the mask of the segmentation parent, with laplacian value superior to <em>Threshold for Seeds</em> and gaussian value superior to <em>Intensity Threshold for Seeds</em></li>"
+            + "<li>Seeds are set on regional maxima of the laplacian transform, within the mask of the segmentation parent, with laplacian value superior to <em>Seed Threshold</em> and gaussian value superior to <em>Seed Threshold</em></li>"
             + "<li>If several scales are provided, the laplacian scale space will be computed (3D for 2D input, and 4D for 3D input) and the seeds will be 3D/4D local extrema in the scale space in order to determine at the same time their scale and spatial localization</li>"
-            + "<li>Watershed propagation is done within the segmentation parent mask until laplacian values reach <em>Threshold for propagation</em></li>"
-            + "<li>A quality parameter in computed as √(laplacian x gaussian) at the center of the spot</li><ul>";
+            + "<li>Watershed propagation is done within the segmentation parent mask until laplacian values reach <em>Propagation Threshold</em></li>"
+            + "<li>A quality parameter defined as √(laplacian x gaussian) at the center of the spot is computed</li><ul>";
     
     public SpotSegmenter() {}
     
