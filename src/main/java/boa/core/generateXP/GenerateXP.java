@@ -476,7 +476,7 @@ public class GenerateXP {
         Structure mutation = xp.getStructure(2);
         mutation.setSegmentationParentStructure(1);
         if (processing) {
-            mc.setProcessingScheme(new SegmentAndTrack(
+            mc.setProcessingPipeline(new SegmentAndTrack(
                     new MicrochannelTracker().setSegmenter(new MicrochannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05).setWidthQuantile(0.9)
                     ).addTrackPostFilters(
@@ -484,7 +484,7 @@ public class GenerateXP {
                             new TrackLengthFilter().setMinSize(5), 
                             new RemoveTracksStartingAfterFrame())
             );
-            bacteria.setProcessingScheme(new SegmentAndTrack(
+            bacteria.setProcessingPipeline(new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaIntensity()).setCostParameters(0.25, 1.25)
                     ).addTrackPostFilters(
                             new PostFilter(new RemoveEndofChannelBacteria()).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
@@ -492,7 +492,7 @@ public class GenerateXP {
                     )
             );
             // modification of scaling: lap * 2.5, gauss * scale (=2) quality * 2.23
-            mutation.setProcessingScheme(new SegmentAndTrack(
+            mutation.setProcessingPipeline(new SegmentAndTrack(
                     new NestedSpotTracker().setCompartimentStructure(1).setSegmenter(new SpotSegmenter(!mutationHighBck ? 2.75 : 3, !mutationHighBck ? 2 : 2.75, !mutationHighBck ? 1.6 : 2).setScale(2.5)  // was 0.9, 0.65, 0.9, scale was 2 for mutH
                 ).setSpotQualityThreshold(3.122) // 4.46 for mutH ? 
                             .setLinkingMaxDistance(0.75, 0.77).setGapParameters(0.75, 0.15, 3)
@@ -570,8 +570,8 @@ public class GenerateXP {
                 //new AverageMask()
             );
             
-            mc.setProcessingScheme(mcpc);
-            bacteria.setProcessingScheme(
+            mc.setProcessingPipeline(mcpc);
+            bacteria.setProcessingPipeline(
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
                             .setSegmenter(new BacteriaIntensityPhase())

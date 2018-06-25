@@ -97,8 +97,8 @@ public class DeleteFromDAOTest {
 
         // processing chains
         PluginFactory.findPlugins("boa.plugins.plugins");
-        microChannel.setProcessingScheme(new SegmentThenTrack(new SimpleThresholder(new ConstantValue(1)), new ObjectIdxTracker()));
-        bacteria.setProcessingScheme(new SegmentThenTrack(new SimpleThresholder(new ConstantValue(1)), new ObjectIdxTracker()));
+        microChannel.setProcessingPipeline(new SegmentThenTrack(new SimpleThresholder(new ConstantValue(1)), new ObjectIdxTracker()));
+        bacteria.setProcessingPipeline(new SegmentThenTrack(new SimpleThresholder(new ConstantValue(1)), new ObjectIdxTracker()));
 
         // set up I/O directory & create fields
         File inputImage = testFolder.newFolder();

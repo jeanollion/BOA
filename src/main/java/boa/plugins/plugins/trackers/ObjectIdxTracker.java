@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import boa.plugins.Plugin;
+import boa.plugins.ToolTip;
 import boa.plugins.Tracker;
 import boa.utils.Utils;
 
@@ -43,7 +44,12 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class ObjectIdxTracker implements Tracker {
+public class ObjectIdxTracker implements Tracker, ToolTip {
+
+    @Override
+    public String getToolTipText() {
+        return "Link objects according to their index";
+    }
 
     
     public static enum IndexingOrder {XYZ(0, 1, 2), YXZ(1, 0, 2), XZY(0, 2, 1), ZXY(2, 0, 1), ZYX(2, 1, 0);

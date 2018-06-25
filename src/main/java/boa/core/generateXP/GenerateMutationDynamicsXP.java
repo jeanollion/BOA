@@ -170,10 +170,10 @@ public class GenerateMutationDynamicsXP {
         Structure mutation = new Structure("Mutation", 0, mutChan); // parent structure 1 segParentStructure 0
         xp.getStructures().insert(mc, bacteria, mutation);
         
-        mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelFluo2D())));
+        mc.setProcessingPipeline(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelFluo2D())));
         //bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
-        bacteria.setProcessingScheme(new SegmentThenTrack(new BacteriaIntensity(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
-        mutation.setProcessingScheme(new SegmentAndTrack(
+        bacteria.setProcessingPipeline(new SegmentThenTrack(new BacteriaIntensity(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
+        mutation.setProcessingPipeline(new SegmentAndTrack(
                 new NestedSpotTracker().setCompartimentStructure(1).setSegmenter(new SpotSegmenter(0.65, 0.5, 0.55).setScale(2.5) 
                 ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.4, 0.41).setGapParameters(0.4, 0.1, 3)
         ).addPreFilters(new BandPass(0, 8, 0, 5) // was 10

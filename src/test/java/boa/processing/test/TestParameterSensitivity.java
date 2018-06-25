@@ -85,7 +85,7 @@ public class TestParameterSensitivity {
         t.setPositions(pos).setActions(false, true, true, true).setStructures(2);
         
         Structure mutation = t.getDB().getExperiment().getStructure(2);
-        mutation.setProcessingScheme(new SegmentAndTrack(
+        mutation.setProcessingPipeline(new SegmentAndTrack(
                     new NestedSpotTracker().setCompartimentStructure(1).setSegmenter(new SpotSegmenter(0.9, 0.75, 0.9).setScale(2)
                 ).setSpotQualityThreshold(params[1])
                             .setLinkingMaxDistance(0.8, 0.82).setGapParameters(0.8, 0.15, 3)

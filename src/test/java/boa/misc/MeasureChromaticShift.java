@@ -29,7 +29,6 @@ import boa.plugins.plugins.measurements.objectFeatures.Size;
 import boa.plugins.plugins.post_filters.FeatureFilter;
 import boa.plugins.plugins.pre_filters.Median;
 import boa.plugins.plugins.processing_pipeline.SegmentOnly;
-import boa.plugins.plugins.segmenters.ProcessingChain;
 import boa.plugins.plugins.segmenters.SimpleThresholder;
 
 /**
@@ -54,7 +53,7 @@ public class MeasureChromaticShift {
             xp.getChannelImages().insert(new ChannelImage("channel:"+s));
             Structure struc = new Structure("structure:"+s, -1, s);
             xp.getStructures().insert(struc);
-            struc.setProcessingScheme(new SegmentOnly(new ProcessingChain(new SimpleThresholder(thresholds[s])).addPrefilters(new Median(2, 1)).addPostfilters(new FeatureFilter(new Size(), 5, true, true))));
+            struc.setProcessingPipeline(new SegmentOnly(new SimpleThresholder(thresholds[s])).addPreFilters(new Median(2, 1)).addPostFilters(new FeatureFilter(new Size(), 5, true, true)));
         }
         // sets measurements
         for (int s = 0; s<thresholds.length-1; ++s) { 

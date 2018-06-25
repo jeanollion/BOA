@@ -40,20 +40,20 @@ import boa.plugins.plugins.thresholders.ConstantValue;
  * @author jollion
  */
 public class SimpleThresholder implements Segmenter {
-    PluginParameter<Thresholder> threshold;
+    PluginParameter<Thresholder> threshold = new PluginParameter<>("Threshold", Thresholder.class, false);
     
     public SimpleThresholder() {
-        threshold = new PluginParameter<Thresholder>("Threshold", Thresholder.class, false);
+
     }
     
     public SimpleThresholder(Thresholder thresholder) {
-        this.threshold= new PluginParameter<Thresholder>("Threshold", Thresholder.class, thresholder, false);
+        this.threshold.setPlugin(thresholder);
     }
     
     public SimpleThresholder(double threshold) {
-        this.threshold= new PluginParameter<Thresholder>("Threshold", Thresholder.class, new ConstantValue(threshold), false);
+        this(new ConstantValue(threshold));
     }
-    
+    @Override
     public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing structureObject) {
         ImageByte mask = new ImageByte("mask", input);
         Thresholder t =  threshold.instanciatePlugin();
@@ -66,7 +66,7 @@ public class SimpleThresholder implements Segmenter {
         }
         Region[] objects = ImageLabeller.labelImage(mask);
         logger.trace("simple thresholder: image: {} number of objects: {}", input.getName(), objects.length);
-        return  new RegionPopulation(new ArrayList<Region>(Arrays.asList(objects)), input);
+        return  new RegionPopulation(new ArrayList<>(Arrays.asList(objects)), input);
         
     }
     
@@ -86,9 +86,9 @@ public class SimpleThresholder implements Segmenter {
         ImageInteger maskR = ImageOperations.threshold(input, threhsold, false, false, false, null);
         if (mask!=null) ImageOperations.and(maskR, mask, maskR);
         Region[] objects = ImageLabeller.labelImage(maskR);
-        return new RegionPopulation(new ArrayList<Region>(Arrays.asList(objects)), input);
+        return new RegionPopulation(new ArrayList<>(Arrays.asList(objects)), input);
     }
-
+    @Override
     public Parameter[] getParameters() {
         return new Parameter[]{threshold};
     }

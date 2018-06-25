@@ -127,8 +127,8 @@ public class ConfigurationTest {
 
         // set-up processing & tracking 
         PluginFactory.findPlugins("boa.dummy_plugins");
-        microChannel.setProcessingScheme(new SegmentThenTrack(new DummySegmenter(true, 2), new ObjectIdxTracker()));
-        bacteries.setProcessingScheme(new SegmentThenTrack(new DummySegmenter(true, 3), new ObjectIdxTracker()));
+        microChannel.setProcessingPipeline(new SegmentThenTrack(new DummySegmenter(true, 2), new ObjectIdxTracker()));
+        bacteries.setProcessingPipeline(new SegmentThenTrack(new DummySegmenter(true, 3), new ObjectIdxTracker()));
         
 
         db.setExperiment(xp);

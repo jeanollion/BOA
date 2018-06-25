@@ -164,7 +164,7 @@ public class Structure extends SimpleContainerParameter {
         return processingPipeline.instanciatePlugin();
     }
     
-    public void setProcessingScheme(ProcessingPipeline ps) {
+    public void setProcessingPipeline(ProcessingPipeline ps) {
         this.processingPipeline.setPlugin(ps);
     }
     
