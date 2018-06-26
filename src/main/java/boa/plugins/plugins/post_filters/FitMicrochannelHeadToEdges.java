@@ -219,6 +219,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter, ToolTip {
             partition.getRegions().removeIf(o->o.contains(cornerL) || o.contains(cornerR)); // remove background
         }
         partition.relabel(true);
+        
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(partition.getLabelMap().duplicate("after ws transf & delete"));
         partition.translate(cut, true);
         ImageInteger mcMask = partition.getLabelMap();
@@ -228,7 +229,7 @@ public class FitMicrochannelHeadToEdges implements PostFilter, ToolTip {
         Filters.binaryOpen(mcMask, mcMask, Filters.getNeighborhood(morphoRadius,mcMask), false);
         
         trimUpperPixels(mcMask, trimUpperPixelRadius); // avoid strong top border artefact 
-        
+        //ImageOperations.andWithOffset(mcMask, object.getMask(), mcMask);
         // trim xLeft & xRight to mean value 
         double[] xLMean = new double[2];
         double[] xRMean = new double[2];
@@ -248,13 +249,9 @@ public class FitMicrochannelHeadToEdges implements PostFilter, ToolTip {
         xRMean[0]/=xRMean[1];
         ImageMask.loop(mcMask, (x, y, z)-> {if (x<xLMean[0] || x>xRMean[0]) regionMask.setPixel(x, y, z, 0);});
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(mcMask.duplicate("after trim L&R"));
-        if (resetMask) { // If average mask filter is used: no reset so that all image have same upper-left-corner
-            object.setMask(mcMask);
-            object.clearVoxels();
-            object.resetMask();
-        } else {
-            object.and(mcMask);
-        }
+        //logger.debug("offset: {} new mask offset: {}", object.getBounds(), mcMask.getBoundingBox());
+        object.and(mcMask);
+        if (resetMask) object.resetMask(); // If average mask filter is used: no reset so that all image have same upper-left-corner
         
         if (verbose && object.getLabel()==debugLabel) ImageWindowManagerFactory.showImage(object.getMaskAsImageInteger().duplicate("after fit "));
         //if (debug && object.getLabel()==1) ImageWindowManagerFactory.showImage(object.getMask().duplicate("mask after remove"));

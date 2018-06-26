@@ -84,5 +84,7 @@ public class SimpleOffset implements Offset<SimpleOffset> {
         zMin+=other.zMin();
         return this;
     }
-    
+    public boolean sameOffset(Offset other) {
+        return xMin == other.xMin() && yMin == other.yMin() && zMin == other.zMin();
+    }
 }

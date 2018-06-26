@@ -609,20 +609,10 @@ public class RegionPopulation {
     
     public void mergeAll() {
         if (getRegions().isEmpty()) return;
-        boolean one3D = false;
-        boolean absoluteLandMark=false;
-        if (labelImage!=null) {
-            for (Region o : getRegions()) draw(o, 1);
-        }
-        for (Region o : getRegions()) {
-            o.setLabel(1);
-            if (o.is2D()) one3D = true;
-            if (o.isAbsoluteLandMark()) absoluteLandMark= true;
-        }
-        Region o = new Region(getLabelMap(), 1, !one3D);
-        if (!absoluteLandMark) o.translate(new SimpleOffset(o.getBounds()).reverseOffset());
+        for (Region o : getRegions()) o.setLabel(1);
+        this.relabel(false);
         objects.clear();
-        objects.add(o);
+        constructObjects();
     }
     public void mergeAllConnected() {
         mergeAllConnected(Integer.MIN_VALUE);

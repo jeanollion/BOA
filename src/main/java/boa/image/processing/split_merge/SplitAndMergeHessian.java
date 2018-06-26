@@ -48,7 +48,8 @@ import java.util.stream.Stream;
 public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
     Image hessian, seedCreationMap, watershedMap;
     
-    public final double splitThresholdValue, hessianScale;
+    protected double splitThresholdValue;
+    public final double hessianScale;
     Function<Interface, Double> interfaceValue;
 
     public SplitAndMergeHessian(Image input, double splitThreshold, double hessianScale, double intensityBackground) {
@@ -67,6 +68,15 @@ public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
                 return sum[0] / sum[1];
             }
         };
+    }
+
+    public double getSplitThresholdValue() {
+        return splitThresholdValue;
+    }
+    
+    public SplitAndMergeHessian setThreshold(double threshold)  {
+        this.splitThresholdValue = threshold;
+        return this;
     }
     public SplitAndMergeHessian setInterfaceValue(Function<Interface, Double> interfaceValue) {
         this.interfaceValue=interfaceValue;

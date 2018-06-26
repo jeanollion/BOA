@@ -358,26 +358,27 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
         //bounds.trimToImage(this);
         I res = newImage(name, new SimpleImageProperties(bounds, scaleXY, scaleZ));
         res.setCalibration(this);
-        res.translate(this); // TODO: si absoluteLandmark -> ne pas ajouter...
-        int x_min = bounds.xMin();
+        res.translate(this); // bounds are relative to this image
+        if (!BoundingBox.intersect(getBoundingBox().resetOffset(), bounds)) return res; // no data is copied
+        int offXSource = bounds.xMin();
         int y_min = bounds.yMin();
         int z_min = bounds.zMin();
         int x_max = bounds.xMax();
         int y_max = bounds.yMax();
         int z_max = bounds.zMax();
-        int sX = x_max - x_min + 1;
+        int sizeXDest = bounds.sizeX();
         int oZ = -z_min;
         int oY_i = 0;
-        int oX = 0;
-        if (x_min <= -1) {
-            oX=-x_min;
-            x_min = 0;
+        int offXDest = 0;
+        if (offXSource <= -1) {
+            offXDest=-offXSource;
+            offXSource = 0;
         }
         if (x_max >= sizeX) {
             x_max = sizeX - 1;
         }
         if (y_min <= -1) {
-            oY_i = -sX * y_min;
+            oY_i = -sizeXDest * y_min;
             y_min = 0;
         }
         if (y_max >= sizeY) {
@@ -389,14 +390,14 @@ public abstract class Image<I extends Image<I>> extends SimpleImageProperties<I>
         if (z_max >= sizeZ) {
             z_max = sizeZ - 1;
         }
-        int sXo = x_max - x_min + 1;
+        int sizeXCopyDest = x_max - offXSource + 1;
         for (int z = z_min; z <= z_max; ++z) {
-            int offY = y_min * sizeX;
-            int oY = oY_i;
+            int offYSource = y_min * sizeX;
+            int offYDest = oY_i;
             for (int y = y_min; y <= y_max; ++y) {
-                System.arraycopy(getPixelArray()[z], offY + x_min, res.getPixelArray()[z + oZ], oY + oX, sXo);
-                oY += sX;
-                offY += sizeX;
+                System.arraycopy(getPixelArray()[z], offYSource + offXSource, res.getPixelArray()[z + oZ], offYDest + offXDest, sizeXCopyDest);
+                offYDest += sizeXDest;
+                offYSource += sizeX;
             }
         }
         return res;

@@ -276,10 +276,11 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
     public TrackParametrizer<MicrochannelPhase2D> run(int structureIdx, List<StructureObject> parentTrack) {
         switch(X_DER_METHOD.valueOf(xDerPeakThldMethod.getSelectedItem())) {
             case CONSTANT:
-                return (p, s)->{};
+                return null;
             case RELATIVE_TO_INTENSITY_RANGE:
             default:
                 // compute signal range on all images
+                //logger.debug("parent track: {}",parentTrack.stream().map(p->p.getPreFilteredImage(structureIdx)).collect(Collectors.toList()) );
                 Map<Image, ImageMask> maskMap = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
                 Histogram histo = HistogramFactory.getHistogram(()->Image.stream(maskMap, true), HistogramFactory.BIN_SIZE_METHOD.AUTO);
                 double thld = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
@@ -287,8 +288,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
                 double foreground = histo.duplicate(thldIdx, histo.data.length).getQuantiles(0.5)[0];
                 double background = histo.getValueFromIdx(histo.getMeanIdx(0, thldIdx-1));
                 double range =foreground - background;
-                double xDerThld = range / this.relativeDerThld.getValue().doubleValue();
-                // divide by ratio and set to segmenter
+                double xDerThld = range / this.relativeDerThld.getValue().doubleValue(); // divide by ratio and set to segmenter
                 return (p, s) -> s.globalLocalDerThld = xDerThld;
         }
     }

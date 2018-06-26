@@ -23,6 +23,7 @@ import boa.configuration.parameters.ScaleXYZParameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.ImageInteger;
 import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
@@ -53,6 +54,7 @@ public class BinaryClose implements PostFilter, MultiThreaded, ToolTip {
             ImageInteger closed = Filters.binaryCloseExtend(o.getMaskAsImageInteger(), n, parallele);
             o.setMask(closed);
         }
+        childPopulation.relabel(true);
         return childPopulation;
     }
 

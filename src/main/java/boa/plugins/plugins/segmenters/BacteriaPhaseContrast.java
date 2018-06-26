@@ -99,7 +99,7 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
     NumberParameter maxYCoordinate = new BoundedNumberParameter("Max yMin coordinate of upper cell", 0, 5, 0, null);
     ConditionalParameter cond = new ConditionalParameter(upperCellCorrection).setActionParameters("true", upperCellLocalThresholdFactor, maxYCoordinate);
     ConditionalParameter ltCond = new ConditionalParameter(performLocalThreshold).setActionParameters("true", localThresholdFactor, smoothScale, upperCellCorrection);
-    
+    NumberParameter minSize = new BoundedNumberParameter("Minimum Region Size", 0, 300, 50, null).setToolTipText("Minimum Object Size in voxels. <br />After split and merge using hessian: regions under this size will be merged by the adjacent region that has the lowest interface value, and if this value is under 2 * <em>Split Threshold</em>");
     // attributes parametrized during track parametrization
     double lowerThld = Double.NaN, upperThld = Double.NaN;
     
@@ -108,13 +108,16 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
         return new Parameter[]{vcThldForVoidMC, edgeMap, foreThresholder, filterBorderArtefacts, hessianScale, splitThreshold, minSize , ltCond};
     }
     public BacteriaPhaseContrast() {
-        this.splitThreshold.setValue(0.10); // 0.15 for scale = 3
-        this.minSize.setValue(100);
+        this.splitThreshold.setValue(0.10); // 0.15 for hessian scale = 3
         this.hessianScale.setValue(2);
         this.edgeMap.removeAll().add(new Sigma(3).setMedianRadius(2));
         localThresholdFactor.setToolTipText("Factor defining the local threshold. <br />Lower value of this factor will yield in smaller cells. <br />Threshold = mean_w - sigma_w * (this factor), <br />with mean_w = weigthed mean of raw pahse image weighted by edge image, sigma_w = sigma weighted by edge image. Refer to images: <em>Local Threshold edge map</em> and <em>Local Threshold intensity map</em>");
         localThresholdFactor.setValue(1);
         
+    }
+    public BacteriaPhaseContrast setMinSize(int minSize) {
+        this.minSize.setValue(minSize);
+        return this;
     }
     @Override public RegionPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         if (isVoid) return null;
@@ -151,19 +154,28 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
         });
     }
     
-    
     @Override
     protected EdgeDetector initEdgeDetector(StructureObjectProcessing parent, int structureIdx) {
         EdgeDetector seg = super.initEdgeDetector(parent, structureIdx);
         seg.minSizePropagation.setValue(0);
         seg.seedRadius.setValue(1.5);
-        seg.setThrehsoldingMethod(EdgeDetector.THLD_METHOD.NO_THRESHOLDING);
         return seg;
     }
     @Override 
-    protected RegionPopulation filterRegionAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+    protected RegionPopulation filterRegionsAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
         return pop;
         //return filterBorderArtefacts(parent, structureIdx, pop);
+    }
+    @Override
+    protected RegionPopulation filterRegionsAfterMergeByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+        // merge small objects with the object with the smallest edge
+        int minSize = this.minSize.getValue().intValue();
+        SplitAndMergeHessian sm= new SplitAndMergeHessian(parent.getPreFilteredImage(structureIdx), splitThreshold.getValue().doubleValue()*2, hessianScale.getValue().doubleValue(), globalBackgroundLevel);
+        sm.setHessian(splitAndMerge.getHessian());
+        sm.addForbidFusion(i -> i.getE1().size()>minSize && i.getE2().size()>minSize);
+        setInterfaceValue(parent.getPreFilteredImage(structureIdx), sm);
+        sm.merge(pop, null);
+        return pop;
     }
     public static boolean verbosePlus=false;
     @Override

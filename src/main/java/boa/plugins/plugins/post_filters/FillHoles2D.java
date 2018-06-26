@@ -21,6 +21,7 @@ package boa.plugins.plugins.post_filters;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
+import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.plugins.PostFilter;
 import boa.plugins.ToolTip;
 

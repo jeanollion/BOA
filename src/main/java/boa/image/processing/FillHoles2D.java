@@ -70,13 +70,12 @@ public class FillHoles2D {
     
 
 // Binary fill by Gabriel Landini, G.Landini at bham.ac.uk
-    // 21/May/2008
 
-    public static void fillHoles(RegionPopulation pop) {
+    public static void fillHoles(RegionPopulation pop) { // object-wise
         for (Region o : pop.getRegions()) {
             o.ensureMaskIsImageInteger();
-            fillHoles(o.getMaskAsImageInteger(), 2);
-            o.clearVoxels();
+            fillHoles(o.getMaskAsImageInteger(), 127);
+            o.clearVoxels(); // no need to reset mask
         }
         pop.relabel(true);
     }
@@ -86,7 +85,7 @@ public class FillHoles2D {
             fillHoles(IJImageWrapper.getImagePlus(image).getProcessor(), midValue);
         } else {
             ImageStack stack = IJImageWrapper.getImagePlus(image).getImageStack();
-            for (int i = 1; i<=image.sizeZ(); i++) { // TODO multithread
+            for (int i = 1; i<=image.sizeZ(); i++) { 
                 fillHoles(stack.getProcessor(i), midValue);
             }
         }

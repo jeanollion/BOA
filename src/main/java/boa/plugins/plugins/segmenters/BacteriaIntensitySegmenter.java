@@ -73,7 +73,7 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6).setToolTipText("In pixels. Used in step 2). Lower value -> finner split, more sentitive to noise. Influences the value of split threshold parameter. <br />Configuration Hint: tune this value using the intermediate image <em>Hessian</em>");
     NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.3, 0, null).setEmphasized(true).setToolTipText("At step 2) regions are merge if sum(hessian)|interface / sum(raw intensity)|interface < (this parameter). <br />Lower value splits more.  <br />Configuration Hint: Tune the value using intermediate image <em>Interface Values before merge by Hessian</em>, interface with a value over this threshold will not be merged");
     NumberParameter localThresholdFactor = new BoundedNumberParameter("Local Threshold Factor", 2, 1.25, 0, null);
-    NumberParameter minSize = new BoundedNumberParameter("Minimum Region Size", 0, 100, 50, null).setToolTipText("Minimum Object Size in voxels");
+    
     
     //segmentation-related attributes (kept for split and merge methods)
     EdgeDetector edgeDetector;
@@ -88,10 +88,7 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
         this.splitThreshold.setValue(splitThreshold);
         return (T)this;
     }
-    public T setMinSize(int minSize) {
-        this.minSize.setValue(minSize);
-        return (T)this;
-    }
+    
     public T setSmoothScale(double smoothScale) {
         this.smoothScale.setValue(smoothScale);
         return (T)this;
@@ -145,16 +142,17 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
             imageDisp.accept(splitAndMerge.getHessian().setName("Hessian"));
             
         }
-        split = filterRegionAfterSplitByHessian(parent, structureIdx, split);
+        split = filterRegionsAfterSplitByHessian(parent, structureIdx, split);
         if (stores!=null)  {
             imageDisp.accept(EdgeDetector.generateRegionValueMap(split, input).setName("Region Values before merge by Hessian"));
             imageDisp.accept(splitAndMerge.drawInterfaceValues(split).setName("Interface values before merge by Hessian"));
         }
         RegionPopulation res = splitAndMerge.merge(split, null);
+        res = filterRegionsAfterMergeByHessian(parent, structureIdx, res);
         res = localThreshold(input, res, parent, structureIdx, false);
         if (stores!=null)  imageDisp.accept(res.getLabelMap().duplicate("Region Labels after local threshold"));
         res.filter(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
-        res.filter(new RegionPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
+        //res.filter(new RegionPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
         
         res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         
@@ -170,7 +168,8 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
     }
     protected abstract void displayAttributes();
     protected abstract RegionPopulation filterRegionsAfterEdgeDetector(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop);
-    protected abstract RegionPopulation filterRegionAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop);
+    protected abstract RegionPopulation filterRegionsAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop);
+    protected abstract RegionPopulation filterRegionsAfterMergeByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop);
     protected abstract RegionPopulation localThreshold(Image input, RegionPopulation pop, StructureObjectProcessing parent, int structureIdx, boolean callFromSplit);
 
     
@@ -197,7 +196,7 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
             SplitAndMergeHessian.Interface inter = getInterface(result.get(0), result.get(1));
             //logger.debug("split @ {}-{}, inter size: {} value: {}/{}", parent, o.getLabel(), inter.getVoxels().size(), inter.value, splitAndMerge.splitThresholdValue);
             if (inter.getVoxels().size()<=1) return 0;
-            double cost = getCost(inter.value, splitAndMerge.splitThresholdValue, true);
+            double cost = getCost(inter.value, splitAndMerge.getSplitThresholdValue(), true);
             return cost;
         }
         
@@ -226,7 +225,7 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
         }
 
         if (Double.isInfinite(maxCost)) return Double.POSITIVE_INFINITY;
-        return getCost(maxCost, splitAndMerge.splitThresholdValue, false);
+        return getCost(maxCost, splitAndMerge.getSplitThresholdValue(), false);
         
     }
     public static double getCost(double value, double threshold, boolean valueShouldBeBelowThresholdForAPositiveCost)  {

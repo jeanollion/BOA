@@ -130,7 +130,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
     
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{vcThldForVoidMC, edgeMap, foregroundSelectionCond, hessianScale, splitThreshold, smoothScale, localThresholdFactor, minSize};
+        return new Parameter[]{vcThldForVoidMC, edgeMap, foregroundSelectionCond, hessianScale, splitThreshold, smoothScale, localThresholdFactor};
     }
     @Override
     public String getToolTipText() {
@@ -289,7 +289,11 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
         return pop;
     }
     @Override 
-    protected RegionPopulation filterRegionAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+    protected RegionPopulation filterRegionsAfterSplitByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+        return pop;
+    }
+    @Override
+    protected RegionPopulation filterRegionsAfterMergeByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
         return pop;
     }
     @Override

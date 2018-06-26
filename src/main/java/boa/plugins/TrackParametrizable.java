@@ -78,7 +78,10 @@ public interface TrackParametrizable<P extends Plugin> {
     public static <P extends Plugin> TrackParametrizer<P> getTrackParametrizer(int structureIdx, List<StructureObject> parentTrack, P plugin) {
         if (plugin instanceof TrackParametrizable) {
             TrackParametrizable tp = (TrackParametrizable)plugin;
-            return tp.run(structureIdx, StructureObjectUtils.getTrack(parentTrack.get(0).getTrackHead()));
+            List<StructureObject> pT = StructureObjectUtils.getTrack(parentTrack.get(0).getTrackHead());
+            pT.removeIf(p->p.getPreFilteredImage(structureIdx)==null);
+            if (pT.isEmpty()) throw new RuntimeException("NO prefiltered images set");
+            return tp.run(structureIdx, pT);
         }
         return null;
     }

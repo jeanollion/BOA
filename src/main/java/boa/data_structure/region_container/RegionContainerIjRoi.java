@@ -43,6 +43,7 @@ import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.Offset;
 import boa.image.SimpleImageProperties;
+import boa.image.SimpleOffset;
 import boa.image.TypeConverter;
 import boa.image.processing.ImageOperations;
 import ij.plugin.filter.ThresholdToSelection;
@@ -102,7 +103,7 @@ public class RegionContainerIjRoi extends RegionContainer {
         for (byte[] b : roiZ) {
             Roi r = RoiDecoder.openFromByteArray(b);
             r.setPosition(z+1+bounds.zMin());
-            r.setLocation(bounds.xMin(), bounds.yMin());
+            //r.setLocation(bounds.xMin(), bounds.yMin()); // encoded in ROI ?
             roi.put(z+bounds.zMin(), r);
             ++z;
         }
@@ -112,21 +113,14 @@ public class RegionContainerIjRoi extends RegionContainer {
         if (roi==null) decodeRoi();
         IntStream.rangeClosed(bounds.zMin(), bounds.zMax()).forEachOrdered(z -> {
             Roi r = roi.get(z);
-            r.setLocation(0, 0);
-            r.setPosition(z+1-bounds.zMin());
             Rectangle bds = r.getBounds();
             ImageProcessor mask = r.getMask();
             if (mask.getWidth()!=stack.getWidth() || mask.getHeight()!=stack.getHeight()) { // need to paste image
-                logger.debug("past image during ij roi decoding");
-                ImageByte i = (ImageByte)IJImageWrapper.wrap(new ImagePlus("", mask));
-                ImageByte iOut = new ImageByte("", bounds.sizeX(), bounds.sizeY(), 1);
-                Image.pasteImage(i, iOut, new MutableBoundingBox(bds.x-bounds.xMin(), bds.y-bounds.yMin(), 0));
-                mask = IJImageWrapper.getImagePlus(iOut).getProcessor();
+                ImageByte i = (ImageByte)IJImageWrapper.wrap(new ImagePlus("", mask)).translate(new SimpleOffset(bds.x, bds.y, 0));
+                logger.debug("object: {} paste image during ij roi decoding: roi: {} object bounds: {}", structureObject, i.getBoundingBox(), bounds);
+                mask = IJImageWrapper.getImagePlus(i.cropWithOffset(bounds)).getProcessor();
             }
             stack.setProcessor(mask, z-bounds.zMin()+1);
-            // reset default roi location
-            r.setLocation(bounds.xMin(), bounds.yMin());
-            r.setPosition(z);
         });
         ImageByte res = (ImageByte) IJImageWrapper.wrap(new ImagePlus("MASK", stack));
         //logger.debug("creating object for: {}, scale: {}", structureObject, structureObject.getScaleXY());
@@ -194,9 +188,7 @@ public class RegionContainerIjRoi extends RegionContainer {
             for (int z = 0; z < mask.sizeZ(); ++z) {
                 Roi rect = new Roi(0, 0, mask.sizeX(), mask.sizeY());
                 rect.setLocation(offset.xMin(), offset.yMin());
-                if (is3D) {
-                    rect.setPosition(z + 1+ offset.zMin());
-                }
+                rect.setPosition(z +1+ offset.zMin());
                 res.put(z + mask.zMin(), rect);
             }
             return res;
@@ -218,7 +210,7 @@ public class RegionContainerIjRoi extends RegionContainer {
                     continue;
                 }
                 roi.setLocation(bds.x + offset.xMin(), bds.y + offset.yMin());
-                if (is3D)  roi.setPosition(z + 1 + offset.zMin()); 
+                roi.setPosition(z + 1 + offset.zMin()); 
                 res.put(z + offset.zMin(), roi);
             }
         }
