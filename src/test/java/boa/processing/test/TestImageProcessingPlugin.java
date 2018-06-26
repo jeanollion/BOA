@@ -56,6 +56,7 @@ public class TestImageProcessingPlugin {
         //String dbName = "MF1_180509";
         //String dbName = "MutH_151220";
         //String dbName = "WT_150616";
+        //String dbName = "WT_150609";
         //String dbName = "WT_180318_Fluo";
         //String dbName = "Aya_170324";
         //String dbName = "Aya_180315";

@@ -226,16 +226,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (debug) logger.debug("minF: {}, maxF: {}", minF, maxFExcluded);
         
         // 1) Segment and keep track of segmenter parametrizer for corrections
-        SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters);
-        if (correction) { // record prefilters & applyToSegmenter
-            trackPreFilters.filter(structureIdx, parentTrack);
-            inputImages=parentTrack.stream().collect(Collectors.toMap(p->p.getFrame(), p->p.getPreFilteredImage(structureIdx)));
-            applyToSegmenter = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin());
-            so.segmentAndTrack(structureIdx, parentTrack, applyToSegmenter);
-        } else { // no need to record the preFilters images
-            so.setTrackPreFilters(trackPreFilters);
-            so.segmentAndTrack(structureIdx, parentTrack);
-        }
+        SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters).setTrackPreFilters(trackPreFilters);
+        so.segmentAndTrack(structureIdx, parentTrack);
+        if (correction) inputImages=parentTrack.stream().collect(Collectors.toMap(p->p.getFrame(), p->p.getPreFilteredImage(structureIdx))); // record prefiter images
         // trim empty frames @ start & end. Limit to first continuous segment ? 
         while (minF<maxFExcluded && getObjects(minF).isEmpty()) ++minF;
         while (maxFExcluded>minF && getObjects(maxFExcluded-1).isEmpty()) --maxFExcluded;

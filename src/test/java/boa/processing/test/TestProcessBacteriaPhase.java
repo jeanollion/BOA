@@ -47,7 +47,7 @@ import java.util.List;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.plugins.segmenters.BacteriaIntensity;
+import boa.plugins.plugins.segmenters.BacteriaFluo;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
 import boa.utils.Utils;
 import java.util.Map;

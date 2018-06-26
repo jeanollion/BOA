@@ -59,7 +59,7 @@ import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.plugins.plugins.processing_pipeline.SegmentAndTrack;
 import boa.plugins.plugins.processing_pipeline.SegmentOnly;
 import boa.plugins.plugins.processing_pipeline.SegmentThenTrack;
-import boa.plugins.plugins.segmenters.BacteriaIntensity;
+import boa.plugins.plugins.segmenters.BacteriaFluo;
 import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D;
 import boa.plugins.plugins.segmenters.SpotSegmenter;
@@ -99,7 +99,7 @@ import boa.plugins.plugins.measurements.objectFeatures.ThicknessAxis;
 import boa.plugins.plugins.post_filters.BinaryClose;
 import boa.plugins.plugins.post_filters.FillHoles2D;
 import boa.plugins.plugins.post_filters.FitMicrochannelHeadToEdges;
-import boa.plugins.plugins.segmenters.BacteriaIntensityPhase;
+import boa.plugins.plugins.segmenters.BacteriaPhaseContrast;
 import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.plugins.plugins.track_post_filter.PostFilter;
 import boa.plugins.plugins.track_pre_filters.NormalizeTrack;
@@ -485,7 +485,7 @@ public class GenerateXP {
                             new RemoveTracksStartingAfterFrame())
             );
             bacteria.setProcessingPipeline(new SegmentAndTrack(
-                            new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaIntensity()).setCostParameters(0.25, 1.25)
+                            new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.25, 1.25)
                     ).addTrackPostFilters(
                             new PostFilter(new RemoveEndofChannelBacteria()).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
                             new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND).setFeature(new Size(), 150, true).setQuantileValue(0.25)
@@ -571,10 +571,9 @@ public class GenerateXP {
             );
             
             mc.setProcessingPipeline(mcpc);
-            bacteria.setProcessingPipeline(
-                    new SegmentAndTrack(
+            bacteria.setProcessingPipeline(new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections()
-                            .setSegmenter(new BacteriaIntensityPhase())
+                            .setSegmenter(new BacteriaPhaseContrast())
                             .setCostParameters(0.2, 2)
                             .setSizeFeature(0)
                     ).addTrackPreFilters(

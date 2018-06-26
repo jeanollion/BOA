@@ -56,7 +56,7 @@ import boa.plugins.plugins.pre_filters.IJSubtractBackground;
 import boa.plugins.plugins.pre_filters.Median;
 import boa.plugins.plugins.processing_pipeline.SegmentAndTrack;
 import boa.plugins.plugins.processing_pipeline.SegmentThenTrack;
-import boa.plugins.plugins.segmenters.BacteriaIntensity;
+import boa.plugins.plugins.segmenters.BacteriaFluo;
 import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.plugins.segmenters.SpotSegmenter;
 import boa.plugins.plugins.trackers.MicrochannelTracker;
@@ -172,7 +172,7 @@ public class GenerateMutationDynamicsXP {
         
         mc.setProcessingPipeline(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelFluo2D())));
         //bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
-        bacteria.setProcessingPipeline(new SegmentThenTrack(new BacteriaIntensity(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
+        bacteria.setProcessingPipeline(new SegmentThenTrack(new BacteriaFluo(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
         mutation.setProcessingPipeline(new SegmentAndTrack(
                 new NestedSpotTracker().setCompartimentStructure(1).setSegmenter(new SpotSegmenter(0.65, 0.5, 0.55).setScale(2.5) 
                 ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.4, 0.41).setGapParameters(0.4, 0.1, 3)

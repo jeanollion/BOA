@@ -33,7 +33,7 @@ import boa.image.ImageMask;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.plugins.segmenters.BacteriaIntensity;
+import boa.plugins.plugins.segmenters.BacteriaFluo;
 import static boa.processing.test.TestProcessBacteriaPhase.trackPrefilterRange;
 import boa.utils.Utils;
 import java.util.List;
@@ -78,7 +78,7 @@ public class TestProcessBacteria {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(parentSIdx).get(microChannel);
         Image input = mc.getPreFilteredImage(bacteriaStructureIdx);
-        BacteriaIntensity.verbose=true;
+        BacteriaFluo.verbose=true;
         Segmenter seg = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme().getSegmenter();
         if (apply !=null) apply.apply(mc, seg);
         

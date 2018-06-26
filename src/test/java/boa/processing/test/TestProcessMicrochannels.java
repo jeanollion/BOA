@@ -37,7 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
-import boa.plugins.plugins.segmenters.BacteriaIntensity;
+import boa.plugins.plugins.segmenters.BacteriaFluo;
 import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 /**
