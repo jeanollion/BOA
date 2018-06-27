@@ -107,10 +107,12 @@ public class SpineOverlayDrawer {
     }
 
     public static void drawArrow(Overlay overlay, Offset offset, Point p1, Point p2, Color color, double width) {
+        if (p1==null || p2==null) return;
         overlay.add(SpineOverlayDrawer.drawArrow(p1.duplicate().translateRev(offset), Vector.vector(p1, p2), color, width));
     }
 
     public static void drawPoint(Overlay overlay, Offset offset, Point p, Color color, double width) {
+        if (p==null) return;
         overlay.add(SpineOverlayDrawer.drawPoint(p.duplicate().translateRev(offset), color, width, 3, 3));
     }
 

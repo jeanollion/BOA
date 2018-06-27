@@ -326,14 +326,20 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                     SpineOverlayDrawer.display("Destination", mc2.getRawImage(l.get(0).getStructureIdx()), spineDest);
                     
                     // also add to object attributes
-                    l.get(0).setAttribute("Spine Coordinate", numberFormater.apply(coord.spineCoord(false))+"/"+numberFormater.apply(coord.spineLength()));
-                    l.get(0).setAttribute("Spine Radial Coordinate", numberFormater.apply(coord.radialCoord(false))+"/"+numberFormater.apply(coord.spineRadius()));
-                    l.get(1).setAttribute("Spine Coordinate", numberFormater.apply(coord2.spineCoord(false))+"/"+numberFormater.apply(coord2.spineLength()));
-                    l.get(1).setAttribute("Spine Radial Coordinate", numberFormater.apply(coord2.radialCoord(false))+"/"+numberFormater.apply(coord2.spineRadius()));
+                    l.get(0).setAttribute("Spine Coordinate", coord==null? "could not be computed": numberFormater.apply(coord.spineCoord(false))+"/"+numberFormater.apply(coord.spineLength()));
+                    l.get(0).setAttribute("Spine Radial Coordinate", coord==null? "could not be computed": numberFormater.apply(coord.radialCoord(false))+"/"+numberFormater.apply(coord.spineRadius()));
+                    l.get(1).setAttribute("Spine Coordinate", coord2==null? "could not be computed": numberFormater.apply(coord2.spineCoord(false))+"/"+numberFormater.apply(coord2.spineLength()));
+                    l.get(1).setAttribute("Spine Radial Coordinate", coord2==null? "could not be computed": numberFormater.apply(coord2.radialCoord(false))+"/"+numberFormater.apply(coord2.spineRadius()));
                     
                     // log distance
-                    GUI.log("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter()));
-                    logger.info("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter()));
+                    if (proj!=null) {
+                        GUI.log("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter()));
+                        logger.info("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter()));
+                    } else {
+                        GUI.log("Point could not be projected");
+                        logger.info("Point could not be projected");
+                    }
+                    
                     /*
                     Image spine1 = bsl1.spine.drawSpine(verboseZoomFactor, drawDistances).setName("Source Spine: "+b1);
                     BacteriaSpineLocalizer.drawPoint(l.get(0).getRegion().getCenter(), spine1, verboseZoomFactor, 1000);
