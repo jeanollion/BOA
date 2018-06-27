@@ -226,13 +226,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     logger.debug("pb");
                     tabs.setSelectedIndex(lastSelTab);
                 } else lastSelTab=tabs.getSelectedIndex();
-                if (reloadObjectTrees && tabs.getSelectedComponent()==dataPanel) {
-                    reloadObjectTrees=false;
-                    loadObjectTrees();
-                    displayTrackTrees();
-                } else if (tabs.getSelectedComponent()==dataPanel) {
-                    setInteractiveStructures();
+                if (tabs.getSelectedComponent()==dataPanel) {
+                    if (reloadObjectTrees) {
+                        reloadObjectTrees=false;
+                        loadObjectTrees();
+                        displayTrackTrees();
+                    }
                     setTrackTreeStructures();
+                    setInteractiveStructures();
+                    
                 }
                 if (tabs.getSelectedComponent()==actionPanel) {
                     populateActionStructureList();
@@ -922,10 +924,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             if (reloadObjectTrees) {
                 reloadObjectTrees=false;
                 loadObjectTrees();
-            } else {
-                setInteractiveStructures();
-                setTrackTreeStructures();
             }
+            setInteractiveStructures();
+            setTrackTreeStructures();
             
         } 
     }
@@ -994,8 +995,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             return;
         }
         int[] sel = trackTreeStructureSelector !=null ? trackTreeStructureSelector.getSelectedStructures().toArray() : new int[]{0};
+        if (sel.length==0) sel = new int[]{0};
         trackTreeStructureSelector = new StructureSelectorTree(db.getExperiment(), i -> setTrackTreeStructure(i), TreeSelectionModel.SINGLE_TREE_SELECTION);
-        trackTreeStructureSelector.selectStructures(sel);
+        setTrackStructureIdx(sel[0]);
         trackTreeStructureJSP.setViewportView(trackTreeStructureSelector.getTree());
     }
     
