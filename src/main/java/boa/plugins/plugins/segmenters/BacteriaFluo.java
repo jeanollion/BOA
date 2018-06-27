@@ -428,6 +428,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
         String meanK = "backgroundMean_"+structureIdx;
         String stdK = "backgroundStd_"+structureIdx;
         if (parents.get(0).getRoot().getAttributes().containsKey(meanK)) {
+            logger.debug("found on root {} mean {}, sigma: {}", parents.get(0), parents.get(0).getRoot().getAttribute(meanK, 0d),parents.get(0).getRoot().getAttribute(stdK, 1d));
             return new double[]{parents.get(0).getRoot().getAttribute(meanK, 0d), parents.get(0).getRoot().getAttribute(stdK, 1d)};
         } else {
             synchronized(parents.get(0).getRoot()) {

@@ -282,6 +282,7 @@ public class Processor {
         if (roots.isEmpty()) throw new RuntimeException("no root");
         Map<StructureObject, List<StructureObject>> rootTrack = new HashMap<>(1); rootTrack.put(roots.get(0), roots);
         boolean containsObjects=false;
+        MultipleException globE = new MultipleException();
         for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
             Map<StructureObject, List<StructureObject>> allParentTracks;
             if (e.getKey()==-1) {
@@ -299,22 +300,35 @@ public class Processor {
             });
             if (pcb!=null && actionPool.size()>0) pcb.log("Executing: #"+actionPool.size()+" track measurements");
             if (!actionPool.isEmpty()) containsObjects=true;
-            ThreadRunner.executeAndThrowErrors(actionPool.parallelStream(), p->p.key.performMeasurement(p.value));
+            try {
+                ThreadRunner.executeAndThrowErrors(actionPool.parallelStream(), p->p.key.performMeasurement(p.value));
+            } catch(MultipleException me) {
+                globE.addExceptions(me.getExceptions());
+            }
             
             // parallele measurement on tracks
             int paralleleMeasCount = (int)e.getValue().stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded) ).count(); 
             if (pcb!=null && paralleleMeasCount>0) pcb.log("Executing: #"+ paralleleMeasCount * allParentTracks.size()+" multithreaded track measurements");
-            allParentTracks.keySet().forEach(pt -> {
-                dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded)).forEach(m-> {
-                    ((MultiThreaded)m).setMultithread(true);
-                    m.performMeasurement(pt);
+            try {
+                ThreadRunner.executeAndThrowErrors(allParentTracks.keySet().stream(), pt->{
+                    dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded)).forEach(m-> {
+                        ((MultiThreaded)m).setMultithread(true);
+                        m.performMeasurement(pt);
+                    });
                 });
-            });
+            } catch(MultipleException me) {
+                globE.addExceptions(me.getExceptions());
+            }
             int allObCount = allParentTracks.values().stream().mapToInt(t->t.size()).sum();
+            
             // measurements on objects
             dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->!m.callOnlyOnTrackHeads()).forEach(m-> {
                 if (pcb!=null) pcb.log("Executing Measurement: "+m.getClass().getSimpleName()+" on #"+allObCount+" objects");
-                ThreadRunner.executeAndThrowErrors(StreamConcatenation.concat((Stream<StructureObject>[])allParentTracks.values().stream().map(l->l.parallelStream()).toArray(s->new Stream[s])), o->m.performMeasurement(o));
+                try {
+                    ThreadRunner.executeAndThrowErrors(StreamConcatenation.concat((Stream<StructureObject>[])allParentTracks.values().stream().map(l->l.parallelStream()).toArray(s->new Stream[s])), o->m.performMeasurement(o));
+                } catch(MultipleException me) {
+                    globE.addExceptions(me.getExceptions());
+                }
             });
             if (!containsObjects && allObCount>0) containsObjects = e.getValue().stream().filter(m->!m.callOnlyOnTrackHeads()).findAny().orElse(null)!=null;
             
@@ -334,6 +348,7 @@ public class Processor {
         }
         logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getPositionName(), t1-t0, allModifiedObjects.size());
         dao.upsertMeasurements(allModifiedObjects);
+        if (!globE.isEmpty()) throw globE;
         if (containsObjects && allModifiedObjects.isEmpty()) throw new RuntimeException("No Measurement preformed");
     }
     

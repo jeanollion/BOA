@@ -337,7 +337,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             final int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             logger.debug("create selectionfor structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
                             List<TrackNode> selectedNodes = root.generator.getSelectedTrackNodes();
-                            List<StructureObject> objectsToAdd = new ArrayList<StructureObject>();
+                            List<StructureObject> objectsToAdd = new ArrayList<>();
                             for (TrackNode tn : selectedNodes) {
                                 //logger.debug("creating selection: th: {}, length: {}", tn.trackHead, tn.getTrack().size());
                                 for (StructureObject p : tn.getTrack()) {
@@ -350,9 +350,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             s.setColor("Grey");
                             root.generator.db.getSelectionDAO().store(s);
                             GUI.getInstance().populateSelections();
-                            List<Selection> sels = GUI.getInstance().getSelections();
-                            sels.removeIf(ss->!ss.getName().equals(ae.getActionCommand()));
-                            sels.get(0).setIsDisplayingObjects(true);
+                            GUI.getInstance().getSelections().stream().filter(ss->ss.getName().equals(ae.getActionCommand())).findAny().get().setIsDisplayingObjects(true);
                         }
                     }
                 );

@@ -93,11 +93,19 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
             Point center = e.getKey().getRegion().getCenter();
             if (center==null) center = e.getKey().getRegion().getGeomCenter(false);
             BacteriaSpineCoord coord = bacteriaMapLocalizer.get(e.getValue()).getSpineCoord(center);
-            e.getKey().getMeasurements().setValue("SpineCoord", coord.spineCoord(false));
-            e.getKey().getMeasurements().setValue("SpineRadialCoord", coord.radialCoord(false));
-            e.getKey().getMeasurements().setValue("SpineLength", coord.spineLength());
-            e.getValue().getMeasurements().setValue("SpineLength", coord.spineLength());
-            e.getKey().getMeasurements().setValue("SpineRadius", coord.spineLength()); // radius at spot position
+            if (coord==null) {
+                e.getKey().getMeasurements().setValue("SpineCoord", null);
+                e.getKey().getMeasurements().setValue("SpineRadialCoord", null);
+                e.getKey().getMeasurements().setValue("SpineLength", null);
+                e.getValue().getMeasurements().setValue("SpineLength", null);
+                e.getKey().getMeasurements().setValue("SpineRadius", null);
+            } else {
+                e.getKey().getMeasurements().setValue("SpineCoord", coord.spineCoord(false));
+                e.getKey().getMeasurements().setValue("SpineRadialCoord", coord.radialCoord(false));
+                e.getKey().getMeasurements().setValue("SpineLength", coord.spineLength());
+                e.getValue().getMeasurements().setValue("SpineLength", coord.spineLength());
+                e.getKey().getMeasurements().setValue("SpineRadius", coord.spineLength()); // radius at spot position
+            }
         });
     }
 

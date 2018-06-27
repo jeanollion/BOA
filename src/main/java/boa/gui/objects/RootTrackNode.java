@@ -277,22 +277,26 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             int structureIdx = generator.getExperiment().getStructureIdx(ae.getActionCommand());
-                            logger.debug("create selectionfor structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
+                            logger.debug("create selection for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
                             List<RootTrackNode> selectedNodes = generator.getSelectedRootTrackNodes();
-                            List<StructureObject> objectsToAdd = new ArrayList<>();
+                            logger.debug("selected nodes: {}", selectedNodes);
                             Selection s = generator.db.getSelectionDAO().getOrCreate(ae.getActionCommand(), true);
-                            s.addElements(objectsToAdd);
                             s.setColor("Grey");
-                            s.setIsDisplayingObjects(true);
-                            // create in background
+                            // execute in background
                             DefaultWorker.execute(i->{
                                 s.addElements(StructureObjectUtils.getAllObjects(generator.db.getDao(selectedNodes.get(i).position), structureIdx));
-                                if (i==1 || i%(selectedNodes.size()/5)==0 || i==selectedNodes.size()-1) {
+                                logger.debug("current objects: {}", s.getAllElementStrings().size());
+                                if (i==1 || (selectedNodes.size()>5 && i%(selectedNodes.size()/5)==0) || i==(selectedNodes.size()-1)) {
+                                    logger.debug("saving sel {}", s.getAllElementStrings().size());
                                     generator.db.getSelectionDAO().store(s);
-                                    GUI.getInstance().populateSelections();
                                 }
-                                return null;
-                            }, selectedNodes.size());
+                                
+                                return "";
+                            }, selectedNodes.size()).setEndOfWork(()->{
+                                GUI.getInstance().populateSelections();
+                                GUI.getInstance().getSelections().stream().filter(ss->ss.getName().equals(ae.getActionCommand())).findAny().get().setIsDisplayingObjects(true);
+                            });
+                            
                         }
                     }
                 );
