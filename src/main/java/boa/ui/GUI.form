@@ -82,7 +82,7 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="runSelectedActionsMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Run Selected Actions"/>
+                <Property name="text" type="java.lang.String" value="Run Selected Tasks"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="runSelectedActionsMenuItemActionPerformed"/>
@@ -90,7 +90,7 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="runActionAllXPMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Run Selected Actions on all Selected Experiments"/>
+                <Property name="text" type="java.lang.String" value="Run Selected Tasks on all Selected Experiments"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="runActionAllXPMenuItemActionPerformed"/>

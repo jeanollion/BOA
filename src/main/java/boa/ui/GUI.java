@@ -1735,7 +1735,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         runMenu.add(importImagesMenuItem);
 
-        runSelectedActionsMenuItem.setText("Run Selected Actions");
+        runSelectedActionsMenuItem.setText("Run Selected Tasks");
         runSelectedActionsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 runSelectedActionsMenuItemActionPerformed(evt);
@@ -1743,7 +1743,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         runMenu.add(runSelectedActionsMenuItem);
 
-        runActionAllXPMenuItem.setText("Run Selected Actions on all Selected Experiments");
+        runActionAllXPMenuItem.setText("Run Selected Tasks on all Selected Experiments");
         runActionAllXPMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 runActionAllXPMenuItemActionPerformed(evt);

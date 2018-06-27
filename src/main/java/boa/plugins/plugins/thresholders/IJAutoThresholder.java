@@ -141,7 +141,22 @@ public class IJAutoThresholder implements SimpleThresholder, ThresholderHisto {
                 throw new IllegalArgumentException("Invalid threshold method");
         }
         RealType res = thlder.createOutput(histoIJ2);
-        thlder.compute1(histoIJ2, res); 
+        // fix for compatibility with version 0.3 / 0.4
+        java.lang.reflect.Method m;
+        try {
+            m = thlder.getClass().getMethod("compute", Histogram1d.class, RealType.class); // version 0.4
+        } catch (NoSuchMethodException e) {
+            try {
+                m = thlder.getClass().getMethod("compute1", Histogram1d.class, RealType.class); // version 0.3
+            } catch(NoSuchMethodException ee) {
+                throw new RuntimeException(ee);
+            }
+        }
+        try {
+            m.invoke(thlder, histoIJ2, res);
+        } catch (Throwable t) { 
+            throw new RuntimeException(t);
+        }
         return res.getRealDouble();
     }
     
