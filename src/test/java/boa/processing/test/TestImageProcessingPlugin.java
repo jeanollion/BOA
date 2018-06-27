@@ -66,8 +66,8 @@ public class TestImageProcessingPlugin {
         int structureIdx =1;
         
         int pIdx =0;
-        int mcIdx =1;
-        int[] frames = new int[]{86,116}; 
+        int mcIdx =4;
+        int[] frames = new int[]{715,755}; 
         
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {

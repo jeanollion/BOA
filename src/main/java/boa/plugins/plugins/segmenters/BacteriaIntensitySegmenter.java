@@ -150,7 +150,6 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
         RegionPopulation res = splitAndMerge.merge(split, null);
         res = filterRegionsAfterMergeByHessian(parent, structureIdx, res);
         res = localThreshold(input, res, parent, structureIdx, false);
-        if (stores!=null)  imageDisp.accept(res.getLabelMap().duplicate("Region Labels after local threshold"));
         res.filter(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         //res.filter(new RegionPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
         

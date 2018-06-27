@@ -101,7 +101,7 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
     ConditionalParameter ltCond = new ConditionalParameter(performLocalThreshold).setActionParameters("true", localThresholdFactor, smoothScale, upperCellCorrection);
     NumberParameter minSize = new BoundedNumberParameter("Minimum Region Size", 0, 300, 50, null).setToolTipText("Minimum Object Size in voxels. <br />After split and merge using hessian: regions under this size will be merged by the adjacent region that has the lowest interface value, and if this value is under 2 * <em>Split Threshold</em>");
     // attributes parametrized during track parametrization
-    double lowerThld = Double.NaN, upperThld = Double.NaN;
+    double lowerThld = Double.NaN, upperThld = Double.NaN, filterThld=Double.NaN;
     
     @Override
     public Parameter[] getParameters() {
@@ -168,6 +168,15 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
     }
     @Override
     protected RegionPopulation filterRegionsAfterMergeByHessian(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
+        if (stores!=null) stores.get(parent).addIntermediateImage("values after merge by hessian", EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Region Values before merge by Hessian"));
+        if (pop.getRegions().isEmpty()) return pop;        
+        // filter low value regions
+        if (!Double.isNaN(filterThld)) {
+            Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(parent.getPreFilteredImage(structureIdx))));
+            pop.getRegions().removeIf(r->values.get(r)<filterThld);
+            pop.relabel(true);
+            if (pop.getRegions().isEmpty()) return pop;        
+        }
         // merge small objects with the object with the smallest edge
         int minSize = this.minSize.getValue().intValue();
         SplitAndMergeHessian sm= new SplitAndMergeHessian(parent.getPreFilteredImage(structureIdx), splitThreshold.getValue().doubleValue()*2, hessianScale.getValue().doubleValue(), globalBackgroundLevel);
@@ -377,6 +386,7 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
             s.globalBackgroundLevel = 0; // was 0. use in SplitAndMergeHessian
             s.lowerThld= thlds[0];
             s.upperThld = thlds[1];
+            s.filterThld = thlds[2];
         };
     }
 
@@ -387,11 +397,13 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
         Map<Image, ImageMask> imageMapMask = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
         Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO);
         double globalThld = this.foreThresholder.instanciatePlugin().runThresholderHisto(histo);
-        // 4) estimate a minimal threshold : middle point between mean value under global threshold and global threshold
+        //estimate a minimal threshold : middle point between mean value under global threshold and global threshold
         double mean = histo.getValueFromIdx(histo.getMeanIdx(0, (int)histo.getIdxFromValue(globalThld)));
         double minThreshold = (mean+globalThld)/2.0;
+        double meanUp = histo.getValueFromIdx(histo.getMeanIdx((int)histo.getIdxFromValue(globalThld), histo.data.length));
+        double globalThld2 = (meanUp+globalThld)/2.0;
         logger.debug("parent: {} global threshold on images with forground: [{};{};{}]", parentTrack.get(0), mean, minThreshold, globalThld);
-        return new double[]{minThreshold, globalThld}; 
+        return new double[]{minThreshold, globalThld, globalThld2}; 
     }
     @Override 
     protected double getGlobalThreshold(List<StructureObject> parent, int structureIdx) {
@@ -409,5 +421,7 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
         logger.info("Lower Threshold: "+this.lowerThld);
         GUI.log("Upper Threshold: "+this.upperThld);
         logger.info("Upper Threshold: {}", upperThld);
+        GUI.log("Upper Threshold2: "+this.filterThld);
+        logger.info("Upper Threshold2: {}", filterThld);
     }
 }
