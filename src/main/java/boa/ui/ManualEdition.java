@@ -217,10 +217,10 @@ public class ManualEdition {
             }
         }
     }
-    public static void prune(MasterDAO db, List<StructureObject> objects, BiPredicate<StructureObject, StructureObject> mergeTracks, boolean updateDisplay) {
+    public static void prune(MasterDAO db, Collection<StructureObject> objects, BiPredicate<StructureObject, StructureObject> mergeTracks, boolean updateDisplay) {
         if (objects.isEmpty()) return;
         TreeSet<StructureObject> queue = new TreeSet<>(objects);
-        List<StructureObject> toDel = new ArrayList<>();
+        Set<StructureObject> toDel = new HashSet<>();
         while(!queue.isEmpty()) {
             StructureObject o = queue.pollFirst();
             toDel.add(o);
@@ -228,7 +228,6 @@ public class ManualEdition {
             toDel.addAll(next);
             queue.addAll(next);
         }
-        Utils.removeDuplicates(toDel, false);
         deleteObjects(db, toDel, mergeTracks, updateDisplay);
     }
     public static void modifyObjectLinks(MasterDAO db, List<StructureObject> objects, boolean unlink, boolean updateDisplay) {
@@ -714,12 +713,15 @@ public class ManualEdition {
             }
             Set<StructureObject> parents = StructureObjectUtils.getParents(toDelete);
             for (StructureObject p : parents) p.relabelChildren(structureIdx, modifiedObjects); // relabel
-            Set<StructureObject> parentTH = updateDisplay ? StructureObjectUtils.getParentTrackHeads(toDelete) : null;
+            
             if (dao!=null) {
                 logger.info("Deleting {} objects, from {} parents", toDelete.size(), parents.size());
                 dao.delete(toDelete, true, true, true);
                 modifiedObjects.removeAll(toDelete); // avoid storing deleted objects!!!
                 dao.store(modifiedObjects);
+            } else {
+                //Collections.sort(toDelete);
+                //logger.debug("Deleting {} objects, from {} parents", toDelete.size(), parents.size());
             }
             if (updateDisplay) {
                 //Update selection on opened image
@@ -728,7 +730,7 @@ public class ManualEdition {
                 List<StructureObject> selTh = ImageWindowManagerFactory.getImageManager().getSelectedLabileTrackHeads(null);
                 
                 //Update all opened images & objectImageInteraction
-                for (StructureObject p : parentTH) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+                for (StructureObject p : StructureObjectUtils.getParentTrackHeads(toDelete) ) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
                 ImageWindowManagerFactory.getImageManager().displayTracks(null, null, StructureObjectUtils.getTracks(selTh, true), true);
                 GUI.updateRoiDisplayForSelections(null, null);
                 

@@ -487,7 +487,7 @@ public class GenerateXP {
             bacteria.setProcessingPipeline(new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.25, 1.25)
                     ).addTrackPostFilters(
-                            new PostFilter(new RemoveEndofChannelBacteria()).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
+                            new PostFilter(new RemoveEndofChannelBacteria().setContactSidesProportion(0.5)).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
                             new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND).setFeature(new Size(), 150, true).setQuantileValue(0.25)
                     )
             );
@@ -585,7 +585,7 @@ public class GenerateXP {
                             new BinaryClose(5),
                             new FillHoles2D()
                     ).addTrackPostFilters(
-                            new PostFilter(new RemoveEndofChannelBacteria().setContactSidesProportion(0)).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
+                            new PostFilter(new RemoveEndofChannelBacteria()).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
                             new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND).setFeature(new Size(), 10, true).setStatistics(2)
                     )
             );

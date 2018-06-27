@@ -81,7 +81,7 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
     StructureObjectProcessing currentParent;
     
     // parameter from track parametrizable
-    double globalBackgroundLevel;
+    double globalBackgroundLevel=0;
     boolean isVoid;
     
     public T setSplitThreshold(double splitThreshold) {
@@ -285,9 +285,7 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
     protected Set<StructureObject> getVoidMicrochannels(int structureIdx, List<StructureObject> parentTrack) {
         double globalVoidThldSigmaMu = vcThldForVoidMC.getValue().doubleValue();
         // get sigma in the middle line of each MC
-        double[] globalSum = new double[4];
-        boolean phase = this instanceof BacteriaPhaseContrast; // min value only computed for fluo. 0 -> phase
-        globalSum[3] = phase ? 0 : Double.POSITIVE_INFINITY;
+        double[] globalSum = new double[3];
         Function<StructureObject, float[]> compute = p->{
             Image imR = p.getRawImage(structureIdx);
             Image im = p.getPreFilteredImage(structureIdx);
@@ -295,8 +293,7 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
             int xMargin = im.sizeX()/3;
             MutableBoundingBox bb= new MutableBoundingBox(im).resetOffset().extend(new SimpleBoundingBox(xMargin, -xMargin, im.sizeX(), -im.sizeY()/6, 0, 0)); // only central line to avoid border effects + remove open end -> sometimes optical aberration
             double[] sum = new double[2];
-            double[] sumR = new double[4];
-            sumR[3] = phase? 0 : Double.POSITIVE_INFINITY;
+            double[] sumR = new double[3];
             BoundingBox.loop(bb, (x, y, z)-> {
                 if (p.getMask().insideMask(x, y, z)) {
                     double v = im.getPixel(x, y, z);
@@ -306,23 +303,21 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
                     sumR[0]+=v;
                     sumR[1]+=v*v;
                     sumR[2]++;
-                    if (!phase && sumR[3]>v) sumR[3] = v;
                 }
             });
             synchronized(globalSum) {
                 globalSum[0]+=sumR[0];
                 globalSum[1]+=sumR[1];
                 globalSum[2]+=sumR[2];
-                if (!phase && globalSum[3]>sumR[3]) globalSum[3] = sumR[3];
             }
             double meanR = sumR[0]/sumR[2];
             double meanR2 = sumR[1]/sumR[2];
-            return new float[]{(float)(sum[0]/sum[1]), (float)meanR, (float)Math.sqrt(meanR2 - meanR * meanR), (float)sumR[3]};
+            return new float[]{(float)(sum[0]/sum[1]), (float)meanR, (float)Math.sqrt(meanR2 - meanR * meanR)};
         };
-        List<float[]> meanF_meanR_sigmaR_minR = parentTrack.stream().parallel().map(p->compute.apply(p)).collect(Collectors.toList());
+        List<float[]> meanF_meanR_sigmaR = parentTrack.stream().parallel().map(p->compute.apply(p)).collect(Collectors.toList());
         // 1) criterion for void microchannel track
         double globalMean = globalSum[0]/globalSum[2];
-        double globalMin = globalSum[3];
+        double globalMin = globalBackgroundLevel;
         double globalSigma = Math.sqrt(globalSum[1]/globalSum[2] - globalMean * globalMean);
         if (globalSigma/(globalMean-globalMin)<globalVoidThldSigmaMu) {
             logger.debug("parent: {} sigma/mean: {}/{}-{}={} all channels considered void: {}", parentTrack.get(0), globalSigma, globalMean, globalMin, globalSigma/(globalMean-globalMin));
@@ -333,13 +328,13 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
         double globalThld = getGlobalThreshold(parentTrack, structureIdx);
 
         Set<StructureObject> outputVoidMicrochannels = IntStream.range(0, parentTrack.size())
-                .filter(idx -> meanF_meanR_sigmaR_minR.get(idx)[0]<globalThld)  // test on mean value is because when mc is very full, sigma can be low enough
-                .filter(idx -> meanF_meanR_sigmaR_minR.get(idx)[2]/(meanF_meanR_sigmaR_minR.get(idx)[1]-meanF_meanR_sigmaR_minR.get(idx)[3])<globalVoidThldSigmaMu) // test on sigma/mu value because when mc is nearly void, mean can be low engough
+                .filter(idx -> meanF_meanR_sigmaR.get(idx)[0]<globalThld)  // test on mean value is because when mc is very full, sigma can be low enough
+                .filter(idx -> meanF_meanR_sigmaR.get(idx)[2]/(meanF_meanR_sigmaR.get(idx)[1]-globalMin)<globalVoidThldSigmaMu) // test on sigma/mu value because when mc is nearly void, mean can be low engough
                 .mapToObj(idx -> parentTrack.get(idx))
                 .collect(Collectors.toSet());
         logger.debug("parent: {} global Sigma/Mean-Min {}/{}-{}={} global thld: {} void mc {}/{}", parentTrack.get(0), globalSigma,globalMean, globalMin, globalSigma/(globalMean-globalMin), globalThld,outputVoidMicrochannels.size(), parentTrack.size() );
-        logger.debug("10 frames lower std/mu: {}", IntStream.range(0, parentTrack.size()).mapToObj(idx -> new Pair<>(parentTrack.get(idx).getFrame(), meanF_meanR_sigmaR_minR.get(idx)[2]/(meanF_meanR_sigmaR_minR.get(idx)[1]-meanF_meanR_sigmaR_minR.get(idx)[3]))).sorted((p1, p2)->Double.compare(p1.value, p2.value)).limit(10).collect(Collectors.toList()));
-        logger.debug("10 frames upper std/mu: {}", IntStream.range(0, parentTrack.size()).mapToObj(idx -> new Pair<>(parentTrack.get(idx).getFrame(), meanF_meanR_sigmaR_minR.get(idx)[2]/(meanF_meanR_sigmaR_minR.get(idx)[1]-meanF_meanR_sigmaR_minR.get(idx)[3]))).sorted((p1, p2)->-Double.compare(p1.value, p2.value)).limit(10).collect(Collectors.toList()));
+        logger.debug("10 frames lower std/mu: {}", IntStream.range(0, parentTrack.size()).mapToObj(idx -> new Pair<>(parentTrack.get(idx).getFrame(), meanF_meanR_sigmaR.get(idx)[2]/(meanF_meanR_sigmaR.get(idx)[1]-globalMin))).sorted((p1, p2)->Double.compare(p1.value, p2.value)).limit(10).collect(Collectors.toList()));
+        logger.debug("10 frames upper std/mu: {}", IntStream.range(0, parentTrack.size()).mapToObj(idx -> new Pair<>(parentTrack.get(idx).getFrame(), meanF_meanR_sigmaR.get(idx)[2]/(meanF_meanR_sigmaR.get(idx)[1]-globalMin))).sorted((p1, p2)->-Double.compare(p1.value, p2.value)).limit(10).collect(Collectors.toList()));
         
         //logger.debug("s/mu : {}", Utils.toStringList(meanF_meanR_sigmaR.subList(10, 15), f->"mu="+f[0]+" muR="+f[1]+"sR="+f[2]+ " sR/muR="+f[2]/f[1]));
         return outputVoidMicrochannels;

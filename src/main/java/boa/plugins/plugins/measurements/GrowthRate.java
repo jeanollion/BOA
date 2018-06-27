@@ -68,7 +68,8 @@ public class GrowthRate implements Measurement, MultiThreaded {
     protected BooleanParameter saveFeature = new BooleanParameter("Save Feature", false);
     protected TextParameter featureKey = new TextParameter("Feature Name", "", false).setToolTipText("Name given to geometrical feature in measurements");
     protected ConditionalParameter saveFeatureCond = new ConditionalParameter(saveFeature).setActionParameters("true", featureKey).setToolTipText("Whether value of geometrical feature should be saved to measurements");
-    protected Parameter[] parameters = new Parameter[]{structure, feature, suffix, saveFeatureCond, residuals, intersection};
+    protected BoundedNumberParameter minCells = new BoundedNumberParameter("Minimum cell number", 0, 4, 3, null).setToolTipText("Minimum number of cell to compute growth rate. NA is returned if minimum not reached");
+    protected Parameter[] parameters = new Parameter[]{structure, feature, minCells, suffix, saveFeatureCond, residuals, intersection};
     
     public GrowthRate() {
         feature.addListener( p -> {
@@ -125,8 +126,9 @@ public class GrowthRate implements Measurement, MultiThreaded {
         long t2 = System.currentTimeMillis();
         Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
         long t3 = System.currentTimeMillis();
+        int minCells = this.minCells.getValue().intValue();
         parallele(bacteriaTracks.values().stream(), true).forEach(l-> {
-            if (l.size()>=2) {
+            if (l.size()>=minCells) {
                 double[] frame = new double[l.size()];
                 double[] length = new double[frame.length];
                 int idx = 0;
@@ -142,6 +144,13 @@ public class GrowthRate implements Measurement, MultiThreaded {
                     if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, beta[0] );
                     if (res) b.getMeasurements().setValue("GrowthRateResidual"+suffix, residuals[idx++] );
                     if (feat) b.getMeasurements().setValue(featKey, Math.exp(logLengthMap.get(b)));
+                }
+            } else { // erase values
+                for (StructureObject b : l) {
+                    b.getMeasurements().setValue("GrowthRate"+suffix, null );
+                    if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, null );
+                    if (res) b.getMeasurements().setValue("GrowthRateResidual"+suffix, null );
+                    if (feat) b.getMeasurements().setValue(featKey, null);
                 }
             }
         });

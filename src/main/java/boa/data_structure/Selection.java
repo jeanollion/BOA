@@ -510,7 +510,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     @Override
     public Object toJSONEntry() {
         JSONObject res= new JSONObject();
-        res.put("elements", JSONUtils.toJSONObject(elements));
+        res.put("objects", JSONUtils.toJSONObject(elements));
         res.put("name", name);
         res.put("structureIdx", structureIdx);
         res.put("color", color);
@@ -523,7 +523,8 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     @Override
     public void initFromJSONEntry(Object jsonEntry) {
         JSONObject jo = (JSONObject)jsonEntry;
-        elements = (Map<String, List<String>>)jo.get("elements");
+        if (!jo.containsKey("objects")) elements = (Map<String, List<String>>)jo.get("elements");
+        else elements = (Map<String, List<String>>)jo.get("objects");
         if (!jo.containsKey("name")) name = (String)jo.get("_id"); 
         else name = (String)jo.get("name");
         if (!jo.containsKey("structureIdx")) structureIdx = ((Number)jo.get("structure_idx")).intValue();

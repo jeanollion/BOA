@@ -41,6 +41,7 @@ import boa.utils.Utils;
 import static boa.utils.Utils.parallele;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -87,11 +88,11 @@ public class PostFilter implements TrackPostFilter, ToolTip {
     @Override
     public void filter(int structureIdx, List<StructureObject> parentTrack) {
         boolean rootParent = parentTrack.stream().findAny().get().isRoot();
-        List<StructureObject> objectsToRemove = new ArrayList<>();
+        Set<StructureObject> objectsToRemove = new HashSet<>();
         Consumer<StructureObject> exe = parent -> {
             RegionPopulation pop = parent.getObjectPopulation(structureIdx);
             //logger.debug("seg post-filter: {}", parent);
-            if (!rootParent) pop.translate(new SimpleBoundingBox(parent.getBounds()).reverseOffset(), false); // go back to relative landmark
+            if (!rootParent) pop.translate(new SimpleBoundingBox(parent.getBounds()).reverseOffset(), false); // go back to relative landmark for post-filter
             //if(parent.getFrame()==858) postFilters.set
             pop=filter.instanciatePlugin().runPostFilter(parent, structureIdx, pop);
             List<StructureObject> toRemove=null;
@@ -101,7 +102,7 @@ public class PostFilter implements TrackPostFilter, ToolTip {
                     for (int i = 0; i<pop.getRegions().size(); ++i) {
                         children.get(i).setRegion(pop.getRegions().get(i));
                     }
-                } else { // map object by hashcode -> preFilter should only modify or 
+                } else { // map object by region hashcode -> preFilter should not create new region, but only delete or modify. TODO: use matching algorithm to solve creation case
                     for (StructureObject o : parent.getChildren(structureIdx)) {
                         if (!pop.getRegions().contains(o.getRegion())) {
                             if (toRemove==null) toRemove= new ArrayList<>();

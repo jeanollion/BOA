@@ -25,6 +25,7 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.RegionPopulation.ContactBorder;
 import boa.data_structure.RegionPopulation.Border;
+import boa.data_structure.RegionPopulation.ContactBorderMask;
 import boa.data_structure.RegionPopulation.Filter;
 import boa.data_structure.RegionPopulation.Size;
 import boa.data_structure.StructureObject;
@@ -38,15 +39,15 @@ import boa.plugins.ToolTip;
  * @author jollion
  */
 public class RemoveEndofChannelBacteria implements PostFilter, ToolTip {
-    BoundedNumberParameter contactProportion = new BoundedNumberParameter("Contact Proportion", 3, 0.9, 0, 1).setToolTipText("contact = number of pixels in contact with open end of channel / median width of cell. If contact > this value, cell will be erased. If value = 0 -> this condition won't be tested");
-    BoundedNumberParameter sizeLimit = new BoundedNumberParameter("Minimum Size", 0, 300, 0, null).setToolTipText("If cell is in contact with open end of channel and size (in pixels) is inferior to this value, it will be erased. O = no size limit");
-    BooleanParameter doNotRemoveIfOnlyOne = new BooleanParameter("Do not remove if only one object", true).setToolTipText("If only one object is present in microchannel, it won't be removed");
-    BoundedNumberParameter contactSidesProportion = new BoundedNumberParameter("Contact with Sides Proportion", 3, 0.6, 0, 1).setToolTipText("contact with sides = number of pixels in contact with left or right sides of microchannel / min(median size of cell along Y, median size of cell along X) . If contact > this value, cell will be erased. If value = 0 -> this condition won't be tested");
+    BoundedNumberParameter contactProportion = new BoundedNumberParameter("Contact Proportion", 3, 0.25, 0, 1).setToolTipText("contact = number of pixels in contact with open end of channel / width of cell. If contact > this value, cell will be erased. If value = 0 -> this condition won't be tested");
+    BoundedNumberParameter sizeLimit = new BoundedNumberParameter("Minimum Size", 0, 300, 0, null).setToolTipText("If cell is in contact with open end of channel and size (in pixels) is inferior to this value, it will be erased even if the proportion of contact is lower than the threshold. O = no size limit");
+    BooleanParameter doNotRemoveIfOnlyOne = new BooleanParameter("Do not remove if only one object", true).setToolTipText("If only one object is present in microchannel, it won't be removed even if it is in contact with microchanel opened-end");
+    BoundedNumberParameter contactSidesProportion = new BoundedNumberParameter("Contact with Sides Proportion", 3, 0, 0, 1).setToolTipText("contact with sides = number of pixels in contact with left or right sides of microchannel / width of cell. If contact > this value, cell will be erased. If value = 0 -> this condition won't be tested");
     Parameter[] parameters = new Parameter[]{doNotRemoveIfOnlyOne, contactProportion, sizeLimit, contactSidesProportion};
     
     @Override
     public String getToolTipText() {
-        return "Removes bacteria in contact with open-end of microchannels";
+        return "Removes trimmed bacteria (in contact with open-end of microchannels)";
     }
     
     public RemoveEndofChannelBacteria(){}
@@ -64,25 +65,25 @@ public class RemoveEndofChannelBacteria implements PostFilter, ToolTip {
     }
     
     @Override public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
-        final ContactBorder yDown = new ContactBorder(0, childPopulation.getImageProperties(), Border.YDown);
-        final ContactBorder xlr = new ContactBorder(0, childPopulation.getImageProperties(), Border.Xlr); 
+        final ContactBorderMask yDown = new ContactBorderMask(0, parent.getMask(), Border.YDown);
+        final ContactBorderMask xlr = new ContactBorderMask(0, parent.getMask(), Border.Xlr); 
         final double contactThld=contactProportion.getValue().doubleValue();
         final double contactSideThld = contactSidesProportion.getValue().doubleValue();
         final double sizeLimit  = this.sizeLimit.getValue().doubleValue();
         childPopulation.filter(o->{
             if (doNotRemoveIfOnlyOne.getSelected() && childPopulation.getRegions().size()==1) return true;
-            double thickX = GeometricalMeasurements.medianThicknessX(o);
-            if (contactThld>0) {
+            double thick = o.size() / GeometricalMeasurements.getFeretMax(o) ; // estimation of width for rod-shapes structures
+            if (contactThld>0) { // contact end
                 double contactDown = yDown.getContact(o);
                 if (contactDown>0 && sizeLimit>0 && o.size()<sizeLimit) return false;
-                double contactYDownNorm = contactDown / thickX;
+                double contactYDownNorm = contactDown / thick;
                 if (contactYDownNorm>=contactThld) return false;
             }
-            if (contactSideThld>0) { // end of channel : bacteria going out of channel -> contact with
+            if (contactSideThld>0) { // contact on sides
                 double contactSides = xlr.getContact(o);
                 if (contactSides>0 && sizeLimit>0 && o.size()<sizeLimit) return false;
                 double thickY = GeometricalMeasurements.medianThicknessY(o);
-                double contactXNorm = contactSides / Math.min(thickX, thickY);
+                double contactXNorm = contactSides / thick;
                 if (contactXNorm>=contactSideThld) return false;
             }
             //logger.debug("remove contactDown end of channel o: {}, value: {}({}/{}), remove?{}",getSO(parent, childStructureIdx, o), contactYDownNorm, contactDown, GeometricalMeasurements.medianThicknessX(o), contactYDownNorm >= contactThld);

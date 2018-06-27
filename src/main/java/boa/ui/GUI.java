@@ -136,6 +136,7 @@ import boa.ui.logger.FileProgressLogger;
 import boa.ui.logger.MultiProgressLogger;
 import boa.ui.PropertyUtils;
 import static boa.plugins.PluginFactory.checkClass;
+import static boa.plugins.ToolTip.formatToolTip;
 import boa.utils.ArrayUtil;
 import boa.utils.CommandExecuter;
 import boa.utils.FileIO;
@@ -230,6 +231,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     loadObjectTrees();
                     displayTrackTrees();
                 } else if (tabs.getSelectedComponent()==dataPanel) {
+                    setInteractiveStructures();
                     setTrackTreeStructures();
                 }
                 if (tabs.getSelectedComponent()==actionPanel) {
@@ -257,15 +259,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         // tool tips
         ToolTipManager.sharedInstance().setInitialDelay(100);
         ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
-        trackPanel.setToolTipText("Element displayed are segmented tracks for each object type. Right click for actions on the track like display kymograph, run segmentation/tracking etc..");
-        trackTreeStructureJSP.setToolTipText("<html>Object type to be displayed in the <em>Segmentation & Tracking</em> panel</html>");
-        interactiveObjectPanel.setToolTipText("Object type that will be displayed and edited on interactive images");
-        editPanel.setToolTipText("<html>Commands to edit segmentation/lineage of selected objects of the interactive objects on the currently active kymograph<br />See <em>Shortcuts > Object/Lineage Edition</em> menu for while list of commands and description</html>");
-        actionStructureJSP.setToolTipText("Object types of the opened experiment. Tasks will be run only on selected objects types, or on all object types if none is selected");
-        experimentJSP.setToolTipText("List of all experiments contained in the current experiment folder");
-        actionPositionJSP.setToolTipText("Positions of the opened experiment. Tasks will be run only on selected position, or on all position if no position is selected");
-        deleteObjectsButton.setToolTipText("Right-click for more delete commands");
-        experimentFolder.setToolTipText("<html>Directory containing several experiments<br />Righ-click menu to access recent list and file browser</html>");
+        trackPanel.setToolTipText(formatToolTip("Element displayed are segmented tracks for each object type. Right click for actions on the track like display kymograph, run segmentation/tracking etc.."));
+        trackTreeStructureJSP.setToolTipText(formatToolTip("Object type to be displayed in the <em>Segmentation & Tracking</em> panel"));
+        interactiveObjectPanel.setToolTipText(formatToolTip("Object type that will be displayed and edited on interactive images"));
+        editPanel.setToolTipText(formatToolTip("Commands to edit segmentation/lineage of selected objects of the interactive objects on the currently active kymograph<br />See <em>Shortcuts > Object/Lineage Edition</em> menu for while list of commands and description"));
+        actionStructureJSP.setToolTipText(formatToolTip("Object types of the opened experiment. Tasks will be run only on selected objects types, or on all object types if none is selected"));
+        experimentJSP.setToolTipText(formatToolTip("List of all experiments contained in the current experiment folder"));
+        actionPositionJSP.setToolTipText(formatToolTip("Positions of the opened experiment. Tasks will be run only on selected position, or on all position if no position is selected"));
+        deleteObjectsButton.setToolTipText(formatToolTip("Right-click for more delete commands"));
+        experimentFolder.setToolTipText(formatToolTip("Directory containing several experiments<br />Righ-click menu to access recent list and file browser"));
+        this.actionJSP.setToolTipText(formatToolTip("<b>Tasks to run on selected positions/object types:</b><br/><ol>"
+                + "<li><b>"+runActionList.getModel().getElementAt(0)+"</b>: Performs preprocessing pipeline on selected positions (or all if none is selected)</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(1)+"</b>: Performs segmentation and tracking on selected object types (all if none is selected) and selected positions (or all if none is selected)</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(2)+"</b>: Performs Tracking on selected object types (all if none is selected) and selected positions (or all if none is selected). Ignored if "+runActionList.getModel().getElementAt(1)+" is selected.</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(3)+"</b>: Pre-computes kymographs and saves them in the experiment folder in order to have a faster display of kymograph, and to eventually allow to erase pre-processed images to save disk-space</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(4)+"</b>: Computes measurements on selected positions (or all if none is selected)</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(5)+"</b>: Extract measurements of selected object tpye (or all is none is selected) on selected positions (or all if none is selected), and saves them in one single .csv <em>;</em>-separated file per object type in the experiment folder</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(6)+"</b>: Export data from this experiment (segmentation and tracking results, configuration...) of all selected posisions (or all if none is selected) in a single zip archive that can be imported. Exported data can be configured in the menu <em>Import/Export > Export Options</em></li></ol>"));
         // disable componenets when run action
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
@@ -719,6 +729,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         populateSelections();
         updateDisplayRelatedToXPSet();
         experimentListValueChanged(null);
+        setInteractiveStructures();
     }
     
     private void updateConfigurationTree() {
@@ -841,6 +852,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             return;
         }
         trackTreeController = new TrackTreeController(db);
+        setInteractiveStructures();
         setTrackTreeStructures();
         resetSelectionHighlight();
     }
@@ -911,6 +923,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 reloadObjectTrees=false;
                 loadObjectTrees();
             } else {
+                setInteractiveStructures();
                 setTrackTreeStructures();
             }
             
@@ -963,20 +976,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         objectTreeGenerator.unselectAllObjects();
         objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);*/
     }
-    
+    private void setInteractiveStructures() {
+        List<String> structureNames= Arrays.asList(db.getExperiment().getStructuresAsString());
+        Object selectedO = interactiveStructure.getSelectedItem();
+        this.interactiveStructure.removeAllItems();
+        interactiveStructure.addItem("Root");
+        for (String s: structureNames) interactiveStructure.addItem(s);
+        if (structureNames.size()>0) {
+            if (selectedO!=null && structureNames.contains(selectedO)) interactiveStructure.setSelectedItem(selectedO);
+            else interactiveStructure.setSelectedIndex(1);
+        }
+    }
     private void setTrackTreeStructures() {
         if (db==null) {
             trackTreeStructureJSP.setViewportView(null);
             trackTreeStructureSelector = null;
             return;
-        }
-        String[] structureNames= db.getExperiment().getStructuresAsString();
-        this.interactiveStructure.removeAllItems();
-        interactiveStructure.addItem("Root");
-        for (String s: structureNames) interactiveStructure.addItem(s);
-        if (structureNames.length>0) {
-            interactiveStructure.setSelectedIndex(1);
-            setTrackTreeStructure(0);
         }
         int[] sel = trackTreeStructureSelector !=null ? trackTreeStructureSelector.getSelectedStructures().toArray() : new int[]{0};
         trackTreeStructureSelector = new StructureSelectorTree(db.getExperiment(), i -> setTrackTreeStructure(i), TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -1215,7 +1230,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         runActionList.setBackground(new java.awt.Color(247, 246, 246));
         runActionList.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Pre-Processing", "Segment", "Track", "Generate Track Images", "Measurements", "Extract Measurements", "Export Data" };
+            String[] strings = { "Pre-Processing", "Segment and Track", "Track only", "Generate Kymographs", "Measurements", "Extract Measurements", "Export Data" };
             public int getSize() { return strings.length; }
             public Object getElementAt(int i) { return strings[i]; }
         });
@@ -2238,7 +2253,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     navigateCount=0;
                     if (newImage && setInteractiveStructure) { // new image open -> set interactive structure & navigate to next object in newly opened image
                         setInteractiveStructureIdx(sel.getStructureIdx());
-                        interactiveStructure.setSelectedIndex(sel.getStructureIdx());
                         interactiveStructureActionPerformed(null);
                     }
                     List<StructureObject> objects = Pair.unpairKeys(SelectionUtils.filterPairs(nextI.getObjects(), sel.getElementStrings(position)));
@@ -3570,7 +3584,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             logger.error("Error set interactive structure out of bounds: max: {}, current: {}, asked: {}", interactiveStructure.getItemCount()-1, interactiveStructure.getSelectedIndex()-1, structureIdx );
             return;
         }
-        interactiveStructure.setSelectedIndex(structureIdx+1);
+        interactiveStructure.setSelectedIndex(structureIdx+1); // +1 because root is first
         interactiveStructureActionPerformed(null);
     }
     
