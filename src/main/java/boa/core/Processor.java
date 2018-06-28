@@ -129,7 +129,7 @@ public class Processor {
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations(true)) {
             Transformation transfo = tpp.instanciatePlugin();
-            logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
+            logger.info("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
             if (transfo instanceof ConfigurableTransformation) {
                 ConfigurableTransformation ct = (ConfigurableTransformation)transfo;
                 logger.debug("before configuring: {}", Utils.getMemoryUsage());
@@ -137,6 +137,8 @@ public class Processor {
                 logger.debug("after configuring: {}", Utils.getMemoryUsage());
             }
             images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
+            images.applyAllTransformations(); // directly compute all trasforamtion in multithread to avoid that next configuration round force apply, but no necessarily in multithread
+            
         }
     }
     // processing-related methods

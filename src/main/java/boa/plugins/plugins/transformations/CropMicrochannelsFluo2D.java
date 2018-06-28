@@ -116,7 +116,7 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
         // compute one threshold for all images
         List<Image> allImages = IntStream.range(0, inputImages.getFrameNumber()).mapToObj(f->inputImages.getImage(channelIdx, f)).collect(Collectors.toList());
         ThresholderHisto thlder = thresholder.instanciatePlugin();
-        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages), thlder instanceof IJAutoThresholder ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256 : HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         threshold = thlder.runThresholderHisto(histo);
         super.computeConfigurationData(channelIdx, inputImages);
     }
@@ -124,7 +124,7 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
     @Override
     public MutableBoundingBox getBoundingBox(Image image) {
         double thld = Double.isNaN(threshold)? 
-                thresholder.instanciatePlugin().runThresholderHisto(HistogramFactory.getHistogram(()->image.stream(), thresholder.instanciatePlugin() instanceof IJAutoThresholder ? HistogramFactory.BIN_SIZE_METHOD.NBINS_256 : HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS)) 
+                thresholder.instanciatePlugin().runThresholderHisto(HistogramFactory.getHistogram(()->image.stream(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS)) 
                 : threshold;
         return getBoundingBox(image, null , thld);
     }

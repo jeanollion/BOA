@@ -45,7 +45,8 @@ public class HistogramFactory {
     public final static Logger logger = LoggerFactory.getLogger(HistogramFactory.class);
     public static int MIN_N_BINS = 256;
     public static int MAX_N_BINS = 5000;
-
+    public static int MAX_N_BINS2 = 30000;
+    
     public enum BIN_SIZE_METHOD {
         NBINS_256,
         AUTO_WITH_LIMITS,
@@ -97,6 +98,10 @@ public class HistogramFactory {
                     if (nBins<MIN_N_BINS) binSize = getBinSize(stats[5], stats[6], MIN_N_BINS); 
                     if (nBins>MAX_N_BINS) binSize = getBinSize(stats[5], stats[6], MAX_N_BINS);
                 }
+                break;
+            case AUTO:
+                int nBins = getNBins(stats[5], stats[6], binSize);
+                if (nBins>MAX_N_BINS2) binSize = getBinSize(stats[5], stats[6], MAX_N_BINS2);
                 break;
         }
         //logger.debug("autobin: range: [{};{}], count: {}, sigma: {}, max decimal place: {} binSize: {}", stats[5], stats[6], stats[3], std, stats[7], binSize);

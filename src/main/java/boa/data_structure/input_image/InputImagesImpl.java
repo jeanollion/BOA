@@ -150,10 +150,14 @@ public class InputImagesImpl implements InputImages {
         }
         return imagesTC;
     }
+    public void applyAllTransformations() {
+        for (int c = 0; c<getChannelNumber(); ++c) {
+            InputImage[] imageF = imageCT[c];
+            IntStream.range(0, imageF.length).parallel().forEach(f-> imageF[f].getImage());
+        }
+    }
     public void applyTranformationsAndSave(boolean close) {
         long tStart = System.currentTimeMillis();
-        final int cCount = getChannelNumber();
-        
         for (int c = 0; c<getChannelNumber(); ++c) {
             InputImage[] imageF = imageCT[c];
             IntStream.range(0, imageF.length).parallel().forEach(f-> {
@@ -164,7 +168,7 @@ public class InputImagesImpl implements InputImages {
         }
         
         long tEnd = System.currentTimeMillis();
-        logger.debug("apply transformation & save: total time: {}, for {} time points and {} channels", tEnd-tStart, getFrameNumber(), cCount );
+        logger.debug("apply transformation & save: total time: {}, for {} time points and {} channels", tEnd-tStart, getFrameNumber(), getChannelNumber() );
     }
     
     public void deleteFromDAO() {
