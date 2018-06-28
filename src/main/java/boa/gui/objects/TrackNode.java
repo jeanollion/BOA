@@ -266,9 +266,10 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             nodesByPosition.forEach((p, l) -> {
                                 l.forEach(n -> {
                                     logger.debug("run seg & track on : {}, structure: {}", n.trackHead, structureIdx);
-                                    GUI.log("RUN Segmentation & Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx);
+                                    GUI.log("Running Segmentation & Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx+"...");
                                     try {
                                         Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
+                                        GUI.log("Segmentation & Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx+" performed!");
                                     } catch (MultipleException me) {
                                         for (Pair<String, Throwable> pe : me.getExceptions()) {
                                             GUI.log("Error @ "+pe.key+ " "+pe.value.getMessage());
@@ -305,9 +306,10 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             nodesByPosition.forEach((p, l) -> {
                                 l.forEach(n -> {
                                     logger.debug("Running Tracking on : {}, structure: {}", n.trackHead, structureIdx);
-                                    GUI.log("RUN Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx);
+                                    GUI.log("Running Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx);
                                     try {
                                         Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
+                                        GUI.log("Tracking on track: "+n.trackHead+ " structureIdx: "+structureIdx+" performed!");
                                     } catch (MultipleException me) {
                                         for (Pair<String, Throwable> t : me.getExceptions()) {
                                             GUI.log("Error @ "+t.key+ " "+t.value.getMessage());

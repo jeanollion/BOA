@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class CropMicroChannels implements ConfigurableTransformation, MultichannelTransformation {
     public static boolean debug = false;
-    public final static Logger logger = LoggerFactory.getLogger(CropMicroChannels.class);
+    private final static Logger logger = LoggerFactory.getLogger(CropMicroChannels.class);
     protected NumberParameter xStart = new BoundedNumberParameter("X start", 0, 0, 0, null);
     protected NumberParameter xStop = new BoundedNumberParameter("X stop (0 for image width)", 0, 0, 0, null);
     protected NumberParameter yStart = new BoundedNumberParameter("Y start", 0, 0, 0, null);
@@ -76,6 +76,8 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
     }
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
+        cropBounds=null;
+        bounds = null;
         if (channelIdx<0) throw new IllegalArgumentException("Channel no configured");
         Image<? extends Image> image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
         // check configuration validity
@@ -142,7 +144,7 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
             });
         }
         uniformizeBoundingBoxes(bounds, inputImages, channelIdx);
-        if (framesN!=0)  cropBounds = bounds;
+        if (framesN==0)  cropBounds = bounds;
         else this.bounds = bounds.values().stream().findAny().get();
         /*if (framesN !=0) { // one bounding box for all images: merge all bounds by expanding
             Iterator<MutableBoundingBox> it = bounds.values().iterator();

@@ -530,12 +530,14 @@ public class ManualEdition {
             });
         } else {
             if (dao==null) throw new RuntimeException("Cannot compute pre-filtered images because track preFilters are present and DAO not preset");
+            GUI.log("Computing track pre-filters...");
             parents.map(p->p.getParent(parentStructureIdx)).map(o->o.getTrackHead()).distinct().forEach(p->{
                 logger.debug("tpf for : {}", p);
                 if (p.getPreFilteredImage(structureIdx)==null) {
                     tpfWithPF.filter(structureIdx, dao.getTrack(p));
                 }
             });
+            GUI.log("Track pre-filters computed!");
         }
     }
     public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay, boolean test, ObjectSplitter defaultSplitter) {

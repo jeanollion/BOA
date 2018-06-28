@@ -280,6 +280,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 + "<li><b>"+runActionList.getModel().getElementAt(6)+"</b>: Export data from this experiment (segmentation and tracking results, configuration...) of all selected posisions (or all if none is selected) in a single zip archive that can be imported. Exported data can be configured in the menu <em>Import/Export > Export Options</em></li></ol>"));
         shortcutMenu.setToolTipText(formatToolTip("List of all commands and associated shortcuts. <br />Change here preset to AZERTY/QWERT keyboard layout"));
         localZoomMenu.setToolTipText(formatToolTip("Local zoom is activated/desactivated with TAB"));
+        this.importConfigurationMenuItem.setToolTipText(formatToolTip("Will overwrite configuration from a selected file to current experiment/selected experiments. <br />Selected configuration file must have same number of object classes<br />Overwrites configuration for each Object class<br />Overwrite preprocessing template"));
         // disable componenets when run action
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
@@ -1911,7 +1912,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         importSubMenu.add(importConfigurationForSelectedPositionsMenuItem);
 
-        importConfigurationForSelectedStructuresMenuItem.setText("Configuration for Selected Structures");
+        importConfigurationForSelectedStructuresMenuItem.setText("Configuration for Selected Object type(s)");
         importConfigurationForSelectedStructuresMenuItem.setEnabled(false);
         importConfigurationForSelectedStructuresMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -2545,7 +2546,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (f==null || !f.isFile()) return;
         Experiment xp = ImportExportJSON.readConfig(f);
         if (xp==null) return;
-        if (xp.getStructureCount()!=db.getExperiment().getStructureCount()) logger.error("Selected config to import should have same stucture count as current xp");
+        if (xp.getStructureCount()!=db.getExperiment().getStructureCount()) logger.error("Selected config to import should have same object class number as current xp");
         if (!Utils.promptBoolean("This will erase configutation on current xp. Continue?", this)) return;
         for (int s : getSelectedStructures(true)) {
             db.getExperiment().getStructure(s).setContentFrom(xp.getStructure(s));

@@ -35,15 +35,20 @@ import boa.image.processing.ImageOperations;
 import boa.plugins.Plugin;
 import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
+import boa.utils.Pair;
 import boa.utils.Utils;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jollion
  */
 public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolTip {
+    private final static Logger logger = LoggerFactory.getLogger(CropMicrochannelsPhase2D.class);
     public static boolean debug = false;
     protected String toolTip = "<b>Microchannel Detection in phase-contrast images</b><br />"
             + "Based on detection of optical aberration (shadow of opened-end of microchannels in phase contrast imaging) as the max of Y mean profile. End of peak is determined using the <em>peak proportion</em> parameter and height using the <em>channel length</em> parameter. <br />Supposes optical aberration is the highest peak. Refer to plot <em>Peak Detection</em><br />"
@@ -157,10 +162,16 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
 
     @Override
     protected void uniformizeBoundingBoxes(Map<Integer, MutableBoundingBox> allBounds, InputImages inputImages, int channelIdx) {
-        // limit sizeY so that no null pixels (due to rotation) is present in the image & not out-of-bounds
+        
         int maxSizeY = allBounds.values().stream().mapToInt(b->b.sizeY()).max().getAsInt();
-        int sY = allBounds.entrySet().stream().mapToInt(b-> b.getValue().yMax() - Math.max(b.getValue().yMax()-(maxSizeY-1), getYmin(inputImages.getImage(channelIdx, b.getKey()), b.getValue().xMin(), b.getValue().xMax()))+1).min().getAsInt();
+        int sY = allBounds.entrySet().stream().mapToInt(b-> {
+            int yMinNull = getYmin(inputImages.getImage(channelIdx, b.getKey()), b.getValue().xMin(), b.getValue().xMax()); // limit sizeY so that no null pixels (due to rotation) is present in the image & not out-of-bounds
+            return b.getValue().yMax() - Math.max(b.getValue().yMax()-(maxSizeY-1), yMinNull)+1;
+        }).min().getAsInt();
+        //logger.info("max size Y: {} uniformized sizeY: {}", maxSizeY, sY);
+        //logger.info("all bounds: {}", allBounds.entrySet().stream().filter(e->e.getKey()%100==0).sorted((e1, e2)->Integer.compare(e1.getKey(), e2.getKey())).map(e->new Pair(e.getKey(), e.getValue())).collect(Collectors.toList()));
         allBounds.values().stream().filter(bb->bb.sizeY()!=sY).forEach(bb-> bb.setyMin(bb.yMax()-(sY-1)));
+        //logger.info("all bounds after uniformize Y: {}", allBounds.entrySet().stream().filter(e->e.getKey()%100==0).sorted((e1, e2)->Integer.compare(e1.getKey(), e2.getKey())).map(e->new Pair(e.getKey(), e.getValue())).collect(Collectors.toList()));
         uniformizeX(allBounds);
         
     }

@@ -146,9 +146,11 @@ public class Shortcuts {
         menu.removeAll();
         JMenu selection = new JMenu("Selections");
         menu.add(selection);
-        selection.add("Active selections are set through right-clik menu on selections");
+        selection.add("Navigation selection is set through right-click menu on selection");
         selection.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of active selection (or selected selection if no active selection is set)"));
         selection.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of active selection (or selected selection if no active selection is set)"));
+        selection.add(new JSeparator());
+        selection.add("Active selections are set through right-click menu on selections");
         selection.add(new JSeparator());
         selection.add(getMenuLabelFor(ACTION.TOGGLE_DISPLAY_SEL0, "Toggle Display Objects for active selection group 0"));
         selection.add(getMenuLabelFor(ACTION.ADD_TO_SEL0, "Add selected object(s) to active selection group 0"));
