@@ -67,8 +67,9 @@ public class TestSpine {
         //String dbName = "MutH_150324";
         //String dbName = "WT_180318_Fluo";
         //String dbName = "WT_150609";
-        String dbName = "fluo160501_uncorr_TestParam";
-        int postition= 0, frame=220, mc=8, b=0;
+        //String dbName = "fluo160501_uncorr_TestParam";
+        String dbName = "dataset2";
+        int postition= 0, frame=469, mc=0, b=1, m = 2;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
@@ -82,13 +83,14 @@ public class TestSpine {
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(structureIdx).get(b);
         
-        testSpineCreation(bact);
+        //testSpineCreation(bact);
         //testContourCleaning(bact);
         //testAllSteps(bact);
         //testLocalization(bact, true);
         //testLocalization(bact, false);
         //testSkeleton(bact);
-        
+        StructureObject mut = bact.getParent().getChildren(2).get(m);
+        testCoordCreation(bact, mut.getRegion().getCenter());
         //StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(4);
         //StructureObject bact2 = root2.getChildren(parentStructure).get(mc).getChildren(structureIdx).get(1);
         
@@ -173,6 +175,12 @@ public class TestSpine {
                 throw e;
             }
         }
+    }
+    public static void testCoordCreation(StructureObject b, Point p) {
+        int zoomFactor = 7;
+        BacteriaSpineLocalizer loc = new BacteriaSpineLocalizer(b.getRegion()).setTestMode(true);
+        BacteriaSpineCoord coord = loc.getSpineCoord(p);
+        logger.debug("Coord: {}", coord);
     }
     public static void testProjection(StructureObject bact1, StructureObject bact2) {
         int zoomFactor = 7;

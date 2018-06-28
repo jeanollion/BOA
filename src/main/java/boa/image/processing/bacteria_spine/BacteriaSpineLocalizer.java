@@ -128,7 +128,7 @@ public class BacteriaSpineLocalizer {
         if (c2==null && c1!=null) return c1;
         if (testMode && vPrev!=null && vNext!=null) logger.debug("compare two coords");
         if (c1==null && c2==null) return null; // unable to locate point -> concave contour ? 
-        return Math.abs(c1.radialCoord(false))<Math.abs(c2.radialCoord(false)) ? c1 : c2;
+        return Math.abs(c1.radialCoord(false))<Math.abs(c2.radialCoord(false)) ? c1 : c2; // conflict : return the closes to the spine
     }
     /**
      * 
@@ -152,34 +152,37 @@ public class BacteriaSpineLocalizer {
         }
         Vector v0 = r0.getContent1().duplicate().normalize();
         Vector v1 = r1.getContent1().duplicate().normalize();
-        Vector A = Vector.vector(r0, source);
-        Vector A1 = Vector.vector(r1, source);
-        if (A.duplicate().normalize().equals(v0)) { // point is in direction of r0
+        Vector r0_src = Vector.vector(r0, source);
+        Vector r1_src = Vector.vector(r1, source);
+        if (r0_src.duplicate().normalize().equals(v0)) { // point is in direction of r0
             res.setSpineCoord(r0.getContent2());
             res.setSpineRadius(r0.getContent1().norm());
-            res.setDistFromSpine(A.norm());
+            res.setDistFromSpine(r0_src.norm());
             return res;
         }
-        if (A1.duplicate().normalize().equals(v1)) { // point is in direction of r1
+        if (r1_src.duplicate().normalize().equals(v1)) { // point is in direction of r1
             res.setSpineCoord(r1.getContent2());
             res.setSpineRadius(r1.getContent1().norm());
-            res.setDistFromSpine(A1.norm());
+            res.setDistFromSpine(r1_src.norm());
             return res;
         }
-        Vector B = Vector.vector(r0, r1); 
+        Vector r0_r1 = Vector.vector(r0, r1); 
         // inside segment condition:
-        if (Vector.crossProduct2D(A, v0)*Vector.crossProduct2D(A1, v1)>0) { // out of bound case : point is outside segment: 
-            double dotP = A.dotProduct(B);
-            if ((dotP<0 && r0.equals(spine.spine[0])) || (dotP>0 && r0.equals(spine.spine[spine.spine.length-1]))) { //only allow if before rO & r0 = first, or after r0 & rO = last
+        if (Vector.crossProduct2D(r0_src, v0)*Vector.crossProduct2D(r1_src, v1)>0) { // out of bound case : point is outside segment: 
+            double dotP = r0_src.dotProduct(r0_r1);
+            //logger.debug("OUT OF BOUND CASE r0_src.r0_r1={}, r0 = {} r1 = {}", dotP, r0.equals(spine.spine[0])?"first":(r0.equals(spine.spine[spine.spine.length-1])?"last":"middle"), r1.equals(spine.spine[0])?"first":(r1.equals(spine.spine[spine.spine.length-1])?"last":"middle"));
+            int dir = r0.equals(spine.spine[0]) ? -1 : ( r0.equals(spine.spine[spine.spine.length-1]) ? 1 : 0 );
+            if ( dotP<0 && dir!=0) { //only allow if before rO & r0 = first, or after r0 & rO = last
                 Point intersection = Point.intersect2D(source, source.duplicate().translateRev(v0), r0, r1);
-                Vector sourceDir = Vector.vector(intersection, source);
                 Vector r0_inter = Vector.vector(r0, intersection);
-                double before = Math.signum(dotP); // intersection if before r0 -> only allow if ro is first  // intersection is after r0 -> only allow if r0 is last
+                double distFromR0 = r0_inter.norm();
+                if (distFromR0>3) return null; // limit out-of-bound
                 Vector spineDir = r0.getContent1();
                 res.setSpineRadius(spineDir.norm());
+                Vector sourceDir = Vector.vector(intersection, source);
                 double sign = Math.signum(sourceDir.dotProduct(spineDir));
                 res.setDistFromSpine(sourceDir.norm() * sign);
-                res.setSpineCoord(r0.getContent2()+before*r0_inter.norm());
+                res.setSpineCoord(r0.getContent2()+dir*distFromR0);
                 return res;
             }
             return null;
@@ -210,21 +213,21 @@ public class BacteriaSpineLocalizer {
         }
         
         // need to solve alpha & d = distanceSq from spine in the direction spineDir = weighted sum of v0 & v1
-        A.reverseOffset(); //  not null  & not colinear to V0 
+        r0_src.reverseOffset(); //  not null  & not colinear to V0 
         
         Vector C = v0;
         Vector D = v1.duplicate().weightedSum(v0, 1, -1); // not null
         // vector walk: source -> r0 -> intersection -> source. "intersection" begin intersection point of source point and r0r1. direction inter-source is weighted sum of direction ro & direction r1
-        // equation to solve is A + alpha*B + d * C + alpha*d * D = 0 (1)
+        // equation to solve is r0_src + alpha * r0_r1 + d * C + alpha*d * D = 0 (1)
         // first stip eliminate the non linear term -> get a linear relation between 
-        double a = Vector.crossProduct2D(D, A);
-        double b = Vector.crossProduct2D(D, B);
+        double a = Vector.crossProduct2D(D, r0_src);
+        double b = Vector.crossProduct2D(D, r0_r1);
         double c = Vector.crossProduct2D(C, D); // never null -> check in specific cases
         // a + alpha * b  = d * c (2)
         
         Vector AA = D.duplicate().multiply(b/c);
-        Vector BB = B.duplicate().add(C, b/c).add(D, a/c);
-        Vector CC = A.duplicate().add(C, a/c);
+        Vector BB = r0_r1.duplicate().add(C, b/c).add(D, a/c);
+        Vector CC = r0_src.duplicate().add(C, a/c);
         // (1) & (2) -> system of quadratic equation (colinear -> one single equation, take the positive root in ]0:1[ )
         // alpha2 * AA + alpha  * BB + C = 0
         double alpha = solveQuadratic(AA, BB, CC);
