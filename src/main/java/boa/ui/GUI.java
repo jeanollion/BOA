@@ -278,6 +278,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 + "<li><b>"+runActionList.getModel().getElementAt(4)+"</b>: Computes measurements on selected positions (or all if none is selected)</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(5)+"</b>: Extract measurements of selected object tpye (or all is none is selected) on selected positions (or all if none is selected), and saves them in one single .csv <em>;</em>-separated file per object class in the experiment folder</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(6)+"</b>: Export data from this experiment (segmentation and tracking results, configuration...) of all selected posisions (or all if none is selected) in a single zip archive that can be imported. Exported data can be configured in the menu <em>Import/Export > Export Options</em></li></ol>"));
+        shortcutMenu.setToolTipText(formatToolTip("List of all commands and associated shortcuts. <br />Change here preset to AZERTY/QWERT keyboard layout"));
+        
         // disable componenets when run action
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
@@ -552,13 +554,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         
         ChoiceParameter shortcutPreset = new ChoiceParameter("Shortcut preset", Utils.toStringArray(PRESET.values()), PRESET.AZERTY.toString(), false);
         PropertyUtils.setPersistant(shortcutPreset, "shortcut_preset");
-        ConfigurationTreeGenerator.addToMenu(shortcutPreset.getName(), shortcutPreset.getUI().getDisplayComponent(), this.shortcutPresetMenu);
+        
         this.shortcuts = new Shortcuts(actionMap, PRESET.valueOf(shortcutPreset.getValue()));
         
         Consumer<Parameter> setShortcut = p->{
+            int selPreset = ((ChoiceParameter)p).getSelectedIndex();
             shortcuts.setPreset(PRESET.valueOf(((ChoiceParameter)p).getValue()));
-            shortcuts.addToMenu(this.ShortcutMenu);
-            ShortcutMenu.add(shortcutPresetMenu);
+            shortcuts.addToMenu(this.shortcutMenu);
+            shortcutPresetMenu.removeAll();
+            ConfigurationTreeGenerator.addToMenu(shortcutPreset.getName(), shortcutPreset.getUI().getDisplayComponent(), this.shortcutPresetMenu);
+            shortcutMenu.add(shortcutPresetMenu);
             setDataBrowsingButtonsTitles();
         };
         shortcutPreset.addListener(setShortcut);
@@ -1195,7 +1200,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         setLogFileMenuItem = new javax.swing.JMenuItem();
         activateLoggingMenuItem = new javax.swing.JCheckBoxMenuItem();
         appendToFileMenuItem = new javax.swing.JCheckBoxMenuItem();
-        ShortcutMenu = new javax.swing.JMenu();
+        shortcutMenu = new javax.swing.JMenu();
         shortcutPresetMenu = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -2076,12 +2081,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         mainMenu.add(miscMenu);
 
-        ShortcutMenu.setText("Shortcuts");
+        shortcutMenu.setText("Shortcuts");
 
         shortcutPresetMenu.setText("Shortcut Preset");
-        ShortcutMenu.add(shortcutPresetMenu);
+        shortcutMenu.add(shortcutPresetMenu);
 
-        mainMenu.add(ShortcutMenu);
+        mainMenu.add(shortcutMenu);
 
         setJMenuBar(mainMenu);
 
@@ -3696,7 +3701,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem CloseNonInteractiveWindowsMenuItem;
-    private javax.swing.JMenu ShortcutMenu;
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JScrollPane actionJSP;
     private javax.swing.JPanel actionPanel;
@@ -3797,6 +3801,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JPanel selectionPanel;
     private javax.swing.JMenuItem setLogFileMenuItem;
     private javax.swing.JMenuItem setSelectedExperimentMenuItem;
+    private javax.swing.JMenu shortcutMenu;
     private javax.swing.JMenu shortcutPresetMenu;
     private javax.swing.JButton splitObjectsButton;
     private javax.swing.JTabbedPane tabs;

@@ -480,7 +480,7 @@
             </Menu>
           </SubComponents>
         </Menu>
-        <Menu class="javax.swing.JMenu" name="ShortcutMenu">
+        <Menu class="javax.swing.JMenu" name="shortcutMenu">
           <Properties>
             <Property name="text" type="java.lang.String" value="Shortcuts"/>
           </Properties>
