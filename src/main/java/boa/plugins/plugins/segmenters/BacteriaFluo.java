@@ -73,26 +73,17 @@ import boa.plugins.Thresholder;
 import boa.plugins.ThresholderHisto;
 import boa.plugins.ToolTip;
 import boa.plugins.TrackParametrizable;
-import boa.plugins.plugins.pre_filters.Median;
-import boa.plugins.plugins.pre_filters.Sigma;
 import boa.plugins.plugins.segmenters.BacteriaFluo.FOREGROUND_SELECTION_METHOD;
 import boa.plugins.plugins.segmenters.BacteriaFluo.THRESHOLD_COMPUTATION;
 import static boa.plugins.plugins.segmenters.EdgeDetector.valueFunction;
 import boa.plugins.plugins.thresholders.BackgroundFit;
-import boa.plugins.plugins.thresholders.CompareThresholds;
-import boa.plugins.plugins.thresholders.ParentThresholder;
 import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import boa.utils.ArrayUtil;
-import boa.utils.HashMapGetCreate;
-import boa.utils.Pair;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -116,13 +107,12 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
     ChoiceParameter foreThresholdMethod=  new ChoiceParameter("Foreground Threshold", Utils.toStringArray(THRESHOLD_COMPUTATION.values()), THRESHOLD_COMPUTATION.ROOT_TRACK.toString(), false);
     ConditionalParameter foreThldCond = new ConditionalParameter(foreThresholdMethod).setActionParameters(THRESHOLD_COMPUTATION.CURRENT_FRAME.toString(), foreThresholderFrame).setActionParameters(THRESHOLD_COMPUTATION.ROOT_TRACK.toString(), foreThresholder).setActionParameters(THRESHOLD_COMPUTATION.PARENT_TRACK.toString(), foreThresholder).setToolTipText("Threshold for foreground region selection after watershed partitioning on edge map. All regions with median value over this value are considered foreground. <br />If <em>CURRENT_FRAME</em> is selected, threshold will be computed at each frame. If <em>PARENT_BRANCH</em> is selected, threshold will be computed on the whole parent track. If <em>ROOT_TRACK</em> is selected, threshold will be computed on the whole root track, on raw images (no prefilters).<br />Configuration Hint: value is displayed on right click menu: <em>display thresholds</em> command. Tune the value using intermediate image <em>Region Values after partitioning</em>, only foreground partitions should be over this value");
     
-    ChoiceParameter backgroundSel=  new ChoiceParameter("Background Removal", Utils.toStringArray(BACKGROUND_REMOVAL.values()), BACKGROUND_REMOVAL.BORDER_CONTACT.toString(), false);
-    ConditionalParameter backgroundSelCond = new ConditionalParameter(backgroundSel).setActionParameters(BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING.toString(), bckThldCond).setActionParameters(BACKGROUND_REMOVAL.THRESHOLDING.toString(), bckThldCond).setToolTipText("Method to remove background partition after merging edges.<br/><ol><li>"+BACKGROUND_REMOVAL.BORDER_CONTACT.toString()+": Removes all partition directly in contact with upper, left and right borders. Length & with of microchannels should be adjusted so that bacteria going out of microchannels are no within the segmented regions of microchannel otherwise they may touch the borders of microchannels are be erased</li><li>"+BACKGROUND_REMOVAL.THRESHOLDING.toString()+": Removes regions with median value under <em>Background Threshold</em></li><li>"+BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING.toString()+": Combination of the two previous methods</li></ol>");
-    
     NumberParameter backgroundEdgeFusionThld = new BoundedNumberParameter("Background Edge Fusion Threshold", 4, 2, 0, null).setEmphasized(true).setToolTipText("Threshold for background edge partition fusion. 2 adjacent partitions are merged if the 10% quantile edge value @ interface / background sigma &lt; this value.<br />Sensible to sharpness of edges (decrease smoothing in edge map to increase sharpness)<br />Configuration Hint: Tune the value using intermediate image <em>Interface Values for Background Fusion</em>, no interface between foreground and background partitions should have a value under this threshold");
-    NumberParameter foregroundEdgeFusionThld = new BoundedNumberParameter("Foreground Edge Fusion Threshold", 4, 0.2, 0, null).setEmphasized(true).setToolTipText("Threshold for foreground edge partition fusion. 2 adjacent partitions are merged if the mean edge value @ interface / mean value @ regions &lt; this value<br />Sensible to sharpness of edges (decrease smoothing in edge map to increase sharpness).<br />Configuration Hint: Tune the value using intermediate image <em>Interface Values for Foreground Fusion</em>, no interface between foreground and background partitions should have a value under this threshold");
+    NumberParameter foregroundEdgeFusionThld = new BoundedNumberParameter("Foreground Edge Fusion Threshold", 4, 0.2, 0, null).setEmphasized(true).setToolTipText("Threshold for foreground edge partition fusion. Allow to merge foreground region with low value in order to avoid removing them at thresholding<br />2 adjacent partitions are merged if the mean edge value @ interface / mean value @ regions &lt; this value<br />Sensible to sharpness of edges (decrease smoothing in edge map to increase sharpness).<br />Configuration Hint: Tune the value using intermediate image <em>Interface Values for Foreground Fusion</em>, no interface between foreground and background partitions should have a value under this threshold");
+    ChoiceParameter backgroundSel=  new ChoiceParameter("Background Removal", Utils.toStringArray(BACKGROUND_REMOVAL.values()), BACKGROUND_REMOVAL.BORDER_CONTACT.toString(), false);
+    ConditionalParameter backgroundSelCond = new ConditionalParameter(backgroundSel).setActionParameters(BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING.toString(), foregroundEdgeFusionThld, bckThldCond).setActionParameters(BACKGROUND_REMOVAL.THRESHOLDING.toString(), foregroundEdgeFusionThld, bckThldCond).setToolTipText("Method to remove background partition after merging edges.<br/><ol><li>"+BACKGROUND_REMOVAL.BORDER_CONTACT.toString()+": Removes all partition directly in contact with upper, left and right borders. Length & with of microchannels should be adjusted so that bacteria going out of microchannels are no within the segmented regions of microchannel otherwise they may touch the left/right sides of microchannels are be erased</li><li>"+BACKGROUND_REMOVAL.THRESHOLDING.toString()+": Removes regions with median value under <em>Background Threshold</em></li><li>"+BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING.toString()+": Combination of the two previous methods</li></ol>");
     ChoiceParameter foregroundSelectionMethod=  new ChoiceParameter("Foreground Selection Method", Utils.toStringArray(FOREGROUND_SELECTION_METHOD.values()), FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), false); 
-    ConditionalParameter foregroundSelectionCond = new ConditionalParameter(foregroundSelectionMethod).setActionParameters(FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString(), bckThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString(), bckThldCond, foreThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), backgroundEdgeFusionThld,foregroundEdgeFusionThld, backgroundSelCond).setEmphasized(true).setToolTipText("Foreground selection after watershed partitioning on <em>Edge Map</em><br /><ol><li>"+FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString()+": All regions with median value inferior to threshold defined in <em>Background Threshold</em> are erased. No suitable when fluorescence signal is highly variable among bacteria</li><li>"+FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString()+": Regions with median value under <em>Background Threshold</em> are condidered as background, all regions over threshold defined in <em>Foreground Threshold</em> are considered as foreground. Other regions are fused to the adjacent region that has lower edge value at interface, until only Background and Foreground region remain. Then background regions are removed. This method is suitable if a foreground threshold can be defined verifying the following conditions : <ol><li>each bacteria has at least one partition with a value superior to this threshold</li><li>No foreground partition (especially close to highly fluorescent bacteria) has a value over this threshold</li></ol> </li> This method is suitable when fluorescence signal is highly variable, but requieres to be tuned according to fluorescence signal (that can vary between different strands/gorwth conditions)<li>"+FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString()+": </li>Foreground selection is performed in 3 steps:<ol><li>All adjacent regions that verify condition defined in <em>Background Edge Fusion Threshold</em> are merged. This mainly merges background regions </li><li>All adjacent regions that verify condition defined in <em>Foreground Edge Fusion Threshold</em> are merged. This mainly merges foreground regions </li><li>All regions with median value inferior to threshold defined in <em>Background Threshold</em> are erased</li></ol>This method is more suitable when foreground fluorescence levels are higly variable, but might lead in false negative when edges are not sharp enough</ol>");
+    ConditionalParameter foregroundSelectionCond = new ConditionalParameter(foregroundSelectionMethod).setActionParameters(FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString(), bckThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString(), bckThldCond, foreThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), backgroundEdgeFusionThld,backgroundSelCond).setEmphasized(true).setToolTipText("Foreground selection after watershed partitioning on <em>Edge Map</em><br /><ol><li>"+FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString()+": All regions with median value inferior to threshold defined in <em>Background Threshold</em> are erased. No suitable when fluorescence signal is highly variable among bacteria</li><li>"+FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString()+": Regions with median value under <em>Background Threshold</em> are condidered as background, all regions over threshold defined in <em>Foreground Threshold</em> are considered as foreground. Other regions are fused to the adjacent region that has lower edge value at interface, until only Background and Foreground region remain. Then background regions are removed. This method is suitable if a foreground threshold can be defined verifying the following conditions : <ol><li>each bacteria has at least one partition with a value superior to this threshold</li><li>No foreground partition (especially close to highly fluorescent bacteria) has a value over this threshold</li></ol> </li> This method is suitable when fluorescence signal is highly variable, but requieres to be tuned according to fluorescence signal (that can vary between different strands/gorwth conditions)<li>"+FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString()+": </li>Foreground selection is performed in 3 steps:<ol><li>All adjacent regions that verify condition defined in <em>Background Edge Fusion Threshold</em> are merged. This mainly merges background regions </li><li>All adjacent regions that verify condition defined in <em>Foreground Edge Fusion Threshold</em> are merged. This mainly merges foreground regions </li><li>All regions with median value inferior to threshold defined in <em>Background Threshold</em> are erased</li></ol>This method is more suitable when foreground fluorescence levels are higly variable, but might lead in false negative when edges are not sharp enough</ol>");
     
     // attributes parametrized during track parametrization
     protected double bckThld = Double.NaN, foreThld = Double.NaN;
@@ -196,30 +186,30 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
         sm.merge(pop, null);
         if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Background Parition Fusion"));
         //if (stores!=null) imageDisp.accept(sm.drawInterfaceValues(pop).setName("Interface Values after Bck Partition Fusion"));
-        
-        // merge foreground regions: normalized values
-        sm.setInterfaceValue(i-> {
-            if (i.getVoxels().isEmpty() || sm.isFusionForbidden(i)) {
-                return Double.NaN;
-            } else {
-                int size = i.getVoxels().size()+i.getDuplicatedVoxels().size();
-                double val= Stream.concat(i.getVoxels().stream(), i.getDuplicatedVoxels().stream()).mapToDouble(v->sm.getWatershedMap().getPixel(v.x, v.y, v.z)).average().getAsDouble();
-                //double val= ArrayUtil.quantile(Stream.concat(i.getVoxels().stream(), i.getDuplicatedVoxels().stream()).mapToDouble(v->sm.getWatershedMap().getPixel(v.x, v.y, v.z)).sorted(), size, 0.2);
-                double mean1 = BasicMeasurements.getMeanValue(i.getE1(), sm.getIntensityMap());
-                double mean2 = BasicMeasurements.getMeanValue(i.getE2(), sm.getIntensityMap());
-                double mean = (mean1 + mean2) / 2d;
-                //double mean= Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->sm.getIntensityMap().getPixel(v.x, v.y, v.z)).average().getAsDouble(); // not suitable for background regions directly adjecent to highly fluo cells
-                //double mean= Stream.concat(i.getVoxels().stream(), i.getDuplicatedVoxels().stream()).mapToDouble(v->sm.getIntensityMap().getPixel(v.x, v.y, v.z)).average().getAsDouble(); // leak easily
-                val= val/(mean-globalBackgroundLevel);
-                return val;
-            }
-        }).setThresholdValue(this.foregroundEdgeFusionThld.getValue().doubleValue());
-        if (stores!=null) imageDisp.accept(sm.drawInterfaceValues(pop).setName("Interface Values for Foreground Partition Fusion"));
-        sm.merge(pop, null);
-        if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Foreground Parition Fusion"));
         BACKGROUND_REMOVAL remMeth = BACKGROUND_REMOVAL.valueOf(backgroundSel.getSelectedItem());
         boolean remContact = remMeth == BACKGROUND_REMOVAL.BORDER_CONTACT || remMeth == BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING;
         boolean remThld = remMeth == BACKGROUND_REMOVAL.THRESHOLDING || remMeth == BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING;
+        if (remThld) { // merge foreground regions: normalized values
+            sm.setInterfaceValue(i-> {
+                if (i.getVoxels().isEmpty() || sm.isFusionForbidden(i)) {
+                    return Double.NaN;
+                } else {
+                    int size = i.getVoxels().size()+i.getDuplicatedVoxels().size();
+                    double val= Stream.concat(i.getVoxels().stream(), i.getDuplicatedVoxels().stream()).mapToDouble(v->sm.getWatershedMap().getPixel(v.x, v.y, v.z)).average().getAsDouble();
+                    //double val= ArrayUtil.quantile(Stream.concat(i.getVoxels().stream(), i.getDuplicatedVoxels().stream()).mapToDouble(v->sm.getWatershedMap().getPixel(v.x, v.y, v.z)).sorted(), size, 0.2);
+                    double mean1 = BasicMeasurements.getMeanValue(i.getE1(), sm.getIntensityMap());
+                    double mean2 = BasicMeasurements.getMeanValue(i.getE2(), sm.getIntensityMap());
+                    double mean = (mean1 + mean2) / 2d;
+                    //double mean= Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->sm.getIntensityMap().getPixel(v.x, v.y, v.z)).average().getAsDouble(); // not suitable for background regions directly adjecent to highly fluo cells
+                    //double mean= Stream.concat(i.getVoxels().stream(), i.getDuplicatedVoxels().stream()).mapToDouble(v->sm.getIntensityMap().getPixel(v.x, v.y, v.z)).average().getAsDouble(); // leak easily
+                    val= val/(mean-globalBackgroundLevel);
+                    return val;
+                }
+            }).setThresholdValue(this.foregroundEdgeFusionThld.getValue().doubleValue());
+            if (stores!=null) imageDisp.accept(sm.drawInterfaceValues(pop).setName("Interface Values for Foreground Partition Fusion"));
+            sm.merge(pop, null);
+            if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Foreground Parition Fusion"));
+        }
         if (remThld) ensureThresholds(parent, structureIdx, true, false);
         RegionPopulation.ContactBorderMask contact = new RegionPopulation.ContactBorderMask(2, parent.getMask(), RegionPopulation.Border.XYup);
         pop.getRegions().removeIf(r->(remContact ? !contact.keepObject(r):false) || (remThld ? valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)<=bckThld : false)); // remove regions with low intensity
