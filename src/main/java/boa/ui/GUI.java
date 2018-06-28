@@ -263,14 +263,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
         trackPanel.setToolTipText(formatToolTip("Element displayed are segmented tracks for each object class. Right click for actions on the track like display kymograph, run segmentation/tracking etc.."));
         trackTreeStructureJSP.setToolTipText(formatToolTip("Object class to be displayed in the <em>Segmentation & Tracking</em> panel"));
-        interactiveObjectPanel.setToolTipText(formatToolTip("Object class that will be displayed and edited on interactive images"));
+        interactiveObjectPanel.setToolTipText(formatToolTip("Object class that will be displayed and edited on interactive images. <br />ctrl+click to select/deselect object classes"));
         editPanel.setToolTipText(formatToolTip("Commands to edit segmentation/lineage of selected objects of the interactive objects on the currently active kymograph<br />See <em>Shortcuts > Object/Lineage Edition</em> menu for while list of commands and description"));
         actionStructureJSP.setToolTipText(formatToolTip("Object classes of the opened experiment. Tasks will be run only on selected objects classes, or on all object classes if none is selected"));
-        experimentJSP.setToolTipText(formatToolTip("List of all experiments contained in the current experiment folder"));
-        actionPositionJSP.setToolTipText(formatToolTip("Positions of the opened experiment. Tasks will be run only on selected position, or on all position if no position is selected"));
+        experimentJSP.setToolTipText(formatToolTip("List of all experiments contained in the current experiment folder<br />If an experiment is opened, its name written in the title of this window. The opened experiment does not necessarily correspond to the selected experiment in this list<br /><br />ctrl+click to select/deselect experiments"));
+        actionPositionJSP.setToolTipText(formatToolTip("Positions of the opened experiment. <br />Tasks will be run only on selected position, or on all position if no position is selected<br />ctrl+click to select/deselect positions"));
         deleteObjectsButton.setToolTipText(formatToolTip("Right-click for more delete commands"));
         experimentFolder.setToolTipText(formatToolTip("Directory containing several experiments<br />Righ-click menu to access recent list and file browser"));
-        this.actionJSP.setToolTipText(formatToolTip("<b>Tasks to run on selected positions/object classes:</b><br/><ol>"
+        this.actionJSP.setToolTipText(formatToolTip("<b>Tasks to run on selected positions/object classes:</b> (ctrl+click to select/deselect tasks)<br/><ol>"
                 + "<li><b>"+runActionList.getModel().getElementAt(0)+"</b>: Performs preprocessing pipeline on selected positions (or all if none is selected)</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(1)+"</b>: Performs segmentation and tracking on selected object classes (all if none is selected) and selected positions (or all if none is selected)</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(2)+"</b>: Performs Tracking on selected object classes (all if none is selected) and selected positions (or all if none is selected). Ignored if "+runActionList.getModel().getElementAt(1)+" is selected.</li>"
