@@ -749,7 +749,7 @@ public class ImageOperations {
         return output;
     }
     public static double[] getQuantiles(Image image, ImageMask mask, BoundingBox limits, double... percent) {
-        Histogram histo = HistogramFactory.getHistogram(()->image.stream(mask, true), HistogramFactory.BIN_SIZE_METHOD.AUTO);
+        Histogram histo = HistogramFactory.getHistogram(()->image.stream(mask, true), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         return histo.getQuantiles(percent);
     }
     

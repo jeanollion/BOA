@@ -79,7 +79,7 @@ public class RemoveSaturatedMicrochannels implements TrackPostFilter, ToolTip {
     private boolean isSaturated(StructureObject o) {
         // get mask of bacteria using Otsu threshold
         Image image = o.getRawImage(o.getStructureIdx());
-        Histogram hist = HistogramFactory.getHistogram(()->image.stream(), HistogramFactory.BIN_SIZE_METHOD.AUTO);
+        Histogram hist = HistogramFactory.getHistogram(()->image.stream().parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         double thld = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, hist);
         ThresholdMask mask = new ThresholdMask(image, thld, true, false);
         double stauratedPixelsThld =  mask.count() * minPercentageOfSaturatedPixels.getValue().doubleValue() / 100d;

@@ -80,7 +80,7 @@ public interface ImageDisplayer<T> {
         return resTC;
     }
     public static double[] getDisplayRange(Image im, ImageMask mask) {
-        Histogram hist = HistogramFactory.getHistogram(()->im.stream(mask, true), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+        Histogram hist = HistogramFactory.getHistogram(()->im.stream(mask, true).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         if (hist.data.length==2) return new double[]{hist.min, hist.min+hist.binSize};
         hist.removeSaturatingValue(5, true);
         hist.removeSaturatingValue(5, false);

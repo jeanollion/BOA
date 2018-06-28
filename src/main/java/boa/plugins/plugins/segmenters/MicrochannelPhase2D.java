@@ -282,7 +282,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
                 // compute signal range on all images
                 //logger.debug("parent track: {}",parentTrack.stream().map(p->p.getPreFilteredImage(structureIdx)).collect(Collectors.toList()) );
                 Map<Image, ImageMask> maskMap = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask()));
-                Histogram histo = HistogramFactory.getHistogram(()->Image.stream(maskMap, true), HistogramFactory.BIN_SIZE_METHOD.AUTO);
+                Histogram histo = HistogramFactory.getHistogram(()->Image.stream(maskMap, true).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
                 double thld = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo);
                 int thldIdx = (int)histo.getIdxFromValue(thld);
                 double foreground = histo.duplicate(thldIdx, histo.data.length).getQuantiles(0.5)[0];
