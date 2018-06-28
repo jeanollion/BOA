@@ -65,14 +65,14 @@ public class RemoveEndofChannelBacteria implements PostFilter, ToolTip {
     }
     
     @Override public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
-        final ContactBorderMask yDown = new ContactBorderMask(0, parent.getMask(), Border.YDown);
-        final ContactBorderMask xlr = new ContactBorderMask(0, parent.getMask(), Border.Xlr); 
+        if (doNotRemoveIfOnlyOne.getSelected() && childPopulation.getRegions().size()==1) return childPopulation;
+        final ContactBorder yDown = new ContactBorder(0, parent.getMask(), Border.YDown);
+        final ContactBorder xlr = new ContactBorder(0, parent.getMask(), Border.Xlr); 
         final double contactThld=contactProportion.getValue().doubleValue();
         final double contactSideThld = contactSidesProportion.getValue().doubleValue();
         final double sizeLimit  = this.sizeLimit.getValue().doubleValue();
         childPopulation.filter(o->{
-            if (doNotRemoveIfOnlyOne.getSelected() && childPopulation.getRegions().size()==1) return true;
-            double thick = o.size() / GeometricalMeasurements.getFeretMax(o) ; // estimation of width for rod-shapes structures
+            double thick = o.size() / GeometricalMeasurements.getFeretMax(o) ; // estimation of width for rod-shapes objects
             if (contactThld>0) { // contact end
                 double contactDown = yDown.getContact(o);
                 if (contactDown>0 && sizeLimit>0 && o.size()<sizeLimit) return false;
@@ -82,7 +82,6 @@ public class RemoveEndofChannelBacteria implements PostFilter, ToolTip {
             if (contactSideThld>0) { // contact on sides
                 double contactSides = xlr.getContact(o);
                 if (contactSides>0 && sizeLimit>0 && o.size()<sizeLimit) return false;
-                double thickY = GeometricalMeasurements.medianThicknessY(o);
                 double contactXNorm = contactSides / thick;
                 if (contactXNorm>=contactSideThld) return false;
             }

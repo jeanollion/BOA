@@ -519,7 +519,7 @@ public class GenerateXP {
     
     public static Experiment generateXPPhase(String name, String outputDir, boolean setUpPreProcessing, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         Experiment xp = new Experiment(name);
-        xp.setImportImageMethod(importMethod==null ? Experiment.IMPORT_METHOD.SINGLE_FILE : importMethod);
+        xp.setImportImageMethod(importMethod==null ? Experiment.IMPORT_METHOD.ONE_FILE_PER_CHANNEL_FRAME_POSITION : importMethod); // Was single file
         xp.getChannelImages().insert(new ChannelImage("PhaseContrast", ""));
         xp.setOutputDirectory(outputDir);
         Structure mc = new Structure("Microchannels", -1, 0);
@@ -582,6 +582,7 @@ public class GenerateXP {
                         new NormalizeTrack(1, true)
                     ).addPostFilters(
                             new FeatureFilter(new ThicknessAxis().setAxis(MainAxis.X), 6, true, true), 
+                            new FeatureFilter(new Size(), 200, true, true), 
                             new BinaryClose(5),
                             new FillHoles2D()
                     ).addTrackPostFilters(

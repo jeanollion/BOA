@@ -630,7 +630,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             this.frame=timePoint;
             int lim = parentsByF.get(timePoint).getBounds().sizeY()-1;
             if (o.getBounds().yMax()==lim) {
-                double count = new RegionPopulation.ContactBorderMask(0, parentsByF.get(timePoint).getMask(), RegionPopulation.Border.YDown).getContact(o);
+                double count = new RegionPopulation.ContactBorder(0, parentsByF.get(timePoint).getMask(), RegionPopulation.Border.YDown).getContact(o);
                 endOfChannelContact = count/getWidth();
                 if (endOfChannelContact>endOfChannelContactThreshold.getValue().doubleValue()) touchEndOfChannel=true;
                 else touchEndOfChannel=false; 
