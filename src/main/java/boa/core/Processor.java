@@ -79,8 +79,11 @@ public class Processor {
         for (MultipleImageContainer c : images) {
             Position position = xp.createPosition(c.getName());
             if (c.getScaleXY()==1 || c.getScaleXY()==0) {
-                if (pcb!=null) pcb.log("Warning: no scale set for position: "+position.getName());
-                logger.info("no scale set for positon: "+position.getName());
+                if (pcb!=null) {
+                    pcb.log("Warning: no scale set for position: "+c.getName());
+                    pcb.log("Scale can be set in configuration tab, \"Pre-processing pipeline template\">\"Voxel Calibration\" and overriden on all existing positions");
+                }
+                logger.info("no scale set for positon: "+c.getName());
             }
             logger.debug("image: {} scale: {}, scaleZ: {} frame: {}", c.getName(), c.getScaleXY(), c.getScaleZ(), c.getCalibratedTimePoint(1, 0, 0));
             if (position!=null) {

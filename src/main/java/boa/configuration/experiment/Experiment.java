@@ -70,7 +70,7 @@ import java.util.stream.Stream;
 
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<>("Channel Images", 0 , ChannelImage.class).setToolTipText("Channel of input images");
-    SimpleListParameter<Structure> structures= new SimpleListParameter<>("Object Types", -1 , Structure.class).setToolTipText("Types of objects to be analysed in this experiment. All processing is defined in this part of the configuration tree");
+    SimpleListParameter<Structure> structures= new SimpleListParameter<>("Object Classes", -1 , Structure.class).setToolTipText("Types of objects to be analysed in this experiment. All processing is defined in this part of the configuration tree");
     SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<>("Measurements", -1 , new PluginParameter<>("Measurements", Measurement.class, false)).setToolTipText("Measurement to be performed after processing");
     SimpleListParameter<Position> positions= new SimpleListParameter<>("Positions", -1 , Position.class).setAllowMoveChildren(false).setToolTipText("Positions of the experiment. Preprocessing is defined for each position. Right-click menu allows to overwrite preprocessing to other position.");
     PreProcessingChain template = new PreProcessingChain("Pre-Processing pipeline template").setToolTipText("Default preprocessing set to positions at import");

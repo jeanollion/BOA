@@ -230,7 +230,6 @@ public class DBMapMasterDAO implements MasterDAO {
                     if (xpFileLock==null) this.lockXP();
                     if (!readOnly && xpFileLock==null) {
                         logger.warn(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
-                        GUI.log(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
                         readOnly = true;
                         lockXP(); // will try to access the xp file in readonly mode
                     }

@@ -7,7 +7,7 @@
 
     <groupId>ljp</groupId>
     <artifactId>boa</artifactId>
-    <version>1.9.8-SNAPSHOT</version>
+    <version>1.9.9-SNAPSHOT</version>
 
     <name>BOA</name>
     <description>Mother Machine Image Analysis</description>

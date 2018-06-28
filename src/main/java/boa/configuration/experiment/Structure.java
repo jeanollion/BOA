@@ -53,7 +53,7 @@ import boa.plugins.ProcessingPipeline;
  */
 
 public class Structure extends SimpleContainerParameter {
-    ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Object Type", -1, -1).setToolTipText("In the processing step: pre-filters, segmentation, tracking and post-filters will be run from each tracks of this object type");
+    ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Object Class", -1, -1).setToolTipText("In the processing step: pre-filters, segmentation, tracking and post-filters will be run from each tracks of this object class");
     ParentStructureParameter segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1).setToolTipText("If different from parent structure, allows to perform segmentation from objects of another structure contained in the object of the parent structure. Pre-filters, tracking and post-filters will still be run from the track of the parent structure.");
     ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", -1).setToolTipText("Channel on which processing pipeline will be applied");
     PluginParameter<ObjectSplitter> objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true).setEmphasized(false).setToolTipText("Split algorithm used in split command in manual edition. <br />If no algorith is defined here and segmenter is able to split objects, segmenter will be used instead");

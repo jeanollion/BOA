@@ -261,22 +261,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         // tool tips
         ToolTipManager.sharedInstance().setInitialDelay(100);
         ToolTipManager.sharedInstance().setDismissDelay(Integer.MAX_VALUE);
-        trackPanel.setToolTipText(formatToolTip("Element displayed are segmented tracks for each object type. Right click for actions on the track like display kymograph, run segmentation/tracking etc.."));
-        trackTreeStructureJSP.setToolTipText(formatToolTip("Object type to be displayed in the <em>Segmentation & Tracking</em> panel"));
-        interactiveObjectPanel.setToolTipText(formatToolTip("Object type that will be displayed and edited on interactive images"));
+        trackPanel.setToolTipText(formatToolTip("Element displayed are segmented tracks for each object class. Right click for actions on the track like display kymograph, run segmentation/tracking etc.."));
+        trackTreeStructureJSP.setToolTipText(formatToolTip("Object class to be displayed in the <em>Segmentation & Tracking</em> panel"));
+        interactiveObjectPanel.setToolTipText(formatToolTip("Object class that will be displayed and edited on interactive images"));
         editPanel.setToolTipText(formatToolTip("Commands to edit segmentation/lineage of selected objects of the interactive objects on the currently active kymograph<br />See <em>Shortcuts > Object/Lineage Edition</em> menu for while list of commands and description"));
-        actionStructureJSP.setToolTipText(formatToolTip("Object types of the opened experiment. Tasks will be run only on selected objects types, or on all object types if none is selected"));
+        actionStructureJSP.setToolTipText(formatToolTip("Object classes of the opened experiment. Tasks will be run only on selected objects classes, or on all object classes if none is selected"));
         experimentJSP.setToolTipText(formatToolTip("List of all experiments contained in the current experiment folder"));
         actionPositionJSP.setToolTipText(formatToolTip("Positions of the opened experiment. Tasks will be run only on selected position, or on all position if no position is selected"));
         deleteObjectsButton.setToolTipText(formatToolTip("Right-click for more delete commands"));
         experimentFolder.setToolTipText(formatToolTip("Directory containing several experiments<br />Righ-click menu to access recent list and file browser"));
-        this.actionJSP.setToolTipText(formatToolTip("<b>Tasks to run on selected positions/object types:</b><br/><ol>"
+        this.actionJSP.setToolTipText(formatToolTip("<b>Tasks to run on selected positions/object classes:</b><br/><ol>"
                 + "<li><b>"+runActionList.getModel().getElementAt(0)+"</b>: Performs preprocessing pipeline on selected positions (or all if none is selected)</li>"
-                + "<li><b>"+runActionList.getModel().getElementAt(1)+"</b>: Performs segmentation and tracking on selected object types (all if none is selected) and selected positions (or all if none is selected)</li>"
-                + "<li><b>"+runActionList.getModel().getElementAt(2)+"</b>: Performs Tracking on selected object types (all if none is selected) and selected positions (or all if none is selected). Ignored if "+runActionList.getModel().getElementAt(1)+" is selected.</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(1)+"</b>: Performs segmentation and tracking on selected object classes (all if none is selected) and selected positions (or all if none is selected)</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(2)+"</b>: Performs Tracking on selected object classes (all if none is selected) and selected positions (or all if none is selected). Ignored if "+runActionList.getModel().getElementAt(1)+" is selected.</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(3)+"</b>: Pre-computes kymographs and saves them in the experiment folder in order to have a faster display of kymograph, and to eventually allow to erase pre-processed images to save disk-space</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(4)+"</b>: Computes measurements on selected positions (or all if none is selected)</li>"
-                + "<li><b>"+runActionList.getModel().getElementAt(5)+"</b>: Extract measurements of selected object tpye (or all is none is selected) on selected positions (or all if none is selected), and saves them in one single .csv <em>;</em>-separated file per object type in the experiment folder</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(5)+"</b>: Extract measurements of selected object tpye (or all is none is selected) on selected positions (or all if none is selected), and saves them in one single .csv <em>;</em>-separated file per object class in the experiment folder</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(6)+"</b>: Export data from this experiment (segmentation and tracking results, configuration...) of all selected posisions (or all if none is selected) in a single zip archive that can be imported. Exported data can be configured in the menu <em>Import/Export > Export Options</em></li></ol>"));
         // disable componenets when run action
         actionPoolList.setModel(actionPoolListModel);
@@ -722,7 +722,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             return;
         } else {
             logger.info("Experiment found in db: {} ", db.getDBName());
-            setMessage("Experiment: "+db.getDBName()+" opened");
+            if (db.isReadOnly()) {
+                GUI.log(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in Read Only mode: all modifications (configuration, segmentation/lineage ...) won't be saved. ");
+                GUI.log("To open in read and write mode, close all other instances and re-open the experiment. ");
+            } else {
+               setMessage("Experiment: "+db.getDBName()+" opened"); 
+            }
+            
         }
         updateConfigurationTree();
         populateActionStructureList();
@@ -1691,7 +1697,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         experimentMenu.add(newXPMenuItem);
 
-        newXPFromTemplateMenuItem.setText("New XP from Template");
+        newXPFromTemplateMenuItem.setText("New Experiment from Template");
         newXPFromTemplateMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 newXPFromTemplateMenuItemActionPerformed(evt);
