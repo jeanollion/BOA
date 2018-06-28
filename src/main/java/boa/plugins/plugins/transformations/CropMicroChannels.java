@@ -128,7 +128,7 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
         if (!nullBounds.isEmpty()) logger.warn("bounds could not be computed for frames: {}", nullBounds);
         bounds.values().removeIf(b->b==null);
         if (bounds.isEmpty()) throw new RuntimeException("Bounds could not be computed");
-        if (framesN==0 && bounds.size()<frames.size()) { // fill holes
+        if (framesN==0 && bounds.size()<frames.size()) { // fill null bounds
             Set<Integer> missingFrames = new HashSet<>(frames);
             missingFrames.removeAll(bounds.keySet());
             missingFrames.forEach((f) -> {
