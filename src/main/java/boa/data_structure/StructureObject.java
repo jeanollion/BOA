@@ -907,7 +907,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                         if (im!=null) { // set image && set offsets for all track
                             im.setCalibration(getScaleXY(), getScaleZ());
                             List<StructureObject> track = StructureObjectUtils.getTrack(this, false);
-                            InteractiveImage i = Kymograph.generateTrackMask(track, structureIdx); // not saved in image window manager to avoid memory leaks
+                            InteractiveImage i = Kymograph.generateKymograph(track, structureIdx); // not saved in image window manager to avoid memory leaks
                             List<Pair<StructureObject, BoundingBox>> off = i.pairWithOffset(track);
                             for (Pair<StructureObject, BoundingBox> p : off) p.key.offsetInTrackImage=p.value;
                             //logger.debug("get track image: track:{}(id: {}/trackImageCId: {}) length: {}, chId: {}", this, this.hashCode(), trackImagesC.hashCode(), track.size(), channelIdx);

@@ -366,7 +366,7 @@ public abstract class ImageWindowManager<I, U, V> {
         logger.debug("getIOI: hash: {} ({}), exists: {}, trackHeadTrackMap: {}", parentTrack.hashCode(), new InteractiveImageKey(parentTrack, childStructureIdx, true).hashCode(), i!=null, trackHeadTrackMap.containsKey(parentTrack.get(0)));
         if (i==null) {
             long t0 = System.currentTimeMillis();
-            i = Kymograph.generateTrackMask(parentTrack, childStructureIdx);
+            i = Kymograph.generateKymograph(parentTrack, childStructureIdx);
             long t1 = System.currentTimeMillis();
             imageObjectInterfaces.put(i.getKey(), i);
             trackHeadTrackMap.getAndCreateIfNecessary(parentTrack.get(0)).add(parentTrack);

@@ -60,7 +60,7 @@ import java.util.stream.IntStream;
  */
 public abstract class Kymograph extends InteractiveImage {
 
-    public static Kymograph generateTrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
+    public static Kymograph generateKymograph(List<StructureObject> parentTrack, int childStructureIdx) {
         //setAllChildren(parentTrack, childStructureIdx); // if set -> tracking test cannot work ?
         BoundingBox bb = parentTrack.get(0).getBounds();
         return bb.sizeY() >= bb.sizeX() ? new KymographX(parentTrack, childStructureIdx, false) : new KymographY(parentTrack, childStructureIdx);
@@ -142,7 +142,11 @@ public abstract class Kymograph extends InteractiveImage {
         String structureName;
         if (getParent().getExperiment()!=null) structureName = getParent().getExperiment().getStructure(structureIdx).getName(); 
         else structureName= structureIdx+"";
-        final Image displayImage =  generateEmptyImage("Track: Parent:"+parents.get(0)+" Raw Image of"+structureName, image0);
+        if (image0==null) return null;
+        String pStructureName;
+        if (getParent().getExperiment()!=null) pStructureName = getParent().getExperiment().getStructure(getParent().getStructureIdx()).getName(); 
+        else pStructureName= getParent().getStructureIdx()+"";
+        final Image displayImage =  generateEmptyImage("Kymograph of "+pStructureName+" Idx:"+getParent().getIdx()+" Frames ["+getParent().getFrame()+";"+parents.get(parents.size()-1).getFrame()+"]. Displayed image of: "+structureName, image0);
         Image.pasteImage(image0, displayImage, trackOffset[0]);
         long t1 = System.currentTimeMillis();
         logger.debug("generate image: {} for structure: {}, ex in background?{}, time: {}ms", parents.get(0), structureIdx, background, t1-t0);

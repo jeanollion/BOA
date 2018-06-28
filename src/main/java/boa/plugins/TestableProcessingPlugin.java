@@ -111,7 +111,7 @@ public interface TestableProcessingPlugin extends ImageProcessingPlugin {
         Set<String> allImageNames = stores.stream().map(s->s.images.keySet()).flatMap(Set::stream).collect(Collectors.toSet());
         List<StructureObject> parents = stores.stream().map(s->s.parent.getParent(parentStructureIdx)).distinct().sorted().collect(Collectors.toList());
         StructureObjectUtils.enshureContinuousTrack(parents);
-        Kymograph ioi = Kymograph.generateTrackMask(parents, childStructure);
+        Kymograph ioi = Kymograph.generateKymograph(parents, childStructure);
         List<Image> images = new ArrayList<>();
         allImageNames.forEach(name -> {
             int maxBitDepth = stores.stream().filter(s->s.images.containsKey(name)).mapToInt(s->s.images.get(name).getBitDepth()).max().getAsInt();

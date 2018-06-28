@@ -63,11 +63,11 @@ public class TestImageProcessingPlugin {
         //String dbName = "170919_glyc_lac";
         boolean segmentation = true;
         boolean track = true;
-        int structureIdx =1;
+        int structureIdx =0;
         
         int pIdx =0;
         int mcIdx =0;
-        int[] frames = new int[]{415,450}; 
+        int[] frames = new int[]{0,3}; 
         
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
