@@ -73,6 +73,7 @@ import java.util.stream.IntStream;
  * @author jollion
  */
 public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTip {
+    protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 410, 0, null);
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null).setToolTipText(SIZE_TOOL_TIP);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.5, 0.05, 1).setToolTipText(FILL_TOOL_TIP);
     PluginParameter<ThresholderHisto> thresholder = new PluginParameter<>("Threshold", ThresholderHisto.class, new BackgroundFit(10), false).setToolTipText(THLD_TOOL_TIP);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)

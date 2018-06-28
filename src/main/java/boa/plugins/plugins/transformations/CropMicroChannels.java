@@ -63,9 +63,8 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
     protected NumberParameter yStop = new BoundedNumberParameter("Y stop (0 for image heigth)", 0, 0, 0, null);
     protected GroupParameter boundGroup = new GroupParameter("Bound constraint", xStart, xStop, yStart, yStop).setToolTipText("Constant bound additional constaint");
     //protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 0, 0, null).setToolTipText("Microchannels closer to X-border (left or right) than this value will be removed");
-    protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 410, 0, null);
     protected NumberParameter cropMarginY = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null).setToolTipText("The y-start point will be shifted of this value towards upper direction");
-    protected NumberParameter frameNumber = new BoundedNumberParameter("Frame Number", 0, 0, 0, null);
+    protected NumberParameter frameNumber = new BoundedNumberParameter("Frame Number", 0, 0, 0, null); // not used anymore -> both implementations compute bounds on every image -> value = 0
     
     ChoiceParameter referencePoint = new ChoiceParameter("Reference point", new String[]{"Top", "Bottom"}, "Top", false);
     Map<Integer, ? extends BoundingBox> cropBounds;
@@ -93,8 +92,6 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
             yStart.setValue(0);
             yStop.setValue(image.sizeY()-1);
         }
-        
-        if (channelHeight.getValue().intValue()>image.sizeY()) throw new IllegalArgumentException("channel height > image height");
         
         int framesN = frameNumber.getValue().intValue();
         List<Integer> frames; 

@@ -179,8 +179,8 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         double max=-1;
         ImageFloat sinogram = null;
         if (testMode) sinogram = new ImageFloat("sinogram search angles: ["+ang1+";"+ang2+"]", angles.length, proj.length, 1);
-        for (int angleIdx = 0; angleIdx<angles.length; ++angleIdx) { // first search
-            radonProject(image, z, angles[angleIdx]+90, proj);
+        for (int angleIdx = 0; angleIdx<angles.length; ++angleIdx) { 
+            radonProject(image, z, angles[angleIdx]+90, proj, true);
             if (testMode) paste(proj, sinogram, angleIdx);
             //if (filterScale>0) filter(filterScale, proj);
             double tempMax = var?RadonProjection.var(proj):RadonProjection.max(proj);
