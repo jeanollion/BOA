@@ -174,6 +174,11 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     public Voxel asVoxel() {
         return new Voxel(xMin(), yMin(), zMin());
     }
+    public void copyLocationToVoxel(Voxel dest) {
+        dest.x = xMin();
+        dest.y = yMin();
+        dest.z = zMin();
+    }
     // offset implementation
     @Override
     public int xMin() {

@@ -95,11 +95,13 @@ import boa.plugins.ObjectSplitter;
 import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import boa.utils.geom.Point;
+import boa.utils.geom.Vector;
 import java.awt.Event;
-import java.awt.Point;
 import java.util.HashSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -427,15 +429,26 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         Predicate<StructureObject> editedprev = o -> o.getAttribute(StructureObject.EDITED_LINK_PREV, false);
         Predicate<StructureObject> editedNext = o -> o.getAttribute(StructureObject.EDITED_LINK_NEXT, false);
         TrackRoi trackRoi= new TrackRoi();
-        Pair<StructureObject, BoundingBox> o1 = track.get(0);
-        trackRoi.setIs2D(o1.key.is2D());
-        int idxMin = track.size()==1 ? 0 : 1; // display tracks with only 1 object as arrow head
-        Pair<StructureObject, BoundingBox> o2;
-        double arrowSize = track.size()==1 ? 1 : 0.5;
-        for (int idx = idxMin; idx<track.size(); ++idx) {
-            o2 = track.get(idx);
-            if (o1==null || o2==null) continue;
-            Arrow arrow = new Arrow(o1.value.xMean(), o1.value.yMean(), o2.value.xMean(), o2.value.yMean());
+        trackRoi.setIs2D(track.get(0).key.is2D());
+        double arrowSize = track.size()==1 ? 1 : 0.75;
+        IntStream.range(track.size()==1 ? 0 : 1, track.size()).forEach( idx -> {
+            Pair<StructureObject, BoundingBox> o1 = idx>0 ? track.get(idx-1) : track.get(0);
+            Pair<StructureObject, BoundingBox> o2 = track.get(idx);
+            if (o1==null || o2==null) return;
+            // get coordinates outside regions so that track links do not hide regions
+            Point p1 = new Point((float)o1.value.xMean(), (float)o1.value.yMean());
+            Point p2 = new Point((float)o2.value.xMean(), (float)o2.value.yMean());
+            Vector dir = Vector.vector2D(p1, p2);
+            dir.multiply(2d/dir.norm());
+            p1.translateRev(o1.value).translate(o1.key.getBounds()); // go to each region offset
+            p2.translateRev(o2.value).translate(o2.key.getBounds());
+            o1.key.getRegion().translateToFirstPointOutsideRegionInDir(p1, dir);
+            o2.key.getRegion().translateToFirstPointOutsideRegionInDir(p2, dir.multiply(-1));
+            p1.translate(o1.value).translateRev(o1.key.getBounds()); // go back to kymograph offset
+            p2.translate(o2.value).translateRev(o2.key.getBounds());
+            
+            Arrow arrow = new Arrow(p1.get(0), p1.get(1), p2.get(0), p2.get(1));
+            arrow.setDoubleHeaded(true);
             boolean error = o2.key.hasTrackLinkError(true, false) || (o1.key.hasTrackLinkError(false, true));
             boolean correction = editedNext.test(o1.key)||editedprev.test(o2.key);
             //arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);
@@ -476,9 +489,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             } else {
                 trackRoi.add(arrow);
             }
-              
-            o1=o2;
-        }
+        });
         return trackRoi;
     }
     private static Arrow getErrorArrow(double x1, double y1, double x2, double y2, Color c, Color fillColor) {
@@ -580,4 +591,5 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             return sliceDuplicates.get(z);
         }
     }
+    
 }

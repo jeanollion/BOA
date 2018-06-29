@@ -64,6 +64,7 @@ import boa.utils.Utils;
 import static boa.utils.Utils.comparator;
 import static boa.utils.Utils.comparatorInt;
 import boa.utils.geom.Point;
+import boa.utils.geom.Vector;
 import java.util.Arrays;
 import java.util.function.Predicate;
 /**
@@ -870,6 +871,18 @@ public class Region {
             if (center!=null) center.translate(offset);
         }
         return this;
+    }
+    
+    public Point translateToFirstPointOutsideRegionInDir(Point start, Vector normedDir) {
+        Voxel v = start.asVoxel();
+        if (!contains(v)) return start;
+        start.translate(normedDir);
+        start.copyLocationToVoxel(v);
+        while(contains(v)) {
+            start.translate(normedDir);
+            start.copyLocationToVoxel(v);
+        }
+        return start;
     }
 
     public Region setLabel(int label) {
