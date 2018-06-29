@@ -182,17 +182,17 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     // offset implementation
     @Override
     public int xMin() {
-        return (int)(coords[0]+0.5);
+        return (int)Math.round(coords[0]);
     }
 
     @Override
     public int yMin() {
-        return coords.length<=1 ? 0 :(int)(coords[1]+0.5);
+        return coords.length<=1 ? 0 :(int)Math.round(coords[1]);
     }
 
     @Override
     public int zMin() {
-        return coords.length<=2 ? 0 : (int)(coords[2]+0.5);
+        return coords.length<=2 ? 0 : (int)Math.round(coords[2]);
     }
 
     @Override

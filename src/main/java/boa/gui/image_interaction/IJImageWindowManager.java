@@ -323,7 +323,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             PointRoi pRoi = (PointRoi)r;
             Polygon p = r.getPolygon();
             
-            List<int[]> res = new ArrayList<int[]>(p.npoints);
+            List<int[]> res = new ArrayList<>(p.npoints);
             for (int i = 0; i<p.npoints; ++i) {
                 res.add(new int[]{p.xpoints[i], p.ypoints[i], Math.max(0, pRoi.getPointPosition(i)-1)});
             }
@@ -366,7 +366,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         } else r =  RegionContainerIjRoi.createRoi(object.key.getMask(), object.value, !object.key.is2D());
         if (object.key.getAttribute(StructureObject.EDITED_SEGMENTATION, false)) { // also display when segmentation is edited
             double size = trackArrowStrokeWidth*1.5;
-            Arrow arrow = new Arrow(object.value.xMin()-size, object.value.yMin()-size, object.value.xMin(), object.value.yMin());
+            Point p = new Point((float)object.key.getBounds().xMean(), (float)object.key.getBounds().yMean());
+            object.key.getRegion().translateToFirstPointOutsideRegionInDir(p, new Vector(1, 1));
+            p.translate(object.value).translateRev(object.key.getBounds()); // go to kymograph offset
+            Arrow arrow = new Arrow(p.get(0)+size, p.get(1)+size, p.get(0), p.get(1));
             arrow.setStrokeColor(trackCorrectionColor);
             arrow.setStrokeWidth(trackArrowStrokeWidth);
             arrow.setHeadSize(size);
@@ -430,25 +433,44 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         Predicate<StructureObject> editedNext = o -> o.getAttribute(StructureObject.EDITED_LINK_NEXT, false);
         TrackRoi trackRoi= new TrackRoi();
         trackRoi.setIs2D(track.get(0).key.is2D());
-        double arrowSize = track.size()==1 ? 1 : 0.75;
+        double arrowSize = track.size()==1 ? 1.5 : 0.65;
         IntStream.range(track.size()==1 ? 0 : 1, track.size()).forEach( idx -> {
             Pair<StructureObject, BoundingBox> o1 = idx>0 ? track.get(idx-1) : track.get(0);
             Pair<StructureObject, BoundingBox> o2 = track.get(idx);
             if (o1==null || o2==null) return;
-            // get coordinates outside regions so that track links do not hide regions
-            Point p1 = new Point((float)o1.value.xMean(), (float)o1.value.yMean());
-            Point p2 = new Point((float)o2.value.xMean(), (float)o2.value.yMean());
-            Vector dir = Vector.vector2D(p1, p2);
-            dir.multiply(2d/dir.norm());
-            p1.translateRev(o1.value).translate(o1.key.getBounds()); // go to each region offset
-            p2.translateRev(o2.value).translate(o2.key.getBounds());
-            o1.key.getRegion().translateToFirstPointOutsideRegionInDir(p1, dir);
-            o2.key.getRegion().translateToFirstPointOutsideRegionInDir(p2, dir.multiply(-1));
-            p1.translate(o1.value).translateRev(o1.key.getBounds()); // go back to kymograph offset
-            p2.translate(o2.value).translateRev(o2.key.getBounds());
+            Arrow arrow;
+            if (track.size()==1) {
+                double size = trackArrowStrokeWidth*arrowSize;
+                Point p = new Point((float)o1.key.getBounds().xMean(), (float)o1.key.getBounds().yMean());
+                o1.key.getRegion().translateToFirstPointOutsideRegionInDir(p, new Vector(-1, -1));
+                p.translate(o1.value).translateRev(o1.key.getBounds()); // go to kymograph offset
+                arrow = new Arrow(p.get(0)-size, p.get(1)-size, p.get(0), p.get(1));
+            } else {
+                Point p1 = new Point((float)o1.value.xMean(), (float)o1.value.yMean());
+                Point p2 = new Point((float)o2.value.xMean(), (float)o2.value.yMean());
+                double minDist = 17;
+                if (p1.dist(p2)>minDist) {  // get coordinates outside regions so that track links do not hide regions
+                    Vector dir = Vector.vector2D(p1, p2);
+                    double dirFactor = 2d;
+                    dir.multiply(dirFactor/dir.norm()); // increment
+                    p1.translateRev(o1.value).translate(o1.key.getBounds()); // go to each region offset for the out-of-region test
+                    p2.translateRev(o2.value).translate(o2.key.getBounds());
+                    o1.key.getRegion().translateToFirstPointOutsideRegionInDir(p1, dir);
+                    o2.key.getRegion().translateToFirstPointOutsideRegionInDir(p2, dir.multiply(-1));
+                    p1.translate(o1.value).translateRev(o1.key.getBounds()); // go back to kymograph offset
+                    p2.translate(o2.value).translateRev(o2.key.getBounds());
+                    // ensure there is a minimal distance
+                    double d = p1.dist(p2);
+                    if (d<minDist) {
+                        dir.multiply((minDist-d)/(2*dirFactor));
+                        p1.translate(dir);
+                        p2.translateRev(dir);
+                    }
+                }
+                arrow = new Arrow(p1.get(0), p1.get(1), p2.get(0), p2.get(1));
+                arrow.setDoubleHeaded(true);
+            }
             
-            Arrow arrow = new Arrow(p1.get(0), p1.get(1), p2.get(0), p2.get(1));
-            arrow.setDoubleHeaded(true);
             boolean error = o2.key.hasTrackLinkError(true, false) || (o1.key.hasTrackLinkError(false, true));
             boolean correction = editedNext.test(o1.key)||editedprev.test(o2.key);
             //arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);

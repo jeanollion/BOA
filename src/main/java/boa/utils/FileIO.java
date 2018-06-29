@@ -133,21 +133,7 @@ public class FileIO {
         }
         return resS.stream().map(converter).collect(Collectors.toList());
     }
-    public static <T> void writeToZip(ZipOutputStream outStream, String relativePath, Collection<T> objects, Function<T, String> converter) {
-        try {
-            ZipEntry e= new ZipEntry(relativePath);
-            outStream.putNextEntry(e);
-            List<byte[]> toWrite = objects.stream().parallel().map(o->converter.apply(o)).filter(o->o!=null).map(o->o.getBytes()).collect(Collectors.toList());
-            if (toWrite.size()!=objects.size()) logger.error("#{} objects could not be converted", objects.size()-toWrite.size());
-            for (byte[] b : toWrite) {
-                outStream.write(b);
-                outStream.write('\n');
-            }
-            outStream.closeEntry();
-        } catch (IOException ex) {
-            logger.debug("Error while writing list to file", ex);
-        }
-    }
+    
     public static <T> List<T> readFromZip(ZipFile file, String relativePath, Function<String, T> converter) {
         List<String> resS = new ArrayList<>();
         try {
@@ -284,6 +270,8 @@ public class FileIO {
     public static class ZipWriter {
         File f;
         ZipOutputStream out;
+        // append if existing
+        //https://stackoverflow.com/questions/3048669/how-can-i-add-entries-to-an-existing-zip-file-in-java
         public ZipWriter(String path) {
             f = new File(path);
             try {
@@ -295,7 +283,19 @@ public class FileIO {
         }
         public boolean isValid() {return out!=null;}
         public <T> void write(String relativePath, List<T> objects, Function<T, String> converter) {
-            writeToZip(out, relativePath, objects, converter);
+            try {
+                ZipEntry e= new ZipEntry(relativePath);
+                out.putNextEntry(e);
+                List<byte[]> toWrite = objects.stream().parallel().map(o->converter.apply(o)).filter(o->o!=null).map(o->o.getBytes()).collect(Collectors.toList());
+                if (toWrite.size()!=objects.size()) logger.error("#{} objects could not be converted", objects.size()-toWrite.size());
+                for (byte[] b : toWrite) {
+                    out.write(b);
+                    out.write('\n');
+                }
+                out.closeEntry();
+            } catch (IOException ex) {
+                logger.debug("Error while writing list to file", ex);
+            }    
         }
         public void appendFile(String relativePath, InputStream in) { 
             //relativePath=relativePath.replace('\\', '/'); // WARNING : path should be with "/" as separator. 

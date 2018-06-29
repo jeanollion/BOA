@@ -48,6 +48,16 @@ public class GenerateXPConfig {
         Experiment xpPhase = GenerateXP.generateXPPhase("MotherMachinePhaseContrast", null, true, 0, 0, Double.NaN);
         exportXP(path, xpPhase, false);
         
+        // dataset config for nature protocol
+        String pathDS = "/data/Images/ExampleDatasets/";
+        Experiment xpFluoBactOnly = xpFluo.duplicate();
+        xpFluoBactOnly.setName("dataset3");
+        xpFluoBactOnly.getChannelImages().remove(1);
+        xpFluoBactOnly.getStructures().remove(2);
+        exportXP(pathDS+"/dataset3/", "config_dataset3.json", xpFluoBactOnly, false);
+        exportXP(pathDS+"/dataset1/", "config_dataset1.json", xpPhase, false);
+        exportXP(pathDS+"/dataset2/", "config_dataset2.json", xpFluo, false);
+        
         /*Experiment xpTransFluo = GenerateXP.generateXPFluo("MotherMachinePhaseContrastAndMutations", null, true, 0, 0, Double.NaN, null);
         GenerateXP.setParametersPhase(xpTransFluo, true, false);
         PreProcessingChain ps = xpTransFluo.getPreProcessingTemplate();
@@ -79,10 +89,14 @@ public class GenerateXPConfig {
         
     }
     private static void exportXP(String dir, Experiment xp, boolean zip) {
-        if (!zip) FileIO.writeToFile(dir+File.separator+xp.getName()+"Config.txt", new ArrayList<Experiment>(){{add(xp);}}, o->JSONUtils.serialize(o));
+        if (!zip) exportXP(dir, xp.getName()+"Config.txt", xp, false);
+        else exportXP(dir+File.separator+ xp.getName()+"Config.zip", "config.json", xp, true);
+    }
+    private static void exportXP(String dir, String fileName, Experiment xp, boolean zip) {
+        if (!zip) FileIO.writeToFile(dir+File.separator+fileName, new ArrayList<Experiment>(){{add(xp);}}, o->JSONUtils.serialize(o));
         else {
-            FileIO.ZipWriter w = new FileIO.ZipWriter(dir+File.separator+xp.getName()+".zip");
-            w.write("config.json", new ArrayList<Experiment>(1){{add(xp);}}, o->JSONUtils.serialize(o));
+            FileIO.ZipWriter w = new FileIO.ZipWriter(dir);
+            w.write(fileName, new ArrayList<Experiment>(1){{add(xp);}}, o->JSONUtils.serialize(o));
             w.close();
         }
     }

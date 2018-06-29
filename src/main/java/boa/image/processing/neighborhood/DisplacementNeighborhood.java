@@ -50,7 +50,10 @@ public abstract class DisplacementNeighborhood implements Neighborhood {
             for (int i = 0; i<dx.length; ++i) {
                 xx=x+dx[i];
                 yy=y+dy[i];
-                if (image.contains(xx, yy, z) && (mask==null||mask.insideMask(xx, yy, z))) values[valueCount++]=image.getPixel(xx, yy, z);
+                if (image.contains(xx, yy, z) 
+                        && (mask==null||mask.insideMask(xx, yy, z))) {
+                    values[valueCount++]=image.getPixel(xx, yy, z);
+                }
             }
         }
     }
