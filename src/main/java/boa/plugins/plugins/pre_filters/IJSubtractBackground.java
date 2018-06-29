@@ -36,8 +36,10 @@ import java.util.ArrayList;
 import boa.plugins.Filter;
 import boa.plugins.PreFilter;
 import static boa.plugins.plugins.pre_filters.IJSubtractBackground.FILTER_DIRECTION.DIAGONAL_2B;
+import boa.utils.HashMapGetCreate;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -138,8 +140,8 @@ public class IJSubtractBackground implements PreFilter, Filter {
         float[] pixels = (float[])fp.getPixels();   //this will become the background
         int width = fp.getWidth();
         int height = fp.getHeight();
-        float[] cache = new float[Math.max(width, height)]; //work array for lineSlideParabola
-        int[] nextPoint = new int[Math.max(width, height)]; //work array for lineSlideParabola
+        HashMapGetCreate<Thread, float[]> cache = new HashMapGetCreate<>(t -> new float[Math.max(width, height)]); //work array for lineSlideParabola
+        HashMapGetCreate<Thread, int[]> nextPoint = new HashMapGetCreate<>(t -> new int[Math.max(width, height)]); //work array for lineSlideParabola
         float coeff2 = 0.5f/radius;                 //2nd-order coefficient of the polynomial approximating the ball
         float coeff2diag = 1.f/radius;              //same for diagonal directions where step is sqrt2
                   //start the progress bar (only filter1D will increment it)
@@ -183,27 +185,25 @@ public class IJSubtractBackground implements PreFilter, Filter {
     // modified from IJ SOURCE by Sliding Paraboloid by Michael Schmid, 2007.
     /** Filter by subtracting a sliding parabola for all lines in one direction, x, y or one of
      *  the two diagonal directions (diagonals are processed only for half the image per call). */
-    static void filter1D(FloatProcessor fp, FILTER_DIRECTION direction, float coeff2, float[] cache, int[] nextPoint) {
+    static void filter1D(FloatProcessor fp, FILTER_DIRECTION direction, float coeff2, HashMapGetCreate<Thread, float[]> cache, HashMapGetCreate<Thread, int[]> nextPoint) {
         float[] pixels = (float[])fp.getPixels();   //this will become the background
         int width = fp.getWidth();
         int height = fp.getHeight();
         int startLine = 0;          //index of the first line to handle
-        int nLines = 0;             //index+1 of the last line to handle (initialized to avoid compile-time error)
-        int lineInc = 0;            //increment from one line to the next in pixels array
-        int pointInc = 0;           //increment from one point to the next along the line
-        int length = 0;             //length of the line
+        int nLines;             //index+1 of the last line to handle (initialized to avoid compile-time error)
+        int lineInc;            //increment from one line to the next in pixels array
+        int pointInc;           //increment from one point to the next along the line
         switch (direction) {
             case X_DIRECTION:       //lines parallel to x direction
                 nLines = height;
                 lineInc = width;
                 pointInc = 1;
-                length = width;
             break;
             case Y_DIRECTION:       //lines parallel to y direction
+            default:
                 nLines = width;
                 lineInc = 1;
                 pointInc = width;
-                length = height;
             break;
             case DIAGONAL_1A:       //lines parallel to x=y, starting at x axis
                 nLines = width-2;   //the algorithm makes no sense for lines shorter than 3 pixels
@@ -229,17 +229,33 @@ public class IJSubtractBackground implements PreFilter, Filter {
                 pointInc = width - 1;
             break;
         }
-        for (int i=startLine; i<nLines; i++) {
+        IntStream.range(startLine, nLines).parallel().forEach(i -> {
             int startPixel = i*lineInc;
             if (direction == DIAGONAL_2B) startPixel += width-1;
+            int length; // length of the line
             switch (direction) {
-                case DIAGONAL_1A: length = Math.min(height, width-i); break;
-                case DIAGONAL_1B: length = Math.min(width, height-i); break;
-                case DIAGONAL_2A: length = Math.min(height, i+1);     break;
-                case DIAGONAL_2B: length = Math.min(width, height-i); break;
+                case X_DIRECTION: 
+                    length = width;
+                    break;
+                case Y_DIRECTION: 
+                default:
+                    length = height;
+                    break;
+                case DIAGONAL_1A: 
+                    length = Math.min(height, width-i); 
+                    break;
+                case DIAGONAL_1B: 
+                    length = Math.min(width, height-i); 
+                    break;
+                case DIAGONAL_2A: 
+                    length = Math.min(height, i+1);     
+                    break;
+                case DIAGONAL_2B: 
+                    length = Math.min(width, height-i); 
+                    break;
             }
-            lineSlideParabola(pixels, startPixel, pointInc, length, coeff2, cache, nextPoint, null);
-        }
+            lineSlideParabola(pixels, startPixel, pointInc, length, coeff2, cache.getAndCreateIfNecessarySyncOnKey(Thread.currentThread()), nextPoint.getAndCreateIfNecessarySyncOnKey(Thread.currentThread()), null);
+        });
     } //void filter1D
 
     /** Process one straight line in the image by sliding a parabola along the line

@@ -129,7 +129,7 @@ public class Processor {
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations(true)) {
             Transformation transfo = tpp.instanciatePlugin();
-            logger.info("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
+            logger.info("adding transformation: {} of class: {} to position: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
             if (transfo instanceof ConfigurableTransformation) {
                 ConfigurableTransformation ct = (ConfigurableTransformation)transfo;
                 logger.debug("before configuring: {}", Utils.getMemoryUsage());
@@ -188,8 +188,8 @@ public class Processor {
 
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
         for (int s: structures) {
-            if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {} available mem: {}/{}GB", dao.getPositionName(), s, (Runtime.getRuntime().freeMemory()/1000000)/1000d, (Runtime.getRuntime().totalMemory()/1000000)/1000d);
-            else logger.info("Tracking: Field: {}, Structure: {}", dao.getPositionName(), s);
+            if (!trackOnly) logger.info("Segmentation & Tracking: Position: {}, Structure: {} available mem: {}/{}GB", dao.getPositionName(), s, (Runtime.getRuntime().freeMemory()/1000000)/1000d, (Runtime.getRuntime().totalMemory()/1000000)/1000d);
+            else logger.info("Tracking: Position: {}, Structure: {}", dao.getPositionName(), s);
             executeProcessingScheme(root, s, trackOnly, false);
             System.gc();
         }
@@ -250,8 +250,8 @@ public class Processor {
         else {
             try {
                 ps.segmentAndTrack(structureIdx, parentTrack);
-                logger.debug("ps {} executed on track: {}, structure: {}", ps.getClass(), parentTrack.get(0), structureIdx);
-            } catch(Exception e) {
+                logger.info("processing pipeline {} executed on track: {}, structure: {}", ps.getClass(), parentTrack.get(0), structureIdx);
+            } catch(Throwable e) {
                 parentTrack.forEach(p -> p.setChildren(Collections.EMPTY_LIST, structureIdx)); // remove segmented objects if present to avoid saving them in DAO
                 throw e;
             } finally {

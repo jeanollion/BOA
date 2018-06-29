@@ -52,6 +52,7 @@ public class MultipleException extends RuntimeException {
     }
     
     private void addException(Pair<String, Throwable> ex) {
+        if (ex==null || ex.value==null || ex.key==null) return;
         boolean[] added = new boolean[1];
         exceptions.stream().filter(p->thowableEqual.test(p.value, ex.value)).findAny().ifPresent(p->{
             p.key+=";"+ex.key;
@@ -61,7 +62,13 @@ public class MultipleException extends RuntimeException {
 
     }
     
-    private final static BiPredicate<Throwable, Throwable> tEq = (t1, t2) -> t1==null ? t2==null : t2==null ? false : t1.getMessage().equals(t2.getMessage()) && Arrays.equals(t1.getStackTrace(), t2.getStackTrace());
+    private final static BiPredicate<Throwable, Throwable> tEq = (t1, t2) -> {
+       return  t1==null ? t2==null : 
+               (t2==null ? false : 
+               (t1.getMessage()==null ? t2.getMessage()==null : 
+               (t2.getMessage()==null ? false : t1.getMessage().equals(t2.getMessage())))
+                    && Arrays.equals(t1.getStackTrace(), t2.getStackTrace()));
+    };
     public final static BiPredicate<Throwable, Throwable> thowableEqual = (t1, t2) -> tEq.test(t1, t2) && tEq.test(t1.getCause(), t2.getCause());
     
     public List<Pair<String, Throwable>> getExceptions() {
