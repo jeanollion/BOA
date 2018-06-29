@@ -344,7 +344,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 o.add(r);
             }
         } else if (roi.containsKey(0)) o.add(roi.get(0));*/
-        for (Roi r : roi.values()) o.add(r);
+        for (Roi r : roi.values()) {
+            r.setStrokeWidth(ROI_STROKE_WIDTH);
+            o.add(r);
+        }
     }
 
     @Override
@@ -365,13 +368,13 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             
         } else r =  RegionContainerIjRoi.createRoi(object.key.getMask(), object.value, !object.key.is2D());
         if (object.key.getAttribute(StructureObject.EDITED_SEGMENTATION, false)) { // also display when segmentation is edited
-            double size = trackArrowStrokeWidth*1.5;
+            double size = TRACK_ARROW_STROKE_WIDTH*1.5;
             Point p = new Point((float)object.key.getBounds().xMean(), (float)object.key.getBounds().yMean());
             object.key.getRegion().translateToFirstPointOutsideRegionInDir(p, new Vector(1, 1));
             p.translate(object.value).translateRev(object.key.getBounds()); // go to kymograph offset
             Arrow arrow = new Arrow(p.get(0)+size, p.get(1)+size, p.get(0), p.get(1));
             arrow.setStrokeColor(trackCorrectionColor);
-            arrow.setStrokeWidth(trackArrowStrokeWidth);
+            arrow.setStrokeWidth(TRACK_ARROW_STROKE_WIDTH);
             arrow.setHeadSize(size);
             new HashSet<>(r.keySet()).forEach((z) -> {
                 Arrow arrowS = r.size()>1 ? (Arrow)arrow.clone() : arrow;
@@ -440,7 +443,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             if (o1==null || o2==null) return;
             Arrow arrow;
             if (track.size()==1) {
-                double size = trackArrowStrokeWidth*arrowSize;
+                double size = TRACK_ARROW_STROKE_WIDTH*arrowSize;
                 Point p = new Point((float)o1.key.getBounds().xMean(), (float)o1.key.getBounds().yMean());
                 o1.key.getRegion().translateToFirstPointOutsideRegionInDir(p, new Vector(-1, -1));
                 p.translate(o1.value).translateRev(o1.key.getBounds()); // go to kymograph offset
@@ -475,8 +478,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             boolean correction = editedNext.test(o1.key)||editedprev.test(o2.key);
             //arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);
             arrow.setStrokeColor(color);
-            arrow.setStrokeWidth(trackArrowStrokeWidth);
-            arrow.setHeadSize(trackArrowStrokeWidth*arrowSize);
+            arrow.setStrokeWidth(TRACK_ARROW_STROKE_WIDTH);
+            arrow.setHeadSize(TRACK_ARROW_STROKE_WIDTH*arrowSize);
             
             //if (o1.getNext()==o2) arrow.setDoubleHeaded(true);
             
@@ -515,7 +518,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         return trackRoi;
     }
     private static Arrow getErrorArrow(double x1, double y1, double x2, double y2, Color c, Color fillColor) {
-        double arrowSize = trackArrowStrokeWidth*2;
+        double arrowSize = TRACK_ARROW_STROKE_WIDTH*2;
         double norm = Math.sqrt(Math.pow(x1-x2, 2)+Math.pow(y1-y2, 2));
         double[] vNorm = new double[]{(x2-x1)/norm, (y2-y1)/norm};
         double startLength = norm-2*arrowSize;
@@ -525,8 +528,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         Arrow res =  new Arrow(start[0], start[1], end[0], end[1]);
         res.setStrokeColor(c);
         res.setFillColor(fillColor);
-        res.setStrokeWidth(trackArrowStrokeWidth);
-        res.setHeadSize(trackArrowStrokeWidth*1.5);
+        res.setStrokeWidth(TRACK_ARROW_STROKE_WIDTH);
+        res.setHeadSize(TRACK_ARROW_STROKE_WIDTH*1.5);
         return res;
         
         // OTHER ARROW

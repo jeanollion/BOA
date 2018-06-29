@@ -141,7 +141,9 @@ public class PreProcessingChain extends SimpleContainerParameter {
     public void removeAllTransformations() {
         transformations.removeAllElements();
     }
-    
+    public SimpleListParameter<TransformationPluginParameter<Transformation>> getTransformations() {
+        return transformations;
+    }
     public void setTrimFrames(int startFrame, int endFrame) {
         this.trimFramesStart.setFrame(startFrame);
         this.trimFramesEnd.setFrame(endFrame);

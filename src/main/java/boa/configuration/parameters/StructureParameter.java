@@ -45,6 +45,18 @@ public class StructureParameter<T extends StructureParameter<T>> extends IndexCh
         super(name, selectedStructures, allowNoSelection);
     }
     
+    @Override
+    public boolean isValid() {
+        if (!super.isValid()) return false;
+        // also check selected indices are within index choice range
+        if (this.selectedIndices==null) return true;
+        String[] ch = this.getChoiceList();
+        if (ch!=null) {
+            for (int i : selectedIndices) if (i>=ch.length) return false;
+        } else return false;
+        return true;
+    }
+    
     public T setAutoConfiguration(Consumer<T> autoConfiguration) {
         this.autoConfiguration=autoConfiguration;
         return (T)this;
@@ -81,10 +93,6 @@ public class StructureParameter<T extends StructureParameter<T>> extends IndexCh
     
     public int getSelectedStructureIdx() {
         int idx = super.getSelectedIndex();
-        if (idx==-1 && !allowNoSelection && getChoiceList().length==1 && getXP()!=null) {
-           this.setSelectedStructureIdx(0);
-           return 0;
-        }
         if (idx==-1 && autoConfiguration!=null) {
             autoConfiguration();
             return super.getSelectedIndex();
@@ -97,7 +105,7 @@ public class StructureParameter<T extends StructureParameter<T>> extends IndexCh
         if (getXP()!=null) {
             choices=getXP().getStructuresAsString();
         } else {
-            choices = new String[]{"error, no experiment in the tree"};
+            choices = new String[]{"error, no experiment in the configuration"};
         }
         return choices;
     }

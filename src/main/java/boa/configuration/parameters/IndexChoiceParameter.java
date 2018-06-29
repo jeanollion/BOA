@@ -55,7 +55,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     @Override 
     public boolean isValid() {
         if (!super.isValid()) return false;
-        return allowNoSelection || (selectedIndices!=null && selectedIndices.length>0);
+        return allowNoSelection || getSelectedIndex()>=0;
     }
     public <T extends IndexChoiceParameter> T setAllowNoSelection(boolean allowNoSelection) {
         this.allowNoSelection= allowNoSelection;
@@ -95,11 +95,13 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     public void setMonoSelection(int selectedIndex) {
         this.multipleSelection=false;
         this.selectedIndices=new int[]{selectedIndex};
+        fireListeners();
     }
     
     public void setMultipleSelection(int[] selectedIndicies) {
         this.multipleSelection=true;
         this.selectedIndices=selectedIndicies;
+        fireListeners();
     }
     
     @Override 

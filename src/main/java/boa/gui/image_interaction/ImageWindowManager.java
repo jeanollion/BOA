@@ -101,7 +101,8 @@ public abstract class ImageWindowManager<I, U, V> {
     public static Color getColor() {
         return Palette.getColor(150, trackErrorColor, trackCorrectionColor);
     }
-    final static int trackArrowStrokeWidth = 3;
+    final static double TRACK_ARROW_STROKE_WIDTH = 3;
+    final static double ROI_STROKE_WIDTH = 1;
     protected final HashMap<InteractiveImageKey, InteractiveImage> imageObjectInterfaces;
     protected final HashMap<Image, InteractiveImageKey> imageObjectInterfaceMap;
     protected final HashMapGetCreate<StructureObject, List<List<StructureObject>>> trackHeadTrackMap;
