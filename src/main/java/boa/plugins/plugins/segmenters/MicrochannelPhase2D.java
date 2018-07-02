@@ -54,7 +54,6 @@ import java.util.Map;
 import boa.plugins.Segmenter;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
-import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.segmenters.MicrochannelPhase2D.X_DER_METHOD;
 import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
@@ -68,12 +67,13 @@ import java.util.Comparator;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import boa.plugins.TrackConfigurable;
 
 /**
  *
  * @author jollion
  */
-public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProcessingPlugin, ToolTip, TrackParametrizable<MicrochannelPhase2D> {
+public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProcessingPlugin, ToolTip, TrackConfigurable<MicrochannelPhase2D> {
 
     
     public enum X_DER_METHOD {CONSTANT, RELATIVE_TO_INTENSITY_RANGE}
@@ -273,7 +273,7 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
     double globalLocalDerThld = Double.NaN;
     // track parametrizable interface
     @Override
-    public TrackParametrizer<MicrochannelPhase2D> run(int structureIdx, List<StructureObject> parentTrack) {
+    public TrackConfigurer<MicrochannelPhase2D> run(int structureIdx, List<StructureObject> parentTrack) {
         switch(X_DER_METHOD.valueOf(xDerPeakThldMethod.getSelectedItem())) {
             case CONSTANT:
                 return null;

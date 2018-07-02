@@ -52,17 +52,17 @@ import java.util.stream.Collectors;
  * @author jollion
  * @param <P> segmenter type
  */
-public interface TrackParametrizable<P extends Plugin> {
+public interface TrackConfigurable<P extends Plugin> {
     /**
-     * Interface Allowing to parametrize a plugin using information from whole parent track
-     * @param <P> type of plugin to be parametrized
+     * Interface Allowing to configure a plugin using information from whole parent track
+     * @param <P> type of plugin to be configured
      */
-    @FunctionalInterface public static interface TrackParametrizer<P> { 
+    @FunctionalInterface public static interface TrackConfigurer<P> { 
         /**
          * Parametrizes the {@param segmenter}
          * This method may be called asynchronously with different pairs of {@param parent}/{@param segmenter}
-         * @param parent parent object from the parent track used to create the {@link boa.plugins.TrackParametrizable.TrackParametrizer apply to segmenter object} See: {@link #getTrackParametrizer(int, java.util.List, boa.plugins.Segmenter, java.util.concurrent.ExecutorService) }. This is not necessary the segmentation parent that will be used as argument in {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
-         * @param plugin Segmenter instance that will be parametrized, prior to call the method {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
+         * @param parent parent object from the parent track used to create the {@link boa.plugins.TrackParametrizable.TrackConfigurer apply to segmenter object} See: {@link #getTrackConfigurer(int, java.util.List, boa.plugins.Segmenter, java.util.concurrent.ExecutorService) }. This is not necessary the segmentation parent that will be used as argument in {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
+         * @param plugin Segmenter instance that will be configured, prior to call the method {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
          */
         public void apply(StructureObject parent, P plugin);
     }
@@ -70,14 +70,14 @@ public interface TrackParametrizable<P extends Plugin> {
      * 
      * @param structureIdx index of the structure to be segmented via call to {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
      * @param parentTrack parent track (elements are parent of structure {@param structureIdx}
-     * @return ApplyToSegmenter object that will parametrize Segmenter instances before call to {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
+     * @return ApplyToSegmenter object that will configure Segmenter instances before call to {@link boa.plugins.Segmenter#runSegmenter(boa.image.Image, int, boa.data_structure.StructureObjectProcessing) }
      */
-    public TrackParametrizer run(int structureIdx, List<StructureObject> parentTrack);
+    public TrackConfigurer run(int structureIdx, List<StructureObject> parentTrack);
     
     // + static helpers methods
-    public static <P extends Plugin> TrackParametrizer<P> getTrackParametrizer(int structureIdx, List<StructureObject> parentTrack, P plugin) {
-        if (plugin instanceof TrackParametrizable) {
-            TrackParametrizable tp = (TrackParametrizable)plugin;
+    public static <P extends Plugin> TrackConfigurer<P> getTrackConfigurer(int structureIdx, List<StructureObject> parentTrack, P plugin) {
+        if (plugin instanceof TrackConfigurable) {
+            TrackConfigurable tp = (TrackConfigurable)plugin;
             List<StructureObject> pT = StructureObjectUtils.getTrack(parentTrack.get(0).getTrackHead());
             pT.removeIf(p->p.getPreFilteredImage(structureIdx)==null);
             if (pT.isEmpty()) throw new RuntimeException("NO prefiltered images set");

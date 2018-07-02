@@ -56,7 +56,6 @@ import boa.measurement.GeometricalMeasurements;
 import static boa.plugins.Plugin.logger;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ThresholderHisto;
-import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.pre_filters.Sigma;
 import static boa.plugins.plugins.segmenters.EdgeDetector.valueFunction;
 import boa.plugins.plugins.thresholders.BackgroundFit;
@@ -82,6 +81,7 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
+import boa.plugins.TrackConfigurable;
 
 
 /**
@@ -378,7 +378,7 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
     }
     // track parametrization
     @Override
-    public TrackParametrizable.TrackParametrizer<BacteriaPhaseContrast> run(int structureIdx, List<StructureObject> parentTrack) {
+    public TrackConfigurable.TrackConfigurer<BacteriaPhaseContrast> run(int structureIdx, List<StructureObject> parentTrack) {
         Set<StructureObject> voidMC = getVoidMicrochannels(structureIdx, parentTrack);
         double[] thlds = getTrackThresholds(parentTrack, structureIdx, voidMC);
         return (p, s) -> {

@@ -37,17 +37,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
-import java.util.function.BiFunction;
-import boa.plugins.PostFilter;
-import boa.plugins.PreFilter;
 import boa.plugins.Segmenter;
 import boa.plugins.ToolTip;
-import boa.plugins.TrackParametrizable;
 import boa.utils.HashMapGetCreate;
-import boa.plugins.TrackParametrizable.TrackParametrizer;
 import java.util.stream.Collectors;
 import boa.plugins.ProcessingPipeline;
+import boa.plugins.TrackConfigurable;
+import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
@@ -72,10 +68,10 @@ public class SegmentOnly extends SegmentationProcessingPipeline<SegmentOnly> imp
     
     @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
         getTrackPreFilters(true).filter(structureIdx, parentTrack); // set preFiltered images to structureObjects
-        TrackParametrizer apply=TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, segmenter.instanciatePlugin());
+        TrackConfigurer apply=TrackConfigurable.getTrackConfigurer(structureIdx, parentTrack, segmenter.instanciatePlugin());
         segmentAndTrack(structureIdx, parentTrack, apply);
     }
-    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, TrackParametrizer applyToSegmenter) {
+    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, TrackConfigurer applyToSegmenter) {
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
             return;

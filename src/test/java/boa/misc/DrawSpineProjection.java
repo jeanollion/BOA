@@ -62,9 +62,10 @@ public class DrawSpineProjection {
     public static void main(String[] args) {
         new ImageJ();
         String dbName = "fluo160501_uncorr_TestParam";
-        int position= 0, mc=1, frame=86, b=1, m=1, frame2 = 89, b2= 1, m2 = 2, frame3 = 94, b31=2, b32=3, m3 = 2;
+        int position= 0, mc=1, frame=86, b=1, m=1, frame2 = 89, b2= 1, m2 = 2, frame3 = 94, b31=2, b32=3, m3 = 3;
         
         MasterDAO mDAO = new Task(dbName).getDB();
+        mDAO.setReadOnly(true);
         ObjectDAO dao = MasterDAO.getDao(mDAO, position);
         StructureObject bact = dao.getRoots().get(frame).getChildren(0).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(1).get(b);
         StructureObject bact2 = dao.getRoots().get(frame2).getChildren(0).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(1).get(b2);
@@ -83,7 +84,7 @@ public class DrawSpineProjection {
         BacteriaSpineCoord coord = loc.getSpineCoord(mut.getRegion().getCenter());
         Overlay spine = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc.spine, TRIM_SPINE_FACTOR), mic.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
         drawCoord(spine, mic.getBounds(), loc.spine, coord, mut.getRegion().getCenter());
-        SpineOverlayDrawer.drawPoint(spine, mic.getBounds(), mut.getRegion().getCenter(), SOURCE_COLOR, WIDTH);
+        //SpineOverlayDrawer.drawPoint(spine, mic.getBounds(), mut.getRegion().getCenter(), SOURCE_COLOR, WIDTH/4);
         
         BacteriaSpineLocalizer loc2 = new BacteriaSpineLocalizer(bact2.getRegion());
         BacteriaSpineCoord coord2 = loc2.getSpineCoord(mut2.getRegion().getCenter());
@@ -91,8 +92,8 @@ public class DrawSpineProjection {
         Point mutProj2 = loc2.project(coord, BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL);
         Overlay spine2 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc2.spine, TRIM_SPINE_FACTOR), mic2.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
         drawCoord(spine2, mic2.getBounds(), loc2.spine, coordProj2, mutProj2);
-        SpineOverlayDrawer.drawPoint(spine2, mic2.getBounds(), mutProj2, SOURCE_COLOR, WIDTH);
-        SpineOverlayDrawer.drawPoint(spine2, mic2.getBounds(), mut2.getRegion().getCenter(), TARGET_COLOR, WIDTH);
+        //SpineOverlayDrawer.drawPoint(spine2, mic2.getBounds(), mutProj2, SOURCE_COLOR, WIDTH/4);
+        //SpineOverlayDrawer.drawPoint(spine2, mic2.getBounds(), mut2.getRegion().getCenter(), TARGET_COLOR, WIDTH/4);
         //drawArrow(spine2, mic2.getBounds(), mutProj2, mut2.getRegion().getCenter(), TARGET_COLOR);
         
         BacteriaSpineLocalizer loc31 = new BacteriaSpineLocalizer(bact31.getRegion());
@@ -108,8 +109,8 @@ public class DrawSpineProjection {
         drawCoord(spine31, mic3.getBounds(), loc31.spine, coord2.duplicate().setSpineCoord(loc31.getLength()*2).setSpineLength(loc31.getLength()), null); // draw whole spine on bact 31
         Overlay spine32 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc32.spine, TRIM_SPINE_FACTOR), mic3.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
         drawCoord(spine32, mic3.getBounds(), loc32.spine, coordDivProj, mutProj3); // normal draw on bact 32
-        SpineOverlayDrawer.drawPoint(spine32, mic3.getBounds(), mutProj3, SOURCE_COLOR, WIDTH);
-        SpineOverlayDrawer.drawPoint(spine32, mic3.getBounds(), mut3.getRegion().getCenter(), TARGET_COLOR, WIDTH);
+        //SpineOverlayDrawer.drawPoint(spine32, mic3.getBounds(), mutProj3, SOURCE_COLOR, WIDTH/4);
+        //SpineOverlayDrawer.drawPoint(spine32, mic3.getBounds(), mut3.getRegion().getCenter(), TARGET_COLOR, WIDTH/4);
         //drawArrow(spine32, mic3.getBounds(), mutProj3, mut3.getRegion().getCenter(), TARGET_COLOR);
         IntStream.range(0, spine31.size()).forEach(i->spine32.add(spine31.get(i)));
         

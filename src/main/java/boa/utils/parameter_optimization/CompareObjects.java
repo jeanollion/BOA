@@ -49,8 +49,6 @@ import java.util.logging.Logger;
 import boa.measurement.GeometricalMeasurements;
 import org.slf4j.LoggerFactory;
 import boa.plugins.PluginFactory;
-import boa.plugins.TrackParametrizable;
-import boa.plugins.TrackParametrizable.TrackParametrizer;
 import boa.plugins.plugins.segmenters.SpotSegmenter;
 import boa.utils.ArrayUtil;
 import boa.utils.FileIO;
@@ -64,6 +62,8 @@ import boa.utils.Utils;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import boa.plugins.ProcessingPipeline;
+import boa.plugins.TrackConfigurable;
+import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
@@ -281,10 +281,10 @@ public class CompareObjects {
         ProcessingPipeline ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         TrackPreFilterSequence tpf = ps.getTrackPreFilters(true);
         SpotSegmenter seg = (SpotSegmenter)ps.getSegmenter();
-        Map<StructureObject, TrackParametrizer> pthMapParametrizer = new HashMap<>();
+        Map<StructureObject, TrackConfigurer> pthMapParametrizer = new HashMap<>();
         for (Entry<StructureObject, List<StructureObject>> e : parentTrackRef.entrySet()) {
             tpf.filter(structureIdx, e.getValue());
-            pthMapParametrizer.put(e.getKey(), TrackParametrizable.getTrackParametrizer(structureIdx, e.getValue(), ps.getSegmenter()));
+            pthMapParametrizer.put(e.getKey(), TrackConfigurable.getTrackConfigurer(structureIdx, e.getValue(), ps.getSegmenter()));
         }
         pthMapParametrizer.entrySet().removeIf(e->e.getValue()==null);
         for (StructureObject parent : Utils.flattenMap(parentTrackRef)) {

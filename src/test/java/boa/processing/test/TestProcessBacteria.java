@@ -32,12 +32,12 @@ import boa.image.Image;
 import boa.image.ImageMask;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
-import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.segmenters.BacteriaFluo;
 import static boa.processing.test.TestProcessBacteriaPhase.trackPrefilterRange;
 import boa.utils.Utils;
 import java.util.List;
 import boa.plugins.ProcessingPipeline;
+import boa.plugins.TrackConfigurable;
 
 /**
  *
@@ -70,7 +70,7 @@ public class TestProcessBacteria {
         ProcessingPipeline psc = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme();
         parentTrack.removeIf(o -> o.getFrame()<timePoint-trackPrefilterRange || o.getFrame()>timePoint+trackPrefilterRange);
         psc.getTrackPreFilters(true).filter(bacteriaStructureIdx, parentTrack);
-        TrackParametrizable.TrackParametrizer<Segmenter> apply = TrackParametrizable.getTrackParametrizer(bacteriaStructureIdx, parentTrack, psc.getSegmenter());
+        TrackConfigurable.TrackConfigurer<Segmenter> apply = TrackConfigurable.getTrackConfigurer(bacteriaStructureIdx, parentTrack, psc.getSegmenter());
         parentTrack.removeIf(o -> o.getFrame()<timePoint || o.getFrame()>timePoint);
         
         

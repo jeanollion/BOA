@@ -72,7 +72,6 @@ import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.Thresholder;
 import boa.plugins.ThresholderHisto;
 import boa.plugins.ToolTip;
-import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.segmenters.BacteriaFluo.FOREGROUND_SELECTION_METHOD;
 import boa.plugins.plugins.segmenters.BacteriaFluo.THRESHOLD_COMPUTATION;
 import static boa.plugins.plugins.segmenters.EdgeDetector.valueFunction;
@@ -85,6 +84,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import boa.plugins.TrackConfigurable;
 
 /**
  *
@@ -320,7 +320,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
     // apply to segmenter from whole track information (will be set prior to call any other methods)
     
     @Override
-    public TrackParametrizable.TrackParametrizer<BacteriaFluo> run(int structureIdx, List<StructureObject> parentTrack) {
+    public TrackConfigurable.TrackConfigurer<BacteriaFluo> run(int structureIdx, List<StructureObject> parentTrack) {
         if (parentTrack.get(0).getRawImage(structureIdx)==parentTrack.get(0).getPreFilteredImage(structureIdx)) { // no prefilter -> perform on root
             logger.debug("no prefilters detected: global mean & sigma on root track");
             double[] ms = getRootBckMeanAndSigma(parentTrack, structureIdx, null);

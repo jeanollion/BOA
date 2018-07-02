@@ -75,18 +75,18 @@ import boa.image.processing.neighborhood.Neighborhood;
 import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
-import boa.plugins.TrackParametrizable;
 import boa.utils.StreamConcatenation;
 import boa.utils.Utils;
 import boa.utils.geom.Point;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
+import boa.plugins.TrackConfigurable;
 
 /**
  *
  * @author jollion
  */
-public class SpotSegmenter implements Segmenter, TrackParametrizable<SpotSegmenter>, ManualSegmenter, ObjectSplitter, TestableProcessingPlugin, ToolTip {
+public class SpotSegmenter implements Segmenter, TrackConfigurable<SpotSegmenter>, ManualSegmenter, ObjectSplitter, TestableProcessingPlugin, ToolTip {
     public static boolean debug = false;
     ArrayNumberParameter scale = new ArrayNumberParameter("Scale", 0, new BoundedNumberParameter("Scale", 1, 2, 1, 5)).setSorted(true).setEmphasized(true).setToolTipText("Scale for lapalcian transform. <br />Configuration hint: <em>Laplacian</em> image");
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 5).setToolTipText("Scale (in pixels) for gaussian smooth <br />Configuration hint: <em>smooth & scaled</em> image");
@@ -435,7 +435,7 @@ public class SpotSegmenter implements Segmenter, TrackParametrizable<SpotSegment
      * @return 
      */
     @Override
-    public TrackParametrizer<SpotSegmenter> run(int structureIdx, List<StructureObject> parentTrack) {
+    public TrackConfigurer<SpotSegmenter> run(int structureIdx, List<StructureObject> parentTrack) {
         Map<StructureObject, Image[]> parentMapImages = parentTrack.stream().parallel().collect(Collectors.toMap(p->p, p->computeMaps(p.getRawImage(structureIdx), p.getPreFilteredImage(structureIdx))));
         // get scaling per segmentation parent track
         int segParent = parentTrack.iterator().next().getExperiment().getStructure(structureIdx).getSegmentationParentStructure();

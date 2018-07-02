@@ -46,7 +46,6 @@ import boa.image.processing.Filters;
 import boa.plugins.Plugin;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
-import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.thresholders.BackgroundFit;
 import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import boa.utils.Utils;
@@ -58,12 +57,13 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import boa.plugins.TrackConfigurable;
 
 /**
  *
  * @author jollion
  */
-public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametrizable<MicrochannelFluo2D>, ToolTip, TestableProcessingPlugin {
+public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackConfigurable<MicrochannelFluo2D>, ToolTip, TestableProcessingPlugin {
     
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height", 0, 320, 5, null).setToolTipText("Height of microchannels, in pixels");
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width", 0, 60, 5, null).setToolTipText("Width of microchannels in pixels");
@@ -120,8 +120,8 @@ public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackParametri
 
 
     @Override
-    public TrackParametrizer<MicrochannelFluo2D> run(int structureIdx, List<StructureObject> parentTrack) {
-        double thld = TrackParametrizable.getGlobalThreshold(structureIdx, parentTrack, this.threshold.instanciatePlugin());
+    public TrackConfigurer<MicrochannelFluo2D> run(int structureIdx, List<StructureObject> parentTrack) {
+        double thld = TrackConfigurable.getGlobalThreshold(structureIdx, parentTrack, this.threshold.instanciatePlugin());
         return (p, s)->s.thresholdValue=thld;
     }
     /**

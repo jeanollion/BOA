@@ -62,17 +62,17 @@ import boa.measurement.GeometricalMeasurements;
 import boa.plugins.ManualSegmenter;
 import boa.plugins.ObjectSplitter;
 import boa.plugins.Segmenter;
-import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface;
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import boa.plugins.TrackParametrizable.TrackParametrizer;
 import java.util.function.BiPredicate;
 import static boa.data_structure.StructureObject.TRACK_ERROR_NEXT;
 import static boa.data_structure.StructureObject.TRACK_ERROR_PREV;
+import boa.plugins.TrackConfigurable;
+import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
@@ -445,9 +445,9 @@ public class ManualEdition {
             if (positions.length>1) throw new IllegalArgumentException("All points should come from same parent");
             ensurePreFilteredImages(points.keySet().stream(), structureIdx, db.getExperiment(), db.getDao(positions[0]));
             ManualSegmenter s = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
-            HashMap<StructureObject, TrackParametrizer> parentThMapParam = new HashMap<>();
-            if (s instanceof TrackParametrizable) {
-                points.keySet().stream().map(p->p.getParent(parentStructureIdx)).map(p->p.getTrackHead()).distinct().forEach(p->parentThMapParam.put(p, TrackParametrizable.getTrackParametrizer(structureIdx, db.getDao(positions[0]).getTrack(p), s)));
+            HashMap<StructureObject, TrackConfigurer> parentThMapParam = new HashMap<>();
+            if (s instanceof TrackConfigurable) {
+                points.keySet().stream().map(p->p.getParent(parentStructureIdx)).map(p->p.getTrackHead()).distinct().forEach(p->parentThMapParam.put(p, TrackConfigurable.getTrackConfigurer(structureIdx, db.getDao(positions[0]).getTrack(p), s)));
                 parentThMapParam.entrySet().removeIf(e->e.getValue()==null);
             }
             
@@ -519,7 +519,7 @@ public class ManualEdition {
     public static void ensurePreFilteredImages(Stream<StructureObject> parents, int structureIdx, Experiment xp , ObjectDAO dao) {
         int parentStructureIdx = xp.getStructure(structureIdx).getParentStructure();
         TrackPreFilterSequence tpf = xp.getStructure(structureIdx).getProcessingScheme().getTrackPreFilters(false);
-        boolean needToComputeAllPreFilteredImage = !tpf.get().isEmpty() || xp.getStructure(structureIdx).getProcessingScheme().getSegmenter() instanceof TrackParametrizable;
+        boolean needToComputeAllPreFilteredImage = !tpf.get().isEmpty() || xp.getStructure(structureIdx).getProcessingScheme().getSegmenter() instanceof TrackConfigurable;
         TrackPreFilterSequence tpfWithPF = xp.getStructure(structureIdx).getProcessingScheme().getTrackPreFilters(true);
         if (!needToComputeAllPreFilteredImage) { // only preFilters on current objects
             PreFilterSequence pf = xp.getStructure(structureIdx).getProcessingScheme().getPreFilters();

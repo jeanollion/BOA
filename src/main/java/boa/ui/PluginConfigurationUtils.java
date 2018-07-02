@@ -47,7 +47,6 @@ import boa.plugins.Segmenter;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.TestableProcessingPlugin.TestDataStore;
 import static boa.plugins.TestableProcessingPlugin.buildIntermediateImages;
-import boa.plugins.TrackParametrizable;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.Transformation;
@@ -67,7 +66,6 @@ import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
-import boa.plugins.TrackParametrizable.TrackParametrizer;
 import boa.utils.HashMapGetCreate;
 import java.util.HashSet;
 import java.util.Set;
@@ -75,6 +73,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import boa.plugins.ProcessingPipeline;
 import boa.plugins.ProcessingPipelineWithTracking;
+import boa.plugins.TrackConfigurable;
+import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
@@ -106,12 +106,12 @@ public class PluginConfigurationUtils {
         if (plugin instanceof Segmenter) { // case segmenter -> segment only & call to test method
 
             // run pre-filters on whole track -> some track preFilters need whole track to be effective. todo : parameter to limit ? 
-            boolean runPreFiltersOnWholeTrack = !psc.getTrackPreFilters(false).isEmpty() || plugin instanceof TrackParametrizable; 
+            boolean runPreFiltersOnWholeTrack = !psc.getTrackPreFilters(false).isEmpty() || plugin instanceof TrackConfigurable; 
             if (runPreFiltersOnWholeTrack)  psc.getTrackPreFilters(true).filter(structureIdx, wholeParentTrackDup);
             else  psc.getTrackPreFilters(true).filter(structureIdx, parentTrackDup); // only segmentation pre-filter -> run only on parentTrack
             parentTrackDup.forEach(p->stores.get(p).addIntermediateImage("pre-filtered", p.getPreFilteredImage(structureIdx))); // add preFiltered image
             logger.debug("run prefilters on whole parent track: {}", runPreFiltersOnWholeTrack);
-            TrackParametrizer  applyToSeg = TrackParametrizable.getTrackParametrizer(structureIdx, wholeParentTrackDup, (Segmenter)plugin);
+            TrackConfigurer  applyToSeg = TrackConfigurable.getTrackConfigurer(structureIdx, wholeParentTrackDup, (Segmenter)plugin);
             SegmentOnly so; 
             if (psc instanceof SegmentOnly) {
                 so = (SegmentOnly)psc;
@@ -124,7 +124,7 @@ public class PluginConfigurationUtils {
                 parentTrackDup.forEach(p->p.getChildren(segParentStrutureIdx).removeIf(c->!selectedObjects.contains(c)));
                 logger.debug("remaining segmentation parents: {}", Utils.toStringList(parentTrackDup, p->p.getChildren(segParentStrutureIdx)));
             }
-            TrackParametrizer  apply = (p, s)-> {
+            TrackConfigurer  apply = (p, s)-> {
                 if (s instanceof TestableProcessingPlugin) ((TestableProcessingPlugin)s).setTestDataStore(stores);
                 if (applyToSeg!=null) applyToSeg.apply(p, s); 
             };

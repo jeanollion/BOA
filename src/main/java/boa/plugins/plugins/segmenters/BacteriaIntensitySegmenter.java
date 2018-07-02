@@ -43,7 +43,6 @@ import static boa.plugins.Plugin.logger;
 import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
-import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.pre_filters.ImageFeature;
 import boa.plugins.plugins.pre_filters.Sigma;
 import static boa.plugins.plugins.segmenters.BacteriaFluo.getCost;
@@ -58,13 +57,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import boa.plugins.TrackConfigurable;
 
 /**
  *
  * @author Jean Ollion
  * @param <T>
  */
-public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegmenter<T>> implements TrackParametrizable<T>, SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ToolTip, TestableProcessingPlugin {
+public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegmenter<T>> implements TrackConfigurable<T>, SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ToolTip, TestableProcessingPlugin {
     protected final int MIN_SIZE_PROPAGATION = 50;
     NumberParameter vcThldForVoidMC = new BoundedNumberParameter("Variation coefficient threshold", 3, 0.085, 0, null).setToolTipText("Parameter to look for void microchannels, at track pre-filter step: <br /> To assess if whole microchannel track is void: sigma / mu of raw images is computed on whole track, in the central line of each microchannel (1/3 of the width). If sigma / mu < this value, the whole track is considered to be void. <br />If the track is not void, a global otsu threshold is computed on the prefiltered signal. A channel is considered as void if its value of sigma / mu of raw signal is inferior to this threshold and is its mean value of prefiltered signal is superior to the global threshold");
     

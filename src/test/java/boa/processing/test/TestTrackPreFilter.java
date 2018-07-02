@@ -27,8 +27,6 @@ import boa.data_structure.dao.ObjectDAO;
 import boa.ui.GUI;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.gui.image_interaction.KymographX;
-import boa.plugins.TrackParametrizable;
-import boa.plugins.TrackParametrizable.TrackParametrizer;
 import boa.plugins.plugins.track_pre_filters.SubtractBackgroundMicrochannels;
 import static boa.test_utils.TestUtils.logger;
 import boa.utils.Utils;
@@ -38,6 +36,8 @@ import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import boa.plugins.ProcessingPipeline;
+import boa.plugins.TrackConfigurable;
+import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
@@ -90,7 +90,7 @@ public class TestTrackPreFilter {
             tm.setDisplayPreFilteredImages(true);
             //ImageWindowManagerFactory.showImage(tm.generatemage(structureIdx, false).setName("track:"+parentTrack.get(0)));
         }
-        TrackParametrizer  tp = TrackParametrizable.getTrackParametrizer(structureIdx, parentTrack, ps.getSegmenter());
+        TrackConfigurer  tp = TrackConfigurable.getTrackConfigurer(structureIdx, parentTrack, ps.getSegmenter());
         
         //return ps.getSegmenter()
     } 

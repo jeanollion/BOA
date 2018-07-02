@@ -69,7 +69,6 @@ import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.ToolTip;
-import boa.plugins.TrackParametrizable;
 import boa.plugins.plugins.processing_pipeline.SegmentOnly;
 import boa.utils.ArrayUtil;
 import boa.utils.HashMapGetCreate;
@@ -77,12 +76,13 @@ import boa.utils.Pair;
 import boa.utils.Utils;
 import java.util.Collection;
 import java.util.stream.Collectors;
-import boa.plugins.TrackParametrizable.TrackParametrizer;
 import boa.utils.SlidingOperator;
 import static boa.utils.SlidingOperator.performSlide;
 import static boa.utils.SlidingOperator.slidingMean;
 import static boa.utils.Utils.parallele;
 import java.util.stream.IntStream;
+import boa.plugins.TrackConfigurable;
+import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
@@ -128,7 +128,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     Map<Region, TrackAttribute> objectAttributeMap;
     private boolean segment, correction;
     Map<Integer, Image> inputImages;
-    TrackParametrizer applyToSegmenter;
+    TrackConfigurer applyToSegmenter;
     TreeMap<Integer, StructureObject> parentsByF;
     HashMapGetCreate<Integer, SegmenterSplitAndMerge> segmenters = new HashMapGetCreate<>(f->{
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();

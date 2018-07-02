@@ -46,13 +46,13 @@ import java.util.Iterator;
 import java.util.List;
 import boa.plugins.PluginFactory;
 import boa.plugins.Segmenter;
-import boa.plugins.TrackParametrizable;
 import boa.utils.Utils;
 import java.util.Map;
 import java.util.TreeMap;
-import boa.plugins.TrackParametrizable.TrackParametrizer;
 import java.util.function.Consumer;
 import boa.plugins.ProcessingPipeline;
+import boa.plugins.TrackConfigurable;
+import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
@@ -105,7 +105,7 @@ public class TestProcessBacteriaPhase {
         ProcessingPipeline psc = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getProcessingScheme();
         parentTrack.removeIf(o -> o.getFrame()<timePointMin-trackPrefilterRange || o.getFrame()>timePointMax+trackPrefilterRange);
         psc.getTrackPreFilters(true).filter(bacteriaStructureIdx, parentTrack);
-        TrackParametrizer apply = TrackParametrizable.getTrackParametrizer(bacteriaStructureIdx, parentTrack, psc.getSegmenter());
+        TrackConfigurer apply = TrackConfigurable.getTrackConfigurer(bacteriaStructureIdx, parentTrack, psc.getSegmenter());
         parentTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         
         for (StructureObject mc : parentTrack) {

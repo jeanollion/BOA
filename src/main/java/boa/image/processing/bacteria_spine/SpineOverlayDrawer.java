@@ -113,7 +113,7 @@ public class SpineOverlayDrawer {
 
     public static void drawPoint(Overlay overlay, Offset offset, Point p, Color color, double width) {
         if (p==null) return;
-        overlay.add(SpineOverlayDrawer.drawPoint(p.duplicate().translateRev(offset), color, width, 3, 3));
+        overlay.add(SpineOverlayDrawer.drawPoint(p.duplicate().translateRev(offset), color, width, 1, 2));
     }
 
 }
