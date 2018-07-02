@@ -400,7 +400,7 @@ public class SelectionUtils {
             GUI.getInstance().resetSelectionHighlight();
         });
         menu.add(highlightTracks);
-        final JCheckBoxMenuItem navigateMI = new JCheckBoxMenuItem("Navigate");
+        final JCheckBoxMenuItem navigateMI = new JCheckBoxMenuItem("Enable Navigation");
         if (selectedValues.size()==1) navigateMI.setSelected(selectedValues.get(0).isNavigate());
         navigateMI.addActionListener((ActionEvent e) -> {
             if (selectedValues.isEmpty()) return;

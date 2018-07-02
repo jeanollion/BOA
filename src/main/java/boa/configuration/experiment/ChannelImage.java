@@ -39,7 +39,7 @@ public class ChannelImage extends SimpleContainerParameter {
         Experiment xp = ParameterUtils.getExperiment(this);
         if (xp!=null) {
             IMPORT_METHOD method = xp.getImportImageMethod();
-            if (method==IMPORT_METHOD.ONE_FILE_PER_CHANNEL_POSITION && this.getParent().getIndex(this)==0 && this.getImportImageChannelKeyword().length()==0) return false; // first must be non null 
+            if (xp.getChannelImageCount()>1 && method==IMPORT_METHOD.ONE_FILE_PER_CHANNEL_POSITION && this.getParent().getIndex(this)==0 && this.getImportImageChannelKeyword().length()==0) return false; // first must be non null if there are several channels
             long distinctKW = xp.getChannelImages().getChildren().stream().map(c -> c.getImportImageChannelKeyword()).distinct().count();
             return distinctKW == xp.getChannelImageCount();
         } else return true;

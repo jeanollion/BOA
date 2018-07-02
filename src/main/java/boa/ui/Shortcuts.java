@@ -147,8 +147,9 @@ public class Shortcuts {
         JMenu selection = new JMenu("Selections");
         menu.add(selection);
         selection.add("Navigation selection is set through right-click menu on selection");
-        selection.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of active selection (or selected selection if no active selection is set)"));
-        selection.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of active selection (or selected selection if no active selection is set)"));
+        selection.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of the selection enabled for navigation (or selected selection if no selection is enabled for navigation)"));
+        selection.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of the selection enabled for navigation (or selected selection if no active selection is set)"));
+        selection.add(new JSeparator());
         selection.add(new JSeparator());
         selection.add("Active selections are set through right-click menu on selections");
         selection.add(new JSeparator());
@@ -167,8 +168,8 @@ public class Shortcuts {
         menu.add(nav);
         nav.add("Shift + mouse wheel mouve: fast scroll");
         nav.add("Navigation selection is set through right-click menu on selections");
-        nav.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of active selection (or selected selection if no active selection is set)"));
-        nav.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of active selection (or selected selection if no active selection is set)"));
+        nav.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of the selection enabled for navigation (or selected selection if no selection is enabled for navigation)"));
+        nav.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of the selection enabled for navigation (or selected selection if no selection is enabled for navigation)"));
         nav.add(getMenuLabelFor(ACTION.OPEN_NEXT, "Display next image"));
         nav.add(getMenuLabelFor(ACTION.OPEN_PREV, "Display previous image"));
         nav.add(new JSeparator());
