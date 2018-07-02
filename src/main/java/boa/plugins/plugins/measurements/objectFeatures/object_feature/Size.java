@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
+package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
@@ -24,19 +24,18 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.MutableBoundingBox;
-import boa.measurement.GeometricalMeasurements;
 import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
 import boa.plugins.ToolTip;
-import static boa.plugins.plugins.measurements.objectFeatures.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class FeretMax implements GeometricalFeature, ToolTip {
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Unit", false).setToolTipText(SCALED_TT);;
-    public FeretMax setScale(boolean unit) {
+public class Size implements GeometricalFeature, ToolTip {
+    public final static String SCALED_TT = "When Unit is chosen, the size is multiplied by the size of a voxel in unit, depending on the calibration of the image";
+    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false).setToolTipText(SCALED_TT);
+    public Size setScale(boolean unit) {
         scaled.setSelectedIndex(unit?1:0);
         return this;
     }
@@ -52,17 +51,22 @@ public class FeretMax implements GeometricalFeature, ToolTip {
 
     @Override
     public double performMeasurement(Region object) {
-        double feret = GeometricalMeasurements.getFeretMax(object);
-        if (scaled.getSelectedIndex()==1) feret*=object.getScaleXY();
-        return feret;
+        double size = object.size();
+        if (scaled.getSelectedIndex()==1) {
+            size*=Math.pow(object.getScaleXY(), 2);
+            if (!object.is2D()) size*=object.getScaleZ();
+        }
+        return size;
     }
 
     @Override
     public String getDefaultName() {
-        return "Length";
+        return "Size";
     }
+
     @Override
     public String getToolTipText() {
-        return "Maximal distance between two points of the contour";
+        return "Size is estimated by counting the number of voxels of an object.";
     }
+    
 }

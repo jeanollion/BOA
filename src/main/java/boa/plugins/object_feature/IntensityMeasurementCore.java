@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.objectFeature;
+package boa.plugins.object_feature;
 
 import boa.configuration.parameters.PreFilterSequence;
 import static boa.core.Processor.logger;
@@ -29,8 +29,8 @@ import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import java.util.HashMap;
 import boa.measurement.BasicMeasurements;
-import boa.plugins.objectFeature.ObjectFeatureCore;
-import boa.plugins.plugins.measurements.objectFeatures.LocalSNR;
+import boa.plugins.object_feature.ObjectFeatureCore;
+import boa.plugins.plugins.measurements.objectFeatures.object_feature.LocalSNR;
 import boa.utils.DoubleStatistics;
 import boa.utils.geom.Point;
 import java.util.stream.DoubleStream;

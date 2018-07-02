@@ -24,7 +24,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import boa.plugins.PluginFactory;
-import boa.plugins.plugins.measurements.objectFeatures.Quality;
+import boa.plugins.plugins.measurements.objectFeatures.object_feature.Quality;
 import boa.plugins.plugins.post_filters.FeatureFilter;
 import boa.plugins.plugins.pre_filters.BandPass;
 import boa.plugins.plugins.processing_pipeline.SegmentAndTrack;

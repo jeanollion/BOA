@@ -29,7 +29,7 @@ import java.util.List;
 import boa.plugins.Measurement;
 import boa.plugins.PluginFactory;
 import boa.plugins.plugins.measurements.ObjectFeatures;
-import boa.plugins.plugins.measurements.objectFeatures.LocalSNR;
+import boa.plugins.plugins.measurements.objectFeatures.object_feature.LocalSNR;
 
 /**
  *

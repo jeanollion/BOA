@@ -25,7 +25,7 @@ import boa.configuration.experiment.Structure;
 import boa.data_structure.dao.MasterDAO;
 import boa.plugins.PluginFactory;
 import boa.plugins.plugins.measurements.ChromaticShiftBeads;
-import boa.plugins.plugins.measurements.objectFeatures.Size;
+import boa.plugins.plugins.measurements.objectFeatures.object_feature.Size;
 import boa.plugins.plugins.post_filters.FeatureFilter;
 import boa.plugins.plugins.pre_filters.Median;
 import boa.plugins.plugins.processing_pipeline.SegmentOnly;

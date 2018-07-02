@@ -16,33 +16,28 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
+package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
+import boa.plugins.object_feature.IntensityMeasurement;
 import boa.data_structure.Region;
 import boa.image.MutableBoundingBox;
-import boa.plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
-import boa.utils.Utils;
+import boa.plugins.ToolTip;
 
 /**
  *
  * @author jollion
  */
-public class IntensityRatio extends SNR {
-    
-    
+public class Max extends IntensityMeasurement implements ToolTip {
+
     @Override public double performMeasurement(Region object) {
-        if (core==null) synchronized(this) {setUpOrAddCore(null, null);}
-        Region parentObject; 
-        if (foregroundMapBackground==null) parentObject = super.parent.getRegion();
-        else parentObject=this.foregroundMapBackground.get(object);
-        if (parentObject==null) return 0;
-        IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject);
-        double fore = super.core.getIntensityMeasurements(object).mean;
-        return fore/iParent.mean ;
+        return core.getIntensityMeasurements(object).max;
     }
 
     @Override public String getDefaultName() {
-        return "IntensityRatio";
+        return "Max";
     }
-    
+    @Override
+    public String getToolTipText() {
+        return "Maximal intensity value within object";
+    }
 }

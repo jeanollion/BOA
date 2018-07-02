@@ -29,7 +29,7 @@ import boa.image.Image;
 import java.util.List;
 import boa.plugins.Measurement;
 import boa.plugins.ObjectSplitter;
-import boa.plugins.plugins.measurements.objectFeatures.LocalSNR;
+import boa.plugins.plugins.measurements.objectFeatures.object_feature.LocalSNR;
 
 /**
  *

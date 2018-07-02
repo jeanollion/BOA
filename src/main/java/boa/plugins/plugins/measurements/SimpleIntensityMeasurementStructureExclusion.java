@@ -37,7 +37,7 @@ import boa.measurement.BasicMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
-import boa.plugins.plugins.measurements.objectFeatures.SNR;
+import boa.plugins.plugins.measurements.objectFeatures.object_feature.SNR;
 import boa.image.processing.Filters;
 import boa.plugins.DevPlugin;
 

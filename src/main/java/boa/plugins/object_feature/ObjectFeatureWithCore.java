@@ -16,30 +16,15 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
+package boa.plugins.object_feature;
 
-import boa.plugins.objectFeature.IntensityMeasurement;
-import boa.data_structure.Region;
-import boa.image.MutableBoundingBox;
-import boa.plugins.ToolTip;
+import boa.configuration.parameters.PreFilterSequence;
+import java.util.List;
 
 /**
  *
  * @author jollion
  */
-public class Min extends IntensityMeasurement implements ToolTip {
-
-    @Override public double performMeasurement(Region object) {
-        return core.getIntensityMeasurements(object).min;
-    }
-
-    @Override public String getDefaultName() {
-        return "Min";
-    }
-
-    @Override
-    public String getToolTipText() {
-        return "Minimal intensity value within object";
-    }
-    
+public interface ObjectFeatureWithCore {
+    public void setUpOrAddCore(List<ObjectFeatureCore> availableCores, PreFilterSequence preFilters);
 }

@@ -451,10 +451,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             } else {
                 Point p1 = new Point((float)o1.value.xMean(), (float)o1.value.yMean());
                 Point p2 = new Point((float)o2.value.xMean(), (float)o2.value.yMean());
-                double minDist = 17;
+                double minDist = TRACK_LINK_MIN_SIZE;
                 if (p1.dist(p2)>minDist) {  // get coordinates outside regions so that track links do not hide regions
                     Vector dir = Vector.vector2D(p1, p2);
-                    double dirFactor = 2d;
+                    double dirFactor = 1d;
                     dir.multiply(dirFactor/dir.norm()); // increment
                     p1.translateRev(o1.value).translate(o1.key.getBounds()); // go to each region offset for the out-of-region test
                     p2.translateRev(o2.value).translate(o2.key.getBounds());

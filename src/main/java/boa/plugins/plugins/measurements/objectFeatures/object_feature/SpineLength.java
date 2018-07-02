@@ -16,9 +16,10 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
+package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
 import boa.configuration.parameters.BooleanParameter;
+import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
@@ -27,19 +28,19 @@ import boa.measurement.GeometricalMeasurements;
 import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
 import boa.plugins.ToolTip;
-import static boa.plugins.plugins.measurements.objectFeatures.Size.SCALED_TT;
+import static boa.plugins.plugins.measurements.objectFeatures.object_feature.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class SpineWidth implements GeometricalFeature, ToolTip {
-    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false).setToolTipText(SCALED_TT);;
+public class SpineLength implements GeometricalFeature, ToolTip {
+    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false).setToolTipText(SCALED_TT);
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{scaled};
     }
-    public SpineWidth setScaled(boolean scaled) {
+    public SpineLength setScaled(boolean scaled) {
         this.scaled.setSelected(scaled);
         return this;
     }
@@ -50,17 +51,19 @@ public class SpineWidth implements GeometricalFeature, ToolTip {
 
     @Override
     public double performMeasurement(Region region) {
-        double w= GeometricalMeasurements.getSpineLengthAndWidth(region)[1];
-        if (scaled.getSelected()) w *= region.getScaleXY();
-        return w;
+        double l =  GeometricalMeasurements.getSpineLength(region);
+        if (scaled.getSelected()) l*=region.getScaleXY();
+        return l;
     }
 
     @Override
     public String getDefaultName() {
-        return "SpineWidth";
+        return "SpineLength";
     }
+
     @Override
     public String getToolTipText() {
-        return "Median value of the spine radii. Only valid for rod shaped regions";
+        return "Length of the spine (skeleton): takes into acount rippling deformation. Only valid for rod shaped regions";
     }
+    
 }

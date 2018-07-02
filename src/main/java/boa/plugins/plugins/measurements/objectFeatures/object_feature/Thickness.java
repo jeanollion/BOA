@@ -16,54 +16,55 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
+package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
-import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
+import boa.image.MutableBoundingBox;
 import boa.measurement.GeometricalMeasurements;
 import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
 import boa.plugins.ToolTip;
-import static boa.plugins.plugins.measurements.objectFeatures.Size.SCALED_TT;
+import static boa.plugins.plugins.measurements.objectFeatures.object_feature.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class SpineLength implements GeometricalFeature, ToolTip {
-    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false).setToolTipText(SCALED_TT);
+public class Thickness implements GeometricalFeature, ToolTip {
+    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false).setToolTipText(SCALED_TT);
+    public Thickness setScale(boolean unit) {
+        this.scaled.setSelectedIndex(unit?1:0);
+        return this;
+    }
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{scaled};
     }
-    public SpineLength setScaled(boolean scaled) {
-        this.scaled.setSelected(scaled);
-        return this;
-    }
+
     @Override
     public ObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         return this;
     }
 
     @Override
-    public double performMeasurement(Region region) {
-        double l =  GeometricalMeasurements.getSpineLength(region);
-        if (scaled.getSelected()) l*=region.getScaleXY();
-        return l;
+    public double performMeasurement(Region object) {
+        double res = GeometricalMeasurements.getThickness(object);
+        if (scaled.getSelectedIndex()==1) res*=object.getScaleXY();
+        return res;
     }
 
     @Override
     public String getDefaultName() {
-        return "SpineLength";
+        return "Thickness";
     }
 
     @Override
     public String getToolTipText() {
-        return "Length of the spine (skeleton): takes into acount rippling deformation. Only valid for rod shaped regions";
+        return "Estimation of thickness using euclidean distance map: median value of local maxima of the EDM";
     }
     
 }

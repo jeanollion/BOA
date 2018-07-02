@@ -16,57 +16,51 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
+package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
-import boa.configuration.parameters.ChoiceParameter;
+import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
-import boa.image.MutableBoundingBox;
+import boa.measurement.GeometricalMeasurements;
 import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
 import boa.plugins.ToolTip;
+import static boa.plugins.plugins.measurements.objectFeatures.object_feature.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class Size implements GeometricalFeature, ToolTip {
-    public final static String SCALED_TT = "When Unit is chosen, the size is multiplied by the size of a voxel in unit, depending on the calibration of the image";
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false).setToolTipText(SCALED_TT);
-    public Size setScale(boolean unit) {
-        scaled.setSelectedIndex(unit?1:0);
-        return this;
-    }
+public class SpineWidth implements GeometricalFeature, ToolTip {
+    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false).setToolTipText(SCALED_TT);;
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{scaled};
     }
-
+    public SpineWidth setScaled(boolean scaled) {
+        this.scaled.setSelected(scaled);
+        return this;
+    }
     @Override
     public ObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         return this;
     }
 
     @Override
-    public double performMeasurement(Region object) {
-        double size = object.size();
-        if (scaled.getSelectedIndex()==1) {
-            size*=Math.pow(object.getScaleXY(), 2);
-            if (!object.is2D()) size*=object.getScaleZ();
-        }
-        return size;
+    public double performMeasurement(Region region) {
+        double w= GeometricalMeasurements.getSpineLengthAndWidth(region)[1];
+        if (scaled.getSelected()) w *= region.getScaleXY();
+        return w;
     }
 
     @Override
     public String getDefaultName() {
-        return "Size";
+        return "SpineWidth";
     }
-
     @Override
     public String getToolTipText() {
-        return "Size is estimated by counting the number of voxels of an object.";
+        return "Median value of the spine radii. Only valid for rod shaped regions";
     }
-    
 }

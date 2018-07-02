@@ -16,28 +16,12 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
-
-import boa.plugins.objectFeature.IntensityMeasurement;
-import boa.data_structure.Region;
-import boa.measurement.BasicMeasurements;
-import boa.plugins.ToolTip;
+package boa.plugins.object_feature;
 
 /**
  *
  * @author jollion
  */
-public class MeanAtBorder extends IntensityMeasurement implements ToolTip {
-    @Override
-    public double performMeasurement(Region object) {
-        return BasicMeasurements.getMeanValue(object.getContour(), core.getIntensityMap(true), object.isAbsoluteLandMark());
-    }
-    @Override
-    public String getDefaultName() {
-        return "MeanIntensityBorder";
-    }
-    @Override
-    public String getToolTipText() {
-        return "Average intensity value at the border of the object";
-    }
+public interface ObjectFeatureCore {
+    
 }

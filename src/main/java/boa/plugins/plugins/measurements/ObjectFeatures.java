@@ -33,9 +33,9 @@ import boa.plugins.Measurement;
 import boa.plugins.ObjectFeature;
 import boa.plugins.PreFilter;
 import boa.plugins.ToolTip;
-import boa.plugins.objectFeature.IntensityMeasurement;
-import boa.plugins.objectFeature.ObjectFeatureCore;
-import boa.plugins.objectFeature.ObjectFeatureWithCore;
+import boa.plugins.object_feature.IntensityMeasurement;
+import boa.plugins.object_feature.ObjectFeatureCore;
+import boa.plugins.object_feature.ObjectFeatureWithCore;
 
 /**
  *

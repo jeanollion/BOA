@@ -72,6 +72,7 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter, ToolTip{
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages) {
         //smooth.setSelected(true);
         // construct one single image 
+        long t0 = System.currentTimeMillis();
         TrackMaskYWithMirroring tm = new TrackMaskYWithMirroring(new ArrayList<>(preFilteredImages.keySet()), true, false);
         ImageFloat allImagesY = (ImageFloat)tm.generateEmptyImage("sub mc", new ImageFloat("", 0, 0, 0));
         int idx = 0;
@@ -96,7 +97,9 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter, ToolTip{
         double radius = sizeY*(this.radius.getValue().doubleValue());
         //logger.debug("necessary memory: {}MB", allImagesY.getSizeXY()*32/8000000);
         //ThreadRunner.executeUntilFreeMemory(()-> {IJSubtractBackground.filter(allImagesYStore[0], radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);}, 10);
+        long t1 = System.currentTimeMillis();
         IJSubtractBackground.filterCustomSlidingParaboloid(allImagesYStore[0], radius, !isDarkBck.getSelected(), smooth.getSelected(), false, true, FILTER_DIRECTION.X_DIRECTION, FILTER_DIRECTION.Y_DIRECTION, FILTER_DIRECTION.X_DIRECTION, FILTER_DIRECTION.Y_DIRECTION);
+        long t2 = System.currentTimeMillis();
         
         allImagesY = allImagesY.crop(allImagesY.getBoundingBox().setyMin(offsetY).setyMax(offsetY+sizeY-1)); // crop
         // recover data
@@ -105,7 +108,8 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter, ToolTip{
             Image.pasteImage(allImagesY, preFilteredImages.get(o), null, tm.getObjectOffset(idx++, 1));
             //fillOutsideMask(o.getRegion(), preFilteredImages.get(o));
         }
-        logger.debug("subtrack backgroun microchannel done");
+        long t3 = System.currentTimeMillis();
+        logger.debug("subtrack backgroun microchannel done in {}ms, filtering: {}ms", t3-t0, t2-t1);
     }
     
     

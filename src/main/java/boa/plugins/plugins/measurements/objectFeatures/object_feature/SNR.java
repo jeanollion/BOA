@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
+package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
 import boa.gui.image_interaction.IJImageDisplayer;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
@@ -40,8 +40,8 @@ import boa.image.TypeConverter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import boa.plugins.objectFeature.IntensityMeasurement;
-import boa.plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
+import boa.plugins.object_feature.IntensityMeasurement;
+import boa.plugins.object_feature.IntensityMeasurementCore.IntensityMeasurements;
 import boa.image.processing.Filters;
 import boa.plugins.ToolTip;
 import boa.utils.HashMapGetCreate;

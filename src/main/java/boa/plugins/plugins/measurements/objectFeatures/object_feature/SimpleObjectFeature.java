@@ -16,28 +16,28 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
+package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
-import boa.plugins.objectFeature.IntensityMeasurement;
-import boa.data_structure.Region;
-import boa.image.MutableBoundingBox;
-import boa.plugins.ToolTip;
+import boa.configuration.parameters.Parameter;
+import boa.data_structure.RegionPopulation;
+import boa.data_structure.StructureObject;
+import boa.plugins.ObjectFeature;
 
 /**
  *
  * @author jollion
  */
-public class Mean extends IntensityMeasurement implements ToolTip {
-    @Override
-    public double performMeasurement(Region object) {
-        return core.getIntensityMeasurements(object).mean;
+public abstract class SimpleObjectFeature implements ObjectFeature {
+    protected StructureObject parent;
+    protected int childStructureIdx;
+    @Override public Parameter[] getParameters() {
+        return new Parameter[0];
     }
-    @Override
-    public String getDefaultName() {
-        return "MeanIntensity";
+
+    @Override public SimpleObjectFeature setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
+        this.parent=parent;
+        this.childStructureIdx=childStructureIdx;
+        return this;
     }
-    @Override
-    public String getToolTipText() {
-        return "Average intensity value within object";
-    }
+    
 }

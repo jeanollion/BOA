@@ -16,24 +16,33 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements.objectFeatures;
+package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
+import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.image.MutableBoundingBox;
+import boa.measurement.GeometricalMeasurements;
+import boa.plugins.GeometricalFeature;
 import boa.plugins.ObjectFeature;
 import boa.plugins.ToolTip;
+import static boa.plugins.plugins.measurements.objectFeatures.object_feature.Size.SCALED_TT;
 
 /**
  *
  * @author jollion
  */
-public class Quality implements ObjectFeature, ToolTip {
+public class LocalThickness implements GeometricalFeature, ToolTip {
+    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false).setToolTipText(SCALED_TT);
+    public LocalThickness setScale(boolean unit) {
+        this.scaled.setSelectedIndex(unit?1:0);
+        return this;
+    }
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[0];
+        return new Parameter[]{scaled};
     }
 
     @Override
@@ -43,18 +52,19 @@ public class Quality implements ObjectFeature, ToolTip {
 
     @Override
     public double performMeasurement(Region object) {
-        double quality = object.getQuality();
-        if (Double.isInfinite(quality)) return Double.NaN; // not measured
-        return quality;
+        double res = GeometricalMeasurements.localThickness(object);
+        if (scaled.getSelectedIndex()==1) res*=object.getScaleXY();
+        return res;
     }
 
     @Override
     public String getDefaultName() {
-        return "Quality";
+        return "LocalThickness";
     }
 
     @Override
     public String getToolTipText() {
-        return "Quality attribute of the object, if defined by the segmenter, NA if not";
+        return "Estimation of thickness: median value of local thickness within object. <br />Local thickness at a given voxel is the radius of the largest circle (sphere) center on this voxel that can fit within the object";
     }
+    
 }

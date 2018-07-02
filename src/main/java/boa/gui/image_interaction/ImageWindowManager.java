@@ -103,6 +103,7 @@ public abstract class ImageWindowManager<I, U, V> {
     }
     final static double TRACK_ARROW_STROKE_WIDTH = 3;
     final static double ROI_STROKE_WIDTH = 1;
+    public static double TRACK_LINK_MIN_SIZE = 23;
     protected final HashMap<InteractiveImageKey, InteractiveImage> imageObjectInterfaces;
     protected final HashMap<Image, InteractiveImageKey> imageObjectInterfaceMap;
     protected final HashMapGetCreate<StructureObject, List<List<StructureObject>>> trackHeadTrackMap;

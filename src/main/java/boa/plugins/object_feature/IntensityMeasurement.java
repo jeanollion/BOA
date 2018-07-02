@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BOA.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.objectFeature;
+package boa.plugins.object_feature;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PreFilterSequence;
@@ -28,9 +28,9 @@ import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import java.util.List;
 import boa.plugins.ObjectFeature;
-import boa.plugins.objectFeature.ObjectFeatureCore;
-import boa.plugins.objectFeature.ObjectFeatureWithCore;
-import boa.plugins.plugins.measurements.objectFeatures.SimpleObjectFeature;
+import boa.plugins.object_feature.ObjectFeatureCore;
+import boa.plugins.object_feature.ObjectFeatureWithCore;
+import boa.plugins.plugins.measurements.objectFeatures.object_feature.SimpleObjectFeature;
 
 /**
  *
