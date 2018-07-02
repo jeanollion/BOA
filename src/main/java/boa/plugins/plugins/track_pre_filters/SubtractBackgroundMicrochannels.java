@@ -90,15 +90,13 @@ public class SubtractBackgroundMicrochannels implements TrackPreFilter, ToolTip{
         double mirrorProportion = 1;
         int offsetY = (int)(allImagesY.sizeY()*mirrorProportion);
         ImageFloat[] allImagesYStore = new ImageFloat[]{allImagesY};
-        allImagesY = ThreadRunner.executeUntilFreeMemory(()-> {return mirrorY(allImagesYStore[0], offsetY);}, 10); // mirrorY image on both Y ends
+        allImagesY = mirrorY(allImagesYStore[0], offsetY); // mirrorY image on both Y ends
         allImagesYStore[0] = allImagesY;
         // apply filter
         double radius = sizeY*(this.radius.getValue().doubleValue());
         //logger.debug("necessary memory: {}MB", allImagesY.getSizeXY()*32/8000000);
         //ThreadRunner.executeUntilFreeMemory(()-> {IJSubtractBackground.filter(allImagesYStore[0], radius, true, !isDarkBck.getSelected(), smooth.getSelected(), false, false);}, 10);
-        ThreadRunner.executeUntilFreeMemory(()-> {
-            IJSubtractBackground.filterCustomSlidingParaboloid(allImagesYStore[0], radius, !isDarkBck.getSelected(), smooth.getSelected(), false, FILTER_DIRECTION.X_DIRECTION, FILTER_DIRECTION.Y_DIRECTION, FILTER_DIRECTION.X_DIRECTION, FILTER_DIRECTION.Y_DIRECTION);
-        }, 5);
+        IJSubtractBackground.filterCustomSlidingParaboloid(allImagesYStore[0], radius, !isDarkBck.getSelected(), smooth.getSelected(), false, true, FILTER_DIRECTION.X_DIRECTION, FILTER_DIRECTION.Y_DIRECTION, FILTER_DIRECTION.X_DIRECTION, FILTER_DIRECTION.Y_DIRECTION);
         
         allImagesY = allImagesY.crop(allImagesY.getBoundingBox().setyMin(offsetY).setyMax(offsetY+sizeY-1)); // crop
         // recover data

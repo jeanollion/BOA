@@ -153,7 +153,7 @@ public class InputImagesImpl implements InputImages {
     public void applyAllTransformations() {
         for (int c = 0; c<getChannelNumber(); ++c) {
             InputImage[] imageF = imageCT[c];
-            IntStream.range(0, imageF.length).parallel().forEach(f-> imageF[f].getImage());
+            IntStream.range(0, imageF.length).parallel().filter(i->!imageF[i].transformationsToApply.isEmpty()).forEach(f-> imageF[f].getImage());
         }
     }
     public void applyTranformationsAndSave(boolean close) {

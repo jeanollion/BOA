@@ -391,7 +391,7 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
     }
 
     protected double[] getTrackThresholds(List<StructureObject> parentTrack, int structureIdx, Set<StructureObject> voidMC) {
-        if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
+        if (voidMC.size()==parentTrack.size()) return new double[]{Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY};
         // 1) get global otsu thld for images with foreground
         //double globalThld = getGlobalOtsuThreshold(parentTrack.stream().filter(p->!voidMC.contains(p)), structureIdx);
         Map<Image, ImageMask> imageMapMask = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 

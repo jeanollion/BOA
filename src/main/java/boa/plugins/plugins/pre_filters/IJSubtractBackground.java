@@ -37,6 +37,7 @@ import boa.plugins.Filter;
 import boa.plugins.PreFilter;
 import static boa.plugins.plugins.pre_filters.IJSubtractBackground.FILTER_DIRECTION.DIAGONAL_2B;
 import boa.utils.HashMapGetCreate;
+import static boa.utils.Utils.parallele;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import java.util.stream.IntStream;
@@ -107,12 +108,12 @@ public class IJSubtractBackground implements PreFilter, Filter {
     boolean testMode;
     @Override public void setTestMode(boolean testMode) {this.testMode=testMode;}
     
-    public static ImageFloat filterCustomSlidingParaboloid(Image input, double radius, boolean lightBackground, boolean smooth, boolean duplicate, FILTER_DIRECTION... directions) {
+    public static ImageFloat filterCustomSlidingParaboloid(Image input, double radius, boolean lightBackground, boolean smooth, boolean duplicate, boolean parallele, FILTER_DIRECTION... directions) {
         if (!(input instanceof ImageFloat)) input = TypeConverter.toFloat(input, null);
         else if (duplicate) input = input.duplicate();
         ImageStack ip = IJImageWrapper.getImagePlus(input).getImageStack();
         for (int z = 0; z<input.sizeZ(); ++z) {
-            modifiedSlidingParaboloid(ip.getProcessor(z+1), (float)radius, lightBackground, smooth, directions);
+            modifiedSlidingParaboloid(ip.getProcessor(z+1), (float)radius, lightBackground, smooth, parallele, directions);
         }
         return (ImageFloat)input;
     }
@@ -125,10 +126,10 @@ public class IJSubtractBackground implements PreFilter, Filter {
         }
     }; //filter directions
     
-    static void modifiedSlidingParaboloid(ImageProcessor ip, float radius, boolean light, boolean smooth, FILTER_DIRECTION... directions) {
+    static void modifiedSlidingParaboloid(ImageProcessor ip, float radius, boolean light, boolean smooth, boolean parallele, FILTER_DIRECTION... directions) {
         FloatProcessor fp = ip.toFloat(0, null);
         fp.snapshot();
-        slidingParaboloidFloatBackground(fp, (float)radius, light, smooth, directions);
+        slidingParaboloidFloatBackground(fp, (float)radius, light, smooth, parallele, directions);
         float[] bgPixels = (float[])fp.getPixels();
         float[] snapshotPixels = (float[])fp.getSnapshotPixels(); //original data in the snapshot
         for (int p=0; p<bgPixels.length; p++)
@@ -136,7 +137,7 @@ public class IJSubtractBackground implements PreFilter, Filter {
     }
     /** Create background for a float image by sliding a paraboloid over
      * the image. */
-    static void slidingParaboloidFloatBackground(FloatProcessor fp, float radius, boolean invert, boolean doPresmooth, FILTER_DIRECTION... directions) {
+    static void slidingParaboloidFloatBackground(FloatProcessor fp, float radius, boolean invert, boolean doPresmooth, boolean parallele, FILTER_DIRECTION... directions) {
         float[] pixels = (float[])fp.getPixels();   //this will become the background
         int width = fp.getWidth();
         int height = fp.getHeight();
@@ -158,7 +159,7 @@ public class IJSubtractBackground implements PreFilter, Filter {
         /* Slide the parabola over the image in different directions */
         /* Doing the diagonal directions at the end is faster (diagonal lines are denser,
          * so there are more such lines, and the algorithm gets faster with each iteration) */
-        for (FILTER_DIRECTION dir: directions) filter1D(fp, dir, dir.diag ? coeff2diag : coeff2, cache, nextPoint);
+        for (FILTER_DIRECTION dir: directions) filter1D(fp, dir, dir.diag ? coeff2diag : coeff2, cache, nextPoint, parallele);
         
         
         /*filter1D(fp, X_DIRECTION, coeff2, cache, nextPoint);
@@ -185,7 +186,7 @@ public class IJSubtractBackground implements PreFilter, Filter {
     // modified from IJ SOURCE by Sliding Paraboloid by Michael Schmid, 2007.
     /** Filter by subtracting a sliding parabola for all lines in one direction, x, y or one of
      *  the two diagonal directions (diagonals are processed only for half the image per call). */
-    static void filter1D(FloatProcessor fp, FILTER_DIRECTION direction, float coeff2, HashMapGetCreate<Thread, float[]> cache, HashMapGetCreate<Thread, int[]> nextPoint) {
+    static void filter1D(FloatProcessor fp, FILTER_DIRECTION direction, float coeff2, HashMapGetCreate<Thread, float[]> cache, HashMapGetCreate<Thread, int[]> nextPoint, boolean parallel) {
         float[] pixels = (float[])fp.getPixels();   //this will become the background
         int width = fp.getWidth();
         int height = fp.getHeight();
@@ -229,7 +230,7 @@ public class IJSubtractBackground implements PreFilter, Filter {
                 pointInc = width - 1;
             break;
         }
-        IntStream.range(startLine, nLines).parallel().forEach(i -> {
+        parallele(IntStream.range(startLine, nLines), parallel).forEach(i -> {
             int startPixel = i*lineInc;
             if (direction == DIAGONAL_2B) startPixel += width-1;
             int length; // length of the line
