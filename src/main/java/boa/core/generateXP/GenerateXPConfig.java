@@ -57,6 +57,7 @@ public class GenerateXPConfig {
         xpFluoBactOnly.getPreProcessingTemplate().getTransformations().remove(3);
         xpFluoBactOnly.getPreProcessingTemplate().getTransformations().remove(1);
         xpFluoBactOnly.getPreProcessingTemplate().getTransformations().remove(0);
+        xpFluoBactOnly.getMeasurements().removeAllElements();
         exportXP(pathDS+"/dataset3/", "config_dataset3.json", xpFluoBactOnly, false);
         exportXP(pathDS+"/dataset1/", "config_dataset1.json", xpPhase, false);
         exportXP(pathDS+"/dataset2/", "config_dataset2.json", xpFluo, false);

@@ -114,7 +114,7 @@ public class ConfigurationTreeGenerator {
                             if (!keys.isEmpty()) {
                                 if (t.length()>0) t= t+"<br /> <br />";
                                 t = t+ "<b>Measurement Keys (column names in extracted data and associated object class):</b><br />";
-                                for (MeasurementKey k : keys) t=t+k.getKey()+ (k.getStoreStructureIdx()>=0 ? " ("+rootParameter.getStructure(k.getStoreStructureIdx()).getName()+")":"")+"<br />";
+                                for (MeasurementKey k : keys) t=t+k.getKey()+ (k.getStoreStructureIdx()>=0 && k.getStoreStructureIdx()<rootParameter.getStructureCount() ? " ("+rootParameter.getStructure(k.getStoreStructureIdx()).getName()+")":"")+"<br />";
                             }
                         }
                     }

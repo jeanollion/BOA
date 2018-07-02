@@ -203,7 +203,7 @@ public class GenerateXP {
             xp.clearMeasurements();
             xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));
             xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Size().setScale(true), new FeretMax().setScale(true), new Mean().setIntensityStructure(1)));
-            xp.addMeasurement(new ObjectFeatures(1).addFeature(new MeanAtBorder().setIntensityStructure(1), "IntensityBorderMeanGrad").addPreFilter(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2.5)));
+            //xp.addMeasurement(new ObjectFeatures(1).addFeature(new MeanAtBorder().setIntensityStructure(1), "IntensityBorderMeanGrad").addPreFilter(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2.5)));
             xp.addMeasurement(new ContainerObject(2, 1));
             xp.addMeasurement(new SimpleTrackMeasurements(2));
             xp.addMeasurement(new SpineCoordinates(2, 1));
@@ -213,7 +213,7 @@ public class GenerateXP {
             xp.addMeasurement(new RelativePosition(1, 0, RelativePosition.REF_POINT.GEOM_CENTER, RelativePosition.REF_POINT.UPPER_LEFT_CORNER).setMeasurementName("Center"));
             xp.addMeasurement(new GrowthRate().setFeature(new Size()).setSuffix("Area"));
             xp.addMeasurement(new GrowthRate().setFeature(new FeretMax()).setSuffix("Length"));
-            xp.addMeasurement(new GrowthRate().setFeature(new SpineLength()).setSuffix("SpineLength"));
+            //xp.addMeasurement(new GrowthRate().setFeature(new SpineLength()).setSuffix("SpineLength"));
         }
     }
     

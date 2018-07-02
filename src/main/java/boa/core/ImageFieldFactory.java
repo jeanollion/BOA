@@ -67,29 +67,27 @@ public class ImageFieldFactory {
             case ONE_FILE_PER_CHANNEL_POSITION:
                 {
                     // get keywords
-                    int nb = xp.getChannelImages().getChildCount();
-                    String[] keyWords = new String[nb];
-                    int idx = 0;
-                    for (ChannelImage i : xp.getChannelImages().getChildren()) keyWords[idx++] = i.getImportImageChannelKeyword();
+                    String[] keyWords = xp.getChannelImages().getChildren().stream().map(c -> c.getImportImageChannelKeyword()).toArray(s->new String[s]);
                     logger.debug("import image channel: keywords: {}", (Object)keyWords);
+                    long countBlank = Arrays.stream(keyWords).filter(s->"".equals(s)).count();
+                    if (countBlank>1) {
+                        if (pcb!=null) pcb.log("When Experiement has several channels, one must specify channel keyword for this import method");
+                        logger.error("When Experiement has several channels, one must specify channel keyword for this import method");
+                        return res;
+                    }
                     for (String p : path) ImageFieldFactory.importImagesChannel(new File(p), xp, keyWords, res, pcb);
                     break;
                 }
             case ONE_FILE_PER_CHANNEL_FRAME_POSITION:
                 {
-                    int nb = xp.getChannelImages().getChildCount();
-                    String[] keyWords = new String[nb];
-                    int idx = 0;
-                    int countBlank = 0;
-                    for (ChannelImage i : xp.getChannelImages().getChildren()) {
-                        keyWords[idx] = i.getImportImageChannelKeyword();
-                        if ("".equals(keyWords[idx])) ++countBlank;
-                        ++idx;
-                    }       if (countBlank>1) {
+                    String[] keyWords = xp.getChannelImages().getChildren().stream().map(c -> c.getImportImageChannelKeyword()).toArray(s->new String[s]);
+                    long countBlank = Arrays.stream(keyWords).filter(s->"".equals(s)).count();
+                    if (countBlank>1) {
                         if (pcb!=null) pcb.log("When Experiement has several channels, one must specify channel keyword for this import method");
                         logger.error("When Experiement has several channels, one must specify channel keyword for this import method");
                         return res;
-                    }       for (String p : path) ImageFieldFactory.importImagesCTP(new File(p), xp, keyWords, res, pcb);
+                    }       
+                    for (String p : path) ImageFieldFactory.importImagesCTP(new File(p), xp, keyWords, res, pcb);
                     break;
                 }
             default:
@@ -225,8 +223,9 @@ public class ImageFieldFactory {
         Pattern timePattern = Pattern.compile(".*"+frameSep+"(\\d+).*");
         Map<String, List<File>> filesByPosition=null;
         Pattern posPattern = Pattern.compile(".*("+posSep+"\\d+).*");
-        try {filesByPosition = files.stream().collect(Collectors.groupingBy(f -> getAsString(f.getName(), posPattern)));}
-        catch (Exception e) {
+        try {
+            filesByPosition = files.stream().collect(Collectors.groupingBy(f -> getAsString(f.getName(), posPattern)));
+        } catch (Exception e) {
             if (pcb!=null) pcb.log("No position with keyword: "+posSep+" could be find in dir: "+input);
             logger.error("no position could be identified for dir: {}", input);
             return;

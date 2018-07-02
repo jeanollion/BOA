@@ -63,6 +63,7 @@ public class StructureSelectorTree {
     
     private void setExperiment(Experiment xp, int treeSelectionMode) {
         this.xp = xp;
+        if (xp==null) throw new IllegalArgumentException("XP NULL");
         structureNamesMapIdx.clear();
         for (int sIdx = 0; sIdx<xp.getStructureCount(); sIdx++) {
             Structure s = xp.getStructure(sIdx);
@@ -79,7 +80,7 @@ public class StructureSelectorTree {
     
     public void selectStructures(int... structureIdx) {
         if (structureIdx==null || structureIdx.length==0) tree.setSelectionPaths(new TreePath[0]);
-        else tree.setSelectionPaths(Arrays.stream(structureIdx).mapToObj(i->getPath(i)).filter(p->p!=null).toArray(i->new TreePath[i]));
+        else tree.setSelectionPaths(Arrays.stream(structureIdx).filter(sIdx->xp.getStructureCount()>sIdx).mapToObj(i->getPath(i)).filter(p->p!=null).toArray(i->new TreePath[i]));
     }
     
     private JTree generateTree(int treeSelectionMode) {
