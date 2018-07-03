@@ -993,7 +993,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         List<String> structureNames= Arrays.asList(db.getExperiment().getStructuresAsString());
         Object selectedO = interactiveStructure.getSelectedItem();
         this.interactiveStructure.removeAllItems();
-        interactiveStructure.addItem("Root");
+        interactiveStructure.addItem("Viewfield");
         for (String s: structureNames) interactiveStructure.addItem(s);
         if (structureNames.size()>0) {
             if (selectedO!=null && structureNames.contains(selectedO)) interactiveStructure.setSelectedItem(selectedO);

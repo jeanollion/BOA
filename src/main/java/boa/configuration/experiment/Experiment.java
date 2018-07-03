@@ -316,7 +316,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public String[] getStructureNames(int[] structureIndicies) {
         String[] res = new String[structureIndicies.length];
         for (int i = 0; i<res.length; ++i) {
-            if (structureIndicies[i]<0) res[i]="root";
+            if (structureIndicies[i]<0) res[i]="Viewfield";
             else res[i] = this.getStructure(structureIndicies[i]).getName();
         }
         return res;

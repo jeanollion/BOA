@@ -124,6 +124,7 @@ public class ConfigurationTreeGenerator {
             }
         };
         treeModel.setJTree(tree);
+        tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         DefaultTreeCellRenderer renderer = new TransparentTreeCellRenderer();
         Icon personIcon = null;

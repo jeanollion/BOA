@@ -69,7 +69,7 @@ public class StructureSelectorTree {
             Structure s = xp.getStructure(sIdx);
             structureNamesMapIdx.put(s.getName(), sIdx);
         }
-        structureNamesMapIdx.put("Root", -1);
+        structureNamesMapIdx.put("Viewfield", -1);
         generateTree(treeSelectionMode);
     }
     
@@ -92,7 +92,7 @@ public class StructureSelectorTree {
             directC.forEach(p::add);
             return directC.stream();
         }).collect(Collectors.toList());
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode("Root");
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode("Viewfield");
         List<DefaultMutableTreeNode> nextLevel = getNextLevel.apply(new ArrayList<DefaultMutableTreeNode>(){{add(root);}});
         while (!nextLevel.isEmpty())  nextLevel = getNextLevel.apply(nextLevel);
         treeModel = new DefaultTreeModel(root);

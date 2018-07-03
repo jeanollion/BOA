@@ -21,9 +21,6 @@ package boa.configuration.parameters;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Structure;
 import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-import java.util.function.IntSupplier;
-import java.util.function.ObjIntConsumer;
 import java.util.function.ToIntFunction;
 
 /**
@@ -127,7 +124,7 @@ public class StructureParameter<T extends StructureParameter<T>> extends IndexCh
 
     @Override
     public String getNoSelectionString() {
-        return "Root";
+        return "Viewfield";
     }
     
 }
