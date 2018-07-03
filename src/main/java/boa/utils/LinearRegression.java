@@ -18,6 +18,8 @@
  */
 package boa.utils;
 
+import java.util.stream.IntStream;
+
 /**
  *
  * @author adapted from http://introcs.cs.princeton.edu/java/97data/LinearRegression.java.html
@@ -74,9 +76,7 @@ public class LinearRegression {
                 */
     }
     public static double[] getResiduals(double[] x, double[] y, double intersect, double slope) {
-        double[] res = new double[x.length];
-        for (int i = 0; i<x.length; ++i) res[i] = y[i] - (intersect + x[i] * slope);
-        return res;
+        return IntStream.range(0, x.length).mapToDouble(i -> y[i] - (intersect + x[i] * slope)).toArray();
     }
 
 }

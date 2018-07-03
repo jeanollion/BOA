@@ -86,6 +86,7 @@ public class FileProgressLogger implements ProgressLogger {
     }
     public void setLogFile(String dir) {
         if (dir==null) {
+            this.logFile=null;
             this.unlockLogFile();
             return;
         }

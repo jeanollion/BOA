@@ -63,13 +63,12 @@ public class GrowthRate implements Measurement, MultiThreaded {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
     protected PluginParameter<GeometricalFeature> feature = new PluginParameter<>("Feature", GeometricalFeature.class, new Size(), false).setToolTipText("Geometrical Feature of object used to compute Growth Rate");
     protected TextParameter suffix = new TextParameter("Suffix", "", false).setToolTipText("Suffix added to measurement keys");
-    protected BooleanParameter residuals = new BooleanParameter("Save Residuals", false);
     protected BooleanParameter intersection = new BooleanParameter("Save Intersection", false);
     protected BooleanParameter saveFeature = new BooleanParameter("Save Feature", false);
     protected TextParameter featureKey = new TextParameter("Feature Name", "", false).setToolTipText("Name given to geometrical feature in measurements");
     protected ConditionalParameter saveFeatureCond = new ConditionalParameter(saveFeature).setActionParameters("true", featureKey).setToolTipText("Whether value of geometrical feature should be saved to measurements");
     protected BoundedNumberParameter minCells = new BoundedNumberParameter("Minimum cell number", 0, 4, 3, null).setToolTipText("Minimum number of cell to compute growth rate. NA is returned if minimum not reached");
-    protected Parameter[] parameters = new Parameter[]{structure, feature, minCells, suffix, saveFeatureCond, residuals, intersection};
+    protected Parameter[] parameters = new Parameter[]{structure, feature, minCells, suffix, saveFeatureCond, intersection};
     
     public GrowthRate() {
         feature.addListener( p -> {
@@ -110,7 +109,6 @@ public class GrowthRate implements Measurement, MultiThreaded {
         int bIdx = structure.getSelectedIndex();
         String suffix = this.suffix.getValue();
         String featKey = this.featureKey.getValue();
-        boolean res = residuals.getSelected();
         boolean inter = intersection.getSelected();
         boolean feat = saveFeature.getSelected();
         final ArrayList<ObjectFeatureCore> cores = new ArrayList<>();
@@ -137,19 +135,16 @@ public class GrowthRate implements Measurement, MultiThreaded {
                     length[idx++] =   logLengthMap.get(b);
                 }
                 double[] beta = LinearRegression.run(frame, length);
-                double[] residuals = res? LinearRegression.getResiduals(frame, length, beta[0], beta[1]) : null;
                 idx = 0;
                 for (StructureObject b : l) {
                     b.getMeasurements().setValue("GrowthRate"+suffix, beta[1] );
                     if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, beta[0] );
-                    if (res) b.getMeasurements().setValue("GrowthRateResidual"+suffix, residuals[idx++] );
                     if (feat) b.getMeasurements().setValue(featKey, Math.exp(logLengthMap.get(b)));
                 }
             } else { // erase values
                 for (StructureObject b : l) {
                     b.getMeasurements().setValue("GrowthRate"+suffix, null );
                     if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, null );
-                    if (res) b.getMeasurements().setValue("GrowthRateResidual"+suffix, null );
                     if (feat) b.getMeasurements().setValue(featKey, null);
                 }
             }
@@ -164,7 +159,6 @@ public class GrowthRate implements Measurement, MultiThreaded {
         String suffix = this.suffix.getValue();
         res.add(new MeasurementKeyObject("GrowthRate"+suffix, structure.getSelectedIndex()));
         if (intersection.getSelected()) res.add(new MeasurementKeyObject("GrowthRateIntersection"+suffix, structure.getSelectedIndex()));
-        if (residuals.getSelected()) res.add(new MeasurementKeyObject("GrowthRateResidual"+suffix, structure.getSelectedIndex()));
         return res;
     }
     
