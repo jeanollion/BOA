@@ -45,7 +45,10 @@ public class ChannelImage extends SimpleContainerParameter {
             return distinctKW == xp.getChannelImageCount();
         } else return true;
     };
-    TextParameter importKeyWord = new TextParameter("Channel keyword", "", true).addValidationFunction(kwValid).setToolTipText("Keyword allowing to distinguish the channel during image import. Filename of the channel must contain this keyword and only differ of this keyword (and eventually by frame number). First channel must have a non-null keyword is import method is <em>"+ONE_FILE_PER_CHANNEL_POSITION.getMethod()+"</em> and that there are several channels. All keywords should be distinct");
+    TextParameter importKeyWord = new TextParameter("Channel keyword", "", true).addValidationFunction(kwValid).setToolTipText("Keyword allowing to distinguish the file containing channel during image import, when dataset is composed of several files per position. <br />"
+            + "For a given position, the name of the file containing the channel image must contain this keyword and all the files from the same position must differ only by this keyword (and eventually by frame number if each frame is in a separate file). "
+            + "<br />First channel must have a non-null keyword is import method is <em>"+ONE_FILE_PER_CHANNEL_POSITION.getMethod()+"</em> and that there are several channels. "
+            + "<br />All keywords should be distinct");
     
     public ChannelImage(String name) {
         super(name);
