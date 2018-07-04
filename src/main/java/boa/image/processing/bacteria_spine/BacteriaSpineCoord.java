@@ -32,22 +32,24 @@ public class BacteriaSpineCoord {
         System.arraycopy(coords, 0, dup.coords, 0, coords.length);
         return dup;
     }
-    public double spineCoord(boolean normalized) {
+    public double curvilinearCoord(boolean normalized) {
         return normalized?coords[0]/coords[2] : coords[0];
     }
-    public double getProjectedSpineCoord(double newSpineLength, PROJECTION proj) {
+    public double getProjectedCurvilinearCoord(double newSpineLength, PROJECTION proj) {
         switch(proj) {
             case PROPORTIONAL:
             default:
-                return spineCoord(true) * newSpineLength;
+                return curvilinearCoord(true) * newSpineLength;
             case NEAREST_POLE:
-                if (spineCoord(true)<=0.5) { // upper pole
+                if (curvilinearCoord(true)<=0.5) { // upper pole
                     //logger.debug("upper pole: new l {}, old l {}, res: {}",newSpineLength , spineLength(), spineCoord(false));
-                    return spineCoord(false);
+                    return curvilinearCoord(false);
                 } else { // lower pole
                     //logger.debug("lower pole: new l {}, old l {}, coord: {}, delta: {}, res: {}",newSpineLength , spineLength(), spineCoord(false), spineLength() - spineCoord(false), newSpineLength-(spineLength() - spineCoord(false)));
-                    return newSpineLength-(spineLength() - spineCoord(false));
+                    return newSpineLength-(spineLength() - curvilinearCoord(false));
                 }
+            case IDENTITY:
+                return curvilinearCoord(false);
         }
     }
     public double spineLength() {
@@ -59,8 +61,8 @@ public class BacteriaSpineCoord {
     public double spineRadius() {
         return coords[3];
     }
-    public BacteriaSpineCoord setSpineCoord(double spineCoord) {
-        coords[0] = spineCoord;
+    public BacteriaSpineCoord setCurvilinearCoord(double curvilinearCoord) {
+        coords[0] = curvilinearCoord;
         return this;
     }
     public BacteriaSpineCoord setSpineLength(double spineLengthd) {
@@ -82,13 +84,13 @@ public class BacteriaSpineCoord {
      * @return same modified object
      */
     public BacteriaSpineCoord setDivisionPoint(double divisionProportion, boolean upperCell) {
-        if (!upperCell) setSpineCoord(spineCoord(false)-(1-divisionProportion)*spineLength()); // shift coord of the size of the upper cell
+        if (!upperCell) setCurvilinearCoord(curvilinearCoord(false)-(1-divisionProportion)*spineLength()); // shift coord of the size of the upper cell
         setSpineLength(spineLength() * divisionProportion);
         return this;
     }
     
     @Override
     public String toString() {
-        return new StringBuilder().append("along spine: ").append(spineCoord(false)).append("/").append(spineLength()).append(" distance from spine:").append(radialCoord(false)).append("/").append(spineRadius()).toString();
+        return new StringBuilder().append("curvilinear:").append(curvilinearCoord(false)).append("/").append(spineLength()).append(" radial:").append(radialCoord(false)).append("/").append(spineRadius()).toString();
     }
 }

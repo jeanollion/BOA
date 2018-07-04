@@ -88,7 +88,7 @@ public class DrawSpineProjection {
         
         BacteriaSpineLocalizer loc2 = new BacteriaSpineLocalizer(bact2.getRegion());
         BacteriaSpineCoord coord2 = loc2.getSpineCoord(mut2.getRegion().getCenter());
-        BacteriaSpineCoord coordProj2 = coord.duplicate().setSpineCoord(coord.getProjectedSpineCoord(loc2.getLength(), BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL));
+        BacteriaSpineCoord coordProj2 = coord.duplicate().setCurvilinearCoord(coord.getProjectedCurvilinearCoord(loc2.getLength(), BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL));
         Point mutProj2 = loc2.project(coord, BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL);
         Overlay spine2 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc2.spine, TRIM_SPINE_FACTOR), mic2.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
         drawCoord(spine2, mic2.getBounds(), loc2.spine, coordProj2, mutProj2);
@@ -100,13 +100,13 @@ public class DrawSpineProjection {
         BacteriaSpineLocalizer loc32 = new BacteriaSpineLocalizer(bact32.getRegion());
         double divProp = loc32.getLength() / (loc31.getLength() + loc32.getLength());
         BacteriaSpineCoord coordDiv = coord2.duplicate().setDivisionPoint(divProp, false);
-        BacteriaSpineCoord coordDivProj = coordDiv.duplicate().setSpineCoord(coordDiv.getProjectedSpineCoord(loc32.getLength(), BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL));
+        BacteriaSpineCoord coordDivProj = coordDiv.duplicate().setCurvilinearCoord(coordDiv.getProjectedCurvilinearCoord(loc32.getLength(), BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL));
         Point mutProj3 = loc32.project(coordDiv, BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL);
         logger.debug("coord: {} coord div: {}, div length: {}+{}", coord2, coordDiv, loc31.getLength(), loc32.getLength());
         logger.debug("target coord: {}", loc32.getSpineCoord(mut3.getRegion().getCenter()));
         logger.debug("target: {} projDiv: {}", mut3.getRegion().getCenter(), mutProj3);
         Overlay spine31 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc31.spine, TRIM_SPINE_FACTOR), mic3.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
-        drawCoord(spine31, mic3.getBounds(), loc31.spine, coord2.duplicate().setSpineCoord(loc31.getLength()*2).setSpineLength(loc31.getLength()), null); // draw whole spine on bact 31
+        drawCoord(spine31, mic3.getBounds(), loc31.spine, coord2.duplicate().setCurvilinearCoord(loc31.getLength()*2).setSpineLength(loc31.getLength()), null); // draw whole spine on bact 31
         Overlay spine32 = SpineOverlayDrawer.getSpineOverlay(trimSpine(loc32.spine, TRIM_SPINE_FACTOR), mic3.getBounds(), SPINE_COLOR, CONTOUR_COLOR, WIDTH);
         drawCoord(spine32, mic3.getBounds(), loc32.spine, coordDivProj, mutProj3); // normal draw on bact 32
         //SpineOverlayDrawer.drawPoint(spine32, mic3.getBounds(), mutProj3, SOURCE_COLOR, WIDTH/4);
@@ -125,10 +125,10 @@ public class DrawSpineProjection {
             PointContainer2<Vector, Double> p = spine.spine[i - 1];
             PointContainer2<Vector, Double> p2 = spine.spine[i];
             Vector dir = Vector.vector2D(p, p2);
-            boolean last = p2.getContent2() >= coord.spineCoord(false);
+            boolean last = p2.getContent2() >= coord.curvilinearCoord(false);
             if (last) {
                 // only draw until coord
-                double newL = coord.spineCoord(false) - p.getContent2();
+                double newL = coord.curvilinearCoord(false) - p.getContent2();
                 dir.normalize().multiply(newL);
                 spineIntersection = p.duplicate().translate(dir);
             }
