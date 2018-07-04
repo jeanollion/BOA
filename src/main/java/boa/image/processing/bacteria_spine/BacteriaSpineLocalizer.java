@@ -141,12 +141,12 @@ public class BacteriaSpineLocalizer {
         BacteriaSpineCoord res = new BacteriaSpineCoord().setSpineLength(length);
         // specific cases
         if (source.equals(r0)) { // source is r0
-            res.setSpineCoord(r0.getContent2());
+            res.setCurvilinearCoord(r0.getContent2());
             res.setSpineRadius(r0.getContent1().norm());
             return res;
         }
         if (source.equals(r1)) { // source is r1
-            res.setSpineCoord(r1.getContent2());
+            res.setCurvilinearCoord(r1.getContent2());
             res.setSpineRadius(r1.getContent1().norm());
             return res;
         }
@@ -155,15 +155,15 @@ public class BacteriaSpineLocalizer {
         Vector r0_src = Vector.vector(r0, source);
         Vector r1_src = Vector.vector(r1, source);
         if (r0_src.duplicate().normalize().equals(v0)) { // point is in direction of r0
-            res.setSpineCoord(r0.getContent2());
+            res.setCurvilinearCoord(r0.getContent2());
             res.setSpineRadius(r0.getContent1().norm());
-            res.setDistFromSpine(r0_src.norm());
+            res.setRadialCoord(r0_src.norm());
             return res;
         }
         if (r1_src.duplicate().normalize().equals(v1)) { // point is in direction of r1
-            res.setSpineCoord(r1.getContent2());
+            res.setCurvilinearCoord(r1.getContent2());
             res.setSpineRadius(r1.getContent1().norm());
-            res.setDistFromSpine(r1_src.norm());
+            res.setRadialCoord(r1_src.norm());
             return res;
         }
         Vector r0_r1 = Vector.vector(r0, r1); 
@@ -181,8 +181,8 @@ public class BacteriaSpineLocalizer {
                 res.setSpineRadius(spineDir.norm());
                 Vector sourceDir = Vector.vector(intersection, source);
                 double sign = Math.signum(sourceDir.dotProduct(spineDir));
-                res.setDistFromSpine(sourceDir.norm() * sign);
-                res.setSpineCoord(r0.getContent2()+dir*distFromR0);
+                res.setRadialCoord(sourceDir.norm() * sign);
+                res.setCurvilinearCoord(r0.getContent2()+dir*distFromR0);
                 return res;
             }
             return null;
@@ -205,8 +205,8 @@ public class BacteriaSpineLocalizer {
                 Vector spineDir = r0.getContent1().duplicate().weightedSum(r1.getContent1(), w, 1-w);
                 res.setSpineRadius(spineDir.norm());
                 double sign = Math.signum(sourceDir.dotProduct(spineDir));
-                res.setDistFromSpine(sourceDir.norm() * sign);
-                res.setSpineCoord(w * r0.getContent2() + (1-w)*r1.getContent2());
+                res.setRadialCoord(sourceDir.norm() * sign);
+                res.setCurvilinearCoord(w * r0.getContent2() + (1-w)*r1.getContent2());
                 if (testMode) logger.debug("vertabra with colinear direction case weight: {}, intersection: {} res -> {}", w, intersection, res);
                 return res;
             }
@@ -240,8 +240,8 @@ public class BacteriaSpineLocalizer {
         double w = 1-alpha;
         Vector spineDir = r0.getContent1().duplicate().weightedSum(r1.getContent1(), w, 1-w);
         res.setSpineRadius(spineDir.norm());
-        res.setDistFromSpine(d);
-        res.setSpineCoord(w * r0.getContent2() + (1-w)*r1.getContent2());
+        res.setRadialCoord(d);
+        res.setCurvilinearCoord(w * r0.getContent2() + (1-w)*r1.getContent2());
         if (testMode) logger.debug("general case. weight: {}, d: {}, coord: {}", w, d, res);
         return res;
         
@@ -255,7 +255,7 @@ public class BacteriaSpineLocalizer {
      */
     public Point project(BacteriaSpineCoord coord, PROJECTION proj) {
         if (coord==null) return null;
-        Double spineCoord = coord.getProjectedSpineCoord(length, proj);
+        Double spineCoord = coord.getProjectedCurvilinearCoord(length, proj);
         if (spineCoord<=-1 || spineCoord>=length+1) return null; //border cases allow only 1 pixel outside
         PointContainer2<Vector, Double> searchKey = new PointContainer2<>(null, spineCoord);
         int idx = Arrays.binarySearch(spine.spine, searchKey, SPINE_COMPARATOR);
@@ -279,7 +279,7 @@ public class BacteriaSpineLocalizer {
             PointContainer2<Vector, Double> v1 = spine.spine[ip-1];
             PointContainer2<Vector, Double> v2 = spine.spine[ip];
             return projectFrom2Vertebra(v1, v2, spineCoord, coord.radialCoord(false));
-        } else return projectFromVertebra(spine.spine[idx],coord.radialCoord(false));
+        } else return projectFromVertebra(spine.spine[idx], coord.radialCoord(false));
     }
     private Point projectFromVertebra(PointContainer2<Vector, Double> vertebra, double distanceFromSpine) {
         if (testMode) logger.debug("projecting from single vertebra: {}", vertebra);
@@ -336,13 +336,16 @@ public class BacteriaSpineLocalizer {
         return new double[]{(-b+d)/(2*a), (-b-d)/(2*a)};
     }
     // HELPER METHODS
-    public static double distanceSq(Point sourcePoint, Point otherPoint, StructureObject source, StructureObject destination, PROJECTION projType, Map<StructureObject,BacteriaSpineLocalizer> localizerMap, boolean testMode ) {
-        if (source==destination) return sourcePoint.dist(otherPoint)* source.getScaleXY();
-        Point proj = project(sourcePoint, source, destination, projType, localizerMap, testMode);
-        if (proj==null) return Double.POSITIVE_INFINITY;
-        return otherPoint.distSq(proj) * Math.pow(source.getScaleXY(), 2); 
+    public static double distanceSq(Point sourcePoint, Point otherPoint, StructureObject source, StructureObject destination, PROJECTION projType, boolean projectOnSameSide, Map<StructureObject,BacteriaSpineLocalizer> localizerMap, boolean testMode ) {
+        BacteriaSpineCoord coord = localizerMap.get(source).getSpineCoord(sourcePoint);
+        return distanceSq(coord, otherPoint, source, destination, projType, projectOnSameSide, localizerMap, testMode);
     }
-    public static double distanceSq(BacteriaSpineCoord sourceCoord, Point otherPoint, StructureObject source, StructureObject destination, PROJECTION projType, Map<StructureObject,BacteriaSpineLocalizer> localizerMap, boolean testMode ) {
+    public static double distanceSq(BacteriaSpineCoord sourceCoord, Point otherPoint, StructureObject source, StructureObject destination, PROJECTION projType, boolean projectOnSameSide, Map<StructureObject,BacteriaSpineLocalizer> localizerMap, boolean testMode ) {
+        if (sourceCoord==null) return Double.POSITIVE_INFINITY;
+        if (projectOnSameSide) { // also enshure both points are on the same side
+            otherPoint = getPointOnSameSide(sourceCoord.radialCoord(false), otherPoint, destination, localizerMap);
+            if (otherPoint==null) return Double.POSITIVE_INFINITY;
+        }
         if (source==destination) {
             Point sourcePoint = localizerMap.get(source).project(sourceCoord, projType);
             return sourcePoint.distSq(otherPoint) * Math.pow(source.getScaleXY(), 2); 
@@ -351,6 +354,15 @@ public class BacteriaSpineLocalizer {
         if (testMode) logger.debug("distance: coord: {}->proj: {}", sourceCoord, proj);
         if (proj==null) return Double.POSITIVE_INFINITY;
         return otherPoint.distSq(proj) * Math.pow(source.getScaleXY(), 2); 
+    }
+    public static Point getPointOnSameSide(double side, Point pointToMove, StructureObject bact, Map<StructureObject,BacteriaSpineLocalizer> localizerMap) {
+        BacteriaSpineCoord coord = localizerMap.get(bact).getSpineCoord(pointToMove);
+        if (coord==null) return null;
+        if (Math.signum(side)==Math.signum(coord.radialCoord(false))) return pointToMove;
+        else {
+            coord.setRadialCoord(-coord.radialCoord(false));
+            return localizerMap.get(bact).project(coord, PROJECTION.PROPORTIONAL);
+        }
     }
     public static Point project(Point sourcePoint, StructureObject source, StructureObject destination, PROJECTION proj, Map<StructureObject,BacteriaSpineLocalizer> localizerMap, boolean testMode ) {
         return project(localizerMap.get(source).getSpineCoord(sourcePoint), source, destination, proj, localizerMap, testMode);
@@ -446,5 +458,5 @@ public class BacteriaSpineLocalizer {
         //logger.debug("proj div: {} -> {}", c, res==null ? null : destination.getSpineCoord(res));
         return res;
     }
-    public enum PROJECTION {PROPORTIONAL, NEAREST_POLE};
+    public enum PROJECTION { PROPORTIONAL, NEAREST_POLE, IDENTITY };
 }

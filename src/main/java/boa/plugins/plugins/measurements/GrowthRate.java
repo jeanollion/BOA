@@ -159,6 +159,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
         String suffix = this.suffix.getValue();
         res.add(new MeasurementKeyObject("GrowthRate"+suffix, structure.getSelectedIndex()));
         if (intersection.getSelected()) res.add(new MeasurementKeyObject("GrowthRateIntersection"+suffix, structure.getSelectedIndex()));
+        if (this.saveFeature.getSelected()) res.add(new MeasurementKeyObject(featureKey.getValue(), structure.getSelectedIndex()));
         return res;
     }
     

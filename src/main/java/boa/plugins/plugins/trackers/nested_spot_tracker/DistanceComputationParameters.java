@@ -32,7 +32,8 @@ public class DistanceComputationParameters {
         public boolean includeLQ = true;
         public boolean allowGapBetweenLQ = false;
         int maxFrameDiff = 0;
-        public PROJECTION projectionType=PROJECTION.NEAREST_POLE;
+        boolean projectOnSameSides = true;
+        public PROJECTION projectionType=PROJECTION.PROPORTIONAL;
         public DistanceComputationParameters() {
             
         }
@@ -66,5 +67,9 @@ public class DistanceComputationParameters {
             if (delta==0) return 0;
             if (!allowGapBetweenLQ && s.isLowQuality() && t.isLowQuality()) return Double.POSITIVE_INFINITY; // no gap closing between LQ spots
             return  delta * delta * gapSquareDistancePenalty + 2*delta * gapDistancePenalty*Math.sqrt(distanceSq); // working on square distance
+        }
+        public DistanceComputationParameters setProjOnSameSide(boolean projectOnSameSides) {
+            this.projectOnSameSides = projectOnSameSides;
+            return this;
         }
     }

@@ -18,6 +18,7 @@
  */
 package boa.plugins.plugins.trackers;
 
+import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.NumberParameter;
@@ -93,17 +94,18 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", -1, false, false).setToolTipText("Structure of bacteria objects.");
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5).setEmphasized(true).setToolTipText("Spot with quality parameter over this threshold are considered as high quality spots, others as low quality spots");
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null).setEmphasized(true).setToolTipText("Maximum frame gap for spot linking: if two spots are separated by more frame than this value they cannot be linked together directly");
-    NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together."+CONF_HINT);
+    NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.4, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together."+CONF_HINT);
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Maximum Linking Distance", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for theglobal linking step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together. An additional cost proportional to the gap is added to the distance between spots (see <em>gap penalty</em>"+CONF_HINT);
-    NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null).setEmphasized(true).setToolTipText("When two spots are separated by a gap, an additional distance is added to their distance: this value x number of frame of the gap");
-    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance", 2, 0.8, 0, null).setToolTipText("The algorithm performs a global optimization minimizing the global cost. Cost are the distance between spots. Alternative distance represent the cost of being linked with no other spot. If this value is too low, the algorithm won't link any spot, it should be superior to the linking distance threshold");
+    NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.15, 0, null).setEmphasized(true).setToolTipText("When two spots are separated by a gap, an additional distance is added to their distance: this value x number of frame of the gap");
+    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance", 2, 0.77, 0, null).setToolTipText("The algorithm performs a global optimization minimizing the global cost. Cost are the distance between spots. Alternative distance represent the cost of being linked with no other spot. If this value is too low, the algorithm won't link any spot, it should be superior to the linking distance threshold");
     ChoiceParameter projectionType = new ChoiceParameter("Projection type", Utils.toStringArray(BacteriaSpineLocalizer.PROJECTION.values()), PROPORTIONAL.toString(), false ).setToolTipText("Spine projection for distance calculation: spine coordinate of source spots are first computed and then projected in destination bacteria. <ol><li>"+PROPORTIONAL+": spine coordinate is multiplied by the ratio of the spine length of the two bacteria</li><li>"+NEAREST_POLE+": distance (in terms of path along the spine) to nearest pole is conseverd</li></ol><br />"+CONF_HINT);
-    Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, projectionType, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
+    BooleanParameter projectOnSameSide = new BooleanParameter("Project on same side", true).setToolTipText("Wether point should be projected on same side of the spine as destination point. <br />This allows to remove the rotation of the bacteria along its spine axis");
+    Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, projectionType, projectOnSameSide, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
     String toolTip = "<b>Tracker for spots moving within bacteria</b> using <em>TrackMate (https://imagej.net/TrackMate)</em> <br />"
             + "<ul><li>Distance between spots is computed using spine coordinates in order to take into acount bacteria growth and movements</li>"
             + "<li>Bacteria lineage is honoured: two spots can only be linked if they are contained in bacteria from the same track or connected tracks (after division events)</li>"
             + "<li>If segmentation and tracking are performed jointly, a first step of removal of low-quality (LQ) spots (spot that can be either false-negative or true-positive) will be applied: only LQ spots that can be linked (directly or indirectly) to high-quality (HQ) spots (ie spots that are true-positives) are kept, allowing a better selection of true-positives spots of low intensity. HQ/LQ definition depends on the parameter <em>Spot Quality Threshold</em> and depends on the quality parameter defined by the segmenter</li>"
-            + "<li>A global linking procedure - allowing gaps (if <em>Maximum frame gap</em> is >0) - is applied among remaining spots</li></ul>";
+            + "<li>A global linking procedure frame-to-frame then - allowing gaps (if <em>Maximum frame gap</em> is >0) - is applied among remaining spots</li></ul>";
     // multithreaded interface
         
     public NestedSpotTracker setCompartimentStructure(int compartimentStructureIdx) {
@@ -166,7 +168,8 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                 .setAlternativeDistance(alternativeDistance.getValue().doubleValue())
                 .setAllowGCBetweenLQ(true)
                 .setMaxFrameDifference(maxGap)
-                .setProjectionType(BacteriaSpineLocalizer.PROJECTION.valueOf(projectionType.getSelectedItem()));
+                .setProjectionType(BacteriaSpineLocalizer.PROJECTION.valueOf(projectionType.getSelectedItem()))
+                .setProjOnSameSide(this.projectOnSameSide.getSelected());
         
         logger.debug("distanceFTF: {}, distance GC: {}, gapP: {}, atl: {}", maxLinkingDistance, maxLinkingDistanceGC, gapPenalty, alternativeDistance);
         
@@ -240,6 +243,7 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
         }
         long t2 = System.currentTimeMillis();
         boolean ok = true; 
+        ok = tmi.processFTF(maxLinkingDistance);
         if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
         if (ok) {
             //switchCrossingLinksWithLQBranches(tmi, maxLinkingDistanceGC/Math.sqrt(2), maxLinkingDistanceGC, maxGap); // remove crossing links
@@ -326,9 +330,9 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                     SpineOverlayDrawer.display("Destination", mc2.getRawImage(l.get(0).getStructureIdx()), spineDest);
                     
                     // also add to object attributes
-                    l.get(0).setAttribute("Spine Coordinate", coord==null? "could not be computed": numberFormater.apply(coord.spineCoord(false))+"/"+numberFormater.apply(coord.spineLength()));
+                    l.get(0).setAttribute("Spine Coordinate", coord==null? "could not be computed": numberFormater.apply(coord.curvilinearCoord(false))+"/"+numberFormater.apply(coord.spineLength()));
                     l.get(0).setAttribute("Spine Radial Coordinate", coord==null? "could not be computed": numberFormater.apply(coord.radialCoord(false))+"/"+numberFormater.apply(coord.spineRadius()));
-                    l.get(1).setAttribute("Spine Coordinate", coord2==null? "could not be computed": numberFormater.apply(coord2.spineCoord(false))+"/"+numberFormater.apply(coord2.spineLength()));
+                    l.get(1).setAttribute("Spine Coordinate", coord2==null? "could not be computed": numberFormater.apply(coord2.curvilinearCoord(false))+"/"+numberFormater.apply(coord2.spineLength()));
                     l.get(1).setAttribute("Spine Radial Coordinate", coord2==null? "could not be computed": numberFormater.apply(coord2.radialCoord(false))+"/"+numberFormater.apply(coord2.spineRadius()));
                     
                     // log distance
