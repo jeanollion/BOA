@@ -141,11 +141,11 @@ public class GrowthRate implements Measurement, MultiThreaded {
                     if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, beta[0] );
                     if (feat) b.getMeasurements().setValue(featKey, Math.exp(logLengthMap.get(b)));
                 }
-            } else { // erase values
+            } else {
                 for (StructureObject b : l) {
-                    b.getMeasurements().setValue("GrowthRate"+suffix, null );
-                    if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, null );
-                    if (feat) b.getMeasurements().setValue(featKey, null);
+                    b.getMeasurements().setValue("GrowthRate"+suffix, null );  // erase values
+                    if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, null );  // erase values
+                    if (feat) b.getMeasurements().setValue(featKey, Math.exp(logLengthMap.get(b))); 
                 }
             }
         });
