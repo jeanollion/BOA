@@ -18,6 +18,7 @@
  */
 package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
+import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
@@ -35,9 +36,9 @@ import static boa.plugins.plugins.measurements.objectFeatures.object_feature.Siz
  * @author jollion
  */
 public class FeretMax implements GeometricalFeature, ToolTip {
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Unit", false).setToolTipText(SCALED_TT);;
-    public FeretMax setScale(boolean unit) {
-        scaled.setSelectedIndex(unit?1:0);
+    protected BooleanParameter scaled = new BooleanParameter("Scaled", "Unit", "Pixel", true).setToolTipText(SCALED_TT);
+    public FeretMax setScaled(boolean unit) {
+        scaled.setSelected(unit);
         return this;
     }
     @Override
@@ -53,7 +54,7 @@ public class FeretMax implements GeometricalFeature, ToolTip {
     @Override
     public double performMeasurement(Region object) {
         double feret = GeometricalMeasurements.getFeretMax(object);
-        if (scaled.getSelectedIndex()==1) feret*=object.getScaleXY();
+        if (scaled.getSelected()) feret*=object.getScaleXY();
         return feret;
     }
 

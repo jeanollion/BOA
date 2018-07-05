@@ -25,6 +25,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import org.scijava.module.ModuleItem;
@@ -38,7 +39,7 @@ public abstract class SimpleParameter implements Parameter {
     protected String name;
     private ContainerParameter parent;
     protected boolean isEmphasized;
-    protected BooleanSupplier validationFunction = ()->true;
+    protected Function<Parameter, Boolean> validationFunction;
     
     protected SimpleParameter(String name) {
         this.name=name;
@@ -53,14 +54,14 @@ public abstract class SimpleParameter implements Parameter {
         this.toolTipText=txt;
         return (T)this;
     }
-    public <T extends Parameter> T addValidationFunction(BooleanSupplier validationFunction) {
-        BooleanSupplier oldValidation = this.validationFunction;
-        this.validationFunction = () -> oldValidation.getAsBoolean() && validationFunction.getAsBoolean();
+    public <T extends Parameter> T setValidationFunction(Function<Parameter, Boolean> validationFunction) {
+        this.validationFunction = validationFunction;
         return (T)this;
     }
     @Override 
     public boolean isValid() {
-        return validationFunction.getAsBoolean();
+        if (validationFunction==null) return true;
+        return validationFunction.apply(this);
     }
     @Override
     public String getName(){
@@ -81,6 +82,7 @@ public abstract class SimpleParameter implements Parameter {
                 SimpleParameter p = this.getClass().getDeclaredConstructor(String.class).newInstance(name);
                 p.setContentFrom(this);
                 p.setListeners(listeners);
+                p.setValidationFunction(validationFunction);
                 return (T)p;
             } catch (Exception ex) {
                 try {
@@ -88,6 +90,7 @@ public abstract class SimpleParameter implements Parameter {
                     p.setName(name);
                     p.setContentFrom(this);
                     p.setListeners(listeners);
+                    p.setValidationFunction(validationFunction);
                 return (T)p;
                 } catch (Exception ex2) {
                     logger.error("duplicate Simple Parameter", ex2);

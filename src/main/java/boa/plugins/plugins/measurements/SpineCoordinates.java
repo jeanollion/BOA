@@ -18,6 +18,8 @@
  */
 package boa.plugins.plugins.measurements;
 
+import boa.configuration.parameters.BooleanParameter;
+import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.StructureParameter;
 import boa.data_structure.StructureObject;
@@ -29,6 +31,7 @@ import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
 import boa.plugins.MultiThreaded;
 import boa.plugins.ToolTip;
+import static boa.plugins.plugins.measurements.objectFeatures.object_feature.Size.SCALED_TT;
 import boa.utils.geom.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,7 +48,8 @@ import java.util.stream.Collectors;
 public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
     protected StructureParameter bacteria = new StructureParameter("Bacteria", -1, false, false);
     protected StructureParameter spot = new StructureParameter("Spot", -1, false, false);
-    protected Parameter[] parameters = new Parameter[]{bacteria, spot};
+    protected BooleanParameter scaled = new BooleanParameter("Scaled", "Unit", "Pixel", false).setToolTipText(SCALED_TT);
+    protected Parameter[] parameters = new Parameter[]{bacteria, spot, scaled};
     
     public SpineCoordinates() {}
     public SpineCoordinates(int spotIdx, int bacteriaIdx) {
@@ -56,7 +60,10 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
     public String getToolTipText() {
         return "Project the spot center in the spine (skeleton) coordinate system of the bacteria that contains the spot (if exists) and return the spine coordinates<br />To compute the spine, <em>Bacteria</em> must correspond to objects with rod shapes<br />Spot center is by default the center defined by the segmenter, if no center is defined, the mass center is used<br /><ol><li><em>SpineCoord</em> is the coordinate along the bacteria axis</li><li><em>SpineRadialCoord is the coordinate perpendicular to the radial axis (negative on the left side)</em></li><li><em>SpineLength is the total spine length</em></li><li><em>SpineRadiius is the width of the bacteria at the position of the spot</em></li></ol><>";
     }
-    
+    public SpineCoordinates setScaled(boolean scaled) {
+        this.scaled.setSelected(scaled);
+        return this;
+    }
     @Override
     public int getCallStructure() {
         return spot.getParentStructureIdx();
@@ -80,6 +87,7 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
 
     @Override
     public void performMeasurement(StructureObject parentTrackHead) {
+        double scale = scaled.getSelected() ? parentTrackHead.getScaleXY() : 1d;
         List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
         Map<StructureObject, StructureObject> spotMapBacteria = new ConcurrentHashMap<>();
         parentTrack.parallelStream().forEach(parent -> {
@@ -100,11 +108,11 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
                 e.getValue().getMeasurements().setValue("SpineLength", null);
                 e.getKey().getMeasurements().setValue("SpineRadius", null);
             } else {
-                e.getKey().getMeasurements().setValue("SpineCoord", coord.curvilinearCoord(false));
-                e.getKey().getMeasurements().setValue("SpineRadialCoord", coord.radialCoord(false));
-                e.getKey().getMeasurements().setValue("SpineLength", coord.spineLength());
-                e.getValue().getMeasurements().setValue("SpineLength", coord.spineLength());
-                e.getKey().getMeasurements().setValue("SpineRadius", coord.spineLength()); // radius at spot position
+                e.getKey().getMeasurements().setValue("SpineCoord", coord.curvilinearCoord(false)*scale);
+                e.getKey().getMeasurements().setValue("SpineRadialCoord", coord.radialCoord(false)*scale);
+                e.getKey().getMeasurements().setValue("SpineLength", coord.spineLength()*scale);
+                e.getValue().getMeasurements().setValue("SpineLength", coord.spineLength()*scale);
+                e.getKey().getMeasurements().setValue("SpineRadius", coord.spineLength()*scale); // radius at spot position
             }
         });
     }

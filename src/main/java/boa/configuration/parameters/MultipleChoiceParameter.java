@@ -124,6 +124,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     public MultipleChoiceParameter duplicate() {
         MultipleChoiceParameter res= new MultipleChoiceParameter(name, listChoice, selectedItems);
         res.setListeners(listeners);
+        res.setValidationFunction(validationFunction);
         return res;
     }
     

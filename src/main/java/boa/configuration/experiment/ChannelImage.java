@@ -20,6 +20,7 @@ package boa.configuration.experiment;
 
 import boa.configuration.experiment.Experiment.IMPORT_METHOD;
 import static boa.configuration.experiment.Experiment.IMPORT_METHOD.ONE_FILE_PER_CHANNEL_POSITION;
+import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.SimpleContainerParameter;
 import boa.configuration.parameters.TextParameter;
@@ -27,6 +28,7 @@ import boa.configuration.parameters.ui.NameEditorUI;
 import boa.configuration.parameters.ui.ParameterUI;
 import java.util.List;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import org.json.simple.JSONObject;
 
 /**
@@ -35,7 +37,7 @@ import org.json.simple.JSONObject;
  */
 public class ChannelImage extends SimpleContainerParameter {
     NameEditorUI ui;
-    BooleanSupplier kwValid = () -> {
+    Function<Parameter, Boolean> kwValid = (p) -> {
         Experiment xp = ParameterUtils.getExperiment(this);
         if (xp!=null) {
             IMPORT_METHOD method = xp.getImportImageMethod();
@@ -45,7 +47,7 @@ public class ChannelImage extends SimpleContainerParameter {
             return distinctKW == xp.getChannelImageCount();
         } else return true;
     };
-    TextParameter importKeyWord = new TextParameter("Channel keyword", "", true).addValidationFunction(kwValid).setToolTipText("Keyword allowing to distinguish the file containing channel during image import, when dataset is composed of several files per position. <br />"
+    TextParameter importKeyWord = new TextParameter("Channel keyword", "", true).setValidationFunction(kwValid).setToolTipText("Keyword allowing to distinguish the file containing channel during image import, when dataset is composed of several files per position. <br />"
             + "For a given position, the name of the file containing the channel image must contain this keyword and all the files from the same position must differ only by this keyword (and eventually by frame number if each frame is in a separate file). "
             + "<br />First channel must have a non-null keyword is import method is <em>"+ONE_FILE_PER_CHANNEL_POSITION.getMethod()+"</em> and that there are several channels. "
             + "<br />All keywords should be distinct");

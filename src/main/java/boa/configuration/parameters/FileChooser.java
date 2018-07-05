@@ -109,6 +109,7 @@ public class FileChooser extends SimpleParameter implements Listenable {
     @Override public FileChooser duplicate() {
         FileChooser res = new FileChooser(name, option);
         res.setListeners(listeners);
+        res.setValidationFunction(validationFunction);
         return res;
     }
 

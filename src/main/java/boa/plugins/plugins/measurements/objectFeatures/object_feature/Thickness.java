@@ -18,6 +18,7 @@
  */
 package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
+import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
@@ -35,9 +36,9 @@ import static boa.plugins.plugins.measurements.objectFeatures.object_feature.Siz
  * @author jollion
  */
 public class Thickness implements GeometricalFeature, ToolTip {
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false).setToolTipText(SCALED_TT);
+    protected BooleanParameter scaled = new BooleanParameter("Scaled", "Unit", "Pixel", true).setToolTipText(SCALED_TT);
     public Thickness setScale(boolean unit) {
-        this.scaled.setSelectedIndex(unit?1:0);
+        this.scaled.setSelected(unit);
         return this;
     }
     @Override

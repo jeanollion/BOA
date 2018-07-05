@@ -18,6 +18,7 @@
  */
 package boa.plugins.plugins.measurements.objectFeatures.object_feature;
 
+import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
@@ -34,9 +35,9 @@ import boa.plugins.ToolTip;
  */
 public class Size implements GeometricalFeature, ToolTip {
     public final static String SCALED_TT = "When Unit is chosen, the size is multiplied by the size of a voxel in unit, depending on the calibration of the image";
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false).setToolTipText(SCALED_TT);
-    public Size setScale(boolean unit) {
-        scaled.setSelectedIndex(unit?1:0);
+    protected BooleanParameter scaled = new BooleanParameter("Scaled", "Unit", "Pixel", true).setToolTipText(SCALED_TT);
+    public Size setScaled(boolean unit) {
+        scaled.setSelected(unit);
         return this;
     }
     @Override
@@ -52,7 +53,7 @@ public class Size implements GeometricalFeature, ToolTip {
     @Override
     public double performMeasurement(Region object) {
         double size = object.size();
-        if (scaled.getSelectedIndex()==1) {
+        if (scaled.getSelected()) {
             size*=Math.pow(object.getScaleXY(), 2);
             if (!object.is2D()) size*=object.getScaleZ();
         }

@@ -146,6 +146,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     @Override public ChoiceParameter duplicate() {
         ChoiceParameter res = new ChoiceParameter(name, selectedItem);
         res.setListeners(listeners);
+        res.setValidationFunction(validationFunction);
         return res;
     }
     private ChoiceParameter(String name, String selectedItem) {

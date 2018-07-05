@@ -35,7 +35,7 @@ import static boa.plugins.plugins.measurements.objectFeatures.object_feature.Siz
  * @author jollion
  */
 public class SpineLength implements GeometricalFeature, ToolTip {
-    BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", false).setToolTipText(SCALED_TT);
+    protected BooleanParameter scaled = new BooleanParameter("Scale", "Unit", "Pixel", true).setToolTipText(SCALED_TT);
     @Override
     public Parameter[] getParameters() {
         return new Parameter[]{scaled};

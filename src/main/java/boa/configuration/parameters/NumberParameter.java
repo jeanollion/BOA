@@ -91,6 +91,7 @@ public class NumberParameter extends SimpleParameter implements Listenable, OpPa
     @Override public NumberParameter duplicate() {
         NumberParameter res =  new NumberParameter(name, decimalPlaces, value);
         res.setListeners(listeners);
+        res.setValidationFunction(validationFunction);
         return res;
     }
 

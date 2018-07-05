@@ -49,6 +49,7 @@ public class BoundedNumberParameter extends NumberParameter {
     @Override public BoundedNumberParameter duplicate() {
         BoundedNumberParameter res = new BoundedNumberParameter(name, decimalPlaces, value, lowerBound, upperBound);
         res.setListeners(listeners);
+        res.setValidationFunction(validationFunction);
         return res;
     }
 }

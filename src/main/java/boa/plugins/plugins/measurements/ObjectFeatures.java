@@ -61,6 +61,7 @@ public class ObjectFeatures implements Measurement, ToolTip {
             if (s.isOnePluginSet()) tp.setValue(s.instanciatePlugin().getDefaultName());
             else tp.setValue("");
         });
+        ((TextParameter)def.getAdditionalParameters().get(0)).setValidationFunction((t)->((TextParameter)t).getValue().length()>0);
     }
 
     public ObjectFeatures(int structureIdx) {

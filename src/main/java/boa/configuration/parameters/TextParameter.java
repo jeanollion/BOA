@@ -80,6 +80,7 @@ public class TextParameter extends SimpleParameter {
     @Override public TextParameter duplicate() {
         TextParameter res =  new TextParameter(name, value, allowSpecialCharacters);
         res.setListeners(listeners);
+        res.setValidationFunction(validationFunction);
         return res;
     }
     
