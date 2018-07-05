@@ -105,13 +105,11 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
                 e.getKey().getMeasurements().setValue("SpineCoord", null);
                 e.getKey().getMeasurements().setValue("SpineRadialCoord", null);
                 e.getKey().getMeasurements().setValue("SpineLength", null);
-                e.getValue().getMeasurements().setValue("SpineLength", null);
                 e.getKey().getMeasurements().setValue("SpineRadius", null);
             } else {
                 e.getKey().getMeasurements().setValue("SpineCoord", coord.curvilinearCoord(false)*scale);
                 e.getKey().getMeasurements().setValue("SpineRadialCoord", coord.radialCoord(false)*scale);
                 e.getKey().getMeasurements().setValue("SpineLength", coord.spineLength()*scale);
-                e.getValue().getMeasurements().setValue("SpineLength", coord.spineLength()*scale);
                 e.getKey().getMeasurements().setValue("SpineRadius", coord.spineLength()*scale); // radius at spot position
             }
         });
