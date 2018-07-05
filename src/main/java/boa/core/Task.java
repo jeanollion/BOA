@@ -382,6 +382,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         
         public Task setStructures(int... structures) {
             this.structures=structures;
+            Arrays.sort(structures);
             return this;
         }
         

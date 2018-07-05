@@ -75,7 +75,7 @@ public class StructureSelectorTree {
     
     public IntStream getSelectedStructures() {
         if (tree.getSelectionCount()==0) return IntStream.empty();
-        return Arrays.stream(tree.getSelectionPaths()).mapToInt(path -> getStructureIdx(path));
+        return Arrays.stream(tree.getSelectionPaths()).mapToInt(path -> getStructureIdx(path)).sorted();
     }
     
     public void selectStructures(int... structureIdx) {
