@@ -67,7 +67,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
     protected BooleanParameter saveFeature = new BooleanParameter("Save Feature", false);
     protected TextParameter featureKey = new TextParameter("Feature Name", "", false).setValidationFunction((t)->((TextParameter)t).getValue().length()>0).setToolTipText("Name given to geometrical feature in measurements");
     protected ConditionalParameter saveFeatureCond = new ConditionalParameter(saveFeature).setActionParameters("true", featureKey).setToolTipText("Whether value of geometrical feature should be saved to measurements");
-    protected BoundedNumberParameter minCells = new BoundedNumberParameter("Minimum cell number", 0, 4, 3, null).setToolTipText("Minimum number of cell to compute growth rate. NA is returned if minimum not reached");
+    protected BoundedNumberParameter minCells = new BoundedNumberParameter("Minimum cell number", 0, 3, 2, null).setToolTipText("Minimum number of cell to compute growth rate. NA is returned if minimum not reached");
     protected Parameter[] parameters = new Parameter[]{structure, feature, minCells, suffix, saveFeatureCond, intersection};
     
     public GrowthRate() {
