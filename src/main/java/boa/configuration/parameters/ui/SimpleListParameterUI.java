@@ -28,6 +28,7 @@ import boa.gui.configuration.ConfigurationTreeModel;
 import boa.configuration.parameters.ListElementErasable;
 import static boa.configuration.parameters.Parameter.logger;
 import boa.configuration.experiment.Position;
+import boa.utils.Utils;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
@@ -73,13 +74,11 @@ public class SimpleListParameterUI implements ListParameterUI{
                     TreeNode child = list.getChildAt(0);
                     // 
                     if ((child instanceof ListElementErasable)) {
-                        if (((ListElementErasable)child).eraseData(true)) { // call from GUI only for the first
+                        if (!Utils.promptBoolean("Delete selected Positions (all data will be lost)", null)) return;
+                        while (list.getChildCount()>0) {
+                            child = list.getChildAt(0);
+                            ((ListElementErasable)child).eraseData();
                             model.removeNodeFromParent((MutableTreeNode)child);
-                            while (list.getChildCount()>0) {
-                                child = list.getChildAt(0);
-                                ((ListElementErasable)child).eraseData(false);
-                                model.removeNodeFromParent((MutableTreeNode)child);
-                            }
                         }
                     } else {
                         list.removeAllElements();
@@ -136,7 +135,9 @@ public class SimpleListParameterUI implements ListParameterUI{
         ((JMenuItem)childActions[1]).setAction(new AbstractAction(childActionNames[1]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (!(child instanceof ListElementErasable) || ((ListElementErasable)child).eraseData(true) ) {
+                    if (child instanceof ListElementErasable) {
+                        if (!Utils.promptBoolean("Delete selected Position (all data will be lost)", null)) return;
+                        ((ListElementErasable)child).eraseData();
                         model.removeNodeFromParent(child);
                     }
                 }

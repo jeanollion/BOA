@@ -238,7 +238,7 @@ public class GenerateXP {
                 String[] names = xp.getPositionsAsString();
                 for (int i = 0; i<deletePositions.length; ++i) if (deletePositions[i]) toDelete.add(names[i]);
                 for (String p : toDelete) {
-                    xp.getPosition(p).eraseData(false); // deletes images - 
+                    xp.getPosition(p).eraseData(); // deletes images - 
                     xp.getPosition(p).removeFromParent(); // remove from parent
                 }
             }

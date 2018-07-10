@@ -307,13 +307,7 @@ public class Position extends SimpleContainerParameter implements ListElementEra
     
     // listElementErasable
     @Override 
-    public boolean eraseData(boolean promptConfirm) { // do not eraseAll objects if GUI not connected
-        if (promptConfirm) {
-            // eraseAll all objects..
-            int response = JOptionPane.showConfirmDialog(null, "Delete Field: "+name+ "(all data will be lost)", "Confirm",
-            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-            if (response != JOptionPane.YES_OPTION) return false;
-        }
+    public boolean eraseData() { // do not eraseAll objects if GUI not connected
         if (GUI.getDBConnection()!=null && GUI.getDBConnection().getDao(name)!=null) GUI.getDBConnection().getDao(name).deleteAllObjects(); //TODO : unsafe if not called from GUI.. // ne pas conditionner par callFromGUI 
         if (getInputImages()!=null) getInputImages().deleteFromDAO();
         for (int s =0; s<getExperiment().getStructureCount(); ++s) getExperiment().getImageDAO().deleteTrackImages(name, s);

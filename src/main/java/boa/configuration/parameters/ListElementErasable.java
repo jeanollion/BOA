@@ -23,5 +23,5 @@ package boa.configuration.parameters;
  * @author jollion
  */
 public interface ListElementErasable {
-    public boolean eraseData(boolean callFromGUI);
+    public boolean eraseData();
 }

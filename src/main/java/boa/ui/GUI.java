@@ -155,6 +155,7 @@ import java.util.function.Consumer;
 import javax.swing.ToolTipManager;
 import javax.swing.tree.TreeSelectionModel;
 import boa.ui.logger.ProgressLogger;
+import javax.swing.JSeparator;
 
 
 /**
@@ -758,8 +759,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     
     private void promptSaveUnsavedChanges() {
         if (db==null) return;
-        logger.debug("WARNING: current modification cannot be saved"+ " experiment edited: "+((Experiment)this.configurationTreeGenerator.getTree().getModel().getRoot()).hashCode()+ " current experiment: "+db.getExperiment().hashCode());
-        if (configurationTreeGenerator.getTree()!=null && ((Experiment)this.configurationTreeGenerator.getTree().getModel().getRoot())!=db.getExperiment()) {
+        if (configurationTreeGenerator!=null && configurationTreeGenerator.getTree()!=null  
+                && configurationTreeGenerator.getTree().getModel()!=null 
+                && configurationTreeGenerator.getTree().getModel().getRoot() != null
+                && ((Experiment)configurationTreeGenerator.getTree().getModel().getRoot())!=db.getExperiment()) {
             GUI.log("WARNING: current modification cannot be saved");
             //return;
         }
@@ -3355,9 +3358,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (!this.checkConnection()) return;
         if (SwingUtilities.isRightMouseButton(evt)) {
             List<String> positions = this.getSelectedPositions(false);
+            if (positions.isEmpty()) return;
+            JPopupMenu menu = new JPopupMenu();
             if (positions.size()==1) {
                 String position = positions.get(0);
-                JPopupMenu menu = new JPopupMenu();
                 Action openRaw = new AbstractAction("Open Input Images") {
                     @Override
                     public void actionPerformed(ActionEvent e) {
@@ -3375,9 +3379,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 };
                 openPP.setEnabled(db.getExperiment().getImageDAO().getPreProcessedImageProperties(position)!=null);
                 menu.add(openPP);
-                menu.show(this.microscopyFieldList, evt.getX(), evt.getY());
-                
+                menu.add(new JSeparator());
             }
+            Action delete = new AbstractAction("Delete") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    if (!Utils.promptBoolean("Delete "+(positions.size()>1?"all":"")+" selected position"+(positions.size()>1?"s":""), microscopyFieldList)) return;
+                    for (String pos : positions) {
+                        db.getExperiment().getPosition(pos).eraseData();
+                        db.getExperiment().getPosition(pos).removeFromParent();
+                    }
+                    db.updateExperiment();
+                    populateActionMicroscopyFieldList();
+                    updateConfigurationTree();
+                }
+            };
+            menu.add(delete);
+            menu.show(this.microscopyFieldList, evt.getX(), evt.getY());
         }
     }//GEN-LAST:event_microscopyFieldListMousePressed
 
