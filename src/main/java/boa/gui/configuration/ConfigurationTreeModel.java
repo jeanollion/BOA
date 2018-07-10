@@ -34,8 +34,10 @@ import javax.swing.tree.TreePath;
  */
 public class ConfigurationTreeModel extends DefaultTreeModel {
     protected JTree tree;
-    public ConfigurationTreeModel(ContainerParameter root) {
+    private final Runnable update;
+    public ConfigurationTreeModel(ContainerParameter root, Runnable update) {
         super(root);
+        this.update=update;
         if (root instanceof TreeModelContainer) ((TreeModelContainer)root).setModel(this);
     }
     public void setJTree(JTree tree) {
@@ -50,6 +52,7 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
         super.insertNodeInto(newChild, parent, index);
         newChild.setParent(parent);
         if (tree!=null) tree.updateUI();
+        update.run();
     }
     public void insertNodeInto(Parameter newChild, ListParameter parent) {
         this.insertNodeInto(newChild, parent, parent.getChildCount());
@@ -57,12 +60,14 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
             if (parent.getChildCount()==1) tree.expandPath(getPath(parent));
             tree.updateUI();
         }
+        update.run();
     }
     
     @Override
     public void removeNodeFromParent(MutableTreeNode node) {
         super.removeNodeFromParent(node);
         if (tree!=null) tree.updateUI();
+        update.run();
     }
     
     public void moveUp(ListParameter list, Parameter p) {
@@ -72,6 +77,7 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
             super.insertNodeInto(p, list, idx-1);
         }
         if (tree!=null) tree.updateUI();
+        update.run();
     }
 
     public void moveDown(ListParameter list, Parameter p) {
@@ -81,6 +87,7 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
             super.insertNodeInto(p, list, idx+1);
         }
         if (tree!=null) tree.updateUI();
+        update.run();
     }
 
     public static TreePath getPath(TreeNode treeNode) {

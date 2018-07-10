@@ -53,7 +53,7 @@ public class MeasureChromaticShift {
             xp.getChannelImages().insert(new ChannelImage("channel:"+s));
             Structure struc = new Structure("structure:"+s, -1, s);
             xp.getStructures().insert(struc);
-            struc.setProcessingPipeline(new SegmentOnly(new SimpleThresholder(thresholds[s])).addPreFilters(new Median(2, 1)).addPostFilters(new FeatureFilter(new Size(), 5, true, true)));
+            struc.setProcessingPipeline(new SegmentOnly(new SimpleThresholder(thresholds[s])).addPreFilters(new Median(2, 1)).addPostFilters(new FeatureFilter(new Size().setScaled(false), 5, true, true)));
         }
         // sets measurements
         for (int s = 0; s<thresholds.length-1; ++s) { 

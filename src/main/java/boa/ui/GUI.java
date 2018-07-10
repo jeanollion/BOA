@@ -155,6 +155,7 @@ import java.util.function.Consumer;
 import javax.swing.ToolTipManager;
 import javax.swing.tree.TreeSelectionModel;
 import boa.ui.logger.ProgressLogger;
+import javax.swing.JLabel;
 import javax.swing.JSeparator;
 
 
@@ -217,6 +218,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         this.INSTANCE=this;
         initComponents();
         //updateMongoDBBinActions();
+        tabs.setTabComponentAt(1, new JLabel("Configuration")); // so that it can be colorized in red when configuration is not valid
         progressBar = new ProgressIcon(Color.darkGray, tabs);
         Component progressComponent =  new ColorPanel(progressBar);
         tabs.addTab("Progress: ", progressBar, progressComponent);
@@ -752,7 +754,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             configurationTreeGenerator=null;
             configurationJSP.setViewportView(null);
         } else {
-            configurationTreeGenerator = new ConfigurationTreeGenerator(db.getExperiment());
+            configurationTreeGenerator = new ConfigurationTreeGenerator(db.getExperiment(), v -> { // action when experiment is not valid
+                tabs.getTabComponentAt(1).setForeground(v ? Color.black : Color.red);
+                tabs.getTabComponentAt(1).repaint();
+            });
             configurationJSP.setViewportView(configurationTreeGenerator.getTree());
         }
     }

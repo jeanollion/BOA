@@ -187,8 +187,8 @@ public class GenerateXP {
             bacteria.setProcessingPipeline(new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.25, 1.25)
                     ).addTrackPostFilters(
-                            new PostFilter(new RemoveEndofChannelBacteria().setContactSidesProportion(0.5)).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
-                            new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND).setFeature(new Size(), 150, true).setQuantileValue(0.25)
+                            new PostFilter(new RemoveEndofChannelBacteria().setContactSidesProportion(0.5)).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_BACT_SIZE_COND), 
+                            new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_BACT_SIZE_COND).setFeature(new Size().setScaled(false), 150, true).setQuantileValue(0.25)
                     )
             );
             // modification of scaling: lap * 2.5, gauss * scale (=2) quality * 2.23
@@ -283,12 +283,12 @@ public class GenerateXP {
                         new NormalizeTrack(1, true)
                     ).addPostFilters(
                             new FeatureFilter(new ThicknessAxis().setAxis(MainAxis.X), 6, true, true), 
-                            new FeatureFilter(new Size(), 200, true, true), 
+                            new FeatureFilter(new Size().setScaled(false), 200, true, true), 
                             new BinaryClose(5),
                             new FillHoles2D()
                     ).addTrackPostFilters(
-                            new PostFilter(new RemoveEndofChannelBacteria()).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND), 
-                            new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_SIZE_COND).setFeature(new Size(), 10, true).setStatistics(2)
+                            new PostFilter(new RemoveEndofChannelBacteria()).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_BACT_SIZE_COND), 
+                            new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_BACT_SIZE_COND).setFeature(new Size(), 10, true).setStatistics(2)
                     )
             );
             /*bacteria.setProcessingScheme(

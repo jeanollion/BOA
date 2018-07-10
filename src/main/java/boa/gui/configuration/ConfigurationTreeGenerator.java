@@ -41,6 +41,7 @@ import java.awt.datatransfer.Transferable;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.function.Consumer;
 import javax.swing.Action;
 import javax.swing.DropMode;
 import javax.swing.Icon;
@@ -72,10 +73,10 @@ public class ConfigurationTreeGenerator {
     protected Experiment rootParameter;
     protected ConfigurationTreeModel treeModel;
     protected JTree tree;
-    private static final boolean soutParent=false;
-    
-    public ConfigurationTreeGenerator(Experiment xp) {
+    private final Consumer<Boolean> xpIsValidCallBack;
+    public ConfigurationTreeGenerator(Experiment xp, Consumer<Boolean> xpIsValidCallBack) {
         rootParameter = xp;
+        this.xpIsValidCallBack = xpIsValidCallBack;
     }
     
     public JTree getTree() {
@@ -90,7 +91,7 @@ public class ConfigurationTreeGenerator {
         }
     }
     private void generateTree() {
-        treeModel = new ConfigurationTreeModel(rootParameter);
+        treeModel = new ConfigurationTreeModel(rootParameter, () -> xpChanged());
         tree = new JTree(treeModel) {
             @Override
             public String getToolTipText(MouseEvent evt) {
@@ -165,23 +166,8 @@ public class ConfigurationTreeGenerator {
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
                         
                     }
-                } 
-                if (soutParent && SwingUtilities.isLeftMouseButton(e)) {
-                    TreePath path = tree.getPathForLocation(e.getX(), e.getY());
-                    tree.setSelectionPath(path);
-                    Rectangle pathBounds = tree.getUI().getPathBounds(tree, path);
-                    if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
-                        Object lastO = path.getLastPathComponent();
-                        if (lastO instanceof Parameter) {
-                            Parameter p = (Parameter) lastO;
-                            if (p.getParent() == null) {
-                                System.out.println(p.toString() + " no parent");
-                            } else {
-                                System.out.println(p.toString() + ": has parent: " + p.getParent().toString());
-                            }
-                        }
-                    }
                 }
+                xpChanged();
             }
         });
         // drag and drop for lists
@@ -193,6 +179,10 @@ public class ConfigurationTreeGenerator {
         ));
         
         ToolTipManager.sharedInstance().registerComponent(tree);
+    }
+    
+    public void xpChanged() {
+        xpIsValidCallBack.accept(rootParameter.isValid());
     }
     
     public static void addToMenu(Object[] UIElements, JPopupMenu menu) {

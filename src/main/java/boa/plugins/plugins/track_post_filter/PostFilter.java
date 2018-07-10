@@ -59,7 +59,7 @@ public class PostFilter implements TrackPostFilter, ToolTip {
     public enum MERGE_POLICY {
         NERVER_MERGE(ManualEdition.NERVE_MERGE), 
         ALWAYS_MERGE(ManualEdition.ALWAYS_MERGE), 
-        MERGE_TRACKS_SIZE_COND(ManualEdition.MERGE_TRACKS_SIZE_COND);
+        MERGE_TRACKS_BACT_SIZE_COND(ManualEdition.MERGE_TRACKS_BACT_SIZE_COND);
         public final BiPredicate<StructureObject, StructureObject> mergePredicate;
         private MERGE_POLICY(BiPredicate<StructureObject, StructureObject> mergePredicate) {
             this.mergePredicate=mergePredicate; 

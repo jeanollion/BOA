@@ -82,7 +82,7 @@ public class ManualEdition {
 
     public static final BiPredicate<StructureObject, StructureObject> NERVE_MERGE = (s1, s2)->false;
     public static final BiPredicate<StructureObject, StructureObject> ALWAYS_MERGE = (s1, s2)->true;
-    public static final BiPredicate<StructureObject, StructureObject> MERGE_TRACKS_SIZE_COND = (prev, next)-> next.getRegion().size()>prev.getRegion().size()  * 0.8;
+    public static final BiPredicate<StructureObject, StructureObject> MERGE_TRACKS_BACT_SIZE_COND = (prev, next)-> next.getRegion().size()>prev.getRegion().size()  * 0.8;
     
     private static List<StructureObject> getNext(StructureObject o) {
         StructureObject nextParent = o.getNext()==null ? o.getParent().getNext() : o.getNext().getParent();
