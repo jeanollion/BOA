@@ -114,7 +114,7 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         // compute one threshold for all images
-        List<Image> allImages = IntStream.range(0, inputImages.getFrameNumber()).mapToObj(f->inputImages.getImage(channelIdx, f)).collect(Collectors.toList());
+        List<Image> allImages = Arrays.asList(InputImages.getImageForChannel(inputImages, channelIdx, false));
         ThresholderHisto thlder = thresholder.instanciatePlugin();
         Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
         threshold = thlder.runThresholderHisto(histo);

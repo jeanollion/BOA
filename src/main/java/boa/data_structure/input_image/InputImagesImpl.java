@@ -27,6 +27,10 @@ import boa.utils.ArrayUtil;
 import boa.utils.Pair;
 import boa.utils.ThreadRunner;
 import boa.utils.ThreadRunner.ThreadAction;
+import boa.utils.Utils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 /**
  *
@@ -136,36 +140,39 @@ public class InputImagesImpl implements InputImages {
             frameMaxExcluded = getFrameNumber();
         } else if (frameMaxExcluded==frameMin) frameMaxExcluded+=1;
         if (frameMaxExcluded>=this.getFrameNumber()) frameMaxExcluded = this.getFrameNumber();
-        Image[][] imagesTC = new Image[frameMaxExcluded-frameMin][channels.length];
+        final Image[][] imagesTC = new Image[frameMaxExcluded-frameMin][channels.length];
         int cIdx = 0;
         for (int channelIdx : channels) {
-            for (int f = frameMin; f<frameMaxExcluded; ++f) {
-                imagesTC[f-frameMin][cIdx] = getImage(channelIdx, f).setName("Channel: "+channelIdx+" Frame: "+f);
-                if (imagesTC[f-frameMin][cIdx]==null) {
-                    logger.debug("could not open image: channel:{} frame:{}", channelIdx, f);
-                    return null;
-                }
-            }
+            final int c = cIdx;
+            final int fMin = frameMin;
+            IntStream.range(fMin, frameMaxExcluded).parallel().forEach( f-> {
+                imagesTC[f-fMin][c] = getImage(channelIdx, f).setName("Channel: "+channelIdx+" Frame: "+f);
+                if (imagesTC[f-fMin][c]==null) throw new RuntimeException("could not open image: channel:" +channelIdx + " frame: "+f);
+            });
             ++cIdx;
         }
         return imagesTC;
     }
-    public void applyAllTransformations() {
-        for (int c = 0; c<getChannelNumber(); ++c) {
-            InputImage[] imageF = imageCT[c];
-            IntStream.range(0, imageF.length).parallel().filter(i->!imageF[i].transformationsToApply.isEmpty()).forEach(f-> imageF[f].getImage());
-        }
-    }
+    
     public void applyTranformationsAndSave(boolean close) {
         long tStart = System.currentTimeMillis();
-        for (int c = 0; c<getChannelNumber(); ++c) {
+        // start with modified channels
+        List<Integer> modifiedChannels = IntStream.range(0, getChannelNumber()).filter(c -> IntStream.range(0, imageCT[c].length).anyMatch(f -> imageCT[c][f].modified())).mapToObj(c->c).sorted().collect(Collectors.toList());
+        List<Integer> unmodifiedChannels = IntStream.range(0, getChannelNumber()).filter(c -> !modifiedChannels.contains(c)).mapToObj(c->c).sorted().collect(Collectors.toList());
+        List<Integer> allChannels = new ArrayList<>(getChannelNumber());
+        allChannels.addAll(modifiedChannels);
+        allChannels.addAll(unmodifiedChannels);
+        logger.debug("modified channels: {} unmodified: {}", modifiedChannels, unmodifiedChannels);
+        // TODO: if !close: compute necessary memory, and close other channels before computing (starting with unmodified opened channels), and close after processing
+        allChannels.stream().forEachOrdered(c -> {
             InputImage[] imageF = imageCT[c];
             IntStream.range(0, imageF.length).parallel().forEach(f-> {
                 imageF[f].getImage();
                 imageF[f].saveImage();
                 if (close) imageF[f].flush();
             });
-        }
+            logger.debug("after applying transformation for channel: {} ", c, Utils.getMemoryUsage());
+        });
         
         long tEnd = System.currentTimeMillis();
         logger.debug("apply transformation & save: total time: {}, for {} time points and {} channels", tEnd-tStart, getFrameNumber(), getChannelNumber() );

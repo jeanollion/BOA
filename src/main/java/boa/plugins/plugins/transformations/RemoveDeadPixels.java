@@ -120,8 +120,7 @@ public class RemoveDeadPixels implements ConfigurableTransformation, ToolTip {
                 return null;
             }
         };
-        List<Image> imList = new ArrayList<>(inputImages.getFrameNumber());
-        for (int f = 0; f<inputImages.getFrameNumber(); ++f) imList.add(inputImages.getImage(channelIdx, f));
+        List<Image> imList = Arrays.asList(InputImages.getImageForChannel(inputImages, channelIdx, false));
         if (frameRadius>=1) SlidingOperator.performSlideLeft(imList, frameRadius, operator);
         else IntStream.range(0, imList.size()).parallel().forEach(i-> operator.compute(new Pair<>(i, imList.get(i))));
         if (testMode) {

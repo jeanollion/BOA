@@ -50,7 +50,21 @@ public interface InputImages {
     public void flush();
     public double getCalibratedTimePoint(int c, int t, int z);
     public boolean singleFrameChannel(int channelIdx);
-    
+    public static Image[] getImageForChannel(InputImages images, int channelIdx, boolean ensure2D) {
+        if(channelIdx<0 || channelIdx>=images.getChannelNumber()) throw new IllegalArgumentException("invalid channel idx: "+channelIdx+" max idx: "+(images.getChannelNumber()-1));
+        if (!ensure2D) return IntStream.range(0, images.getFrameNumber()).parallel().mapToObj(f -> images.getImage(channelIdx, f)).toArray(l -> new Image[l]);
+        else {
+            return IntStream.range(0, images.getFrameNumber()).parallel().mapToObj(f -> {
+                Image<? extends Image> image = images.getImage(channelIdx, f);
+                if (image.sizeZ()>1) {
+                    int plane = images.getBestFocusPlane(f);
+                    if (plane<0) throw new RuntimeException("SaturateHistogramHyperFluoBacteria can only be run on 2D images AND no autofocus algorithm was set");
+                    image = image.splitZPlanes().get(plane);
+                }
+                return image;
+            }).toArray(l -> new Image[l]);
+        }
+    }
     
     public static Image getAverageFrame(InputImages images, int channelIdx, int frame,  int numberOfFramesToAverage) {
         if (numberOfFramesToAverage<=1) return images.getImage(channelIdx, frame);
@@ -63,14 +77,13 @@ public interface InputImages {
     }
     /**
      * See {@link #chooseNImagesWithSignal(java.util.List, int) }
-     * @param images
-     * @param channelidx
+     * @param inputImages
+     * @param channelIdx
      * @param n
      * @return 
      */
-    public static List<Integer> chooseNImagesWithSignal(InputImages images, int channelidx, int n) {
-        List<Image> imagesByFrame = new ArrayList<>(images.getFrameNumber());
-        for (int i = 0; i<images.getFrameNumber(); ++i) imagesByFrame.add(images.getImage(channelidx, i));
+    public static List<Integer> chooseNImagesWithSignal(InputImages inputImages, int channelIdx, int n) {
+        List<Image> imagesByFrame = Arrays.asList(InputImages.getImageForChannel(inputImages, channelIdx, false));
         return chooseNImagesWithSignal(imagesByFrame, n);
 
     }

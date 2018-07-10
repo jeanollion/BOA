@@ -34,6 +34,7 @@ import java.util.List;
 import boa.plugins.ConfigurableTransformation;
 import boa.plugins.ToolTip;
 import boa.plugins.plugins.thresholders.BackgroundFit;
+import java.util.Arrays;
 
 /**
  *
@@ -58,19 +59,7 @@ public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransform
     }
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        List<Image> allImages = new ArrayList<>();
-        //List<Image> imageTemp = new ArrayList<>();
-        int fMax = inputImages.getFrameNumber();
-        //int count =0;
-        for (int f = 0; f<fMax; ++f) {
-            Image<? extends Image> image = inputImages.getImage(channelIdx, f);
-            if (image.sizeZ()>1) {
-                int plane = inputImages.getBestFocusPlane(f);
-                if (plane<0) throw new RuntimeException("SaturateHistogramHyperFluoBacteria can only be run on 2D images AND no autofocus algorithm was set");
-                image = image.splitZPlanes().get(plane);
-            }
-            allImages.add(image);
-        }
+        List<Image> allImages = Arrays.asList(InputImages.getImageForChannel(inputImages, channelIdx, true));
         if (allImages.isEmpty()) {
             logger.error("No image");
             return;

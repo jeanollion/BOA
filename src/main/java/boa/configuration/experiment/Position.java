@@ -194,12 +194,11 @@ public class Position extends SimpleContainerParameter implements ListElementEra
         Map<Integer, List<Integer>> c2s = getExperiment().getChannelToStructureCorrespondance();
         for (int channelIdx = 0; channelIdx<getExperiment().getChannelImageCount(); ++channelIdx) {
             List<Integer> structureIndices =c2s.get(channelIdx);
+            final int cIdx = channelIdx;
             if (structureIndices==null) continue; // no structure associated to channel
-            for (StructureObject root : rootTrack) {    
-                if (preProcessedImages.imageOpened(channelIdx, root.getFrame())) {
-                    for (int s : structureIndices) root.setRawImage(s, preProcessedImages.getImage(channelIdx, root.getFrame()));
-                }
-            }
+            rootTrack.parallelStream().filter(root -> preProcessedImages.imageOpened(cIdx, root.getFrame())).forEach(root-> {
+                structureIndices.forEach((s) -> root.setRawImage(s, preProcessedImages.getImage(cIdx, root.getFrame())));
+            });
         }
     }
     

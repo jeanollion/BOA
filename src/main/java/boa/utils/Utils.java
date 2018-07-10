@@ -140,7 +140,7 @@ public class Utils {
     public static String getMemoryUsage() {
         long used = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         String of = Utils.getOpenedFileCount();
-        return " Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)"; //+(of.length()==0?"": " OpenedFiles: "+of
+        return " Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().maxMemory())) + "%)"; //+(of.length()==0?"": " OpenedFiles: "+of
     }
 
     public static String getOpenedFileCount() {

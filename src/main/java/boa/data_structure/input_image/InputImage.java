@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import boa.plugins.Transformation;
+import java.util.stream.IntStream;
 
 /**
  *
@@ -45,7 +46,7 @@ public class InputImage {
     String microscopyFieldName;
     Image originalImageType;
     Image image;
-    boolean intermediateImageSavedToDAO=false;
+    boolean intermediateImageSavedToDAO=false, modified=false;
     ArrayList<Transformation> transformationsToApply;
     
     public InputImage(int channelIdx, int inputTimePoint, int timePoint, String microscopyFieldName, MultipleImageContainer imageSources, ImageDAO dao) {
@@ -57,7 +58,9 @@ public class InputImage {
         this.microscopyFieldName = microscopyFieldName;
         transformationsToApply=new ArrayList<>();
     }
-    
+    public boolean modified() {
+        return modified;
+    }
     public InputImage duplicate() {
         InputImage res = new InputImage(channelIdx, inputTimePoint, frame, microscopyFieldName, imageSources, dao);
         if (image!=null) {
@@ -105,6 +108,7 @@ public class InputImage {
         if (transformationsToApply!=null && !transformationsToApply.isEmpty()) {
             synchronized(transformationsToApply) {
                 if (transformationsToApply.isEmpty()) return;
+                modified=true;
                 Iterator<Transformation> it = transformationsToApply.iterator();
                 while(it.hasNext()) {
                     Transformation t = it.next();
@@ -115,11 +119,7 @@ public class InputImage {
         }
     }
     
-    public void saveImage() { // si modification du bitDepth -> faire la même pour toutes les images. Parfois seulement bruit négatif -> pas besoin
-        // cast to initial type
-        /*if (originalImageType!=null && originalImageType.getBitDepth()!=image.getBitDepth()) {
-            image = TypeConverter.cast(image, originalImageType);
-        }*/
+    public void saveImage() { 
         dao.writePreProcessedImage(image, channelIdx, frame, microscopyFieldName);
     }
     

@@ -119,16 +119,19 @@ public class RemoveStripesSignalExclusion implements ConfigurableTransformation,
         final boolean addGlobalMean = this.addGlobalMean.getSelected();
         //logger.debug("remove stripes thld: {}", exclThld);
         meanFZY = new float[inputImages.getFrameNumber()][][];
+        Image[] allImages = InputImages.getImageForChannel(inputImages, channelIdx, false);
+        Image[] allImagesExcl = chExcl<0 ? null : (chExcl == channelIdx ? allImages : InputImages.getImageForChannel(inputImages, chExcl, false));
+        Image[] allImagesExcl2 = chExcl2<0 ? null : (chExcl2 == channelIdx ? allImages : InputImages.getImageForChannel(inputImages, chExcl2, false));
         IntStream.range(0, inputImages.getFrameNumber()).parallel().forEach(frame -> {
-                Image currentImage = inputImages.getImage(channelIdx, frame);
+                Image currentImage = allImages[frame];
                 ImageMask m;
                 if (chExcl>=0) {
-                    Image se1 = inputImages.getImage(chExcl, frame);
+                    Image se1 = allImagesExcl[frame];
                     double thld1 = signalExclusionThreshold.instanciatePlugin().runSimpleThresholder(se1, null);
                     ThresholdMask mask = currentImage.sizeZ()>1 && se1.sizeZ()==1 ? new ThresholdMask(se1, thld1, true, true, 0):new ThresholdMask(se1, thld1, true, true);
                     if (testMode) synchronized(testMasks) {testMasks.put(frame, TypeConverter.toByteMask(mask, null, 1));}
                     if (chExcl2>=0) {
-                        Image se2 = inputImages.getImage(chExcl2, frame);
+                        Image se2 = allImagesExcl2[frame];
                         double thld2 = signalExclusionThreshold2.instanciatePlugin().runSimpleThresholder(se2, null);
                         ThresholdMask mask2 = currentImage.sizeZ()>1 && se2.sizeZ()==1 ? new ThresholdMask(se2, thld2, true, true, 0):new ThresholdMask(se2, thld2, true, true);
                         if (testMode) synchronized(testMasks2) {testMasks2.put(frame, TypeConverter.toByteMask(mask2, null, 1));}
@@ -143,7 +146,7 @@ public class RemoveStripesSignalExclusion implements ConfigurableTransformation,
         if (testMode) { // make stripes images
             Image[][] stripesTC = new Image[meanFZY.length][1];
             for (int f = 0; f<meanFZY.length; ++f) {
-                stripesTC[f][0] = new ImageFloat("removeStripes", inputImages.getImage(channelIdx, f));
+                stripesTC[f][0] = new ImageFloat("removeStripes", allImages[f]);
                 for (int z = 0; z<stripesTC[f][0].sizeZ(); ++z) {
                     for (int y = 0; y<stripesTC[f][0].sizeY(); ++y) {
                         for (int x = 0; x<stripesTC[f][0].sizeX(); ++x) {

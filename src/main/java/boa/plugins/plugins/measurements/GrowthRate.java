@@ -122,6 +122,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
         List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
         parentTrack.stream().forEach(p->ofMap.getAndCreateIfNecessary(p));
         long t1 = System.currentTimeMillis();
+        logger.debug("Growth Rate: computing values... ({}) for : {}", featKey, parentTrackHead);
         Map<StructureObject, Double> logLengthMap = parallele(StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), bIdx), true).collect(Collectors.toMap(b->b, b->Math.log(ofMap.get(b.getParent()).performMeasurement(b.getRegion()))));
         long t2 = System.currentTimeMillis();
         Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);

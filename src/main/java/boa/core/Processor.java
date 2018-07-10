@@ -109,27 +109,29 @@ public class Processor {
         }
     }
     
-    public static void preProcessImages(Position field, ObjectDAO dao, boolean deleteObjects, ProgressCallback pcb)  {
-        if (!dao.getPositionName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
-        InputImagesImpl images = field.getInputImages();
+    public static void preProcessImages(Position position, ObjectDAO dao, boolean deleteObjects, ProgressCallback pcb)  {
+        if (!dao.getPositionName().equals(position.getName())) throw new IllegalArgumentException("field name should be equal");
+        InputImagesImpl images = position.getInputImages();
         if (images==null || images.getImage(0, images.getDefaultTimePoint())==null) {
-            if (pcb!=null) pcb.log("Error: no input images found for position: "+field.getName());
+            if (pcb!=null) pcb.log("Error: no input images found for position: "+position.getName());
             throw new RuntimeException("No images found for position");
         }
         images.deleteFromDAO(); // eraseAll images if existing in imageDAO
-        for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(field.getName(), s);
-        setTransformations(field);
+        for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(position.getName(), s);
+        setTransformations(position);
         logger.debug("applying all transformation, save & close. {} ", Utils.getMemoryUsage());
-        images.applyTranformationsAndSave(false);
+        images.applyTranformationsAndSave(false); // here : should be able to close if necessary
+        System.gc();
+        logger.debug("after applying: {}", Utils.getMemoryUsage());
         if (deleteObjects) dao.deleteAllObjects();
     }
     
-    public static void setTransformations(Position field)  {
-        InputImagesImpl images = field.getInputImages();
-        PreProcessingChain ppc = field.getPreProcessingChain();
+    public static void setTransformations(Position position)  {
+        InputImagesImpl images = position.getInputImages();
+        PreProcessingChain ppc = position.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations(true)) {
             Transformation transfo = tpp.instanciatePlugin();
-            logger.info("adding transformation: {} of class: {} to position: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
+            logger.info("adding transformation: {} of class: {} to position: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
             if (transfo instanceof ConfigurableTransformation) {
                 ConfigurableTransformation ct = (ConfigurableTransformation)transfo;
                 logger.debug("before configuring: {}", Utils.getMemoryUsage());
@@ -137,8 +139,6 @@ public class Processor {
                 logger.debug("after configuring: {}", Utils.getMemoryUsage());
             }
             images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
-            images.applyAllTransformations(); // directly compute all trasforamtion in multithread to avoid that next configuration round force apply, but no necessarily in multithread
-            
         }
     }
     // processing-related methods

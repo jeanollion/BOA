@@ -130,6 +130,7 @@ public class ImageStabilizerXY implements ConfigurableTransformation, Multichann
         Cropper crop = cropper.instanciatePlugin();
         MutableBoundingBox cropBB= crop==null? null : crop.getCropBoundginBox(channelIdx, inputImages);
         logger.debug("crop bounding box: {}", cropBB);
+        InputImages.getImageForChannel(inputImages, channelIdx, false); // ensure all transformations are performed on images (multithread)
         ccdSegments(channelIdx, inputImages, segmentLength.getValue().intValue(), tRef, translationTXYArray, maxIterations, tolerance, cropBB);
         translationTXY = new ArrayList<>(translationTXYArray.length);
         for (Double[] d : translationTXYArray) translationTXY.add(new ArrayList<>(Arrays.asList(d)));
