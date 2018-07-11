@@ -125,7 +125,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     // tracking-related attributes
     protected enum Flag {error, correctionMerge, correctionSplit;}
-    final FrameRangeLock lock = new FrameRangeLock();
+    final FrameRangeLock lock= performSeveralIntervalsInParallel ? new FrameRangeLock() : null;
     Map<Integer, List<Region>> populations;
     Map<Region, TrackAttribute> objectAttributeMap;
     private boolean segment, correction;
@@ -682,7 +682,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<Double> res=  new ArrayList<>(sizeRatioFrameNumber);
             TrackAttribute ta = this.prev;
             Set<TrackAttribute> bucket = new HashSet<>(3);
-            FrameRangeLock.Unlocker unlocker = lock.lock(new FrameRange(prev.frame - sizeRatioFrameNumber,  prev.frame)); // this function that can go outside processing range
+            Unlocker unlocker = lock==null?()->{} : lock.lock(new FrameRange(prev.frame - sizeRatioFrameNumber,  prev.frame)); // this function that can go outside processing range
             WL: while(res.size()<sizeRatioFrameNumber && ta!=null) {
                 if (ta.next==null) {
                     StructureObject p = parentsByF.get(ta.frame);
@@ -712,7 +712,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             Set<TrackAttribute> nextTa = new HashSet<>();
             Set<TrackAttribute> bucket = new HashSet<>(3);
             Set<TrackAttribute> switchTa;
-            FrameRangeLock.Unlocker unlocker = lock.lock(new FrameRange(frame+1,  frame+1+sizeRatioFrameNumber)); // this function that can go outside processing range
+            FrameRangeLock.Unlocker unlocker = lock==null?()->{} : lock.lock(new FrameRange(frame+1,  frame+1+sizeRatioFrameNumber)); // this function that can go outside processing range
             WL: while(res.size()<sizeRatioFrameNumber && !curTa.isEmpty()) {
                 for (TrackAttribute ta : curTa) {
                     if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
@@ -1085,7 +1085,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         final Map<CorrectionScenario, Integer> errorMap = new HashMap<>(scenarios.size());
 
         for (CorrectionScenario c : scenarios) {
-            Unlocker ul = lock.lock(new FrameRange(c.frameMin-1, c.frameMax+1));
+            Unlocker ul = lock==null?()->{} : lock.lock(new FrameRange(c.frameMin-1, c.frameMax+1));
             c.applyScenario();
             errorMap.put(c, getErrorNumber(fMin, fMax+1, true)); // performs the assignment
             saveMap.put(c, new ObjectAndAttributeSave(c.frameMin-1, c.frameMax+1));
@@ -1100,7 +1100,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return comp;
         });
         if (errorMap.get(best)<currentErrors) { 
-            Unlocker ul = lock.lock(new FrameRange(best.frameMin-1, best.frameMax+1));
+            Unlocker ul = lock==null?()->{} : lock.lock(new FrameRange(best.frameMin-1, best.frameMax+1));
             saveMap.get(best).restoreAll(false);
             setAssignmentToTrackAttributes(best.frameMin, false);
             if (best.frameMax+1<maxFExcluded) setAssignmentToTrackAttributes(best.frameMax+1, false);
