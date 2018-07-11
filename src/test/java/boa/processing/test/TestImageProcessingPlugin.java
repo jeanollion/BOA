@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import boa.plugins.ProcessingPipeline;
 import boa.plugins.plugins.processing_pipeline.SegmentationAndTrackingProcessingPipeline;
+import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 
 /**
  *
@@ -48,7 +49,7 @@ public class TestImageProcessingPlugin {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        String dbName = "dataset1";
+        //String dbName = "dataset1";
         //String dbName = "RecA_180606";
         //String dbName = "MF1_180509";
         //String dbName = "fluo160501_uncorr_TestParam";
@@ -61,15 +62,16 @@ public class TestImageProcessingPlugin {
         //String dbName = "Aya_170324";
         //String dbName = "Aya_180315";
         //String dbName = "170919_glyc_lac";
+        String dbName = "WT_170120";
         boolean segmentation = true;
         boolean track = true;
-        int structureIdx =0;
+        int structureIdx =1;
         
-        int pIdx =0;
-        int mcIdx =0;
-        int[] frames = new int[]{0,3}; 
+        int pIdx =13;
+        int mcIdx =10;
+        int[] frames = new int[]{0,1000}; 
         
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
             return;

@@ -83,6 +83,8 @@ import static boa.utils.Utils.parallele;
 import java.util.stream.IntStream;
 import boa.plugins.TrackConfigurable;
 import boa.plugins.TrackConfigurable.TrackConfigurer;
+import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.FrameRangeLock.Unlocker;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -123,7 +125,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     // tracking-related attributes
     protected enum Flag {error, correctionMerge, correctionSplit;}
-    final Object lock = new Object();
+    final FrameRangeLock lock = new FrameRangeLock();
     Map<Integer, List<Region>> populations;
     Map<Region, TrackAttribute> objectAttributeMap;
     private boolean segment, correction;
@@ -157,7 +159,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     final static double maxErrorRate = 4; // above this number of error per frame (mean on 7 consecutive frame) no correction is intended
     final static int maxCorrectionLength = 100; // limit lenth of correction scenario
     final static int correctionIndexLimit = 20; // max bacteria idx for correction
-    
+    final static boolean performSeveralIntervalsInParallel = false;
     // functions for assigners
     HashMapGetCreate<Collection<Region>, Double> sizeMap = new HashMapGetCreate<>(col -> {
         if (col.isEmpty()) return 0d;
@@ -261,28 +263,41 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         .entrySet().stream().peek(e->FrameRange.ensureContinuousRanges(e.getValue(), e.getKey()))
                         .flatMap(e->e.getValue().stream()).sorted().collect(Collectors.toList());
             }
-            // TODO merge ranges if too close to avoid concurrent modifications
+            
+            // merge intervals that are too close to reduce concurrent modification (can still happen if correction extends outside interval)
+            Iterator<FrameRange> itFR = subLowErrorRanges.iterator();
+            if (itFR.hasNext()) {
+                FrameRange prev= itFR.next();
+                while(itFR.hasNext()) {
+                    FrameRange next = itFR.next();
+                    if (prev.max+(sizeRatioFrameNumber-(2*3+1))>=next.min) { // to have an interval with no error of sizeRatioFrameNumber: 0 error mean on sizeRatioFrameNumber - rolling mean interval
+                        prev.merge(next);
+                        itFR.remove();
+                    } else prev = next;
+                }
+            }
+            
             if (debugCorr) logger.debug("Correction ranges: {}", subLowErrorRanges);
             
             if (correctionStep) {
                 snapshot("INITIAL STATE", true);
                 if (correctionStepLimit<=1) return;
             }
-            
-            parallele(subLowErrorRanges.stream(), true).forEach(range -> { // TODO Solve concurent exeption on population between restore & getNext (getLineageSR)
+            FrameRange wholeRange = new FrameRange(minF+1, maxFExcluded-1);
+            parallele(subLowErrorRanges.stream(), performSeveralIntervalsInParallel).forEach(range -> { 
                 List<FrameRange> corrRanges = new ArrayList<>();
                 List<FrameRange> subCorrRanges = new ArrayList<>(1);
                 int idxMax=0;
                 int idxLim = Math.min(correctionIndexLimit, populations.values().stream().mapToInt(p->p.size()).max().getAsInt());
                 MAIN_COR_LOOP: while(idxMax<idxLim) {
-                    performCorrectionsByIdx(range, range, idxMax, corrRanges);
+                    performCorrectionsByIdx(range, wholeRange, idxMax, corrRanges); // limit was "range" but it would limit too much
                     if (!corrRanges.isEmpty()) {
                         for (int subIdx = 0; subIdx<=idxMax; ++subIdx) {
                             if (debugCorr) logger.debug("sub corr: {}->{}, frame ranges {}", subIdx, idxLim, corrRanges);
                             Iterator<FrameRange> it = corrRanges.iterator();
                             while (it.hasNext()) {
                                 FrameRange subRange = it.next();
-                                performCorrectionsByIdx(subRange, range, idxMax, subCorrRanges);
+                                performCorrectionsByIdx(subRange, wholeRange, idxMax, subCorrRanges); // limit was "range" 
                                 if (!subCorrRanges.isEmpty()) {
                                     corrRanges.addAll(subCorrRanges);
                                     FrameRange.mergeOverlappingRanges(corrRanges);
@@ -447,7 +462,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (postFilters==null) this.postFilters=new PostFilterSequence("");
         this.segment=segment;
         this.parentsByF = new TreeMap<>(StructureObjectUtils.splitByFrame(parentTrack));
-        objectAttributeMap = new HashMap<>();
+        objectAttributeMap = new ConcurrentHashMap<>();
         populations = new HashMap<>(parentTrack.size());
         //if (segment) segmenters  = new SegmenterSplitAndMerge[timePointNumber];
         this.maxGR=this.maxSR.getValue().doubleValue();
@@ -500,19 +515,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     protected List<Region> getObjects(int frame) {
         if (frame<minF || frame>=maxFExcluded) return Collections.EMPTY_LIST;
         if (this.populations.get(frame)==null) {
-            //synchronized(lock) {
-            //    if (this.populations.get(frame)==null) {
-                    StructureObject parent = this.parentsByF.get(frame);
-                    List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
-                    if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
-                        if (segment || correction) o.getRegion().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
-                        return o.getRegion();
-                    }));
-                    else populations.put(frame, Collections.EMPTY_LIST); 
-                    //logger.debug("get object @ {}, size: {}", frame, populations.get(frame].size());
-                    createAttributes(frame);
-            //    }
-            //}
+            StructureObject parent = this.parentsByF.get(frame);
+            List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
+            if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
+                if (segment || correction) o.getRegion().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
+                return o.getRegion();
+            }));
+            else populations.put(frame, Collections.EMPTY_LIST); 
+            //logger.debug("get object @ {}, size: {}", frame, populations.get(frame].size());
+            createAttributes(frame);
         }
         return populations.get(frame);
     }
@@ -667,29 +678,30 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return (double)o.getVoxels().size() / getLength(); // do not use getSize() if getSize() return area !!
         }
         private List<Double> getLineageSizeRatioList() {
+            if (prev==null) return Collections.EMPTY_LIST;
             List<Double> res=  new ArrayList<>(sizeRatioFrameNumber);
             TrackAttribute ta = this.prev;
             Set<TrackAttribute> bucket = new HashSet<>(3);
-            synchronized(lock) { // this function that can go outside processing range
-                WL: while(res.size()<sizeRatioFrameNumber && ta!=null) {
-                    if (ta.next==null) {
-                        StructureObject p = parentsByF.get(ta.frame);
-                        logger.debug("Prev's NEXT NULL db:{}, position: {}, parent: {}, current: {}: ta with no next: {}, last of channel: {}", p.getDAO().getMasterDAO().getDBName(), p.getDAO().getPositionName(), p, this, ta, ta.idx==populations.get(ta.frame).size()-1);
-                    }
-                    if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
-                        if (ta.division || ta.next==null) {
-                            double nextSize = 0;
-                            bucket.clear();
-                            Set<TrackAttribute> n = ta.addNext(bucket);
-                            if (!n.stream().anyMatch(t->t.touchEndOfChannel) && ((ta.division && n.size()>1) || (!ta.division && n.size()==1))) {
-                                for (TrackAttribute t : n) nextSize+=t.getSize();
-                                res.add(nextSize/ta.getSize()); 
-                            }
-                        } else if (!ta.next.touchEndOfChannel) res.add(ta.next.getSize()/ta.getSize()); 
-                    }
-                    ta = ta.prev;
+            FrameRangeLock.Unlocker unlocker = lock.lock(new FrameRange(prev.frame - sizeRatioFrameNumber,  prev.frame)); // this function that can go outside processing range
+            WL: while(res.size()<sizeRatioFrameNumber && ta!=null) {
+                if (ta.next==null) {
+                    StructureObject p = parentsByF.get(ta.frame);
+                    logger.debug("Prev's NEXT NULL db:{}, position: {}, parent: {}, current: {}: ta with no next: {}, last of channel: {}", p.getDAO().getMasterDAO().getDBName(), p.getDAO().getPositionName(), p, this, ta, ta.idx==populations.get(ta.frame).size()-1);
                 }
+                if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
+                    if (ta.division || ta.next==null) {
+                        double nextSize = 0;
+                        bucket.clear();
+                        Set<TrackAttribute> n = ta.addNext(bucket);
+                        if (!n.stream().anyMatch(t->t.touchEndOfChannel) && ((ta.division && n.size()>1) || (!ta.division && n.size()==1))) {
+                            for (TrackAttribute t : n) nextSize+=t.getSize();
+                            res.add(nextSize/ta.getSize()); 
+                        }
+                    } else if (!ta.next.touchEndOfChannel) res.add(ta.next.getSize()/ta.getSize()); 
+                }
+                ta = ta.prev;
             }
+            unlocker.unlock();
             return res;
         }
         private List<Double> getNextLineageSizeRatioList() {
@@ -700,31 +712,31 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             Set<TrackAttribute> nextTa = new HashSet<>();
             Set<TrackAttribute> bucket = new HashSet<>(3);
             Set<TrackAttribute> switchTa;
-            synchronized(lock) { // this function that can go outside processing range
-                WL: while(res.size()<sizeRatioFrameNumber && !curTa.isEmpty()) {
-                    for (TrackAttribute ta : curTa) {
-                        if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
-                            if (ta.division || ta.next==null) {
-                                double nextSize = 0;
-                                bucket.clear();
-                                ta.addNext(bucket);
-                                if (Utils.getFirst(bucket, t->t.touchEndOfChannel)==null && (ta.division && bucket.size()>1) || (!ta.division && bucket.size()<2)) { // do not take into acount if touches end of channel // nor take into acount weird divisions
-                                    for (TrackAttribute t : bucket) nextSize+=t.getSize();
-                                    res.add(nextSize/ta.getSize()); 
-                                    nextTa.addAll(bucket);
-                                }
-                            } else if (!ta.next.touchEndOfChannel) {
-                                res.add(ta.next.getSize()/ta.getSize());
-                                nextTa.add(ta.next);
-                            } 
-                        }
+            FrameRangeLock.Unlocker unlocker = lock.lock(new FrameRange(frame+1,  frame+1+sizeRatioFrameNumber)); // this function that can go outside processing range
+            WL: while(res.size()<sizeRatioFrameNumber && !curTa.isEmpty()) {
+                for (TrackAttribute ta : curTa) {
+                    if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
+                        if (ta.division || ta.next==null) {
+                            double nextSize = 0;
+                            bucket.clear();
+                            ta.addNext(bucket);
+                            if (Utils.getFirst(bucket, t->t.touchEndOfChannel)==null && (ta.division && bucket.size()>1) || (!ta.division && bucket.size()<2)) { // do not take into acount if touches end of channel // nor take into acount weird divisions
+                                for (TrackAttribute t : bucket) nextSize+=t.getSize();
+                                res.add(nextSize/ta.getSize()); 
+                                nextTa.addAll(bucket);
+                            }
+                        } else if (!ta.next.touchEndOfChannel) {
+                            res.add(ta.next.getSize()/ta.getSize());
+                            nextTa.add(ta.next);
+                        } 
                     }
-                    switchTa = curTa;
-                    curTa = nextTa;
-                    nextTa = switchTa;
-                    nextTa.clear();
                 }
+                switchTa = curTa;
+                curTa = nextTa;
+                nextTa = switchTa;
+                nextTa.clear();
             }
+            unlocker.unlock();
             return res;
         }
         private List<TrackAttribute> getPreviousTrack(int sizeLimit, boolean reverseOrder) {
@@ -791,7 +803,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (division) {
                 if (res==null) res = new HashSet<>();
                 if (populations.get(frame+1)==null) return res;
-                for (Region o : getObjects(frame+1)) {
+                for (Region o : getObjects(frame+1)) { // NO LOCK HERE BECAUSE FUNCTION THAT CALLS THEM ALREADY LOCK
                     TrackAttribute ta = objectAttributeMap.get(o);
                     if (ta!=null && ta.prev==this) res.add(ta);
                 }
@@ -807,7 +819,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         public Set<TrackAttribute> addPrevious(Set<TrackAttribute> res) {
             if (frame==minF) return res!=null ? res : Collections.EMPTY_SET;
             if (res==null) res = new HashSet<>();
-            for (Region o : getObjects(frame-1)) {
+            for (Region o : getObjects(frame-1)) { // NO LOCK HERE BECAUSE FUNCTION THAT CALLS THEM ALREADY LOCK
                 TrackAttribute ta = objectAttributeMap.get(o);
                 if (ta!=null && ta.next==this) res.add(ta);
             }
@@ -1000,7 +1012,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     private FrameRange performCorrectionSplitBeforeOverMultipleFrames(Assignment a, int frame, FrameRange limit) {
         List<CorrectionScenario> allScenarios = new ArrayList<>(1);
         SplitScenario split = new SplitScenario(this, a.prevObjects.get(0), frame-1);
-        allScenarios.add(split);
+        allScenarios.add(split.getWholeScenario(limit, maxCorrectionLength, costLim, cumCostLim)); // before: WAS just split
         return getBestScenario(allScenarios, a.ta.verboseLevel);
     }
     /**
@@ -1053,7 +1065,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (a.objectCountPrev()>2 && a.objectCountNext()<=2) scenarios.add(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, a.idxPrev, a.prevObjects, frame-1)); // merge all previous objects
 
         scenarios.add(new RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections.this, frame, a)); // TODO: TEST INSTEAD OF SPLIT / SPLITANDMERGE
-
         return getBestScenario(scenarios, a.ta.verboseLevel);
     }
     /**
@@ -1074,12 +1085,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         final Map<CorrectionScenario, Integer> errorMap = new HashMap<>(scenarios.size());
 
         for (CorrectionScenario c : scenarios) {
+            Unlocker ul = lock.lock(new FrameRange(c.frameMin-1, c.frameMax+1));
             c.applyScenario();
             errorMap.put(c, getErrorNumber(fMin, fMax+1, true)); // performs the assignment
             saveMap.put(c, new ObjectAndAttributeSave(c.frameMin-1, c.frameMax+1));
             if (correctionStep) snapshot("step:"+snapshotIdx+"/"+c, false);
             if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("compare corrections: errors current: {}, scenario: {}:  errors: {}, cost: {} frames [{};{}]",currentErrors, c, errorMap.get(c), c.cost, c.frameMin, c.frameMax);
             saveCur.restore(c.frameMin-1, c.frameMax+1, true);
+            ul.unlock();
         }
         CorrectionScenario best = Collections.min(scenarios, (CorrectionScenario o1, CorrectionScenario o2) -> {
             int comp = Integer.compare(errorMap.get(o1), errorMap.get(o2)); // min errors
@@ -1087,9 +1100,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return comp;
         });
         if (errorMap.get(best)<currentErrors) { 
+            Unlocker ul = lock.lock(new FrameRange(best.frameMin-1, best.frameMax+1));
             saveMap.get(best).restoreAll(false);
             setAssignmentToTrackAttributes(best.frameMin, false);
             if (best.frameMax+1<maxFExcluded) setAssignmentToTrackAttributes(best.frameMax+1, false);
+            ul.unlock();
             return new FrameRange(Math.max(minF+1, best.frameMin), Math.min(best.frameMax, maxFExcluded-1));
         }
 
@@ -1125,15 +1140,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             restore(fMin, fMin+objects.length-1, copy);
         }
         public boolean restore(int fMin, int fMaxIncluded, boolean copy) {
-            synchronized(lock) { // modification of objectAttibutes & population while processing. 
-                for (int f = fMin; f<=fMaxIncluded; ++f) restore(f, false, copy);
-                for (int f = fMin; f<=fMaxIncluded; ++f) { // setLinks AFTER having restored
-                    if (f<0 || f>=maxFExcluded) continue;
-                    for (Region o : populations.get(f)) {
-                        TrackAttribute curTa = objectAttributeMap.get(o);
-                        if (curTa.prev!=null) curTa.prev = objectAttributeMap.get(curTa.prev.o);
-                        if (curTa.next!=null) curTa.next = objectAttributeMap.get(curTa.next.o);
-                    }
+            // no locking here because already locked when called
+            for (int f = fMin; f<=fMaxIncluded; ++f) restore(f, false, copy);
+            for (int f = fMin; f<=fMaxIncluded; ++f) { // setLinks AFTER having restored
+                if (f<0 || f>=maxFExcluded) continue;
+                for (Region o : populations.get(f)) {
+                    TrackAttribute curTa = objectAttributeMap.get(o);
+                    if (curTa.prev!=null) curTa.prev = objectAttributeMap.get(curTa.prev.o);
+                    if (curTa.next!=null) curTa.next = objectAttributeMap.get(curTa.next.o);
                 }
             }
             return true;

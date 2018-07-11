@@ -86,10 +86,10 @@ public class FrameRange implements Comparable<FrameRange>{
         return "["+min+";"+max+"]";
     }
     
-    public static FrameRange getContainingRange(List<FrameRange> sortedRanges, FrameRange range) {
-        int idx = Collections.binarySearch(sortedRanges, range, (r1, r2)->Integer.compare(r1.min, r2.min));
-        if (idx>=0) return sortedRanges.get(idx);
-        FrameRange fr = sortedRanges.get(-idx-2);
+    public static FrameRange getContainingRange(List<FrameRange> sortedRangeCandidates, FrameRange range) {
+        int idx = Collections.binarySearch(sortedRangeCandidates, range, (r1, r2)->Integer.compare(r1.min, r2.min));
+        if (idx>=0) return sortedRangeCandidates.get(idx);
+        FrameRange fr = sortedRangeCandidates.get(-idx-2);
         if (!range.isIncludedIn(fr)) throw new RuntimeException("Could not find range");
         return fr;
     }
@@ -153,4 +153,35 @@ public class FrameRange implements Comparable<FrameRange>{
             }
         }
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 53 * hash + this.min;
+        hash = 53 * hash + this.max;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final FrameRange other = (FrameRange) obj;
+        if (this.min != other.min) {
+            return false;
+        }
+        if (this.max != other.max) {
+            return false;
+        }
+        return true;
+    }
+    
+    
 }

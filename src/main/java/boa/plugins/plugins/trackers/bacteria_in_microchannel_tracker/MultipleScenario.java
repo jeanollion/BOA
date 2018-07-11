@@ -18,6 +18,8 @@
  */
 package boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker;
 
+import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.performSeveralIntervalsInParallel;
+import static boa.utils.Utils.parallele;
 import java.util.List;
 
 /**
@@ -41,7 +43,7 @@ public class MultipleScenario extends CorrectionScenario {
 
         @Override
         protected void applyScenario() {
-            for (CorrectionScenario s : scenarios) s.applyScenario();
+            parallele(scenarios.stream(), !performSeveralIntervalsInParallel).forEach(s -> s.applyScenario());
         }
         @Override 
         public String toString() {
