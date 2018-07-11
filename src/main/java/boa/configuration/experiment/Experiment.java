@@ -313,7 +313,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return getStructureNames(childIdx);
     }
     
-    public String[] getStructureNames(int[] structureIndicies) {
+    public String[] getStructureNames(int... structureIndicies) {
         String[] res = new String[structureIndicies.length];
         for (int i = 0; i<res.length; ++i) {
             if (structureIndicies[i]<0) res[i]="Viewfield";
@@ -489,6 +489,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         }
         Map<Integer, String[]> mapRes = new HashMap<Integer, String[]>(map.size());
         for (Entry<Integer, ArrayList<String>> e : map.entrySet()) mapRes.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
+        for (int s : structures) if (!mapRes.containsKey(s)) mapRes.put(s, new String[0]);
         return mapRes;
     }
     

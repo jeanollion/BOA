@@ -22,6 +22,7 @@ import boa.ui.GUI;
 import static boa.ui.GUI.logger;
 import com.sun.management.UnixOperatingSystemMXBean;
 import boa.configuration.parameters.FileChooser;
+import boa.data_structure.Measurements;
 import ij.gui.Plot;
 import boa.image.Image;
 import java.awt.Color;
@@ -850,7 +851,7 @@ public class Utils {
             return n.toString();
         } else {
             double abs = Math.abs(n.doubleValue());
-            if (Double.isInfinite(abs) || Double.isNaN(abs)) return MeasurementExtractor.NaN;
+            if (Double.isInfinite(abs) || Double.isNaN(abs)) return Measurements.NA_STRING; // NAN ? 
             double pow = Math.pow(10, digits);
             if (abs > 1000 || (abs<0.1 && ((int)(abs*pow))/pow!=abs)) {
                 return String.format(java.util.Locale.US, "%."+ digits+ "E", n);
@@ -865,7 +866,7 @@ public class Utils {
             else return String.format(java.util.Locale.US, "%.4E", n.doubleValue());
         } else {
             double abs = Math.abs(n.doubleValue());
-            if (Double.isInfinite(abs) || Double.isNaN(abs)) return MeasurementExtractor.NaN;
+            if (Double.isInfinite(abs) || Double.isNaN(abs)) return Measurements.NA_STRING; // NAN ? 
             if (abs > 1000 || (abs<0.1 && ((int)(abs*10000))/10000!=abs)) {
                 return String.format(java.util.Locale.US, "%.4E", n);
             } else {

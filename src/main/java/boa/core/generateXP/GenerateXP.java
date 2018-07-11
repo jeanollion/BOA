@@ -201,12 +201,13 @@ public class GenerateXP {
         }
         if (measurements) {
             xp.clearMeasurements();
-            xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));
+            xp.addMeasurement(new BacteriaLineageMeasurements(1));
             xp.addMeasurement(new SimpleTrackMeasurements(1));
             xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Mean().setIntensityStructure(1)));
             //xp.addMeasurement(new ObjectFeatures(1).addFeature(new MeanAtBorder().setIntensityStructure(1), "IntensityBorderMeanGrad").addPreFilter(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2.5)));
             xp.addMeasurement(new ContainerObject(2, 1));
             xp.addMeasurement(new SimpleTrackMeasurements(2));
+            xp.addMeasurement(new SimpleTrackMeasurements(0));
             xp.addMeasurement(new SpineCoordinates(2, 1));
             xp.addMeasurement(new ObjectFeatures(2).addFeatures(new Mean(), new Max(), new Min()));
             xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));
@@ -305,6 +306,7 @@ public class GenerateXP {
             xp.addMeasurement(new BacteriaLineageMeasurements(1));
             xp.addMeasurement(new BacteriaTrackingAttributes(1));
             xp.addMeasurement(new SimpleTrackMeasurements(1));
+            xp.addMeasurement(new SimpleTrackMeasurements(0));
             xp.addMeasurement(new RelativePosition(1, 0, RelativePosition.REF_POINT.GEOM_CENTER, RelativePosition.REF_POINT.UPPER_LEFT_CORNER).setMeasurementName("BacteriaCenter"));
             xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Thickness()));
             xp.addMeasurement(new GrowthRate().setFeature(new Size().setScaled(true), true).setSuffix("Area"));

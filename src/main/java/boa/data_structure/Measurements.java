@@ -19,6 +19,7 @@
 package boa.data_structure;
 
 
+import boa.measurement.MeasurementExtractor;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;

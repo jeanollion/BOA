@@ -63,12 +63,12 @@ public class GrowthRate implements Measurement, MultiThreaded {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
     protected PluginParameter<GeometricalFeature> feature = new PluginParameter<>("Feature", GeometricalFeature.class, new Size(), false).setToolTipText("Geometrical Feature of object used to compute Growth Rate");
     protected TextParameter suffix = new TextParameter("Suffix", "", false).setToolTipText("Suffix added to measurement keys");
-    protected BooleanParameter intersection = new BooleanParameter("Save Intersection", false);
+    protected BooleanParameter saveSizeAtDiv = new BooleanParameter("Save Size at Division", false).setToolTipText("Wether the estimated size at division should be saved or not");
     protected BooleanParameter saveFeature = new BooleanParameter("Save Feature", false);
     protected TextParameter featureKey = new TextParameter("Feature Name", "", false).setValidationFunction((t)->((TextParameter)t).getValue().length()>0).setToolTipText("Name given to geometrical feature in measurements");
     protected ConditionalParameter saveFeatureCond = new ConditionalParameter(saveFeature).setActionParameters("true", featureKey).setToolTipText("Whether value of geometrical feature should be saved to measurements");
     protected BoundedNumberParameter minCells = new BoundedNumberParameter("Minimum cell number", 0, 3, 2, null).setToolTipText("Minimum number of cell to compute growth rate. NA is returned if minimum not reached");
-    protected Parameter[] parameters = new Parameter[]{structure, feature, minCells, suffix, saveFeatureCond, intersection};
+    protected Parameter[] parameters = new Parameter[]{structure, feature, minCells, suffix, saveFeatureCond, saveSizeAtDiv};
     
     public GrowthRate() {
         feature.addListener( p -> {
@@ -111,7 +111,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
         int bIdx = structure.getSelectedIndex();
         String suffix = this.suffix.getValue();
         String featKey = this.featureKey.getValue();
-        boolean inter = intersection.getSelected();
+        boolean saveSizeDiv = saveSizeAtDiv.getSelected();
         boolean feat = saveFeature.getSelected();
         final ArrayList<ObjectFeatureCore> cores = new ArrayList<>();
         HashMapGetCreate<StructureObject, ObjectFeature> ofMap = new HashMapGetCreate<>(p -> {
@@ -134,20 +134,21 @@ public class GrowthRate implements Measurement, MultiThreaded {
                 double[] length = new double[frame.length];
                 int idx = 0;
                 for (StructureObject b : l) {
-                    frame[idx] = b.getCalibratedTimePoint();
+                    frame[idx] = b.getCalibratedTimePoint() - frame[0]; // so that beta represents the estimation of the size at division
                     length[idx++] =   logLengthMap.get(b);
                 }
+                frame[0] = 0;
                 double[] beta = LinearRegression.run(frame, length);
                 idx = 0;
                 for (StructureObject b : l) {
                     b.getMeasurements().setValue("GrowthRate"+suffix, beta[1] );
-                    if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, beta[0] );
+                    if (saveSizeDiv) b.getMeasurements().setValue("SizeAtDivision"+suffix, Math.exp(beta[0]) );
                     if (feat) b.getMeasurements().setValue(featKey, Math.exp(logLengthMap.get(b)));
                 }
             } else {
                 for (StructureObject b : l) {
                     b.getMeasurements().setValue("GrowthRate"+suffix, null );  // erase values
-                    if (inter) b.getMeasurements().setValue("GrowthRateIntersection"+suffix, null );  // erase values
+                    if (saveSizeDiv) b.getMeasurements().setValue("SizeAtDivision"+suffix, null );  // erase values
                     if (feat) b.getMeasurements().setValue(featKey, Math.exp(logLengthMap.get(b))); 
                 }
             }
@@ -161,7 +162,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
         ArrayList<MeasurementKey> res = new ArrayList<>(3);
         String suffix = this.suffix.getValue();
         res.add(new MeasurementKeyObject("GrowthRate"+suffix, structure.getSelectedIndex()));
-        if (intersection.getSelected()) res.add(new MeasurementKeyObject("GrowthRateIntersection"+suffix, structure.getSelectedIndex()));
+        if (saveSizeAtDiv.getSelected()) res.add(new MeasurementKeyObject("SizeAtDivision"+suffix, structure.getSelectedIndex()));
         if (this.saveFeature.getSelected()) res.add(new MeasurementKeyObject(featureKey.getValue(), structure.getSelectedIndex()));
         return res;
     }

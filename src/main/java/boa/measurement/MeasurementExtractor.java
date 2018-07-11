@@ -46,7 +46,6 @@ import boa.utils.Utils;
 public class MeasurementExtractor {
     
     final static String separator =";";
-    public final static String NaN = "NaN";
     int structureIdx;
     MasterDAO db;
     public static Function<Number, String> numberFormater = (Number n) -> { // precision
@@ -56,7 +55,7 @@ public class MeasurementExtractor {
         this.db=db;
         this.structureIdx=structureIdx;
     }
-    protected StringBuilder getBaseHeader() { //TODO split Indicies column ...
+    protected StringBuilder getBaseHeader() {
         int[] path = db.getExperiment().getPathToRoot(structureIdx);
         String[] structureNames = db.getExperiment().getStructureNames(path);
         StringBuilder sb = new StringBuilder(50+20*structureNames.length);
@@ -67,11 +66,10 @@ public class MeasurementExtractor {
         sb.append("Indices");
         sb.append(separator);
         sb.append("Frame");
-        for (String s : structureNames) {
-            sb.append(separator);
-            sb.append(s);
-            sb.append("Idx");
-        }
+        sb.append(separator);
+        // index of this structure
+        sb.append(db.getExperiment().getStructureNames(structureIdx)[0]);
+        sb.append("Idx");
         sb.append(separator);
         sb.append("Time");
         return sb;
@@ -83,11 +81,11 @@ public class MeasurementExtractor {
         sb.append(pIdx);
         int[] idx = m.getIndices();
         sb.append(separator);
-        Utils.appendArray(idx, Selection.indexSeparator, sb); //sb.append(Utils.toStringArray(idx, separator, "", Selection.indexSeparator));
-        for (int i : idx) { // also add in separated columns
-            sb.append(separator);
-            sb.append(i);
-        }
+        Utils.appendArray(idx, Selection.indexSeparator, sb); 
+        sb.append(separator);
+        sb.append(m.getFrame());
+        sb.append(separator);
+        sb.append(m.getIndices()[m.getIndices().length-1]);
         sb.append(separator);
         sb.append(numberFormater.apply(m.getCalibratedTimePoint()));
         return sb;
@@ -115,7 +113,7 @@ public class MeasurementExtractor {
     }
     public static void extractMeasurementObjects(MasterDAO db, String outputFile, List<String> positions, Map<Integer, String[]> allMeasurements) {
         TreeMap<Integer, String[]> allMeasurementsSort = new TreeMap<>(allMeasurements);
-        if (allMeasurementsSort.isEmpty()) return;
+        //if (allMeasurementsSort.isEmpty()) return;
         MeasurementExtractor de= new MeasurementExtractor(db, allMeasurementsSort.lastKey());
         de.extractMeasurementObjects(outputFile, positions, allMeasurementsSort);
     }
@@ -158,7 +156,7 @@ public class MeasurementExtractor {
                         if (pIdx==-1) {
                             for (String pMeasName : allMeasurementsSort.get(e.getKey())) {
                                 line.append(separator);
-                                line.append(NaN);
+                                line.append(Measurements.NA_STRING);
                             } 
                         }
                         else {

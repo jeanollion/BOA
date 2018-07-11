@@ -21,18 +21,13 @@ package boa.plugins.plugins.measurements;
 import boa.gui.image_interaction.IJImageDisplayer;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.StructureParameter;
+import boa.data_structure.Measurements;
 import boa.data_structure.Region;
 import boa.data_structure.Selection;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
-import boa.data_structure.Voxel;
-import boa.image.MutableBoundingBox;
-import boa.image.Image;
-import boa.image.ImageMask;
 import java.util.ArrayList;
 import java.util.List;
-import boa.measurement.BasicMeasurements;
-import boa.measurement.GeometricalMeasurements;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
@@ -68,18 +63,20 @@ public class SimpleTrackMeasurements implements Measurement, ToolTip {
         res.add(new MeasurementKeyObject("TrackHeadIndices", structureIdx));
         res.add(new MeasurementKeyObject("TrackLength", structureIdx));
         res.add(new MeasurementKeyObject("TrackObjectCount", structureIdx));
-
+        res.add(new MeasurementKeyObject("ParentTrackHeadIndices", structureIdx));
         return res;
     }
 
     @Override public void performMeasurement(StructureObject object) {
         String th = StructureObjectUtils.getIndices(object.getTrackHead());
+        String pth = object.isRoot() ? Measurements.NA_STRING : StructureObjectUtils.getIndices(object.getParent().getTrackHead());
         List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
         int tl = track.get(track.size()-1).getFrame() - object.getFrame()+1;
         for (StructureObject o : track) {
             o.getMeasurements().setValue("TrackLength", tl);
             o.getMeasurements().setValue("TrackObjectCount", track.size());
             o.getMeasurements().setStringValue("TrackHeadIndices", th);
+            o.getMeasurements().setStringValue("ParentTrackHeadIndices", pth);
         }
     }
 
