@@ -88,6 +88,11 @@ public class GrowthRate implements Measurement, MultiThreaded {
         this.suffix.setValue(suffix);
         return this;
     }
+    
+    public GrowthRate saveSizeAtDivision(boolean save) {
+        saveSizeAtDiv.setSelected(save);
+        return this;
+    }
 
     public GrowthRate setFeature(GeometricalFeature f, boolean saveFeature) {
         this.feature.setPlugin(f);

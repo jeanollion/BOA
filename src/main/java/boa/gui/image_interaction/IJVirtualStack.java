@@ -48,6 +48,7 @@ public class IJVirtualStack extends VirtualStack {
     Function<Integer, int[]> getFCZ;
     int[] FCZCount;
     Image[][] imageCT;
+    private final Object lock = new Object();
     public IJVirtualStack(int sizeX, int sizeY, int[] FCZCount, Function<Integer, int[]> getFCZ, BiFunction<Integer, Integer, Image> imageOpenerCT) {
         super(sizeX, sizeY, null, null);
         this.imageOpenerCT=imageOpenerCT;
@@ -61,9 +62,14 @@ public class IJVirtualStack extends VirtualStack {
     public ImageProcessor getProcessor(int n) {
         int[] fcz = getFCZ.apply(n);
         if (imageCT[fcz[1]][fcz[0]]==null) {
-            imageCT[fcz[1]][fcz[0]] = imageOpenerCT.apply(fcz[1], fcz[0]);
+            synchronized(lock) {
+                if (imageCT[fcz[1]][fcz[0]]==null) {
+                    imageCT[fcz[1]][fcz[0]] = imageOpenerCT.apply(fcz[1], fcz[0]);
+                    if (imageCT[fcz[1]][fcz[0]]==null) logger.error("could not open image: channel: {}, frame: {}", fcz[1], fcz[0]);
+                }
+            }
         }
-        if (fcz[2]>=imageCT[fcz[1]][fcz[0]].sizeZ()) {
+        if (fcz[2]>= imageCT[fcz[1]][fcz[0]].sizeZ()) {
             if (imageCT[fcz[1]][fcz[0]].sizeZ()==1) fcz[2]=0; // case of reference images 
             else throw new IllegalArgumentException("Wrong Z size for channel: "+fcz[1]);
         }
