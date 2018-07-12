@@ -125,12 +125,12 @@ public class ArrayUtil {
     public static int max(int[] array) {
         return max(array, 0, array.length);
     }
-    public static int max(int[] array, int start, int stop) {
+    public static int max(int[] array, int start, int stopExcluded) {
         if (start<0) start=0;
-        if (stop>array.length) stop=array.length;
-        if (stop<start) throw new IllegalArgumentException("Stop before start");
+        if (stopExcluded>array.length) stopExcluded=array.length;
+        if (stopExcluded<start) throw new IllegalArgumentException("Stop before start");
         int idxMax = start;
-        for (int i = start+1; i<stop; ++i) if (array[i]>array[idxMax]) idxMax=i;
+        for (int i = start+1; i<stopExcluded; ++i) if (array[i]>array[idxMax]) idxMax=i;
         return idxMax;
     }
     public static int min(float[] array) {

@@ -116,14 +116,24 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
         long t0 = System.currentTimeMillis();
         long t1 = System.currentTimeMillis();
         // get mode -> background
-        fillZeros(histo.data);
-        if (smooth) smoothInPlace(histo.data, 3);
-        int mode = ArrayUtil.max(histo.data);
+        if (smooth) {
+            fillZeros(histo.data);
+            smoothInPlace(histo.data, 3);
+        }
+        int mode = ArrayUtil.max(histo.data, 1, histo.data.length-1);  // if the image has a lot of null values or a saturated values, the mode can be null or the saturated value. 
+        
         double halfWidthIdx = getHalfWidthIdx(histo, mode, true);
-        if (Double.isNaN(halfWidthIdx)) halfWidthIdx = getHalfWidthIdx(histo, mode, false);
+        //logger.debug("background fit  : mode idx: {} value: {}, half width estimation: {}", mode, histo.getValueFromIdx(mode), halfWidthIdx);
+        if (Double.isNaN(halfWidthIdx)||mode-halfWidthIdx<2) {
+            halfWidthIdx = getHalfWidthIdx(histo, mode, false);
+            //logger.debug("background fit estimation after peak: {}", mode, histo.getValueFromIdx(mode), mode-halfWidthIdx);
+        }
+        if (!smooth && (Double.isNaN(halfWidthIdx)||halfWidthIdx-mode<2)) { // very thin peak try on smoothed histogram
+            return backgroundFit(histo.duplicate(), sigmaFactor, meanSigma, true); 
+        }
         long t2 = System.currentTimeMillis();
         double modeFit;
-        int halfHalf = Math.max(2, (int)(halfWidthIdx/2d));
+        int halfHalf = Math.max(4, (int)(halfWidthIdx/2d));
         int startT = mode - halfHalf;
         if (startT>=0 && 2 * mode - halfHalf<histo.data.length) {
             // gaussian fit on trimmed data to get more precise mean value
@@ -131,12 +141,13 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
             for (int i = startT; i<=2 * mode - halfHalf; ++i) obsT.add( i, histo.data[i]-histo.data[startT]);
             double sigma = (mode - halfWidthIdx) / Math.sqrt(2*Math.log(2));
             try { 
-                double[] coeffsT = GaussianCurveFitter.create().withStartPoint(new double[]{histo.data[mode]-histo.data[startT], mode, sigma/2.0}).fit(obsT.toList());
+                double[] coeffsT = GaussianCurveFitter.create().withMaxIterations(1000).withStartPoint(new double[]{histo.data[mode]-histo.data[startT], mode, sigma/2.0}).fit(obsT.toList());
                 modeFit = coeffsT[1];
                 double stdBckT = coeffsT[2];
                 //logger.debug("mean (T): {}, std (T): {}", modeFit, stdBckT);
             } catch (Throwable t) {
                 if (!smooth) return backgroundFit(histo.duplicate(), sigmaFactor, meanSigma, true);
+                logger.error("error while looking for mode value", t);
                 throw t;
             }
         } else modeFit = mode;
@@ -151,7 +162,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
         obs.add(modeFit, histo.getCountLinearApprox(modeFit));
         for (double i  = modeFit; i<=2 * modeFit - start; ++i) obs.add(histo.getValueFromIdx(i), histo.getCountLinearApprox(2*modeFit-i));  
         try {
-            double[] coeffs = GaussianCurveFitter.create().withStartPoint(new double[]{histo.data[mode], histo.getValueFromIdx(mode), sigma}).fit(obs.toList());
+            double[] coeffs = GaussianCurveFitter.create().withMaxIterations(1000).withStartPoint(new double[]{histo.data[mode], histo.getValueFromIdx(mode), sigma}).fit(obs.toList());
             double meanBck = coeffs[1];
             double stdBck = coeffs[2];
             if (meanSigma!=null) {
@@ -159,9 +170,11 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
                 meanSigma[1] = stdBck;
             }
             double thld = meanBck + sigmaFactor * stdBck;
+            //logger.debug("mean : {}, sigma: {} thld: {}", meanBck, stdBck, thld);
             return thld;
         } catch(Throwable t) {
             if (!smooth) return backgroundFit(histo.duplicate(), sigmaFactor, meanSigma, true);
+            logger.error("error while fitting to get sigma", t);
             histo.plotIJ1("mode: "+modeFit+ " sigma: "+sigma, debug);
             throw t;
         }
@@ -185,6 +198,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
             // linear approx between half & half -1
             return half + (halfH - histo.data[half]) / (double)(histo.data[half]-histo.data[half+1]) ;
         }
+        
     }
     
     private static int getMinMonoBefore(int[] array, int start) {

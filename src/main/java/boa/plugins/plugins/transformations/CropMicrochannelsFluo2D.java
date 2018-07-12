@@ -148,8 +148,48 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
         
         //xStart = Math.max(xStart, r.getXMin()-cropMargin);
         //xStop = Math.min(xStop, r.getXMax() + cropMargin);
+        MutableBoundingBox bounds = new MutableBoundingBox(xStart, xStop, yStart, yStop, 0, image.sizeZ()-1);
         
-        return new MutableBoundingBox(xStart, xStop, yStart, yStop, 0, image.sizeZ()-1);
+        // in case a rotation was performed null rows / columns were added: look for min x & max x @ y min & y max
+        // 1) limit x min and max @ middle y
+        int[] xMMMid= getXMinAndMax(image, (int)bounds.yMean());
+        int[] xMMMid2= getXMinAndMax(image, 1+(int)bounds.yMean()); // when fluo bck is close to 0 : more robust using 2 lines
+        xMMMid[0] = (int)((xMMMid[0]+xMMMid2[0]+1)/2d);
+        xMMMid[1] = (int)((xMMMid[1]+xMMMid2[1])/2d);
+        if (bounds.xMin()<xMMMid[0]) bounds.setxMin(xMMMid[0]);
+        if (bounds.xMax()>xMMMid[1]) bounds.setxMax(xMMMid[1]);
+        
+        // 2) limit Y to non-null values
+        int[] yMMLeft= getYMinAndMax(image, bounds.xMin());
+        int[] yMMLeft2= getYMinAndMax(image, bounds.xMin()+1);
+        yMMLeft[0] = (int)((yMMLeft[0]+yMMLeft2[0]+1)/2d);
+        yMMLeft[1] = (int)((yMMLeft[1]+yMMLeft2[1])/2d);
+        int[] yMMRight= getYMinAndMax(image, bounds.xMax());
+        int[] yMMRight2= getYMinAndMax(image, bounds.xMax()-1);
+        yMMRight[0] = (int)((yMMRight[0]+yMMRight2[0]+1)/2d);
+        yMMRight[1] = (int)((yMMRight[1]+yMMRight2[1])/2d);
+        
+        int yMinLim = Math.min(yMMLeft[0], yMMRight[0]);
+        int yMaxLim = Math.max(yMMLeft[1], yMMRight[1]);
+        if (bounds.yMin()<yMinLim) bounds.setyMin(yMinLim);
+        if (bounds.yMax()>yMaxLim) bounds.setyMax(yMaxLim);
+        
+        //3) limit X to non-null values
+        int[] xMMUp= getXMinAndMax(image, bounds.yMin());
+        int[] xMMUp2= getXMinAndMax(image, bounds.yMin()+1); // fluo values can be close to 0 : better detection using 2 lines
+        xMMUp[0] = (int)((xMMUp[0]+xMMUp2[0]+1)/2d);
+        xMMUp[1] = (int)((xMMUp[1]+xMMUp2[1])/2d);
+        int[] xMMDown= getXMinAndMax(image, bounds.yMax());
+        int[] xMMDown2= getXMinAndMax(image, bounds.yMax()-1);  // fluo values can be close to 0 : better detection using 2 lines
+        xMMDown[0] = (int)((xMMDown[0]+xMMDown2[0]+1)/2d);
+        xMMDown[1] = (int)((xMMDown[1]+xMMDown2[1])/2d);
+        
+        int xMinLim = Math.max(xMMUp[0], xMMDown[0]);
+        int xMaxLim = Math.min(xMMUp[1], xMMDown[1]);
+        if (bounds.xMin()<xMinLim) bounds.setxMin(xMinLim);
+        if (bounds.xMax()>xMaxLim) bounds.setxMax(xMaxLim);
+        
+        return bounds;
         
     }
     @Override

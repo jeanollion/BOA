@@ -423,7 +423,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 PreProcessingChain template = db.getExperiment().getPreProcessingTemplate();
                 for (int p : positions) {
                     PreProcessingChain pr = db.getExperiment().getPosition(p).getPreProcessingChain();
-                    if (!template.sameContent(pr)) publish("Warning: Position: "+db.getExperiment().getPosition(p).getName()+": pre-processing chain differs from template");
+                    if (!template.getTransformations().sameContent(pr.getTransformations())) publish("Warning: Position: "+db.getExperiment().getPosition(p).getName()+": pre-processing pipeline differs from template");
                 }
             }
             // check files

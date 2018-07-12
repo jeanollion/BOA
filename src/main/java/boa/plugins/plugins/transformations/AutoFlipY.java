@@ -227,7 +227,9 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
     private Boolean isFlipFluo(Image image) {
         int minSize = minObjectSize.getValue().intValue();
         SimpleThresholder thlder = fluoThld.instanciatePlugin();
-        ImageMask mask = new ThresholdMask(image, thlder.runSimpleThresholder(image, null), true, true);
+        double thld = thlder.runSimpleThresholder(image, null);
+        if (testMode) logger.debug("threshold: {}", thld);
+        ImageMask mask = new ThresholdMask(image, thld, true, true);
         List<Region> objects = ImageLabeller.labelImageList(mask);
         objects.removeIf(o->o.size()<minSize);
         // filter by median sizeY

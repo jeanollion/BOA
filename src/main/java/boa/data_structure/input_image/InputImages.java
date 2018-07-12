@@ -99,7 +99,9 @@ public interface InputImages {
         long t0 = System.currentTimeMillis();
         double sTot = images.get(0).sizeXYZ();
         Histogram histo = HistogramFactory.getHistogram(()->Image.stream(images).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+        //histo.plotIJ1("choose "+n+" images: histogram.", true);
         double thld = BackgroundFit.backgroundFit(histo, 3);
+        
         List<Pair<Integer, Double>> signal = IntStream.range(0, images.size()).parallel()
                 .mapToObj((int i) ->  new Pair<>(i, images.get(i).stream().filter(v->v>thld).count() /  sTot))
                 .sorted((p1, p2)->-Double.compare(p1.value, p2.value)).collect(Collectors.toList());

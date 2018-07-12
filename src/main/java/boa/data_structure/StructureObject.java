@@ -584,32 +584,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     // track correction-related methods 
-    public boolean divisionAtNextTimePoint() {
-        int count = 0;
+    public boolean newTrackAtNextTimePoint() {
         if (getParent()==null || this.getParent().getNext()==null) return false;
-        List<StructureObject> candidates = this.getParent().getNext().getChildren(structureIdx);
-        for (StructureObject o : candidates) {
-            if (o.getPrevious()==this) ++count;
-            if (count>1) return true;
-        }
-        return false;
+        return getParent().getNext().getChildren(structureIdx).stream().anyMatch(o -> o.getPrevious()==this && o.isTrackHead());
     }
-    public int getPreviousDivisionTimePoint() {
-        StructureObject p = this.getPrevious();
-        while (p!=null) {
-            if (p.divisionAtNextTimePoint()) return p.getFrame()+1;
-            p=p.getPrevious();
-        }
-        return -1;
-    }
-    public int getNextDivisionTimePoint() {
-        StructureObject p = this;
-        while (p!=null) {
-            if (p.divisionAtNextTimePoint()) return p.getFrame()+1;
-            p=p.getNext();
-        }
-        return -1;
-    }
+    
     /**
      * 
      * @return the next element of the track that contains a track link error, as defined by the tracker; null is there are no next track error;

@@ -101,7 +101,7 @@ public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolT
     }
     
     /**
-     * Search of Optical Aberration (shadow produced by the microfluidic device at the opened-end of microchannels
+     * Search of Optical Aberration (shadow produced by the microfluidic device at the edge of main chanel microchannels
      * The closed-end should be towards top of image
      * All the following steps are performed on the mean projection of {@param image} along Y axis
      * 1) search for global max yMax
