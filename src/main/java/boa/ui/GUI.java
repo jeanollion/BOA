@@ -805,7 +805,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         String xp = db==null ? "" : " - Experiment: "+db.getDBName();
         String v = Utils.getVersion(this);
         if (v!=null && v.length()>0) v = "- Version: "+v;
-        setTitle("**BOA**"+v+xp);
+        setTitle("**BACMAN**"+v+xp);
         for (Component c: relatedToXPSet) c.setEnabled(enable);
         runActionAllXPMenuItem.setEnabled(!enable); // only available if no xp is set
         this.tabs.setEnabledAt(1, enable); // configuration
