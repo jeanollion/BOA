@@ -34,6 +34,7 @@ import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory.SpineResult;
 import static boa.image.processing.bacteria_spine.BacteriaSpineFactory.drawVector;
 import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
+import boa.image.processing.bacteria_spine.CircularNode;
 import boa.image.processing.bacteria_spine.SpineOverlayDrawer;
 import static boa.image.processing.bacteria_spine.SpineOverlayDrawer.drawLine;
 import static boa.image.processing.bacteria_spine.SpineOverlayDrawer.trimSpine;
@@ -45,6 +46,7 @@ import boa.utils.geom.Vector;
 import ij.ImageJ;
 import ij.gui.Overlay;
 import java.awt.Color;
+import java.util.Collection;
 import java.util.stream.IntStream;
 
 /**
@@ -62,8 +64,8 @@ public class DrawSpineProjection {
     public static void main(String[] args) {
         new ImageJ();
         String dbName = "fluo160501_uncorr_TestParam";
-        int position= 0, mc=1, frame=86, b=1, m=1, frame2 = 89, b2= 1, m2 = 2, frame3 = 94, b31=2, b32=3, m3 = 3;
-        
+        //int position= 0, mc=1, frame=86, b=1, m=1, frame2 = 89, b2= 1, m2 = 2, frame3 = 94, b31=2, b32=3, m3 = 3;
+        int position= 0, mc=0, frame=383, b=1, m=2, frame2 = 386, b2= 1, m2 = 3, frame3 = 390, b31=2, b32=3, m3 = 2;
         MasterDAO mDAO = new Task(dbName).getDB();
         mDAO.setReadOnly(true);
         ObjectDAO dao = MasterDAO.getDao(mDAO, position);
@@ -114,9 +116,29 @@ public class DrawSpineProjection {
         //drawArrow(spine32, mic3.getBounds(), mutProj3, mut3.getRegion().getCenter(), TARGET_COLOR);
         IntStream.range(0, spine31.size()).forEach(i->spine32.add(spine31.get(i)));
         
-        SpineOverlayDrawer.display("bact 0", mic.getRawImage(1), spine);
-        SpineOverlayDrawer.display("bact 1", mic2.getRawImage(1), spine2);
-        SpineOverlayDrawer.display("bact 2", mic3.getRawImage(1), spine32);
+        SpineOverlayDrawer.display("bact 0", mic.getRawImage(2), spine);
+        SpineOverlayDrawer.display("bact 1", mic2.getRawImage(2), spine2);
+        SpineOverlayDrawer.display("bact 2", mic3.getRawImage(2), spine32);
+        
+        // also display all images with only bacteria conours
+        
+        drawChildrenContours(mic, 1, 2);
+        drawChildrenContours(mic2, 1, 2);
+        drawChildrenContours(mic3, 1, 2);
+    }
+    
+    private static void drawChildrenContours(StructureObject parent, int childSIdx, int displaySIdx) {
+        Overlay overlay = new Overlay();
+        // draw contour
+        parent.getChildren(childSIdx).forEach(b -> {
+            BacteriaSpineLocalizer s = new BacteriaSpineLocalizer(b.getRegion());
+            CircularNode.apply(s.spine.circContour, n -> {
+                Point cur = Point.asPoint2D(n.getElement()).translateRev(parent.getBounds());
+                Vector dir = Vector.vector2D(n.getElement(), n.next().getElement());
+                overlay.add(drawLine(cur, dir, CONTOUR_COLOR, WIDTH));
+            }, true);
+        });
+        SpineOverlayDrawer.display("parent: "+parent.getFrame(), parent.getRawImage(displaySIdx).duplicate(), overlay);
     }
     public static void drawCoord(Overlay overlay, Offset offset, SpineResult spine, BacteriaSpineCoord coord, Point target) {
         Point spineIntersection = null;
