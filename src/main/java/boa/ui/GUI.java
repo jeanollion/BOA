@@ -175,7 +175,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     
     // xp tree-related attributes
     ConfigurationTreeGenerator configurationTreeGenerator;
-    
+    final Consumer<Boolean> setConfigurationTabValid;
     // track-related attributes
     TrackTreeController trackTreeController;
     private HashMap<Integer, JTree> currentTrees;
@@ -219,12 +219,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         initComponents();
         //updateMongoDBBinActions();
         tabs.setTabComponentAt(1, new JLabel("Configuration")); // so that it can be colorized in red when configuration is not valid
+        setConfigurationTabValid = v -> { // action when experiment is not valid
+            tabs.getTabComponentAt(1).setForeground(v ? Color.black : Color.red);
+            tabs.getTabComponentAt(1).repaint();
+        };
         progressBar = new ProgressIcon(Color.darkGray, tabs);
         Component progressComponent =  new ColorPanel(progressBar);
         tabs.addTab("Progress: ", progressBar, progressComponent);
         tabs.addChangeListener(new ChangeListener() {
             int lastSelTab=0;
             @Override public void stateChanged(ChangeEvent e) {
+                if (lastSelTab==1 && tabs.getSelectedIndex()!=lastSelTab) setConfigurationTabValid.accept(db==null? true : db.getExperiment().isValid());
                 if (tabs.getSelectedComponent()==progressComponent) {
                     logger.debug("pb");
                     tabs.setSelectedIndex(lastSelTab);
@@ -753,12 +758,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (db==null) {
             configurationTreeGenerator=null;
             configurationJSP.setViewportView(null);
+            setConfigurationTabValid.accept(true);
         } else {
-            configurationTreeGenerator = new ConfigurationTreeGenerator(db.getExperiment(), v -> { // action when experiment is not valid
-                tabs.getTabComponentAt(1).setForeground(v ? Color.black : Color.red);
-                tabs.getTabComponentAt(1).repaint();
-            });
+            configurationTreeGenerator = new ConfigurationTreeGenerator(db.getExperiment(),setConfigurationTabValid);
             configurationJSP.setViewportView(configurationTreeGenerator.getTree());
+            setConfigurationTabValid.accept(db.getExperiment().isValid());
         }
     }
     
@@ -947,7 +951,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             }
             setInteractiveStructures();
             setTrackTreeStructures();
-            
         } 
     }
     
