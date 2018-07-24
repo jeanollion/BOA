@@ -201,32 +201,48 @@ public class PreProcessingChain extends SimpleContainerParameter {
         public void addMenuListener(JPopupMenu menu, int X, int Y, Component parent) {
             ((MultipleChoiceParameterUI)fields.getUI()).addMenuListener(menu, X, Y, parent);
         }
+        @Override
         public Object[] getDisplayComponent() {
             fieldUI = (MultipleChoiceParameterUI)fields.getUI();
-            actions = new Object[fieldUI.getDisplayComponent().length + 2];
-            for (int i = 2; i < actions.length; i++) {
-                actions[i] = fieldUI.getDisplayComponent()[i - 2];
+            boolean isTemplate = getParent()==xp;
+            int offset = isTemplate?2:3;
+            actions = new Object[fieldUI.getDisplayComponent().length + offset];
+            for (int i = offset; i < actions.length; i++) {
+                actions[i] = fieldUI.getDisplayComponent()[i - offset];
                 //if (i<actions.length-1) ((JMenuItem)actions[i]).setUI(new StayOpenMenuItemUI());
             }
-            JMenuItem overide = new JMenuItem("Overwrite configuration on selected positions");
-            overide.setAction(
-                new AbstractAction(overide.getActionCommand()) {
+            int off = 0;
+            if (!isTemplate) {
+                JMenuItem overwriteToTemplate = new JMenuItem("Copy pipeline to template");
+                overwriteToTemplate.setAction(new AbstractAction(overwriteToTemplate.getActionCommand()) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            xp.getPreProcessingTemplate().setContentFrom(ppc);
+                            ConfigurationTreeModel model = ParameterUtils.getModel(xp);
+                            if (model!=null) model.nodeStructureChanged(xp.getPreProcessingTemplate());
+                        }
+                    }
+                );
+                actions[off++]=overwriteToTemplate;
+            }
+            JMenuItem overwrite = new JMenuItem("Overwrite pipeline on selected positions");
+            overwrite.setAction(new AbstractAction(overwrite.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         for (int f : fields.getSelectedItems()) {
                             //logger.debug("override pp on field: {}", f);
-                            Position field = xp.positions.getChildAt(f);
-                            if (field.getPreProcessingChain()!=ppc) {
-                                field.setPreProcessingChains(ppc);
+                            Position position = xp.positions.getChildAt(f);
+                            if (position.getPreProcessingChain()!=ppc) {
+                                position.setPreProcessingChains(ppc);
                                 ConfigurationTreeModel model = ParameterUtils.getModel(xp);
-                                if (model!=null) model.nodeStructureChanged(field);
+                                if (model!=null) model.nodeStructureChanged(position);
                             }
                         }
                     }
                 }
             );
-            actions[0]=overide;
-            actions[1]=new JSeparator();
+            actions[off++]=overwrite;
+            actions[off]=new JSeparator();
             return actions;
         }
     }
