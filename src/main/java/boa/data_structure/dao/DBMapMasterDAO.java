@@ -42,6 +42,8 @@ import boa.utils.DBMapUtils;
 import boa.utils.FileIO;
 import boa.utils.JSONUtils;
 import boa.utils.Utils;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
@@ -53,41 +55,72 @@ public class DBMapMasterDAO implements MasterDAO {
     
     protected final String dbName;
     final HashMap<String, DBMapObjectDAO> DAOs = new HashMap<>();
+    final Set<String> positionLock = new HashSet<>();
     protected Experiment xp;
     java.nio.channels.FileLock xpFileLock;
     RandomAccessFile cfg;
     DBMapSelectionDAO selectionDAO;
-    boolean readOnly = false;
+    boolean readOnly = true; // default is read only
     public DBMapMasterDAO(String dir, String dbName) {
         if (dir==null) throw new IllegalArgumentException("Invalid directory: "+ dir);
         if (dbName==null) throw new IllegalArgumentException("Invalid DbName: "+ dbName);
         logger.debug("create DBMAPMASTERDAO: dir: {}, dbName: {}", dir, dbName);
         configDir = dir;
-        new File(configDir).mkdirs();
+        File conf = new File(configDir);
+        if (!conf.exists()) conf.mkdirs();
         this.dbName = dbName;
     }
 
+    @Override
+    public boolean lockPositions(String... positionNames) {
+        if (positionNames==null || positionNames.length==0) positionNames = getExperiment().getPositionsAsString();
+        positionLock.addAll(Arrays.asList(positionNames));
+        boolean success = true;
+        for (String p : positionNames) {
+            DBMapObjectDAO dao = getDao(p);
+            success = success && !dao.readOnly;
+            if (dao.readOnly) logger.warn("Position: {} could not be locked. Another process already locks it? All changes won't be saved", p);
+        }
+        return success;
+    }
+    
+    @Override 
+    public void unlockPositions(String... positionNames) {
+        if (positionNames==null || positionNames.length==0) positionNames = getExperiment().getPositionsAsString();
+        this.positionLock.removeAll(Arrays.asList(positionNames));
+        for (String p : positionNames) {
+            if (this.DAOs.containsKey(p)) {
+                this.getDao(p).unlock();
+                DAOs.remove(p);
+            }
+        }
+    }
+    
     public boolean xpFileLock() {
         return xpFileLock!=null;
     }
     
     @Override
-    public boolean isReadOnly() {
+    public boolean isConfigurationReadOnly() {
         if (cfg==null) this.getExperiment(); // try to get lock 
         return readOnly;
     }
     @Override 
-    public boolean setReadOnly(boolean readOnly) {
+    public boolean setConfigurationReadOnly(boolean readOnly) {
         if (readOnly) {
             this.readOnly=true;
             this.unlockXP();
             return true;
         } else {
+            this.readOnly=false;
             this.getExperiment();
             if (xpFileLock!=null) {
                 this.readOnly=false;
                 return true;
-            } else return false;
+            } else {
+                this.readOnly = true;
+                return false;
+            }
         }
         
     }
@@ -98,6 +131,7 @@ public class DBMapMasterDAO implements MasterDAO {
         String outputPath = getExperiment()!=null ? getExperiment().getOutputDirectory() : null;
         String outputImagePath = getExperiment()!=null ? getExperiment().getOutputImageDirectory() : null;
         clearCache();
+        unlockPositions();
         Utils.deleteDirectory(outputPath);
         Utils.deleteDirectory(outputImagePath);
         deleteExperiment();
@@ -109,13 +143,13 @@ public class DBMapMasterDAO implements MasterDAO {
     }
     
     @Override
-    public DBMapObjectDAO getDao(String fieldName) {
-        DBMapObjectDAO res = this.DAOs.get(fieldName);
+    public DBMapObjectDAO getDao(String positionName) {
+        DBMapObjectDAO res = this.DAOs.get(positionName);
         if (res==null) {
             String op = getOutputPath();
             if (op==null) return null;
-            res = new DBMapObjectDAO(this, fieldName, op, readOnly);
-            DAOs.put(fieldName, res);
+            res = new DBMapObjectDAO(this, positionName, op, !positionLock.contains(positionName));
+            DAOs.put(positionName, res);
         }
         return res;
     }
@@ -190,6 +224,12 @@ public class DBMapMasterDAO implements MasterDAO {
         logger.debug("clearing cache...");
         clearCache(true, true , true);
     }
+    @Override
+    public void unlockConfiguration() {
+        unlockXP();
+        getSelectionDAO().clearCache();
+        this.selectionDAO=null;
+    }
     @Override 
     public void clearCache(String position) {
         DBMapObjectDAO dao = DAOs.remove(position);
@@ -201,7 +241,7 @@ public class DBMapMasterDAO implements MasterDAO {
                 if (getExperiment().getPosition(dao.getPositionName())!=null) getExperiment().getPosition(dao.getPositionName()).flushImages(true, true); // input images
                 dao.clearCache();
             }
-            DAOs.clear();
+            //DAOs.clear();
         }
         
         if (selectionDAO && this.selectionDAO!=null) {
@@ -209,7 +249,7 @@ public class DBMapMasterDAO implements MasterDAO {
             this.selectionDAO=null;
         }
         if (xpDAO) {
-            this.unlockXP();
+            //this.unlockXP();
             this.xp=null;
         }
     }

@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Jean Ollion
  */
-public class processJobs {
+public class ProcessJobs {
     
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");

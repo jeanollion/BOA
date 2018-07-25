@@ -226,6 +226,7 @@ public class Processor {
         logger.debug("total objects: {}, dao type: {}", children.size(), dao.getClass().getSimpleName());
         
         // create error selection
+        /*
         if (dao.getMasterDAO().getSelectionDAO()!=null) {
             Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
             boolean hadObjectsBefore=errors.count(dao.getPositionName())>0;
@@ -241,6 +242,7 @@ public class Processor {
                 dao.getMasterDAO().getSelectionDAO().store(errors);
             }
         }
+        */
         if (me!=null) throw me;
     }
     

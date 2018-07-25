@@ -96,7 +96,7 @@ public class TestProcessBacteriaPhase {
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int microChannel, int timePointMin, int timePointMax) {
         MasterDAO mDAO = new Task(dbName).getDB();
-        mDAO.setReadOnly(true);
+        mDAO.setConfigurationReadOnly(true);
         int parentSIdx = mDAO.getExperiment().getStructure(bacteriaStructureIdx).getParentStructure();
         Position f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();

@@ -104,11 +104,26 @@ public class BasicMasterDAO implements MasterDAO {
     }
 
     @Override
-    public boolean isReadOnly() {
+    public boolean isConfigurationReadOnly() {
         return false;
     }
     @Override 
-    public boolean setReadOnly(boolean readOnly) {
+    public boolean setConfigurationReadOnly(boolean readOnly) {
         return false;
+    }
+
+    @Override
+    public void unlockConfiguration() {
+        
+    }
+
+    @Override
+    public boolean lockPositions(String... positionNames) {
+        return true;
+    }
+
+    @Override
+    public void unlockPositions(String... positionNames) {
+        
     }
 }

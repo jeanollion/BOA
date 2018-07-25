@@ -43,8 +43,11 @@ public interface MasterDAO {
     public void clearCache();
     public void clearCache(String position);
     public ObjectDAO getDao(String fieldName);
-    public boolean isReadOnly();
-    public boolean setReadOnly(boolean readOnly);
+    public boolean isConfigurationReadOnly();
+    public boolean setConfigurationReadOnly(boolean readOnly);
+    public void unlockConfiguration();
+    public boolean lockPositions(String... positionNames);
+    public void unlockPositions(String... positionNames);
     public String getDBName();
     public String getDir();
     public void deleteAllObjects();
@@ -109,4 +112,5 @@ public interface MasterDAO {
         }
         return sameContent;
     }
+    
 }

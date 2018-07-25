@@ -246,7 +246,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 }
                 if (tabs.getSelectedComponent()==actionPanel) {
                     populateActionStructureList();
-                    populateActionMicroscopyFieldList();
+                    populateActionPositionList();
                 }
             }
         });
@@ -259,7 +259,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         addWindowListener(new WindowAdapter() {
             @Override 
             public void windowClosing(WindowEvent evt) {
-                if (db!=null) db.clearCache();
+                if (db!=null) {
+                    db.unlockPositions();
+                    db.unlockConfiguration();
+                    db.clearCache();
+                }
                 logger.debug("Closed successfully");
             }
         });
@@ -729,14 +733,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         //long t0 = System.currentTimeMillis();
         if (hostnameOrDir==null) hostnameOrDir = getHostNameOrDir(dbName);
         db = MasterDAOFactory.createDAO(dbName, hostnameOrDir);
-        if (readOnly) db.setReadOnly(readOnly);
+        db.setConfigurationReadOnly(readOnly);
+        if (!readOnly) db.lockPositions(); // locks all positions
         if (db==null || db.getExperiment()==null) {
             logger.warn("no experiment found in DB: {}", db);
             closeExperiment();
             return;
         } else {
             logger.info("Experiment found in db: {} ", db.getDBName());
-            if (db.isReadOnly()) {
+            if (db.isConfigurationReadOnly()) {
                 GUI.log(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in Read Only mode: all modifications (configuration, segmentation/lineage ...) won't be saved. ");
                 GUI.log("To open in read and write mode, close all other instances and re-open the experiment. ");
             } else {
@@ -746,7 +751,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         }
         updateConfigurationTree();
         populateActionStructureList();
-        populateActionMicroscopyFieldList();
+        populateActionPositionList();
         reloadObjectTrees=true;
         populateSelections();
         updateDisplayRelatedToXPSet();
@@ -776,7 +781,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             //return;
         }
         if (db.experimentChangedFromFile()) {
-            if (db.isReadOnly()) {
+            if (db.isConfigurationReadOnly()) {
                 this.setMessage("Configuration have changed but canno't be saved in read-only mode");
             } else {
                 boolean save = Utils.promptBoolean("Current configuration has unsaved changes. Save ? ", this);
@@ -788,14 +793,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private void closeExperiment() {
         promptSaveUnsavedChanges();
         String xp = db!=null ? db.getDBName() : null;
-        if (db!=null) db.clearCache();
+        if (db!=null) {
+            db.unlockPositions();
+            db.unlockConfiguration();
+            db.clearCache();
+        }
         db=null;
         if (configurationTreeGenerator!=null) configurationTreeGenerator.flush();
         configurationTreeGenerator=null;
         trackTreeController=null;
         reloadObjectTrees=true;
         populateActionStructureList();
-        populateActionMicroscopyFieldList();
+        populateActionPositionList();
         updateDisplayRelatedToXPSet();
         updateConfigurationTree();
         tabs.setSelectedIndex(0);
@@ -817,7 +826,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     
         // readOnly
         if (enable) {
-            boolean rw = !db.isReadOnly();
+            boolean rw = !db.isConfigurationReadOnly();
             for (Component c : relatedToReadOnly) c.setEnabled(rw);
         }
         importConfigurationMenuItem.setText(enable ? "Configuration to current Experiment" : (getSelectedExperiments().isEmpty()? "--" : "Configuration to selected Experiment(s)") );
@@ -918,7 +927,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         return res;
     }
     
-    public void populateActionMicroscopyFieldList() {
+    public void populateActionPositionList() {
         List sel = microscopyFieldList.getSelectedValuesList();
         if (actionMicroscopyFieldModel==null) {
             actionMicroscopyFieldModel = new DefaultListModel();
@@ -2365,11 +2374,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 if (adress==null) return;
             }
             MasterDAO db2 = MasterDAOFactory.createDAO(name, adress);
+            if (db2.setConfigurationReadOnly(false)) {
+                this.setMessage("Could not modify experiment "+name+" @ "+  adress);
+                return;
+            }
             Experiment xp2 = new Experiment(name);
             xp2.setName(name);
             if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) xp2.setOutputDirectory(adress+File.separator+"Output");
             db2.setExperiment(xp2);
             db2.updateExperiment();
+            db2.unlockConfiguration();
             db2.clearCache();
             populateExperimentList();
             openExperiment(name, null, false);
@@ -2388,10 +2402,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     }//GEN-LAST:event_deleteXPMenuItemActionPerformed
 
     private void duplicateXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_duplicateXPMenuItemActionPerformed
-        String name = JOptionPane.showInputDialog("New DB name:", getSelectedExperiment());
+        String name = JOptionPane.showInputDialog("New experiment name:", getSelectedExperiment());
         name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
-        else if (getDBNames().contains(name)) logger.error("DB name already exists");
+        else if (getDBNames().contains(name)) logger.error("experiment name already exists");
         else {
             closeExperiment();
             MasterDAO db1 = MasterDAOFactory.createDAO(getSelectedExperiment(), getCurrentHostNameOrDir());
@@ -2399,10 +2413,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) { // create directory
                 File dir = new File(getCurrentHostNameOrDir()).getParentFile();
                 adress = createSubdir(dir.getAbsolutePath(), name);
-                logger.debug("duplicate xp dir: {}", adress);
+                logger.debug("duplicate experiment dir: {}", adress);
                 if (adress==null) return;
             }
             MasterDAO db2 = MasterDAOFactory.createDAO(name, adress);
+            if (db2.setConfigurationReadOnly(false)) {
+                this.setMessage("Could not modify experiment "+name+" @ "+  adress);
+                return;
+            }
             Experiment xp2 = db1.getExperiment().duplicate();
             xp2.clearPositions();
             xp2.setName(name);
@@ -2411,10 +2429,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             db2.setExperiment(xp2);
             db2.updateExperiment();
             db2.clearCache();
+            db2.unlockConfiguration();
             populateExperimentList();
-            db1.clearCache();// avoid lock issues
-            //setSelectedExperiment(name);
-            //setDBConnection(getSelectedExperiment(), getCurrentHostNameOrDir());
+            db1.clearCache();
+            openExperiment(name, null, false);
+            if (this.db!=null) setSelectedExperiment(name);
         }
     }//GEN-LAST:event_duplicateXPMenuItemActionPerformed
 
@@ -2522,7 +2541,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 GUI.getInstance().populateExperimentList();
                 db.updateExperiment();
                 updateConfigurationTree();
-                populateActionMicroscopyFieldList();
+                populateActionPositionList();
                 loadObjectTrees();
                 ImageWindowManagerFactory.getImageManager().flush();
                 if (!error) pcb.log("importing done!");
@@ -2755,8 +2774,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             File dir = Utils.getOneDir(selectedFiles);
             if (dir!=null) PropertyUtils.set(PropertyUtils.LAST_IMPORT_IMAGE_DIR, dir.getAbsolutePath());
             db.updateExperiment(); //stores imported fields
-            populateActionMicroscopyFieldList();
+            populateActionPositionList();
             updateConfigurationTree();
+            // also lock all new positions
+            db.lockPositions();
         }
     }//GEN-LAST:event_importImagesMenuItemActionPerformed
 
@@ -2801,7 +2822,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
     private void pruneTrackActionPerformed(java.awt.event.ActionEvent evt) {
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        if (db.isConfigurationReadOnly()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         ManualEdition.prune(db, sel, ManualEdition.ALWAYS_MERGE, true);
         logger.debug("prune: {}", Utils.toStringList(sel));
@@ -2812,9 +2833,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             closeExperiment();
             for (String xp : getSelectedExperiments()) {
                 DBMapMasterDAO dao = (DBMapMasterDAO)MasterDAOFactory.createDAO(xp, this.getHostNameOrDir(xp));
+                dao.lockPositions();
                 GUI.log("Compacting Experiment: "+xp);
                 dao.compact();
                 dao.clearCache();
+                dao.unlockPositions();
             }
         }
     }//GEN-LAST:event_compactLocalDBMenuItemActionPerformed
@@ -2995,7 +3018,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 log("comparing dump of: "+dbName);
                 logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
                 MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
-                dao.setReadOnly(true);
+                dao.setConfigurationReadOnly(true);
                 MasterDAO daoDump = new BasicMasterDAO();
                 ImportExportJSON.importFromZip(dump.getAbsolutePath(), daoDump, true, true, true, false, false, ProgressCallback.get(INSTANCE));
                 try {
@@ -3046,7 +3069,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 GUI.getInstance().populateExperimentList();
                 db.updateExperiment();
                 updateConfigurationTree();
-                populateActionMicroscopyFieldList();
+                populateActionPositionList();
                 loadObjectTrees();
                 ImageWindowManagerFactory.getImageManager().flush();
                 if (!error) pcb.log("importing done!");
@@ -3398,7 +3421,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                         db.getExperiment().getPosition(pos).removeFromParent();
                     }
                     db.updateExperiment();
-                    populateActionMicroscopyFieldList();
+                    populateActionPositionList();
                     updateConfigurationTree();
                 }
             };
@@ -3425,7 +3448,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
     private void pruneTrackButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pruneTrackButtonActionPerformed
         if (!checkConnection()) return;
-        if (db.isReadOnly()) return;
+        if (db.isConfigurationReadOnly()) return;
         pruneTrackActionPerformed(evt);
     }//GEN-LAST:event_pruneTrackButtonActionPerformed
 

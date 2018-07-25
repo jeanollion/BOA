@@ -67,7 +67,7 @@ public class DrawSpineProjection {
         //int position= 0, mc=1, frame=86, b=1, m=1, frame2 = 89, b2= 1, m2 = 2, frame3 = 94, b31=2, b32=3, m3 = 3;
         int position= 0, mc=0, frame=383, b=1, m=2, frame2 = 386, b2= 1, m2 = 3, frame3 = 390, b31=2, b32=3, m3 = 2;
         MasterDAO mDAO = new Task(dbName).getDB();
-        mDAO.setReadOnly(true);
+        mDAO.setConfigurationReadOnly(true);
         ObjectDAO dao = MasterDAO.getDao(mDAO, position);
         StructureObject bact = dao.getRoots().get(frame).getChildren(0).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(1).get(b);
         StructureObject bact2 = dao.getRoots().get(frame2).getChildren(0).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(1).get(b2);

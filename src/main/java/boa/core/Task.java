@@ -99,6 +99,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         List<Pair<String, int[]>> extractMeasurementDir = new ArrayList<>();
         MultipleException errors = new MultipleException();
         MasterDAO db;
+        final boolean keepDB;
         int[] taskCounter;
         ProgressLogger ui;
         public JSONObject toJSON() {
@@ -263,12 +264,14 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         public Task() {
             if (GUI.hasInstance()) setUI(GUI.getInstance());
+            keepDB = false;
         }
         public Task(MasterDAO db) {
-            this();
+            if (GUI.hasInstance()) setUI(GUI.getInstance());
             this.db=db;
             this.dbName=db.getDBName();
             this.dir=db.getDir();
+            keepDB = true;
         }
         public Task(String dbName) {
             this(dbName, null);
@@ -397,23 +400,19 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (db==null) {
                 closeDB = true;
                 initDB();
-                db.setReadOnly(true);
+                db.setConfigurationReadOnly(true);
             }
             if (positions && this.positions==null) this.positions = Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
             if (structures && this.structures==null) this.structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
         }
 
         public boolean isValid() {
-            boolean initDB = db==null;
-            if (initDB) {
-                initDB();
-                db.setReadOnly(true);
-            }
+            initDB(); // read only be default
             
             if (db.getExperiment()==null) {
                 errors.addExceptions(new Pair(dbName, new Exception("DB: "+ dbName+ " not found")));
                 printErrors();
-                if (initDB) db = null;
+                if (!keepDB) db = null;
                 return false;
             } 
             if (structures!=null) checkArray(structures, db.getExperiment().getStructureCount(), "Invalid structure: ");
@@ -449,7 +448,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             for (Pair<String, Throwable> e : errors.getExceptions()) publish("Invalid Task Error @"+e.key+" "+(e.value==null?"null":e.value.getLocalizedMessage()));
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
-            if (initDB) {
+            if (!keepDB) {
                 db.clearCache();
                 db=null;
             }
@@ -468,10 +467,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             for (Pair<String, ? extends Throwable> e : errors.getExceptions()) logger.error(e.key, e.value);
         }
         public int countSubtasks() {
-            boolean initDB = db==null;
             if (db==null) {
                 initDB();
-                db.setReadOnly(true);
+                db.setConfigurationReadOnly(true);
             }
             ensurePositionAndStructures(true, true);
             int count=0;
@@ -486,7 +484,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             count+=extractMeasurementDir.size();
             if (this.exportObjects || this.exportPreProcessedImages || this.exportTrackImages) count+=positions.size();
-            if (initDB) {
+            if (!keepDB) {
                 db.clearCache();
                 db = null;
             }
@@ -499,11 +497,17 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (ui!=null) ui.setRunning(true);
             publish("Run task: "+this.toString());
             initDB();
-            db.clearCache();
-            db.getExperiment(); // lock directly after
             ImageWindowManagerFactory.getImageManager().flush();
             publishMemoryUsage("Before processing");
             if (positions==null) positions= IntStream.range(0, db.getExperiment().getPositionCount()).mapToObj(i->i).collect(Collectors.toList());
+            if (!keepDB) {
+                String[] pos = positions.stream().map(pIdx -> db.getExperiment().getPosition(pIdx).getName()).toArray(l->new String[l]);
+                boolean lock = db.lockPositions();
+                if (!lock) {
+                    ui.setMessage("Some positions could not be locked and will not be processed: " + Arrays.stream(pos).filter(p->db.getDao(p).isReadOnly()).collect(Collectors.toList()));
+                    positions.removeIf( p -> MasterDAO.getDao(db, p).isReadOnly());
+                }
+            }
             if (structures==null) structures = IntStream.range(0, db.getExperiment().getStructureCount()).toArray();
             
             boolean needToDeleteObjects = preProcess || segmentAndTrack;
@@ -541,7 +545,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             for (Pair<String, int[]> e  : this.extractMeasurementDir) extractMeasurements(e.key==null?db.getDir():e.key, e.value);
             if (exportData) exportData();
-            db.clearCache();
+            if (!keepDB) {
+                db.unlockPositions();
+                db.clearCache();
+            }
         }
     private void process(String position, boolean deleteAllField) {
         publish("Position: "+position);
@@ -755,8 +762,11 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             tasks.get(i).runTask();
             tasks.get(i).done();
             if (ui!=null) ui.setRunning(i<tasks.size()-1);
-            if (tasks.get(i).db!=null) tasks.get(i).db.clearCache(); // unlock
-            tasks.get(i).db=null;
+            if (tasks.get(i).db!=null && !tasks.get(i).keepDB) { // unlock
+                tasks.get(i).db.clearCache();
+                tasks.get(i).db.unlockPositions();
+                tasks.get(i).db=null;
+            } 
             if (ui instanceof MultiProgressLogger) ((MultiProgressLogger)ui).applyToLogUserInterfaces(unsetLF);
             else if (ui instanceof FileProgressLogger) unsetLF.accept((FileProgressLogger)ui);
             

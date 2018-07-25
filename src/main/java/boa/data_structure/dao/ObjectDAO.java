@@ -42,6 +42,7 @@ public interface ObjectDAO {
     public Experiment getExperiment();
     public String getPositionName();
     public void clearCache();
+    public boolean isReadOnly();
     StructureObject getById(String parentTrackHeadId, int structureIdx, int frame, String id);
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx); // needs indicies: structureIdx & parent
     /**

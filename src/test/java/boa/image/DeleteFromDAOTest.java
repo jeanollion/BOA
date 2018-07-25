@@ -288,7 +288,7 @@ public class DeleteFromDAOTest {
             }
         } else {
             db.clearCache();
-            ArrayList<StructureObject> allObjects = new ArrayList<StructureObject>();
+            ArrayList<StructureObject> allObjects = new ArrayList<>();
             for (String p : db.getExperiment().getPositionsAsString()) {
                 ObjectDAO dao = db.getDao(p);
                 for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) {

@@ -50,7 +50,16 @@ import boa.utils.JSONUtils;
 import static boa.utils.JSONUtils.parse;
 import boa.utils.Pair;
 import boa.utils.Utils;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 /**
  *
@@ -67,13 +76,56 @@ public class DBMapObjectDAO implements ObjectDAO {
     final String dir;
     final Map<Integer, DB> dbS = new HashMap<>();
     final Map<Integer, Pair<DB, HTreeMap<String, String>>> measurementdbS = new HashMap<>();
-    private final boolean readOnly;
+    public final boolean readOnly;
+    private java.nio.channels.FileLock lock;
+    private FileChannel lockChannel;
     public DBMapObjectDAO(DBMapMasterDAO mDAO, String positionName, String dir, boolean readOnly) {
         this.mDAO=mDAO;
         this.positionName=positionName;
         this.dir = dir+File.separator+positionName+File.separator+"segmented_objects"+File.separator;
-        new File(this.dir).mkdirs();
-        this.readOnly=readOnly;
+        File folder = new File(this.dir);
+        if (!folder.exists()) folder.mkdirs();
+        // lock system is on position folder
+        if (!readOnly) {
+            this.readOnly = !lock();
+        } else this.readOnly = true;
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return readOnly;
+    }
+    
+    private synchronized boolean lock() {
+        if (lock!=null) return true;
+        try {
+            logger.debug("locking DAO: {} @ ", positionName, dir);
+            Path p = FileSystems.getDefault().getPath(dir+".lock");
+            lockChannel = FileChannel.open(p, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            lock = lockChannel.tryLock();
+        } catch (IOException|OverlappingFileLockException ex) {
+            return false;
+        }
+        return true;
+    }
+    public synchronized void unlock() {
+        clearCache();
+        if (this.lock!=null) {
+            try {
+                lock.release();
+                lock = null;
+            } catch (IOException ex) {
+                logger.debug("error realeasing dao lock", ex);
+            }
+        }
+        if (this.lockChannel!=null && lockChannel.isOpen()) {
+            try {
+                lockChannel.close();
+                lockChannel = null;
+            } catch (IOException ex) {
+                logger.debug("error realeasing dao lock channel", ex);
+            }
+        }
     }
     
     @Override

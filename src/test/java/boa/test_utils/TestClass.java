@@ -49,6 +49,17 @@ import boa.utils.SymetricalPair;
 import static boa.utils.ThreadRunner.executeAndThrowErrors;
 import static boa.utils.Utils.removeFromMap;
 import boa.utils.geom.Point;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import net.imglib2.Localizable;
 
@@ -58,7 +69,16 @@ import net.imglib2.Localizable;
  */
 public class TestClass {
     public static void main(String[] args) {
-        
+        try {
+            String path = "/data/LJP.lock";
+            Path p = FileSystems.getDefault().getPath(path);
+            FileChannel channel = FileChannel.open(p, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+            FileLock lock = channel.tryLock();
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(TestClass.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(TestClass.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     private static <T extends Localizable> void toString(List<T> loc) {
         for (T t: loc) logger.debug("elem: {}", t);

@@ -97,7 +97,7 @@ public class CompareObjects {
     String configName;
     public CompareObjects(String refXP, String xp, int structureIdx, double distCCThld, String unshureSelectionName, boolean allowModifyRefXP) {
         dbRef = new Task(refXP).getDB();
-        dbRef.setReadOnly(!allowModifyRefXP);
+        dbRef.setConfigurationReadOnly(!allowModifyRefXP);
         db = new Task(xp).getDB();
         this.structureIdx=structureIdx;
         this.parentStructureIdx = db.getExperiment().getStructure(structureIdx).getParentStructure();
@@ -108,13 +108,13 @@ public class CompareObjects {
         }
     }
     public void enableSelection(boolean eraseIfExisting) {
-        if (db.isReadOnly()) throw new IllegalArgumentException("DB :"+db.getDBName()+" is in read only mode, cannot enable selection");
+        if (db.isConfigurationReadOnly()) throw new IllegalArgumentException("DB :"+db.getDBName()+" is in read only mode, cannot enable selection");
         fp= db.getSelectionDAO().getOrCreate("falsePositives", eraseIfExisting);
         fn = db.getSelectionDAO().getOrCreate("falseNegatives", false);
         if (eraseIfExisting) eraseSelection(fn);
     }
     public void enableRefSelection(boolean eraseIfExisting) {
-        if (dbRef.isReadOnly()) throw new IllegalArgumentException("Ref DB :"+dbRef.getDBName()+" is in read only mode, cannot enable selection");
+        if (dbRef.isConfigurationReadOnly()) throw new IllegalArgumentException("Ref DB :"+dbRef.getDBName()+" is in read only mode, cannot enable selection");
         fpRef= dbRef.getSelectionDAO().getOrCreate("falsePositives", false);
         if (eraseIfExisting) eraseSelection(fpRef);
         fnRef= dbRef.getSelectionDAO().getOrCreate("falseNegatives", eraseIfExisting);
@@ -134,7 +134,7 @@ public class CompareObjects {
         selection.clear();
     }
     public void setConfigAndRun(String confFile, boolean eraseSelections, int... positions) {
-        if (dbRef.isReadOnly()) throw new IllegalArgumentException("Ref DB :"+dbRef.getDBName()+" is in read only mode, cannot enable selection");
+        if (dbRef.isConfigurationReadOnly()) throw new IllegalArgumentException("Ref DB :"+dbRef.getDBName()+" is in read only mode, cannot enable selection");
         setConfig(confFile);
         run(eraseSelections, true, positions);
     }
@@ -154,7 +154,7 @@ public class CompareObjects {
     }
     public void scanConfigurationFolderAndRunAndCount(String folder, int... positions) {
         if (output==null) throw new IllegalArgumentException("No output file set");
-        if (db.isReadOnly()) throw new RuntimeException("DB could not be locked");
+        if (db.isConfigurationReadOnly()) throw new RuntimeException("DB could not be locked");
         File[] configs = new File(folder).listFiles(f->f.getName().endsWith(".json"));
         boolean first = true;
         for (File f : configs) {
@@ -235,7 +235,7 @@ public class CompareObjects {
         processPositions(pos);
     }
     public void processPositions(String... positions) {
-        if (db.isReadOnly()) throw new RuntimeException("DB "+db.getDBName()+" is in read only mode, cannot process");
+        if (db.isConfigurationReadOnly()) throw new RuntimeException("DB "+db.getDBName()+" is in read only mode, cannot process");
         for (String p: positions) Processor.processAndTrackStructures(db.getDao(p), true, false, structureIdx);
     }
     public void runOnAllPositions() {

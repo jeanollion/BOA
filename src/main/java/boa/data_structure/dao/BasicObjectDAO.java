@@ -61,6 +61,13 @@ public class BasicObjectDAO implements ObjectDAO {
         this.rootTrack = new HashMap<>();
     }
     
+    
+    @Override
+    public boolean isReadOnly() {
+        return false;
+    }
+    
+    @Override
     public Experiment getExperiment() {
         return masterDAO.getExperiment();
     }
@@ -310,6 +317,8 @@ public class BasicObjectDAO implements ObjectDAO {
     public Measurements getMeasurements(StructureObject o) {
         return o.getMeasurements();
     }
+
+    
 
     
 

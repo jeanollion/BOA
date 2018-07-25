@@ -105,7 +105,7 @@ public class TestProcessMutations {
     
     public void init(String dbName, String dir) {
         db = new Task(dbName, dir).getDB();
-        db.setReadOnly(true);
+        db.setConfigurationReadOnly(true);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, int time) {

@@ -94,10 +94,8 @@ public class TestParameterSensitivity {
         t.getDB().updateExperiment();
         logger.debug("Test: {}",t.toString());
         t.runTask();
-        t.getDB().clearCache();
         t = new Task(xp, dir).setPositions(pos).addExtractMeasurementDir(null, 2);
         t.runTask();
-        t.getDB().clearCache();
         // rename files
         logger.debug("rename from: {}, to : {}", dir+File.separator+xp+"_2.csv", dir+File.separator+xp+"_"+params[0]+"_"+params[1]+"_2.csv");
         new File(dir+File.separator+xp+"_2.csv").renameTo(new File(dir+File.separator+xp+"_"+params[0]+"_"+params[1]+"_2.csv"));
