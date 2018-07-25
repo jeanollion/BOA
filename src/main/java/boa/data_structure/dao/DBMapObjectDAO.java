@@ -56,6 +56,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.function.Consumer;
@@ -95,18 +96,30 @@ public class DBMapObjectDAO implements ObjectDAO {
     public boolean isReadOnly() {
         return readOnly;
     }
-    
+    private Path getLockedFilePath() {
+        return FileSystems.getDefault().getPath(new File(dir).getParent(), ".lock");
+    }
     private synchronized boolean lock() {
         if (lock!=null) return true;
         try {
-            logger.debug("locking DAO: {} @ ", positionName, dir);
-            Path p = FileSystems.getDefault().getPath(dir+".lock");
+            logger.debug("locking DAO: {} @ {}", positionName, dir);
+            Path p = getLockedFilePath();
+            logger.info("lock file: {}", p.toString());
             lockChannel = FileChannel.open(p, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
             lock = lockChannel.tryLock();
         } catch (IOException|OverlappingFileLockException ex) {
             return false;
         }
-        return true;
+        if (lock==null) {
+            if (lockChannel!=null) {
+                try {
+                    lockChannel.close();
+                } catch (IOException ex) {
+                    return false;
+                } 
+            } 
+            return false;
+        } else return true;
     }
     public synchronized void unlock() {
         clearCache();
@@ -124,6 +137,14 @@ public class DBMapObjectDAO implements ObjectDAO {
                 lockChannel = null;
             } catch (IOException ex) {
                 logger.debug("error realeasing dao lock channel", ex);
+            }
+        }
+        Path p = getLockedFilePath();
+        if (Files.exists(p)) {
+            try {
+                Files.delete(p);
+            } catch (IOException ex) {
+
             }
         }
     }

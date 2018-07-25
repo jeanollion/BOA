@@ -396,12 +396,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         private void ensurePositionAndStructures(boolean positions, boolean structures) {
             if ((!positions || this.positions!=null) && (!structures || this.structures!=null)) return;
-            boolean closeDB = false;
-            if (db==null) {
-                closeDB = true;
-                initDB();
-                db.setConfigurationReadOnly(true);
-            }
+            initDB();
             if (positions && this.positions==null) this.positions = Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
             if (structures && this.structures==null) this.structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
         }
@@ -467,10 +462,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             for (Pair<String, ? extends Throwable> e : errors.getExceptions()) logger.error(e.key, e.value);
         }
         public int countSubtasks() {
-            if (db==null) {
-                initDB();
-                db.setConfigurationReadOnly(true);
-            }
+            initDB();
             ensurePositionAndStructures(true, true);
             int count=0;
             // preProcess: 
@@ -484,10 +476,6 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             count+=extractMeasurementDir.size();
             if (this.exportObjects || this.exportPreProcessedImages || this.exportTrackImages) count+=positions.size();
-            if (!keepDB) {
-                db.clearCache();
-                db = null;
-            }
             return count;
         }
         public void setSubtaskNumber(int[] taskCounter) {
@@ -499,16 +487,15 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             initDB();
             ImageWindowManagerFactory.getImageManager().flush();
             publishMemoryUsage("Before processing");
-            if (positions==null) positions= IntStream.range(0, db.getExperiment().getPositionCount()).mapToObj(i->i).collect(Collectors.toList());
+            this.ensurePositionAndStructures(true, true);
             if (!keepDB) {
                 String[] pos = positions.stream().map(pIdx -> db.getExperiment().getPosition(pIdx).getName()).toArray(l->new String[l]);
-                boolean lock = db.lockPositions();
+                boolean lock = db.lockPositions(pos);
                 if (!lock) {
                     ui.setMessage("Some positions could not be locked and will not be processed: " + Arrays.stream(pos).filter(p->db.getDao(p).isReadOnly()).collect(Collectors.toList()));
                     positions.removeIf( p -> MasterDAO.getDao(db, p).isReadOnly());
                 }
             }
-            if (structures==null) structures = IntStream.range(0, db.getExperiment().getStructureCount()).toArray();
             
             boolean needToDeleteObjects = preProcess || segmentAndTrack;
             boolean deleteAll =  needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && positions.size()==db.getExperiment().getPositionCount();
@@ -518,9 +505,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             boolean deleteAllField = needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && !deleteAll;
             logger.info("Run task: db: {} preProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, need to delete objects: {}, delete all: {}, delete all by field: {}", dbName, preProcess, segmentAndTrack, trackOnly, measurements, needToDeleteObjects, deleteAll, deleteAllField);
-            
             if (this.taskCounter==null) this.taskCounter = new int[]{0, this.countSubtasks()};
             publish("number of subtasks: "+countSubtasks());
+            
             try {
                 positions.stream().map((pIdx) -> db.getExperiment().getPosition(pIdx).getName()).forEachOrdered((position) -> {
                     try {
@@ -532,7 +519,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     } finally {
                         db.getExperiment().getPosition(position).flushImages(true, true);
                         db.clearCache(position);
-                        db.getSelectionDAO().clearCache();
+                        if (!db.isConfigurationReadOnly() && db.getSelectionDAO()!=null) db.getSelectionDAO().clearCache();
                         ImageWindowManagerFactory.getImageManager().flush();
                         System.gc();
                         publishMemoryUsage("After clearing cache");
@@ -614,7 +601,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         publish(message+Utils.getMemoryUsage());
     }
     public void extractMeasurements(String dir, int[] structures) {
-        if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
+        ensurePositionAndStructures(true, true);
         String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structures, "_", "", "_")+".csv";
         publish("extracting measurements from object class: "+Utils.toStringArray(structures));
         publish("measurements will be extracted to: "+ file);
@@ -639,7 +626,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
     }
     private List<String> getPositions() {
-        if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+        this.ensurePositionAndStructures(true, false);
         List<String> res = new ArrayList<>(positions.size());
         for (int i : positions) res.add(db.getExperiment().getPosition(i).getName());
         return res;

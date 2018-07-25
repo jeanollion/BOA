@@ -227,8 +227,11 @@ public class DBMapMasterDAO implements MasterDAO {
     @Override
     public void unlockConfiguration() {
         unlockXP();
-        getSelectionDAO().clearCache();
-        this.selectionDAO=null;
+        if (selectionDAO!=null) {
+            getSelectionDAO().clearCache();
+            this.selectionDAO=null;
+        }
+        
     }
     @Override 
     public void clearCache(String position) {
