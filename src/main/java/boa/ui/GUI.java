@@ -734,7 +734,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (hostnameOrDir==null) hostnameOrDir = getHostNameOrDir(dbName);
         db = MasterDAOFactory.createDAO(dbName, hostnameOrDir);
         db.setConfigurationReadOnly(readOnly);
-        if (!readOnly) db.lockPositions(); // locks all positions
+        if (!readOnly) { // locks all positions
+            db.lockPositions();
+            for (String p : db.getExperiment().getPositionsAsString()) if (db.getDao(p).isReadOnly()) setMessage("Position: "+p+" could not be locked. it may be used by another process. All changes on segmented objects of this position won't be saved");
+        } 
         if (db==null || db.getExperiment()==null) {
             logger.warn("no experiment found in DB: {}", db);
             closeExperiment();
@@ -3158,7 +3161,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             };
             menu.add(save);
             save.setEnabled(!actionPoolListModel.isEmpty());
-            Action saveProc = new AbstractAction("Split Processing Task per Position and Save to folder...") {
+            Action saveProc = new AbstractAction("Split and Save to files...") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     File out = Utils.chooseFile("Choose Folder", experimentFolder.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, tabs);

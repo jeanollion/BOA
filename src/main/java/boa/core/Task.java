@@ -488,15 +488,17 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             ImageWindowManagerFactory.getImageManager().flush();
             publishMemoryUsage("Before processing");
             this.ensurePositionAndStructures(true, true);
-            if (!keepDB) {
-                String[] pos = positions.stream().map(pIdx -> db.getExperiment().getPosition(pIdx).getName()).toArray(l->new String[l]);
-                boolean lock = db.lockPositions(pos);
-                if (!lock) {
-                    ui.setMessage("Some positions could not be locked and will not be processed: " + Arrays.stream(pos).filter(p->db.getDao(p).isReadOnly()).collect(Collectors.toList()));
-                    positions.removeIf( p -> MasterDAO.getDao(db, p).isReadOnly());
-                }
-            }
             
+            String[] pos = positions.stream().map(pIdx -> db.getExperiment().getPosition(pIdx).getName()).toArray(l->new String[l]);
+            db.lockPositions(pos);
+            
+            // check that all position to be processed are effectively locked
+            List<String> lockedPos = positions.stream().map(pIdx -> db.getExperiment().getPosition(pIdx).getName()).filter(p->db.getDao(p).isReadOnly()).collect(Collectors.toList());
+            if (!lockedPos.isEmpty()) {
+                ui.setMessage("Some positions could not be locked and will not be processed: " + lockedPos);
+                for (String p : lockedPos) errors.addExceptions(new Pair(p, new RuntimeException("Locked position. Already used by another process?")));
+                positions.removeIf( p -> MasterDAO.getDao(db, p).isReadOnly());
+            }
             boolean needToDeleteObjects = preProcess || segmentAndTrack;
             boolean deleteAll =  needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && positions.size()==db.getExperiment().getPositionCount();
             if (deleteAll) {

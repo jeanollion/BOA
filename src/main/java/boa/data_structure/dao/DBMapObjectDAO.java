@@ -102,9 +102,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     private synchronized boolean lock() {
         if (lock!=null) return true;
         try {
-            logger.debug("locking DAO: {} @ {}", positionName, dir);
             Path p = getLockedFilePath();
-            logger.info("lock file: {}", p.toString());
             lockChannel = FileChannel.open(p, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
             lock = lockChannel.tryLock();
         } catch (IOException|OverlappingFileLockException ex) {
