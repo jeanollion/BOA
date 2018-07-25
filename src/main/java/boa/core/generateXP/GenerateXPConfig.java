@@ -20,8 +20,6 @@ package boa.core.generateXP;
 
 import static boa.core.generateXP.GenerateXP.generateXPFluo;
 import boa.configuration.experiment.Experiment;
-import boa.configuration.experiment.PreProcessingChain;
-import boa.configuration.parameters.TransformationPluginParameter;
 import boa.plugins.PluginFactory;
 import java.io.File;
 import java.util.ArrayList;

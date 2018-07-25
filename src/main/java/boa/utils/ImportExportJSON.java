@@ -261,6 +261,11 @@ public class ImportExportJSON {
         File f = new File(path);
         if (f.getName().endsWith(".json")||f.getName().endsWith(".txt")) {
             if (config) {
+                dao.setConfigurationReadOnly(false);
+                if (dao.isConfigurationReadOnly()) {
+                    if (pcb!=null) pcb.log("Cannot import configuration: experiment is in read only");
+                    return;
+                }
                 List<Experiment> xp = FileIO.readFromFile(path, o->JSONUtils.parse(Experiment.class, o));
                 if (xp.size()==1) {
                     xp.get(0).setOutputDirectory(dao.getDir()+File.separator+"Output");
@@ -275,17 +280,26 @@ public class ImportExportJSON {
     
     public static boolean importFromZip(String path, MasterDAO dao, boolean config, boolean selections, boolean objects, boolean preProcessedImages, boolean trackImages, ProgressCallback pcb) {
         ZipReader r = new ZipReader(path);
+        boolean ok = true;
         if (r.valid()) {
             if (config) { 
-                Experiment xp = r.readFirstObject("config.json", o->JSONUtils.parse(Experiment.class, o));
-                if (xp!=null) {
-                    if (dao.getDir()!=null) {
-                        xp.setOutputDirectory(dao.getDir()+File.separator+"Output");
-                        xp.setOutputImageDirectory(xp.getOutputDirectory());
+                dao.setConfigurationReadOnly(false);
+                if (dao.isConfigurationReadOnly()) {
+                    if (pcb!=null) pcb.log("Cannot import configuration: experiment is in read only");
+                    ok = false;
+                } else {
+                    Experiment xp = r.readFirstObject("config.json", o->JSONUtils.parse(Experiment.class, o));
+                    if (xp!=null) {
+                        if (dao.getDir()!=null) {
+                            xp.setOutputDirectory(dao.getDir()+File.separator+"Output");
+                            xp.setOutputImageDirectory(xp.getOutputDirectory());
+                        }
+                        dao.setExperiment(xp);
+                        logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
+                    } else {
+                        ok = false;
                     }
-                    dao.setExperiment(xp);
-                    logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
-                } else return false;
+                }
             }
             if (objects || preProcessedImages || trackImages) {
                 Collection<String> dirs = r.listRootDirectories();
@@ -297,47 +311,57 @@ public class ImportExportJSON {
                     pcb.log("positions: "+dirs.size());
                 }
                 int count = 0;
-                
+                dao.lockPositions(dirs.toArray(new String[dirs.size()]));
                 for (String position : dirs) {
                     count++;
                     if (pcb!=null) pcb.log("Importing: Position: "+position + " ("+ count+"/"+dirs.size()+")");
                     ObjectDAO oDAO = dao.getDao(position);
-                    try {
-                        if (objects) {
-                            logger.debug("deleting all objects");
-                            oDAO.deleteAllObjects();
-                            logger.debug("all objects deleted");
-                            importObjects(r, oDAO);
+                    if (oDAO.isReadOnly()) {
+                        if (pcb!=null) pcb.log("Cannot import position: "+position+" (cannot be locked)");
+                        ok = false;
+                    } else {
+                        try {
+                            if (objects) {
+                                logger.debug("deleting all objects");
+                                oDAO.deleteAllObjects();
+                                logger.debug("all objects deleted");
+                                importObjects(r, oDAO);
+                            }
+                            if (preProcessedImages) importPreProcessedImages(r, oDAO);
+                            if (trackImages) {
+                                String importTI = importTrackImages(r, oDAO);
+                                if (importTI!=null && pcb!=null) pcb.log(importTI);
+                                else if (pcb!=null) pcb.log("Import track images ok");
+                            }
+                        } catch (Exception e) {
+                            if (pcb!=null) pcb.log("Error! xp could not be undumped! "+e.getMessage());
+                            e.printStackTrace();
+                            dao.deleteExperiment();
+                            throw e;
                         }
-                        if (preProcessedImages) importPreProcessedImages(r, oDAO);
-                        if (trackImages) {
-                            String importTI = importTrackImages(r, oDAO);
-                            if (importTI!=null && pcb!=null) pcb.log(importTI);
-                            else if (pcb!=null) pcb.log("Import track images ok");
-                        }
-                    } catch (Exception e) {
-                        if (pcb!=null) pcb.log("Error! xp could not be undumped! "+e.getMessage());
-                        e.printStackTrace();
-                        dao.deleteExperiment();
-                        throw e;
+                        oDAO.clearCache();
+                        if (pcb!=null) pcb.incrementProgress();
+                        if (pcb!=null) pcb.log("Position: "+position+" imported!");
                     }
-                    oDAO.clearCache();
-                    if (pcb!=null) pcb.incrementProgress();
-                    if (pcb!=null) pcb.log("Position: "+position+" imported!");
                 }
             }
             if (selections) {
-                logger.debug("importing selections....");
-                List<Selection> sels = r.readObjects("selections.json", o->JSONUtils.parse(Selection.class, o));
-                logger.debug("selections: {}", sels.size());
-                if (sels.size()>0 && dao.getSelectionDAO()!=null) {
-                    for (Selection s: sels ) if (dao.getSelectionDAO()!=null) dao.getSelectionDAO().store(s);
-                    logger.debug("Stored: #{} selections from file: {} set to db: {}", sels.size(), path, dao.getDBName());
+                dao.setConfigurationReadOnly(false);
+                if (dao.isConfigurationReadOnly()) {
+                    if (pcb!=null) pcb.log("Cannot import selection: experiment is in read only");
+                    ok = false;
+                } else {
+                    logger.debug("importing selections....");
+                    List<Selection> sels = r.readObjects("selections.json", o->JSONUtils.parse(Selection.class, o));
+                    logger.debug("selections: {}", sels.size());
+                    if (sels.size()>0 && dao.getSelectionDAO()!=null) {
+                        for (Selection s: sels ) if (dao.getSelectionDAO()!=null) dao.getSelectionDAO().store(s);
+                        logger.debug("Stored: #{} selections from file: {} set to db: {}", sels.size(), path, dao.getDBName());
+                    }
                 }
             }
-            dao.clearCache(); // avoid lock issues
             r.close();
-            return true;
+            return ok;
         } else return false;
     }
     

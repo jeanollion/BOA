@@ -2367,7 +2367,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (name==null) return;
         name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
-        else if (getDBNames().contains(name)) logger.error("XP name already exists");
+        else if (getDBNames().contains(name)) logger.error("Experiment name already exists");
         else {
             String adress = null;
             if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) { // create directory
@@ -2377,7 +2377,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 if (adress==null) return;
             }
             MasterDAO db2 = MasterDAOFactory.createDAO(name, adress);
-            if (db2.setConfigurationReadOnly(false)) {
+            if (!db2.setConfigurationReadOnly(false)) {
                 this.setMessage("Could not modify experiment "+name+" @ "+  adress);
                 return;
             }
@@ -2399,7 +2399,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (xps==null || xps.isEmpty()) return;
         if (Utils.promptBoolean( "Delete Selected Experiment"+(xps.size()>1?"s":"")+" (all data will be lost)", this)) {
             if (db!=null && xps.contains(db.getDBName())) closeExperiment();
-            for (String xpName : xps) MasterDAOFactory.createDAO(xpName, getHostNameOrDir(xpName)).eraseAll();
+            for (String xpName : xps) {
+                MasterDAO mDAO = MasterDAOFactory.createDAO(xpName, getHostNameOrDir(xpName));
+                mDAO.setConfigurationReadOnly(false);
+                mDAO.eraseAll();
+            }
             populateExperimentList();
         }
     }//GEN-LAST:event_deleteXPMenuItemActionPerformed
@@ -2420,7 +2424,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 if (adress==null) return;
             }
             MasterDAO db2 = MasterDAOFactory.createDAO(name, adress);
-            if (db2.setConfigurationReadOnly(false)) {
+            if (!db2.setConfigurationReadOnly(false)) {
                 this.setMessage("Could not modify experiment "+name+" @ "+  adress);
                 return;
             }
@@ -2839,8 +2843,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 dao.lockPositions();
                 GUI.log("Compacting Experiment: "+xp);
                 dao.compact();
-                dao.clearCache();
                 dao.unlockPositions();
+                dao.unlockConfiguration();
             }
         }
     }//GEN-LAST:event_compactLocalDBMenuItemActionPerformed
@@ -3362,9 +3366,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             return;
         }
         MasterDAO mDAO = MasterDAOFactory.createDAO(name, this.getHostNameOrDir(name));
+        mDAO.setConfigurationReadOnly(false);
+        mDAO.lockPositions();
         mDAO.deleteAllObjects();
         ImportExportJSON.importFromFile(config, mDAO, true, false, false, false, false, ProgressCallback.get(INSTANCE));
-        
+        mDAO.unlockPositions();
+        mDAO.unlockConfiguration();
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_CONFIG_DIR, config);
         openExperiment(name, null, false);

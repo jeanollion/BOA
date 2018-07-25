@@ -78,13 +78,13 @@ public class TestTracker {
         //String dbName = "MutH_140115";
         //String dbName = "MutD5_141202";
         //String dbName = "MutT_150402";
-        String dbName = "MutH_151220";
+        String dbName = "dataset1";
         //String dbName = "WT_150616";
         //String dbName = "WT_180318_Fluo";
-        int pIdx =20;
-        int mcIdx =7;
+        int pIdx =0;
+        int mcIdx =0;
         int structureIdx =1;
-        int[] frames = new int[]{0,1000}; //{215, 237};
+        int[] frames = new int[]{0,200}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {
             logger.error("DB {} not found", dbName);
@@ -103,8 +103,8 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStepLimit=2;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
-        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
+        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingPipeline ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);

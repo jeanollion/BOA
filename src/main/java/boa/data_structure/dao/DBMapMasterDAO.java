@@ -73,7 +73,10 @@ public class DBMapMasterDAO implements MasterDAO {
 
     @Override
     public boolean lockPositions(String... positionNames) {
-        if (positionNames==null || positionNames.length==0) positionNames = getExperiment().getPositionsAsString();
+        if (positionNames==null || positionNames.length==0) {
+            if (getExperiment()==null) return false;
+            positionNames = getExperiment().getPositionsAsString();
+        }
         positionLock.addAll(Arrays.asList(positionNames));
         boolean success = true;
         for (String p : positionNames) {
@@ -86,7 +89,10 @@ public class DBMapMasterDAO implements MasterDAO {
     
     @Override 
     public void unlockPositions(String... positionNames) {
-        if (positionNames==null || positionNames.length==0) positionNames = getExperiment().getPositionsAsString();
+        if (positionNames==null || positionNames.length==0) {
+            if (getExperiment()==null) return;
+            positionNames = getExperiment().getPositionsAsString();
+        }
         this.positionLock.removeAll(Arrays.asList(positionNames));
         for (String p : positionNames) {
             if (this.DAOs.containsKey(p)) {
@@ -130,8 +136,8 @@ public class DBMapMasterDAO implements MasterDAO {
         if (readOnly) return;
         String outputPath = getExperiment()!=null ? getExperiment().getOutputDirectory() : null;
         String outputImagePath = getExperiment()!=null ? getExperiment().getOutputImageDirectory() : null;
-        clearCache();
         unlockPositions();
+        unlockConfiguration();
         Utils.deleteDirectory(outputPath);
         Utils.deleteDirectory(outputImagePath);
         deleteExperiment();

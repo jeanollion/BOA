@@ -289,7 +289,7 @@ public class GenerateXP {
                             new FillHoles2D()
                     ).addTrackPostFilters(
                             new PostFilter(new RemoveEndofChannelBacteria()).setDeleteMethod(2).setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_BACT_SIZE_COND), 
-                            new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_BACT_SIZE_COND).setFeature(new Size(), 10, true).setStatistics(2)
+                            new RemoveTrackByFeature().setMergePolicy(PostFilter.MERGE_POLICY.MERGE_TRACKS_BACT_SIZE_COND).setFeature(new Size().setScaled(false), 10, true).setStatistics(2)
                     )
             );
             /*bacteria.setProcessingScheme(
