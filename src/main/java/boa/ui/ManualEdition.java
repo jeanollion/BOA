@@ -523,21 +523,17 @@ public class ManualEdition {
         TrackPreFilterSequence tpfWithPF = xp.getStructure(structureIdx).getProcessingScheme().getTrackPreFilters(true);
         if (!needToComputeAllPreFilteredImage) { // only preFilters on current objects
             PreFilterSequence pf = xp.getStructure(structureIdx).getProcessingScheme().getPreFilters();
-            parents.map(p->p.getParent(parentStructureIdx)).forEach(parent ->{
-                if (parent.getPreFilteredImage(structureIdx)==null) {
-                    parent.setPreFilteredImage(pf.filter(parent.getRawImage(structureIdx), parent.getMask()), structureIdx);
-                }
+            parents.map(p->p.getParent(parentStructureIdx)).filter(p->p.getPreFilteredImage(structureIdx)==null).forEach(parent ->{
+                parent.setPreFilteredImage(pf.filter(parent.getRawImage(structureIdx), parent.getMask()), structureIdx);
             });
         } else {
             if (dao==null) throw new RuntimeException("Cannot compute pre-filtered images because track preFilters are present and DAO not preset");
-            GUI.log("Computing track pre-filters...");
-            parents.map(p->p.getParent(parentStructureIdx)).map(o->o.getTrackHead()).distinct().forEach(p->{
+            parents.map(p->p.getParent(parentStructureIdx)).map(o->o.getTrackHead()).distinct().filter(p->p.getPreFilteredImage(structureIdx)==null).forEach(p->{
+                GUI.log("Computing track pre-filters...");
                 logger.debug("tpf for : {}", p);
-                if (p.getPreFilteredImage(structureIdx)==null) {
-                    tpfWithPF.filter(structureIdx, dao.getTrack(p));
-                }
+                tpfWithPF.filter(structureIdx, dao.getTrack(p));
+                GUI.log("Track pre-filters computed!");
             });
-            GUI.log("Track pre-filters computed!");
         }
     }
     public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay, boolean test, ObjectSplitter defaultSplitter) {
@@ -553,7 +549,7 @@ public class ManualEdition {
         Map<String, List<StructureObject>> objectsByPosition = StructureObjectUtils.splitByPosition(objects);
         for (String f : objectsByPosition.keySet()) {
             ObjectDAO dao = db==null? null : db.getDao(f);
-            List<StructureObject> objectsToStore = new ArrayList<>();
+            Set<StructureObject> objectsToStore = new HashSet<>();
             List<StructureObject> newObjects = new ArrayList<>();
             ensurePreFilteredImages(objectsByPosition.get(f).stream().map(o->o.getParent()), structureIdx, xp, dao);
             for (StructureObject objectToSplit : objectsByPosition.get(f)) {
@@ -565,14 +561,12 @@ public class ManualEdition {
                     if (newObject==null) logger.warn("Object could not be splitted!");
                     else {
                         newObjects.add(newObject);
-                        objectToSplit.setAttribute(StructureObject.EDITED_SEGMENTATION, true);
                         StructureObject prev = objectToSplit.getPrevious();
                         if (prev!=null) unlinkObjects(prev, objectToSplit, ALWAYS_MERGE, objectsToStore);
                         List<StructureObject> nexts = getNext(objectToSplit);
                         for (StructureObject n : nexts) unlinkObjects(objectToSplit, n, ALWAYS_MERGE, objectsToStore);
                         StructureObject next = nexts.size()==1 ? nexts.get(0) : null;
                         objectToSplit.getParent().relabelChildren(objectToSplit.getStructureIdx(), objectsToStore);
-                        newObject.setAttribute(StructureObject.EDITED_SEGMENTATION, true);
                         /*if (prev!=null && objectToSplit.getExperiment().getStructure(objectToSplit.getStructureIdx()).allowSplit()) {
                             linkObjects(prev, objectToSplit, objectsToStore);
                             linkObjects(prev, newObject, objectsToStore);

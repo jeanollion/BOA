@@ -190,33 +190,23 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 List<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<>();
                 Roi r = ip.getRoi();
                 boolean fromSelection = false;
+                
                 // get all objects with intersection with ROI
                 if (r!=null) {
-                    boolean removeAfterwards = r.getType()==Roi.FREELINE || r.getType()==Roi.FREEROI || (r.getType()==Roi.POLYGON && r.getState()==Roi.NORMAL);
+                    boolean removeAfterwards = r.getType()==Roi.FREELINE || r.getType()==Roi.FREEROI || r.getType()==Roi.LINE || (r.getType()==Roi.POLYGON && r.getState()==Roi.NORMAL);
                     //logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
-                    if (r.getType()==Roi.RECTANGLE || r.getType()==Roi.LINE || removeAfterwards) {
+                    if (r.getType()==Roi.RECTANGLE ||  removeAfterwards) {
+                        // starts by getting all objects within bounding box of ROI
                         fromSelection=true;
                         Rectangle rect = removeAfterwards ? r.getPolygon().getBounds() : r.getBounds();
                         if (rect.height==0 || rect.width==0) removeAfterwards=false;
                         MutableBoundingBox selection = new MutableBoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
                         if (selection.sizeX()==0 && selection.sizeY()==0) selection=null;
-                        long t0 = System.currentTimeMillis();
                         i.addClickedObjects(selection, selectedObjects);
-                        long t1 = System.currentTimeMillis();
-                        //logger.debug("before remove, contained: {}, rect: {}, selection: {}", selectedObjects.size(), rect, selection);
-                        if (removeAfterwards) {
-                            Polygon poly = r.getPolygon();
-                            Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
-                            while (it.hasNext()) {
-                                Pair<StructureObject, BoundingBox> p= it.next();
-                                //logger.debug("poly {}, nPoints: {}, x:{}, y:{}", poly, poly.npoints, poly.xpoints, poly.ypoints);
-                                Rectangle oRect = new Rectangle(p.value.xMin(), p.value.yMin(), p.key.getBounds().sizeX(), p.key.getBounds().sizeY());
-                                if ((poly.npoints>1 && !poly.intersects(oRect)) || !insideMask(p.key.getMask(), p.value, poly)) it.remove();
-                            }
-                            //logger.debug("interactive selection after remove, contained: {}", selectedObjects.size());
+                        if (removeAfterwards || (selection.sizeX()==1 && selection.sizeY()==1)) {
+                            FloatPolygon fPoly = r.getInterpolatedPolygon();
+                            selectedObjects.removeIf(p -> !intersectMask(p.key.getMask(), p.value, fPoly));
                         }
-                        long t2 = System.currentTimeMillis();
-                        //logger.debug("select objects: find indices: {} remove afterwards: {}", t1-t0, t2-t1);
                         if (!freeHandSplit || !strechObjects) ip.deleteRoi();
                     }
                 }
@@ -284,6 +274,23 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         for (MouseListener m : mls) canvas.addMouseListener(m);
     }
     
+    private static boolean intersectMask(ImageMask mask, Offset offsetMask, FloatPolygon selection) {
+        return IntStream.range(0, selection.npoints).parallel().anyMatch(i -> {
+            int x= Math.round(selection.xpoints[i] - offsetMask.xMin());
+            int y = Math.round(selection.ypoints[i] - offsetMask.yMin());
+            int z = offsetMask.zMin();
+            return mask.contains(x, y, z) && mask.insideMask(x, y, z);
+        });
+    }
+    /*private static boolean intersectMask(ImageMask mask, Offset offsetMask, FloatPolygon selection) {
+        for (int i = 0; i<selection.npoints; ++i) {
+            int x= selection.xpoints[i] - offsetMask.xMin();
+            int y = selection.ypoints[i] - offsetMask.yMin();
+            int z = offsetMask.zMin();
+            if (mask.contains(x, y, z) && mask.insideMask(x, y, z)) return true;
+        }
+        return false;
+    }*/
     @Override public void closeNonInteractiveWindows() {
         super.closeNonInteractiveWindows();
         String[] names = WindowManager.getImageTitles();
@@ -295,15 +302,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             if (!imageObjectInterfaceMap.keySet().contains(im)) ip.close();
         }
     }
-    private boolean insideMask(ImageMask mask, Offset offsetMask, Polygon selection) {
-        for (int i = 0; i<selection.npoints; ++i) {
-            int x= selection.xpoints[i] - offsetMask.xMin();
-            int y = selection.ypoints[i] - offsetMask.yMin();
-            int z = offsetMask.zMin();
-            if (mask.contains(x, y, z) && mask.insideMask(x, y, z)) return true;
-        }
-        return false;
-    }
+    
     @Override public void setActive(Image image) {
         super.setActive(image);
         ImagePlus ip = this.displayer.getImage(image);

@@ -704,10 +704,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             }
         }
     }
-    
+    @Override
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
-        RegionPopulation pop = splitter.splitObject(getParent(), structureIdx, getRegion()); //getRawImage(structureIdx)
+        RegionPopulation pop = splitter.splitObject(getParent(), structureIdx, getRegion());
         if (pop==null || pop.getRegions().size()==1) {
             logger.warn("split error: {}", this);
             return null;
@@ -717,8 +717,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         regionModified=true;
         this.object=pop.getRegions().get(0).setLabel(idx+1);
         flushImages();
+        // second object is added to parent and returned
         if (pop.getRegions().size()>2) pop.mergeWithConnected(pop.getRegions().subList(2, pop.getRegions().size()));
-       
         StructureObject res = new StructureObject(timePoint, structureIdx, idx+1, pop.getRegions().get(1).setLabel(idx+2), getParent());
         getParent().getChildren(structureIdx).add(getParent().getChildren(structureIdx).indexOf(this)+1, res);
         setAttribute(EDITED_SEGMENTATION, true);
