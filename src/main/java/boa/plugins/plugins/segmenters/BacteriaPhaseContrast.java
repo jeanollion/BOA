@@ -367,8 +367,8 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
             splitAndMerge = initializeSplitAndMerge(parent, structureIdx,parent.getMask());
         }
         splitAndMerge.setTestMode(TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent));
-        splitAndMerge.setInterfaceValue(i->-(double)i.getVoxels().size()); // split @ smallest interface ? 
-        RegionPopulation res = splitAndMerge.splitAndMerge(mask, object.size()/4, splitAndMerge.objectNumberLimitCondition(2));
+        splitAndMerge.setInterfaceValue(i->-(double)i.getVoxels().size()); // algorithm:  split  @ smallest interface
+        RegionPopulation res = splitAndMerge.splitAndMerge(mask, MIN_SIZE_PROPAGATION, splitAndMerge.objectNumberLimitCondition(2));
         setInterfaceValue(input, splitAndMerge); // for interface value computation
         //res =  localThreshold(input, res, parent, structureIdx, true); 
         if (object.isAbsoluteLandMark()) res.translate(parent.getBounds(), true);
