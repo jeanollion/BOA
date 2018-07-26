@@ -9,8 +9,8 @@
     <artifactId>bacman</artifactId>
     <version>2.0.2-SNAPSHOT</version>
 
-    <name>BACMAN</name>
-    <description>Mother Machine Image Analysis Software</description>
+    <name>BACMMAN</name>
+    <description>BACteria in Mother Machine ANalysis software</description>
 
     <developers>
         <developer>
@@ -26,10 +26,10 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git://github.com/jeanollion/bacman</connection>
-        <developerConnection>scm:git:git@github.com:jeanollion/bacman</developerConnection>
+        <connection>scm:git:git://github.com/jeanollion/bacmman</connection>
+        <developerConnection>scm:git:git@github.com:jeanollion/bacmman</developerConnection>
         <tag>HEAD</tag>
-        <url>https://github.com/jeanollion/bacman</url>
+        <url>https://github.com/jeanollion/bacmman</url>
     </scm>
 
     <properties>
