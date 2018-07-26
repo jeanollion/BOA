@@ -72,15 +72,6 @@ public class RegionContainerIjRoi extends RegionContainer {
         createRoi(structureObject.getRegion());
     }
 
-    @Override
-    public void update() {
-        super.update();
-        if (structureObject.getRegion().getMask() != null) createRoi(structureObject.getRegion());
-        else {
-            roiZ = null;
-            roi = null;
-        }
-    }
 
     private void createRoi(Region object) {
         roi = createRoi(object.getMask(), object.getBounds(), object.is2D());

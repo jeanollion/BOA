@@ -47,18 +47,7 @@ public class RegionContainerVoxels extends RegionContainer {
         createCoordsArrays(structureObject.getRegion());
     }
 
-    @Override
-    public void update() {
-        super.update();
-        if (structureObject.getRegion().getVoxels() != null) {
-            createCoordsArrays(structureObject.getRegion());
-        } else {
-            x = null;
-            y = null;
-            z = null;
-        }
-    }
-
+    
     private void createCoordsArrays(Region object) {
         if (!object.is2D()) {
             Collection<Voxel> voxels = object.getVoxels();

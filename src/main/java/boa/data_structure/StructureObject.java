@@ -80,7 +80,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected Map<String, Object> attributes;
     // object- and images-related attributes
     private transient Region object;
-    private transient boolean regionModified=false;
     protected RegionContainer regionContainer;
     protected transient SmallArray<Image> rawImagesC=new SmallArray<>();
     protected transient SmallArray<Image> preFilteredImagesS=new SmallArray<>();
@@ -678,7 +677,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (otherO.getRegion()==null) logger.debug("merge: {}+{}, other object==null", this, other);
         getRegion().merge(otherO.getRegion()); 
         flushImages();
-        regionModified = true;
+        regionContainer = null;
         // update links
         StructureObject prev = otherO.getPrevious();
         if (prev !=null && prev.getNext()!=null && prev.next==otherO) prev.setNext(this);
@@ -713,9 +712,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             return null;
         }
         // first object returned by splitter is updated to current structureObject
-        if (!pop.isAbsoluteLandmark()) pop.translate(this.getBounds(), true); 
-        regionModified=true;
+        if (!pop.isAbsoluteLandmark()) pop.translate(getParent().getBounds(), true); 
         this.object=pop.getRegions().get(0).setLabel(idx+1);
+        this.regionContainer = null;
         flushImages();
         // second object is added to parent and returned
         if (pop.getRegions().size()>2) pop.mergeWithConnected(pop.getRegions().subList(2, pop.getRegions().size()));
@@ -726,7 +725,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return res;
     }
     public boolean hasRegion() {return object!=null;}
-    public boolean objectHasBeenModified() {return regionModified=true;}
     // object- and image-related methods
     @Override 
     public Region getRegion() {
@@ -780,11 +778,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         //logger.debug("updating object for: {}, container null? {}, was modified? {}, flag: {}", this,objectContainer==null, objectModified, flag);
         if (regionContainer==null) {
             createRegionContainer();
-            regionContainer.update();
-            regionModified=false;
-        } else if (regionModified) {
-            regionContainer.update();
-            regionModified=false;
         }
         //logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
         

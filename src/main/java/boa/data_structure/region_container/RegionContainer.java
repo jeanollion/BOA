@@ -38,6 +38,7 @@ public abstract class RegionContainer {
     SimpleBoundingBox bounds;
     boolean is2D;
     public RegionContainer(StructureObject structureObject) {
+        this.is2D = structureObject.getRegion().is2D();
         this.structureObject=structureObject;
         this.bounds=new SimpleBoundingBox(structureObject.getBounds());
     }
@@ -48,10 +49,7 @@ public abstract class RegionContainer {
     protected float getScaleZ() {return structureObject.getMicroscopyField().getScaleZ();}
     public boolean is2D() {return is2D;}
     public abstract Region getRegion();
-    public void update() {
-        is2D = structureObject.getRegion().is2D();
-        bounds = new SimpleBoundingBox(structureObject.getRegion().getBounds());
-    }
+    
     public abstract void deleteRegion();
     public abstract void relabelRegion(int newIdx);
     public void initFromJSON(Map<String, Object> json) {

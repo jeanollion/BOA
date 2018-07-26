@@ -71,6 +71,7 @@ import java.util.stream.Stream;
 import java.util.function.BiPredicate;
 import static boa.data_structure.StructureObject.TRACK_ERROR_NEXT;
 import static boa.data_structure.StructureObject.TRACK_ERROR_PREV;
+import boa.gui.image_interaction.FreeLineSplitter;
 import boa.plugins.TrackConfigurable;
 import boa.plugins.TrackConfigurable.TrackConfigurer;
 
@@ -551,7 +552,7 @@ public class ManualEdition {
             ObjectDAO dao = db==null? null : db.getDao(f);
             Set<StructureObject> objectsToStore = new HashSet<>();
             List<StructureObject> newObjects = new ArrayList<>();
-            ensurePreFilteredImages(objectsByPosition.get(f).stream().map(o->o.getParent()), structureIdx, xp, dao);
+            if (!(splitter instanceof FreeLineSplitter)) ensurePreFilteredImages(objectsByPosition.get(f).stream().map(o->o.getParent()), structureIdx, xp, dao);
             for (StructureObject objectToSplit : objectsByPosition.get(f)) {
                 if (defaultSplitter==null) splitter = xp.getStructure(structureIdx).getObjectSplitter();
                 splitter.setSplitVerboseMode(test);
@@ -581,8 +582,10 @@ public class ManualEdition {
                 }
             }
             
-            Utils.removeDuplicates(objectsToStore, false);
-            if (!test && dao!=null) dao.store(objectsToStore);
+            if (!test && dao!=null) {
+                dao.store(objectsToStore);
+                logger.debug("storing modified objects after split: {}", objectsToStore);
+            }
             if (updateDisplay && !test) {
                 // unselect
                 ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);

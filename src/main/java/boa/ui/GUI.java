@@ -358,42 +358,36 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             @Override
             public void actionPerformed(ActionEvent e) {
                 linkObjectsButtonActionPerformed(e);
-                logger.debug("L pressed: " + e);
             }
         });
         actionMap.put(ACTION.UNLINK, new AbstractAction("Unlink") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 unlinkObjectsButtonActionPerformed(e);
-                logger.debug("U pressed: " + e);
             }
         });
         actionMap.put(ACTION.RESET_LINKS, new AbstractAction("Reset Links") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 resetLinksButtonActionPerformed(e);
-                logger.debug("R pressed: " + e);
             }
         });
         actionMap.put(ACTION.RESET_LINKS, new AbstractAction("Reset Links") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 resetLinksButtonActionPerformed(e);
-                logger.debug("R pressed: " + e);
             }
         });
         actionMap.put(ACTION.DELETE, new AbstractAction("Delete") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 deleteObjectsButtonActionPerformed(e);
-                logger.debug("D pressed: " + e);
             }
         });
         actionMap.put(ACTION.DELETE_AFTER_FRAME, new AbstractAction("Delete") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (Utils.promptBoolean("Delete All Objects after selected Frame ? ", null)) ManualEdition.deleteAllObjectsFromFrame(db, true);
-                logger.debug("D pressed: " + e);
             }
         });
         actionMap.put(ACTION.PRUNE, new AbstractAction("Create Branch") {
@@ -3702,6 +3696,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         //</editor-fold>
         /* Create and display the form */
         new ImageJ();
+        IJ.setTool("freeline");
         Core.getCore();
         java.awt.EventQueue.invokeLater(() -> {
             new GUI().setVisible(true);

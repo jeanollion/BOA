@@ -203,7 +203,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         MutableBoundingBox selection = new MutableBoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
                         if (selection.sizeX()==0 && selection.sizeY()==0) selection=null;
                         i.addClickedObjects(selection, selectedObjects);
-                        if (removeAfterwards || (selection.sizeX()==1 && selection.sizeY()==1)) {
+                        if (removeAfterwards || (selection.sizeX()<=2 && selection.sizeY()<=2)) {
                             FloatPolygon fPoly = r.getInterpolatedPolygon();
                             selectedObjects.removeIf(p -> !intersectMask(p.key.getMask(), p.value, fPoly));
                         }
@@ -282,15 +282,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             return mask.contains(x, y, z) && mask.insideMask(x, y, z);
         });
     }
-    /*private static boolean intersectMask(ImageMask mask, Offset offsetMask, FloatPolygon selection) {
-        for (int i = 0; i<selection.npoints; ++i) {
-            int x= selection.xpoints[i] - offsetMask.xMin();
-            int y = selection.ypoints[i] - offsetMask.yMin();
-            int z = offsetMask.zMin();
-            if (mask.contains(x, y, z) && mask.insideMask(x, y, z)) return true;
-        }
-        return false;
-    }*/
+    
     @Override public void closeNonInteractiveWindows() {
         super.closeNonInteractiveWindows();
         String[] names = WindowManager.getImageTitles();
