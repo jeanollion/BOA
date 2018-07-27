@@ -31,6 +31,7 @@ import boa.image.ImageInteger;
 import boa.image.ImageLabeller;
 import boa.image.ImageMask;
 import boa.image.Offset;
+import boa.image.SimpleOffset;
 import boa.image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +44,7 @@ import boa.plugins.ObjectSplitter;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
 import boa.utils.Pair;
+import boa.utils.Utils;
 import java.util.stream.IntStream;
 
 /**
@@ -65,7 +67,6 @@ public class FreeLineSplitter implements ObjectSplitter {
     }
     @Override
     public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
-        Image input = parent.getRawImage(structureIdx);
         ImageMask mask = object.getMask();
         ImageInteger splitMask = mask instanceof ImageInteger ? ((ImageInteger)mask).duplicate("splitMask") : TypeConverter.toImageInteger(mask, null);
         Offset off=offsetMap.get(object);
@@ -85,18 +86,18 @@ public class FreeLineSplitter implements ObjectSplitter {
             }
         }
         List<Region> objects = ImageLabeller.labelImageListLowConnectivity(splitMask);
-        RegionPopulation res = new RegionPopulation(objects, input);
+        RegionPopulation res = new RegionPopulation(objects, splitMask);
         res.filterAndMergeWithConnected(o->o.size()>1); // connect 1-pixels objects, artifacts of low connectivity labelling
         if (objects.size()>2) { // merge smaller & connected
             // islate bigger object and try to merge others
             Region biggest = Collections.max(objects, (o1, o2)->Integer.compare(o1.size(), o2.size()));
             List<Region> toMerge = new ArrayList<>(objects);
             toMerge.remove(biggest);
-            RegionPopulation mergedPop =  new RegionPopulation(toMerge, input);
+            RegionPopulation mergedPop =  new RegionPopulation(toMerge, splitMask);
             mergedPop.mergeAllConnected();
             objects = mergedPop.getRegions();
             objects.add(biggest);
-            res = new RegionPopulation(objects, input);
+            res = new RegionPopulation(objects, splitMask);
         }
         // relabel removed pixels
         if (objects.size()==2) {
@@ -118,7 +119,11 @@ public class FreeLineSplitter implements ObjectSplitter {
         if (verbose) {
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(res.getLabelMap());
         } 
-        if (objects.size()==2) return res;
+        res.translate(object.getBounds(), object.isAbsoluteLandMark());
+        if (objects.size()==2) {
+            logger.debug("freeline splitter absolute landmark : {}, off: {}", res.isAbsoluteLandmark(), Utils.toStringList(res.getRegions(), r -> new SimpleOffset(r.getBounds())));
+            return res;
+        }
         return null;
     }
     boolean verbose=false;

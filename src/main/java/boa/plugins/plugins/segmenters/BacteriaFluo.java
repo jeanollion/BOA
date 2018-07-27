@@ -50,13 +50,6 @@ import boa.image.processing.RegionFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import boa.plugins.ManualSegmenter;
-import boa.plugins.ObjectSplitter;
-import boa.plugins.Segmenter;
-import boa.plugins.SegmenterSplitAndMerge;
-import boa.plugins.plugins.pre_filters.ImageFeature;
-import boa.plugins.plugins.thresholders.BackgroundThresholder;
-import boa.plugins.plugins.thresholders.ConstantValue;
 import boa.plugins.plugins.thresholders.IJAutoThresholder;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
@@ -299,7 +292,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
      * @param parent
      * @param structureIdx
      * @param object
-     * @return split objects in same landmark as {@param object}
+     * @return split objects in absolute landmark if {@param object} is in absolutelandmark or in relative landmark to {@param parent}
      */
     @Override public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
         Image input = parent.getPreFilteredImage(structureIdx);

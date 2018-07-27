@@ -22,6 +22,7 @@ package boa.image;
 /**
  *
  * @author jollion
+ * @param <T>
  */
 public interface Offset<T> {
     public int xMin();

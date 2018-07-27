@@ -712,7 +712,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             return null;
         }
         // first object returned by splitter is updated to current structureObject
-        if (!pop.isAbsoluteLandmark()) pop.translate(getParent().getBounds(), true); 
+        if (!pop.isAbsoluteLandmark()) {
+            pop.translate(getParent().getBounds(), true);
+            logger.debug("offsets: {}", Utils.toStringList(pop.getRegions(), r -> new SimpleOffset(r.getBounds())));
+        } 
         this.object=pop.getRegions().get(0).setLabel(idx+1);
         this.regionContainer = null;
         flushImages();

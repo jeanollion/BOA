@@ -63,7 +63,10 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         Image input = parent.getPreFilteredImage(structureIdx);
         double sScale = smoothScale.getValue().doubleValue();
         if (sScale>0) input = ImageFeatures.gaussianSmooth(input, sScale, false);
-        return splitInTwo(input, object.getMask(), true, keepOnlyTwoSeeds.getSelected(), splitVerbose);
+        input = object.isAbsoluteLandMark() ? input.cropWithOffset(object.getBounds()) : input.crop(object.getBounds());
+        RegionPopulation res= splitInTwo(input, object.getMask(), true, keepOnlyTwoSeeds.getSelected(), splitVerbose);
+        res.translate(object.getBounds(), object.isAbsoluteLandMark());
+        return res;
     }
     
     public static RegionPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation, boolean keepOnlyTwoSeeds, boolean verbose) {

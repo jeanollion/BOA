@@ -7,7 +7,7 @@
 
     <groupId>ljp</groupId>
     <artifactId>bacmman</artifactId>
-    <version>2.0.2-SNAPSHOT</version>
+    <version>2.0.3-SNAPSHOT</version>
 
     <name>BACMMAN</name>
     <description>BACteria in Mother Machine ANalysis software</description>
