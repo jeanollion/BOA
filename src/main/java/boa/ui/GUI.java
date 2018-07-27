@@ -1228,7 +1228,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         experimentFolder.setBackground(new Color(getBackground().getRGB()));
         experimentFolder.setText("localhost");
-        experimentFolder.setBorder(javax.swing.BorderFactory.createTitledBorder("Dataset Folder"));
+        experimentFolder.setBorder(javax.swing.BorderFactory.createTitledBorder("Datasets Folder"));
         experimentFolder.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
                 experimentFolderMousePressed(evt);
@@ -1336,6 +1336,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(experimentJSP))))
         );
+
+        experimentFolder.getAccessibleContext().setAccessibleName("Datasets Folder");
 
         tabs.addTab("Home", actionPanel);
 
