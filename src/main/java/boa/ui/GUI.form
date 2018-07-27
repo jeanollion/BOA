@@ -6,7 +6,7 @@
       <SubComponents>
         <Menu class="javax.swing.JMenu" name="experimentMenu">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Experiment"/>
+            <Property name="text" type="java.lang.String" value="Dataset"/>
           </Properties>
           <SubComponents>
             <MenuItem class="javax.swing.JMenuItem" name="refreshExperimentListMenuItem">
@@ -19,7 +19,7 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="setSelectedExperimentMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Open / Close Selected Experiment"/>
+                <Property name="text" type="java.lang.String" value="Open / Close Selected Dataset"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="setSelectedExperimentMenuItemActionPerformed"/>
@@ -35,7 +35,7 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="newXPFromTemplateMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="New Experiment from Template"/>
+                <Property name="text" type="java.lang.String" value="New Dataset from Template"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="newXPFromTemplateMenuItemActionPerformed"/>
@@ -90,7 +90,7 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="runActionAllXPMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Run Selected Tasks on all Selected Experiments"/>
+                <Property name="text" type="java.lang.String" value="Run Selected Tasks on all Selected Datasets"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="runActionAllXPMenuItemActionPerformed"/>
@@ -158,7 +158,7 @@
               <SubComponents>
                 <MenuItem class="javax.swing.JMenuItem" name="compactLocalDBMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Compact Selected Experiment(s)"/>
+                    <Property name="text" type="java.lang.String" value="Compact Selected Dataset(s)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="compactLocalDBMenuItemActionPerformed"/>
@@ -180,7 +180,7 @@
               <SubComponents>
                 <MenuItem class="javax.swing.JMenuItem" name="exportDataMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Data From Selected Experiment(s) (see export options)"/>
+                    <Property name="text" type="java.lang.String" value="Data From Selected Dataset(s) (see export options)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportDataMenuItemActionPerformed"/>
@@ -204,7 +204,7 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="exportWholeXPMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Whole Experiment(s)"/>
+                    <Property name="text" type="java.lang.String" value="Whole Dataset(s)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportWholeXPMenuItemActionPerformed"/>
@@ -212,18 +212,10 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="exportXPObjectsMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Objects of Selected Experiment(s)"/>
+                    <Property name="text" type="java.lang.String" value="Objects of Selected Dataset(s)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportXPObjectsMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="compareToDumpFileMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Compare To Dump file"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="compareToDumpFileMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
               </SubComponents>
@@ -235,7 +227,7 @@
               <SubComponents>
                 <MenuItem class="javax.swing.JMenuItem" name="importDataMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Data From Selected File to Current Experiment (see import options)"/>
+                    <Property name="text" type="java.lang.String" value="Data From Selected File to Current Dataset (see import options)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importDataMenuItemActionPerformed"/>
@@ -243,7 +235,7 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="importPositionsToCurrentExperimentMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Objects to Current Experiment"/>
+                    <Property name="text" type="java.lang.String" value="Objects to Current Dataset"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importPositionsToCurrentExperimentMenuItemActionPerformed"/>
@@ -251,7 +243,7 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="importConfigurationMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Configuration to Current Experiment"/>
+                    <Property name="text" type="java.lang.String" value="Configuration to Current Dataset"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importConfigurationMenuItemActionPerformed"/>
@@ -277,7 +269,7 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="importNewExperimentMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="New Experiment(s)"/>
+                    <Property name="text" type="java.lang.String" value="New Dataset(s)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importNewExperimentMenuItemActionPerformed"/>
@@ -285,7 +277,7 @@
                 </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="unDumpObjectsMenuItem">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Dumped Experiment(s)"/>
+                    <Property name="text" type="java.lang.String" value="Dumped Dataset(s)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="unDumpObjectsMenuItemActionPerformed"/>
@@ -617,7 +609,7 @@
                     <Property name="text" type="java.lang.String" value="localhost"/>
                     <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                       <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
-                        <TitledBorder title="Experiment Group Folder"/>
+                        <TitledBorder title="Dataset Folder"/>
                       </Border>
                     </Property>
                   </Properties>
@@ -721,7 +713,7 @@
                   <Properties>
                     <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                       <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
-                        <TitledBorder title="Experiments:"/>
+                        <TitledBorder title="Datasets:"/>
                       </Border>
                     </Property>
                   </Properties>

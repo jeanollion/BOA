@@ -66,7 +66,7 @@ public class FileProgressLogger implements ProgressLogger {
                 //setMessage("realising lock: "+ xpFileLock);
                 xpFileLock.release();
             } catch (IOException ex) {
-                setMessage("error realeasing xp lock");
+                setMessage("error realeasing dataset lock");
             } finally {
                 xpFileLock = null;
             }

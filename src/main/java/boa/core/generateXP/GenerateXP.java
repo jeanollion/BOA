@@ -233,7 +233,7 @@ public class GenerateXP {
     }
     public static void deletePositions(Experiment xp, boolean[] deletePositions) {
         if (deletePositions!=null) {
-            if (deletePositions.length!=xp.getPositionCount()) logger.error("Delete array has {} elements and xp has: {} imported positions", deletePositions.length, xp.getPositionCount());
+            if (deletePositions.length!=xp.getPositionCount()) logger.error("Delete array has {} elements and dataset has: {} imported positions", deletePositions.length, xp.getPositionCount());
             else {
                 List<String> toDelete = new ArrayList<>();
                 String[] names = xp.getPositionsAsString();
@@ -247,7 +247,7 @@ public class GenerateXP {
     }
     public static void setFlip(Experiment xp, boolean[] flipArray) {
         if (flipArray!=null) {
-            if (flipArray.length!=xp.getPositionCount()) logger.error("Flip array has {} elements and xp has: {} imported positions", flipArray.length, xp.getPositionCount());
+            if (flipArray.length!=xp.getPositionCount()) logger.error("Flip array has {} elements and dataset has: {} imported positions", flipArray.length, xp.getPositionCount());
             else {
                 for (int i = 0; i<flipArray.length; ++i) {
                     List<TransformationPluginParameter<Transformation>> transfo = xp.getPosition(i).getPreProcessingChain().getTransformations(false);

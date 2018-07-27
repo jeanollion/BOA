@@ -70,9 +70,9 @@ import java.util.stream.Stream;
 
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<>("Channel Images", 0 , ChannelImage.class).setNewInstanceNameFunction(i->"channel image"+i).setToolTipText("Channel of input images");
-    SimpleListParameter<Structure> structures= new SimpleListParameter<>("Object Classes", -1 , Structure.class).setNewInstanceNameFunction(i->"object class"+i).setToolTipText("Types of objects to be analysed in this experiment. All processing is defined in this part of the configuration tree");
+    SimpleListParameter<Structure> structures= new SimpleListParameter<>("Object Classes", -1 , Structure.class).setNewInstanceNameFunction(i->"object class"+i).setToolTipText("Types of objects to be analysed in this dataset. All processing is defined in this part of the configuration tree");
     SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<>("Measurements", -1 , new PluginParameter<>("Measurements", Measurement.class, false)).setToolTipText("Measurement to be performed after processing");
-    SimpleListParameter<Position> positions= new SimpleListParameter<>("Positions", -1 , Position.class).setAllowMoveChildren(false).setToolTipText("Positions of the experiment. Preprocessing is defined for each position. Right-click menu allows to overwrite preprocessing to other position.");
+    SimpleListParameter<Position> positions= new SimpleListParameter<>("Positions", -1 , Position.class).setAllowMoveChildren(false).setToolTipText("Positions of the dataset. Preprocessing is defined for each position. Right-click menu allows to overwrite preprocessing to other position.");
     PreProcessingChain template = new PreProcessingChain("Pre-Processing pipeline template").setToolTipText("Default preprocessing set to positions at import");
     
     protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY).setToolTipText("Directory where preprocessed images will be stored");

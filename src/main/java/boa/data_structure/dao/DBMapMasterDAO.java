@@ -189,7 +189,7 @@ public class DBMapMasterDAO implements MasterDAO {
     private synchronized void lockXP() {
         if (xpFileLock!=null) return;
         try {
-            logger.debug("locking file: {} (xp null? {})", getConfigFile(dbName), xp==null);
+            logger.debug("locking file: {} (cfg null? {})", getConfigFile(dbName), xp==null);
             File f = getConfigFile(dbName);
             if (!f.exists()) f.createNewFile();
             cfg = new RandomAccessFile(f, readOnly?"r":"rw");
@@ -211,7 +211,7 @@ public class DBMapMasterDAO implements MasterDAO {
                 logger.debug("lock realeased: {} ", !xpFileLock.isValid());
                 xpFileLock = null;
             } catch (IOException ex) {
-                logger.debug("error realeasing xp lock", ex);
+                logger.debug("error realeasing cfg lock", ex);
             }
         }
         if (cfg!=null) {
@@ -278,7 +278,7 @@ public class DBMapMasterDAO implements MasterDAO {
                 if (xp==null) {
                     if (xpFileLock==null) this.lockXP();
                     if (!readOnly && xpFileLock==null) {
-                        logger.warn(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in ReadOnly mode");
+                        logger.warn(dbName+ ": Config file could not be locked. Dataset already opened ? Dataset will be opened in ReadOnly mode");
                         readOnly = true;
                         lockXP(); // will try to access the xp file in readonly mode
                     }

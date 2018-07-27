@@ -277,22 +277,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         trackTreeStructureJSP.setToolTipText(formatToolTip("Object class to be displayed in the <em>Segmentation & Tracking</em> panel"));
         interactiveObjectPanel.setToolTipText(formatToolTip("Object class that will be displayed and edited on interactive images. <br />ctrl+click to select/deselect object classes"));
         editPanel.setToolTipText(formatToolTip("Commands to edit segmentation/lineage of selected objects of the interactive objects on the currently active kymograph<br />See <em>Shortcuts > Object/Lineage Edition</em> menu for while list of commands and description"));
-        actionStructureJSP.setToolTipText(formatToolTip("Object classes of the opened experiment. Tasks will be run only on selected objects classes, or on all object classes if none is selected"));
-        experimentJSP.setToolTipText(formatToolTip("List of all experiments contained in the current experiment folder<br />If an experiment is opened, its name written in the title of this window. The opened experiment does not necessarily correspond to the selected experiment in this list<br /><br />ctrl+click to select/deselect experiments"));
-        actionPositionJSP.setToolTipText(formatToolTip("Positions of the opened experiment. <br />Tasks will be run only on selected position, or on all position if no position is selected<br />ctrl+click to select/deselect positions"));
+        actionStructureJSP.setToolTipText(formatToolTip("Object classes of the opened dataset. Tasks will be run only on selected objects classes, or on all object classes if none is selected"));
+        experimentJSP.setToolTipText(formatToolTip("List of all datasets contained in the current datasets folder<br />If an dataset is opened, its name written in the title of this window. The opened dataset does not necessarily correspond to the selected dataset in this list<br /><br />ctrl+click to select/deselect experiments"));
+        actionPositionJSP.setToolTipText(formatToolTip("Positions of the opened dataset. <br />Tasks will be run only on selected position, or on all position if no position is selected<br />ctrl+click to select/deselect positions"));
         deleteObjectsButton.setToolTipText(formatToolTip("Right-click for more delete commands"));
-        experimentFolder.setToolTipText(formatToolTip("Directory containing several experiments<br />Righ-click menu to access recent list and file browser"));
+        experimentFolder.setToolTipText(formatToolTip("Directory containing several datasets<br />Righ-click menu to access recent list and file browser"));
         this.actionJSP.setToolTipText(formatToolTip("<b>Tasks to run on selected positions/object classes:</b> (ctrl+click to select/deselect tasks)<br/><ol>"
                 + "<li><b>"+runActionList.getModel().getElementAt(0)+"</b>: Performs preprocessing pipeline on selected positions (or all if none is selected)</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(1)+"</b>: Performs segmentation and tracking on selected object classes (all if none is selected) and selected positions (or all if none is selected)</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(2)+"</b>: Performs Tracking on selected object classes (all if none is selected) and selected positions (or all if none is selected). Ignored if "+runActionList.getModel().getElementAt(1)+" is selected.</li>"
-                + "<li><b>"+runActionList.getModel().getElementAt(3)+"</b>: Pre-computes kymographs and saves them in the experiment folder in order to have a faster display of kymograph, and to eventually allow to erase pre-processed images to save disk-space</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(3)+"</b>: Pre-computes kymographs and saves them in the dataset folder in order to have a faster display of kymograph, and to eventually allow to erase pre-processed images to save disk-space</li>"
                 + "<li><b>"+runActionList.getModel().getElementAt(4)+"</b>: Computes measurements on selected positions (or all if none is selected)</li>"
-                + "<li><b>"+runActionList.getModel().getElementAt(5)+"</b>: Extract measurements of selected object tpye (or all is none is selected) on selected positions (or all if none is selected), and saves them in one single .csv <em>;</em>-separated file per object class in the experiment folder</li>"
-                + "<li><b>"+runActionList.getModel().getElementAt(6)+"</b>: Export data from this experiment (segmentation and tracking results, configuration...) of all selected posisions (or all if none is selected) in a single zip archive that can be imported. Exported data can be configured in the menu <em>Import/Export > Export Options</em></li></ol>"));
+                + "<li><b>"+runActionList.getModel().getElementAt(5)+"</b>: Extract measurements of selected object tpye (or all is none is selected) on selected positions (or all if none is selected), and saves them in one single .csv <em>;</em>-separated file per object class in the dataset folder</li>"
+                + "<li><b>"+runActionList.getModel().getElementAt(6)+"</b>: Export data from this dataset (segmentation and tracking results, configuration...) of all selected posisions (or all if none is selected) in a single zip archive that can be imported. Exported data can be configured in the menu <em>Import/Export > Export Options</em></li></ol>"));
         shortcutMenu.setToolTipText(formatToolTip("List of all commands and associated shortcuts. <br />Change here preset to AZERTY/QWERT keyboard layout"));
         localZoomMenu.setToolTipText(formatToolTip("Local zoom is activated/desactivated with TAB"));
-        this.importConfigurationMenuItem.setToolTipText(formatToolTip("Will overwrite configuration from a selected file to current experiment/selected experiments. <br />Selected configuration file must have same number of object classes<br />Overwrites configuration for each Object class<br />Overwrite preprocessing template"));
+        this.importConfigurationMenuItem.setToolTipText(formatToolTip("Will overwrite configuration from a selected file to current dataset/selected datasets. <br />Selected configuration file must have same number of object classes<br />Overwrites configuration for each Object class<br />Overwrite preprocessing template"));
         // disable componenets when run action
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
@@ -739,10 +739,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         } else {
             logger.info("Experiment found in db: {} ", db.getDBName());
             if (db.isConfigurationReadOnly()) {
-                GUI.log(dbName+ ": Config file could not be locked. Experiment already opened ? Experiment will be opened in Read Only mode: all modifications (configuration, segmentation/lineage ...) won't be saved. ");
-                GUI.log("To open in read and write mode, close all other instances and re-open the experiment. ");
+                GUI.log(dbName+ ": Config file could not be locked. Dataset already opened ? Dataset will be opened in Read Only mode: all modifications on configuration or selections won't be saved. ");
+                GUI.log("To open in read and write mode, close all other instances and re-open the dataset. ");
             } else {
-               setMessage("Experiment: "+db.getDBName()+" opened"); 
+               setMessage("Dataset: "+db.getDBName()+" opened"); 
             }
             
         }
@@ -812,7 +812,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     
     private void updateDisplayRelatedToXPSet() {
         final boolean enable = db!=null;
-        String xp = db==null ? "" : " - Experiment: "+db.getDBName();
+        String xp = db==null ? "" : " - Dataset: "+db.getDBName();
         String v = Utils.getVersion(this);
         if (v!=null && v.length()>0) v = "- Version: "+v;
         setTitle("**BACMMAN**"+v+xp);
@@ -826,7 +826,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             boolean rw = !db.isConfigurationReadOnly();
             for (Component c : relatedToReadOnly) c.setEnabled(rw);
         }
-        importConfigurationMenuItem.setText(enable ? "Configuration to current Experiment" : (getSelectedExperiments().isEmpty()? "--" : "Configuration to selected Experiment(s)") );
+        importConfigurationMenuItem.setText(enable ? "Configuration to current Dataset" : (getSelectedExperiments().isEmpty()? "--" : "Configuration to selected Dataset(s)") );
     }
     
     
@@ -1182,7 +1182,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         exportXPConfigMenuItem = new javax.swing.JMenuItem();
         exportWholeXPMenuItem = new javax.swing.JMenuItem();
         exportXPObjectsMenuItem = new javax.swing.JMenuItem();
-        compareToDumpFileMenuItem = new javax.swing.JMenuItem();
         importSubMenu = new javax.swing.JMenu();
         importDataMenuItem = new javax.swing.JMenuItem();
         importPositionsToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
@@ -1229,7 +1228,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         experimentFolder.setBackground(new Color(getBackground().getRGB()));
         experimentFolder.setText("localhost");
-        experimentFolder.setBorder(javax.swing.BorderFactory.createTitledBorder("Experiment Group Folder"));
+        experimentFolder.setBorder(javax.swing.BorderFactory.createTitledBorder("Dataset Folder"));
         experimentFolder.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
                 experimentFolderMousePressed(evt);
@@ -1271,7 +1270,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         runActionList.setSelectionForeground(new java.awt.Color(255, 255, 254));
         actionJSP.setViewportView(runActionList);
 
-        experimentJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Experiments:"));
+        experimentJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Datasets:"));
 
         experimentList.setBackground(new java.awt.Color(247, 246, 246));
         experimentList.setBorder(null);
@@ -1694,7 +1693,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         jSplitPane3.setBottomComponent(consoleJSP);
 
-        experimentMenu.setText("Experiment");
+        experimentMenu.setText("Dataset");
 
         refreshExperimentListMenuItem.setText("Refresh List");
         refreshExperimentListMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1704,7 +1703,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         experimentMenu.add(refreshExperimentListMenuItem);
 
-        setSelectedExperimentMenuItem.setText("Open / Close Selected Experiment");
+        setSelectedExperimentMenuItem.setText("Open / Close Selected Dataset");
         setSelectedExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 setSelectedExperimentMenuItemActionPerformed(evt);
@@ -1720,7 +1719,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         experimentMenu.add(newXPMenuItem);
 
-        newXPFromTemplateMenuItem.setText("New Experiment from Template");
+        newXPFromTemplateMenuItem.setText("New Dataset from Template");
         newXPFromTemplateMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 newXPFromTemplateMenuItemActionPerformed(evt);
@@ -1772,7 +1771,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         runMenu.add(runSelectedActionsMenuItem);
 
-        runActionAllXPMenuItem.setText("Run Selected Tasks on all Selected Experiments");
+        runActionAllXPMenuItem.setText("Run Selected Tasks on all Selected Datasets");
         runActionAllXPMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 runActionAllXPMenuItemActionPerformed(evt);
@@ -1828,7 +1827,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         localDBMenu.setText("Local DataBase");
 
-        compactLocalDBMenuItem.setText("Compact Selected Experiment(s)");
+        compactLocalDBMenuItem.setText("Compact Selected Dataset(s)");
         compactLocalDBMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 compactLocalDBMenuItemActionPerformed(evt);
@@ -1844,7 +1843,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         exportSubMenu.setText("Export");
 
-        exportDataMenuItem.setText("Data From Selected Experiment(s) (see export options)");
+        exportDataMenuItem.setText("Data From Selected Dataset(s) (see export options)");
         exportDataMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 exportDataMenuItemActionPerformed(evt);
@@ -1868,7 +1867,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         exportSubMenu.add(exportXPConfigMenuItem);
 
-        exportWholeXPMenuItem.setText("Whole Experiment(s)");
+        exportWholeXPMenuItem.setText("Whole Dataset(s)");
         exportWholeXPMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 exportWholeXPMenuItemActionPerformed(evt);
@@ -1876,7 +1875,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         exportSubMenu.add(exportWholeXPMenuItem);
 
-        exportXPObjectsMenuItem.setText("Objects of Selected Experiment(s)");
+        exportXPObjectsMenuItem.setText("Objects of Selected Dataset(s)");
         exportXPObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 exportXPObjectsMenuItemActionPerformed(evt);
@@ -1884,19 +1883,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         exportSubMenu.add(exportXPObjectsMenuItem);
 
-        compareToDumpFileMenuItem.setText("Compare To Dump file");
-        compareToDumpFileMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                compareToDumpFileMenuItemActionPerformed(evt);
-            }
-        });
-        exportSubMenu.add(compareToDumpFileMenuItem);
-
         importExportMenu.add(exportSubMenu);
 
         importSubMenu.setText("Import");
 
-        importDataMenuItem.setText("Data From Selected File to Current Experiment (see import options)");
+        importDataMenuItem.setText("Data From Selected File to Current Dataset (see import options)");
         importDataMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 importDataMenuItemActionPerformed(evt);
@@ -1904,7 +1895,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         importSubMenu.add(importDataMenuItem);
 
-        importPositionsToCurrentExperimentMenuItem.setText("Objects to Current Experiment");
+        importPositionsToCurrentExperimentMenuItem.setText("Objects to Current Dataset");
         importPositionsToCurrentExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 importPositionsToCurrentExperimentMenuItemActionPerformed(evt);
@@ -1912,7 +1903,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         importSubMenu.add(importPositionsToCurrentExperimentMenuItem);
 
-        importConfigurationMenuItem.setText("Configuration to Current Experiment");
+        importConfigurationMenuItem.setText("Configuration to Current Dataset");
         importConfigurationMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 importConfigurationMenuItemActionPerformed(evt);
@@ -1938,7 +1929,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         importSubMenu.add(importConfigurationForSelectedStructuresMenuItem);
 
-        importNewExperimentMenuItem.setText("New Experiment(s)");
+        importNewExperimentMenuItem.setText("New Dataset(s)");
         importNewExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 importNewExperimentMenuItemActionPerformed(evt);
@@ -1946,7 +1937,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         importSubMenu.add(importNewExperimentMenuItem);
 
-        unDumpObjectsMenuItem.setText("Dumped Experiment(s)");
+        unDumpObjectsMenuItem.setText("Dumped Dataset(s)");
         unDumpObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 unDumpObjectsMenuItemActionPerformed(evt);
@@ -2357,22 +2348,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     }//GEN-LAST:event_setSelectedExperimentMenuItemActionPerformed
 
     private void newXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPMenuItemActionPerformed
-        String name = JOptionPane.showInputDialog("New XP name:");
+        String name = JOptionPane.showInputDialog("New Dataset name:");
         if (name==null) return;
         name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
-        else if (getDBNames().contains(name)) logger.error("Experiment name already exists");
+        else if (getDBNames().contains(name)) logger.error("Dataset name already exists");
         else {
             String adress = null;
             if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) { // create directory
                 File dir = new File(experimentFolder.getText());
                 adress = createSubdir(dir.getAbsolutePath(), name);
-                logger.debug("new xp dir: {}", adress);
+                logger.debug("new dataset dir: {}", adress);
                 if (adress==null) return;
             }
             MasterDAO db2 = MasterDAOFactory.createDAO(name, adress);
             if (!db2.setConfigurationReadOnly(false)) {
-                this.setMessage("Could not modify experiment "+name+" @ "+  adress);
+                this.setMessage("Could not modify dataset "+name+" @ "+  adress);
                 return;
             }
             Experiment xp2 = new Experiment(name);
@@ -2391,7 +2382,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private void deleteXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteXPMenuItemActionPerformed
         List<String> xps = getSelectedExperiments();
         if (xps==null || xps.isEmpty()) return;
-        if (Utils.promptBoolean( "Delete Selected Experiment"+(xps.size()>1?"s":"")+" (all data will be lost)", this)) {
+        if (Utils.promptBoolean( "Delete Selected Dataset"+(xps.size()>1?"s":"")+" (all data will be lost)", this)) {
             if (db!=null && xps.contains(db.getDBName())) closeExperiment();
             for (String xpName : xps) {
                 MasterDAO mDAO = MasterDAOFactory.createDAO(xpName, getHostNameOrDir(xpName));
@@ -2403,10 +2394,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     }//GEN-LAST:event_deleteXPMenuItemActionPerformed
 
     private void duplicateXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_duplicateXPMenuItemActionPerformed
-        String name = JOptionPane.showInputDialog("New experiment name:", getSelectedExperiment());
+        String name = JOptionPane.showInputDialog("New dataset name:", getSelectedExperiment());
         name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
-        else if (getDBNames().contains(name)) logger.error("experiment name already exists");
+        else if (getDBNames().contains(name)) logger.error("dataset name already exists");
         else {
             closeExperiment();
             MasterDAO db1 = MasterDAOFactory.createDAO(getSelectedExperiment(), getCurrentHostNameOrDir());
@@ -2414,12 +2405,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) { // create directory
                 File dir = new File(getCurrentHostNameOrDir()).getParentFile();
                 adress = createSubdir(dir.getAbsolutePath(), name);
-                logger.debug("duplicate experiment dir: {}", adress);
+                logger.debug("duplicate dataset dir: {}", adress);
                 if (adress==null) return;
             }
             MasterDAO db2 = MasterDAOFactory.createDAO(name, adress);
             if (!db2.setConfigurationReadOnly(false)) {
-                this.setMessage("Could not modify experiment "+name+" @ "+  adress);
+                this.setMessage("Could not modify dataset "+name+" @ "+  adress);
                 return;
             }
             Experiment xp2 = db1.getExperiment().duplicate();
@@ -2502,7 +2493,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         File f = Utils.chooseFile("Write config to...", defDir, FileChooser.FileChooserOption.FILES_ONLY, this);
         if (f==null || !f.getParentFile().isDirectory()) return;
         promptSaveUnsavedChanges();
-        //CommandExecuter.dump(getCurrentHostNameOrDir(), db.getDBName(), "Experiment", dir, jsonFormatMenuItem.isSelected());
+        //CommandExecuter.dump(getCurrentHostNameOrDir(), db.getDBName(), "Dataset", dir, jsonFormatMenuItem.isSelected());
         //ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
         //ImportExportJSON.exportConfig(w, db);
         //w.close();
@@ -2588,14 +2579,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
     private void importNewExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importNewExperimentMenuItemActionPerformed
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        String dir = promptDir("Select folder containing experiment or experiments", defDir, false);
+        String dir = promptDir("Select folder containing dataset or datasets", defDir, false);
         if (dir==null) return;
         File directory = new File(dir);
         List<String> dbNames = getDBNames();
         Map<String, File> allXps = ExperimentSearchUtils.listExperiments(directory.getAbsolutePath(), false, null);
         //Map<String, File> allXps = ImportExportJSON.listExperiments(directory.getAbsolutePath());
         if (allXps.size()==1) {
-            String name = JOptionPane.showInputDialog("New XP name:");
+            String name = JOptionPane.showInputDialog("New Dataset name:");
             if (name==null) return;
             name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
             if (!Utils.isValid(name, false)) {
@@ -2613,8 +2604,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (xpNotPresent.size()!=allXps.size()) {
             List<String> xpPresent = new ArrayList<>(allXps.keySet());
             xpPresent.retainAll(dbNames);
-            Object[] options = {"Overwrite existig experiments (data loss)", "Ignore existing experiments"};
-            int n = JOptionPane.showOptionDialog(this, "Some experiments found in the directory are already present: "+Utils.toStringList(xpPresent), "Import Whole Experiment", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+            Object[] options = {"Overwrite existig datasets (data loss)", "Ignore existing datasets"};
+            int n = JOptionPane.showOptionDialog(this, "Some datasets found in the directory are already present: "+Utils.toStringList(xpPresent), "Import Whole Dataset", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
             if (n==1) xpsToImport = xpNotPresent;
         }
         closeExperiment();
@@ -2683,7 +2674,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             for (String xp : this.getSelectedExperiments()) {
                 MasterDAO mDAO = new Task(xp).getDB();
                 if (mDAO==null) {
-                    this.setMessage("Could not open experiment: "+xp);
+                    this.setMessage("Could not open dataset: "+xp);
                     continue;
                 }
                 PreProcessingChain oldppTemplate = mDAO.getExperiment().getPreProcessingTemplate().duplicate();
@@ -2835,7 +2826,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             for (String xp : getSelectedExperiments()) {
                 DBMapMasterDAO dao = (DBMapMasterDAO)MasterDAOFactory.createDAO(xp, this.getHostNameOrDir(xp));
                 dao.lockPositions();
-                GUI.log("Compacting Experiment: "+xp);
+                GUI.log("Compacting Dataset: "+xp);
                 dao.compact();
                 dao.unlockPositions();
                 dao.unlockConfiguration();
@@ -2919,7 +2910,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             if (xps.isEmpty() && db!=null && db.getExperiment()!=null) xps.add(db.getDBName());
         } else closeExperiment();
         
-        log("dumping: "+xps.size()+ " Experiment"+(xps.size()>1?"s":""));
+        log("dumping: "+xps.size()+ " Dataset"+(xps.size()>1?"s":""));
         DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
             @Override
             public String run(int i) {
@@ -2997,47 +2988,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         localDBMenu.setEnabled(true);
         populateExperimentList();
     }//GEN-LAST:event_localFileSystemDatabaseRadioButtonActionPerformed
-
-    private void compareToDumpFileMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_compareToDumpFileMenuItemActionPerformed
-        final List<File> dumpedFiles = Utils.seachAll(experimentFolder.getText(), s->s.endsWith("_dump.zip"), 1);
-        if (dumpedFiles==null) return;
-        closeExperiment();
-        // remove xp already undumped
-        Map<String, File> dbFiles = ExperimentSearchUtils.listExperiments(experimentFolder.getText(), true, ProgressCallback.get(this));
-        dumpedFiles.removeIf(f->!dbFiles.containsValue(f.getParentFile()));
-        // remove unselected xp if any
-        Set<String> xpSel = new HashSet<>(getSelectedExperiments());
-        if (!xpSel.isEmpty()) dumpedFiles.removeIf(f->!xpSel.contains(Utils.getOneKey(dbFiles, f.getParentFile())));
-
-        log("found: "+dumpedFiles.size()+ " undumped Experimentse");
-        DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
-            @Override
-            public String run(int i) {
-                if (i==0) GUI.getInstance().setRunning(true);
-                File dump = dumpedFiles.get(i);
-                String dbName = dump.getName().replace("_dump.zip", "");
-                log("comparing dump of: "+dbName);
-                logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
-                MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
-                dao.setConfigurationReadOnly(true);
-                MasterDAO daoDump = new BasicMasterDAO();
-                ImportExportJSON.importFromZip(dump.getAbsolutePath(), daoDump, true, true, true, false, false, ProgressCallback.get(INSTANCE));
-                try {
-                    MasterDAO.compareDAOContent(dao, daoDump, true, true, true, ProgressCallback.get(INSTANCE));
-                } catch (Exception|Error e) {
-                    throw e;
-                }
-                
-                if (i==dumpedFiles.size()-1) {
-                    GUI.getInstance().setRunning(false);
-                    GUI.getInstance().populateExperimentList();
-                    log("dump comparison done!");
-                }
-                return dbName+" compared!";
-            };
-        };
-        DefaultWorker.execute(t, dumpedFiles.size());
-    }//GEN-LAST:event_compareToDumpFileMenuItemActionPerformed
 
     private void importObjectsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importObjectsMenuItemActionPerformed
         // TODO add your handling code here:
@@ -3206,7 +3156,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                             if (d==null) log("Error: Could not find directory of XP: "+xp);
                             else {
                                 t.setDBName(xp).setDir(d);
-                                if (!t.isValid()) log("Error: could not set experiment to task: "+en.getValue());
+                                if (!t.isValid()) log("Error: could not set dataset to task: "+en.getValue());
                                 else {
                                     actionPoolListModel.remove(en.getKey());
                                     actionPoolListModel.add(en.getKey(), t.toJSON().toJSONString());
@@ -3345,7 +3295,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         Experiment xp = FileIO.readFisrtFromFile(config, s->JSONUtils.parse(Experiment.class, s));
         String name=null;
         if (xp!=null) {
-            name = JOptionPane.showInputDialog("New XP name:", Utils.removeExtension(new File(config).getName()));
+            name = JOptionPane.showInputDialog("New Dataset name:", Utils.removeExtension(new File(config).getName()));
             if (name==null) return;
             name = ExperimentSearchUtils.addPrefix(name, currentDBPrefix);
             if (!Utils.isValid(name, false)) {
@@ -3437,11 +3387,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private void experimentListValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_experimentListValueChanged
         List<String> sel = getSelectedExperiments();
         if (this.db==null) {
-            if (sel.size()==1) setSelectedExperimentMenuItem.setText("Open Experiment: "+sel.get(0));
+            if (sel.size()==1) setSelectedExperimentMenuItem.setText("Open Dataset: "+sel.get(0));
             else setSelectedExperimentMenuItem.setText("--");
         } else {
-            if (sel.size()==1 && !sel.get(0).equals(db.getDBName())) setSelectedExperimentMenuItem.setText("Open Experiment: "+sel.get(0));
-            else setSelectedExperimentMenuItem.setText("Close Experiment: "+db.getDBName());
+            if (sel.size()==1 && !sel.get(0).equals(db.getDBName())) setSelectedExperimentMenuItem.setText("Open Dataset: "+sel.get(0));
+            else setSelectedExperimentMenuItem.setText("Close Dataset: "+db.getDBName());
         }
     }//GEN-LAST:event_experimentListValueChanged
 
@@ -3771,7 +3721,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JMenuItem clearTrackImagesMenuItem;
     private javax.swing.JMenuItem closeAllWindowsMenuItem;
     private javax.swing.JMenuItem compactLocalDBMenuItem;
-    private javax.swing.JMenuItem compareToDumpFileMenuItem;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JPanel configurationPanel;
     private javax.swing.JTextPane console;

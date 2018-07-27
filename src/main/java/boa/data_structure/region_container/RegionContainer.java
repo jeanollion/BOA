@@ -57,7 +57,7 @@ public abstract class RegionContainer {
         this.bounds=new MutableBoundingBox();
         this.bounds.initFromJSONEntry(bds);
         if (json.containsKey("is2D")) is2D = (Boolean)json.get("is2D");
-        else is2D = true; // for retrocompatibility. do not call to structure object's method at it may not be fully initiated and may not have access to experiment
+        else is2D = true; // for retrocompatibility. do not call to structure object's method at it may not be fully initiated and may not have access to dataset
     }
     public JSONObject toJSON() {
         JSONObject res = new JSONObject();

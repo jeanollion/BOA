@@ -252,7 +252,7 @@ public class ImportExportJSON {
                 // set measurements
                 dao.getExperiment().getMeasurements().setContentFrom(source.getMeasurements());
                 dao.updateExperiment();
-                logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
+                logger.debug("Dataset: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
             }
             
         }
@@ -271,7 +271,7 @@ public class ImportExportJSON {
                     xp.get(0).setOutputDirectory(dao.getDir()+File.separator+"Output");
                     xp.get(0).setOutputImageDirectory(xp.get(0).getOutputDirectory());
                     dao.setExperiment(xp.get(0));
-                    logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
+                    logger.debug("Dataset: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
                     dao.clearCache(); // avoid lock issues
                 }
             }
@@ -285,7 +285,7 @@ public class ImportExportJSON {
             if (config) { 
                 dao.setConfigurationReadOnly(false);
                 if (dao.isConfigurationReadOnly()) {
-                    if (pcb!=null) pcb.log("Cannot import configuration: experiment is in read only");
+                    if (pcb!=null) pcb.log("Cannot import configuration: dataset is in read only");
                     ok = false;
                 } else {
                     Experiment xp = r.readFirstObject("config.json", o->JSONUtils.parse(Experiment.class, o));
@@ -348,7 +348,7 @@ public class ImportExportJSON {
             if (selections) {
                 dao.setConfigurationReadOnly(false);
                 if (dao.isConfigurationReadOnly()) {
-                    if (pcb!=null) pcb.log("Cannot import selection: experiment is in read only");
+                    if (pcb!=null) pcb.log("Cannot import selection: dataset is in read only");
                     ok = false;
                 } else {
                     logger.debug("importing selections....");

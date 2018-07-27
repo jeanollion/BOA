@@ -108,7 +108,7 @@ public class StructureParameter<T extends StructureParameter<T>> extends IndexCh
     }
     
     public int getParentStructureIdx() {
-        if (getXP()==null) logger.error("StructureParameter#getParentStructureIdx(): {}, could not get experiment", name);
+        if (getXP()==null) logger.error("StructureParameter#getParentStructureIdx(): {}, could not get dataset", name);
         if (getSelectedIndex()==-1) return -1;
         else return getXP().getStructure(getSelectedIndex()).getParentStructure();
     }
@@ -116,7 +116,7 @@ public class StructureParameter<T extends StructureParameter<T>> extends IndexCh
     public int getFirstCommonParentStructureIdx(int otherStructureIdx) {
         if (getSelectedIndex()==-1 || otherStructureIdx==-1) return -1;
         if (getXP()==null) {
-            logger.error("StructureParameter#getParentStructureIdx(): {}, could not get experiment", name);
+            logger.error("StructureParameter#getParentStructureIdx(): {}, could not get dataset", name);
             return -1;
         }
         else return getXP().getFirstCommonParentStructureIdx(getSelectedIndex(), otherStructureIdx);
