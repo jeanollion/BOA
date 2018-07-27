@@ -1703,7 +1703,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         experimentMenu.add(refreshExperimentListMenuItem);
 
-        setSelectedExperimentMenuItem.setText("Open / Close Selected Dataset");
+        setSelectedExperimentMenuItem.setText("Open / Close selected dataset");
         setSelectedExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 setSelectedExperimentMenuItemActionPerformed(evt);
@@ -1719,7 +1719,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         experimentMenu.add(newXPMenuItem);
 
-        newXPFromTemplateMenuItem.setText("New Dataset from Template");
+        newXPFromTemplateMenuItem.setText("New dataset from Template");
         newXPFromTemplateMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 newXPFromTemplateMenuItemActionPerformed(evt);

@@ -19,7 +19,7 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="setSelectedExperimentMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Open / Close Selected Dataset"/>
+                <Property name="text" type="java.lang.String" value="Open / Close selected dataset"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="setSelectedExperimentMenuItemActionPerformed"/>
@@ -35,7 +35,7 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="newXPFromTemplateMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="New Dataset from Template"/>
+                <Property name="text" type="java.lang.String" value="New dataset from Template"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="newXPFromTemplateMenuItemActionPerformed"/>
