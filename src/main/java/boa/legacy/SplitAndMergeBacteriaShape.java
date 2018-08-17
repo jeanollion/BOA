@@ -117,7 +117,7 @@ public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShap
         return distanceMap;
     }
     private void setDistanceMap(ImageMask mask) {
-        distanceMap = EDT.transform(mask, true, 1, mask.getScaleZ()/mask.getScaleXY(), 1);
+        distanceMap = EDT.transform(mask, true, 1, mask.getScaleZ()/mask.getScaleXY(), false);
     }
     
     /*@Override

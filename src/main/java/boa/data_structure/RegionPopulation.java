@@ -710,7 +710,7 @@ public class RegionPopulation {
     public Image getLocalThicknessMap() {
         Image ltmap = new ImageFloat("Local Thickness Map "+getImageProperties().getScaleXY()+ " z:"+getImageProperties().getScaleZ(), getImageProperties());
         for (Region r : getRegions()) {
-            Image lt = boa.image.processing.localthickness.LocalThickness.localThickness(r.getMask(), getImageProperties().getScaleZ()/getImageProperties().getScaleXY(), true, 1);
+            Image lt = boa.image.processing.localthickness.LocalThickness.localThickness(r.getMask(), getImageProperties().getScaleZ()/getImageProperties().getScaleXY(), true, false);
             ImageMask.loopWithOffset(r.getMask(), (x, y, z)->{
                 ltmap.setPixel(x, y, z, lt.getPixelWithOffset(x, y, z));
             });

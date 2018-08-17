@@ -27,8 +27,10 @@ import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
+import boa.utils.ThreadRunner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.slf4j.LoggerFactory;
 
 /* 
 Modified from: in  order to take in acount z-anisotropy & borders
@@ -79,21 +81,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
 public class EDT {
-    public static ImageFloat transform(ImageMask mask, boolean insideMask, double scaleXY, double scaleZ, int nbCPUs) {
-        try {
-            return new EDT().run(mask, insideMask, scaleXY, scaleZ, nbCPUs);
-        } catch (Exception ex) {
-            Logger.getLogger(EDT.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return null;
+    public final static org.slf4j.Logger logger = LoggerFactory.getLogger(EDT.class);
+    public static ImageFloat transform(ImageMask mask, boolean insideMask, double scaleXY, double scaleZ, boolean multithread) {
+        return new EDT().run(mask, insideMask, scaleXY, scaleZ, multithread);
     }
     
-    protected ImageFloat run(ImageMask mask, boolean insideMask, double scaleXY, double scaleZ , int nbCPUs) throws Exception {
+    protected ImageFloat run(ImageMask mask, boolean insideMask, double scaleXY, double scaleZ , boolean multithread) {
         int w = mask.sizeX();
         int h = mask.sizeY();
         int d = mask.sizeZ();
         double scale=mask.sizeZ()>1?scaleZ/scaleXY:1;
-        int nThreads = nbCPUs;
+        int nThreads = multithread ? ThreadRunner.getMaxCPUs() : 1;
         ImageFloat res = new ImageFloat("EDT of: "+mask.getName(), mask);
         float[][] s = res.getPixelArray();
         float[] sk;
@@ -108,7 +106,7 @@ public class EDT {
                 s1t[thread].join();
             }
         } catch (InterruptedException ie) {
-            IJ.error("A thread was interrupted in step 1 .");
+            throw new RuntimeException(ie);
         }
         //Transformation 2.  g (in s) -> h (in s)
         Step2Thread[] s2t = new Step2Thread[nThreads];
@@ -121,7 +119,7 @@ public class EDT {
                 s2t[thread].join();
             }
         } catch (InterruptedException ie) {
-            IJ.error("A thread was interrupted in step 2 .");
+            throw new RuntimeException(ie);
         }
         if (mask.sizeZ()>1) { //3D case
             //Transformation 3. h (in s) -> s
@@ -135,7 +133,7 @@ public class EDT {
                     s3t[thread].join();
                 }
             } catch (InterruptedException ie) {
-                IJ.error("A thread was interrupted in step 3 .");
+                throw new RuntimeException(ie);
             }
         }
         //Find the largest distance for scaling

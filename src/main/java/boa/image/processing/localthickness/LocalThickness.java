@@ -29,6 +29,7 @@ import boa.image.ImageFloat;
 import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.processing.EDT;
+import boa.utils.ThreadRunner;
 
 /// adapted to take anisotropy in account. 2012 jean Ollion ollion@mnhn.fr
 
@@ -89,12 +90,12 @@ public class LocalThickness {
          * @param nbCPUs
          * @return local thickness (in pixels)
          */
-        public static ImageFloat localThickness(ImageMask in, double scaleZScaleXYRatio, boolean inside, int nbCPUs) {
-            ImageFloat edm = EDT.transform(in, inside, 1, (float)scaleZScaleXYRatio, nbCPUs);
+        public static ImageFloat localThickness(ImageMask in, double scaleZScaleXYRatio, boolean inside, boolean multithread) {
+            ImageFloat edm = EDT.transform(in, inside, 1, (float)scaleZScaleXYRatio, multithread);
             DistanceRidge dr = new DistanceRidge();
-            ImagePlus distRidge = dr.run(IJImageWrapper.getImagePlus(edm), (float)scaleZScaleXYRatio, nbCPUs);
+            ImagePlus distRidge = dr.run(IJImageWrapper.getImagePlus(edm), (float)scaleZScaleXYRatio, multithread);
             LocalThickness lt = new LocalThickness();
-            lt.run(distRidge, (float)scaleZScaleXYRatio, nbCPUs);
+            lt.run(distRidge, (float)scaleZScaleXYRatio, multithread);
             CleanUpLocalThickness cult = new CleanUpLocalThickness();
             ImagePlus localThickness = cult.run(distRidge); // TODO use array of EDM to save memory
             distRidge.flush();
@@ -104,7 +105,7 @@ public class LocalThickness {
             return res;
         }
         
-	public void run(ImagePlus imp, float scaleZScaleXYRatio, int nbCPUs) {
+	public void run(ImagePlus imp, float scaleZScaleXYRatio, boolean multithread) {
                 
 		ImageStack stack = imp.getStack();
 		w = stack.getWidth();
@@ -164,7 +165,7 @@ public class LocalThickness {
 				}
 			}
 		}
-		int nThreads = nbCPUs;
+		int nThreads = multithread ? ThreadRunner.getMaxCPUs() : 1;
 		
                 final Object[] resources = new Object[d];//For synchronization
 		for(int k = 0; k < d; k++){

@@ -80,7 +80,7 @@ public class DistanceRidge {
 	public float[][] data;
 	public int w,h,d;
         public float scale, scaleInv, scaleSq, scaleInvSq;
-	public ImagePlus run(ImagePlus imp, float scaleZScaleXYRatio, int nbCPUs) {
+	public ImagePlus run(ImagePlus imp, float scaleZScaleXYRatio, boolean multithread) {
 		ImageStack stack = imp.getStack();
 		w = stack.getWidth();
 		h = stack.getHeight();

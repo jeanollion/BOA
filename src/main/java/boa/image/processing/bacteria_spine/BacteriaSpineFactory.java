@@ -165,7 +165,7 @@ public class BacteriaSpineFactory {
     }
     
     private Voxel getEdtCenter(ImageMask mask) {
-        Image edt = EDT.transform(mask, true, 1, 1, 1);
+        Image edt = EDT.transform(mask, true, 1, 1, false);
         Voxel[] max = new Voxel[1];
         ImageMask.loopWithOffset(mask, (x, y, z)-> {
             float edtV = edt.getPixelWithOffset(x, y, z);

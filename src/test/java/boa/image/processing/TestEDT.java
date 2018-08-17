@@ -40,12 +40,12 @@ public class TestEDT {
         for (int x = 0; x<=3; ++x) mask.setPixel(x, 1, 0, 1);
         for (int x = 0; x<=3; ++x) mask.setPixel(x, 2, 0, 1);
         for (int x = 0; x<=3; ++x) mask.setPixel(x, 3, 0, 1);
-        ImageFloat edm = EDT.transform(mask, true, 0.1f, 0.1f, 1); // inside mask
+        ImageFloat edm = EDT.transform(mask, true, 0.1f, 0.1f, false); // inside mask
         assertEquals("pixel", edm.getPixel(1, 0, 0), 0.1, 0.001);
         assertEquals("pixel", edm.getPixel(0, 2, 0), 0.1, 0.001); // exterieur de l'image = background car inside == true
         assertEquals("pixel", edm.getPixel(1, 2, 0), 0.2, 0.001);
         assertEquals("pixel", Math.sqrt(2)*0.1, edm.getPixel(1, 1, 0) , 0.001);
-        edm = EDT.transform(mask, false, 0.1f, 0.1f, 1); // outside mask
+        edm = EDT.transform(mask, false, 0.1f, 0.1f, false); // outside mask
         assertEquals("pixel", edm.getPixel(0, 0, 0), 0.1, 0.001);
         assertEquals("pixel", edm.getPixel(0, 5, 0), 0.2, 0.001); // exterieur de l'image = foreground car inside == false
     }
@@ -60,7 +60,7 @@ public class TestEDT {
         mask.setPixel(1, 1, 2, 1);
         mask.setPixel(3, 1, 1, 1);
                 
-        ImageFloat edm = EDT.transform(mask, true, 0.1f, 0.12f, 1);
+        ImageFloat edm = EDT.transform(mask, true, 0.1f, 0.12f, false);
         assertEquals("pixel", 0.1, edm.getPixel(0, 0, 1), 0.001); // nearest = outside image same plane
         assertEquals("pixel", 0.12, edm.getPixel(2, 1, 1), 0.001); // nearest = z+/-1
         assertEquals("pixel", Math.sqrt(1*1+1.2*1.2)*0.1, edm.getPixel(1, 1, 1), 0.001); //nearest = dia x/y+/-1 / z+/-1

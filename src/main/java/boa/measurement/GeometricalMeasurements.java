@@ -65,7 +65,7 @@ public class GeometricalMeasurements {
         return Math.sqrt(d2Max)/scaleXY;
     }
     public static double getThickness(Region r) {
-        ImageFloat edt = EDT.transform(r.getMask(), true, 1, r.getScaleZ()/r.getScaleXY(), 1);
+        ImageFloat edt = EDT.transform(r.getMask(), true, 1, r.getScaleZ()/r.getScaleXY(), false);
         Filters.LocalMax lm = new Filters.LocalMax(r.getMask());
         lm.setUp(edt, Filters.getNeighborhood(1.5, edt));
         List<Double> localMax= new ArrayList<>();
@@ -125,7 +125,7 @@ public class GeometricalMeasurements {
         return Math.pow((c1.get(0)-c2.get(0))*scaleXY, 2) + Math.pow((c1.get(1)-c2.get(1))*scaleXY, 2) + Math.pow((c1.getWithDimCheck(2)-c2.getWithDimCheck(2))*scaleZ, 2);
     }
     public static double localThickness(Region object) {
-        Image ltMap = LocalThickness.localThickness(object.getMaskAsImageInteger(), object.is2D()?1:object.getScaleXY()/object.getScaleZ(), true, 1);
+        Image ltMap = LocalThickness.localThickness(object.getMaskAsImageInteger(), object.is2D()?1:object.getScaleXY()/object.getScaleZ(), true, false);
         DoubleStream stream = ltMap.stream(object.getMask(), true).sorted();
         return ArrayUtil.quantiles(stream.toArray(), 0.5)[0];
     }
