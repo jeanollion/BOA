@@ -25,6 +25,7 @@ import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.ImageInteger;
+import boa.image.processing.BinaryMorphoEDT;
 import boa.plugins.PostFilter;
 import boa.image.processing.Filters;
 import boa.image.processing.neighborhood.Neighborhood;
@@ -49,9 +50,11 @@ public class BinaryClose implements PostFilter, MultiThreaded, ToolTip {
     }
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
-        Neighborhood n = Filters.getNeighborhood(scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parent.getMask());
+        boolean edt = scale.getScaleXY()>=8;
+        Neighborhood n = edt?null:Filters.getNeighborhood(scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parent.getMask());
         for (Region o : childPopulation.getRegions()) {
-            ImageInteger closed = Filters.binaryCloseExtend(o.getMaskAsImageInteger(), n, parallele);
+            ImageInteger closed = edt ? BinaryMorphoEDT.binaryClose(o.getMaskAsImageInteger(), scale.getScaleXY(), scale.getScaleZ(parent.getScaleXY(), parent.getScaleZ()), parallele)
+                    : Filters.binaryCloseExtend(o.getMaskAsImageInteger(), n, parallele);
             o.setMask(closed);
         }
         childPopulation.relabel(true);

@@ -19,8 +19,6 @@ package boa.processing.test;
 
 import static boa.test_utils.TestUtils.logger;
 import boa.ui.GUI;
-import boa.gui.image_interaction.IJImageDisplayer;
-import boa.gui.image_interaction.ImageDisplayer;
 import boa.gui.image_interaction.InteractiveImage;
 import boa.gui.image_interaction.ImageWindowManager;
 import boa.gui.image_interaction.ImageWindowManagerFactory;

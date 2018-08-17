@@ -32,7 +32,6 @@ import boa.image.TypeConverter;
  * @author Jean Ollion
  */
 public class BinaryMorphoEDT {
-    // TO TEST -> COMPARE WITH REGULAR FILTERS VALUE & SPEED AND FIND TRADE-OFF -> which algorithm use for wich radius
     /**
      * dilate binary mask using EDT
      * @param in
@@ -52,7 +51,7 @@ public class BinaryMorphoEDT {
             in = ii;
         }
         ImageFloat edm = EDT.transform(in, false, 1, radius / radiusZ, multithread);
-        BoundingBox.loop(edm, (x, y, z) -> {
+        BoundingBox.loop(new SimpleBoundingBox(edm).resetOffset(), (x, y, z) -> {
             if (edm.getPixel(x, y, z)>radius) edm.setPixel(x, y, z, 0);
             else  edm.setPixel(x, y, z, 1);
         }, multithread);
@@ -68,8 +67,8 @@ public class BinaryMorphoEDT {
      */
     public static ImageMask binaryErode(ImageMask in, double radius, double radiusZ, boolean multithread) {
         ImageFloat edm = EDT.transform(in, true, 1, radius / radiusZ, multithread);
-        BoundingBox.loop(edm, (x, y, z) -> {
-            if (edm.getPixel(x, y, z)<radius) edm.setPixel(x, y, z, 0);
+        BoundingBox.loop(new SimpleBoundingBox(edm).resetOffset(), (x, y, z) -> {
+            if (edm.getPixel(x, y, z)<=radius) edm.setPixel(x, y, z, 0);
             else edm.setPixel(x, y, z, 1);
         }, multithread);
         return edm;
@@ -78,14 +77,14 @@ public class BinaryMorphoEDT {
         ImageMask min = binaryErode(in, radius, radiusZ, multithread);
         return binaryDilateEDT(min, radius, radiusZ, false, multithread);
     }
-    public static ImageMask binaryClose(ImageMask in, double radius, double radiusZ, boolean multithread) {
+    public static ImageByte binaryClose(ImageMask in, double radius, double radiusZ, boolean multithread) {
         ImageMask max = binaryDilateEDT(in, radius, radiusZ, true, multithread);
         ImageMask min = binaryErode(max, radius, radiusZ, multithread);
         ImageByte res = new ImageByte("close of "+in.getName(), in);
         int offXY = (int) (radius + 1);
         int offZ = in.sizeZ()==1 ? 0 : (int) (radiusZ + 1);
-        BoundingBox.loop(res, (x, y, z) -> { // copy result of min in resulting image
-            if (min.insideMask(x+offXY, y+offXY, z+offZ)) res.setPixel(x, y, z, 0);
+        BoundingBox.loop(new SimpleBoundingBox(res).resetOffset(), (x, y, z) -> { // copy result of min in resulting image
+            if (min.insideMask(x+offXY, y+offXY, z+offZ)) res.setPixel(x, y, z, 1);
         }, multithread);
         return res;
     }
