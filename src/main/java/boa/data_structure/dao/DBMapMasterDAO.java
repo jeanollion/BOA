@@ -340,7 +340,11 @@ public class DBMapMasterDAO implements MasterDAO {
             GUI.log("Could not update XP -> XP NULL ERROR");
             logger.error("Cannot update XP -> XP NULL");
         }
-        if (readOnly) return;
+        if (readOnly) {
+            GUI.log("Could not update XP -> READ ONLY");
+            logger.error("Cannot update XP -> READ ONLY");
+            return;
+        }
         if (this.xpFileLock==null) lockXP();
         updateXPFile();
     }

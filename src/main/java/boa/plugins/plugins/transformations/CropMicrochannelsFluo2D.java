@@ -135,7 +135,7 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
         BiConsumer<String, Consumer<List<StructureObject>>> miscDisp = testMode ? (s, c)->c.accept(Collections.EMPTY_LIST) : null;
         Result r = MicrochannelFluo2D.segmentMicroChannels(image, thresholdedImage, 0, 0, this.channelHeight.getValue().intValue(), this.fillingProportion.getValue().doubleValue(), threshold, this.minObjectSize.getValue().intValue(), dispImage, miscDisp);
         if (r == null) return null;
-        int cropMargin = this.cropMarginY.getValue().intValue();
+        
         int xStart = this.xStart.getValue().intValue();
         int xStop = this.xStop.getValue().intValue();
         int yStart = this.yStart.getValue().intValue();
@@ -143,6 +143,7 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
         int yMin = Math.max(yStart, r.yMin);
         if (yStop==0) yStop = image.sizeY()-1;
         if (xStop==0) xStop = image.sizeX()-1;
+        int cropMargin = this.cropMarginY.getValue().intValue();
         yStart = Math.max(yMin-cropMargin, yStart);
         yStop = Math.min(yStop, yMin+channelHeight.getValue().intValue()-1);
         
@@ -188,6 +189,9 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
         int xMaxLim = Math.min(xMMUp[1], xMMDown[1]);
         if (bounds.xMin()<xMinLim) bounds.setxMin(xMinLim);
         if (bounds.xMax()>xMaxLim) bounds.setxMax(xMaxLim);
+        
+        //4) limit yStart to upper mother even if it will included rotation background in the image
+        if (bounds.yMin()>yMin) bounds.setyMin(yMin);
         
         return bounds;
         

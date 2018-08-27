@@ -296,8 +296,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         // disable componenets when run action
         actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
-        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
-        relatedToReadOnly = new ArrayList<Component>() {{add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
+        relatedToXPSet = new ArrayList<Component>() {{add(saveConfigMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
+        relatedToReadOnly = new ArrayList<Component>() {{add(saveConfigMenuItem); add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
         
         // persistent properties
         setLogFile(PropertyUtils.get(PropertyUtils.LOG_FILE));
@@ -1161,7 +1161,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         newXPFromTemplateMenuItem = new javax.swing.JMenuItem();
         deleteXPMenuItem = new javax.swing.JMenuItem();
         duplicateXPMenuItem = new javax.swing.JMenuItem();
-        saveXPMenuItem = new javax.swing.JMenuItem();
+        saveConfigMenuItem = new javax.swing.JMenuItem();
         runMenu = new javax.swing.JMenu();
         importImagesMenuItem = new javax.swing.JMenuItem();
         runSelectedActionsMenuItem = new javax.swing.JMenuItem();
@@ -1336,8 +1336,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(experimentJSP))))
         );
-
-        experimentFolder.getAccessibleContext().setAccessibleName("Datasets Folder");
 
         tabs.addTab("Home", actionPanel);
 
@@ -1745,13 +1743,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         });
         experimentMenu.add(duplicateXPMenuItem);
 
-        saveXPMenuItem.setText("Save Changes");
-        saveXPMenuItem.addActionListener(new java.awt.event.ActionListener() {
+        saveConfigMenuItem.setText("Save Configuration Changes");
+        saveConfigMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                saveXPMenuItemActionPerformed(evt);
+                saveConfigMenuItemActionPerformed(evt);
             }
         });
-        experimentMenu.add(saveXPMenuItem);
+        experimentMenu.add(saveConfigMenuItem);
 
         mainMenu.add(experimentMenu);
 
@@ -2431,10 +2429,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         }
     }//GEN-LAST:event_duplicateXPMenuItemActionPerformed
 
-    private void saveXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveXPMenuItemActionPerformed
+    private void saveConfigMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveConfigMenuItemActionPerformed
         if (!checkConnection()) return;
         db.updateExperiment();
-    }//GEN-LAST:event_saveXPMenuItemActionPerformed
+    }//GEN-LAST:event_saveConfigMenuItemActionPerformed
     private String promptDir(String message, String def, boolean onlyDir) {
         if (message==null) message = "Choose Directory";
         File outputFile = Utils.chooseFile(message, def, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
@@ -2611,52 +2609,42 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             if (n==1) xpsToImport = xpNotPresent;
         }
         closeExperiment();
+        // TODO : test! 
         List<String> xpList = new ArrayList<>(xpsToImport);
-        /*DefaultWorker.WorkerTask t= new DefaultWorker.WorkerTask() {
-            @Override
-            public String run(int i) {
-                GUI.getInstance().setRunning(true);
-                ProgressCallback pcb = ProgressCallback.get(instance);
-                String xp =xpList.get(i);
-                File zip = allXps.get(xp);
-                MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
-                mDAO.deleteAllObjects();
-                ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, false, false, false, false, ProgressCallback.get(instance));
-                pcb.log("Will import data from file: "+f);
-                boolean error = false;
-                try {
-                    ImportExportJSON.importFromZip(f.getAbsolutePath(), db, importConfigMenuItem.isSelected(), importSelectionsMenuItem.isSelected(), importObjectsMenuItem.isSelected(), importPPImagesMenuItem.isSelected(), importTrackImagesMenuItem.isSelected(), pcb);
-                } catch (Exception e) {
-                    logger.error("Error while importing", e);
-                    log("error while importing");
-                }
-                GUI.getInstance().setRunning(false);
-                GUI.getInstance().populateExperimentList();
-                db.updateExperiment();
-                populateActionMicroscopyFieldList();
-                loadObjectTrees();
-                ImageWindowManagerFactory.getImageManager().flush();
-                if (!error) pcb.log("importing done!");
-                //PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
+        DefaultWorker.WorkerTask t= (int i) -> {
+            GUI.getInstance().setRunning(true);
+            ProgressCallback pcb = ProgressCallback.get(this);
+            String xp =xpList.get(i);
+            File zip = allXps.get(xp);
+            MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
+            mDAO.setConfigurationReadOnly(false);
+            mDAO.lockPositions();
+            mDAO.deleteAllObjects();
+            ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, false, false, false, false, ProgressCallback.get(this));
+            mDAO.lockPositions();
+            pcb.log("Will import data from file: "+zip.getAbsolutePath());
+            boolean error = false;
+            try {
+                ImportExportJSON.importFromZip(zip.getAbsolutePath(), mDAO, false, importSelectionsMenuItem.isSelected(), importObjectsMenuItem.isSelected(), importPPImagesMenuItem.isSelected(), importTrackImagesMenuItem.isSelected(), pcb);
+            } catch (Exception e) {
+                logger.error("Error while importing", e);
+                log("error while importing");
                 return "";
-            };
+            }
+            pcb.log("Data imported from file: "+zip.getAbsolutePath());
+            mDAO.clearCache();
+            mDAO.unlockConfiguration();
+            mDAO.unlockPositions();
+            return "";
         };
         DefaultWorker.execute(t, 1);
-        */
+        
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_importNewExperimentMenuItemActionPerformed
 
     private void importConfigurationMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationMenuItemActionPerformed
-        /*String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        File outputFile = Utils.chooseFile("Select Experiment.bson of Experiment.json file (WARNING: current configuration will be lost)", defDir, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
-        if (outputFile!=null && outputFile.getName().equals("Experiment.bson") || outputFile.getName().equals("Experiment.json")) {
-            CommandExecuter.restore(getCurrentHostNameOrDir(), db.getDBName(), "Experiment", outputFile.getAbsolutePath(), true);
-            String dbName = db.getDBName();
-            unsetXP();
-            setDBConnection(dbName, getCurrentHostNameOrDir());
-            PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, outputFile.getAbsolutePath());
-        }*/
+        
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_CONFIG_DIR, IJ.getDir("plugins")+File.separator+"BOA");
         File f = Utils.chooseFile("Select configuration file or exported zip containing configuration file", defDir, FileChooser.FileChooserOption.FILES_ONLY, this);
         if (f==null) return;
@@ -2675,6 +2663,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             boolean overwritePos= Utils.promptBoolean("Also copy pre-processing chain to all positions?", this);
             for (String xp : this.getSelectedExperiments()) {
                 MasterDAO mDAO = new Task(xp).getDB();
+                mDAO.setConfigurationReadOnly(false);
                 if (mDAO==null) {
                     this.setMessage("Could not open dataset: "+xp);
                     continue;
@@ -2687,7 +2676,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     }
                 }
                 mDAO.updateExperiment();
-                mDAO.clearCache();
+                mDAO.unlockConfiguration();
             }
         }
         PropertyUtils.set(PropertyUtils.LAST_IO_CONFIG_DIR, f.getAbsolutePath());
@@ -2970,13 +2959,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 log("undumpig: "+dbName);
                 logger.debug("dumped file: {}, parent: {}", dump.getAbsolutePath(), dump.getParent());
                 MasterDAO dao = new Task(dbName, dump.getParent()).getDB();
+                dao.setConfigurationReadOnly(false);
+                dao.lockPositions();
                 ImportExportJSON.importFromZip(dump.getAbsolutePath(), dao, true, true, true, false, false, ProgressCallback.get(INSTANCE));
                 if (i==dumpedFiles.size()-1) {
                     GUI.getInstance().setRunning(false);
                     GUI.getInstance().populateExperimentList();
                     log("undumping done!");
                 }
+                dao.unlockPositions();
+                dao.unlockConfiguration();
                 return dbName+" undumped!";
+                
             };
         };
         DefaultWorker.execute(t, dumpedFiles.size());
@@ -3800,7 +3794,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JList runActionList;
     private javax.swing.JMenu runMenu;
     private javax.swing.JMenuItem runSelectedActionsMenuItem;
-    private javax.swing.JMenuItem saveXPMenuItem;
+    private javax.swing.JMenuItem saveConfigMenuItem;
     private javax.swing.JButton selectAllObjectsButton;
     private javax.swing.JButton selectAllTracksButton;
     private javax.swing.JScrollPane selectionJSP;
