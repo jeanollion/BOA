@@ -31,7 +31,6 @@ import java.util.Map;
  * @author jollion
  */
 public class NestedSpot extends SpotWithQuality {
-    protected boolean lowQuality;
     final protected StructureObject parent;
     final protected Region region;
     final protected DistanceComputationParameters distanceParameters;
@@ -55,7 +54,7 @@ public class NestedSpot extends SpotWithQuality {
     }
     @Override
     public boolean isLowQuality() {
-        return lowQuality;
+        return getFeatures().get(Spot.QUALITY)<distanceParameters.qualityThreshold;
     }
     @Override
     public int frame() {
@@ -73,7 +72,7 @@ public class NestedSpot extends SpotWithQuality {
         if (s instanceof NestedSpot) {
             NestedSpot ss= (NestedSpot)s;
             if (this.frame()>ss.frame()) return ss.squareDistanceTo(this);
-            if (!distanceParameters.includeLQ && (lowQuality || ss.lowQuality)) return Double.POSITIVE_INFINITY;
+            if (!distanceParameters.includeLQ && (isLowQuality() || ss.isLowQuality())) return Double.POSITIVE_INFINITY;
             if (ss.frame()-frame()>distanceParameters.maxFrameDiff) return Double.POSITIVE_INFINITY;
             double distSq = BacteriaSpineLocalizer.distanceSq(spineCoord, ss.region.getCenter(), parent, ss.parent, distanceParameters.projectionType, distanceParameters.projectOnSameSides, localizerMap, false);
             distSq+=distanceParameters.getSquareDistancePenalty(distSq, this, ss);

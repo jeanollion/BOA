@@ -220,7 +220,7 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
         long t0 = System.currentTimeMillis();
         tmi.addObjects(objectsF);
         long t1 = System.currentTimeMillis();
-        if (logger.isDebugEnabled()) {
+        if (LQSpots || logger.isDebugEnabled()) {
             int lQCount = 0;
             for (NestedSpot s : tmi.spotObjectMap.keySet()) if (s.isLowQuality()) ++lQCount;
             logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {} (thld: {}), time: {}", parentTrack.get(0), tmi.spotObjectMap.size()-lQCount, lQCount, spotQualityThreshold, t1-t0);
