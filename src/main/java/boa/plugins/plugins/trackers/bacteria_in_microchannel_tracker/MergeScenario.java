@@ -35,20 +35,19 @@ import java.util.Set;
  * @author jollion
  */
 public class MergeScenario extends CorrectionScenario {
-        int idxMin, idxMaxIncluded;
-        List<Region> listO;
-        public MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int idxMin, List<Region> objects, int frame) { // idxMax included
+        final List<Region> listO;
+        int idxMin; // for toString method only
+        public MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, List<Region> objects, int frame) {
             super(frame, frame, tracker);
-            this.idxMaxIncluded=idxMin+objects.size()-1;
-            this.idxMin = idxMin;
-            listO = objects;
+            listO = new ArrayList<>(objects); // avoid concurent modifications
+            idxMin =  tracker.populations.get(frameMin).indexOf(listO.get(0));
             if (!listO.isEmpty()) {
                 this.cost = tracker.segmenters.getAndCreateIfNecessary(frame).computeMergeCost(tracker.getParent(frame), tracker.structureIdx, listO);
             } else cost = Double.POSITIVE_INFINITY;
-            if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", frame, idxMin, listO.size(), cost);
+            if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", frame, getIdxMin(), listO.size(), cost);
         }
         @Override protected MergeScenario getNextScenario() { // @ previous time, until there is one single parent ie no more bacteria to merge
-            if (frameMin==0 || idxMin==idxMaxIncluded) return null;
+            if (frameMin==0 || listO.isEmpty()) return null;
             int iMin = Integer.MAX_VALUE;
             int iMax = -1;
             for (Region o : listO) {
@@ -59,17 +58,25 @@ public class MergeScenario extends CorrectionScenario {
             }
             if (iMin==iMax) return null; // no need to merge
             if (iMin==Integer.MAX_VALUE || iMax==-1) return null; // no previous objects 
-            return new MergeScenario(tracker, iMin,tracker.getObjects(frameMin-1).subList(iMin, iMax+1), frameMin-1);
+            return new MergeScenario(tracker, tracker.getObjects(frameMin-1).subList(iMin, iMax+1), frameMin-1);
         }
-
+        private int getIdxMin() {
+            return tracker.populations.get(frameMin).indexOf(listO.get(0));
+        }
         @Override
         protected void applyScenario() {
             Set<Voxel> vox = new HashSet<>();
-            Region o = tracker.populations.get(frameMin).get(idxMin); 
-            for (int i = idxMaxIncluded; i>=idxMin; --i) {
-                Region rem = tracker.populations.get(frameMin).remove(i);
+            for (Region rem : listO) {
                 vox.addAll(rem.getVoxels());
                 tracker.objectAttributeMap.remove(rem);
+            }
+            int idxMin = getIdxMin();
+            
+            Region o = listO.get(0);
+            boolean ok = tracker.populations.get(frameMin).removeAll(listO);
+            if (idxMin<0 || !ok) {
+                logger.error("could not apply merge scenario: objects absent from population{}", this);
+                throw new RuntimeException("Merge scenario cannot be applied -> object absent from population");
             }
             Region merged = new Region(vox, idxMin+1, o.is2D(), o.getScaleXY(), o.getScaleZ()); // new hashcode generated
             tracker.populations.get(frameMin).add(idxMin, merged);
@@ -78,6 +85,8 @@ public class MergeScenario extends CorrectionScenario {
         }
         @Override 
         public String toString() {
-            return "Merge@"+frameMin+"["+idxMin+";"+idxMaxIncluded+"]/c="+cost;
+            int idxM = getIdxMin();
+            if (idxM<0) idxM = idxMin;
+            return "Merge@"+frameMin+"["+idxM+";"+(idxM+listO.size()-1)+"]/c="+cost;
         }
     }

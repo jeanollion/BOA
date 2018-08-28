@@ -78,11 +78,12 @@ public class TestTracker {
         //String dbName = "MutH_140115";
         //String dbName = "MutD5_141202";
         //String dbName = "MutT_150402";
-        String dbName = "dataset1";
+        String dbName = "fluo171204_WT_750ms";
+        //String dbName = "fluo171127_WT_750ms";
         //String dbName = "WT_150616";
         //String dbName = "WT_180318_Fluo";
-        int pIdx =0;
-        int mcIdx =0;
+        int pIdx =325;
+        int mcIdx =1;
         int structureIdx =1;
         int[] frames = new int[]{0,200}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
@@ -100,11 +101,11 @@ public class TestTracker {
         CropMicrochannelsFluo2D.debug=false;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debug=false;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
-        BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=3;
-        BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStepLimit=2;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStepLimit=13;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
-        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, frames[0],frames[1]); //  0,80);
+        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx,frames[0],frames[1]); 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingPipeline ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);
@@ -202,7 +203,11 @@ public class TestTracker {
         
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
-        ps.segmentAndTrack(structureIdx, parentTrack);
+        try {
+            ps.segmentAndTrack(structureIdx, parentTrack);
+        } catch(Throwable e) {
+            logger.error("Error while running tracker", e);
+        }
         //ps.trackOnly(structureIdx, parentTrack);
         GUI.getInstance();
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();

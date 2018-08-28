@@ -52,7 +52,7 @@ public abstract class CorrectionScenario {
             while(cur!=null && (!Double.isNaN(cur.cost)) && Double.isFinite(cur.cost) && cur.cost<costLimit && limit.isIncluded(cur.frameMax) && limit.isIncluded(cur.frameMin)) {
                 res.add(cur);
                 sum+=cur.cost;
-                //if (cur.cost > costLimit) return new MultipleScenario(tracker, Collections.emptyList());
+                //if (cur.cost > costLimit) return new MultipleScenario(tracker, Collections.emptyList()); // if cost is beyond cost limit -> should scenario be considered ?
                 if (cumulativeCostLimit>0 && sum>cumulativeCostLimit) return new MultipleScenario(tracker, Collections.emptyList());
                 if (lengthLimit>0 && res.size()>=lengthLimit) return new MultipleScenario(tracker, Collections.emptyList());
                 cur = cur.getNextScenario();
