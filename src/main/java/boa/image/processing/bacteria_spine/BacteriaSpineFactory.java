@@ -448,7 +448,7 @@ public class BacteriaSpineFactory {
         if (!firstNext) spineDir.reverseOffset();
         Point lastPoint = skeleton.get(firstNext ? 0 : skeleton.size()-1);
         List<CircularNode<T>> bucketFirst = new ArrayList<>();
-        while(true) { // loop point gets out of bacteria or mask
+        while(true) { // within loop there is a condition of inclusion of point in bacteria
             Point nextPoint = lastPoint.duplicate().translate(spineDir);
             // get direction of current point according to contour
             Point c1 = getIntersectionWithContour(mask, nextPoint, skDir.duplicate().multiply(-1), s1, bucketFirst, logOff);
@@ -468,11 +468,20 @@ public class BacteriaSpineFactory {
                     if (sp.get(sp.size()-2).distSqXY(ref)>next.distSqXY(ref)) sp.remove(sp.size()-2); // adjusted before previous
                     else if (sp.get(sp.size()-2).dist(sp.get(sp.size()-1))<0.25) sp.remove(sp.size()-2); // adjusted too close to previous
                 }
-                return sp;
+                break;
             }
             lastPoint = next;
             
         }
+        // check direction of last point: if the norm is too small direction is not precise -> take direction of previous one keeping the norm
+        if (sp.size()>1) {
+            double norm = sp.get(sp.size()-1).getContent1().norm();
+            if (norm < 3) { // in pixels
+                if (norm<2) norm = 2; // minimal norm
+                sp.get(sp.size()-1).setContent1(sp.get(sp.size()-2).getContent1().duplicate().normalize().multiply(norm));
+            }
+        }
+        return sp;
     }
     
     /**

@@ -352,8 +352,8 @@ public class SelectionUtils {
             if (s.isDisplayingObjects()) dispObjects++;
             if (s.isDisplayingTracks()) dispTracks++;
             if (s.isHighlightingTracks()) highTracks++;
-            if (s.isAddObjects(0)) addObjects0++;
-            if (s.isAddObjects(1)) addObjects1++;
+            if (s.isActive(0)) addObjects0++;
+            if (s.isActive(1)) addObjects1++;
         }
         final SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
         if (selectedValues.size()==1) {
@@ -372,6 +372,7 @@ public class SelectionUtils {
                 //dao.store(s); // optimize if necessary -> update
             }
             GUI.updateRoiDisplayForSelections(null, null);
+            GUI.getInstance().updateSelectionListUI();
         });
         menu.add(displayObjects);
         
@@ -384,6 +385,7 @@ public class SelectionUtils {
                 //dao.store(s); // optimize if necessary -> update
             }
             GUI.updateRoiDisplayForSelections(null, null);
+            GUI.getInstance().updateSelectionListUI();
         });
         menu.add(displayTracks);
         
@@ -398,6 +400,7 @@ public class SelectionUtils {
                 //dao.store(s); // optimize if necessary -> update
             }
             GUI.getInstance().resetSelectionHighlight();
+            GUI.getInstance().updateSelectionListUI();
         });
         menu.add(highlightTracks);
         final JCheckBoxMenuItem navigateMI = new JCheckBoxMenuItem("Enable Navigation");
@@ -413,11 +416,17 @@ public class SelectionUtils {
         menu.add(navigateMI);
         final JCheckBoxMenuItem addObjects0MI = new JCheckBoxMenuItem("Active Selection Group 0");
         addObjects0MI.setSelected(addObjects0==selectedValues.size());
-        addObjects0MI.addActionListener((ActionEvent e) -> { for (Selection s : selectedValues ) s.setAddObjects(addObjects0MI.isSelected()?0:-1);});
+        addObjects0MI.addActionListener((ActionEvent e) -> { 
+            for (Selection s : selectedValues ) s.setActive(addObjects0MI.isSelected()?0:-1);
+            GUI.getInstance().updateSelectionListUI();
+        });
         menu.add(addObjects0MI);
         final JCheckBoxMenuItem addObjects1MI = new JCheckBoxMenuItem("Active Selection Group 1");
         addObjects1MI.setSelected(addObjects1==selectedValues.size());
-        addObjects1MI.addActionListener((ActionEvent e) -> {for (Selection s : selectedValues ) s.setAddObjects(addObjects1MI.isSelected()?1:-1);});
+        addObjects1MI.addActionListener((ActionEvent e) -> {
+            for (Selection s : selectedValues ) s.setActive(addObjects1MI.isSelected()?1:-1);
+            GUI.getInstance().updateSelectionListUI();
+        });
         menu.add(addObjects1MI);
         menu.add(new JSeparator());
         JMenu colorMenu = new JMenu("Set Color");

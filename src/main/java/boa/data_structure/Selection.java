@@ -127,7 +127,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         return navigate;
     }
 
-    public boolean isAddObjects(int selNumber) {
+    public boolean isActive(int selNumber) {
         return addObjects==selNumber;
     }
 
@@ -135,7 +135,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
         this.navigate = navigate;
     }
 
-    public void setAddObjects(int addObjects) {
+    public void setActive(int addObjects) {
         this.addObjects = addObjects;
     }
     
@@ -443,7 +443,16 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     }
     @Override 
     public String toString() {
-        return name+" (s:"+structureIdx+"; n="+count()+")"+(isNavigate()?"[NAV]":"");
+        StringBuilder sb = new StringBuilder();
+        sb.append(name);
+        sb.append(" (s:").append(structureIdx).append("; n=").append(count()).append(")");
+        if (isNavigate()) sb.append("[NAV]");
+        if (isDisplayingObjects()) sb.append("[O]");
+        if (isDisplayingTracks()) sb.append("[T]");
+        if (isHighlightingTracks()) sb.append("[H]");
+        if (isActive(0)) sb.append("[A:0]");
+        if (isActive(1)) sb.append("[A:1]");
+        return sb.toString();
     }
     public int count() {
         int c = 0;

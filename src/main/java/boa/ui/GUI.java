@@ -2319,7 +2319,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     }
     private List<Selection> getAddObjectsSelection(int selNumber) {
         List<Selection> res = getSelections();
-        res.removeIf(s->!s.isAddObjects(selNumber));
+        res.removeIf(s->!s.isActive(selNumber));
         return res;
     }
     private static String createSubdir(String path, String dbName) {

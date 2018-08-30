@@ -71,8 +71,8 @@ public class TestSpine {
         //String dbName = "fluo160501_uncorr_TestParam";
         //String dbName = "dataset2";
         String dbName = "fluo171219_WT_750ms";
-        int postition= 252, frame=0, mc=3, b=0, m = 0;
-        int frame2 = 0, b2=0;
+        int postition= 137, frame=15, mc=0, b=0, m = 0;
+        int frame2 = 16, b2=0;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
@@ -92,13 +92,13 @@ public class TestSpine {
         //testLocalization(bact, true);
         //testLocalization(bact, false);
         //testSkeleton(bact);
-        //StructureObject mut = bact.getParent().getChildren(2).get(m);
-        //testCoordCreation(bact, mut.getRegion().getCenter());
+        StructureObject mut = bact.getParent().getChildren(2).get(m);
+        testCoordCreation(bact, mut.getRegion().getCenter());
         
-        //StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(frame2);
-        //StructureObject bact2 = root2.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(structureIdx).get(b2);
+        StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(frame2);
+        StructureObject bact2 = root2.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(structureIdx).get(b2);
         //testProjection(mut.getRegion().getCenter(), bact, bact2);
-        
+        /*
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(mDAO.getDao(f.getName()).getRoots(), parentStructure, false);
         allTracks.entrySet().stream().filter(e->e.getKey().getIdx()==mc).findAny().get().getValue().stream().filter(o->o.getFrame()>-1).map(mic -> mic.getChildren(structureIdx).get(0)).forEach(bacteria-> {
             try {
@@ -116,6 +116,7 @@ public class TestSpine {
             }
             
         });
+        */
     }
     public static void testAllObjects(MasterDAO mDAO, int structureIdx, int fromPosition) {
         int parentStructure = mDAO.getExperiment().getStructure(structureIdx).getParentStructure();
