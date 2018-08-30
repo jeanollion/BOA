@@ -3571,6 +3571,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         List<Selection> selList = this.getAddObjectsSelection(selNumber);
         for (Selection s : selList) s.setIsDisplayingObjects(!s.isDisplayingObjects());
         GUI.updateRoiDisplayForSelections(null, null);
+        if (GUI.getInstance()!=null) GUI.getInstance().updateSelectionListUI();
     }
     
     private String getSelectedExperiment() {
