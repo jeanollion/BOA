@@ -354,8 +354,9 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                     
                     // log distance
                     if (proj!=null) {
-                        GUI.log("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter())*l.get(0).getScaleXY()+"µm");
+                        
                         double nDist =  Math.sqrt(s1.squareDistanceTo(s2));
+                        GUI.log("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter())*l.get(0).getScaleXY()+"µm"+ " (with corrections: "+nDist+"µm)");
                         logger.info("Distance {} -> {} = {} µm. Nested Spot distance: {}", l.get(0), l.get(1), proj.dist(l.get(1).getRegion().getCenter())*l.get(0).getScaleXY(),nDist);
                         if (Double.isInfinite(nDist)) {
                             logger.debug("2 LQ: {}", !distParams.includeLQ && (s1.isLowQuality() || s2.isLowQuality()));

@@ -408,6 +408,7 @@ public class SelectionUtils {
                 selectedValues.get(0).setNavigate(navigateMI.isSelected());
                 for (Selection s : allSelections ) if (s!=selectedValues.get(0)) s.setNavigate(false);
             } else for (Selection s : allSelections ) s.setNavigate(false);
+            GUI.getInstance().updateSelectionListUI();
         });
         menu.add(navigateMI);
         final JCheckBoxMenuItem addObjects0MI = new JCheckBoxMenuItem("Active Selection Group 0");

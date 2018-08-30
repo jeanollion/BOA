@@ -443,7 +443,7 @@ public class Selection implements Comparable<Selection>, JSONSerializable {
     }
     @Override 
     public String toString() {
-        return name+" (s:"+structureIdx+"; n="+count()+")";
+        return name+" (s:"+structureIdx+"; n="+count()+")"+(isNavigate()?"[NAV]":"");
     }
     public int count() {
         int c = 0;
