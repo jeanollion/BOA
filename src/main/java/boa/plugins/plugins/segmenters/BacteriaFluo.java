@@ -323,7 +323,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
         } else { // prefilters -> perform on parent track
             logger.debug("prefilters detected: global mean & sigma on parent track");
             Map<Image, ImageMask> imageMapMask = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
-            Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+            Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), HistogramFactory.BIN_SIZE_METHOD.BACKGROUND);
             double[] ms = new double[2];
             BackgroundFit.backgroundFit(histo, 5, ms);
             this.globalBackgroundLevel = ms[0];
@@ -423,7 +423,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
                     if (histoStore!=null && histoStore[0]!=null) histo = histoStore[0];
                     else {
                         List<Image> im = parents.stream().map(p->p.getRoot()).map(p->p.getRawImage(structureIdx)).collect(Collectors.toList());
-                        histo = HistogramFactory.getHistogram(()->Image.stream(im).parallel(), BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+                        histo = HistogramFactory.getHistogram(()->Image.stream(im).parallel(), BIN_SIZE_METHOD.BACKGROUND);
                         if (histoStore!=null) histoStore[0] = histo;
                     }
                     double[] ms = new double[2];

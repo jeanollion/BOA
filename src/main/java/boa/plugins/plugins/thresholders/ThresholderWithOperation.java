@@ -75,7 +75,7 @@ public class ThresholderWithOperation implements ThresholderHisto, SimpleThresho
 
     @Override
     public double runSimpleThresholder(Image image, ImageMask mask) {
-        return runThresholderHisto(HistogramFactory.getHistogram(()->image.stream(mask, true), HistogramFactory.BIN_SIZE_METHOD.AUTO));
+        return runThresholderHisto(HistogramFactory.getHistogram(()->image.stream(mask, true), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS));
     }
 
     @Override

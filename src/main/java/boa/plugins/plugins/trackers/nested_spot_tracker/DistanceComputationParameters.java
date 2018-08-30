@@ -31,7 +31,7 @@ public class DistanceComputationParameters {
         public double alternativeDistance;
         public boolean includeLQ = true;
         public boolean allowGapBetweenLQ = false;
-        int maxFrameDiff = 0;
+        public int maxFrameDiff = 0;
         boolean projectOnSameSides = true;
         public PROJECTION projectionType=PROJECTION.PROPORTIONAL;
         public DistanceComputationParameters() {

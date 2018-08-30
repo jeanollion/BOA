@@ -153,6 +153,11 @@ public class Histogram {
     public void eraseRange(int fromIncluded, int toExcluded) {
         Arrays.fill(data, fromIncluded, toExcluded, 0);
     }
+    /**
+     * 
+     * @param title
+     * @param xValues if false: histogram index will be displayed in x axis
+     */
     public void plotIJ1(String title, boolean xValues) {
         float[] values = new float[data.length];
         float[] x = new float[values.length];

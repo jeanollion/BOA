@@ -200,6 +200,10 @@ public class BacteriaSpineFactory {
         // 1) getSum contour pair for each skeleton point
         Offset logOff = new SimpleOffset(mask).reverseOffset();
         List<Pair<CircularNode<T>, CircularNode<T>>> contourPairs = mapToContourPair(skeleton, contour, circContour,logOff);
+        if (contourPairs.stream().anyMatch(cp->cp.key==null||cp.value==null)) {
+            ImageWindowManagerFactory.showImage(new SpineResult().setBounds(mask).setCircContour((CircularNode<Localizable>)circContour).drawSpine(verboseZoomFactor, false).setName("Error init contour pairs"));
+            throw new RuntimeException("Spine could not be created");
+        }
         List<PointContainer2<Vector, Double>> spListSk = contourPairs.stream().map(v -> PointContainer2.fromPoint(Point.middle2D(v.key.element, v.value.element), Vector.vector2D(v.key.element, v.value.element), 0d)).collect(Collectors.toList());
         // 2) smooth direction vectors in order to limit brutal direction change
         for (int i = 1; i<spListSk.size(); ++i) spListSk.get(i).setContent2((spListSk.get(i-1).getContent2() + spListSk.get(i).dist(spListSk.get(i-1)))); // set distance before smooth
@@ -231,8 +235,8 @@ public class BacteriaSpineFactory {
     public static <T extends Localizable> List<Pair<CircularNode<T>, CircularNode<T>>> mapToContourPair(List<Voxel> skeleton, Set<T> contour, CircularNode<T> circContour, Offset logOff) {
         if (skeleton.size()<=2) { // circular shape : convention: axis = X
             return skeleton.stream().map(vertebra -> {
-                T left  = contour.stream().filter(v->v.getFloatPosition(0)<vertebra.x).min((v1, v2) -> Double.compare(Math.abs(vertebra.y-v1.getDoublePosition(1)), Math.abs(vertebra.y-v2.getDoublePosition(1)))).get();
-                T right  = contour.stream().filter(v->v.getFloatPosition(0)>vertebra.x).min((v1, v2) -> Double.compare(Math.abs(vertebra.y-v1.getDoublePosition(1)), Math.abs(vertebra.y-v2.getDoublePosition(1)))).get();
+                T left  = contour.stream().filter(v->v.getFloatPosition(0)<vertebra.x).min((v1, v2) -> Double.compare(Math.abs(vertebra.y-v1.getDoublePosition(1)), Math.abs(vertebra.y-v2.getDoublePosition(1)))).orElse(null);
+                T right  = contour.stream().filter(v->v.getFloatPosition(0)>vertebra.x).min((v1, v2) -> Double.compare(Math.abs(vertebra.y-v1.getDoublePosition(1)), Math.abs(vertebra.y-v2.getDoublePosition(1)))).orElse(null);
                 return new Pair<>(circContour.getInFollowing(left, false), circContour.getInFollowing(right, true));
             }).collect(Collectors.toList());
         } 
@@ -459,9 +463,10 @@ public class BacteriaSpineFactory {
             Voxel nextVox2 = nextPoint2.asVoxel();
             if (!mask.containsWithOffset(nextVox2.x, nextVox2.y, mask.zMin()) || !mask.insideMaskWithOffset(nextVox2.x, nextVox2.y, mask.zMin())) { 
                 adjustPointToContour(next, spineDir, s2, bucketFirst); // adjust to contour
-                if (sp.size()>2) { // check that adjusted point is after previous point
+                if (sp.size()>2) { // check that adjusted point is after previous point AND not too close to previous point (if too close may cause projection issues)
                     Point ref = sp.get(sp.size()-3);
-                    if (sp.get(sp.size()-2).distSqXY(ref)>next.distSqXY(ref)) sp.remove(sp.size()-2);
+                    if (sp.get(sp.size()-2).distSqXY(ref)>next.distSqXY(ref)) sp.remove(sp.size()-2); // adjusted before previous
+                    else if (sp.get(sp.size()-2).dist(sp.get(sp.size()-1))<0.25) sp.remove(sp.size()-2); // adjusted too close to previous
                 }
                 return sp;
             }

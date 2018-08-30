@@ -195,7 +195,7 @@ public class GenerateXP {
             mutation.setProcessingPipeline(new SegmentAndTrack(
                     new NestedSpotTracker().setCompartimentStructure(1).setSegmenter(new SpotSegmenter(!mutationHighBck ? 2.75 : 3, !mutationHighBck ? 2 : 2.75, !mutationHighBck ? 1.6 : 2).setScale(2.5)  // was 0.9, 0.65, 0.9, scale was 2 for mutH
                 ).setSpotQualityThreshold(3.122) // 4.46 for mutH ? 
-                            .setLinkingMaxDistance(0.4, 0.77).setGapParameters(0.75, 0.15, 3)
+                            .setLinkingMaxDistance(0.4, 0.77).setGapParameters(0.75, 0.15, 1)
             ).addPreFilters(new BandPass(0, 7, 0, 0) // was 10
             ).addPostFilters(new FeatureFilter(new Quality(), !mutationHighBck ?2:2.2, true, true)));
         }

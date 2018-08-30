@@ -93,6 +93,7 @@ public class TrackMateInterface<S extends Spot> {
     
     public void addObject(Region o, int frame) {
         S s = factory.toSpot(o, frame);
+        if (s==null) return; // in case no parent or parent's spine could not be created
         objectSpotMap.put(o, s);
         spotObjectMap.put(s, o);
         collection.add(s, frame);

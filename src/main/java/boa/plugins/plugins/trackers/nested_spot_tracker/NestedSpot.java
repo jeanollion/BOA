@@ -25,12 +25,15 @@ import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
 import boa.utils.geom.Point;
 import fiji.plugin.trackmate.Spot;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jollion
  */
 public class NestedSpot extends SpotWithQuality {
+    private final static Logger logger = LoggerFactory.getLogger(NestedSpot.class);
     final protected StructureObject parent;
     final protected Region region;
     final protected DistanceComputationParameters distanceParameters;
@@ -74,7 +77,9 @@ public class NestedSpot extends SpotWithQuality {
             if (this.frame()>ss.frame()) return ss.squareDistanceTo(this);
             if (!distanceParameters.includeLQ && (isLowQuality() || ss.isLowQuality())) return Double.POSITIVE_INFINITY;
             if (ss.frame()-frame()>distanceParameters.maxFrameDiff) return Double.POSITIVE_INFINITY;
+            //logger.debug("get distance: F{}->{}", frame(), ss.frame());
             double distSq = BacteriaSpineLocalizer.distanceSq(spineCoord, ss.region.getCenter(), parent, ss.parent, distanceParameters.projectionType, distanceParameters.projectOnSameSides, localizerMap, false);
+            //logger.debug("dist^2 F{}->F{} = {} + penalty = {}", frame(), ss.frame(), distSq, distanceParameters.getSquareDistancePenalty(distSq, this, ss));
             distSq+=distanceParameters.getSquareDistancePenalty(distSq, this, ss);
             return distSq;
         } else return super.squareDistanceTo(s);

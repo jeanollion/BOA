@@ -120,7 +120,7 @@ public abstract class CropMicroChannels implements ConfigurableTransformation, M
             getBds.apply(inputImages.getDefaultTimePoint());
         }
         if (framesN!=1) this.setTestMode(false);
-        Map<Integer, MutableBoundingBox> bounds = frames.stream().parallel().collect(HashMap::new, (m, i)->m.put(i, getBds.apply(i)), HashMap::putAll); // not using Collectors.toMap because result of getBounds can be null
+        Map<Integer, MutableBoundingBox> bounds = Utils.toMapWithNullValues(frames.stream().parallel(), i->i, i->getBds.apply(i), true); // not using Collectors.toMap because result of getBounds can be null
         List<Integer> nullBounds = bounds.entrySet().stream().filter(e->e.getValue()==null).map(b->b.getKey()).collect(Collectors.toList());
         if (!nullBounds.isEmpty()) logger.warn("bounds could not be computed for frames: {}", nullBounds);
         bounds.values().removeIf(b->b==null);

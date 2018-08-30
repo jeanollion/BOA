@@ -93,7 +93,7 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new SpotSegmenter(), false);
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", -1, false, false).setToolTipText("Structure of bacteria objects.");
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5).setEmphasized(true).setToolTipText("Spot with quality parameter over this threshold are considered as high quality spots, others as low quality spots");
-    NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null).setEmphasized(true).setToolTipText("Maximum frame gap for spot linking: if two spots are separated by more frame than this value they cannot be linked together directly");
+    NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 1, 0, null).setEmphasized(true).setToolTipText("Maximum frame gap for spot linking: if two spots are separated by more frame than this value they cannot be linked together directly");
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.4, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together."+CONF_HINT);
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Maximum Linking Distance", 2, 0.75, 0, null).setToolTipText("Maximum linking distance for theglobal linking step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together. An additional cost proportional to the gap is added to the distance between spots (see <em>gap penalty</em>"+CONF_HINT);
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.15, 0, null).setEmphasized(true).setToolTipText("When two spots are separated by a gap, an additional distance is added to their distance: this value x number of frame of the gap");
@@ -199,14 +199,31 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                 }
             }
         });
-        Map<StructureObject, BacteriaSpineLocalizer> lMap = parallele(parentWithSpine.stream(), true).collect(Collectors.toMap(b->b, b->new BacteriaSpineLocalizer(b.getRegion()))); // spine is long to compute: better performance when computed all at once
-        final HashMapGetCreate<StructureObject, BacteriaSpineLocalizer> localizerMap = HashMapGetCreate.getRedirectedMap((StructureObject s) -> new BacteriaSpineLocalizer(s.getRegion()), HashMapGetCreate.Syncronization.SYNC_ON_KEY);
+        //Map<StructureObject, BacteriaSpineLocalizer> lMap = parallele(parentWithSpine.stream(), true).collect(Collectors.toMap(b->b, b->new BacteriaSpineLocalizer(b.getRegion()))); // spine are long to compute: better performance when computed all at once
+        MultipleException me = new MultipleException();
+        Map<StructureObject, BacteriaSpineLocalizer> lMap = Utils.toMapWithNullValues(parallele(parentWithSpine.stream(), true), b->b, b->new BacteriaSpineLocalizer(b.getRegion()), true, me);  // spine are long to compute: better performance when computed all at once
+        final HashMapGetCreate<StructureObject, BacteriaSpineLocalizer> localizerMap = HashMapGetCreate.getRedirectedMap((StructureObject s) -> {
+            try {
+                return new BacteriaSpineLocalizer(s.getRegion());
+            } catch(Throwable t) {
+                me.addExceptions(new Pair<>(s.toString(), t));
+                return null;
+            }
+        }, HashMapGetCreate.Syncronization.SYNC_ON_KEY);
         localizerMap.putAll(lMap);
+        
         TrackMateInterface<NestedSpot> tmi = new TrackMateInterface<>(new SpotFactory<NestedSpot>() {
             @Override
             public NestedSpot toSpot(Region o, int frame) {
                 StructureObject b = mutationMapParentBacteria.get(o);
-                if (b==null) throw new IllegalArgumentException("Mutation's parent bacteria "+o.getLabel()+ " not found at frame: "+frame);
+                if (b==null) {
+                    me.addExceptions(new Pair<>(parentTrack.stream().filter(p->p.getFrame()==frame).findAny()+"-spot#"+o.getLabel(), new RuntimeException("Mutation's parent bacteria not found")));
+                    return null;
+                }
+                if (localizerMap.get(b)==null) {
+                    me.addExceptions(new Pair<>(b+"-spot#"+o.getLabel(), new RuntimeException("Mutation's parent bacteria spine not found")));
+                    return null;
+                }
                 if (o.getCenter()==null) o.setCenter(o.getGeomCenter(false));
                 return new NestedSpot(o, b, localizerMap, distParams);
             }
@@ -337,8 +354,14 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                     
                     // log distance
                     if (proj!=null) {
-                        GUI.log("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter()));
-                        logger.info("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter()));
+                        GUI.log("Distance "+l.get(0)+"->"+l.get(1)+"="+proj.dist(l.get(1).getRegion().getCenter())*l.get(0).getScaleXY()+"µm");
+                        double nDist =  Math.sqrt(s1.squareDistanceTo(s2));
+                        logger.info("Distance {} -> {} = {} µm. Nested Spot distance: {}", l.get(0), l.get(1), proj.dist(l.get(1).getRegion().getCenter())*l.get(0).getScaleXY(),nDist);
+                        if (Double.isInfinite(nDist)) {
+                            logger.debug("2 LQ: {}", !distParams.includeLQ && (s1.isLowQuality() || s2.isLowQuality()));
+                            logger.debug("max frame diff: {}", s2.frame()-s1.frame()>distParams.maxFrameDiff);
+                            
+                        }
                     } else {
                         GUI.log("Point could not be projected");
                         logger.info("Point could not be projected");
@@ -371,6 +394,7 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                 //stores.get(p).addMisc("Display Spine With Distance", l->displayDistance.accept(l, true));
             });
         }
+        if (!me.isEmpty()) throw me;
     }
     
     

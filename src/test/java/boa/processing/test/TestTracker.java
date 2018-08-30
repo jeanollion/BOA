@@ -78,13 +78,13 @@ public class TestTracker {
         //String dbName = "MutH_140115";
         //String dbName = "MutD5_141202";
         //String dbName = "MutT_150402";
-        String dbName = "fluo171204_WT_750ms";
+        String dbName = "fluo171219_WT_750ms";
         //String dbName = "fluo171127_WT_750ms";
         //String dbName = "WT_150616";
         //String dbName = "WT_180318_Fluo";
-        int pIdx =325;
-        int mcIdx =1;
-        int structureIdx =1;
+        int pIdx =252;
+        int mcIdx =3;
+        int structureIdx =2;
         int[] frames = new int[]{0,200}; //{215, 237};
         //BacteriaClosedMicrochannelTrackerLocalCorrections.bactTestFrame=4;
         if (new Task(dbName).getDir()==null) {

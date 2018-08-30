@@ -89,6 +89,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import static jdk.nashorn.internal.objects.ArrayBufferView.buffer;
 import boa.measurement.MeasurementExtractor;
+import java.util.HashMap;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -98,6 +99,27 @@ import java.util.stream.Stream;
  * @author jollion
  */
 public class Utils {
+    public static <T, K, U> Map<K, U> toMapWithNullValues(Stream<T> stream, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends U> valueMapper, boolean allowNullValues) {
+        return toMapWithNullValues(stream, keyMapper, valueMapper, allowNullValues, null);
+    }
+    public static <T, K, U> Map<K, U> toMapWithNullValues(Stream<T> stream, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends U> valueMapper, boolean allowNullValues, MultipleException exceptionCollector) {
+        if (allowNullValues && exceptionCollector==null) return stream.collect(HashMap::new, (m, e)->m.put(keyMapper.apply(e), valueMapper.apply(e)), HashMap::putAll);
+        return stream.collect(HashMap::new, (m, e)->{
+            K k = keyMapper.apply(e);
+            U v=null;
+            if (exceptionCollector!=null) {
+                try {
+                    v = valueMapper.apply(e);
+                } catch(Throwable t) {
+                    exceptionCollector.addExceptions(new Pair<>(k.toString(), t));
+                }
+            } else {
+                v = valueMapper.apply(e);
+            }
+            if (allowNullValues || v!=null) m.put(k, v);
+        }, HashMap::putAll);
+    }
+    
     public static <T> Stream<T> parallele(Stream<T> stream, boolean parallele) {
         if (parallele) return stream.parallel();
         else return stream.sequential();

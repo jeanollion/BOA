@@ -2284,13 +2284,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                         if (iwm.getDisplayer() instanceof IJImageDisplayer) {
                             int timeLimit = 4000;
                             int time = 0;
-                            double m = ((IJImageDisplayer)iwm.getDisplayer()).getImage(im).getCanvas().getMagnification();
-                            while(m<1 && time<timeLimit) { 
-                                try { 
-                                    Thread.sleep(500);
-                                    time+=500;
-                                } catch (InterruptedException ex) {}
-                                m = ((IJImageDisplayer)iwm.getDisplayer()).getImage(im).getCanvas().getMagnification();
+                            if (((IJImageDisplayer)iwm.getDisplayer()).getImage(im)!=null && ((IJImageDisplayer)iwm.getDisplayer()).getImage(im).getCanvas()!=null) {
+                                double m = ((IJImageDisplayer)iwm.getDisplayer()).getImage(im).getCanvas().getMagnification();
+                                while(m<1 && time<timeLimit) { 
+                                    try { 
+                                        Thread.sleep(500);
+                                        time+=500;
+                                    } catch (InterruptedException ex) {}
+                                    m = ((IJImageDisplayer)iwm.getDisplayer()).getImage(im).getCanvas().getMagnification();
+                                }
                             }
                         }
                         ImageWindowManagerFactory.getImageManager().goToNextObject(im, objects, next);
