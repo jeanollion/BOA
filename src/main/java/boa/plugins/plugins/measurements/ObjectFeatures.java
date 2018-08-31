@@ -42,7 +42,7 @@ import boa.plugins.object_feature.ObjectFeatureWithCore;
  * @author jollion
  */
 public class ObjectFeatures implements Measurement, ToolTip {
-    StructureParameter structure = new StructureParameter("Structure", -1, false, false);
+    StructureParameter structure = new StructureParameter("Object class", -1, false, false).setToolTipText("Class of objects to apply feature on");
     PluginParameter<ObjectFeature> def = new PluginParameter<>("Feature", ObjectFeature.class, false).setAdditionalParameters(new TextParameter("Key", "", false));
     SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<>("Features", 0, def);
     PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters").setToolTipText("Pre-Filters that will be used by all intensity measurement");
@@ -71,12 +71,12 @@ public class ObjectFeatures implements Measurement, ToolTip {
     public ObjectFeatures addFeatures(ObjectFeature... features) {
         if (features==null) return this;
         for (ObjectFeature f : features) {
-            PluginParameter<ObjectFeature> dup = def.duplicate().setPlugin(f);
-            ((TextParameter)dup.getAdditionalParameters().get(0)).setValue(f.getDefaultName());
             if (f instanceof IntensityMeasurement) { // autoconfiguration of intensity measurements
                 IntensityMeasurement im = ((IntensityMeasurement)f);
                 if (im.getIntensityStructure()<0) im.setIntensityStructure(structure.getSelectedStructureIdx());
             }
+            PluginParameter<ObjectFeature> dup = def.duplicate().setPlugin(f);
+            ((TextParameter)dup.getAdditionalParameters().get(0)).setValue(f.getDefaultName());
             this.features.insert(dup);
         }
         return this;

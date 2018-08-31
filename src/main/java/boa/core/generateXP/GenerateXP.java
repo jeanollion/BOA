@@ -126,8 +126,8 @@ public class GenerateXP {
         xp.setOutputDirectory(outputDir);
         Structure mc = new Structure("Microchannels", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
-        Structure mutation = new Structure("Spots", 0, 1, 1);
-        xp.getStructures().insert(mc, bacteria, mutation);
+        Structure spots = new Structure("Spots", 0, 1, 1);
+        xp.getStructures().insert(mc, bacteria, spots);
         setParametersFluo(xp, true, mutationHighBck, true);
         
         if (setUpPreProcessing) setPreprocessingFluo(xp.getPreProcessingTemplate(), trimFramesStart, trimFramesEnd, scaleXY, crop);
@@ -173,8 +173,8 @@ public class GenerateXP {
     public static void setParametersFluo(Experiment xp, boolean processing, boolean mutationHighBck, boolean measurements) {
         Structure mc = xp.getStructure(0);
         Structure bacteria = xp.getStructure(1).setAllowSplit(true);
-        Structure mutation = xp.getStructure(2);
-        mutation.setSegmentationParentStructure(1);
+        Structure spots = xp.getStructure(2);
+        spots.setSegmentationParentStructure(1);
         if (processing) {
             mc.setProcessingPipeline(new SegmentAndTrack(
                     new MicrochannelTracker().setSegmenter(new MicrochannelFluo2D()
@@ -192,7 +192,7 @@ public class GenerateXP {
                     )
             );
             // modification of scaling: lap * 2.5, gauss * scale (=2) quality * 2.23
-            mutation.setProcessingPipeline(new SegmentAndTrack(
+            spots.setProcessingPipeline(new SegmentAndTrack(
                     new NestedSpotTracker().setCompartimentStructure(1).setSegmenter(new SpotSegmenter(!mutationHighBck ? 2.75 : 3, !mutationHighBck ? 2 : 2.75, !mutationHighBck ? 1.6 : 2).setScale(2.5)  // was 0.9, 0.65, 0.9, scale was 2 for mutH
                 ).setSpotQualityThreshold(3.122) // 4.46 for mutH ? 
                             .setLinkingMaxDistance(0.4, 0.77).setGapParameters(0.75, 0.15, 1)
@@ -204,18 +204,20 @@ public class GenerateXP {
             xp.addMeasurement(new BacteriaLineageMeasurements(1));
             xp.addMeasurement(new SimpleTrackMeasurements(1));
             xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Mean().setIntensityStructure(1)));
-            //xp.addMeasurement(new ObjectFeatures(1).addFeature(new MeanAtBorder().setIntensityStructure(1), "IntensityBorderMeanGrad").addPreFilter(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2.5)));
-            xp.addMeasurement(new ContainerObject(2, 1));
+            xp.addMeasurement(new ObjectFeatures(1).addFeature(new MeanAtBorder().setIntensityStructure(1), "MeanIntensityBorderGrad").addPreFilter(new ImageFeature().setFeature(ImageFeature.Feature.GRAD).setScale(2.5))).setActivated(false); // to measure focus
+            xp.addMeasurement(new ObjectFeatures(1).addFeature(new SNR().setBackgroundObjectStructureIdx(0).setRadii(3, 0).setFormula(0, 0).setIntensityStructure(2), "SpotSignalSNR")).setActivated(false);
+            xp.addMeasurement(new ContainerObject(2, 1).setMeasurementName("Bacteria"));
             xp.addMeasurement(new SimpleTrackMeasurements(2));
             xp.addMeasurement(new SimpleTrackMeasurements(0));
             //xp.addMeasurement(new SpineCoordinates(2, 1));
             xp.addMeasurement(new ObjectFeatures(2).addFeatures(new Mean(), new Max(), new Min()));
-            xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));
+            xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("SpotNumber"));
             xp.addMeasurement(new ObjectFeatures(2).addFeatures(new Quality()));
             xp.addMeasurement(new RelativePosition(1, 0, RelativePosition.REF_POINT.GEOM_CENTER, RelativePosition.REF_POINT.UPPER_LEFT_CORNER).setMeasurementName("Center"));
             xp.addMeasurement(new GrowthRate().saveSizeAtDivision(true).setFeature(new Size().setScaled(true), true).setSuffix("Area"));
             xp.addMeasurement(new GrowthRate().saveSizeAtDivision(true).setFeature(new FeretMax().setScaled(true), true).setSuffix("Length"));
             //xp.addMeasurement(new GrowthRate().saveSizeAtDivision(true).setFeature(new SpineLength().setScaled(true), true).setSuffix("SpineLength"));
+            
         }
     }
     

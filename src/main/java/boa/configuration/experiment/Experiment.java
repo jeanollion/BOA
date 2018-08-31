@@ -254,10 +254,14 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public void clearMeasurements() {
         this.measurements.removeAllElements();
     }
-    public void addMeasurement(Measurement... measurements) {
-        for (Measurement m : measurements) this.measurements.insert(new PluginParameter<Measurement>("Measurement", Measurement.class, m, false));
+    public PluginParameter<Measurement> addMeasurement(Measurement measurement) {
+        PluginParameter<Measurement> m = new PluginParameter<>("Measurement", Measurement.class, measurement, false);
+        this.measurements.insert(m);
+        return m;
     }
-    
+    public void addMeasurements(Measurement... measurements) {
+        for (Measurement m : measurements) addMeasurement(m);
+    }
     public int[] getStructureToChannelCorrespondance() {
         int[] res = new int[structures.getChildCount()];
         for (int i = 0; i<res.length; i++) res[i] = getStructure(i).getChannelImage();
