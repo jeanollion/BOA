@@ -122,7 +122,11 @@ public class ManualEdition {
             if (next.getPrevious()==prev) {
                 next.resetTrackLinks(true, false);
                 next.setAttribute(StructureObject.EDITED_LINK_PREV, true);
-                if (next.getPrevious()!=null) next.getPrevious().setAttribute(StructureObject.EDITED_LINK_NEXT, true);
+                next.setAttribute(StructureObject.TRACK_ERROR_PREV, null);
+                if (next.getPrevious()!=null) {
+                    next.getPrevious().setAttribute(StructureObject.EDITED_LINK_NEXT, true);
+                    next.getPrevious().setAttribute(StructureObject.TRACK_ERROR_NEXT, null);
+                }
                 next.setTrackHead(next, true, true, modifiedObjects);
             } else prev.resetTrackLinks(false, prev.getNext()==next);
             
@@ -177,6 +181,7 @@ public class ManualEdition {
                 if (allowMergeLink && !allNext.contains(next)) {
                     prev.setTrackLinks(next, false, true);
                     prev.setAttribute(StructureObject.EDITED_LINK_NEXT, true);
+                    prev.setAttribute(StructureObject.TRACK_ERROR_NEXT, null);
                     if (modifiedObjects!=null) modifiedObjects.add(prev);
                     //logger.debug("merge link : {}>{}", prev, next);
                 }
@@ -193,10 +198,12 @@ public class ManualEdition {
                 if (allowSplitLink && !allPrev.contains(prev)) {
                     prev.setTrackLinks(next, true, false);
                     next.setAttribute(StructureObject.EDITED_LINK_PREV, true);
+                    next.setAttribute(StructureObject.TRACK_ERROR_PREV, null);
                     if (modifiedObjects!=null) modifiedObjects.add(next);
                     for (StructureObject o : allNext) {
                         o.setTrackHead(o, true, true, modifiedObjects);
                         o.setAttribute(StructureObject.EDITED_LINK_PREV, true);
+                        o.setAttribute(StructureObject.TRACK_ERROR_PREV, null);
                         if (modifiedObjects!=null) modifiedObjects.add(o);
                     }
                     //logger.debug("split link : {}>{}", prev, next);
@@ -209,7 +216,9 @@ public class ManualEdition {
                 //if (next!=prev.getNext() || prev!=next.getPrevious() || next.getTrackHead()!=prev.getTrackHead()) {
                     prev.setTrackLinks(next, true, true);
                     prev.setAttribute(StructureObject.EDITED_LINK_NEXT, true);
+                    prev.setAttribute(StructureObject.TRACK_ERROR_NEXT, null);
                     next.setAttribute(StructureObject.EDITED_LINK_PREV, true);
+                    next.setAttribute(StructureObject.TRACK_ERROR_PREV, null);
                     next.setTrackHead(prev.getTrackHead(), false, true, modifiedObjects);
                     if (modifiedObjects!=null) modifiedObjects.add(prev);
                     if (modifiedObjects!=null) modifiedObjects.add(next);
@@ -333,6 +342,7 @@ public class ManualEdition {
             e.getValue().forEach(o->{
                 o.setTrackHead(o, true, true, modifiedObjects);
                 o.setAttribute(StructureObject.EDITED_LINK_PREV, true);
+                o.setAttribute(StructureObject.TRACK_ERROR_PREV, null);
             });
             db.getDao(e.getKey()).store(modifiedObjects);
             if (updateDisplay) {

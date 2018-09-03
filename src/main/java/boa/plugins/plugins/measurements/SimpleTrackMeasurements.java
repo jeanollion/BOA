@@ -64,6 +64,8 @@ public class SimpleTrackMeasurements implements Measurement, ToolTip {
         res.add(new MeasurementKeyObject("TrackLength", structureIdx));
         res.add(new MeasurementKeyObject("TrackObjectCount", structureIdx));
         res.add(new MeasurementKeyObject("ParentTrackHeadIndices", structureIdx));
+        res.add(new MeasurementKeyObject("TrackErrorNext", structureIdx));
+        res.add(new MeasurementKeyObject("TrackErrorPrev", structureIdx));
         return res;
     }
 
@@ -77,6 +79,8 @@ public class SimpleTrackMeasurements implements Measurement, ToolTip {
             o.getMeasurements().setValue("TrackObjectCount", track.size());
             o.getMeasurements().setStringValue("TrackHeadIndices", th);
             o.getMeasurements().setStringValue("ParentTrackHeadIndices", pth);
+            o.getMeasurements().setValue("TrackErrorNext", o.hasTrackLinkError(false, true));
+            o.getMeasurements().setValue("TrackErrorPrev", o.hasTrackLinkError(true, false));
         }
     }
 
@@ -86,7 +90,7 @@ public class SimpleTrackMeasurements implements Measurement, ToolTip {
 
     @Override
     public String getToolTipText() {
-        return "Measures the track length (frame of last object - frame of first object + 1 ), the number of object in the track and the indices of the track head";
+        return "Measures <ol><li>the track length (frame of last object - frame of first object + 1 )</li><li>the number of object in the track (that can differ from track length if there are gaps</li><li>the indices of the track head</li><li>The indices of the parent track head</li><li>Tracking errors with previous and next elements (according to the tracker)</li></ol>";
     }
         
 }
