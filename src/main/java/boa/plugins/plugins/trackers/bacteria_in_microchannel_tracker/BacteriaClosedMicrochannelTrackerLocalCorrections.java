@@ -204,6 +204,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         init(parentTrack, structureIdx, false);
+        minF = parentTrack.stream().mapToInt(p->p.getFrame()).min().orElse(0);
+        maxFExcluded = parentTrack.stream().mapToInt(p->p.getFrame()).max().orElse(0)+1;
         Collections.sort(parentTrack, (o1, o2)->Integer.compare(o1.getFrame(), o2.getFrame()));
         for (StructureObject p : parentTrack) getObjects(p.getFrame());
         for (StructureObject p : parentTrack)  setAssignmentToTrackAttributes(p.getFrame(), true);

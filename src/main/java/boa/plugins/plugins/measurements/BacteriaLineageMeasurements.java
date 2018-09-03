@@ -49,7 +49,7 @@ import boa.utils.Pair;
  */
 public class BacteriaLineageMeasurements implements Measurement, ToolTip {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
-    protected TextParameter keyName = new TextParameter("Lineage Index Name", "LineageIndex", false);
+    protected TextParameter keyName = new TextParameter("Lineage Index Name", "BacteriaLineage", false);
     protected Parameter[] parameters = new Parameter[]{structure, keyName};
     public static char[] lineageName = new char[]{'H', 'T'};
     public static char[] lineageError = new char[]{'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S'};

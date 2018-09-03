@@ -114,7 +114,7 @@ public class FileProgressLogger implements ProgressLogger {
             try {
                 FileIO.write(logFileWriter, Utils.getFormattedTime()+": "+message, true);
             } catch (IOException ex) {
-                System.out.println(">cannot log to file:"+logFile.getAbsolutePath());
+                System.out.println(">cannot log to file:"+logFile==null ? "null" : logFile.getAbsolutePath());
             }
         }
     }
