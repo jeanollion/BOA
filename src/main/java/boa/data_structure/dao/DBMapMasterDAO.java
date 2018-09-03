@@ -155,6 +155,7 @@ public class DBMapMasterDAO implements MasterDAO {
             String op = getOutputPath();
             if (op==null) return null;
             res = new DBMapObjectDAO(this, positionName, op, !positionLock.contains(positionName));
+            //logger.debug("creating DAO: {} position lock: {}, read only: {}", positionName, positionLock.contains(positionName), res.isReadOnly());
             DAOs.put(positionName, res);
         }
         return res;
@@ -241,16 +242,13 @@ public class DBMapMasterDAO implements MasterDAO {
     }
     @Override 
     public void clearCache(String position) {
-        DBMapObjectDAO dao = DAOs.remove(position);
+        if (getExperiment().getPosition(position)!=null) getExperiment().getPosition(position).flushImages(true, true); // input images
+        DBMapObjectDAO dao = DAOs.get(position);
         if (dao!=null) dao.clearCache();
     }
     public synchronized void clearCache(boolean xpDAO, boolean objectDAO, boolean selectionDAO) {
         if (objectDAO) {
-            for (DBMapObjectDAO dao : DAOs.values()) {
-                if (getExperiment().getPosition(dao.getPositionName())!=null) getExperiment().getPosition(dao.getPositionName()).flushImages(true, true); // input images
-                dao.clearCache();
-            }
-            //DAOs.clear();
+            for (DBMapObjectDAO dao : DAOs.values()) clearCache(dao.getPositionName());
         }
         
         if (selectionDAO && this.selectionDAO!=null) {

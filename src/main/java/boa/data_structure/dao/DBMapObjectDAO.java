@@ -86,7 +86,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         this.dir = dir+File.separator+positionName+File.separator+"segmented_objects"+File.separator;
         File folder = new File(this.dir);
         if (!folder.exists()) folder.mkdirs();
-        // lock system is on position folder
+        // lock system is on a ".lock" file temporarily created in position folder
         if (!readOnly) {
             this.readOnly = !lock();
         } else this.readOnly = true;
@@ -223,7 +223,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                             }).collect(Collectors.toMap(o->o.getId(), o->o));
                     objectMap.putAll(objectMapToAdd);
                     long t1 = System.currentTimeMillis();
-                    //logger.debug("#{} (already: {}) objects from structure: {}, time {}", objectMap.size(), alreadyInCache.size(), key.value, t1-t0);
+                    logger.debug("#{} (already: {}) objects from structure: {}, time {}", objectMap.size(), objectMap.size()-objectMapToAdd.size(), key.value, t1-t0);
                 } else {
                     long t0 = System.currentTimeMillis();
                     try {
@@ -238,7 +238,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                                 }).collect(Collectors.toMap(o->o.getId(), o->o));
                         cache.put(key, objectMap);
                         long t2 = System.currentTimeMillis();
-                        //logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
+                        logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
                     } catch(IOError|AssertionError|Exception e) {
                         logger.error("Corrupted DATA for structure: "+key.value+" parent: "+key.key, e);
                         allObjectsRetrievedInCache.put(key, true);
@@ -356,54 +356,44 @@ public class DBMapObjectDAO implements ObjectDAO {
             Pair<String, Integer> key = new Pair(parent.getTrackHeadId(), structureIdx);
             Map<String, StructureObject> cacheMap = cache.get(key);
             HTreeMap<String, String> dbm = getDBMap(key);
+            Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(key.value);
             for (StructureObject o : children) {
                 if (cacheMap!=null) cacheMap.remove(o.getId());
                 dbm.remove(o.getId());
             }
+            if (mDB!=null) children.forEach(c->mDB.value.remove(c.getId()));
             getDB(structureIdx).commit();
         }
     }
 
     public static Set<String> toIds(Collection<StructureObject> objects) {
-        Set<String> res= new HashSet<>(objects.size());
-        for (StructureObject o : objects) res.add(o.getId());
-        return res;
+        return objects.stream().map(o -> o.getId()).collect(Collectors.toSet());
     }
 
     public static Map<String, StructureObject> toIdMap(Collection<StructureObject> objects) {
-        Map<String, StructureObject> res= new HashMap<>(objects.size());
-        for (StructureObject o : objects) res.put(o.getId(), o);
-        return res;
+        return objects.stream().collect(Collectors.toMap(o->o.getId(), o->o));
     }
-    
     @Override
     public void deleteChildren(Collection<StructureObject> parents, int structureIdx) {
-        if (readOnly) return;
-        Map<StructureObject, List<StructureObject>> byTh = StructureObjectUtils.splitByTrackHead(parents);
-        for (StructureObject pth : byTh.keySet()) deleteChildren(byTh.get(pth), structureIdx, pth.getId(), false);
-        getDB(structureIdx).commit();
+        deleteChildren(parents, structureIdx, true);
     }
-    protected void deleteChildren(Collection<StructureObject> parents, int structureIdx, String parentThreackHeadId, boolean commit) {
-        if (readOnly) return;
-        Pair<String, Integer> key = new Pair(parentThreackHeadId, structureIdx);
-        Set<String> parentIds = toIds(parents);
-        Map<String, StructureObject> cacheMap = getChildren(key);
-        HTreeMap<String, String> dbMap = getDBMap(key);
-        Iterator<String> it = cacheMap.keySet().iterator();
-        while(it.hasNext()) {
-            String id = it.next();
-            StructureObject o = cacheMap.get(id);
-            if (o==null) {
-                logger.warn("DBMap remove error: structure: {}, parents {}", structureIdx, Utils.toStringList(new ArrayList<>(parents)));
-                continue;
-            }
-            else if (o.getParentId()==null) logger.warn("DBMap remove error: no parent for: {}", o);
-            if (parentIds.contains(o.getParentId())) {
-                it.remove();
-                dbMap.remove(id);
-            }
-        }
+
+    private Set<Integer> deleteChildren(Collection<StructureObject> parents, int structureIdx, boolean commit) {
+        if (readOnly) return Collections.EMPTY_SET;
+        Set<Integer> res = new HashSet<>();
+        Map<StructureObject, List<StructureObject>> byTh = StructureObjectUtils.splitByTrackHead(parents);
+        for (StructureObject pth : byTh.keySet()) res.addAll(deleteChildren(byTh.get(pth), structureIdx, pth.getId(), commit));
         if (commit) getDB(structureIdx).commit();
+        return res;
+    }
+    private Set<Integer> deleteChildren(Collection<StructureObject> parents, int structureIdx, String parentThreackHeadId, boolean commit) {
+        if (readOnly) return Collections.emptySet();
+        Pair<String, Integer> key = new Pair(parentThreackHeadId, structureIdx);
+        Map<String, StructureObject> cacheMap = getChildren(key);
+        Set<String> parentIds = toIds(parents);
+        Set<StructureObject> toDelete = cacheMap.values().stream().filter(o->parentIds.contains(o.getParentId())).collect(Collectors.toSet());
+        logger.debug("delete {}/{} children of structure {} from track: {}(#{}) ", toDelete.size(), cacheMap.size(), structureIdx, parents.stream().min((o1, o2)->o1.compareTo(o2)), parents.size());
+        return delete(toDelete, true, true, false, commit);
     }
     
 
@@ -504,6 +494,10 @@ public class DBMapObjectDAO implements ObjectDAO {
         Pair<String, Integer> key = new Pair(o.getParentTrackHeadId(), o.getStructureIdx());
         HTreeMap<String, String> dbMap = getDBMap(key);
         dbMap.remove(o.getId());
+        // also remove measurements
+        Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(key.value);
+        if (mDB!=null) mDB.value.remove(o.getId());
+        
         if (cache.containsKey(key)) cache.get(key).remove(o.getId());
         if (deleteChildren) {
             for (int s : o.getExperiment().getAllDirectChildStructures(o.getStructureIdx())) deleteChildren(o, s);
@@ -518,49 +512,51 @@ public class DBMapObjectDAO implements ObjectDAO {
         }
         getDB(o.getStructureIdx()).commit();
     }
-
     @Override
     public void delete(Collection<StructureObject> list, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
-        if (readOnly) return;
+        delete(list, deleteChildren, deleteFromParent, relabelSiblings, true);
+    }
+    
+    private Set<Integer> delete(Collection<StructureObject> list, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings, boolean commit) {
+        if (readOnly) return Collections.EMPTY_SET;
         Map<Pair<String, Integer>, List<StructureObject>> splitByPTH = splitByParentTrackHeadIdAndStructureIdx(list);
-        Set<Integer> allModifiedStructureIdx = new HashSet<>(Pair.unpairValues(splitByPTH.keySet()));
+        Set<Integer> allModifiedStructureIdx = new HashSet<>();
         for (Pair<String, Integer> key : splitByPTH.keySet()) {
+            allModifiedStructureIdx.add(key.value);
             List<StructureObject> toRemove = splitByPTH.get(key);
+            if (deleteChildren) {
+                for (int sChild : getExperiment().getAllDirectChildStructures(key.value)) {
+                    allModifiedStructureIdx.addAll(deleteChildren(toRemove, sChild, false)); // will call this method recursively
+                }
+            }
+            
             HTreeMap<String, String> dbMap = getDBMap(key);
-            for (StructureObject o : toRemove) dbMap.remove(o.getId());
+            toRemove.forEach((o) -> dbMap.remove(o.getId()));
+            // also remove measurements
+            Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(key.value);
+            if (mDB!=null) toRemove.forEach((o) -> mDB.value.remove(o.getId()));
             if (cache.containsKey(key)) {
                 Map<String, StructureObject> cacheMap = cache.get(key);
                 for (StructureObject o : toRemove) cacheMap.remove(o.getId());
             }
-            if (deleteChildren) {
-                for (int sChild : getExperiment().getAllDirectChildStructures(key.value)) {
-                    allModifiedStructureIdx.add(sChild);
-                    deleteChildren(toRemove, sChild, key.key, false);
-                }
-            }
+            
             //TODO if track head is removed and has children -> inconsistency -> check at each eraseAll, if eraseAll children -> eraseAll whole collection if trackHead, if not dont do anything
             if (deleteFromParent && relabelSiblings) {
                 if (key.value==-1) continue; // no parents
-                Set<StructureObject> parents = new HashSet<StructureObject>();
-                for (StructureObject o : toRemove) {
-                    if (o.getParent().getChildren(key.value).remove(o)) {
-                        parents.add(o.getParent());
-                    }
-                }
-                //logger.debug("number of parents with eraseAll object from structure: {} = {}", sIdx, parents.size());
-                List<StructureObject> relabeled = new ArrayList<StructureObject>();
-                for (StructureObject p : parents) {
-                    p.relabelChildren(key.value, relabeled);
-                }
+                Set<StructureObject> parents = toRemove.stream().filter((o) -> (o.getParent().getChildren(key.value).remove(o))).map(o->o.getParent()).collect(Collectors.toSet());
+                logger.debug("erase {} objects of structure {} from {} parents", toRemove.size(), key.value, parents.size());
+                List<StructureObject> relabeled = new ArrayList<>();
+                parents.forEach((p) -> p.relabelChildren(key.value, relabeled));
                 Utils.removeDuplicates(relabeled, false);
                 store(relabeled, false);
             } else if (deleteFromParent) {
-                for (StructureObject o : toRemove) {
-                    if (o.getParent()!=null) o.getParent().getChildren(o.getStructureIdx()).remove(o);
-                }
+                toRemove.stream().filter((o) -> (o.getParent()!=null)).forEachOrdered((o) -> {
+                    o.getParent().getChildren(o.getStructureIdx()).remove(o);
+                });
             }
         }
-        for (int i : allModifiedStructureIdx) getDB(i).commit();
+        if (commit) for (int i : allModifiedStructureIdx) getDB(i).commit();
+        return allModifiedStructureIdx;
     }
     
     

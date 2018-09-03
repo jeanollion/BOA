@@ -488,12 +488,12 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             ImageWindowManagerFactory.getImageManager().flush();
             publishMemoryUsage("Before processing");
             this.ensurePositionAndStructures(true, true);
-            
-            String[] pos = positions.stream().map(pIdx -> db.getExperiment().getPosition(pIdx).getName()).toArray(l->new String[l]);
+            Function<Integer, String> posIdxNameMapper = pIdx -> db.getExperiment().getPosition(pIdx).getName();
+            String[] pos = positions.stream().map(posIdxNameMapper).toArray(l->new String[l]);
             db.lockPositions(pos);
             
             // check that all position to be processed are effectively locked
-            List<String> lockedPos = positions.stream().map(pIdx -> db.getExperiment().getPosition(pIdx).getName()).filter(p->db.getDao(p).isReadOnly()).collect(Collectors.toList());
+            List<String> lockedPos = positions.stream().map(posIdxNameMapper).filter(p->db.getDao(p).isReadOnly()).collect(Collectors.toList());
             if (!lockedPos.isEmpty()) {
                 ui.setMessage("Some positions could not be locked and will not be processed: " + lockedPos);
                 for (String p : lockedPos) errors.addExceptions(new Pair(p, new RuntimeException("Locked position. Already used by another process?")));
@@ -534,10 +534,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             }
             for (Pair<String, int[]> e  : this.extractMeasurementDir) extractMeasurements(e.key==null?db.getDir():e.key, e.value);
             if (exportData) exportData();
-            if (!keepDB) {
-                db.unlockPositions();
-                db.clearCache();
-            }
+            if (!keepDB) db.unlockPositions(pos);
+            else positions.forEach(p -> db.clearCache(posIdxNameMapper.apply(p)));
         }
     private void process(String position, boolean deleteAllField) {
         publish("Position: "+position);
@@ -737,28 +735,29 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             } 
             t.setUI(ui);
             totalSubtasks+=t.countSubtasks();
-            logger.debug("check ok: current task number: {}");
         }
         if (ui!=null) ui.setMessage("Total subTasks: "+totalSubtasks);
         int[] taskCounter = new int[]{0, totalSubtasks};
         for (Task t : tasks) t.setSubtaskNumber(taskCounter);
         DefaultWorker.execute(i -> {
+            //if (ui!=null && i==0) ui.setRunning(true);
             tasks.get(i).initDB();
             Consumer<FileProgressLogger> setLF = l->{if (l.getLogFile()==null) l.setLogFile(tasks.get(i).getDir()+File.separator+"Log.txt");};
             Consumer<FileProgressLogger> unsetLF = l->{l.setLogFile(null);};
             if (ui instanceof MultiProgressLogger) ((MultiProgressLogger)ui).applyToLogUserInterfaces(setLF);
             else if (ui instanceof FileProgressLogger) setLF.accept((FileProgressLogger)ui);
-            tasks.get(i).runTask();
+            tasks.get(i).runTask(); // clears cache +  unlock if !keepdb
             tasks.get(i).done();
-            if (ui!=null) ui.setRunning(i<tasks.size()-1);
-            if (tasks.get(i).db!=null && !tasks.get(i).keepDB) { // unlock
-                tasks.get(i).db.clearCache();
-                tasks.get(i).db.unlockPositions();
-                tasks.get(i).db=null;
-            } 
+            if (tasks.get(i).db!=null && !tasks.get(i).keepDB) tasks.get(i).db=null; 
             if (ui instanceof MultiProgressLogger) ((MultiProgressLogger)ui).applyToLogUserInterfaces(unsetLF);
             else if (ui instanceof FileProgressLogger) unsetLF.accept((FileProgressLogger)ui);
             
+            if (ui!=null && i==tasks.size()-1) {
+                ui.setRunning(false);
+                if (tasks.size()>1) {
+                    for (Task t : tasks) t.publishErrors();
+                }
+            }
             return "";
         }, tasks.size()).setEndOfWork(
                 ()->{for (Runnable r : endOfWork) r.run();});

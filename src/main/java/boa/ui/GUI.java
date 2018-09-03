@@ -2710,12 +2710,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         }
         Task t;
         if (dbName==null && db!=null) {
+            logger.debug("create task with same db as GUI");
             int[] microscopyFields = this.getSelectedPositionIdx();
             int[] selectedStructures = this.getSelectedStructures(true);
             t = new Task(db);
             t.setStructures(selectedStructures).setPositions(microscopyFields);
             if (extract) for (int sIdx : selectedStructures) t.addExtractMeasurementDir(db.getDir(), sIdx);
         } else if (dbName!=null) {
+            
             t = new Task(dbName);
             if (extract && t.getDB()!=null) {
                 int[] selectedStructures = ArrayUtil.generateIntegerArray(t.getDB().getExperiment().getStructureCount());
