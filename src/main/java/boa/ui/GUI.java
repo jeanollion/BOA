@@ -616,7 +616,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (trackTreeController!=null) this.trackTreeController.setEnabled(!running);
         if (trackTreeStructureSelector!=null) this.trackTreeStructureSelector.getTree().setEnabled(!running);
         tabs.setEnabledAt(2, !running);
-        //updateDisplayRelatedToXPSet();
+        if (!running) updateDisplayRelatedToXPSet();
     }
     // gui interface method
     @Override
