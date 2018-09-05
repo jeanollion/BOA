@@ -25,15 +25,20 @@ import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectProcessing;
+import boa.data_structure.Voxel;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.BlankMask;
 import boa.image.BoundingBox;
 import boa.image.Histogram;
 import boa.image.Image;
 import boa.image.ImageByte;
+import boa.image.ImageInteger;
 import boa.image.ImageMask;
 import boa.image.MutableBoundingBox;
 import boa.image.SimpleBoundingBox;
+import boa.image.TypeConverter;
+import boa.image.processing.EDT;
+import boa.image.processing.Filters;
 import boa.image.processing.RegionFactory;
 import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
@@ -251,22 +256,36 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
         
         List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.sizeZ()==1, input.getScaleXY(), input.getScaleZ());
         EdgeDetector seg = initEdgeDetector(parent, structureIdx);
-        RegionPopulation pop = seg.run(input, segmentationMask);
-        SplitAndMergeHessian splitAndMerge=initializeSplitAndMerge(parent, structureIdx, pop.getLabelMap());
-        pop = splitAndMerge.merge(pop, null);
-        pop.filter(o->{
-            for(Region so : seedObjects ) if (o.intersect(so)) return true;
-            return false;
+        Image wsMap = seg.getWsMap(input, parent.getMask());
+        ImageInteger seedMap = Filters.localExtrema(wsMap, null, false, segmentationMask, Filters.getNeighborhood(1.5, input));
+        RegionPopulation watershedSeeds = new RegionPopulation(seedMap, false);        
+        // among seeds -> choose those close to border of parent mask
+        Image distanceToBorder = EDT.transform(segmentationMask, true, 1, parent.getMask().sizeZ()>1?parent.getScaleZ()/parent.getScaleXY():1, true);
+        Function<Region, Voxel> objectToVoxelMapper = o -> o.getVoxels().iterator().next();
+        watershedSeeds.filter(o -> {
+            Voxel s = objectToVoxelMapper.apply(o);
+            if (distanceToBorder.getPixel(s.x, s.y, s.z)>2) return false; // background seeds should be close enough to border of parent mask
+            return seedObjects.stream().map(objectToVoxelMapper).mapToDouble(v->v.getDistance(s)).min().orElse(Double.POSITIVE_INFINITY)>3; // background seeds should be far away from foreground seeds
         });
+        watershedSeeds.addObjects(seedObjects, true);
+        seg.setSeedMap(watershedSeeds.getLabelMap());
+        RegionPopulation pop = seg.run(input, segmentationMask);
+        if (verboseManualSeg) ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("Partition"));
+        if (verboseManualSeg) logger.debug("before filter seeds: {} objects", pop.getRegions().size());
+        pop.filter(o-> seedObjects.stream().anyMatch(so -> o.intersect(so)));
+        if (verboseManualSeg) logger.debug("after filter seeds: {} objects", pop.getRegions().size());
         pop.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-        localThreshold(input, pop, parent, structureIdx, false);
+        //localThreshold(input, pop, parent, structureIdx, false);
+        
         //RegionPopulation pop =  WatershedTransform.watershed(splitAndMerge.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(getNormalizedHessian(input), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
         
         if (verboseManualSeg) {
-            Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
-            for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(splitAndMerge.getHessian());
+            //Image manualSeeds = new ImageByte("seeds from: "+input.getName(), input);
+            //for (int[] seed : seedsXYZ) manualSeeds.setPixel(seed[0], seed[1], seed[2], 1);
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(watershedSeeds.getLabelMap().setName("Watershed Seeds (background + manual)"));
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(wsMap.setName("Watershed Map"));
+            
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(TypeConverter.toCommonImageType(segmentationMask).setName("Mask"));
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
         }
         

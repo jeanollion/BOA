@@ -125,8 +125,13 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     }
     @Override
     public void toggleSetObjectCreationTool() {
-        if (IJ.getToolName()=="point"||IJ.getToolName()=="multipoint") IJ.setTool("rect");
+        if (IJ.getToolName()=="point"||IJ.getToolName()=="multipoint") {
+            this.getDisplayer().getCurrentImage().deleteRoi();
+            IJ.setTool("rect");
+        }
         else IJ.setTool("multipoint");
+        ImageCanvas c;
+        
     }
     
     @Override
