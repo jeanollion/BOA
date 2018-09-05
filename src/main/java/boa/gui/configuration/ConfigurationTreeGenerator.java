@@ -125,15 +125,17 @@ public class ConfigurationTreeGenerator {
             }
         };
         treeModel.setJTree(tree);
+        tree.setShowsRootHandles(true);
         tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         DefaultTreeCellRenderer renderer = new TransparentTreeCellRenderer();
-        Icon personIcon = null;
-        renderer.setLeafIcon(personIcon);
-        renderer.setClosedIcon(personIcon);
-        renderer.setOpenIcon(personIcon);
+        Icon icon = null;
+        renderer.setLeafIcon(icon);
+        renderer.setClosedIcon(icon);
+        renderer.setOpenIcon(icon);
         tree.setCellRenderer(renderer);
         tree.setOpaque(false);
+        
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {

@@ -89,6 +89,8 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import static jdk.nashorn.internal.objects.ArrayBufferView.buffer;
 import boa.measurement.MeasurementExtractor;
+import java.awt.FileDialog;
+import java.awt.Frame;
 import java.util.HashMap;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -682,27 +684,42 @@ public class Utils {
         }
         return search(nextFiles, fileName, recLevels, currentLevel+1);
     }
-    
-    public static File[] chooseFiles(String dialogTitle, String directory, FileChooser.FileChooserOption option, Component parent) {
-        final JFileChooser fc = new JFileChooser();
-        fc.setFileSelectionMode(option.getOption());
-        //fc.setFileHidingEnabled(false);
-        fc.setMultiSelectionEnabled(option.getMultipleSelectionEnabled());
-        if (directory != null) fc.setCurrentDirectory(new File(directory));
-        if (dialogTitle!=null) fc.setDialogTitle(dialogTitle);
-        else fc.setDialogTitle("Choose Files");
-        int returnval = fc.showOpenDialog(parent);
-        if (returnval == JFileChooser.APPROVE_OPTION) {
-            File[] res;
-            if (option.getMultipleSelectionEnabled()) res = fc.getSelectedFiles();
-            else res = new File[]{fc.getSelectedFile()};
-            return res;
-        } else return null;
+    public static boolean isMac() {
+        return System.getProperty("os.name").toLowerCase().contains("mac");
+    }
+    public static boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("win");
+    }
+    public static File[] chooseFiles(String dialogTitle, String directory, FileChooser.FileChooserOption option, Frame parent) {
+        if (isMac()) {
+            FileDialog fd = new FileDialog(parent,  dialogTitle, FileDialog.LOAD);
+            fd.setDirectory(directory);
+            fd.setMode(0);
+            // TODO how to sets the options (file / directories...) 
+            //fd.setFile("*.xml");
+            fd.setVisible(true);
+            return fd.getFiles();
+        } else {
+            final JFileChooser fc = new JFileChooser();
+            fc.setFileSelectionMode(option.getOption());
+            //fc.setFileHidingEnabled(false);
+            fc.setMultiSelectionEnabled(option.getMultipleSelectionEnabled());
+            if (directory != null) fc.setCurrentDirectory(new File(directory));
+            if (dialogTitle!=null) fc.setDialogTitle(dialogTitle);
+            else fc.setDialogTitle("Choose Files");
+            int returnval = fc.showOpenDialog(parent);
+            if (returnval == JFileChooser.APPROVE_OPTION) {
+                File[] res;
+                if (option.getMultipleSelectionEnabled()) res = fc.getSelectedFiles();
+                else res = new File[]{fc.getSelectedFile()};
+                return res;
+            } else return null;
+        }
     }
     
-    public static File chooseFile(String dialogTitle, String directory, FileChooser.FileChooserOption option, Component parent) {
+    public static File chooseFile(String dialogTitle, String directory, FileChooser.FileChooserOption option, Frame parent) {
         File[] res = chooseFiles(dialogTitle,directory, option,  parent);
-        if (res!=null) return res[0];
+        if (res!=null && res.length>0) return res[0];
         else return null;
     }
     public static boolean promptBoolean(String question, Component parent) {

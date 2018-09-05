@@ -2653,7 +2653,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
     private void importConfigurationMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationMenuItemActionPerformed
         
-        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_CONFIG_DIR, IJ.getDir("plugins")+File.separator+"BOA");
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_CONFIG_DIR, IJ.getDir("plugins")+File.separator+"BACMMAN");
         File f = Utils.chooseFile("Select configuration file or exported zip containing configuration file", defDir, FileChooser.FileChooserOption.FILES_ONLY, this);
         if (f==null) return;
         if (!Utils.promptBoolean("This will erase configutation on "+(db==null ? "all selected" : "current ")+" xp", this)) return;
@@ -3106,7 +3106,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             Action save = new AbstractAction("Save to File") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    File out = Utils.chooseFile("Save Task list as...", experimentFolder.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, tabs);
+                    File out = Utils.chooseFile("Save Task list as...", experimentFolder.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, GUI.getInstance());
                     if (out==null || out.isDirectory()) return;
                     String outS = out.getAbsolutePath();
                     if (!outS.endsWith(".txt")&&!outS.endsWith(".json")) outS+=".json";
@@ -3118,7 +3118,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             Action saveProc = new AbstractAction("Split and Save to files...") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    File out = Utils.chooseFile("Choose Folder", experimentFolder.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, tabs);
+                    File out = Utils.chooseFile("Choose Folder", experimentFolder.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, GUI.getInstance());
                     if (out==null || !out.isDirectory()) return;
                     String outDir = out.getAbsolutePath();
                     List<Task> tasks = Collections.list(actionPoolListModel.elements()).stream().map(s->JSONUtils.parse(s)).map(j->new Task().fromJSON(j)).collect(Collectors.toList());
@@ -3137,7 +3137,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 public void actionPerformed(ActionEvent e) {
                     String dir = experimentFolder.getText();
                     if (!new File(dir).isDirectory()) dir = null;
-                    File f = Utils.chooseFile("Choose Task list file", dir, FileChooser.FileChooserOption.FILES_ONLY, tabs);
+                    File f = Utils.chooseFile("Choose Task list file", dir, FileChooser.FileChooserOption.FILES_ONLY, GUI.getInstance());
                     if (f!=null && f.exists()) {
                         List<String> jobs = FileIO.readFromFile(f.getAbsolutePath(), s->s);
                         for (String j : jobs) actionPoolListModel.addElement(j);
@@ -3241,7 +3241,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, null);
-                    File f = Utils.chooseFile("Choose local data folder", path, FileChooser.FileChooserOption.DIRECTORIES_ONLY, experimentFolder);
+                    File f = Utils.chooseFile("Choose local data folder", path, FileChooser.FileChooserOption.DIRECTORIES_ONLY, GUI.getInstance());
                     if (f!=null) {
                         closeExperiment();
                         PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
@@ -3285,7 +3285,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     }//GEN-LAST:event_experimentFolderMousePressed
 
     private void newXPFromTemplateMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPFromTemplateMenuItemActionPerformed
-        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_CONFIG_DIR, IJ.getDir("plugins")+File.separator+"BOA");
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_CONFIG_DIR, IJ.getDir("plugins")+File.separator+"BACMMAN");
         logger.debug("defDir: {}", defDir);
         String config = promptDir("Select configuration file (or zip containing config file)", defDir, false);
         if (config==null) return;
