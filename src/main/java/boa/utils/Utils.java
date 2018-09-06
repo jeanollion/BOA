@@ -348,7 +348,28 @@ public class Utils {
     public static <T> String toStringArray(int[] array) {
         return toStringArray(array, "[", "]", "; ").toString();
     }
-    
+    public static <T> String toStringArrayShort(List<Integer> array) {
+        return toStringArrayShort(array.stream().mapToInt(i->i).toArray());
+    }
+    public static <T> String toStringArrayShort(int[] array) {
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        for (int i = 0; i<array.length; ++i) {
+            if (i<array.length-2 && array[i]+1==array[i+1] && array[i+1]+1==array[i+2]) {
+                int j = i;
+                while(j<array.length-1 && array[j+1]==array[j]+1) ++j;
+                sb.append(array[i]).append('-').append(array[j]);
+                if (j<array.length-1) sb.append(';');
+                else sb.append(']');
+                i=j;
+            } else {
+                sb.append(array[i]);
+                if (i<array.length-1) sb.append(';');
+                else sb.append(']');
+            }
+        }
+        return sb.toString();
+    }
     public static <T> String toStringArray(double[] array) {
         return toStringArray(array, "[", "]", "; ", MeasurementExtractor.numberFormater).toString();
     }

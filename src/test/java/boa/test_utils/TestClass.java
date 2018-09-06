@@ -47,6 +47,7 @@ import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.SymetricalPair;
 import static boa.utils.ThreadRunner.executeAndThrowErrors;
+import boa.utils.Utils;
 import static boa.utils.Utils.removeFromMap;
 import boa.utils.geom.Point;
 import java.io.FileInputStream;
@@ -69,16 +70,10 @@ import net.imglib2.Localizable;
  */
 public class TestClass {
     public static void main(String[] args) {
-        try {
-            String path = "/data/LJP.lock";
-            Path p = FileSystems.getDefault().getPath(path);
-            FileChannel channel = FileChannel.open(p, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-            FileLock lock = channel.tryLock();
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(TestClass.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(TestClass.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        int[] a1 = new int[]{1, 2, 3, 4, 5, 7, 8, 9, 11, 12};
+        int[] a2 = new int[]{0, 4, 7, 8, 10};
+        logger.debug("array: {} short: {}", Utils.toStringArray(a1), Utils.toStringArrayShort(a1));
+        logger.debug("array: {} short: {}", Utils.toStringArray(a2), Utils.toStringArrayShort(a2));
     }
     private static <T extends Localizable> void toString(List<T> loc) {
         for (T t: loc) logger.debug("elem: {}", t);

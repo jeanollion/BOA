@@ -24,6 +24,7 @@ import boa.core.Task;
 import boa.configuration.experiment.ChannelImage;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Structure;
+import boa.core.Processor.MEASUREMENT_MODE;
 import boa.data_structure.region_container.RegionContainer;
 import boa.data_structure.dao.BasicMasterDAO;
 import boa.data_structure.dao.DBMapObjectDAO;
@@ -125,7 +126,7 @@ public class DeleteFromDAOTest {
         Processor.processAndTrackStructures(masterDAO, true);
         
         xp.addMeasurement(new ObjectInclusionCount(1, 1, 50));
-        Processor.performMeasurements(masterDAO, null);
+        Processor.performMeasurements(masterDAO, MEASUREMENT_MODE.ERASE_ALL, null);
         ObjectDAO dao = masterDAO.getDao("field1");
         ObjectDAO dao11 = masterDAO.getDao("field11");
         StructureObject root = dao.getRoots().get(0);

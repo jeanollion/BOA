@@ -30,6 +30,7 @@ import boa.ui.PropertyUtils;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
 import static boa.core.TaskRunner.logger;
 import boa.configuration.experiment.PreProcessingChain;
+import boa.core.Processor.MEASUREMENT_MODE;
 import static boa.core.Processor.deleteObjects;
 import static boa.core.Processor.executeProcessingScheme;
 import static boa.core.Processor.getOrCreateRootTrack;
@@ -93,6 +94,7 @@ import boa.ui.logger.ProgressLogger;
 public class Task extends SwingWorker<Integer, String> implements ProgressCallback {
         String dbName, dir;
         boolean preProcess, segmentAndTrack, trackOnly, measurements, generateTrackImages, exportPreProcessedImages, exportTrackImages, exportObjects, exportSelections, exportConfig;
+        MEASUREMENT_MODE measurementMode = MEASUREMENT_MODE.ERASE_ALL;
         boolean exportData;
         List<Integer> positions;
         int[] structures;
@@ -109,7 +111,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (preProcess) res.put("preProcess", preProcess);
             if (segmentAndTrack) res.put("segmentAndTrack", segmentAndTrack);
             if (trackOnly) res.put("trackOnly", trackOnly);
-            if (measurements) res.put("measurements", measurements);
+            if (measurements) {
+                res.put("measurements", measurements);
+                res.put("measurementMode", measurementMode);
+            }
             if (generateTrackImages) res.put("generateTrackImages", generateTrackImages);
             if (exportPreProcessedImages) res.put("exportPreProcessedImages", exportPreProcessedImages);
             if (exportTrackImages) res.put("exportTrackImages", exportTrackImages);
@@ -128,6 +133,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (!ex.isEmpty()) res.put("extractMeasurementDir", ex);
             return res;
         }
+        public Task duplicate() {
+            return new Task().fromJSON(toJSON());
+        }
         public Task fromJSON(JSONObject data) {
             if (data==null) return null;
             this.dbName = (String)data.getOrDefault("dbName", "");
@@ -140,6 +148,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this.segmentAndTrack = (Boolean)data.getOrDefault("segmentAndTrack", false);
             this.trackOnly = (Boolean)data.getOrDefault("trackOnly", false);
             this.measurements = (Boolean)data.getOrDefault("measurements", false);
+            this.measurementMode = MEASUREMENT_MODE.valueOf((String)data.getOrDefault("measurementMode", MEASUREMENT_MODE.ERASE_ALL.toString()));
             this.generateTrackImages = (Boolean)data.getOrDefault("generateTrackImages", false);
             this.exportPreProcessedImages = (Boolean)data.getOrDefault("exportPreProcessedImages", false);
             this.exportTrackImages = (Boolean)data.getOrDefault("exportTrackImages", false);
@@ -318,7 +327,10 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this.measurements=measurements;
             return this;
         }
-
+        public Task setMeasurementMode(MEASUREMENT_MODE mode) {
+            this.measurementMode=mode;
+            return this;
+        }
         public boolean isPreProcess() {
             return preProcess;
         }
@@ -591,8 +603,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         if (measurements) {
             publish("Measurements...");
             logger.info("Measurements: DB: {}, Position: {}", dbName, position);
-            db.getDao(position).deleteAllMeasurements();
-            Processor.performMeasurements(db.getDao(position), this);
+            Processor.performMeasurements(db.getDao(position), measurementMode, this);
             incrementProgress();
             //publishMemoryUsage("After Measurements");
         }
@@ -632,25 +643,60 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         return res;
     }
     @Override public String toString() {
-        String res =  "db: "+dbName+";dir:"+dir;
-        if (preProcess) res+=";preProcess";
-        if (segmentAndTrack) res+=";segmentAndTrack";
-        else if (trackOnly) res+=";trackOnly";
-        if (measurements) res+=";measurements";
-        if (structures!=null) res+=";structures:"+ArrayUtils.toString(structures);
-        if (positions!=null) res+=";positions:"+ArrayUtils.toString(positions);
+        char sep = ';';
+        StringBuilder sb = new StringBuilder();
+        Runnable addSep = () -> {if (sb.length()>0) sb.append(sep);};
+
+        if (preProcess) sb.append("preProcess");
+        if (segmentAndTrack) {
+            addSep.run();
+            sb.append("segmentAndTrack");
+        } else if (trackOnly) {
+            addSep.run();
+            sb.append("trackOnly");
+        }
+        if (measurements) {
+            addSep.run();
+            sb.append("measurements[").append(measurementMode.toString()).append("]");
+        }
+        if (structures!=null) {
+            addSep.run();
+            sb.append("structures:").append(ArrayUtils.toString(structures));
+        }
+        if (positions!=null) {
+            addSep.run();
+            sb.append("positions:").append(Utils.toStringArrayShort(positions));
+        } 
         if (!extractMeasurementDir.isEmpty()) {
-            res+= ";Extract: ";
-            for (Pair<String, int[]> p : this.extractMeasurementDir) res+=(p.key==null?dir:p.key)+ "="+ArrayUtils.toString(p.value);
+            addSep.run();
+            sb.append("Extract: ");
+            for (Pair<String, int[]> p : this.extractMeasurementDir) sb.append((p.key==null?dir:p.key)).append('=').append(ArrayUtils.toString(p.value));
         }
         if (exportData) {
-            if (exportPreProcessedImages) res+=";ExportPPImages";
-            if (exportTrackImages) res+=";ExportTrackImages";
-            if (exportObjects) res+=";ExportObjects";
-            if (exportConfig) res+=";ExportConfig";
-            if (exportSelections) res+=";ExportSelection";
+            if (exportPreProcessedImages) {
+                addSep.run();
+                sb.append("ExportPPImages");
+            }
+            if (exportTrackImages) {
+                addSep.run();
+                sb.append("ExportTrackImages");
+            }
+            if (exportObjects) {
+                addSep.run();
+                sb.append("ExportObjects");
+            }
+            if (exportConfig) {
+                addSep.run();
+                sb.append("ExportConfig");
+            }
+            if (exportSelections) {
+                addSep.run();
+                sb.append("ExportSelection");
+            }
         }
-        return res;
+        addSep.run();
+        sb.append("db:").append(dbName).append(sep).append("dir:").append(dir);
+        return sb.toString();
     }
     @Override
     public void incrementProgress() {

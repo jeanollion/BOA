@@ -28,6 +28,5 @@ public abstract class MeasurementKey {
         this.key=key;
     }
     public String getKey() {return key;}
-    public abstract Object getValue();
     public abstract int getStoreStructureIdx();
 }

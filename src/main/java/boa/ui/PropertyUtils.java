@@ -58,7 +58,6 @@ public class PropertyUtils {
     public final static String LAST_IO_DATA_DIR = "last_io_data_dir";
     public final static String LAST_IO_CONFIG_DIR = "last_io_config_dir";
     public final static String LAST_EXTRACT_MEASUREMENTS_DIR = "last_extract_measurement_dir";
-    public final static String DELETE_MEASUREMENTS = "delete_measurements";
     public final static String LOCAL_DATA_PATH = "local_data_path";
     public final static String HOSTNAME = "hostname";
     public final static String DATABASE_TYPE = MasterDAOFactory.DAOType.Morphium.toString();

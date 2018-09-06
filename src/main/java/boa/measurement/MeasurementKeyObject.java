@@ -25,16 +25,9 @@ package boa.measurement;
 
 public class MeasurementKeyObject extends MeasurementKey {
     int structureIdx;
-    double value;
     public MeasurementKeyObject(String key, int structureIdx) {
         super(key);
         this.structureIdx = structureIdx;
-    }
-    public void setValue(double value) {
-        this.value=value;
-    }
-    @Override public Object getValue() {
-        return value;
     }
 
     @Override

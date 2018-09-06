@@ -84,6 +84,7 @@ public interface ObjectDAO {
     
     public void upsertMeasurements(Collection<StructureObject> objects);
     public void upsertMeasurement(StructureObject o);
+    public void retrieveMeasurements(int... structureIdx);
     public Measurements getMeasurements(StructureObject o);
     public List<Measurements> getMeasurements(int structureIdx, String... measurements);
     public void deleteAllMeasurements();

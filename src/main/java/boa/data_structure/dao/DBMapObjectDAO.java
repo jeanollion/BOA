@@ -703,12 +703,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public List<Measurements> getMeasurements(int structureIdx, String... measurements) {
         Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(structureIdx);
-        List<Measurements> res = new ArrayList<>();
-        for (String s : getValues(mDB.value)) {
-            Measurements m = new Measurements(parse(s), this.positionName);
-            res.add(m);
-        }
-        return res;
+        return getValues(mDB.value).stream().map((s) -> new Measurements(parse(s), this.positionName)).collect(Collectors.toList());
     }
     @Override
     public Measurements getMeasurements(StructureObject o) {
@@ -725,15 +720,17 @@ public class DBMapObjectDAO implements ObjectDAO {
         return null;
         
     }
-    
-    public void retrieveMeasurements(Collection<StructureObject> objects) {
-        Map<Integer, List<StructureObject>> bySIdx = StructureObjectUtils.splitByStructureIdx(objects);
-        for (int i : bySIdx.keySet()) {
-            Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(i);
-            for (StructureObject o : bySIdx.get(i)) {
-                String mS = mDB.value.get(o.getId());
-                o.setMeasurements(new Measurements(parse(mS), this.positionName));
-            }
+    @Override
+    public void retrieveMeasurements(int... structureIdx) {
+        for (int sIdx : structureIdx) {
+            Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(sIdx);
+            StructureObjectUtils.getAllObjectsAsStream(this, sIdx)
+                .parallel()
+                .filter(o->!o.hasMeasurements()) // only objects without measurements
+                .forEach(o->{
+                    String mS = mDB.value.get(o.getId());
+                    if (mS!=null) o.setMeasurements(new Measurements(parse(mS), this.positionName));
+                });
         }
     }
 

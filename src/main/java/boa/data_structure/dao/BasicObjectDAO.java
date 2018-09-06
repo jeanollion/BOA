@@ -318,6 +318,11 @@ public class BasicObjectDAO implements ObjectDAO {
         return o.getMeasurements();
     }
 
+    @Override
+    public void retrieveMeasurements(int... structureIdx) {
+        
+    }
+
     
 
     

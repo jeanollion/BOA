@@ -295,6 +295,12 @@ public class StructureObjectUtils {
         setAllChildren(roots, structureIdx);
         return getAllChildren(roots, structureIdx);
     }
+    public static Stream<StructureObject> getAllObjectsAsStream(ObjectDAO dao, int structureIdx) {
+        List<StructureObject> roots= dao.getRoots();
+        if (structureIdx == -1) return roots.stream();
+        setAllChildren(roots, structureIdx);
+        return getAllChildrenAsStream(roots.stream(), structureIdx);
+    }
     public static List<StructureObject> getAllChildren(List<StructureObject> parentTrack, int structureIdx) {
         List<StructureObject> res = new ArrayList<>();
         for (StructureObject p : parentTrack) res.addAll(p.getChildren(structureIdx));
@@ -319,19 +325,34 @@ public class StructureObjectUtils {
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
         return getAllTracks(parentTrack, structureIdx, true);
     }
+
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx, boolean allowSearchInPreviousFrames) {
         if (parentTrack==null || parentTrack.isEmpty()) return Collections.EMPTY_MAP;
         if (allowSearchInPreviousFrames && parentTrack.get(0).equals(parentTrack.get(0).getTrackHead())) allowSearchInPreviousFrames=false;
-        HashMap<StructureObject, List<StructureObject>>  res = new HashMap<>();
+        
         // set all children
         setAllChildren(parentTrack, structureIdx);
+        Stream<StructureObject> allChildrenStream = StreamConcatenation.concat((Stream<StructureObject>[])parentTrack.stream().map(p->p.getChildren(structureIdx).stream()).toArray(s->new Stream[s]));
+        Map<StructureObject, List<StructureObject>> res = allChildrenStream.collect(Collectors.groupingBy(o->o.getTrackHead()));
+        res.forEach((th, l) -> Collections.sort(l));
+        /*if (allowSearchInPreviousFrames) { // also add objects of track ? 
+            res.forEach((th, l) -> {
+                StructureObject first = l.get(0);
+                while(first!=null && !first.equals(th)) {
+                    first = first.getPrevious();
+                    l.add(first);
+                }
+                Collections.sort(l);
+            });
+        }*/
+        /*HashMap<StructureObject, List<StructureObject>>  res = new HashMap<>();
         for (StructureObject p : parentTrack) {
             List<StructureObject> children = p.getChildren(structureIdx);
             if (children==null) continue;
             for (StructureObject c : children) {
                 List<StructureObject> l;
                 if (c.isTrackHead()) {
-                    l = new ArrayList<StructureObject>();
+                    l = new ArrayList<>();
                     l.add(c);
                     res.put(c, l);
                 } else {
@@ -350,7 +371,7 @@ public class StructureObjectUtils {
                     else logger.error("getAllTracks: track not found for Object: {}, trackHead: {}", c, c.getTrackHead());
                 }
             }
-        }
+        }*/
         //for (List<StructureObject> l : res.values()) updateTrackLinksFromMap(l);
         return res;
     }

@@ -1048,7 +1048,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public boolean hasMeasurements() {
-        return measurements!=null && !getMeasurements().values.isEmpty();
+        return measurements!=null;
     }
     public boolean hasMeasurementModifications() {
         return measurements!=null && measurements.modifications;

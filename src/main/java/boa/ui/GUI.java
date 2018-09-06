@@ -50,6 +50,7 @@ import boa.configuration.experiment.Structure;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.core.Core;
+import boa.core.Processor.MEASUREMENT_MODE;
 import boa.data_structure.dao.ImageDAO;
 import boa.data_structure.dao.BasicMasterDAO;
 import boa.data_structure.dao.DBMapMasterDAO;
@@ -186,7 +187,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     // structure-related attributes
     //StructureObjectTreeGenerator objectTreeGenerator;
     DefaultListModel<String> experimentModel = new DefaultListModel();
-    DefaultListModel<String> actionPoolListModel = new DefaultListModel();
+    DefaultListModel<Task> actionPoolListModel = new DefaultListModel();
     DefaultListModel<String> actionMicroscopyFieldModel;
     DefaultListModel<Selection> selectionModel;
     StructureSelectorTree trackTreeStructureSelector, actionStructureSelector;
@@ -301,7 +302,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         
         // persistent properties
         setLogFile(PropertyUtils.get(PropertyUtils.LOG_FILE));
-        deleteMeasurementsCheckBox.setSelected(PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, true));
         ButtonGroup dbGroup = new ButtonGroup();
         dbGroup.add(localFileSystemDatabaseRadioButton);
         String dbType = PropertyUtils.get(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
@@ -317,6 +317,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
             localDBMenu.setEnabled(true);
         }
+        ButtonGroup measurementMode = new ButtonGroup();
+        measurementMode.add(measurementModeDeleteRadioButton);
+        measurementMode.add(measurementModeOverwriteRadioButton);
+        measurementMode.add(measurementModeOnlyNewRadioButton);
+        PropertyUtils.setPersistant(measurementMode, "measurement_mode", 0);
+        
         // import / export options
         PropertyUtils.setPersistant(importConfigMenuItem, "import_config", true);
         PropertyUtils.setPersistant(importSelectionsMenuItem, "import_selections", true);
@@ -1170,7 +1176,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         extractSelectionMenuItem = new javax.swing.JMenuItem();
         optionMenu = new javax.swing.JMenu();
         jMenu2 = new javax.swing.JMenu();
-        deleteMeasurementsCheckBox = new javax.swing.JCheckBoxMenuItem();
+        measurementModeDeleteRadioButton = new javax.swing.JRadioButtonMenuItem();
+        measurementModeOverwriteRadioButton = new javax.swing.JRadioButtonMenuItem();
+        measurementModeOnlyNewRadioButton = new javax.swing.JRadioButtonMenuItem();
         dataBaseMenu = new javax.swing.JMenu();
         localFileSystemDatabaseRadioButton = new javax.swing.JRadioButtonMenuItem();
         localDBMenu = new javax.swing.JMenu();
@@ -1801,14 +1809,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         jMenu2.setText("Measurements");
 
-        deleteMeasurementsCheckBox.setSelected(true);
-        deleteMeasurementsCheckBox.setText("Delete existing measurements before Running Measurements");
-        deleteMeasurementsCheckBox.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                deleteMeasurementsCheckBoxActionPerformed(evt);
-            }
-        });
-        jMenu2.add(deleteMeasurementsCheckBox);
+        measurementModeDeleteRadioButton.setSelected(true);
+        measurementModeDeleteRadioButton.setText("Delete existing measurements before Running Measurements");
+        jMenu2.add(measurementModeDeleteRadioButton);
+
+        measurementModeOverwriteRadioButton.setSelected(true);
+        measurementModeOverwriteRadioButton.setText("Overwrite measurement");
+        jMenu2.add(measurementModeOverwriteRadioButton);
+
+        measurementModeOnlyNewRadioButton.setSelected(true);
+        measurementModeOnlyNewRadioButton.setText("Perform only new measurements");
+        jMenu2.add(measurementModeOnlyNewRadioButton);
 
         optionMenu.add(jMenu2);
 
@@ -2726,6 +2737,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             t.getDB().clearCache(); 
         } else return null;
         t.setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages);
+        t.setMeasurementMode(this.measurementModeDeleteRadioButton.isSelected() ? MEASUREMENT_MODE.ERASE_ALL : (this.measurementModeOverwriteRadioButton.isSelected() ? MEASUREMENT_MODE.OVERWRITE : MEASUREMENT_MODE.ONLY_NEW));
         if (export) t.setExportData(this.exportPPImagesMenuItem.isSelected(), this.exportTrackImagesMenuItem.isSelected(), this.exportObjectsMenuItem.isSelected(), this.exportConfigMenuItem.isSelected(), this.exportSelectionsMenuItem.isSelected());
         
         return t;
@@ -2796,10 +2808,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structureIdx);
         MeasurementExtractor.extractMeasurementObjects(db, file, getSelectedPositions(true), keys);
     }
-    private void deleteMeasurementsCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteMeasurementsCheckBoxActionPerformed
-        PropertyUtils.set(PropertyUtils.DELETE_MEASUREMENTS, this.deleteMeasurementsCheckBox.isSelected());
-    }//GEN-LAST:event_deleteMeasurementsCheckBoxActionPerformed
-
     private void runActionAllXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runActionAllXPMenuItemActionPerformed
         List<String> xps = this.getSelectedExperiments();
         if (xps.isEmpty()) return;
@@ -3041,12 +3049,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         if (this.running) return;
         if (SwingUtilities.isRightMouseButton(evt)) {
             JPopupMenu menu = new JPopupMenu();
-            List<String> sel = actionPoolList.getSelectedValuesList();
+            List<Task> sel = actionPoolList.getSelectedValuesList();
             Action addCurrentTask = new AbstractAction("Add Current Task to Task List") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     Task t = getCurrentTask(null);
-                    if (t!=null) actionPoolListModel.addElement(t.toJSON().toJSONString());
+                    if (t!=null) {
+                        if (db!=null) t.setDBName(db.getDBName()).setDir(db.getDir());
+                        actionPoolListModel.addElement(t);
+                    }
                 }
             };
             menu.add(addCurrentTask);
@@ -3054,7 +3065,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             Action deleteSelected = new AbstractAction("Delete Selected Tasks") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    for (String s : sel) actionPoolListModel.removeElement(s);
+                    for (Task s : sel) actionPoolListModel.removeElement(s);
                 }
             };
             deleteSelected.setEnabled(!sel.isEmpty());
@@ -3064,7 +3075,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 public void actionPerformed(ActionEvent e) {
                     int[] newIndices = new int[sel.size()];
                     int idx = 0;
-                    for (String s : sel) {
+                    for (Task s : sel) {
                         int i = actionPoolListModel.indexOf(s);
                         if (i>0) {
                             actionPoolListModel.removeElement(s);
@@ -3082,7 +3093,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 public void actionPerformed(ActionEvent e) {
                     int[] newIndices = new int[sel.size()];
                     int idx = 0;
-                    for (String s : sel) {
+                    for (Task s : sel) {
                         int i = actionPoolListModel.indexOf(s);
                         if (i>=0 && i<actionPoolListModel.size()-1) {
                             actionPoolListModel.removeElement(s);
@@ -3110,7 +3121,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     if (out==null || out.isDirectory()) return;
                     String outS = out.getAbsolutePath();
                     if (!outS.endsWith(".txt")&&!outS.endsWith(".json")) outS+=".json";
-                    FileIO.writeToFile(outS, Collections.list(actionPoolListModel.elements()), s->s);
+                    FileIO.writeToFile(outS, Collections.list(actionPoolListModel.elements()), s->s.toJSON().toJSONString());
                 }
             };
             menu.add(save);
@@ -3121,7 +3132,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     File out = Utils.chooseFile("Choose Folder", experimentFolder.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, GUI.getInstance());
                     if (out==null || !out.isDirectory()) return;
                     String outDir = out.getAbsolutePath();
-                    List<Task> tasks = Collections.list(actionPoolListModel.elements()).stream().map(s->JSONUtils.parse(s)).map(j->new Task().fromJSON(j)).collect(Collectors.toList());
+                    List<Task> tasks = Collections.list(actionPoolListModel.elements());
                     Task.getProcessingTasksByPosition(tasks).entrySet().forEach(en -> {
                         String fileName = outDir + File.separator + en.getKey().dbName + "_P"+en.getKey().position+".json";
                         FileIO.writeToFile(fileName, en.getValue(), t->t.toJSON().toJSONString());
@@ -3139,35 +3150,31 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     if (!new File(dir).isDirectory()) dir = null;
                     File f = Utils.chooseFile("Choose Task list file", dir, FileChooser.FileChooserOption.FILES_ONLY, GUI.getInstance());
                     if (f!=null && f.exists()) {
-                        List<String> jobs = FileIO.readFromFile(f.getAbsolutePath(), s->s);
-                        for (String j : jobs) actionPoolListModel.addElement(j);
+                        List<Task> jobs = FileIO.readFromFile(f.getAbsolutePath(), s->{
+                            JSONObject o = JSONUtils.parse(s);
+                            if (o!=null) return new Task().fromJSON(o);
+                            else return null;
+                        });
+                        for (Task j : jobs) actionPoolListModel.addElement(j);
                     }
                 }
             };
             menu.add(load);
-            Action setXP = new AbstractAction("Set selected Experiment to selected Actions") {
+            Action setXP = new AbstractAction("Set selected Experiment to selected Tasks") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     String xp = (String) experimentList.getSelectedValue();
                     String dir = experimentFolder.getText();
-                    Map<Integer, String> indexSelJobMap = ((List<String>)actionPoolList.getSelectedValuesList()).stream().collect(Collectors.toMap(o->actionPoolListModel.indexOf(o), o->o));
-                    for (Entry<Integer, String> en : indexSelJobMap.entrySet()) {
-
-                        JSONObject o = JSONUtils.parse(en.getValue());
-                        if (o==null) log("Error: could not parse task: "+en.getValue());
+                    Map<Integer, Task> indexSelJobMap = ((List<Task>)actionPoolList.getSelectedValuesList()).stream().collect(Collectors.toMap(o->actionPoolListModel.indexOf(o), o->o));
+                    for (Entry<Integer, Task> en : indexSelJobMap.entrySet()) {
+                        Task t = en.getValue();
+                        // look for dir in current directory
+                        String d = ExperimentSearchUtils.searchLocalDirForDB(xp, dir);
+                        if (d==null) log("Error: Could not find directory of XP: "+xp);
                         else {
-                            Task t = new Task().fromJSON(o);
-                            // look for dir in current directory
-                            String d = ExperimentSearchUtils.searchLocalDirForDB(xp, dir);
-                            if (d==null) log("Error: Could not find directory of XP: "+xp);
-                            else {
-                                t.setDBName(xp).setDir(d);
-                                if (!t.isValid()) log("Error: could not set dataset to task: "+en.getValue());
-                                else {
-                                    actionPoolListModel.remove(en.getKey());
-                                    actionPoolListModel.add(en.getKey(), t.toJSON().toJSONString());
-                                }
-                            }
+                            t.setDBName(xp).setDir(d);
+                            if (!t.isValid()) log("Error: task: "+en.getValue()+" is not valid with this experiment");
+                            
                         }
                     }
                 }
@@ -3177,16 +3184,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             Action runAll = new AbstractAction("Run All Tasks") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    List<Task> jobs = new ArrayList<>();
-                    List<String> jobsS = Collections.list(actionPoolListModel.elements());
-                    for (String s : jobsS) {
-                        JSONObject o = JSONUtils.parse(s);
-                        if (o==null) log("Error: could not parse task: "+s);
-                        else {
-                            Task t = new Task().fromJSON(o);
-                            jobs.add(t);
-                        }
-                    }
+                    List<Task> jobs = Utils.applyWithNullCheck(Collections.list(actionPoolListModel.elements()), t->t.duplicate());
                     if (!jobs.isEmpty()) {
                         closeExperiment(); // avoid lock problems
                         Task.executeTasks(jobs, getUserInterface());
@@ -3198,16 +3196,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             Action runSel = new AbstractAction("Run Selected Tasks") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    List<Task> jobs = new ArrayList<>();
-                    List<String> jobsS = sel;
-                    for (String s : jobsS) {
-                        JSONObject o = JSONUtils.parse(s);
-                        if (o==null) log("Error: could not parse task: "+s);
-                        else {
-                            Task t = new Task().fromJSON(o);
-                            jobs.add(t);
-                        }
-                    }
+                    List<Task> jobs = Utils.applyWithNullCheck(sel, t->t.duplicate());
                     if (!jobs.isEmpty()) {
                         closeExperiment(); // avoid lock problems
                         Task.executeTasks(jobs, getUserInterface());
@@ -3738,7 +3727,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JButton createSelectionButton;
     private javax.swing.JMenu dataBaseMenu;
     private javax.swing.JPanel dataPanel;
-    private javax.swing.JCheckBoxMenuItem deleteMeasurementsCheckBox;
     private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JMenuItem deleteXPMenuItem;
     private javax.swing.JMenuItem duplicateXPMenuItem;
@@ -3790,6 +3778,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JMenu logMenu;
     private javax.swing.JMenuBar mainMenu;
     private javax.swing.JButton manualSegmentButton;
+    private javax.swing.JRadioButtonMenuItem measurementModeDeleteRadioButton;
+    private javax.swing.JRadioButtonMenuItem measurementModeOnlyNewRadioButton;
+    private javax.swing.JRadioButtonMenuItem measurementModeOverwriteRadioButton;
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JList microscopyFieldList;
     private javax.swing.JMenu miscMenu;

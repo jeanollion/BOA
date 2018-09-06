@@ -63,6 +63,9 @@ import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
 import java.util.stream.Stream;
 import boa.plugins.ProcessingPipeline;
+import java.util.Collection;
+import java.util.function.BiPredicate;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -269,19 +272,20 @@ public class Processor {
     }
     
     // measurement-related methods
+    public enum MEASUREMENT_MODE {ERASE_ALL, OVERWRITE, ONLY_NEW}
     
-    public static void performMeasurements(MasterDAO db, ProgressCallback pcb) {
+    public static void performMeasurements(MasterDAO db, MEASUREMENT_MODE mode, ProgressCallback pcb) {
         Experiment xp = db.getExperiment();
         for (int i = 0; i<xp.getPositionCount(); ++i) {
-            String fieldName = xp.getPosition(i).getName();
-            performMeasurements(db.getDao(fieldName), pcb);
+            String positionName = xp.getPosition(i).getName();
+            performMeasurements(db.getDao(positionName), mode, pcb);
             //if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
-            db.getDao(fieldName).clearCache();
-            db.getExperiment().getPosition(fieldName).flushImages(true, true);
+            db.getDao(positionName).clearCache();
+            db.getExperiment().getPosition(positionName).flushImages(true, true);
         }
     }
     
-    public static void performMeasurements(final ObjectDAO dao, ProgressCallback pcb) {
+    public static void performMeasurements(final ObjectDAO dao, MEASUREMENT_MODE mode, ProgressCallback pcb) {
         long t0 = System.currentTimeMillis();
         List<StructureObject> roots = dao.getRoots();
         logger.debug("{} number of roots: {}", dao.getPositionName(), roots.size());
@@ -289,8 +293,19 @@ public class Processor {
         if (roots.isEmpty()) throw new RuntimeException("no root");
         Map<StructureObject, List<StructureObject>> rootTrack = new HashMap<>(1); rootTrack.put(roots.get(0), roots);
         boolean containsObjects=false;
+        BiPredicate<StructureObject, Measurement> measurementMissing = (StructureObject callObject, Measurement m) -> {
+            return mode!=MEASUREMENT_MODE.ONLY_NEW || m.getMeasurementKeys().stream().anyMatch(k -> callObject.getChildren(k.getStoreStructureIdx()).stream().anyMatch(o -> !o.getMeasurements().getValues().containsKey(k.getKey())));
+        };
+        if (mode!=MEASUREMENT_MODE.ERASE_ALL) { // retrieve measurements for all objects
+            Set<Integer> targetStructures = Utils.flattenMap(measurements).stream()
+                    .flatMap(m->m.getMeasurementKeys().stream().map(k->k.getStoreStructureIdx()))
+                    .collect(Collectors.toSet());
+            dao.retrieveMeasurements(targetStructures.stream().mapToInt(i->i).toArray());
+        } else {
+            dao.deleteAllMeasurements();
+        }
         MultipleException globE = new MultipleException();
-        for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
+        for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) { // measurements by call structure idx
             Map<StructureObject, List<StructureObject>> allParentTracks;
             if (e.getKey()==-1) {
                 allParentTracks= rootTrack;
@@ -299,11 +314,14 @@ public class Processor {
             }
             if (pcb!=null) pcb.log("Executing #"+e.getValue().size()+" measurement"+(e.getValue().size()>1?"s":"")+" on Structure: "+e.getKey()+" (#"+allParentTracks.size()+" tracks): "+Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
             logger.debug("Executing: #{} measurements from parent: {} (#{} parentTracks) : {}", e.getValue().size(), e.getKey(), allParentTracks.size(), Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
-            
-            // start with non parallele measurements on tracks
+            // measurement are run separately depending on their carateristics to optimize parallele processing
+            // start with non parallele measurements on tracks -> give all ressources to the measurement and perform track by track
             List<Pair<Measurement, StructureObject>> actionPool = new ArrayList<>();
             allParentTracks.keySet().forEach(pt -> {
-                dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->m.callOnlyOnTrackHeads() && !(m instanceof MultiThreaded)).forEach(m-> actionPool.add(new Pair<>(m, pt)));
+                dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream()
+                        .filter(m->m.callOnlyOnTrackHeads() && !(m instanceof MultiThreaded))
+                        .filter(m->measurementMissing.test(pt, m)) // only test on trackhead object
+                        .forEach(m-> actionPool.add(new Pair<>(m, pt)));
             });
             if (pcb!=null && actionPool.size()>0) pcb.log("Executing: #"+actionPool.size()+" track measurements");
             if (!actionPool.isEmpty()) containsObjects=true;
@@ -313,15 +331,18 @@ public class Processor {
                 globE.addExceptions(me.getExceptions());
             }
             
-            // parallele measurement on tracks
+            // parallele measurement on tracks -> give all ressources to the measurement and perform track by track
             int paralleleMeasCount = (int)e.getValue().stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded) ).count(); 
             if (pcb!=null && paralleleMeasCount>0) pcb.log("Executing: #"+ paralleleMeasCount * allParentTracks.size()+" multithreaded track measurements");
             try {
                 ThreadRunner.executeAndThrowErrors(allParentTracks.keySet().stream(), pt->{
-                    dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded)).forEach(m-> {
-                        ((MultiThreaded)m).setMultithread(true);
-                        m.performMeasurement(pt);
-                    });
+                    dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream()
+                            .filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded))
+                            .filter(m->measurementMissing.test(pt, m)) // only test on trackhead object
+                            .forEach(m-> {
+                                ((MultiThreaded)m).setMultithread(true);
+                                m.performMeasurement(pt);
+                            });
                 });
             } catch(MultipleException me) {
                 globE.addExceptions(me.getExceptions());
@@ -329,14 +350,19 @@ public class Processor {
             int allObCount = allParentTracks.values().stream().mapToInt(t->t.size()).sum();
             
             // measurements on objects
-            dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream().filter(m->!m.callOnlyOnTrackHeads()).forEach(m-> {
-                if (pcb!=null) pcb.log("Executing Measurement: "+m.getClass().getSimpleName()+" on #"+allObCount+" objects");
-                try {
-                    ThreadRunner.executeAndThrowErrors(StreamConcatenation.concat((Stream<StructureObject>[])allParentTracks.values().stream().map(l->l.parallelStream()).toArray(s->new Stream[s])), o->m.performMeasurement(o));
-                } catch(MultipleException me) {
-                    globE.addExceptions(me.getExceptions());
-                }
-            });
+            dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()).stream()
+                    .filter(m->!m.callOnlyOnTrackHeads())
+                    .forEach(m-> {
+                        if (pcb!=null) pcb.log("Executing Measurement: "+m.getClass().getSimpleName()+" on #"+allObCount+" objects");
+                        try {
+                            ThreadRunner.executeAndThrowErrors(
+                                    StreamConcatenation.concat((Stream<StructureObject>[])allParentTracks.values().stream().map(l->l.parallelStream()).toArray(s->new Stream[s]))
+                                            .filter(o->measurementMissing.test(o, m))
+                                    , o->m.performMeasurement(o));
+                        } catch(MultipleException me) {
+                            globE.addExceptions(me.getExceptions());
+                        }
+                    });
             if (!containsObjects && allObCount>0) containsObjects = e.getValue().stream().filter(m->!m.callOnlyOnTrackHeads()).findAny().orElse(null)!=null;
             
             //ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
