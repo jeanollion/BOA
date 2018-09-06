@@ -327,30 +327,30 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
                     StructureObject mc1 = b1.getParent();
                     BacteriaSpineCoord coord = bsl1.getSpineCoord(l.get(0).getRegion().getCenter());
                     Overlay spineSource = SpineOverlayDrawer.getSpineOverlay(trimSpine(bsl1.spine, 0.3), mc1.getBounds(), Color.BLUE, Color.YELLOW, 0.5);
-                    SpineOverlayDrawer.drawPoint(spineSource, mc1.getBounds(), l.get(0).getRegion().getCenter(), Color.ORANGE, 1);
+                    SpineOverlayDrawer.drawPoint(spineSource, mc1.getBounds(), l.get(0).getRegion().getCenter(), Color.ORANGE, 2);
                     
                     // draw dest with point
                     StructureObject mc2 = b2.getParent();
                     BacteriaSpineCoord coord2 = bsl2.getSpineCoord(l.get(1).getRegion().getCenter());
                     Overlay spineDest = SpineOverlayDrawer.getSpineOverlay(trimSpine(bsl2.spine, 0.3), mc2.getBounds(), Color.BLUE, Color.YELLOW, 0.5);
-                    SpineOverlayDrawer.drawPoint(spineDest, mc2.getBounds(), l.get(1).getRegion().getCenter(), new Color(0, 150, 0), 1);
+                    SpineOverlayDrawer.drawPoint(spineDest, mc2.getBounds(), l.get(1).getRegion().getCenter(), new Color(0, 150, 0), 2);
                     
                     // actual projection
                     distParams.includeLQ = true;
                     NestedSpot s1 = new NestedSpot(l.get(0).getRegion(), b1, localizerMap, distParams);
                     NestedSpot s2 = new NestedSpot(l.get(1).getRegion(), b2, localizerMap, distParams);
                     Point proj = project(l.get(0).getRegion().getCenter(), b1, b2, distParams.projectionType, localizerMap, true);
-                    SpineOverlayDrawer.drawPoint(spineDest, mc2.getBounds(), proj, Color.ORANGE, 1);
+                    SpineOverlayDrawer.drawPoint(spineDest, mc2.getBounds(), proj, Color.ORANGE, 2);
                     
                     // display
                     SpineOverlayDrawer.display("Source", mc1.getRawImage(l.get(0).getStructureIdx()), spineSource);
                     SpineOverlayDrawer.display("Destination", mc2.getRawImage(l.get(0).getStructureIdx()), spineDest);
                     
                     // also add to object attributes
-                    l.get(0).setAttribute("Spine Coordinate", coord==null? "could not be computed": numberFormater.apply(coord.curvilinearCoord(false))+"/"+numberFormater.apply(coord.spineLength()));
-                    l.get(0).setAttribute("Spine Radial Coordinate", coord==null? "could not be computed": numberFormater.apply(coord.radialCoord(false))+"/"+numberFormater.apply(coord.spineRadius()));
-                    l.get(1).setAttribute("Spine Coordinate", coord2==null? "could not be computed": numberFormater.apply(coord2.curvilinearCoord(false))+"/"+numberFormater.apply(coord2.spineLength()));
-                    l.get(1).setAttribute("Spine Radial Coordinate", coord2==null? "could not be computed": numberFormater.apply(coord2.radialCoord(false))+"/"+numberFormater.apply(coord2.spineRadius()));
+                    l.get(0).setAttribute("Curvilinear Coordinate", coord==null? "could not be computed": numberFormater.apply(coord.curvilinearCoord(false))+"/"+numberFormater.apply(coord.spineLength()));
+                    l.get(0).setAttribute("Radial Coordinate", coord==null? "could not be computed": numberFormater.apply(coord.radialCoord(false))+"/"+numberFormater.apply(coord.spineRadius()));
+                    l.get(1).setAttribute("Curvilinear Coordinate", coord2==null? "could not be computed": numberFormater.apply(coord2.curvilinearCoord(false))+"/"+numberFormater.apply(coord2.spineLength()));
+                    l.get(1).setAttribute("Radial Coordinate", coord2==null? "could not be computed": numberFormater.apply(coord2.radialCoord(false))+"/"+numberFormater.apply(coord2.spineRadius()));
                     
                     // log distance
                     if (proj!=null) {

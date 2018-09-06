@@ -353,8 +353,10 @@ public class BacteriaSpineLocalizer {
     public static double distanceSq(BacteriaSpineCoord sourceCoord, Point otherPoint, StructureObject source, StructureObject destination, PROJECTION projType, boolean projectOnSameSide, Map<StructureObject,BacteriaSpineLocalizer> localizerMap, boolean testMode ) {
         if (sourceCoord==null) return Double.POSITIVE_INFINITY;
         if (projectOnSameSide) { // also enshure both points are on the same side
-            Point otherPoint2 = getPointOnSameSide(sourceCoord.radialCoord(false), otherPoint, destination, localizerMap);
-            if (otherPoint2!=null) otherPoint = otherPoint2;
+            if (Math.abs(sourceCoord.radialCoord(false))>1) { // side is not significative for small distance to spine
+                Point otherPoint2 = getPointOnSameSide(sourceCoord.radialCoord(false), otherPoint, destination, localizerMap);
+                if (otherPoint2!=null) otherPoint = otherPoint2;
+            }
         }
         if (source==destination) {
             BacteriaSpineLocalizer bsl = localizerMap.get(source);
@@ -386,7 +388,7 @@ public class BacteriaSpineLocalizer {
     public static Point project(BacteriaSpineCoord sourceCoord, StructureObject source, StructureObject destination, PROJECTION proj, Map<StructureObject,BacteriaSpineLocalizer> localizerMap, boolean testMode ) {
         if (sourceCoord==null) return null;
         if (source.getFrame()>=destination.getFrame()) throw new IllegalArgumentException("Source should be before destination");
-        if (destination.getPrevious()==source && destination.getTrackHead()==source.getTrackHead()) {
+        if (destination.getPrevious()==source && destination.getTrackHead()==source.getTrackHead()) { // simple projection between two successive frames, no division
             BacteriaSpineLocalizer bsl = localizerMap.get(destination);
             if (bsl ==null) return null;
             return bsl.project(sourceCoord, proj);
@@ -420,7 +422,7 @@ public class BacteriaSpineLocalizer {
                 double prop = localizerMap.get(next).getLength()/divLength;
                 List<StructureObject> sib = next.getDivisionSiblings(false);
                 boolean nextIsUpperCell = sib.isEmpty() || next.getBounds().yMean() < sib.stream().mapToDouble(o->o.getBounds().yMean()).min().getAsDouble(); 
-                if (testMode) logger.debug("project div: coord before proj {} spine: {} after set div point : {}", curentProj,  (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj)), (source==cur?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj)).setDivisionPoint(prop, nextIsUpperCell)); //
+                if (testMode) logger.debug("project div: coord before proj {} spine: {} after set div point : {}", curentProj,  (curentProj==null?sourceCoord : localizerMap.get(cur).getSpineCoord(curentProj)), (curentProj==null?sourceCoord.duplicate().setDivisionPoint(prop, nextIsUpperCell) : localizerMap.get(cur).getSpineCoord(curentProj)).setDivisionPoint(prop, nextIsUpperCell)); //
                 if (curentProj==null) curentProj = localizerMap.get(next).project(sourceCoord.duplicate().setDivisionPoint(prop, nextIsUpperCell), proj); // first projection
                 else curentProj = projectDiv(curentProj, localizerMap.get(cur), localizerMap.get(next), prop, nextIsUpperCell, proj);
                 if (testMode) logger.info("project div: {} -> {}, div prop: {}, upper cell: {} coord div: {} spine: {}", cur, next, prop, nextIsUpperCell, curentProj, localizerMap.get(next).getSpineCoord(curentProj));
