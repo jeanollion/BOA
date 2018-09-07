@@ -98,6 +98,7 @@ import boa.utils.Utils;
 import boa.utils.geom.Point;
 import boa.utils.geom.Vector;
 import java.awt.Event;
+import java.awt.KeyboardFocusManager;
 import java.util.HashSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -126,14 +127,19 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     @Override
     public void toggleSetObjectCreationTool() {
         if (IJ.getToolName()=="point"||IJ.getToolName()=="multipoint") {
-            this.getDisplayer().getCurrentImage().deleteRoi();
+            ImagePlus imp = this.getDisplayer().getCurrentImage();
+            if (imp !=null) imp.deleteRoi();
             IJ.setTool("rect");
         }
         else IJ.setTool("multipoint");
         ImageCanvas c;
-        
     }
-    
+    @Override 
+    public boolean isCurrentFocusOwnerAnImage() {
+        Component c = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+        logger.debug("current focus owner class: {}", c.getClass());
+        return (c instanceof ImageCanvas || c instanceof ImageWindow);
+    }
     @Override
     public void addMouseListener(final Image image) {
         final ImagePlus ip = displayer.getImage(image);

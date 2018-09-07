@@ -431,6 +431,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         actionMap.put(ACTION.TOGGLE_CREATION_TOOL, new AbstractAction("Toggle creation tool") {
             @Override
             public void actionPerformed(ActionEvent e) {
+                // do not perform the action is and image is not focused
+                if (!ImageWindowManagerFactory.getImageManager().isCurrentFocusOwnerAnImage()) return;
                 ImageWindowManagerFactory.getImageManager().toggleSetObjectCreationTool();
                 logger.debug("C pressed: " + e);
             }
@@ -454,6 +456,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         actionMap.put(ACTION.CHANGE_INTERACTIVE_STRUCTURE, new AbstractAction("Change Interactive structure") {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (!ImageWindowManagerFactory.getImageManager().isCurrentFocusOwnerAnImage()) return;
                 if (interactiveStructure.getItemCount()>1) {
                     int s = interactiveStructure.getSelectedIndex()-1;
                     s = (s+1) % (interactiveStructure.getItemCount()-1);
@@ -466,6 +469,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         actionMap.put(ACTION.TOGGLE_SELECT_MODE, new AbstractAction("Track mode") {
             @Override
             public void actionPerformed(ActionEvent e) {
+                if (!ImageWindowManagerFactory.getImageManager().isCurrentFocusOwnerAnImage()) return;
                 if (ImageWindowManager.displayTrackMode) ImageWindowManager.displayTrackMode = false;
                 else ImageWindowManager.displayTrackMode = true;
                 logger.debug("TrackMode is {}", ImageWindowManager.displayTrackMode? "ON":"OFF");
