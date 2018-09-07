@@ -28,7 +28,7 @@ import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.ScaleXYZParameter;
-import boa.configuration.parameters.SimpleContainerParameter;
+import boa.configuration.parameters.ContainerParameterImpl;
 import boa.configuration.parameters.SimpleListParameter;
 import boa.configuration.parameters.FrameParameter;
 import boa.configuration.parameters.TransformationPluginParameter;
@@ -59,7 +59,7 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class PreProcessingChain extends SimpleContainerParameter {
+public class PreProcessingChain extends ContainerParameterImpl<PreProcessingChain> {
     BooleanParameter useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true).setToolTipText("Voxel calibration (voxel size in x, y, z axis). If <em>Custom calibration</em> is set, the image calibration (if present) will be overriden");
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("Scale XY", 5, 1, 0.00001, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("Scale Z", 5, 1, 0.00001, null);
@@ -98,7 +98,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
         super(name);
         //logger.debug("new PPC: {}", name);
         initChildList();
-        Consumer<Parameter> pl = (Parameter sourceParameter) -> {
+        Consumer<BoundedNumberParameter> pl =  sourceParameter -> {
             Position pos = ParameterUtils.getMicroscopyField(sourceParameter);
             if (pos!=null) {
                 pos.flushImages(true, true);

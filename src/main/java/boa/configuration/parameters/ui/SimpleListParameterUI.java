@@ -22,7 +22,7 @@ import boa.configuration.parameters.Deactivatable;
 import boa.configuration.parameters.ListParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParameterUtils;
-import boa.configuration.parameters.SimpleParameter;
+import boa.configuration.parameters.ParameterImpl;
 import boa.configuration.parameters.ui.ListParameterUI;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.configuration.parameters.ListElementErasable;

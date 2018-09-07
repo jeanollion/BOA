@@ -22,7 +22,7 @@ package boa.configuration.parameters;
  *
  * @author jollion
  */
-public interface ChoosableParameterMultiple extends Parameter, Listenable {
+public interface ChoosableParameterMultiple<P extends Parameter<P>> extends Parameter<P>, Listenable<P> {
     public void setSelectedIndicies(int[] selectedItems);
     public int[] getSelectedItems();
     public String[] getChoiceList();

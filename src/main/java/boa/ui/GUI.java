@@ -200,7 +200,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     // enable/disable components
     private ProgressIcon progressBar;
     private NumberParameter openedImageLimit = new BoundedNumberParameter("Limit", 0, 5, 0, null);
-    private NumberParameter kymographInterval = new NumberParameter("Kymograph Interval", 0, 0).setToolTipText("Interval between images, in pixels");
+    private NumberParameter kymographInterval = new NumberParameter<>("Kymograph Interval", 0, 0).setToolTipText("Interval between images, in pixels");
     private NumberParameter localZoomFactor = new BoundedNumberParameter("Local Zoom Factor", 1, 4, 2, null);
     private NumberParameter localZoomArea = new BoundedNumberParameter("Local Zoom Area", 0, 35, 15, null);
     private NumberParameter threadNumber = new BoundedNumberParameter("Max Thread Number", 0, System.getProperty("os.name").toLowerCase().indexOf("win")>=0 ? 1 : ThreadRunner.getMaxCPUs(), 1, ThreadRunner.getMaxCPUs());
@@ -570,8 +570,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         
         this.shortcuts = new Shortcuts(actionMap, PRESET.valueOf(shortcutPreset.getValue()));
         
-        Consumer<Parameter> setShortcut = p->{
-            int selPreset = ((ChoiceParameter)p).getSelectedIndex();
+        Consumer<ChoiceParameter> setShortcut = p->{
+            int selPreset = p.getSelectedIndex();
             shortcuts.setPreset(PRESET.valueOf(((ChoiceParameter)p).getValue()));
             shortcuts.addToMenu(this.shortcutMenu);
             shortcutPresetMenu.removeAll();

@@ -29,7 +29,7 @@ import boa.plugins.PostFilter;
  *
  * @author jollion
  */
-public class PostFilterSequence extends PluginParameterList<PostFilter> {
+public class PostFilterSequence extends PluginParameterList<PostFilter, PostFilterSequence> {
     Boolean configured = false;
     
     public PostFilterSequence(String name) {
@@ -56,5 +56,11 @@ public class PostFilterSequence extends PluginParameterList<PostFilter> {
     @Override public PostFilterSequence add(Collection<PostFilter> instances) {
         super.add(instances);
         return this;
+    }
+    @Override
+    public PostFilterSequence duplicate() {
+        PostFilterSequence res = new PostFilterSequence(name);
+        res.setContentFrom(this);
+        return res;
     }
 }

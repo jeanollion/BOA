@@ -22,7 +22,7 @@ package boa.configuration.parameters;
  *
  * @author jollion
  */
-public interface ChoosableParameter extends Parameter, Listenable {
+public interface ChoosableParameter<P extends Parameter<P>> extends Parameter<P>, Listenable<P> {
     /**
      * Set {@param item} as selected
      * Should also fire listeners

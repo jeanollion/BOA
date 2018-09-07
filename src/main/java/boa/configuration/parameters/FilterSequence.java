@@ -36,7 +36,7 @@ import boa.plugins.Transformation;
  *
  * @author jollion
  */
-public class FilterSequence extends PluginParameterList<Filter> {
+public class FilterSequence extends PluginParameterList<Filter, FilterSequence> {
 
     public FilterSequence(String name) {
         super(name, "Transformation", Filter.class);
@@ -59,5 +59,11 @@ public class FilterSequence extends PluginParameterList<Filter> {
     @Override public FilterSequence add(Collection<Filter> instances) {
         super.add(instances);
         return this;
+    }
+    @Override
+    public FilterSequence duplicate() {
+        FilterSequence res = new FilterSequence(name);
+        res.setContentFrom(this);
+        return res;
     }
 }

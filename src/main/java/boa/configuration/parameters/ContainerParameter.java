@@ -22,6 +22,6 @@ package boa.configuration.parameters;
  *
  * @author jollion
  */
-public interface ContainerParameter extends Parameter {
+public interface ContainerParameter<P extends ContainerParameter<P>> extends Parameter<P> {
     
 }

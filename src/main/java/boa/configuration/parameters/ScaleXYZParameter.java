@@ -27,7 +27,7 @@ import org.json.simple.JSONObject;
  * @author jollion
  */
 
-public class ScaleXYZParameter extends SimpleContainerParameter {
+public class ScaleXYZParameter extends ContainerParameterImpl<ScaleXYZParameter> {
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("ScaleXY (pix)", 3, 1, 0, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("ScaleZ (pix)", 3, 1, 0, null);
     BooleanParameter useImageCalibration = new BooleanParameter("Use image calibration for Z-scale", true);

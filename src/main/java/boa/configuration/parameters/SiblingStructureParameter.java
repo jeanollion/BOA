@@ -24,7 +24,7 @@ import boa.configuration.experiment.Structure;
  *
  * @author jollion
  */
-public class SiblingStructureParameter extends StructureParameter {
+public class SiblingStructureParameter extends ObjectClassParameter<SiblingStructureParameter> {
     int parentStructureIdx=-2;
     int[] idxStructureMap;
     int selectedStructureIdx=-1;

@@ -25,11 +25,10 @@ import java.util.function.ToIntFunction;
 
 /**
  *
- * @author nasique
+ * @author jollion
+ * @param <T>
  */
-public class StructureParameter<T extends StructureParameter<T>> extends IndexChoiceParameter {
-    protected Experiment xp;
-    Consumer<T> autoConfiguration;
+public class StructureParameter extends ObjectClassParameter<StructureParameter> {
     
     public StructureParameter(String name) {
         super(name);
@@ -41,61 +40,6 @@ public class StructureParameter<T extends StructureParameter<T>> extends IndexCh
     public StructureParameter(String name, int[] selectedStructures, boolean allowNoSelection) {
         super(name, selectedStructures, allowNoSelection);
     }
-    
-    @Override
-    public boolean isValid() {
-        if (!super.isValid()) return false;
-        // also check selected indices are within index choice range
-        if (this.selectedIndices==null) return true;
-        String[] ch = this.getChoiceList();
-        if (ch!=null) {
-            for (int i : selectedIndices) if (i>=ch.length) return false;
-        } else return false;
-        return true;
-    }
-    
-    public T setAutoConfiguration(Consumer<T> autoConfiguration) {
-        this.autoConfiguration=autoConfiguration;
-        return (T)this;
-    }
-    public static <T extends StructureParameter<T>> Consumer<T> defaultAutoConfiguration() {
-        return p -> p.setSelectedStructureIdx(structureInParents().applyAsInt(p));
-    }
-    public static ToIntFunction<StructureParameter> structureInParents() {
-        return p->{
-            Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, p, false);
-            int sIdx = (s!=null) ? s.getIndex(): -1;
-            return sIdx;
-        };
-    }
-    public static ToIntFunction<StructureParameter> structureParameterInParents() {
-        return p->{
-            StructureParameter s = ParameterUtils.getFirstParameterFromParents(StructureParameter.class, p, false);
-            int sIdx = (s!=null) ? s.getSelectedStructureIdx(): -1;
-            return sIdx;
-        };
-    }
-    protected void autoConfiguration() {
-        if (autoConfiguration!=null) autoConfiguration.accept((T)this);
-    }
-    
-    protected Experiment getXP() {
-        if (xp==null) xp= ParameterUtils.getExperiment(this);
-        return xp;
-    }
-    
-    public void setSelectedStructureIdx(int structureIdx) {
-        super.setSelectedIndex(structureIdx);
-    }
-    
-    public int getSelectedStructureIdx() {
-        int idx = super.getSelectedIndex();
-        if (idx==-1 && autoConfiguration!=null) {
-            autoConfiguration();
-            return super.getSelectedIndex();
-        } else return idx;
-    }
-    
     @Override
     public String[] getChoiceList() {
         String[] choices;
@@ -106,25 +50,4 @@ public class StructureParameter<T extends StructureParameter<T>> extends IndexCh
         }
         return choices;
     }
-    
-    public int getParentStructureIdx() {
-        if (getXP()==null) logger.error("StructureParameter#getParentStructureIdx(): {}, could not get dataset", name);
-        if (getSelectedIndex()==-1) return -1;
-        else return getXP().getStructure(getSelectedIndex()).getParentStructure();
-    }
-    
-    public int getFirstCommonParentStructureIdx(int otherStructureIdx) {
-        if (getSelectedIndex()==-1 || otherStructureIdx==-1) return -1;
-        if (getXP()==null) {
-            logger.error("StructureParameter#getParentStructureIdx(): {}, could not get dataset", name);
-            return -1;
-        }
-        else return getXP().getFirstCommonParentStructureIdx(getSelectedIndex(), otherStructureIdx);
-    }
-
-    @Override
-    public String getNoSelectionString() {
-        return "Viewfield";
-    }
-    
 }

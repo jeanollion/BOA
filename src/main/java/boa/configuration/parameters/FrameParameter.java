@@ -72,5 +72,9 @@ public class FrameParameter extends BoundedNumberParameter {
         getMaxFrame(); // sets the upper bound
         return super.getUI();
     }
-    
+    @Override
+    public FrameParameter setToolTipText(String txt) {
+        super.setToolTipText(txt);
+        return this;
+    }
 }

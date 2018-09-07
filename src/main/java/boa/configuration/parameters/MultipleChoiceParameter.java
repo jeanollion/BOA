@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class MultipleChoiceParameter extends SimpleParameter implements ChoosableParameterMultiple {
+public class MultipleChoiceParameter extends ParameterImpl implements ChoosableParameterMultiple {
     int[] selectedItems;
     String[] listChoice;
     MultipleChoiceParameterUI ui;
@@ -124,7 +124,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     public MultipleChoiceParameter duplicate() {
         MultipleChoiceParameter res= new MultipleChoiceParameter(name, listChoice, selectedItems);
         res.setListeners(listeners);
-        res.setValidationFunction(validationFunction);
+        res.addValidationFunction(additionalValidation);
         return res;
     }
     

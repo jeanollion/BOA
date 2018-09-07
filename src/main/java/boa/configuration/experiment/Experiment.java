@@ -25,9 +25,9 @@ import boa.configuration.parameters.FileChooser;
 import boa.configuration.parameters.FileChooser.FileChooserOption;
 import boa.configuration.parameters.MultipleChoiceParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.SimpleContainerParameter;
+import boa.configuration.parameters.ContainerParameterImpl;
 import boa.configuration.parameters.SimpleListParameter;
-import boa.configuration.parameters.SimpleParameter;
+import boa.configuration.parameters.ParameterImpl;
 import boa.configuration.parameters.ui.ParameterUI;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
@@ -59,6 +59,10 @@ import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
 import boa.utils.Utils;
 import static boa.utils.Utils.toArray;
+import com.google.common.collect.Sets;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -68,10 +72,26 @@ import java.util.stream.Stream;
  * 
  */
 
-public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
+public class Experiment extends ContainerParameterImpl<Experiment> implements TreeModelContainer {
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<>("Channel Images", 0 , ChannelImage.class).setNewInstanceNameFunction(i->"channel image"+i).setToolTipText("Channel of input images");
     SimpleListParameter<Structure> structures= new SimpleListParameter<>("Object Classes", -1 , Structure.class).setNewInstanceNameFunction(i->"object class"+i).setToolTipText("Types of objects to be analysed in this dataset. All processing is defined in this part of the configuration tree");
-    SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<>("Measurements", -1 , new PluginParameter<>("Measurements", Measurement.class, false)).setToolTipText("Measurement to be performed after processing");
+    SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<>("Measurements", -1 , new PluginParameter<>("Measurements", Measurement.class, false))
+            .addValidationFunctionToChildren(ppm -> {
+                if (!ppm.isActivated()) return true;
+                if (!ppm.isOnePluginSet()) return false;
+                Measurement m = ppm.instanciatePlugin();
+                if (m==null) return false;
+                Map<Integer, List<String>> currentmkByStructure= m.getMeasurementKeys().stream().collect(Collectors.groupingBy(mk->mk.getStoreStructureIdx(), Collectors.mapping(mk->mk.getKey(), Collectors.toList())));               
+                if (currentmkByStructure.values().stream().anyMatch((l) -> ((new HashSet<>(l).size()!=l.size())))) return false; // first check if duplicated keys for the measurement
+                SimpleListParameter<PluginParameter<Measurement>> ml= (SimpleListParameter) ppm.getParent();
+                Map<Integer, Set<String>> allmkByStructure= ml.getActivatedChildren().stream().filter(pp->pp!=ppm).map(pp -> pp.instanciatePlugin()).filter(mes->mes!=null).flatMap(mes -> mes.getMeasurementKeys().stream()).collect(Collectors.groupingBy(mk->mk.getStoreStructureIdx(), Collectors.mapping(mk->mk.getKey(), Collectors.toSet())));
+                return !currentmkByStructure.entrySet().stream().anyMatch( e -> {
+                    Set<String> otherKeys = allmkByStructure.get(e.getKey());
+                    if (otherKeys==null) return false;
+                    return !Sets.intersection(otherKeys, new HashSet<>(e.getValue())).isEmpty();
+                });
+            })
+            .setToolTipText("Measurement to be performed after processing. Help displayed output keys (column in extracted data) and the associated strucutre. If several keys are equal for the same structure, the associated measurement won't be valid (displayed in red)");
     SimpleListParameter<Position> positions= new SimpleListParameter<>("Positions", -1 , Position.class).setAllowMoveChildren(false).setToolTipText("Positions of the dataset. Preprocessing is defined for each position. Right-click menu allows to overwrite preprocessing to other position.");
     PreProcessingChain template = new PreProcessingChain("Pre-Processing pipeline template").setToolTipText("Default preprocessing set to positions at import");
     
@@ -130,7 +150,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public Experiment(String name) {
         super(name);
-        outputPath.addListener((Parameter source) -> {
+        outputPath.addListener((FileChooser source) -> {
             Experiment xp = ParameterUtils.getExperiment(source);
             if (xp.outputPath.getFirstSelectedFilePath()==null) return;
             if (xp.imagePath.getFirstSelectedFilePath()==null) xp.imagePath.setSelectedFilePath(xp.outputPath.getFirstSelectedFilePath());
@@ -139,7 +159,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
                 GUI.getInstance().outputDirectoryUpdated();
             }
         });
-        structures.addListener((Parameter source) -> ((SimpleListParameter<Structure>)source).getChildren().stream().forEachOrdered((s) -> s.setMaxStructureIdx()));
+        structures.addListener(source -> source.getChildren().stream().forEachOrdered((s) -> s.setMaxStructureIdx()));
         initChildList();
     }
     @Override 

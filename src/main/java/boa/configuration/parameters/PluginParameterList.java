@@ -29,42 +29,38 @@ import java.util.function.Consumer;
 /**
  *
  * @author jollion
+ * @param <T>
+ * @param <L>
  */
-public class PluginParameterList<T extends Plugin> extends SimpleListParameter<PluginParameter<T>> {
+public abstract class PluginParameterList<T extends Plugin, L extends PluginParameterList<T, L>> extends ListParameterImpl<PluginParameter<T>, L> {
     String childLabel;
     public PluginParameterList(String name, String childLabel, Class<T> childClass) {
         super(name, -1, new PluginParameter<T>(childLabel, childClass, false));
     }
-    @Override
-    public PluginParameterList duplicate() {
-        PluginParameterList res = new PluginParameterList(name, childLabel, getChildClass());
-        res.setContentFrom(this);
-        res.setListeners(listeners);
-        return res;
-    }
+    
     private void add(T instance) {
         super.insert(super.createChildInstance(childLabel).setPlugin(instance));
     } 
-    public PluginParameterList<T> removeAll() {
+    public L removeAll() {
         this.removeAllElements();
-        return this;
+        return (L)this;
     }
-    public PluginParameterList<T> add(T... instances) {
+    public L add(T... instances) {
         for (T t : instances) add(t);
-        return this;
+        return (L)this;
     }
-    public PluginParameterList<T> addAtFirst(T... instances) {
+    public L addAtFirst(T... instances) {
         for (T t : instances) {
             PluginParameter<T> pp = super.createChildInstance(childLabel).setPlugin(t);
             pp.setParent(this);
             super.getChildren().add(0, pp);
         }
-        return this;
+        return (L)this;
     }
     
-    public PluginParameterList<T> add(Collection<T> instances) {
+    public L add(Collection<T> instances) {
         for (T t : instances) add(t);
-        return this;
+        return (L)this;
     }
     
     public List<T> get() {

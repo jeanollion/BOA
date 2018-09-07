@@ -31,18 +31,22 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import boa.utils.Utils;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  *
  * @author jollion
+ * @param <P>
  */
 
-public abstract class SimpleContainerParameter implements ContainerParameter {
+public abstract class ContainerParameterImpl<P extends ContainerParameterImpl<P>> implements ContainerParameter<P> {
     protected String name;
     protected ContainerParameter parent;
     protected List<Parameter> children;
     protected Boolean isEmphasized;
-    public SimpleContainerParameter(String name) {
+    protected Predicate<P> additionalValidation = p->true;
+    
+    public ContainerParameterImpl(String name) {
         this.name=name;
     }
     protected String toolTipText;
@@ -51,9 +55,9 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         return toolTipText;
     }
     @Override
-    public <T extends Parameter> T setToolTipText(String txt) {
+    public P setToolTipText(String txt) {
         this.toolTipText=txt;
-        return (T)this;
+        return (P)this;
     }
     @Override
     public boolean isEmphasized() {
@@ -61,10 +65,10 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         return getChildren().stream().anyMatch((child) -> (child.isEmphasized()));
     }
     @Override
-    public <T extends Parameter> T setEmphasized(boolean isEmphasized) {
+    public P setEmphasized(boolean isEmphasized) {
         this.getChildren().stream().filter(p->!p.isEmphasized()).forEach(p -> p.setEmphasized(isEmphasized));
         this.isEmphasized = isEmphasized;
-        return (T) this;
+        return (P) this;
     }
     protected void initChildren(List<Parameter> parameters) {
         if (parameters==null) {
@@ -94,15 +98,22 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     protected abstract void initChildList();
     
     @Override
+    public P addValidationFunction(Predicate<P> isValid) {
+        additionalValidation = additionalValidation.and(isValid);
+        return (P)this;
+    }
+    
+    @Override
     public boolean isValid() {
-        return getChildren().stream().noneMatch((child) -> (!child.isValid()));
+        if (!getChildren().stream().noneMatch((child) -> (!child.isValid()))) return false;
+        return additionalValidation.test((P)this);
     }
     
     @Override
     public void setContentFrom(Parameter other) {
-        if (other instanceof SimpleContainerParameter) {
+        if (other instanceof ContainerParameterImpl) {
             bypassListeners=true;
-            SimpleContainerParameter otherP = (SimpleContainerParameter) other;
+            ContainerParameterImpl otherP = (ContainerParameterImpl) other;
             if (!ParameterUtils.setContent(getChildren(), otherP.getChildren())) logger.warn("SCP: {}({}): different parameter length, they might not be well set: c:{}/src:{}", name, this.getClass().getSimpleName(), children.size(), otherP.children.size());
             bypassListeners=false;
         } else {
@@ -111,11 +122,11 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     @Override
-    public <T extends Parameter> T duplicate() {
+    public P duplicate() {
         try {
-            T p = (T) this.getClass().getDeclaredConstructor(String.class).newInstance(name);
+            P p = (P) this.getClass().getDeclaredConstructor(String.class).newInstance(name);
             p.setContentFrom(this);
-            ((SimpleContainerParameter)p).setListeners(listeners);
+            ((ContainerParameterImpl)p).setListeners(listeners);
             return p;
         } catch (NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
             logger.error("duplicate error:", ex);
@@ -135,7 +146,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     
     @Override
     public ArrayList<Parameter> getPath() {
-        return SimpleParameter.getPath(this);
+        return ParameterImpl.getPath(this);
     }
     
     @Override
@@ -232,19 +243,19 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     // listenable
-    protected List<Consumer<Parameter>> listeners;
+    protected List<Consumer<P>> listeners;
     boolean bypassListeners;
-    public void addListener(Consumer<Parameter> listener) {
+    public void addListener(Consumer<P> listener) {
         if (listeners == null) listeners = new ArrayList<>();
         listeners.add(listener);
     }
-    public void removeListener(Consumer<Parameter> listener) {
+    public void removeListener(Consumer<P> listener) {
         if (listeners != null) listeners.remove(listener);
     }
     public void fireListeners() {
-        if (listeners != null && !bypassListeners) for (Consumer<Parameter> pl : listeners) pl.accept(this);
+        if (listeners != null && !bypassListeners) for (Consumer<P> pl : listeners) pl.accept((P)this);
     }
-    public void setListeners(List<Consumer<Parameter>> listeners) {
+    public void setListeners(List<Consumer<P>> listeners) {
         if (listeners==null) this.listeners=null;
         else this.listeners=new ArrayList<>(listeners);
     }

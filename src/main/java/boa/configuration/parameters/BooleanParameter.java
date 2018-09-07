@@ -23,7 +23,7 @@ package boa.configuration.parameters;
  * ChoiceParameter with two elements, 1st = true, 2nd = false
  * @author jollion
  */
-public class BooleanParameter extends ChoiceParameter {
+public class BooleanParameter extends AbstractChoiceParameter<BooleanParameter> {
     
     public BooleanParameter(String name) {
         this(name, false);
@@ -46,5 +46,10 @@ public class BooleanParameter extends ChoiceParameter {
         if (selected) super.setSelectedIndex(0);
         else super.setSelectedIndex(1);
     }
-    
+    @Override public BooleanParameter duplicate() {
+        BooleanParameter res = new BooleanParameter(name, this.listChoice[0], this.listChoice[1], this.getSelected());
+        res.setListeners(listeners);
+        res.addValidationFunction(additionalValidation);
+        return res;
+    }
 }

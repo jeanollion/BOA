@@ -22,7 +22,7 @@ package boa.configuration.parameters;
  *
  * @author jollion
  */
-public class ChannelImageParameter extends StructureParameter {
+public class ChannelImageParameter extends ObjectClassParameter<ChannelImageParameter> {
     
     public ChannelImageParameter() {
         this("");

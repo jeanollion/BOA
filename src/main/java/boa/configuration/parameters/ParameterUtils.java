@@ -117,24 +117,24 @@ public class ParameterUtils {
         }
         return ok;
     }
-    public static boolean sameContent(List<Parameter> recieve, List<Parameter> give) {return sameContent(recieve, give, null);}
-    public static boolean sameContent(List<Parameter> recieve, List<Parameter> give, String message) {
-        if (recieve==null && give!=null) {
+    public static boolean sameContent(List<Parameter> destination, List<Parameter> source) {return sameContent(destination, source, null);}
+    public static boolean sameContent(List<Parameter> destination, List<Parameter> source, String message) {
+        if (destination==null && source!=null) {
             if (message!=null) logger.debug(message+" 1st null");
             return false;
         }
-        if (recieve!=null && give==null) {
+        if (destination!=null && source==null) {
             if (message!=null) logger.debug(message+" 2nd null");
             return false;
         }
-        if (recieve==null && give==null) return true;
-        if (recieve.size()!=give.size()) {
-            if (message!=null) logger.debug(message+" differ in size: {} vs {}", recieve.size(), give.size());
+        if (destination==null && source==null) return true;
+        if (destination.size()!=source.size()) {
+            if (message!=null) logger.debug(message+" differ in size: {} vs {}", destination.size(), source.size());
             return false;
         }
-        for (int i = 0; i < recieve.size(); i++) {
-            if (!recieve.get(i).sameContent(give.get(i))) {
-                if (message!=null) logger.debug(message+" differ at index: {}", i);
+        for (int i = 0; i < destination.size(); i++) {
+            if (!destination.get(i).sameContent(source.get(i))) {
+                if (message!=null) logger.debug(message+" differ at index: {}. source: {} vs destination: {}", i, source.get(i), destination.get(i));
                 return false;
             }
         }
@@ -285,9 +285,11 @@ public class ParameterUtils {
             parent = ((Parameter)parent.getParent());
             // look in siblings/uncles
             if (lookInIndirectParents && parent instanceof ListParameter) {
-                for (Parameter p : ((ListParameter<Parameter>)parent).getActivatedChildren()) if (clazz.equals(p.getClass())) return (T)p;
+                Parameter res = ((ListParameter<? extends Parameter, ? extends ListParameter>)parent).getActivatedChildren().stream().filter(p->clazz.equals(p.getClass())).findAny().orElse(null);
+                if (res!=null) return (T)res;
             } else if (lookInIndirectParents && parent instanceof ContainerParameter) {
-                for (Parameter p : ((SimpleContainerParameter)parent).getChildren())  if (clazz.equals(p.getClass())) return (T)p;
+                Object res = ((ContainerParameterImpl)parent).getChildren().stream().filter(p->clazz.equals(p.getClass())).findAny().orElse(null);
+                if (res!=null) return (T)res;
             } else  if (clazz.equals(parent.getClass())) return (T)parent;
         }
         return null;
@@ -299,13 +301,13 @@ public class ParameterUtils {
     public static void configureStructureParameters(final int structureIdxHint, Parameter parameter) {
         if (structureIdxHint==-1) return;
         ParameterConfiguration config = new ParameterConfiguration() {
-            public void configure(Parameter p) {
+            @Override public void configure(Parameter p) {
                 if (((StructureParameter)p).getSelectedStructureIdx()==-1) {
                     ((StructureParameter)p).setSelectedStructureIdx(structureIdxHint);
                     //logger.debug("Configuring: {}, with value: {}", p.getName(), structureIdxHint);
                 }
             }
-            public boolean isConfigurable(Parameter p) {
+            @Override public boolean isConfigurable(Parameter p) {
                 return p instanceof StructureParameter;
             }
         };
@@ -315,9 +317,9 @@ public class ParameterUtils {
     public static void configureParameter(final ParameterConfiguration config, Parameter parameter) {       
         if (config.isConfigurable(parameter)) config.configure(parameter);
         else if (parameter instanceof ListParameter) {
-            for (Parameter p : ((ListParameter<Parameter>)parameter).getActivatedChildren()) configureParameter(config, p);
+            for (Parameter p : ((ListParameter<? extends Parameter, ? extends ListParameter>)parameter).getActivatedChildren()) configureParameter(config, p);
         } else if (parameter instanceof ContainerParameter) {
-            for (Parameter p : ((SimpleContainerParameter)parameter).getChildren()) configureParameter(config, p);
+            for (Parameter p : ((ContainerParameterImpl<? extends Parameter>)parameter).getChildren()) configureParameter(config, p);
         }
     }
     public interface ParameterConfiguration {

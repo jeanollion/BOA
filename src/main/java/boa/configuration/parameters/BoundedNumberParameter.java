@@ -23,9 +23,10 @@ import java.util.function.Consumer;
 
 /**
  *
- * @author nasique
+ * @author jollion
+ * @param <P>
  */
-public class BoundedNumberParameter extends NumberParameter {
+public class BoundedNumberParameter extends NumberParameter<BoundedNumberParameter> {
     Number lowerBound, upperBound;
     
     public BoundedNumberParameter(String name, int decimalPlaces, Number defaultValue, Number lowerBound, Number upperBound) {
@@ -49,7 +50,7 @@ public class BoundedNumberParameter extends NumberParameter {
     @Override public BoundedNumberParameter duplicate() {
         BoundedNumberParameter res = new BoundedNumberParameter(name, decimalPlaces, value, lowerBound, upperBound);
         res.setListeners(listeners);
-        res.setValidationFunction(validationFunction);
+        res.addValidationFunction(additionalValidation);
         return res;
     }
 }

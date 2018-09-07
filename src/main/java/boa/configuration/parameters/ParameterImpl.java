@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import org.scijava.module.ModuleItem;
@@ -35,13 +36,13 @@ import org.scijava.module.ModuleItem;
  * @author jollion
  */
 
-public abstract class SimpleParameter implements Parameter {
+public abstract class ParameterImpl<P extends ParameterImpl<P>> implements Parameter<P> {
     protected String name;
     private ContainerParameter parent;
     protected boolean isEmphasized;
-    protected Function<Parameter, Boolean> validationFunction;
+    protected Predicate<P> additionalValidation = p->true;
     
-    protected SimpleParameter(String name) {
+    protected ParameterImpl(String name) {
         this.name=name;
     }
     protected String toolTipText;
@@ -50,18 +51,19 @@ public abstract class SimpleParameter implements Parameter {
         return toolTipText;
     }
     @Override
-    public <T extends Parameter> T setToolTipText(String txt) {
+    public P setToolTipText(String txt) {
         this.toolTipText=txt;
-        return (T)this;
+        return (P)this;
     }
-    public <T extends Parameter> T setValidationFunction(Function<Parameter, Boolean> validationFunction) {
-        this.validationFunction = validationFunction;
-        return (T)this;
+    @Override
+    public P addValidationFunction(Predicate<P> validationFunction) {
+        this.additionalValidation = this.additionalValidation.and(validationFunction);
+        return (P)this;
     }
     @Override 
     public boolean isValid() {
-        if (validationFunction==null) return true;
-        return validationFunction.apply(this);
+        if (additionalValidation==null) return true;
+        return additionalValidation.test((P)this);
     }
     @Override
     public String getName(){
@@ -77,21 +79,21 @@ public abstract class SimpleParameter implements Parameter {
     public String toStringFull() {return toString();}
     
     @Override
-    public <T extends Parameter> T duplicate() {
+    public P duplicate() {
         try {
-                SimpleParameter p = this.getClass().getDeclaredConstructor(String.class).newInstance(name);
+                ParameterImpl p = this.getClass().getDeclaredConstructor(String.class).newInstance(name);
                 p.setContentFrom(this);
                 p.setListeners(listeners);
-                p.setValidationFunction(validationFunction);
-                return (T)p;
+                p.addValidationFunction(additionalValidation);
+                return (P)p;
             } catch (Exception ex) {
                 try {
-                    SimpleParameter p = (SimpleParameter)this.getClass().newInstance();
+                    ParameterImpl p = (ParameterImpl)this.getClass().newInstance();
                     p.setName(name);
                     p.setContentFrom(this);
                     p.setListeners(listeners);
-                    p.setValidationFunction(validationFunction);
-                return (T)p;
+                    p.addValidationFunction(additionalValidation);
+                return (P)p;
                 } catch (Exception ex2) {
                     logger.error("duplicate Simple Parameter", ex2);
                 }
@@ -182,9 +184,9 @@ public abstract class SimpleParameter implements Parameter {
     public boolean isEmphasized() {
         return isEmphasized;
     }
-    public <T extends Parameter> T setEmphasized(boolean isEmphasized) {
+    public P setEmphasized(boolean isEmphasized) {
         this.isEmphasized = isEmphasized;
-        return (T) this;
+        return (P) this;
     }
     
     @Override
@@ -193,21 +195,21 @@ public abstract class SimpleParameter implements Parameter {
     }
     
     // listenable
-    ArrayList<Consumer<Parameter>> listeners;
+    ArrayList<Consumer<P>> listeners;
     protected boolean bypassListeners;
-    public void addListener(Consumer<Parameter> listener) {
+    public void addListener(Consumer<P> listener) {
         if (listeners == null) listeners = new ArrayList<>();
         listeners.add(listener);
     }
-    public void removeListener(Consumer<Parameter> listener) {
+    public void removeListener(Consumer<P> listener) {
         if (listeners != null) listeners.remove(listener);
     }
-    public void setListeners(List<Consumer<Parameter>> listeners) {
+    public void setListeners(List<Consumer<P>> listeners) {
         if (listeners ==null ) this.listeners=null;
         else this.listeners = new ArrayList<>(listeners);
     }
     public void fireListeners() {
-        if (!bypassListeners && listeners != null) for (Consumer<Parameter> pl : listeners) pl.accept(this);
+        if (!bypassListeners && listeners != null) for (Consumer<P> pl : listeners) pl.accept((P)this);
     }
     // op
     ModuleItem<?> param;

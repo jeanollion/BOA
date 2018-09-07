@@ -44,7 +44,7 @@ import javax.swing.JMenuItem;
  * @author jollion
  * @param <T> type of plugin
  */
-public class PluginParameter<T extends Plugin> extends SimpleContainerParameter implements Deactivatable, ChoosableParameter {
+public class PluginParameter<T extends Plugin> extends ContainerParameterImpl<PluginParameter<T>> implements Deactivatable, ChoosableParameter<PluginParameter<T>> {
     
     public final static HashMapGetCreate<Class<? extends Plugin>, List<String>> PLUGIN_NAMES=new HashMapGetCreate<Class<? extends Plugin>, List<String>>(c -> PluginFactory.getPluginNames(c));
     protected List<Parameter> pluginParameters;
@@ -205,7 +205,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
                 return false;
             }
             if (!ParameterUtils.sameContent(additionalParameters, otherPP.additionalParameters, "PluginParameter: "+name+"!="+otherPP.name+ " Additional Parameters")) return false;
-            if (!ParameterUtils.sameContent(children, otherPP.children, "PluginParameter: "+name+"!="+otherPP.name+ " Parameters")) return false;
+            if (!ParameterUtils.sameContent(children, otherPP.children, "PluginParameter: "+this.toString()+"!="+otherPP.toString()+ " Parameters")) return false;
             if (activated!=otherPP.activated) {
                 logger.debug("PluginParameter: {}!={} differ in activation : {} vs {}", this, other, activated, otherPP.activated);
                 return false;

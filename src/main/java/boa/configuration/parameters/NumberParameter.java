@@ -28,8 +28,7 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class NumberParameter extends SimpleParameter implements Listenable, OpParameter {
-    //@Transient NumberParameterUI ui;
+public class NumberParameter<P extends NumberParameter<P>> extends ParameterImpl<P> implements Listenable<P>, OpParameter<P> {
     Number value;
     int decimalPlaces;
     
@@ -88,11 +87,11 @@ public class NumberParameter extends SimpleParameter implements Listenable, OpPa
         }
     }
     
-    @Override public NumberParameter duplicate() {
+    @Override public P duplicate() {
         NumberParameter res =  new NumberParameter(name, decimalPlaces, value);
         res.setListeners(listeners);
-        res.setValidationFunction(validationFunction);
-        return res;
+        res.addValidationFunction(additionalValidation);
+        return (P)res;
     }
 
     @Override

@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class ArrayNumberParameter extends SimpleListParameter<BoundedNumberParameter> {
+public class ArrayNumberParameter extends ListParameterImpl<BoundedNumberParameter, ArrayNumberParameter> {
     boolean sorted;
     public ArrayNumberParameter(String name, int unmutableIndex, BoundedNumberParameter childInstance) {
         super(name, unmutableIndex, childInstance);
@@ -52,6 +52,7 @@ public class ArrayNumberParameter extends SimpleListParameter<BoundedNumberParam
     @Override
     public BoundedNumberParameter createChildInstance() {
         BoundedNumberParameter res = super.createChildInstance();
+        
         res.addListener(num -> {
             ArrayNumberParameter a = ParameterUtils.getFirstParameterFromParents(ArrayNumberParameter.class, num, false);
             if (a==null) return;
@@ -74,9 +75,10 @@ public class ArrayNumberParameter extends SimpleListParameter<BoundedNumberParam
         }
     }
     @Override
-    public void setContentFrom(Parameter other) {
+    public void setContentFrom(Parameter other) { // TODO IS THIS NECESSARY ? 
         if (other instanceof ArrayNumberParameter) {
-            setValue(((ArrayNumberParameter)other).getArrayDouble());
+            //setValue(((ArrayNumberParameter)other).getArrayDouble());
+            super.setContentFrom(other);
         } else if (other instanceof NumberParameter) {
             setValue(((NumberParameter) other).getValue().doubleValue());
         } else throw new IllegalArgumentException("wrong parameter type");
@@ -94,5 +96,11 @@ public class ArrayNumberParameter extends SimpleListParameter<BoundedNumberParam
         }
         if (this.childInstance.decimalPlaces==0) return getArrayInt();
         else return getArrayDouble();
+    }
+    @Override
+    public ArrayNumberParameter duplicate() {
+        ArrayNumberParameter res = new ArrayNumberParameter(name, unMutableIndex, childInstance);
+        res.setContentFrom(this);
+        return res;
     }
 }

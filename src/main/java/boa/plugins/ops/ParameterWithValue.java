@@ -24,6 +24,6 @@ import boa.configuration.parameters.Parameter;
  *
  * @author jollion
  */
-public interface ParameterWithValue extends Parameter {
+public interface ParameterWithValue<P extends ParameterWithValue<P>> extends Parameter<P> {
     public Object getValue();
 }

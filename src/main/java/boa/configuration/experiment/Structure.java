@@ -25,7 +25,7 @@ import boa.configuration.parameters.ChannelImageParameter;
 import boa.configuration.parameters.Parameter;
 import static boa.configuration.parameters.Parameter.logger;
 import boa.configuration.parameters.ParameterUtils;
-import boa.configuration.parameters.SimpleContainerParameter;
+import boa.configuration.parameters.ContainerParameterImpl;
 import boa.configuration.parameters.ParentStructureParameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PreFilterSequence;
@@ -52,7 +52,7 @@ import boa.plugins.ProcessingPipeline;
  * @author jollion
  */
 
-public class Structure extends SimpleContainerParameter {
+public class Structure extends ContainerParameterImpl<Structure> {
     ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Object Class", -1, -1).setToolTipText("In the processing step: pre-filters, segmentation, tracking and post-filters will be run from each tracks of this object class");
     ParentStructureParameter segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1).setToolTipText("If different from parent structure, allows to perform segmentation from objects of another structure contained in the object of the parent structure. Pre-filters, tracking and post-filters will still be run from the track of the parent structure.");
     ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", -1).setToolTipText("Channel on which processing pipeline will be applied");
@@ -101,7 +101,7 @@ public class Structure extends SimpleContainerParameter {
         this.parentStructure.setSelectedIndex(parentStructure);
         this.segmentationParent.setSelectedIndex(segmentationParentStructure);
         this.channelImage.setSelectedIndex(channelImage);
-        this.parentStructure.addListener((Parameter source) -> {
+        this.parentStructure.addListener((ParentStructureParameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();
             int parentIdx = s.parentStructure.getSelectedIndex();
@@ -112,7 +112,7 @@ public class Structure extends SimpleContainerParameter {
             if (model!=null) model.nodeChanged(s.segmentationParent);
             else logger.debug("no model found..");
         });
-        segmentationParent.addListener((Parameter source) -> {
+        segmentationParent.addListener((ParentStructureParameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();
             s.setSegmentationParentStructure(s.segmentationParent.getSelectedIndex());
@@ -122,7 +122,7 @@ public class Structure extends SimpleContainerParameter {
             if (model!=null) model.nodeChanged(s.segmentationParent);
             else logger.debug("no model found..");
         });
-        processingPipeline.addListener((Parameter source) -> {
+        processingPipeline.addListener((PluginParameter<ProcessingPipeline> source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();
         });

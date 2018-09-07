@@ -30,7 +30,7 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class GroupParameter extends SimpleContainerParameter {
+public class GroupParameter extends ContainerParameterImpl<GroupParameter> {
     protected List<Parameter> parameters;
     
     public GroupParameter(String name, Parameter... parameters) {

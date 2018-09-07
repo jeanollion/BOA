@@ -33,7 +33,7 @@ import javax.swing.text.AbstractDocument;
  *
  * @author jollion
  */
-public class TextParameter extends SimpleParameter {
+public class TextParameter extends ParameterImpl<TextParameter> {
     TextEditorUI ui;
     boolean allowSpecialCharacters, allowBlank;
     String value;
@@ -80,7 +80,7 @@ public class TextParameter extends SimpleParameter {
     @Override public TextParameter duplicate() {
         TextParameter res =  new TextParameter(name, value, allowSpecialCharacters);
         res.setListeners(listeners);
-        res.setValidationFunction(validationFunction);
+        res.addValidationFunction(additionalValidation);
         return res;
     }
     

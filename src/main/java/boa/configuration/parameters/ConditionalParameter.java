@@ -34,7 +34,7 @@ import boa.utils.Utils;
  * @author jollion
  */
 
-public class ConditionalParameter extends SimpleContainerParameter {
+public class ConditionalParameter extends ContainerParameterImpl<ConditionalParameter> {
     ActionableParameter action;
     HashMap<String, List<Parameter>> parameters;
     List<Parameter> defaultParameters;

@@ -24,7 +24,7 @@ import java.util.List;
  *
  * @author jollion
  */
-public interface ListParameter<T extends Parameter> extends ContainerParameter { //<T extends Parameter>
+public interface ListParameter<T extends Parameter, L extends ListParameter<T, L>> extends ContainerParameter<L> { //<T extends Parameter>
     public abstract T createChildInstance();
     public List<T> getChildren();
     /**

@@ -24,7 +24,7 @@ import boa.configuration.parameters.Parameter;
 import static boa.configuration.parameters.Parameter.logger;
 import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.PluginParameter;
-import boa.configuration.parameters.SimpleContainerParameter;
+import boa.configuration.parameters.ContainerParameterImpl;
 import boa.configuration.parameters.SimpleListParameter;
 import boa.configuration.parameters.TrackPostFilterSequence;
 import boa.configuration.parameters.TransformationPluginParameter;

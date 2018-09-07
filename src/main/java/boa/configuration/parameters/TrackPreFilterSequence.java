@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  *
  * @author jollion
  */
-public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter> {
+public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter, TrackPreFilterSequence> {
     
     public TrackPreFilterSequence(String name) {
         super(name, "Track Pre-Filter", TrackPreFilter.class);
@@ -47,7 +47,6 @@ public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter> 
     public TrackPreFilterSequence duplicate() {
         TrackPreFilterSequence res = new TrackPreFilterSequence(name);
         res.setContentFrom(this);
-        res.setListeners(listeners);
         return res;
     }
     private static boolean allPFImagesAreSet(List<StructureObject> parentTrack, int structureIdx) {

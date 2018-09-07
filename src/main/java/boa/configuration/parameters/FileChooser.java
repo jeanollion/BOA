@@ -32,7 +32,7 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class FileChooser extends SimpleParameter implements Listenable {
+public class FileChooser extends ParameterImpl<FileChooser> implements Listenable<FileChooser> {
     protected String[] selectedFiles=new String[0];
     boolean allowNoSelection = true;
     protected FileChooserOption option = FileChooserOption.DIRECTORIES_ONLY;
@@ -109,7 +109,7 @@ public class FileChooser extends SimpleParameter implements Listenable {
     @Override public FileChooser duplicate() {
         FileChooser res = new FileChooser(name, option);
         res.setListeners(listeners);
-        res.setValidationFunction(validationFunction);
+        res.addValidationFunction(additionalValidation);
         return res;
     }
 

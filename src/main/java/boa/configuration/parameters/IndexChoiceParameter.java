@@ -29,7 +29,7 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public abstract class IndexChoiceParameter extends SimpleParameter implements ChoosableParameter, ChoosableParameterMultiple {
+public abstract class IndexChoiceParameter<P extends IndexChoiceParameter<P>> extends ParameterImpl<P> implements ChoosableParameter<P>, ChoosableParameterMultiple<P> {
     protected int[] selectedIndices;
     protected boolean allowNoSelection, multipleSelection;
     //@Transient ParameterUI ui;
@@ -63,8 +63,8 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     }
     @Override
     public boolean sameContent(Parameter other) {
-        if (other instanceof StructureParameter) {
-            StructureParameter otherP = (StructureParameter) other;
+        if (other instanceof IndexChoiceParameter) {
+            IndexChoiceParameter otherP = (IndexChoiceParameter) other;
             if (!ParameterUtils.arraysEqual(selectedIndices, otherP.selectedIndices)) {
                 logger.debug("IndexChoiceParameter: {}!={} : {} vs {}", this, other, selectedIndices, otherP.selectedIndices);
                 return false;

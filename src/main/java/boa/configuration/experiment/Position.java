@@ -22,7 +22,7 @@ import boa.ui.GUI;
 import boa.gui.image_interaction.IJVirtualStack;
 import boa.configuration.parameters.ListElementErasable;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.SimpleContainerParameter;
+import boa.configuration.parameters.ContainerParameterImpl;
 import boa.configuration.parameters.SimpleListParameter;
 import boa.configuration.parameters.StructureParameter;
 import boa.configuration.parameters.FrameParameter;
@@ -57,7 +57,7 @@ import java.util.function.Consumer;
  *
  * @author jollion
  */
-public class Position extends SimpleContainerParameter implements ListElementErasable {
+public class Position extends ContainerParameterImpl<Position> implements ListElementErasable {
     
     private MultipleImageContainer sourceImages;
     PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing");

@@ -31,7 +31,7 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter> {
+public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter, TrackPostFilterSequence> {
     
     public TrackPostFilterSequence(String name) {
         super(name, "Track Post-Filter", TrackPostFilter.class);
@@ -53,5 +53,11 @@ public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter
     @Override public TrackPostFilterSequence add(Collection<TrackPostFilter> instances) {
         super.add(instances);
         return this;
+    }
+    @Override
+    public TrackPostFilterSequence duplicate() {
+        TrackPostFilterSequence res = new TrackPostFilterSequence(name);
+        res.setContentFrom(this);
+        return res;
     }
 }

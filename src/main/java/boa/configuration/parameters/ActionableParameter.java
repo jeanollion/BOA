@@ -22,7 +22,7 @@ package boa.configuration.parameters;
  * An actionable parameter is used by a conditional parameter: when its content is modified, it should also call the setObjectValue method of the conditional parameter, and its UI object should call the ConfigurationModel.nodeStructureChanged method to update the tree
  * @author jollion
  */
-public interface ActionableParameter extends Parameter {
+public interface ActionableParameter<P extends ActionableParameter<P>> extends Parameter<P> {
     public String getValue();
     public void setValue(String value);
     public void setConditionalParameter(ConditionalParameter cond);

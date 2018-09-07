@@ -51,6 +51,7 @@ public class ContainerObject implements Measurement, ToolTip {
     }
     
     public ContainerObject() {
+        
         reference.addListener(p->{
             Experiment xp = ParameterUtils.getExperiment(p);
             if (xp==null) return;

@@ -29,7 +29,7 @@ import java.util.function.ToIntFunction;
  *
  * @author jollion
  */
-public class ParentStructureParameter extends StructureParameter<ParentStructureParameter> {
+public class ParentStructureParameter extends ObjectClassParameter<ParentStructureParameter> {
     int maxStructure;
     
     public ParentStructureParameter(String name) {

@@ -32,7 +32,7 @@ import boa.utils.Utils;
  *
  * @author jollion
  */
-public class PreFilterSequence extends PluginParameterList<PreFilter> {
+public class PreFilterSequence extends PluginParameterList<PreFilter, PreFilterSequence> {
 
     public PreFilterSequence(String name) {
         super(name, "Pre-Filter", PreFilter.class);
@@ -64,5 +64,15 @@ public class PreFilterSequence extends PluginParameterList<PreFilter> {
     public String toStringElements() {
         return Utils.toStringList(children, p -> p.pluginName);
     }
-    
+    @Override 
+    public PreFilterSequence setToolTipText(String txt){
+        super.setToolTipText(txt);
+        return this;
+    }
+    @Override
+    public PreFilterSequence duplicate() {
+        PreFilterSequence res = new PreFilterSequence(name);
+        res.setContentFrom(this);
+        return res;
+    }
 }

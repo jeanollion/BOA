@@ -25,8 +25,8 @@ import java.util.function.Consumer;
  * the listener should be relative to the source parameter
  * @author jollion
  */
-public interface Listenable {
-    public void addListener(Consumer<Parameter> listener);
-    public void removeListener(Consumer<Parameter> listener);
+public interface Listenable<P extends Parameter> {
+    public void addListener(Consumer<P> listener);
+    public void removeListener(Consumer<P> listener);
     public void fireListeners();
 }
