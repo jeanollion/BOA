@@ -82,8 +82,8 @@ public class ObjectFeatures implements Measurement, ToolTip {
     }
     public ObjectFeatures addFeature(ObjectFeature feature, String key) {
         PluginParameter<ObjectFeature> f = def.duplicate().setPlugin(feature);
-        ((TextParameter)f.getAdditionalParameters().get(0)).setValue(key);
         this.features.insert(f);
+        ((TextParameter)f.getAdditionalParameters().get(0)).setValue(key);
         return this;
     }
     public ObjectFeatures addPreFilter(PreFilter... prefilters) {
