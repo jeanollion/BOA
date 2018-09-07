@@ -203,13 +203,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private NumberParameter kymographInterval = new NumberParameter<>("Kymograph Interval", 0, 0).setToolTipText("Interval between images, in pixels");
     private NumberParameter localZoomFactor = new BoundedNumberParameter("Local Zoom Factor", 1, 4, 2, null);
     private NumberParameter localZoomArea = new BoundedNumberParameter("Local Zoom Area", 0, 35, 15, null);
-    private NumberParameter threadNumber = new BoundedNumberParameter("Max Thread Number", 0, System.getProperty("os.name").toLowerCase().indexOf("win")>=0 ? 1 : ThreadRunner.getMaxCPUs(), 1, ThreadRunner.getMaxCPUs());
     final private List<Component> relatedToXPSet;
     final private List<Component> relatedToReadOnly;
-    public static int getThreadNumber() {
-        if (!hasInstance()) return System.getProperty("os.name").toLowerCase().indexOf("win")>=0 ? 1 : ThreadRunner.getMaxCPUs();
-        return getInstance().threadNumber.getValue().intValue();
-    }
+
     /**
      * Creates new form GUI
      */
