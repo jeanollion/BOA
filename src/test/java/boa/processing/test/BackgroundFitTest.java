@@ -52,12 +52,12 @@ public class BackgroundFitTest {
         double thld = BackgroundFit.backgroundFit(histo, 1, ms);
         double msBT[] = new double[2];
         BackgroundThresholder.debug=true;
-        double thldBT = BackgroundThresholder.runThresholder(histo, 3, 6, 3, Double.POSITIVE_INFINITY, msBT);
+        double thldBT = BackgroundThresholder.runThresholder(im, null, 3, 6, 3, Double.POSITIVE_INFINITY, msBT);
         logger.debug("image: {}, binSize: {} (#{}), mean: {}, sigma: {}, thld: {}, BT: mean: {}, sigma: {}, thld: {}", "all", histo.binSize, histo.data.length, ms[0], ms[1], thld, msBT[0], msBT[1], thldBT);
         histo = HistogramFactory.getHistogram(() -> ims.get(0).stream(), HistogramFactory.BIN_SIZE_METHOD.BACKGROUND);
         histo.plotIJ1("single image: bin: "+histo.binSize, true);
         thld = BackgroundFit.backgroundFit(histo, 1, ms);
-        thldBT = BackgroundThresholder.runThresholder(histo, 3, 6, 3, Double.MAX_VALUE, msBT);
+        thldBT = BackgroundThresholder.runThresholder(ims.get(0), null, 3, 6, 3, Double.MAX_VALUE, msBT);
         logger.debug("image: {}, binSize: {} (#{}), mean: {}, sigma: {}, thld: {}, BT: mean: {}, sigma: {}, thld: {}", idx, histo.binSize, histo.data.length, ms[0], ms[1], thld, msBT[0], msBT[1], thldBT);
     }
 }

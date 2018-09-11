@@ -32,6 +32,7 @@ import boa.image.ImageMask;
 import boa.plugins.MultiThreaded;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.ThresholderHisto;
+import boa.utils.DoubleStatistics;
 
 /**
  * Adapted from Implementation of Kappa Sigma Clipping algorithm by Gaëtan Lehmann, http://www.insight-journal.org/browse/publication/132. 
@@ -96,34 +97,18 @@ public class BackgroundThresholder implements SimpleThresholder, ThresholderHist
         if (mask==null) mask = new BlankMask(input);
         if (firstValue==Double.NaN) firstValue = Double.MAX_VALUE;
         double lastThreshold = firstValue;
-        double count, mean, mean2, sigma;
         if (iterations<=0) iterations=1;
         for (int i = 0; i<iterations; i++) {
-            count=0;
-            mean=0;
-            mean2=0;
-            sigma=0;
-            for (int z = 0; z<input.sizeZ(); z++) {
-                for (int xy = 0; xy<input.sizeXY(); xy++) {
-                    if (mask.insideMask(xy, z)) {
-                        double val = input.getPixel(xy, z);
-                        if (val<lastThreshold) {
-                            mean+=val;
-                            mean2+=val*val;
-                            count++;
-                        }
-                    }
-                }
+            double thld = lastThreshold;
+            DoubleStatistics stats = DoubleStatistics.getStats(input.stream(mask, true).filter(d->d<thld));
+            double mean = stats.getAverage();
+            double sigma = stats.getStandardDeviation();
+            if (meanSigma!=null) {
+                meanSigma[0]=mean;
+                meanSigma[1]=sigma;
+                if (meanSigma.length>2) meanSigma[2] = stats.getCount();
             }
-            if (count>0) {
-                mean/=count;
-                sigma = Math.sqrt(mean2/count - mean*mean);
-                if (meanSigma!=null) {
-                    meanSigma[0]=mean;
-                    meanSigma[1]=sigma;
-                    if (meanSigma.length>2) meanSigma[2] = count;
-                }
-            }
+            
             double newThreshold = i==iterations-1 ? mean + lastSigmaFactor * sigma : mean + sigmaFactor * sigma;
             if (Double.isFinite(firstValue)) newThreshold = Math.min(firstValue, newThreshold);
             if (debug) logger.debug("Kappa Sigma Thresholder: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);

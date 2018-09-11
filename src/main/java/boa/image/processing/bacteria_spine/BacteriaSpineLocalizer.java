@@ -57,6 +57,7 @@ public class BacteriaSpineLocalizer {
     public final BacteriaSpineFactory.SpineResult spine;
     double length;
     public static double precision = 1E-2;
+    public static double OUT_OF_BOUND_TOLERANCE=3; 
     public BacteriaSpineLocalizer(Region bacteria) {
         this.bacteria=bacteria;
         //long t0 = System.currentTimeMillis();
@@ -183,13 +184,15 @@ public class BacteriaSpineLocalizer {
                 Point intersection = Point.intersect2D(source, source.duplicate().translateRev(v0), r0, r1);
                 Vector r0_inter = Vector.vector(r0, intersection);
                 double distFromR0 = r0_inter.norm();
-                if (distFromR0>3) return null; // limit out-of-bound
+                if (testMode) logger.debug("out-of-segment case: dist from closest vertebra: {}", distFromR0);
+                if (distFromR0>OUT_OF_BOUND_TOLERANCE) return null; // limit out-of-bound
                 Vector spineDir = r0.getContent1();
                 res.setSpineRadius(spineDir.norm());
                 Vector sourceDir = Vector.vector(intersection, source);
                 double sign = Math.signum(sourceDir.dotProduct(spineDir));
                 res.setRadialCoord(sourceDir.norm() * sign);
                 res.setCurvilinearCoord(r0.getContent2()+dir*distFromR0);
+                //if (testMode) logger.debug("res: {}", res);
                 return res;
             }
             //if (testMode) logger.debug("out of segment case: refused");
@@ -264,7 +267,7 @@ public class BacteriaSpineLocalizer {
     public Point project(BacteriaSpineCoord coord, PROJECTION proj) {
         if (coord==null) return null;
         Double spineCoord = coord.getProjectedCurvilinearCoord(length, proj);
-        if (spineCoord<=-1 || spineCoord>=length+1) return null; //border cases allow only 1 pixel outside
+        if (spineCoord<OUT_OF_BOUND_TOLERANCE || spineCoord>length+OUT_OF_BOUND_TOLERANCE) return null; //border cases allow only 1 pixel outside
         PointContainer2<Vector, Double> searchKey = new PointContainer2<>(null, spineCoord);
         int idx = Arrays.binarySearch(spine.spine, searchKey, SPINE_COMPARATOR);
         if (testMode) logger.debug("projecting : {}, spineCoord: {}, search idx: {} (ip: {})", coord, spineCoord, idx, (idx<0?-idx-1:idx));

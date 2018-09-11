@@ -70,9 +70,10 @@ public class TestSpine {
         //String dbName = "WT_150609";
         //String dbName = "fluo160501_uncorr_TestParam";
         //String dbName = "dataset2";
-        String dbName = "fluo171219_WT_750ms";
-        int postition= 137, frame=15, mc=0, b=0, m = 0;
-        int frame2 = 16, b2=0;
+        //String dbName = "fluo171219_WT_750ms";
+        String dbName = "MF1R_180910";
+        int postition= 18, frame=10, mc=18, b=1, m = 0;
+        int frame2 = 11, b2=1;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
@@ -97,7 +98,7 @@ public class TestSpine {
         
         StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(frame2);
         StructureObject bact2 = root2.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(structureIdx).get(b2);
-        //testProjection(mut.getRegion().getCenter(), bact, bact2);
+        testProjection(mut.getRegion().getCenter(), bact, bact2);
         /*
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(mDAO.getDao(f.getName()).getRoots(), parentStructure, false);
         allTracks.entrySet().stream().filter(e->e.getKey().getIdx()==mc).findAny().get().getValue().stream().filter(o->o.getFrame()>-1).map(mic -> mic.getChildren(structureIdx).get(0)).forEach(bacteria-> {
@@ -204,7 +205,7 @@ public class TestSpine {
     public static void testProjection(Point point, StructureObject bact1, StructureObject bact2) {
         int zoomFactor = 7;
         Map<StructureObject, BacteriaSpineLocalizer> locMap = HashMapGetCreate.getRedirectedMap((StructureObject b)->new BacteriaSpineLocalizer(b.getRegion()).setTestMode(true), Syncronization.NO_SYNC);
-        if (!bact1.getRegion().contains(point.asVoxel())) throw new IllegalArgumentException("projected point outside bacteria");
+        //if (!bact1.getRegion().contains(point.asVoxel())) throw new IllegalArgumentException("projected point outside bacteria");
         Point proj = BacteriaSpineLocalizer.project(point, bact1, bact2, PROPORTIONAL, locMap, true); 
         //Point proj = BacteriaSpineLocalizer.project(center, bact1, bact2, PROPORTIONAL, locMap);
         

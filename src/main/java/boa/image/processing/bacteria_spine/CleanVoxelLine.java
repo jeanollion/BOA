@@ -24,7 +24,9 @@ import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.image.BoundingBox;
 import boa.image.ImageByte;
 import boa.image.ImageInteger;
+import boa.image.ImageProperties;
 import boa.image.ImageShort;
+import boa.image.SimpleImageProperties;
 import boa.image.processing.ImageOperations;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.image.processing.neighborhood.Neighborhood;
@@ -65,6 +67,7 @@ public class CleanVoxelLine {
     final TreeSet<Integer> availableLabels = new TreeSet<>(); // to avoid label overflow for large & complex contours
     int maxLabel = 0;
     public boolean verbose = false;
+    BoundingBox displayBounds;
     /**
      * Ensures {@param contour} is only composed of 2-connected voxels
      * @param contour set of contour voxel of an object, ie voxel from the object in contact with the background
@@ -82,16 +85,19 @@ public class CleanVoxelLine {
     public static Set<Voxel> cleanContour(Set<Voxel> contour, boolean verbose) {
         return new CleanVoxelLine(contour, verbose).cleanContour();
     }
-    public static List<Voxel> cleanSkeleton(Set<Voxel> skeleton, boolean verbose) {
+    public static List<Voxel> cleanSkeleton(Set<Voxel> skeleton) {
+        return cleanSkeleton(skeleton, false, null);
+    }
+    public static List<Voxel> cleanSkeleton(Set<Voxel> skeleton, boolean verbose, BoundingBox displayBounds) {
         Comparator<Voxel> comp = (v1,v2)->Integer.compare(v1.x+v1.y, v2.x+v2.y);
         if (skeleton.size()>2) {
             CleanVoxelLine cl = new CleanVoxelLine(skeleton, verbose);
+            cl.displayBounds = displayBounds;
             skeleton = cl.cleanSkeleton();
             // order from upper-left end point
             Voxel endPoint = cl.voxMapNeighAndLabels.entrySet().stream().filter(e->e.getValue()[0]==1).map(e->e.getKey()).min(comp).orElseThrow(()->new RuntimeException("No end point in skeleton"));
             List<Voxel> res = cl.segments.values().stream().map(s->(Edge)s).max(Edge::compareTo).get().getOrderdVoxelList(endPoint);
             //res.sort((v1, v2)->Double.compare(endPoint.getDistanceSquareXY(v1), endPoint.getDistanceSquareXY(v2))); // distance to end point mayu not work for curved lines. 
-             
             return res;
         } else {
             List<Voxel> res = new ArrayList<>(skeleton);
@@ -109,13 +115,14 @@ public class CleanVoxelLine {
             voxMapNeighAndLabels.put(v, new int[]{n, 0});
         });
         lines.stream().forEach(v->label(v));
-        if (verbose) ImageWindowManagerFactory.showImage(draw(true).setName("neighbors before run"));
-        if (verbose) ImageWindowManagerFactory.showImage(draw(false).setName("labels before run"));
     }
     
     private ImageInteger draw(boolean neigh) {
-        ImageInteger map = new Region(lines, 1, false, 1, 1).getMaskAsImageInteger();
-        ImageOperations.fill(map, 0, null);
+        ImageInteger map;
+        if (displayBounds==null) {
+            map = new Region(lines, 1, false, 1, 1).getMaskAsImageInteger();
+            ImageOperations.fill(map, 0, null);
+        } else map = new ImageByte("", new SimpleImageProperties(displayBounds, 1, 1));
         voxMapNeighAndLabels.entrySet().stream().forEach(e->map.setPixelWithOffset(e.getKey().x, e.getKey().y, e.getKey().z, e.getValue()[neigh?0:1]));
         return map;
     }

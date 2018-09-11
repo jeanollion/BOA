@@ -192,7 +192,7 @@ public class BacteriaSpineFactory {
         Set<Voxel> sk = new HashSet<>();
         ImageMask.loopWithOffset(mask, (x, y, z)-> sk.add(new Voxel(x, y, z)));
         //if (verbose) ImageWindowManagerFactory.showImage(new Region(sk, 1, true, 1, 1).getMaskAsImageInteger().setName("skeleton before clean"));
-        return CleanVoxelLine.cleanSkeleton(sk, verbose);
+        return CleanVoxelLine.cleanSkeleton(sk, verbose, mask);
     }
     
     public static <T extends Localizable> PointContainer2<Vector, Double>[] createSpineFromSkeleton(ImageMask mask, List<Voxel> skeleton, Set<T> contour, CircularNode<T> circContour) {

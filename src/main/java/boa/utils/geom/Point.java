@@ -19,6 +19,7 @@
 package boa.utils.geom;
 
 import boa.data_structure.Voxel;
+import boa.image.BoundingBox;
 import boa.image.Offset;
 import boa.utils.JSONSerializable;
 import boa.utils.JSONUtils;
@@ -210,15 +211,31 @@ public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONS
     @Override
     public T translate(Offset other) {
         coords[0] +=other.xMin();
-        if (coords.length>1) coords[1]+=other.yMin();
-        if (coords.length>2) coords[2]+=other.zMin();
+        if (coords.length>1) {
+            coords[1]+=other.yMin();
+            if (coords.length>2) coords[2]+=other.zMin();
+        }
         return (T)this;
     }
     public T translateRev(Offset other) {
         coords[0] -=other.xMin();
-        if (coords.length>1) coords[1]-=other.yMin();
-        if (coords.length>2) coords[2]-=other.zMin();
+        if (coords.length>1) {
+            coords[1]-=other.yMin();
+            if (coords.length>2) coords[2]-=other.zMin();
+        }
         return (T)this;
+    }
+    public void ensureWithinBounds(BoundingBox bounds) {
+        if (coords[0]<bounds.xMin()) coords[0] = bounds.xMin();
+        else if (coords[0]>bounds.xMax()) coords[0] = bounds.xMax();
+        if (coords.length>1) {
+            if (coords[1]<bounds.yMin()) coords[1] = bounds.yMin();
+            else if (coords[1]>bounds.yMax()) coords[1] = bounds.yMax();
+            if (coords.length>2) {
+                if (coords[2]<bounds.zMin()) coords[2] = bounds.zMin();
+                else if (coords[2]>bounds.zMax()) coords[2] = bounds.zMax();
+            }
+        }
     }
     // RealLocalizable implementation
     @Override

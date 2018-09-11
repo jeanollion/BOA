@@ -307,13 +307,8 @@ public class SpotSegmenter implements Segmenter, TrackConfigurable<SpotSegmenter
     private static void setCenterAndQuality(Image map, Image map2, RegionPopulation pop, int z) {
         SubPixelLocalizator.setSubPixelCenter(map, pop.getRegions(), true); // lap -> better in case of close objects
         for (Region o : pop.getRegions()) { // quality criterion : sqrt (smooth * lap)
-            if (o.getQuality()==0) { // localizator didnt work
-                Point center = o.getMassCenter(map, false);
-                if (center.get(0)>map.sizeX()-1) center.set(map.sizeX()-1, 0);
-                if (center.get(1)>map.sizeY()-1) center.set(map.sizeY()-1, 1);
-                if (center.numDimensions()>=2 && center.get(2)>map.sizeZ()-1) center.set(map.sizeZ()-1, 2);
-                o.setCenter(center);
-            }
+            if (o.getQuality()==0 || o.getCenter()==null) o.setCenter( o.getMassCenter(map, false)); // localizator didnt work -> use center of mass
+            o.getCenter().ensureWithinBounds(map.getBoundingBox().resetOffset());
             double zz = o.getCenter().numDimensions()>2?o.getCenter().get(2):z;
             //logger.debug("size : {} set quality: center: {} : z : {}, bounds: {}, is2D: {}", o.getSize(), o.getCenter(), z, wsMap[i].getBoundingBox().translateToOrigin(), o.is2D());
             if (zz>map.sizeZ()-1) zz=map.sizeZ()-1;
