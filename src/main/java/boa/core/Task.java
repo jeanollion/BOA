@@ -113,7 +113,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (trackOnly) res.put("trackOnly", trackOnly);
             if (measurements) {
                 res.put("measurements", measurements);
-                res.put("measurementMode", measurementMode);
+                res.put("measurementMode", measurementMode.toString());
             }
             if (generateTrackImages) res.put("generateTrackImages", generateTrackImages);
             if (exportPreProcessedImages) res.put("exportPreProcessedImages", exportPreProcessedImages);
