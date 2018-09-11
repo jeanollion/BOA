@@ -62,7 +62,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
     }
     @Override
     public String getToolTipText() {
-        return "Fits a gaussian on the lower half of the mode's peak of the histogram to extract its 2 first moments: Mean & Standard deviation (Std). <br />Resulting Threshold = Mean + <em>Sigma Factor</em> * Std<br /> <br />Assumes that the mode corresponds to the background values and that the lower half of the background peak is not too far from a gaussian distribution";
+        return "Fits a gaussian on the lower half of the mode's peak of the histogram to extract its 2 first moments: Mean & Standard deviation (Std). <br />Resulting Threshold = Mean + <em>Sigma Factor</em> * Std<br /> <br />Assumes that the mode corresponds to the background values and that the lower half of the background peak is not too far from a gaussian distribution <br >Caution: this assumption is wrong in particular after a rotation with many null values added on sides";
     }
     
     

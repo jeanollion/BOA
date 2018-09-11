@@ -23,6 +23,7 @@ import boa.image.HistogramFactory;
 import boa.image.Image;
 import boa.image.io.ImageReader;
 import boa.plugins.plugins.thresholders.BackgroundFit;
+import boa.plugins.plugins.thresholders.BackgroundThresholder;
 import static boa.test_utils.TestUtils.logger;
 import java.util.List;
 
@@ -32,7 +33,7 @@ import java.util.List;
  */
 public class BackgroundFitTest {
     public static void main(String[] args) {
-        Image im = ImageReader.openIJTif("/data/Images/MOP/BackgroundFitTest.tif");
+        Image im = ImageReader.openIJTif("/data/Images/MOP/BackgroundFitTest2.tif");
         List<Image> ims = im.splitZPlanes();
         int idx = 0;
         /*for (Image i : ims ) {
@@ -48,11 +49,15 @@ public class BackgroundFitTest {
         double[] ms = new double[2];
         Histogram histo = HistogramFactory.getHistogram(() -> im.stream(), HistogramFactory.BIN_SIZE_METHOD.BACKGROUND);
         histo.plotIJ1("whole image: bin: "+histo.binSize, true);
-        BackgroundFit.backgroundFit(histo, 1, ms);
-                logger.debug("image: {}, binSize: {} (#{}), mean: {}, sigma: {}", idx, histo.binSize, histo.data.length, ms[0], ms[1]);
+        double thld = BackgroundFit.backgroundFit(histo, 1, ms);
+        double msBT[] = new double[2];
+        BackgroundThresholder.debug=true;
+        double thldBT = BackgroundThresholder.runThresholder(histo, 3, 6, 3, Double.POSITIVE_INFINITY, msBT);
+        logger.debug("image: {}, binSize: {} (#{}), mean: {}, sigma: {}, thld: {}, BT: mean: {}, sigma: {}, thld: {}", "all", histo.binSize, histo.data.length, ms[0], ms[1], thld, msBT[0], msBT[1], thldBT);
         histo = HistogramFactory.getHistogram(() -> ims.get(0).stream(), HistogramFactory.BIN_SIZE_METHOD.BACKGROUND);
         histo.plotIJ1("single image: bin: "+histo.binSize, true);
-        BackgroundFit.backgroundFit(histo, 1, ms);
-                logger.debug("image: {}, binSize: {} (#{}), mean: {}, sigma: {}", idx, histo.binSize, histo.data.length, ms[0], ms[1]);
+        thld = BackgroundFit.backgroundFit(histo, 1, ms);
+        thldBT = BackgroundThresholder.runThresholder(histo, 3, 6, 3, Double.MAX_VALUE, msBT);
+        logger.debug("image: {}, binSize: {} (#{}), mean: {}, sigma: {}, thld: {}, BT: mean: {}, sigma: {}, thld: {}", idx, histo.binSize, histo.data.length, ms[0], ms[1], thld, msBT[0], msBT[1], thldBT);
     }
 }

@@ -76,7 +76,7 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
     protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 410, 0, null);
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null).setToolTipText(SIZE_TOOL_TIP);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.5, 0.05, 1).setToolTipText(FILL_TOOL_TIP);
-    PluginParameter<ThresholderHisto> thresholder = new PluginParameter<>("Threshold", ThresholderHisto.class, new BackgroundFit(10), false).setToolTipText(THLD_TOOL_TIP);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
+    PluginParameter<ThresholderHisto> thresholder = new PluginParameter<>("Threshold", ThresholderHisto.class, new BackgroundThresholder(3, 6, 3), false).setToolTipText(THLD_TOOL_TIP); 
     
     Parameter[] parameters = new Parameter[]{channelHeight, cropMarginY, minObjectSize, thresholder, fillingProportion, boundGroup};
     double threshold = Double.NaN;
@@ -116,7 +116,7 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
         // compute one threshold for all images
         List<Image> allImages = Arrays.asList(InputImages.getImageForChannel(inputImages, channelIdx, false));
         ThresholderHisto thlder = thresholder.instanciatePlugin();
-        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages).parallel(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS);
+        Histogram histo = HistogramFactory.getHistogram(()->Image.stream(allImages).parallel(), HistogramFactory.BIN_SIZE_METHOD.BACKGROUND);
         threshold = thlder.runThresholderHisto(histo);
         super.computeConfigurationData(channelIdx, inputImages);
     }
@@ -124,7 +124,7 @@ public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTi
     @Override
     public MutableBoundingBox getBoundingBox(Image image) {
         double thld = Double.isNaN(threshold)? 
-                thresholder.instanciatePlugin().runThresholderHisto(HistogramFactory.getHistogram(()->image.stream(), HistogramFactory.BIN_SIZE_METHOD.AUTO_WITH_LIMITS)) 
+                thresholder.instanciatePlugin().runThresholderHisto(HistogramFactory.getHistogram(()->image.stream(), HistogramFactory.BIN_SIZE_METHOD.BACKGROUND)) 
                 : threshold;
         return getBoundingBox(image, null , thld);
     }
