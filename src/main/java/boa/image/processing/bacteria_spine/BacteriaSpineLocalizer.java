@@ -267,7 +267,10 @@ public class BacteriaSpineLocalizer {
     public Point project(BacteriaSpineCoord coord, PROJECTION proj) {
         if (coord==null) return null;
         Double spineCoord = coord.getProjectedCurvilinearCoord(length, proj);
-        if (spineCoord<OUT_OF_BOUND_TOLERANCE || spineCoord>length+OUT_OF_BOUND_TOLERANCE) return null; //border cases allow only 1 pixel outside
+        if (spineCoord<-OUT_OF_BOUND_TOLERANCE || spineCoord>length+OUT_OF_BOUND_TOLERANCE) {
+            if (testMode) logger.debug("out-of-bound : projected curvilinear coord: {}/{}", spineCoord, length);
+            return null;
+        } //border cases allow only 1 pixel outside
         PointContainer2<Vector, Double> searchKey = new PointContainer2<>(null, spineCoord);
         int idx = Arrays.binarySearch(spine.spine, searchKey, SPINE_COMPARATOR);
         if (testMode) logger.debug("projecting : {}, spineCoord: {}, search idx: {} (ip: {})", coord, spineCoord, idx, (idx<0?-idx-1:idx));
