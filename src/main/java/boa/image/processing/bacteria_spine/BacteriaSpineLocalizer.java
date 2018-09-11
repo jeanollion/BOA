@@ -176,10 +176,10 @@ public class BacteriaSpineLocalizer {
         Vector r0_r1 = Vector.vector(r0, r1); 
         // inside segment condition:
         if (Vector.crossProduct2D(r0_src, v0)*Vector.crossProduct2D(r1_src, v1)>0) { // out of bound case : point is outside segment: 
-            double dotP = r0_src.dotProduct(r0_r1);
-            //logger.debug("OUT OF BOUND CASE r0_src.r0_r1={}, r0 = {} r1 = {}", dotP, r0.equals(spine.spine[0])?"first":(r0.equals(spine.spine[spine.spine.length-1])?"last":"middle"), r1.equals(spine.spine[0])?"first":(r1.equals(spine.spine[spine.spine.length-1])?"last":"middle"));
+            // RO is the closest vertebra : point is outside spine <=> r0 == first or last
             int dir = r0.equals(spine.spine[0]) ? -1 : ( r0.equals(spine.spine[spine.spine.length-1]) ? 1 : 0 );
-            if ( dotP<0 && dir!=0) { //only allow if before rO & r0 = first, or after r0 & rO = last
+            //logger.debug("OUT OF BOUND CASE r0 = {} r1 = {}, dir: {}", r0.equals(spine.spine[0])?"first":(r0.equals(spine.spine[spine.spine.length-1])?"last":"middle"), r1.equals(spine.spine[0])?"first":(r1.equals(spine.spine[spine.spine.length-1])?"last":"middle"), dir);
+            if ( dir!=0) { //only allow if  r0 = first, or  rO = last
                 if (testMode) logger.debug("out-of-segment case allowed: first or last segment");
                 Point intersection = Point.intersect2D(source, source.duplicate().translateRev(v0), r0, r1);
                 Vector r0_inter = Vector.vector(r0, intersection);
@@ -195,7 +195,7 @@ public class BacteriaSpineLocalizer {
                 //if (testMode) logger.debug("res: {}", res);
                 return res;
             }
-            //if (testMode) logger.debug("out of segment case: refused");
+            if (testMode) logger.debug("out of segment case: refused");
             return null;
         }
         
@@ -276,28 +276,34 @@ public class BacteriaSpineLocalizer {
         if (testMode) logger.debug("projecting : {}, spineCoord: {}, search idx: {} (ip: {})", coord, spineCoord, idx, (idx<0?-idx-1:idx));
         if (idx<0) {
             int ip = -idx-1;
-            // border cases check if point is inside bacteria
+            // border cases
             if (ip==spine.spine.length) {
-                Point p = projectFromVertebra(spine.spine[spine.spine.length-1],coord.radialCoord(false));
-                return p;
-                //if (bacteria.contains(p.asVoxel())) return p;
-                //else return null;
+                // get dir from
+                return projectFromVertebra(spine.spine[spine.spine.length-1], getSpineDir(false, 5), spineCoord,coord.radialCoord(false));
             } 
             if (ip == 0) {
-                Point p = projectFromVertebra(spine.spine[0],coord.radialCoord(false));
-                return p;
-                //if (bacteria.contains(p.asVoxel())) return p;
-                //else return null;
+                return projectFromVertebra(spine.spine[0], getSpineDir(true, 5), spineCoord,coord.radialCoord(false));
             }
             // project from 2 adjacent vertebras
             PointContainer2<Vector, Double> v1 = spine.spine[ip-1];
             PointContainer2<Vector, Double> v2 = spine.spine[ip];
             return projectFrom2Vertebra(v1, v2, spineCoord, coord.radialCoord(false));
-        } else return projectFromVertebra(spine.spine[idx], coord.radialCoord(false));
+        } else return projectFromVertebra(spine.spine[idx], new Vector(0, 0), spine.spine[idx].getContent2(), coord.radialCoord(false));
     }
-    private Point projectFromVertebra(PointContainer2<Vector, Double> vertebra, double distanceFromSpine) {
-        if (testMode) logger.debug("projecting from single vertebra: {}", vertebra);
-        return vertebra.duplicate().translate(vertebra.getContent1().duplicate().multiply(distanceFromSpine));
+    
+    private Vector getSpineDir(boolean start, int persistanceRadius ) {
+        Vector skDir = BacteriaSpineFactory.SlidingVector.getMeanVector2D(Arrays.stream(spine.spine).skip(start?0:spine.spine.length-persistanceRadius).limit(persistanceRadius).map(p->p.getContent1()));
+        Vector spineDir = skDir.duplicate().normalize().rotateXY90();
+        if (!start) spineDir.reverseOffset();
+        return spineDir;
+    }
+    
+    private Point projectFromVertebra(PointContainer2<Vector, Double> vertebra, Vector curvDirNormed, double spineCoord, double distanceFromSpine) {
+        double deltaCurv = Math.abs(spineCoord - vertebra.getContent2());
+        if (testMode) logger.debug("projecting from single vertebra: {}, distance from spine: {}, curvilinear dir: {}, curv coord: {} (delta={})", vertebra, distanceFromSpine, curvDirNormed, spineCoord, deltaCurv);
+        return vertebra.duplicate()
+                .translate(vertebra.getContent1().duplicate().normalize().multiply(distanceFromSpine)) // radial
+                .translate(curvDirNormed.multiply(deltaCurv)); // curvilinear
     }
     private Point projectFrom2Vertebra(PointContainer2<Vector, Double> v0, PointContainer2<Vector, Double> v1, double spineCoord, double distanceFromSpine) {
         double interVertebraDist = v1.getContent2()-v0.getContent2();

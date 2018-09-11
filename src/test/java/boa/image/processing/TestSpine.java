@@ -72,8 +72,8 @@ public class TestSpine {
         //String dbName = "dataset2";
         //String dbName = "fluo171219_WT_750ms";
         String dbName = "MF1R_180910";
-        int postition= 34, frame=0, mc=6, b=0, m = 0;
-        int frame2 = 1, b2=0;
+        int postition= 34, frame=9, mc=6, b=0, m = 0;
+        int frame2 = 10, b2=0;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
         //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1

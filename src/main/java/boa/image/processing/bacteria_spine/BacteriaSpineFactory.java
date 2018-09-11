@@ -643,7 +643,7 @@ public class BacteriaSpineFactory {
     
     
     
-    private static class SlidingVector  {
+    public static class SlidingVector  {
         final int n;
         Vector sum;
         Queue<Vector> queue;
