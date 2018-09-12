@@ -21,6 +21,8 @@ package boa.image.processing.neighborhood;
 import boa.data_structure.Voxel;
 import boa.image.Image;
 import boa.image.ImageMask;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  *
@@ -211,5 +213,11 @@ public abstract class DisplacementNeighborhood implements Neighborhood {
     
     public boolean is3D() {
         return is3D;
+    }
+    
+    public Stream<Voxel> stream(Voxel v, ImageMask mask) {
+        Stream<Voxel> res = IntStream.range(0, dx.length).mapToObj(i->new Voxel(v.x+dx[i], v.y+dy[i], v.z+dz[i]));
+        if (mask!=null) res = res.filter(vox->mask.contains(vox.x, vox.y, vox.z) & mask.insideMask(vox.x, vox.y, vox.z));
+        return res;
     }
 }

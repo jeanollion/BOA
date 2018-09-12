@@ -22,6 +22,7 @@ import boa.data_structure.Voxel;
 import boa.image.MutableBoundingBox;
 import boa.image.Image;
 import boa.image.ImageMask;
+import java.util.stream.Stream;
 
 /**
  *

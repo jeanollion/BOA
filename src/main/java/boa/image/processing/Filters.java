@@ -35,6 +35,7 @@ import boa.image.ImageMask;
 import boa.image.processing.ImageOperations;
 import boa.image.ImageProperties;
 import boa.image.SimpleBoundingBox;
+import boa.image.processing.neighborhood.DisplacementNeighborhood;
 import java.util.Arrays;
 import java.util.Comparator;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
@@ -48,8 +49,8 @@ import boa.utils.ThreadRunner;
  * @author jollion
  */
 public class Filters {
-    public static Neighborhood getNeighborhood(double radiusXY, ImageProperties image) {return image.sizeZ()>1 ?getNeighborhood(radiusXY, image.getScaleXY()/image.getScaleZ(), image) : getNeighborhood(radiusXY, 1, image);}
-    public static Neighborhood getNeighborhood(double radiusXY, double radiusZ, ImageProperties image) {return image.sizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
+    public static DisplacementNeighborhood getNeighborhood(double radiusXY, ImageProperties image) {return image.sizeZ()>1 ?getNeighborhood(radiusXY, image.getScaleXY()/image.getScaleZ(), image) : getNeighborhood(radiusXY, 1, image);}
+    public static DisplacementNeighborhood getNeighborhood(double radiusXY, double radiusZ, ImageProperties image) {return image.sizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
       
     public static <T extends Image<T>> T mean(Image image, T output, Neighborhood neighborhood, boolean parallele) {
         return applyFilter(image, output, new Mean(), neighborhood, parallele);

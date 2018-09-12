@@ -436,6 +436,7 @@ public abstract class ListParameterImpl<T extends Parameter, L extends ListParam
     
     @Override
     public T getChildByName(String name) { // returns the first occurence..
+        if (name==null) return null;
         if (children==null) {
             logger.error("no children for list: {}( child type:{})", name, this.childClassName);
         }

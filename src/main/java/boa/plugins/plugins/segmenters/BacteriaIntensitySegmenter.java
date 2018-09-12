@@ -41,6 +41,8 @@ import boa.image.processing.EDT;
 import boa.image.processing.Filters;
 import boa.image.processing.RegionFactory;
 import boa.image.processing.clustering.RegionCluster;
+import boa.image.processing.neighborhood.DisplacementNeighborhood;
+import boa.image.processing.neighborhood.Neighborhood;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
 import boa.plugins.ManualSegmenter;
 import boa.plugins.ObjectSplitter;
@@ -257,9 +259,36 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
         List<Region> seedObjects = RegionFactory.createSeedObjectsFromSeeds(seedsXYZ, input.sizeZ()==1, input.getScaleXY(), input.getScaleZ());
         EdgeDetector seg = initEdgeDetector(parent, structureIdx);
         Image wsMap = seg.getWsMap(input, parent.getMask());
+        
+        // in order to avoid creation of objects with only few pixels in case sees is in the border of an object -> replace seeds with pixel of higher intensity value & lower gradient value
+        // search radius should be ~ scale of watershed map. 
+        double searchRadius = 4;
+        DisplacementNeighborhood n = Filters.getNeighborhood(searchRadius, wsMap);
+        seedObjects.forEach(so -> {
+            Voxel seed = so.getVoxels().iterator().next();
+            double wsVal0 = wsMap.getPixel(seed.x, seed.y, seed.z);
+            double inVal0= input.getPixel(seed.x, seed.y, seed.z);
+            Voxel newSeed = n.stream(seed, segmentationMask).map(v-> {
+                double wsVal = wsMap.getPixel(v.x, v.y, v.z);
+                if (wsVal>=wsVal0) return null;
+                double inVal = input.getPixel(v.x, v.y, v.z);
+                if (inVal<=inVal0) return null;
+                v.value = (float) ((inVal - inVal0) * (wsVal0 - wsVal));
+                return v;
+            }).filter(v->v!=null).max(Voxel.getComparator()).orElse(null);
+            if (newSeed!=null) {
+                if (verboseManualSeg) logger.debug("will move seed: dx:{} dy:{}, dz:{}", newSeed.x-seed.x, newSeed.y-seed.y, newSeed.z-seed.z);
+                so.getVoxels().clear();
+                so.getVoxels().add(newSeed);
+                so.clearMask();
+            }
+        });
+        
         ImageInteger seedMap = Filters.localExtrema(wsMap, null, false, segmentationMask, Filters.getNeighborhood(1.5, input));
         RegionPopulation watershedSeeds = new RegionPopulation(seedMap, false);        
-        // among seeds -> choose those close to border of parent mask
+        // TODO optional: replace seeds with the nearest seed with highest intensity -> match algorithm. 
+        
+        // among remaining seeds -> choose those close to border of parent mask & far from foreground seeds
         Image distanceToBorder = EDT.transform(segmentationMask, true, 1, parent.getMask().sizeZ()>1?parent.getScaleZ()/parent.getScaleXY():1, true);
         Function<Region, Voxel> objectToVoxelMapper = o -> o.getVoxels().iterator().next();
         watershedSeeds.filter(o -> {
@@ -272,12 +301,9 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
         RegionPopulation pop = seg.run(input, segmentationMask);
         if (verboseManualSeg) ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("Partition"));
         if (verboseManualSeg) logger.debug("before filter seeds: {} objects", pop.getRegions().size());
-        pop.filter(o-> seedObjects.stream().anyMatch(so -> o.intersect(so)));
+        pop.filter(o-> seedObjects.stream().map(so->so.getVoxels().iterator().next()).anyMatch(v -> o.contains(v))); // keep only objects that contain seeds
         if (verboseManualSeg) logger.debug("after filter seeds: {} objects", pop.getRegions().size());
         pop.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-        //localThreshold(input, pop, parent, structureIdx, false);
-        
-        //RegionPopulation pop =  WatershedTransform.watershed(splitAndMerge.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(getNormalizedHessian(input), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
         
         if (verboseManualSeg) {
             //Image manualSeeds = new ImageByte("seeds from: "+input.getName(), input);
