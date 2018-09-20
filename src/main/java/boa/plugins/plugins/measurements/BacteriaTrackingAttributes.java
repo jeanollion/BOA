@@ -70,8 +70,6 @@ public class BacteriaTrackingAttributes implements Measurement, ToolTip {
     public List<MeasurementKey> getMeasurementKeys() {
         int structureIdx = bacteria.getSelectedStructureIdx();
         ArrayList<MeasurementKey> res = new ArrayList<>();
-        res.add(new MeasurementKeyObject(StructureObject.TRACK_ERROR_PREV, structureIdx));
-        res.add(new MeasurementKeyObject(StructureObject.TRACK_ERROR_NEXT, structureIdx));
         res.add(new MeasurementKeyObject("SizeRatio", structureIdx));
         res.add(new MeasurementKeyObject("TrackErrorSizeRatio", structureIdx));
         res.add(new MeasurementKeyObject("EndOfChannelContact", structureIdx));
@@ -81,10 +79,6 @@ public class BacteriaTrackingAttributes implements Measurement, ToolTip {
 
     @Override public void performMeasurement(StructureObject object) {
         Measurements m = object.getMeasurements();
-        if (object.hasTrackLinkError(false, true)) m.setValue(StructureObject.TRACK_ERROR_NEXT, true);
-        else m.setValue(StructureObject.TRACK_ERROR_NEXT, null); // remove
-        if (object.hasTrackLinkError(true, false)) m.setValue(StructureObject.TRACK_ERROR_PREV, true);
-        else m.setValue(StructureObject.TRACK_ERROR_PREV, null); // remove
         if (object.getAttribute("EndOfChannelContact")!=null) m.setValue("EndOfChannelContact", object.getAttribute("EndOfChannelContact", Double.NaN));
         else m.setValue("EndOfChannelContact", null); // remove
         if (object.getAttribute("TruncatedDivision")!=null) m.setValue("TruncatedDivision", object.getAttribute("TruncatedDivision", false));

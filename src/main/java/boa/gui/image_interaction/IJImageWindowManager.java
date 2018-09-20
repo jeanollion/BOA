@@ -132,11 +132,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             IJ.setTool("rect");
         }
         else IJ.setTool("multipoint");
-        ImageCanvas c;
     }
     @Override 
     public boolean isCurrentFocusOwnerAnImage() {
         Component c = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+        if (c==null) return false;
         logger.debug("current focus owner class: {}", c.getClass());
         return (c instanceof ImageCanvas || c instanceof ImageWindow);
     }

@@ -294,7 +294,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                                 return "";
                             }, selectedNodes.size()).setEndOfWork(()->{
                                 GUI.getInstance().populateSelections();
-                                GUI.getInstance().getSelections().stream().filter(ss->ss.getName().equals(ae.getActionCommand())).findAny().get().setIsDisplayingObjects(true);
+                                GUI.getInstance().getSelections().stream().filter(ss->ss.getName().equals(ae.getActionCommand())).findAny().ifPresent(sel -> sel.setIsDisplayingObjects(true));
                             });
                             
                         }

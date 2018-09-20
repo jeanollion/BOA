@@ -452,15 +452,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 logger.debug("Q pressed: " + e);
             }
         });
-        
+        Runnable[] closePreviousMessage = new Runnable[1];
         actionMap.put(ACTION.CHANGE_INTERACTIVE_STRUCTURE, new AbstractAction("Change Interactive structure") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (!ImageWindowManagerFactory.getImageManager().isCurrentFocusOwnerAnImage()) return;
-                if (interactiveStructure.getItemCount()>1) {
-                    int s = interactiveStructure.getSelectedIndex()-1;
-                    s = (s+1) % (interactiveStructure.getItemCount()-1);
-                    setInteractiveStructureIdx(s);
+                synchronized(closePreviousMessage) {
+                    if (!ImageWindowManagerFactory.getImageManager().isCurrentFocusOwnerAnImage()) return;
+                    if (interactiveStructure.getItemCount()>1) {
+                        int s = interactiveStructure.getSelectedIndex()-1;
+                        s = (s+1) % (interactiveStructure.getItemCount()-1);
+                        setInteractiveStructureIdx(s);
+                        if (closePreviousMessage[0]!=null) closePreviousMessage[0].run();
+                        closePreviousMessage[0] = Utils.displayTemporaryMessage("Current Interactive Structure: "+ interactiveStructure.getSelectedItem().toString(), 1000);
+                    }
                 }
                 logger.debug("Current interactive structure: {}", interactiveStructure.getSelectedIndex()-1);
             }
@@ -3393,6 +3397,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
         if (!checkConnection()) return;
         getImageManager().setInteractiveStructure(interactiveStructure.getSelectedIndex()-1);
+        
     }//GEN-LAST:event_interactiveStructureActionPerformed
 
     private void pruneTrackButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pruneTrackButtonActionPerformed

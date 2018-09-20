@@ -91,10 +91,14 @@ import static jdk.nashorn.internal.objects.ArrayBufferView.buffer;
 import boa.measurement.MeasurementExtractor;
 import java.awt.FileDialog;
 import java.awt.Frame;
+import java.awt.KeyboardFocusManager;
 import java.util.HashMap;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.Timer;
 
 /**
  *
@@ -742,6 +746,28 @@ public class Utils {
         File[] res = chooseFiles(dialogTitle,directory, option,  parent);
         if (res!=null && res.length>0) return res[0];
         else return null;
+    }
+    /**
+     * 
+     * @param message to be displayed
+     * @param delayInMS time during which message is displayed
+     * @return a runnable allowing to close the window
+     */
+    public static Runnable displayTemporaryMessage(String message, int delayInMS) {
+        JFrame frame = new JFrame("");
+        JLabel l = new JLabel(message);
+        l.setBackground(new Color(0, 0, 0, 0));
+        frame.add(l, java.awt.BorderLayout.NORTH);
+        l.setFont(new java.awt.Font(l.getFont().getName(), java.awt.Font.BOLD, l.getFont().getSize() *2 ));
+        frame.setUndecorated(true);
+        frame.setBackground(new Color(0, 0, 0, 0));
+        frame.pack();
+        Timer timer = new Timer(delayInMS, e->{frame.setVisible(false);});
+        timer.setRepeats(false);
+        timer.start();
+        frame.setFocusableWindowState( false );
+        frame.setVisible(true);
+        return () -> frame.setVisible(false);
     }
     public static boolean promptBoolean(String question, Component parent) {
         int response = JOptionPane.showConfirmDialog(parent, question, "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
