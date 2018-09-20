@@ -59,7 +59,7 @@ public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter, 
         boolean first = true;
         TreeMap<StructureObject, Image> images = new TreeMap<>(parentTrack.stream().collect(Collectors.toMap(o->o, o->o.getRawImage(structureIdx))));
         for (TrackPreFilter p : this.get()) {
-            p.filter(structureIdx, images, first);
+            p.filter(structureIdx, images, !first);
             first = false;
         }
         for (Entry<StructureObject, Image> en : images.entrySet()) {

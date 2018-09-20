@@ -275,7 +275,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         interactiveObjectPanel.setToolTipText(formatToolTip("Object class that will be displayed and edited on interactive images. <br />ctrl+click to select/deselect object classes"));
         editPanel.setToolTipText(formatToolTip("Commands to edit segmentation/lineage of selected objects of the interactive objects on the currently active kymograph<br />See <em>Shortcuts > Object/Lineage Edition</em> menu for while list of commands and description"));
         actionStructureJSP.setToolTipText(formatToolTip("Object classes of the opened dataset. <br />Tasks will be run only on selected objects classes, or on all object classes if none is selected. <br />Ctrl + click to select/deselect"));
-        experimentJSP.setToolTipText(formatToolTip("List of all datasets contained in the current datasets folder<br />If a dataset is opened, its name written in the title of this window. The opened dataset does not necessarily correspond to the selected dataset in this list<br /><br />ctrl+click to select/deselect datasets"));
+        datasetJSP.setToolTipText(formatToolTip("List of all datasets contained in the current datasets folder<br />If a dataset is opened, its name written in the title of this window. The opened dataset does not necessarily correspond to the selected dataset in this list<br /><br />ctrl+click to select/deselect datasets<br />double-click to open dataset"));
         actionPositionJSP.setToolTipText(formatToolTip("Positions of the opened dataset. <br />Tasks will be run only on selected position, or on all position if no position is selected<br />ctrl+click to select/deselect positions"));
         deleteObjectsButton.setToolTipText(formatToolTip("Right-click for more delete commands"));
         experimentFolder.setToolTipText(formatToolTip("Directory containing several datasets<br />Righ-click menu to access recent list and file browser"));
@@ -292,7 +292,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         this.importConfigurationMenuItem.setToolTipText(formatToolTip("Will overwrite configuration from a selected file to current dataset/selected datasets. <br />Selected configuration file must have same number of object classes<br />Overwrites configuration for each Object class<br />Overwrite preprocessing template"));
         // disable componenets when run action
         actionPoolList.setModel(actionPoolListModel);
-        experimentList.setModel(experimentModel);
+        datasetList.setModel(experimentModel);
         relatedToXPSet = new ArrayList<Component>() {{add(saveConfigMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
         relatedToReadOnly = new ArrayList<Component>() {{add(saveConfigMenuItem); add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
         
@@ -614,7 +614,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         
         // action tab
         this.experimentFolder.setEditable(!running);
-        this.experimentList.setEnabled(!running);
+        this.datasetList.setEnabled(!running);
         if (actionStructureSelector!=null) this.actionStructureSelector.getTree().setEnabled(!running);
         this.runActionList.setEnabled(!running);
         this.microscopyFieldList.setEnabled(!running);
@@ -762,7 +762,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         reloadObjectTrees=true;
         populateSelections();
         updateDisplayRelatedToXPSet();
-        experimentListValueChanged(null);
+        datasetListValueChanged(null);
         setInteractiveStructures();
     }
     
@@ -817,7 +817,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         tabs.setSelectedIndex(0);
         ImageWindowManagerFactory.getImageManager().flush();
         if (xp!=null) setMessage("XP: "+xp+ " closed");
-        experimentListValueChanged(null);
+        datasetListValueChanged(null);
     }
     
     private void updateDisplayRelatedToXPSet() {
@@ -902,7 +902,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private void populateExperimentList() {
         List<String> names = getDBNames();
         if (names==null) names = Collections.EMPTY_LIST;
-        List sel = experimentList.getSelectedValuesList();
+        List sel = datasetList.getSelectedValuesList();
         if (sel.isEmpty()) {
             String old = PropertyUtils.get(PropertyUtils.LAST_SELECTED_EXPERIMENT);
             if (old!=null) {
@@ -912,7 +912,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         }
         this.experimentModel.removeAllElements();
         for (String s : names) experimentModel.addElement(s);
-        Utils.setSelectedValues(sel, experimentList, experimentModel);
+        Utils.setSelectedValues(sel, datasetList, experimentModel);
     }
     
     public void populateActionStructureList() {
@@ -1125,8 +1125,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         microscopyFieldList = new javax.swing.JList();
         actionJSP = new javax.swing.JScrollPane();
         runActionList = new javax.swing.JList();
-        experimentJSP = new javax.swing.JScrollPane();
-        experimentList = new javax.swing.JList();
+        datasetJSP = new javax.swing.JScrollPane();
+        datasetList = new javax.swing.JList();
         actionPoolJSP = new javax.swing.JScrollPane();
         actionPoolList = new javax.swing.JList();
         configurationPanel = new javax.swing.JPanel();
@@ -1282,20 +1282,25 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         runActionList.setSelectionForeground(new java.awt.Color(255, 255, 254));
         actionJSP.setViewportView(runActionList);
 
-        experimentJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Datasets:"));
+        datasetJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Datasets:"));
 
-        experimentList.setBackground(new java.awt.Color(247, 246, 246));
-        experimentList.setBorder(null);
-        experimentList.setCellRenderer(new TransparentListCellRenderer());
-        experimentList.setOpaque(false);
-        experimentList.setSelectionBackground(new java.awt.Color(57, 105, 138));
-        experimentList.setSelectionForeground(new java.awt.Color(255, 255, 254));
-        experimentList.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
-            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
-                experimentListValueChanged(evt);
+        datasetList.setBackground(new java.awt.Color(247, 246, 246));
+        datasetList.setBorder(null);
+        datasetList.setCellRenderer(new TransparentListCellRenderer());
+        datasetList.setOpaque(false);
+        datasetList.setSelectionBackground(new java.awt.Color(57, 105, 138));
+        datasetList.setSelectionForeground(new java.awt.Color(255, 255, 254));
+        datasetList.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                datasetListMouseClicked(evt);
             }
         });
-        experimentJSP.setViewportView(experimentList);
+        datasetList.addListSelectionListener(new javax.swing.event.ListSelectionListener() {
+            public void valueChanged(javax.swing.event.ListSelectionEvent evt) {
+                datasetListValueChanged(evt);
+            }
+        });
+        datasetJSP.setViewportView(datasetList);
 
         actionPoolJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Tasks to execute"));
 
@@ -1319,7 +1324,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             .addGroup(actionPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(experimentJSP)
+                    .addComponent(datasetJSP)
                     .addComponent(experimentFolder))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
@@ -1346,7 +1351,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addComponent(experimentFolder, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(experimentJSP))))
+                        .addComponent(datasetJSP))))
         );
 
         tabs.addTab("Home", actionPanel);
@@ -3167,7 +3172,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             Action setXP = new AbstractAction("Set selected Experiment to selected Tasks") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    String xp = (String) experimentList.getSelectedValue();
+                    String xp = (String) datasetList.getSelectedValue();
                     String dir = experimentFolder.getText();
                     Map<Integer, Task> indexSelJobMap = ((List<Task>)actionPoolList.getSelectedValuesList()).stream().collect(Collectors.toMap(o->actionPoolListModel.indexOf(o), o->o));
                     for (Entry<Integer, Task> en : indexSelJobMap.entrySet()) {
@@ -3184,7 +3189,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 }
             };
             menu.add(setXP);
-            setXP.setEnabled(experimentList.getSelectedValuesList().size()==1 && !sel.isEmpty());
+            setXP.setEnabled(datasetList.getSelectedValuesList().size()==1 && !sel.isEmpty());
             Action runAll = new AbstractAction("Run All Tasks") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -3383,7 +3388,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         }
     }//GEN-LAST:event_microscopyFieldListMousePressed
 
-    private void experimentListValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_experimentListValueChanged
+    private void datasetListValueChanged(javax.swing.event.ListSelectionEvent evt) {//GEN-FIRST:event_datasetListValueChanged
         List<String> sel = getSelectedExperiments();
         if (this.db==null) {
             if (sel.size()==1) setSelectedExperimentMenuItem.setText("Open Dataset: "+sel.get(0));
@@ -3392,7 +3397,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             if (sel.size()==1 && !sel.get(0).equals(db.getDBName())) setSelectedExperimentMenuItem.setText("Open Dataset: "+sel.get(0));
             else setSelectedExperimentMenuItem.setText("Close Dataset: "+db.getDBName());
         }
-    }//GEN-LAST:event_experimentListValueChanged
+    }//GEN-LAST:event_datasetListValueChanged
 
     private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
         if (!checkConnection()) return;
@@ -3535,6 +3540,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         ImageWindowManagerFactory.getImageManager().displayAllTracks(null);
         //GUI.updateRoiDisplayForSelections(null, null);
     }//GEN-LAST:event_selectAllTracksButtonActionPerformed
+
+    private void datasetListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_datasetListMouseClicked
+        if (SwingUtilities.isLeftMouseButton(evt)) { // open experiment on double click
+            if (evt.getClickCount()==2 && datasetList.getSelectedValuesList().size()==1) {
+                String dbName = getSelectedExperiment();
+                if (dbName!=null && (db==null || !db.getDBName().equals(dbName))) { // only open other experiment
+                    openExperiment(dbName, getCurrentHostNameOrDir(), false);
+                    if (db!=null) PropertyUtils.set(PropertyUtils.LAST_SELECTED_EXPERIMENT, dbName);
+                }
+            }
+        }
+    }//GEN-LAST:event_datasetListMouseClicked
     public void updateSelectionListUI() {
         selectionList.updateUI();
     }
@@ -3571,16 +3588,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     }
     
     private String getSelectedExperiment() {
-        Object sel = experimentList.getSelectedValue();
+        Object sel = datasetList.getSelectedValue();
         if (sel!=null) return (String) sel;
         else return null;
     }
     private List<String> getSelectedExperiments() {
-        List res = experimentList.getSelectedValuesList();
+        List res = datasetList.getSelectedValuesList();
         return res;
     }
     private void setSelectedExperiment(String xpName) {
-        experimentList.setSelectedValue(xpName, true);
+        datasetList.setSelectedValue(xpName, true);
     }
     Map<String, File> dbFiles;
     
@@ -3732,13 +3749,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JButton createSelectionButton;
     private javax.swing.JMenu dataBaseMenu;
     private javax.swing.JPanel dataPanel;
+    private javax.swing.JScrollPane datasetJSP;
+    private javax.swing.JList datasetList;
     private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JMenuItem deleteXPMenuItem;
     private javax.swing.JMenuItem duplicateXPMenuItem;
     private javax.swing.JPanel editPanel;
     private javax.swing.JTextField experimentFolder;
-    private javax.swing.JScrollPane experimentJSP;
-    private javax.swing.JList experimentList;
     private javax.swing.JMenu experimentMenu;
     private javax.swing.JCheckBoxMenuItem exportConfigMenuItem;
     private javax.swing.JMenuItem exportDataMenuItem;

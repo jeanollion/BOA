@@ -25,6 +25,7 @@ import boa.plugins.Plugin;
 import boa.plugins.PreFilter;
 import boa.utils.Utils;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -64,15 +65,9 @@ public abstract class PluginParameterList<T extends Plugin, L extends PluginPara
     }
     
     public List<T> get() {
-        List<T> res = new ArrayList<>(this.getChildCount());
-        for (PluginParameter<T> pp : this.getActivatedChildren()) {
-            T p = pp.instanciatePlugin();
-            if (p!=null) res.add(p);
-        }
-        return res;
+        return this.getActivatedChildren().stream().map(pp->pp.instanciatePlugin()).filter(p->p!=null).collect(Collectors.toList());
     }
     public boolean isEmpty() {
-        for (PluginParameter<T> pp : this.children) if (pp.isActivated()) return false;
-        return true;
+        return this.children.stream().noneMatch((pp) -> (pp.isActivated()));
     }
 }

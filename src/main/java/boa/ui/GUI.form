@@ -568,7 +568,7 @@
                       <Group type="102" attributes="0">
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" max="-2" attributes="0">
-                              <Component id="experimentJSP" max="32767" attributes="0"/>
+                              <Component id="datasetJSP" max="32767" attributes="0"/>
                               <Component id="experimentFolder" max="32767" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
@@ -602,7 +602,7 @@
                               <Group type="102" attributes="0">
                                   <Component id="experimentFolder" min="-2" max="-2" attributes="0"/>
                                   <EmptySpace max="-2" attributes="0"/>
-                                  <Component id="experimentJSP" max="32767" attributes="0"/>
+                                  <Component id="datasetJSP" max="32767" attributes="0"/>
                               </Group>
                           </Group>
                       </Group>
@@ -718,7 +718,7 @@
                     </Component>
                   </SubComponents>
                 </Container>
-                <Container class="javax.swing.JScrollPane" name="experimentJSP">
+                <Container class="javax.swing.JScrollPane" name="datasetJSP">
                   <Properties>
                     <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
                       <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
@@ -732,7 +732,7 @@
 
                   <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
                   <SubComponents>
-                    <Component class="javax.swing.JList" name="experimentList">
+                    <Component class="javax.swing.JList" name="datasetList">
                       <Properties>
                         <Property name="background" type="java.awt.Color" editor="org.netbeans.beaninfo.editors.ColorEditor">
                           <Color blue="f6" green="f6" red="f7" type="rgb"/>
@@ -755,7 +755,8 @@
                         </Property>
                       </Properties>
                       <Events>
-                        <EventHandler event="valueChanged" listener="javax.swing.event.ListSelectionListener" parameters="javax.swing.event.ListSelectionEvent" handler="experimentListValueChanged"/>
+                        <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="datasetListMouseClicked"/>
+                        <EventHandler event="valueChanged" listener="javax.swing.event.ListSelectionListener" parameters="javax.swing.event.ListSelectionEvent" handler="datasetListValueChanged"/>
                       </Events>
                     </Component>
                   </SubComponents>
