@@ -78,6 +78,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import boa.plugins.TrackConfigurable;
+import java.util.stream.DoubleStream;
 
 /**
  *
@@ -152,7 +153,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
         switch(FOREGROUND_SELECTION_METHOD.valueOf(foregroundSelectionMethod.getValue())) {
             case SIMPLE_THRESHOLDING:
                 ensureThresholds(parent, structureIdx, true, false);
-                pop.getRegions().removeIf(r->valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)<=bckThld);
+                pop.filter(r->valueFunction(parent.getPreFilteredImage(structureIdx)).apply(r)>bckThld);
                 return pop;
             case HYSTERESIS_THRESHOLDING:
                 return filterRegionsAfterEdgeDetectorHysteresis(parent, structureIdx, pop);
@@ -324,11 +325,17 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
         } else { // prefilters -> perform on parent track
             logger.debug("prefilters detected: global mean & sigma on parent track");
             Map<Image, ImageMask> imageMapMask = parentTrack.stream().collect(Collectors.toMap(p->p.getPreFilteredImage(structureIdx), p->p.getMask() )); 
+            // Background fit on parent track doesn't necessarily
+            /*
             Histogram histo = HistogramFactory.getHistogram(()->Image.stream(imageMapMask, true).parallel(), HistogramFactory.BIN_SIZE_METHOD.BACKGROUND);
             double[] ms = new double[2];
             BackgroundFit.backgroundFit(histo, 5, ms);
             this.globalBackgroundLevel = ms[0];
             this.globalBackgroundSigma = ms[1];
+            */
+            DoubleStream pixStream = Image.stream(imageMapMask, true);
+            this.globalBackgroundLevel = pixStream.min().orElse(0);
+            this.globalBackgroundSigma = 1;
         } 
         
         Set<StructureObject> voidMC = getVoidMicrochannels(structureIdx, parentTrack);

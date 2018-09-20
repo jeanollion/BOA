@@ -173,8 +173,7 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
         // filter low value regions
         if (!Double.isNaN(filterThld)) {
             Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(parent.getPreFilteredImage(structureIdx))));
-            pop.getRegions().removeIf(r->values.get(r)<filterThld);
-            pop.relabel(true);
+            pop.filter(r->values.get(r)>=filterThld);
             if (pop.getRegions().isEmpty()) return pop;        
         }
         // merge small objects with the object with the smallest edge
@@ -383,10 +382,10 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
         double[] thlds = getTrackThresholds(parentTrack, structureIdx, voidMC);
         return (p, s) -> {
             if (voidMC.contains(p)) s.isVoid=true; 
-            s.globalBackgroundLevel = 0; // was 0. use in SplitAndMergeHessian
+            s.globalBackgroundLevel = 0; // was 0. use in SplitAndMergeHessian -> should be minimal value
             s.lowerThld= thlds[0];
-            s.upperThld = thlds[1];
-            s.filterThld = thlds[2];
+            s.upperThld = thlds[1]; // was otsu
+            s.filterThld = thlds[1]; // was mean over otsu
         };
     }
 
@@ -401,9 +400,9 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
         double mean = histo.getValueFromIdx(histo.getMeanIdx(0, (int)histo.getIdxFromValue(globalThld)));
         double minThreshold = (mean+globalThld)/2.0;
         double meanUp = histo.getValueFromIdx(histo.getMeanIdx((int)histo.getIdxFromValue(globalThld), histo.data.length));
-        double globalThld2 = (meanUp+globalThld)/2.0;
-        logger.debug("parent: {} global threshold on images with forground: [{};{};{}]", parentTrack.get(0), mean, minThreshold, globalThld);
-        return new double[]{minThreshold, globalThld, globalThld2}; 
+        double maxThreshold = (meanUp+globalThld)/2.0;
+        logger.debug("bacteria phase segmentation: {} global threshold on images with forground: global thld: {}, thresholds: [{};{}]", parentTrack.get(0), globalThld, minThreshold, maxThreshold);
+        return new double[]{minThreshold, globalThld, maxThreshold}; 
     }
     @Override 
     protected double getGlobalThreshold(List<StructureObject> parent, int structureIdx) {

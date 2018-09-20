@@ -140,6 +140,7 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
         if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(splitPop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Partitioning"));
         splitPop = filterRegionsAfterEdgeDetector(parent, structureIdx, splitPop);
         if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(splitPop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Filtering of Paritions"));
+        
         if (splitAndMerge==null || !parent.equals(currentParent)) {
             currentParent = parent;
             splitAndMerge = initializeSplitAndMerge(parent, structureIdx, parent.getMask());
@@ -156,6 +157,9 @@ public abstract class BacteriaIntensitySegmenter<T extends BacteriaIntensitySegm
         }
         RegionPopulation res = splitAndMerge.merge(split, null);
         res = filterRegionsAfterMergeByHessian(parent, structureIdx, res);
+        if (stores!=null)  {
+            imageDisp.accept(EdgeDetector.generateRegionValueMap(res, input).setName("Region Values after merge by Hessian + filter"));
+        }
         res = localThreshold(input, res, parent, structureIdx, false);
         res.filter(new RegionPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         //res.filter(new RegionPopulation.Size().setMin(minSize.getValue().intValue())); // remove small objects
