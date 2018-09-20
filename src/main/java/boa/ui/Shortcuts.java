@@ -22,26 +22,65 @@ import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.swing.Action;
 import javax.swing.JMenu;
 import javax.swing.JSeparator;
+import javax.swing.JTable;
 import javax.swing.KeyStroke;
-
+import static boa.ui.Shortcuts.ACTION.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.print.PrinterException;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.function.BiFunction;
+import java.util.logging.Level;
+import java.util.stream.Stream;
+import javafx.scene.layout.Border;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.MediaPrintableArea;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextPane;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sun.swing.DefaultLookup;
 /**
  *
  * @author Jean Ollion
  */
 public class Shortcuts {
+    public static final Logger logger = LoggerFactory.getLogger(Shortcuts.class);
     public enum PRESET {QWERTY, AZERTY}
-    public enum ACTION {LINK, UNLINK, RESET_LINKS, CREATE_TRACK,
-        DELETE, DELETE_AFTER_FRAME, PRUNE, MERGE, SPLIT, CREATE, TOGGLE_CREATION_TOOL,
-        SELECT_ALL_OBJECTS, SELECT_ALL_TRACKS, TOGGLE_SELECT_MODE, TOGGLE_LOCAL_ZOOM, CHANGE_INTERACTIVE_STRUCTURE,
-        NAV_NEXT, NAV_PREV, OPEN_NEXT, OPEN_PREV,
-        ADD_TO_SEL0, REM_FROM_SEL0, REM_ALL_FROM_SEL0, TOGGLE_DISPLAY_SEL0,
-        ADD_TO_SEL1, REM_FROM_SEL1, REM_ALL_FROM_SEL1, TOGGLE_DISPLAY_SEL1
+    public enum ACTION {LINK("Link selected objects"), UNLINK("Remove link between selected objects"), RESET_LINKS("Reset lineage of selected object(s)"), CREATE_TRACK("Create track starting from selected object(s)"),
+        DELETE("Delete selected object(s)"), DELETE_AFTER_FRAME("Delete all object(s) after first selected object"), PRUNE("Prune track starting from selected object(s)"), MERGE("Merge selected objects"), SPLIT("Split selected object(s)"), MANUAL_SPLIT("manual split objects", "Ctrl + freehand line"), CREATE("Create object(s) from selected point(s)"), TOGGLE_CREATION_TOOL("Switch to object creation tool / rectangle selection tool"),
+        SELECT_ALL_OBJECTS("Display all objects on active image"), SELECT_ALL_TRACKS("Display all tracks on active image"), TOGGLE_SELECT_MODE("Toggle display object/track"), TOGGLE_LOCAL_ZOOM("Toggle local zoom"), CHANGE_INTERACTIVE_STRUCTURE("Change interactive structure"),
+        FAST_SCROLL("Fast scroll through Kymograph time axis", "shift + mouse wheel"),
+        NAV_NEXT("Navigate to next objects of the selection enabled for navigation"), NAV_PREV("Navigate to previous objects of the selection enabled for navigation"), OPEN_NEXT("Display next image"), OPEN_PREV("Display previous image"),
+        ADD_TO_SEL0("Add selected object(s) to active selection group 0"), REM_FROM_SEL0("Remove selected object(s) from active selection group 0"), REM_ALL_FROM_SEL0("Remove all objects contained in active image from active selection group 0"), TOGGLE_DISPLAY_SEL0("Toggle Display Objects for active selection group 0"),
+        ADD_TO_SEL1("Add selected object(s) to active selection group 1"), REM_FROM_SEL1("Remove selected object(s) from active selection group 1"), REM_ALL_FROM_SEL1("Remove all objects contained in active image from active selection group 1"), TOGGLE_DISPLAY_SEL1("Toggle Display Objects for active selection group 1");
+        public final String description, shortcut;
+        private ACTION(String description) {
+            this.description=description;
+            this.shortcut=null;
+        }
+        private ACTION(String description, String shortcut) {
+            this.description=description;
+            this.shortcut= shortcut;
+        }
     }
     private final Map<KeyStroke, ACTION> keyMapAction = new HashMap<>();
     private final Map<ACTION, KeyStroke> actionMapKey = new HashMap<>();
@@ -141,65 +180,145 @@ public class Shortcuts {
         }
         actionMapKey.clear();
         actionMapKey.putAll(keyMapAction.entrySet().stream().collect(Collectors.toMap(e->e.getValue(), e->e.getKey())));
+        updateTable();
     }
-    public void addToMenu(JMenu menu) {
-        menu.removeAll();
-        JMenu selection = new JMenu("Selections");
-        menu.add(selection);
-        selection.add("Navigation selection is set through right-click menu on selection");
-        selection.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of the selection enabled for navigation (or selected selection if no selection is enabled for navigation)"));
-        selection.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of the selection enabled for navigation (or selected selection if no active selection is set)"));
-        selection.add(new JSeparator());
-        selection.add(new JSeparator());
-        selection.add("Active selections are set through right-click menu on selections");
-        selection.add(new JSeparator());
-        selection.add(getMenuLabelFor(ACTION.TOGGLE_DISPLAY_SEL0, "Toggle Display Objects for active selection group 0"));
-        selection.add(getMenuLabelFor(ACTION.ADD_TO_SEL0, "Add selected object(s) to active selection group 0"));
-        selection.add(getMenuLabelFor(ACTION.REM_FROM_SEL0, "Remove selected object(s) from active selection group 0"));
-        selection.add(getMenuLabelFor(ACTION.REM_ALL_FROM_SEL0, "Remove all objects contained in active image from active selection group 0"));
-        selection.add(new JSeparator());
-        selection.add(getMenuLabelFor(ACTION.TOGGLE_DISPLAY_SEL1, "Toggle Display Objects for active selection group 1"));
-        selection.add(getMenuLabelFor(ACTION.ADD_TO_SEL1, "Add selected object(s) to active selection group 1"));
-        selection.add(getMenuLabelFor(ACTION.REM_FROM_SEL1, "Remove selected object(s) from active selection group 1"));
-        selection.add(getMenuLabelFor(ACTION.REM_ALL_FROM_SEL1, "Remove all objects contained in active image from active selection group 1"));
-        
-        
-        JMenu nav = new JMenu("Navigation/Display");
-        menu.add(nav);
-        nav.add("Shift + mouse wheel mouve: fast scroll");
-        nav.add("Navigation selection is set through right-click menu on selections");
-        nav.add(getMenuLabelFor(ACTION.NAV_PREV, "Navigate to previous objects of the selection enabled for navigation (or selected selection if no selection is enabled for navigation)"));
-        nav.add(getMenuLabelFor(ACTION.NAV_NEXT, "Navigate to next objects of the selection enabled for navigation (or selected selection if no selection is enabled for navigation)"));
-        nav.add(getMenuLabelFor(ACTION.OPEN_NEXT, "Display next image"));
-        nav.add(getMenuLabelFor(ACTION.OPEN_PREV, "Display previous image"));
-        nav.add(new JSeparator());
-        nav.add(getMenuLabelFor(ACTION.SELECT_ALL_OBJECTS, "Display all objects on active image"));
-        nav.add(getMenuLabelFor(ACTION.SELECT_ALL_TRACKS, "Display all tracks on active image"));
-        nav.add(getMenuLabelFor(ACTION.TOGGLE_SELECT_MODE, "Toggle display object/track"));
-        nav.add(getMenuLabelFor(ACTION.CHANGE_INTERACTIVE_STRUCTURE, "Change interactive structure"));
-        nav.add(new JSeparator());
-        nav.add(getMenuLabelFor(ACTION.TOGGLE_LOCAL_ZOOM, "Toggle local zoom"));
-        
-        JMenu objectModif = new JMenu("Object/Lineage Edition");
-        menu.add(objectModif);
-        objectModif.add("All action are performed on objects selected on active image");
-        objectModif.add(getMenuLabelFor(ACTION.DELETE, "Delete object(s)"));
-        objectModif.add(getMenuLabelFor(ACTION.DELETE_AFTER_FRAME, "Delete all object(s) after first selected object"));
-        objectModif.add(getMenuLabelFor(ACTION.PRUNE, "Prune track starting from selected object(s)"));
-        objectModif.add(getMenuLabelFor(ACTION.TOGGLE_CREATION_TOOL, "Switch to object creation tool / rectangle selection tool"));
-        objectModif.add(getMenuLabelFor(ACTION.CREATE, "Create object(s) from selected point(s)"));
-        objectModif.add(getMenuLabelFor(ACTION.MERGE, "Merge objects"));
-        objectModif.add(getMenuLabelFor(ACTION.SPLIT, "Split object(s)"));
-        objectModif.add("Ctrl + freehand line: manual split objects");
-        objectModif.add(new JSeparator());
-        objectModif.add(getMenuLabelFor(ACTION.RESET_LINKS, "Reset lineage of selected object(s)"));
-        objectModif.add(getMenuLabelFor(ACTION.LINK, "Link selected objects"));
-        objectModif.add(getMenuLabelFor(ACTION.UNLINK, "Unlink selected objects"));
-        objectModif.add(getMenuLabelFor(ACTION.CREATE_TRACK, "Create track starting from selected object(s)"));
-        
-        //objectModif.add("Ctrl + straight line: strech objects");
+    JFrame displayedFrame;
+    JScrollPane scrollPane;
+    public int updateTable() {
+        if (displayedFrame==null) return 0;
+        JTable table = generateTable(false);
+        scrollPane.setViewportView(table);
+        table.setFillsViewportHeight(true);
+        return (table.getRowCount()+1) * (table.getRowHeight() + table.getIntercellSpacing().height);
     }
-    private String getMenuLabelFor(ACTION action, String desc) {
-        return actionMapKey.get(action).toString() +": "+ desc;
+    
+    public void displayTable() {
+        if (displayedFrame==null) {
+            displayedFrame = new JFrame("Shortcuts");
+            scrollPane = new JScrollPane();
+            displayedFrame.add(scrollPane);
+            int height = updateTable();
+            scrollPane.setPreferredSize(new Dimension(700, height+5));
+            //displayedFrame.setPreferredSize(table.getPreferredScrollableViewportSize());
+            displayedFrame.pack();
+        }
+        displayedFrame.setVisible(true);
+    }
+    public void printTable() {
+        JFrame displayedFrame = new JFrame("Shortcuts");
+        JTable table = generateTable(true);
+        JScrollPane scrollPane = new JScrollPane(table);
+        displayedFrame.add(scrollPane);
+        displayedFrame.pack();
+        try {
+            HashPrintRequestAttributeSet attr = new HashPrintRequestAttributeSet();
+            attr.add(new MediaPrintableArea(5f, 5f, 200, 287, MediaPrintableArea.MM)); // set default margins
+            table.print(JTable.PrintMode.FIT_WIDTH, new MessageFormat("BACMMAN SHORTCUTS"), null, true , attr, true);
+        } catch (PrinterException ex) {
+            GUI.log("Error while printing shortcuts: "+ex.getLocalizedMessage());
+        }
+    }
+    private JTable generateTable(boolean printable) {
+        Object[] columnNames = {"Shortcut", "Description"};
+        Function<Object, String> getShortcutString = o -> {
+            if (o instanceof ACTION) {
+                ACTION a = (ACTION)o;
+                if (a.shortcut!=null) return a.shortcut;
+                else {
+                    String res = actionMapKey.get(a).toString();
+                    if (res.startsWith("pressed")) return res.replace("pressed", "");
+                    else return res.replace("pressed", "+");
+                } 
+            } else return "";
+        };
+        Function<Object, String> getDescription = o -> {
+            if (o instanceof ACTION) return ((ACTION)o).description;
+            else return o.toString();
+        };
+        Function<String, String> formatString = (s) -> "<html>" + s + "</html>";
+        Object[] actions = {
+            "<b>Navigation and display</b>",
+            FAST_SCROLL,
+            OPEN_NEXT, 
+            OPEN_PREV,
+            "<em>Navigation selection is set through right-click menu on selection</em>",
+            NAV_PREV, NAV_NEXT,
+            SELECT_ALL_OBJECTS, SELECT_ALL_TRACKS,TOGGLE_SELECT_MODE,CHANGE_INTERACTIVE_STRUCTURE,
+            TOGGLE_LOCAL_ZOOM,
+            "<em>Active selections are set through right-click menu on selections</em>",
+            TOGGLE_DISPLAY_SEL0, ADD_TO_SEL0, REM_FROM_SEL0, REM_ALL_FROM_SEL0,
+            TOGGLE_DISPLAY_SEL1, ADD_TO_SEL1, REM_FROM_SEL1, REM_ALL_FROM_SEL1,
+            "<b>Object Edition: all action are performed on active image</b>",
+            DELETE, DELETE_AFTER_FRAME, PRUNE, TOGGLE_CREATION_TOOL, CREATE, MERGE, SPLIT,
+            "<b>Lineage Edition: all action are performed on active image</b>",
+            RESET_LINKS, LINK, UNLINK, CREATE_TRACK
+        };
+        int shortcutWidth = 140;
+        Stream<Object[]> lines = Arrays.stream(actions).map(o-> new Object[]{formatString.apply(getShortcutString.apply(o)), formatString.apply(getDescription.apply(o))});
+        
+        JTable table = new JTable();
+        table.setFont(new Font("Arial", Font.PLAIN, printable ? 14 : 18));
+        table.setRowHeight(printable ? 17 : 23);
+        //table.setSelectionBackground(Color.BLUE);
+        DefaultTableModel tableModel = new DefaultTableModel(lines.toArray(n -> new Object[n][]), columnNames) {
+            @Override public boolean isCellEditable(int row, int column) {
+               return false;
+            }
+        };
+        table.setModel(tableModel);
+        
+        table.getColumnModel().getColumn(0).setPreferredWidth(shortcutWidth);
+        table.getColumnModel().getColumn(0).setMinWidth(shortcutWidth);    
+        table.getColumnModel().getColumn(0).setMaxWidth(shortcutWidth);
+        table.getColumnModel().getColumn(0).setResizable(false);
+        table.getColumnModel().getColumn(1).setPreferredWidth(500);
+        table.getColumnModel().getColumn(1).setMinWidth(printable ? 500 : 200);
+        table.getColumnModel().getColumn(0).setCellRenderer(new AlternatedColorTableCellRenderer());
+        table.getColumnModel().getColumn(1).setCellRenderer(new AlternatedColorTableCellRenderer());
+        
+        return table;
+    }
+    private static final Color ROW_COLOR_1 = Color.WHITE, ROW_COLOR_2 = new Color(180, 180, 180), HEAD_ROW_COL = new Color(176,196,222);
+    private static class AlternatedColorTableCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            if (!isSelected) {
+                if (table.getValueAt(row, 1).toString().contains("<b>")) c.setBackground(HEAD_ROW_COL);
+                else c.setBackground(row%2==0?ROW_COLOR_1 : ROW_COLOR_2);
+                logger.debug("selected: {}, row: {}, col0: {}, fore: {}, back: {}", isSelected, row, table.getValueAt(row, 0).toString(), c.getForeground(), c.getBackground());
+            }
+            
+            return c;
+        }
+    }
+    static class WordWrapCellRenderer extends JTextPane implements TableCellRenderer {
+        WordWrapCellRenderer() {
+            //setLineWrap(true);
+            //setWrapStyleWord(true);
+            this.setContentType("text/html");
+            this.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+        }
+
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            setText(value.toString());
+            setSize(table.getColumnModel().getColumn(column).getWidth(), getPreferredSize().height);
+            if (table.getRowHeight(row) != getPreferredSize().height) {
+                table.setRowHeight(row, getPreferredSize().height);
+            }
+            if (isSelected) {
+                super.setForeground(table.getSelectionForeground());
+                super.setBackground(table.getSelectionBackground());
+                logger.debug("selected: {}, fore: {}, back: {}", true, table.getSelectionForeground(), table.getSelectionBackground());
+            } else {
+                Color background = row%2==0?ROW_COLOR_1 : ROW_COLOR_2;
+                super.setForeground(table.getForeground());
+                super.setBackground(background);
+                logger.debug("selected: {}, row {}, fore: {}, back: {}", false, row,table.getForeground(), background);
+            }
+            setFont(table.getFont());
+            return this;
+        }
+        
     }
 }

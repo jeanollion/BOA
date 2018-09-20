@@ -481,11 +481,27 @@
             </Menu>
           </SubComponents>
         </Menu>
-        <Menu class="javax.swing.JMenu" name="shortcutMenu">
+        <Menu class="javax.swing.JMenu" name="helpMenu">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Shortcuts"/>
+            <Property name="text" type="java.lang.String" value="Help"/>
           </Properties>
           <SubComponents>
+            <MenuItem class="javax.swing.JMenuItem" name="displayShortcutMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Display Shortcut table"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="displayShortcutMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="printShortcutMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Print Shortcut table"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="printShortcutMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
             <Menu class="javax.swing.JMenu" name="shortcutPresetMenu">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Shortcut Preset"/>
