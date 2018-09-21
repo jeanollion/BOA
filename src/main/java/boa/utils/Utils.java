@@ -649,6 +649,16 @@ public class Utils {
         p.addPoints(x2, values2, 5);
         p.show();
     }
+    public static void plotProfile(String title, double[] values1, double[] x1, double[] values2, double[] x2) {
+        if (values1.length<=1) return;
+        double v = values1[0];
+        int idx = 0; 
+        while (idx<values1.length && values1[idx]==v) ++idx;
+        if (idx==values1.length) return; // cannot be ploted if one single value
+        Plot p = new Plot(title, "coord", "value1", x1, values1);
+        if (values2!=null) p.addPoints(x2, values2, 5);
+        p.show();
+    }
     
     public static void deleteDirectory(String dir) {
         if (dir!=null) deleteDirectory(new File(dir));
