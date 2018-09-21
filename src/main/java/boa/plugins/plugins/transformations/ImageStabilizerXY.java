@@ -110,7 +110,7 @@ public class ImageStabilizerXY implements ConfigurableTransformation, Multichann
         if (getAdditionalTranslationParameter(channelIdx, false)!=null) throw new IllegalArgumentException("Translation already set for channel: "+channelIdx);
         GroupParameter g = additionalTranslation.createChildInstance();
         additionalTranslation.insert(g);
-        ((ChannelImageParameter)g.getChildAt(0)).setSelectedStructureIdx(channelIdx);
+        ((ChannelImageParameter)g.getChildAt(0)).setSelectedClassIdx(channelIdx);
         for (int i = 0; i<Math.min(3, deltas.length); ++i) ((NumberParameter)g.getChildAt(i+ 1)).setValue(deltas[i]);
         return this;
     }

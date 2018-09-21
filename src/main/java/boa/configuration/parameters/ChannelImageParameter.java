@@ -22,7 +22,7 @@ package boa.configuration.parameters;
  *
  * @author jollion
  */
-public class ChannelImageParameter extends ObjectClassParameter<ChannelImageParameter> {
+public class ChannelImageParameter extends ObjectClassOrChannelParameter<ChannelImageParameter> {
     
     public ChannelImageParameter() {
         this("");
@@ -51,6 +51,11 @@ public class ChannelImageParameter extends ObjectClassParameter<ChannelImagePara
         } else {
             return new String[]{"error: no xp found in tree"};
         }
+    }
+
+    @Override
+    public String getNoSelectionString() {
+        return "No selection";
     }
     
 }

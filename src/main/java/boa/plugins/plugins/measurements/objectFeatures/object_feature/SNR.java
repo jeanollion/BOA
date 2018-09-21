@@ -23,8 +23,8 @@ import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.SiblingStructureParameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.SiblingObjectClassParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -53,7 +53,7 @@ import boa.utils.Utils;
  * @author jollion
  */
 public class SNR extends IntensityMeasurement implements ToolTip {
-    protected StructureParameter backgroundStructure = new StructureParameter("Background Structure");//.setAutoConfiguration(true);
+    protected ObjectClassParameter backgroundStructure = new ObjectClassParameter("Background Structure");//.setAutoConfiguration(true);
     protected BoundedNumberParameter dilateExcluded = new BoundedNumberParameter("Dilatation radius for foreground object", 1, 1, 0, null).setToolTipText("Dilated foreground object will be excluded from background mask");
     protected BoundedNumberParameter erodeBorders = new BoundedNumberParameter("Radius for background mask erosion", 1, 1, 0, null).setToolTipText("Background mask will be erored in order to avoid border effects");
     protected ChoiceParameter formula = new ChoiceParameter("Formula", new String[]{"(F-B)/std(B)", "F-B"}, "(F-B)/std(B)", false).setToolTipText("formula for SNR computation. F = Foreground, B = background, std = standard-deviation");
@@ -64,10 +64,10 @@ public class SNR extends IntensityMeasurement implements ToolTip {
     Offset parentOffsetRev;
     public SNR() {}
     public SNR(int backgroundStructureIdx) {
-        backgroundStructure.setSelectedStructureIdx(backgroundStructureIdx);
+        backgroundStructure.setSelectedClassIdx(backgroundStructureIdx);
     }
     public SNR setBackgroundObjectStructureIdx(int structureIdx) {
-        backgroundStructure.setSelectedStructureIdx(structureIdx);
+        backgroundStructure.setSelectedClassIdx(structureIdx);
         return this;
     }
     public SNR setRadii(double dilateRadius, double erodeRadius) {
@@ -88,8 +88,8 @@ public class SNR extends IntensityMeasurement implements ToolTip {
         parentOffsetRev = new SimpleOffset(parent.getBounds()).reverseOffset();
         
         List<Region> backgroundObjects;
-        if (backgroundStructure.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
-            backgroundObjects = parent.getChildRegionPopulation(backgroundStructure.getSelectedStructureIdx()).getRegions();
+        if (backgroundStructure.getSelectedClassIdx()!=super.parent.getStructureIdx()) {
+            backgroundObjects = parent.getChildRegionPopulation(backgroundStructure.getSelectedClassIdx()).getRegions();
         } else {
             backgroundObjects = new ArrayList<>(1);
             backgroundObjects.add(parent.getRegion());

@@ -22,7 +22,7 @@ import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
@@ -48,7 +48,7 @@ import boa.utils.Pair;
  * @author jollion
  */
 public class BacteriaLineageMeasurements implements Measurement, ToolTip {
-    protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
+    protected ObjectClassParameter structure = new ObjectClassParameter("Bacteria Structure", 1, false, false);
     protected TextParameter keyName = new TextParameter("Lineage Index Name", "BacteriaLineage", false);
     protected Parameter[] parameters = new Parameter[]{structure, keyName};
     public static char[] lineageName = new char[]{'H', 'T'};
@@ -72,7 +72,7 @@ public class BacteriaLineageMeasurements implements Measurement, ToolTip {
     
     @Override
     public int getCallStructure() {
-        return structure.getParentStructureIdx();
+        return structure.getParentObjectClassIdx();
     }
     
     @Override

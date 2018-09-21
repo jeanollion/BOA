@@ -21,7 +21,7 @@ package boa.plugins.plugins.measurements;
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.SimpleListParameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.StructureObject;
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ import boa.plugins.Measurement;
  * @author jollion
  */
 public class GetAttribute implements Measurement, DevPlugin {
-    StructureParameter structure = new StructureParameter("Structure", -1, false, false);
+    ObjectClassParameter structure = new ObjectClassParameter("Structure", -1, false, false);
     BooleanParameter parseArraysAsCoordinates = new BooleanParameter("Parse arrays as coordinates", true);
     SimpleListParameter<TextParameter> attributes = new SimpleListParameter("Attributes", new TextParameter("Attribute Key", "", false));
     Parameter[] parameters = new Parameter[]{structure, parseArraysAsCoordinates, attributes};
@@ -44,7 +44,7 @@ public class GetAttribute implements Measurement, DevPlugin {
     public GetAttribute() {}
     
     public GetAttribute(int structureIdx) {
-        structure.setSelectedStructureIdx(structureIdx);
+        structure.setSelectedClassIdx(structureIdx);
     }
     
     public GetAttribute addAttributes(String... attributeNames) {
@@ -58,7 +58,7 @@ public class GetAttribute implements Measurement, DevPlugin {
     
     @Override
     public int getCallStructure() {
-        return structure.getSelectedStructureIdx();
+        return structure.getSelectedClassIdx();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class GetAttribute implements Measurement, DevPlugin {
     @Override
     public List<MeasurementKey> getMeasurementKeys() {
         List<MeasurementKey> res = new ArrayList<>(attributes.getChildCount());
-        for (TextParameter att : attributes.getChildren()) res.add(new MeasurementKeyObject(att.getValue(), structure.getSelectedStructureIdx()));
+        for (TextParameter att : attributes.getChildren()) res.add(new MeasurementKeyObject(att.getValue(), structure.getSelectedClassIdx()));
         return res;
     }
     

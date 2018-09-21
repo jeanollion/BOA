@@ -21,7 +21,7 @@ package boa.plugins.plugins.measurements;
 import boa.configuration.parameters.BooleanParameter;
 import boa.gui.image_interaction.IJImageDisplayer;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.data_structure.Measurements;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
@@ -44,7 +44,7 @@ import boa.utils.geom.Point;
  * @author jollion
  */
 public class BacteriaTrackingAttributes implements Measurement, ToolTip {
-    protected StructureParameter bacteria = new StructureParameter("Bacteria Structure", -1, false, false);
+    protected ObjectClassParameter bacteria = new ObjectClassParameter("Bacteria Structure", -1, false, false);
     protected Parameter[] parameters = new Parameter[]{bacteria};
     
     public BacteriaTrackingAttributes(){}
@@ -60,7 +60,7 @@ public class BacteriaTrackingAttributes implements Measurement, ToolTip {
     
     @Override
     public int getCallStructure() {
-        return bacteria.getSelectedStructureIdx();
+        return bacteria.getSelectedClassIdx();
     }
     @Override
     public boolean callOnlyOnTrackHeads() {
@@ -68,7 +68,7 @@ public class BacteriaTrackingAttributes implements Measurement, ToolTip {
     }
     @Override
     public List<MeasurementKey> getMeasurementKeys() {
-        int structureIdx = bacteria.getSelectedStructureIdx();
+        int structureIdx = bacteria.getSelectedClassIdx();
         ArrayList<MeasurementKey> res = new ArrayList<>();
         res.add(new MeasurementKeyObject("SizeRatio", structureIdx));
         res.add(new MeasurementKeyObject("TrackErrorSizeRatio", structureIdx));

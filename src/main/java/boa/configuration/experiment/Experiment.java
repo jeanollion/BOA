@@ -346,7 +346,7 @@ public class Experiment extends ContainerParameterImpl<Experiment> implements Tr
         return res;
     }
     
-    public int getFirstCommonParentStructureIdx(int structureIdx1, int structureIdx2) {
+    public int getFirstCommonParentObjectClassIdx(int structureIdx1, int structureIdx2) {
         while (structureIdx1>=0 && structureIdx2>=0) {
             if (structureIdx1>structureIdx2) structureIdx1 = getStructure(structureIdx1).getParentStructure();
             else if (structureIdx1<structureIdx2) structureIdx2 = getStructure(structureIdx2).getParentStructure();

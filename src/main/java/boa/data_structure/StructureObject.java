@@ -208,7 +208,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (structureIdx==parentStructureIdx) return this;
         if (parentStructureIdx<0) return getRoot();
         if (parentStructureIdx == this.getParent().getStructureIdx()) return getParent();
-        int common = getExperiment().getFirstCommonParentStructureIdx(structureIdx, parentStructureIdx);
+        int common = getExperiment().getFirstCommonParentObjectClassIdx(structureIdx, parentStructureIdx);
         //logger.debug("common idx: {}", common);
         if (common == parentStructureIdx) {
             StructureObject p = this;
@@ -285,7 +285,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 //logger.debug("structure:{} is not direct child of: {}", structureIdx, this.structureIdx);
                 int[] path = getExperiment().getPathToStructure(this.getStructureIdx(), structureIdx);
                 if (path.length == 0) { // structure is not (indirect) child of current structure -> get included objects from first common parent
-                    int commonParentIdx = getExperiment().getFirstCommonParentStructureIdx(this.structureIdx, structureIdx);
+                    int commonParentIdx = getExperiment().getFirstCommonParentObjectClassIdx(this.structureIdx, structureIdx);
                     StructureObject commonParent = this.getParent(commonParentIdx);
                     List<StructureObject> candidates = commonParent.getChildren(structureIdx);
                     //if (this.frame==0) logger.debug("structure: {}, child: {}, commonParentIdx: {}, object: {}, path: {}, candidates: {}", this.structureIdx, structureIdx, commonParentIdx, commonParent, getExperiment().getPathToStructure(commonParentIdx, structureIdx), candidates.size());

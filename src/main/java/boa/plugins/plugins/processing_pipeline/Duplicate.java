@@ -19,7 +19,7 @@
 package boa.plugins.plugins.processing_pipeline;
 
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.ParentStructureParameter;
+import boa.configuration.parameters.ParentObjectClassParameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
@@ -49,7 +49,7 @@ import boa.plugins.ProcessingPipelineWithTracking;
  */
 public class Duplicate extends SegmentationAndTrackingProcessingPipeline<Duplicate> implements  ToolTip {
     protected PluginParameter<Tracker> tracker = new PluginParameter<>("Tracker", Tracker.class, true);
-    ParentStructureParameter dup = new ParentStructureParameter("Duplicate From").setAllowNoSelection(false);
+    ParentObjectClassParameter dup = new ParentObjectClassParameter("Duplicate From").setAllowNoSelection(false);
     protected Parameter[] parameters = new Parameter[]{dup, preFilters, trackPreFilters, tracker, trackPostFilters};
 
     @Override
@@ -90,10 +90,10 @@ public class Duplicate extends SegmentationAndTrackingProcessingPipeline<Duplica
     public void segmentOnly(final int structureIdx, final List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         int parentStorage = parentTrack.get(0).getExperiment().getStructure(structureIdx).getParentStructure();
-        if (dup.getSelectedStructureIdx()<0) throw new IllegalArgumentException("No selected structure to duplicate");
-        logger.debug("dup: {} dup parent: {}, parentTrack: {}", dup.getSelectedStructureIdx(), dup.getParentStructureIdx(), parentTrack.get(0).getStructureIdx());
+        if (dup.getSelectedClassIdx()<0) throw new IllegalArgumentException("No selected structure to duplicate");
+        logger.debug("dup: {} dup parent: {}, parentTrack: {}", dup.getSelectedClassIdx(), dup.getParentObjectClassIdx(), parentTrack.get(0).getStructureIdx());
         //if (dup.getParentStructureIdx()!=parentTrack.get(0).getStructureIdx() && dup.getSelectedStructureIdx()!=parentTrack.get(0).getStructureIdx()) throw new IllegalArgumentException("Parent Structure should be the same as duplicated's parent strucutre");
-        Stream<StructureObject> dupStream = dup.getSelectedStructureIdx() == parentTrack.get(0).getStructureIdx() ? parentTrack.stream() : StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), dup.getSelectedStructureIdx());
+        Stream<StructureObject> dupStream = dup.getSelectedClassIdx() == parentTrack.get(0).getStructureIdx() ? parentTrack.stream() : StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), dup.getSelectedClassIdx());
         dupStream = dupStream.parallel();
         Map<StructureObject, StructureObject> dupMap = dupStream.collect(Collectors.toMap(s->s, s->s.duplicate(true, true, false)));
         logger.debug("duplicate for parentTrack: {} structure: {}: #{}objects", parentTrack.get(0), structureIdx, dupMap.size());
@@ -118,7 +118,7 @@ public class Duplicate extends SegmentationAndTrackingProcessingPipeline<Duplica
             }
         });
         // set to parents : collect by parent and set to parent. set parent will also set parent && parent track head Id to each object
-        if (parentStorage == parentTrack.get(0).getStructureIdx() && dup.getSelectedStructureIdx() == parentStorage) { // simply store each object into parent
+        if (parentStorage == parentTrack.get(0).getStructureIdx() && dup.getSelectedClassIdx() == parentStorage) { // simply store each object into parent
             dupMap.entrySet().forEach(e->e.getKey().setChildren(new ArrayList<StructureObject>(1){{add(e.getValue());}}, structureIdx));
         } else { // group by parent & store
             dupMap.entrySet().stream().collect(Collectors.groupingBy(e->e.getKey().getParent(parentStorage))).entrySet().stream().forEach(p->{

@@ -21,7 +21,7 @@ package boa.plugins.plugins.measurements;
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.image.processing.bacteria_spine.BacteriaSpineCoord;
@@ -46,8 +46,8 @@ import java.util.stream.Collectors;
  * @author Jean Ollion
  */
 public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
-    protected StructureParameter bacteria = new StructureParameter("Bacteria", -1, false, false);
-    protected StructureParameter spot = new StructureParameter("Spot", -1, false, false);
+    protected ObjectClassParameter bacteria = new ObjectClassParameter("Bacteria", -1, false, false);
+    protected ObjectClassParameter spot = new ObjectClassParameter("Spot", -1, false, false);
     protected BooleanParameter scaled = new BooleanParameter("Scaled", "Unit", "Pixel", false).setToolTipText(SCALED_TT);
     protected Parameter[] parameters = new Parameter[]{bacteria, spot, scaled};
     
@@ -66,7 +66,7 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
     }
     @Override
     public int getCallStructure() {
-        return spot.getParentStructureIdx();
+        return spot.getParentObjectClassIdx();
     }
 
     @Override
@@ -77,11 +77,11 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
     @Override
     public List<MeasurementKey> getMeasurementKeys() {
         ArrayList<MeasurementKey> res = new ArrayList<>();
-        res.add(new MeasurementKeyObject("SpineCoord", spot.getSelectedStructureIdx()));
-        res.add(new MeasurementKeyObject("SpineRadialCoord", spot.getSelectedStructureIdx()));
-        res.add(new MeasurementKeyObject("SpineLength", spot.getSelectedStructureIdx()));
-        res.add(new MeasurementKeyObject("SpineLength", bacteria.getSelectedStructureIdx()));
-        res.add(new MeasurementKeyObject("SpineRadius", spot.getSelectedStructureIdx()));
+        res.add(new MeasurementKeyObject("SpineCoord", spot.getSelectedClassIdx()));
+        res.add(new MeasurementKeyObject("SpineRadialCoord", spot.getSelectedClassIdx()));
+        res.add(new MeasurementKeyObject("SpineLength", spot.getSelectedClassIdx()));
+        res.add(new MeasurementKeyObject("SpineLength", bacteria.getSelectedClassIdx()));
+        res.add(new MeasurementKeyObject("SpineRadius", spot.getSelectedClassIdx()));
         return res;
     }
 
@@ -91,8 +91,8 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
         List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
         Map<StructureObject, StructureObject> spotMapBacteria = new ConcurrentHashMap<>();
         parentTrack.parallelStream().forEach(parent -> {
-            List<StructureObject> allBacteria = parent.getChildren(bacteria.getSelectedStructureIdx());
-            List<StructureObject> allSpots = parent.getChildren(spot.getSelectedStructureIdx());
+            List<StructureObject> allBacteria = parent.getChildren(bacteria.getSelectedClassIdx());
+            List<StructureObject> allSpots = parent.getChildren(spot.getSelectedClassIdx());
             Map<StructureObject, StructureObject> sMb = StructureObjectUtils.getInclusionParentMap(allSpots, allBacteria);
             spotMapBacteria.putAll(sMb);
         });

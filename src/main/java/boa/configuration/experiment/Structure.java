@@ -26,7 +26,7 @@ import boa.configuration.parameters.Parameter;
 import static boa.configuration.parameters.Parameter.logger;
 import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.ContainerParameterImpl;
-import boa.configuration.parameters.ParentStructureParameter;
+import boa.configuration.parameters.ParentObjectClassParameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.parameters.SimpleListParameter;
@@ -53,8 +53,8 @@ import boa.plugins.ProcessingPipeline;
  */
 
 public class Structure extends ContainerParameterImpl<Structure> {
-    ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Object Class", -1, -1).setToolTipText("In the processing step: pre-filters, segmentation, tracking and post-filters will be run from each tracks of this object class");
-    ParentStructureParameter segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1).setToolTipText("If different from parent structure, allows to perform segmentation from objects of another structure contained in the object of the parent structure. Pre-filters, tracking and post-filters will still be run from the track of the parent structure.");
+    ParentObjectClassParameter parentStructure =  new ParentObjectClassParameter("Parent Object Class", -1, -1).setToolTipText("In the processing step: pre-filters, segmentation, tracking and post-filters will be run from each tracks of this object class");
+    ParentObjectClassParameter segmentationParent =  new ParentObjectClassParameter("Segmentation Parent", -1, -1).setToolTipText("If different from parent structure, allows to perform segmentation from objects of another structure contained in the object of the parent structure. Pre-filters, tracking and post-filters will still be run from the track of the parent structure.");
     ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", -1).setToolTipText("Channel on which processing pipeline will be applied");
     PluginParameter<ObjectSplitter> objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true).setEmphasized(false).setToolTipText("Split algorithm used in split command in manual edition. <br />If no algorith is defined here and segmenter is able to split objects, segmenter will be used instead");
     PluginParameter<ManualSegmenter> manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true).setEmphasized(false).setToolTipText("Segmentation algorithm used in create object command in manual edition<br />If no algorith is defined here and segmenter is able to segment objects from user-defined points, segmenter will be used instead");
@@ -101,7 +101,7 @@ public class Structure extends ContainerParameterImpl<Structure> {
         this.parentStructure.setSelectedIndex(parentStructure);
         this.segmentationParent.setSelectedIndex(segmentationParentStructure);
         this.channelImage.setSelectedIndex(channelImage);
-        this.parentStructure.addListener((ParentStructureParameter source) -> {
+        this.parentStructure.addListener((ParentObjectClassParameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();
             int parentIdx = s.parentStructure.getSelectedIndex();
@@ -112,7 +112,7 @@ public class Structure extends ContainerParameterImpl<Structure> {
             if (model!=null) model.nodeChanged(s.segmentationParent);
             else logger.debug("no model found..");
         });
-        segmentationParent.addListener((ParentStructureParameter source) -> {
+        segmentationParent.addListener((ParentObjectClassParameter source) -> {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, source, false);
             s.setMaxStructureIdx();
             s.setSegmentationParentStructure(s.segmentationParent.getSelectedIndex());
@@ -215,8 +215,8 @@ public class Structure extends ContainerParameterImpl<Structure> {
         if (segParent<parentIdx) segmentationParent.setSelectedIndex(parentIdx);
     }
     public void setSegmentationParentStructure(int segmentationParentStructureIdx) {
-        if (segmentationParentStructureIdx<parentStructure.getSelectedStructureIdx()) segmentationParentStructureIdx = parentStructure.getSelectedStructureIdx();
-        if (segmentationParentStructureIdx != segmentationParent.getSelectedStructureIdx()) segmentationParent.setSelectedIndex(segmentationParentStructureIdx);
+        if (segmentationParentStructureIdx<parentStructure.getSelectedClassIdx()) segmentationParentStructureIdx = parentStructure.getSelectedClassIdx();
+        if (segmentationParentStructureIdx != segmentationParent.getSelectedClassIdx()) segmentationParent.setSelectedIndex(segmentationParentStructureIdx);
     }
     
     
@@ -240,7 +240,7 @@ public class Structure extends ContainerParameterImpl<Structure> {
         parentStructure.setMaxStructureIdx(idx);
         segmentationParent.setMaxStructureIdx(idx);
         if (processingPipeline.isOnePluginSet() && processingPipeline.instanciatePlugin() instanceof Duplicate) {
-            processingPipeline.getParameters().stream().filter(p->p instanceof ParentStructureParameter).map(p->(ParentStructureParameter)p).forEach(p->p.setMaxStructureIdx(idx));
+            processingPipeline.getParameters().stream().filter(p->p instanceof ParentObjectClassParameter).map(p->(ParentObjectClassParameter)p).forEach(p->p.setMaxStructureIdx(idx));
         }
     }
     

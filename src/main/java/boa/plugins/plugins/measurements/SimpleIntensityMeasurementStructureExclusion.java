@@ -22,7 +22,7 @@ import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
@@ -46,9 +46,9 @@ import boa.plugins.DevPlugin;
  * @author jollion
  */
 public class SimpleIntensityMeasurementStructureExclusion implements Measurement, DevPlugin {
-    protected StructureParameter structureObject = new StructureParameter("Object", -1, false, false);
-    protected StructureParameter excludedStructure = new StructureParameter("Excluded Structure", -1, false, false);
-    protected StructureParameter structureImage = new StructureParameter("Image", -1, false, false);
+    protected ObjectClassParameter structureObject = new ObjectClassParameter("Object", -1, false, false);
+    protected ObjectClassParameter excludedStructure = new ObjectClassParameter("Excluded Structure", -1, false, false);
+    protected ObjectClassParameter structureImage = new ObjectClassParameter("Image", -1, false, false);
     protected BoundedNumberParameter dilateExcluded = new BoundedNumberParameter("Radius for excluded structure dillatation", 1, 2, 0, null);
     protected BoundedNumberParameter erodeBorders = new BoundedNumberParameter("Radius for border erosion", 1, 2, 0, null);
     protected BooleanParameter addMeasurementToExcludedStructure = new BooleanParameter("set Measurement to excluded structure", false);
@@ -58,9 +58,9 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
     public SimpleIntensityMeasurementStructureExclusion() {}
     
     public SimpleIntensityMeasurementStructureExclusion(int object, int image, int exclude) {
-        this.structureObject.setSelectedStructureIdx(object);
-        this.structureImage.setSelectedStructureIdx(image);
-        this.excludedStructure.setSelectedStructureIdx(exclude);
+        this.structureObject.setSelectedClassIdx(object);
+        this.structureImage.setSelectedClassIdx(image);
+        this.excludedStructure.setSelectedClassIdx(exclude);
     }
     
     public SimpleIntensityMeasurementStructureExclusion setRadii(double dilateExclude, double erodeMainObject) {
@@ -75,7 +75,7 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
     } 
     
     @Override public int getCallStructure() {
-        return structureObject.getSelectedStructureIdx();
+        return structureObject.getSelectedClassIdx();
     }
 
     @Override public boolean callOnlyOnTrackHeads() {
@@ -83,7 +83,7 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
     }
 
     @Override public List<MeasurementKey> getMeasurementKeys() {
-        int structureIdx = addMeasurementToExcludedStructure.getSelected() ? excludedStructure.getSelectedStructureIdx() : structureObject.getSelectedStructureIdx();
+        int structureIdx = addMeasurementToExcludedStructure.getSelected() ? excludedStructure.getSelectedClassIdx() : structureObject.getSelectedClassIdx();
         ArrayList<MeasurementKey> res = new ArrayList<>();
         res.add(new MeasurementKeyObject(prefix.getValue()+"Mean", structureIdx));
         res.add(new MeasurementKeyObject(prefix.getValue()+"Sigma", structureIdx));
@@ -93,8 +93,8 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
 
     @Override public void performMeasurement(StructureObject object) {
         StructureObject parent = object.isRoot() ? object : object.getParent();
-        Image image = parent.getRawImage(structureImage.getSelectedStructureIdx());
-        double[] meanSd = ImageOperations.getMeanAndSigmaWithOffset(image, getMask(object, excludedStructure.getSelectedStructureIdx(), dilateExcluded.getValue().doubleValue(), erodeBorders.getValue().doubleValue()), null, false);
+        Image image = parent.getRawImage(structureImage.getSelectedClassIdx());
+        double[] meanSd = ImageOperations.getMeanAndSigmaWithOffset(image, getMask(object, excludedStructure.getSelectedClassIdx(), dilateExcluded.getValue().doubleValue(), erodeBorders.getValue().doubleValue()), null, false);
         object.getMeasurements().setValue(prefix.getValue()+"Mean", meanSd[0]);
         object.getMeasurements().setValue(prefix.getValue()+"Sigma", meanSd[1]);
         object.getMeasurements().setValue(prefix.getValue()+"PixCount", meanSd[2]);

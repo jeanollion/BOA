@@ -23,7 +23,7 @@ import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -46,16 +46,16 @@ import boa.plugins.TrackPostFilter;
  * @author jollion
  */
 public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFilter {
-    StructureParameter backgroundStructure = new StructureParameter("Background");
+    ObjectClassParameter backgroundStructure = new ObjectClassParameter("Background");
     NumberParameter XMargin = new BoundedNumberParameter("X margin", 0, 8, 0, null).setToolTipText("To avoid removing microchannels touching background from the upper or lower side, this will cut the upper and lower part of the microchannel. In pixels");
     public RemoveMicrochannelsTouchingBackgroundOnSides() {}
     public RemoveMicrochannelsTouchingBackgroundOnSides(int backgroundStructureIdx) {
-        this.backgroundStructure.setSelectedStructureIdx(backgroundStructureIdx);
+        this.backgroundStructure.setSelectedClassIdx(backgroundStructureIdx);
     }
     
     @Override
     public void filter(int structureIdx, List<StructureObject> parentTrack) {
-        if (backgroundStructure.getSelectedStructureIdx()<0) throw new IllegalArgumentException("Background structure not configured");
+        if (backgroundStructure.getSelectedClassIdx()<0) throw new IllegalArgumentException("Background structure not configured");
         if (parentTrack.isEmpty()) return;
         Map<Integer, StructureObject> parentTrackByF = StructureObjectUtils.splitByFrame(parentTrack);
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
@@ -63,7 +63,7 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
         List<StructureObject> objectsToRemove = new ArrayList<>();
         // left-most
         StructureObject object = Collections.min(allTracks.keySet(), (o1, o2)->Double.compare(o1.getBounds().xMean(), o2.getBounds().xMean()));
-        Image image = parentTrackByF.get(object.getFrame()).getRawImage(backgroundStructure.getSelectedStructureIdx());
+        Image image = parentTrackByF.get(object.getFrame()).getRawImage(backgroundStructure.getSelectedClassIdx());
         RegionPopulation bck = ImageLabeller.labelImage(Arrays.asList(new Voxel[]{new Voxel(0, 0, 0), new Voxel(0, image.sizeY()-1, 0 )}), image, true);
         //ImageWindowManagerFactory.showImage(bck.getLabelMap().duplicate("left background"));
         if (intersectWithBackground(object, bck)) objectsToRemove.addAll(allTracks.get(object));
@@ -71,7 +71,7 @@ public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFi
         // right-most
         if (allTracks.size()>1) {
             object = Collections.max(allTracks.keySet(), (o1, o2)->Double.compare(o1.getBounds().xMean(), o2.getBounds().xMean()));
-            image = parentTrackByF.get(object.getFrame()).getRawImage(backgroundStructure.getSelectedStructureIdx());
+            image = parentTrackByF.get(object.getFrame()).getRawImage(backgroundStructure.getSelectedClassIdx());
             bck = ImageLabeller.labelImage(Arrays.asList(new Voxel[]{new Voxel(image.sizeX()-1, 0, 0), new Voxel(image.sizeX()-1, image.sizeY()-1, 0 )}), image, true);
             //ImageWindowManagerFactory.showImage(bck.getLabelMap().duplicate("right background"));
             if (intersectWithBackground(object, bck)) objectsToRemove.addAll(allTracks.get(object));

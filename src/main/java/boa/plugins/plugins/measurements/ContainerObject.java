@@ -23,8 +23,8 @@ import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.MultipleChoiceParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParameterUtils;
-import boa.configuration.parameters.ParentStructureParameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ParentObjectClassParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
@@ -40,8 +40,8 @@ import boa.plugins.ToolTip;
  * @author jollion
  */
 public class ContainerObject implements Measurement, ToolTip {
-    protected StructureParameter objects = new StructureParameter("Objects", -1, false, false).setToolTipText("Objects to perform measurement on");
-    protected StructureParameter reference = new StructureParameter("Container Object", -1, false, false).setToolTipText("Objects type that contain <em>Objects</em>");
+    protected ObjectClassParameter objects = new ObjectClassParameter("Objects", -1, false, false).setToolTipText("Objects to perform measurement on");
+    protected ObjectClassParameter reference = new ObjectClassParameter("Container Object", -1, false, false).setToolTipText("Objects type that contain <em>Objects</em>");
     protected MultipleChoiceParameter returnAttributes = new MultipleChoiceParameter("Attribute of container to return", new String[]{"Simple Index", "Indices"}, true);
     TextParameter key = new TextParameter("Key Name: ", "ContainerObject", false);
     protected Parameter[] parameters = new Parameter[]{objects, reference, key, returnAttributes};
@@ -55,15 +55,15 @@ public class ContainerObject implements Measurement, ToolTip {
         reference.addListener(p->{
             Experiment xp = ParameterUtils.getExperiment(p);
             if (xp==null) return;
-            int sIdx = ((StructureParameter)p).getSelectedStructureIdx();
+            int sIdx = ((ObjectClassParameter)p).getSelectedClassIdx();
             if (sIdx>=0) key.setValue(xp.getStructure(sIdx).getName());
         });
     }
     
     public ContainerObject(int structureIdx, int referenceStructureIdx) {
         this();
-        this.objects.setSelectedStructureIdx(structureIdx);
-        this.reference.setSelectedStructureIdx(referenceStructureIdx);
+        this.objects.setSelectedClassIdx(structureIdx);
+        this.reference.setSelectedClassIdx(referenceStructureIdx);
         
     }
     
@@ -74,7 +74,7 @@ public class ContainerObject implements Measurement, ToolTip {
     
     @Override
     public int getCallStructure() {
-        return objects.getSelectedStructureIdx();
+        return objects.getSelectedClassIdx();
     }
 
     @Override
@@ -86,18 +86,18 @@ public class ContainerObject implements Measurement, ToolTip {
     public List<MeasurementKey> getMeasurementKeys() {
         ArrayList<MeasurementKey> res = new ArrayList<>();
         boolean[] att = returnAttributes.getSelectedItemsAsBoolean();
-        if (att[0]) res.add(new MeasurementKeyObject(key.getValue()+"Idx", objects.getSelectedStructureIdx()));
-        if (att[1]) res.add(new MeasurementKeyObject(key.getValue()+"Indices", objects.getSelectedStructureIdx()));
+        if (att[0]) res.add(new MeasurementKeyObject(key.getValue()+"Idx", objects.getSelectedClassIdx()));
+        if (att[1]) res.add(new MeasurementKeyObject(key.getValue()+"Indices", objects.getSelectedClassIdx()));
         return res;
     }
 
     @Override
     public void performMeasurement(StructureObject object) {
         StructureObject refObject;
-        if (object.getExperiment().isChildOf(reference.getSelectedStructureIdx(), objects.getSelectedStructureIdx()))  refObject = object.getParent(reference.getSelectedStructureIdx());
+        if (object.getExperiment().isChildOf(reference.getSelectedClassIdx(), objects.getSelectedClassIdx()))  refObject = object.getParent(reference.getSelectedClassIdx());
         else {
-            int refParent = reference.getFirstCommonParentStructureIdx(objects.getSelectedStructureIdx());
-            refObject = StructureObjectUtils.getContainer(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
+            int refParent = reference.getFirstCommonParentObjectClassIdx(objects.getSelectedClassIdx());
+            refObject = StructureObjectUtils.getContainer(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedClassIdx()), null);
         }
         boolean[] att = returnAttributes.getSelectedItemsAsBoolean();
         if (refObject == null) {

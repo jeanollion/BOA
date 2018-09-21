@@ -25,7 +25,7 @@ import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PostFilterSequence;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
@@ -91,7 +91,7 @@ import java.util.stream.Collectors;
 public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPlugin, ToolTip {
     private static final String CONF_HINT = "<br />Configuration hint: to display distance between two spots, select the two spots on test images and choose <em>Diplay Spine</em> from right-click menu. Distance will be logged in the console and projection of source spot to destination bacteria displayed";
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new SpotSegmenter(), false);
-    StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", -1, false, false).setToolTipText("Structure of bacteria objects.");
+    ObjectClassParameter compartirmentStructure = new ObjectClassParameter("Compartiment Structure", -1, false, false).setToolTipText("Structure of bacteria objects.");
     NumberParameter spotQualityThreshold = new NumberParameter<>("Spot Quality Threshold", 3, 3.5).setEmphasized(true).setToolTipText("Spot with quality parameter over this threshold are considered as high quality spots, others as low quality spots");
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 1, 0, null).setEmphasized(true).setToolTipText("Maximum frame gap for spot linking: if two spots are separated by more frame than this value they cannot be linked together directly");
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.4, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together."+CONF_HINT);
@@ -109,7 +109,7 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
     // multithreaded interface
         
     public NestedSpotTracker setCompartimentStructure(int compartimentStructureIdx) {
-        this.compartirmentStructure.setSelectedStructureIdx(compartimentStructureIdx);
+        this.compartirmentStructure.setSelectedClassIdx(compartimentStructureIdx);
         return this;
     }
     public NestedSpotTracker setLinkingMaxDistance(double maxDist, double alternativeLinking) {

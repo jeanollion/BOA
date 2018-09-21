@@ -22,7 +22,7 @@ import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
 import boa.configuration.parameters.PreFilterSequence;
 import boa.configuration.parameters.SimpleListParameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.StructureObject;
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ import boa.plugins.object_feature.ObjectFeatureWithCore;
  * @author jollion
  */
 public class ObjectFeatures implements Measurement, ToolTip {
-    StructureParameter structure = new StructureParameter("Object class", -1, false, false).setToolTipText("Class of objects to apply feature on");
+    ObjectClassParameter structure = new ObjectClassParameter("Object class", -1, false, false).setToolTipText("Class of objects to apply feature on");
     PluginParameter<ObjectFeature> def = new PluginParameter<>("Feature", ObjectFeature.class, false).setAdditionalParameters(new TextParameter("Key", "", false));
     SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<>("Features", 0, def);
     PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters").setToolTipText("Pre-Filters that will be used by all intensity measurement");
@@ -72,7 +72,7 @@ public class ObjectFeatures implements Measurement, ToolTip {
         for (ObjectFeature f : features) {
             if (f instanceof IntensityMeasurement) { // autoconfiguration of intensity measurements
                 IntensityMeasurement im = ((IntensityMeasurement)f);
-                if (im.getIntensityStructure()<0) im.setIntensityStructure(structure.getSelectedStructureIdx());
+                if (im.getIntensityStructure()<0) im.setIntensityStructure(structure.getSelectedClassIdx());
             }
             PluginParameter<ObjectFeature> dup = def.duplicate().setPlugin(f);
             ((TextParameter)dup.getAdditionalParameters().get(0)).setValue(f.getDefaultName());
@@ -92,7 +92,7 @@ public class ObjectFeatures implements Measurement, ToolTip {
     }
     @Override
     public int getCallStructure() {
-        return structure.getParentStructureIdx();
+        return structure.getParentObjectClassIdx();
     }
     @Override
     public boolean callOnlyOnTrackHeads() {

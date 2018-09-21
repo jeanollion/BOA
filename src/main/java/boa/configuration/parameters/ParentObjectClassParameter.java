@@ -29,14 +29,14 @@ import java.util.function.ToIntFunction;
  *
  * @author jollion
  */
-public class ParentStructureParameter extends ObjectClassParameter<ParentStructureParameter> {
+public class ParentObjectClassParameter extends ObjectClassParameterAbstract<ParentObjectClassParameter> {
     int maxStructure;
     
-    public ParentStructureParameter(String name) {
+    public ParentObjectClassParameter(String name) {
         this(name, -1, -1);
     }
     
-    public ParentStructureParameter(String name, int selectedStructure, int maxStructure) {
+    public ParentObjectClassParameter(String name, int selectedStructure, int maxStructure) {
         super(name, selectedStructure, true, false);
         this.maxStructure=maxStructure;
     }
@@ -81,7 +81,8 @@ public class ParentStructureParameter extends ObjectClassParameter<ParentStructu
         super.setSelectedIndex(structureIdx);
     }
     
-    public static Consumer<ParentStructureParameter> defaultAutoConfigurationParent() {
-        return (p)-> p.setSelectedStructureIdx(StructureParameter.structureInParents().applyAsInt(p));
+    public static Consumer<ParentObjectClassParameter> defaultAutoConfigurationParent() {
+        return (p)-> p.setSelectedClassIdx(ObjectClassParameter.structureInParents().applyAsInt(p));
     }
+    
 }

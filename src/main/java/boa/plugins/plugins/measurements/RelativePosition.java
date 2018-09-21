@@ -22,7 +22,7 @@ import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.ConditionalParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
@@ -53,8 +53,8 @@ public class RelativePosition implements Measurement, ToolTip {
             return Arrays.stream(REF_POINT.values()).map(s->s.name).toArray(l->new String[l]);
         }
     };
-    protected StructureParameter objects = new StructureParameter("Objects", -1, false, false);
-    protected StructureParameter reference = new StructureParameter("Reference Objects", -1, true, false).setToolTipText("If no reference structure is selected the reference point will automatically be the upper left corner of the image");
+    protected ObjectClassParameter objects = new ObjectClassParameter("Objects", -1, false, false);
+    protected ObjectClassParameter reference = new ObjectClassParameter("Reference Objects", -1, true, false).setToolTipText("If no reference structure is selected the reference point will automatically be the upper left corner of the image");
     private final static String REF_POINT_TT = "<ol>"
             + "<li>"+REF_POINT.UPPER_LEFT_CORNER.toString()+": Upper left corner of the bounding box of the object</li>"
             + "<li>"+REF_POINT.GEOM_CENTER.toString()+": Geometrical center of the object</li>"
@@ -74,8 +74,8 @@ public class RelativePosition implements Measurement, ToolTip {
     public RelativePosition() {}
     
     public RelativePosition(int objectStructure, int referenceStructure, REF_POINT objectPoint, REF_POINT refPoint) {
-        this.objects.setSelectedStructureIdx(objectStructure);
-        this.reference.setSelectedStructureIdx(referenceStructure);
+        this.objects.setSelectedClassIdx(objectStructure);
+        this.reference.setSelectedClassIdx(referenceStructure);
         this.objectCenter.setSelectedItem(objectPoint.name);
         this.refPoint.setSelectedItem(refPoint.name);
     }
@@ -87,7 +87,7 @@ public class RelativePosition implements Measurement, ToolTip {
     
     @Override
     public int getCallStructure() {
-        return objects.getSelectedStructureIdx();
+        return objects.getSelectedClassIdx();
     }
 
     @Override
@@ -97,7 +97,7 @@ public class RelativePosition implements Measurement, ToolTip {
 
     @Override
     public List<MeasurementKey> getMeasurementKeys() {
-        int structureIdx = objects.getSelectedStructureIdx();
+        int structureIdx = objects.getSelectedClassIdx();
         ArrayList<MeasurementKey> res = new ArrayList<>();
         res.add(new MeasurementKeyObject(getKey("X"), structureIdx));
         res.add(new MeasurementKeyObject(getKey("Y"), structureIdx));
@@ -113,14 +113,14 @@ public class RelativePosition implements Measurement, ToolTip {
     @Override
     public void performMeasurement(StructureObject object) {
         StructureObject refObject=null;
-        if (reference.getSelectedStructureIdx()>=0) {
-            if (object.getExperiment().isChildOf(reference.getSelectedStructureIdx(), objects.getSelectedStructureIdx()))  refObject = object.getParent(reference.getSelectedStructureIdx());
+        if (reference.getSelectedClassIdx()>=0) {
+            if (object.getExperiment().isChildOf(reference.getSelectedClassIdx(), objects.getSelectedClassIdx()))  refObject = object.getParent(reference.getSelectedClassIdx());
             else {
-                int refParent = reference.getFirstCommonParentStructureIdx(objects.getSelectedStructureIdx());
-                refObject = StructureObjectUtils.getContainer(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
+                int refParent = reference.getFirstCommonParentObjectClassIdx(objects.getSelectedClassIdx());
+                refObject = StructureObjectUtils.getContainer(object.getRegion(), object.getParent(refParent).getChildren(reference.getSelectedClassIdx()), null);
             }
         }
-        if (refObject == null && reference.getSelectedStructureIdx()>=0) return; // no reference object found
+        if (refObject == null && reference.getSelectedClassIdx()>=0) return; // no reference object found
         Point objectCenter=null;
         switch (this.objectCenter.getSelectedIndex()) {
             case 0: // mass center

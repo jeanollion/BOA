@@ -20,7 +20,7 @@ package boa.plugins.object_feature;
 
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PreFilterSequence;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -38,14 +38,14 @@ import boa.plugins.plugins.measurements.objectFeatures.object_feature.SimpleObje
  */
 public abstract class IntensityMeasurement extends SimpleObjectFeature implements ObjectFeatureWithCore {
     protected IntensityMeasurementCore core;
-    protected StructureParameter intensity = new StructureParameter("Intensity").setAutoConfiguration(StructureParameter.defaultAutoConfiguration());
+    protected ObjectClassParameter intensity = new ObjectClassParameter("Intensity").setAutoConfiguration(ObjectClassParameter.defaultAutoConfiguration());
     protected Image intensityMap;
     public IntensityMeasurement setIntensityStructure(int structureIdx) {
-        this.intensity.setSelectedStructureIdx(structureIdx);
+        this.intensity.setSelectedClassIdx(structureIdx);
         return this;
     }
     public int getIntensityStructure() {
-        return this.intensity.getSelectedStructureIdx();
+        return this.intensity.getSelectedClassIdx();
     }
     @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         super.setUp(parent, childStructureIdx, childPopulation);

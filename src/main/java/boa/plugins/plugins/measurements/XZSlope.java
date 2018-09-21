@@ -19,7 +19,7 @@
 package boa.plugins.plugins.measurements;
 
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.data_structure.StructureObject;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,7 +36,7 @@ import boa.plugins.plugins.transformations.SelectBestFocusPlane;
  * @author jollion
  */
 public class XZSlope implements Measurement, DevPlugin {
-    protected StructureParameter microchannel = new StructureParameter("Microchannel Structure", 0, false, false);
+    protected ObjectClassParameter microchannel = new ObjectClassParameter("Microchannel Structure", 0, false, false);
     @Override
     public int getCallStructure() {
         return -1;

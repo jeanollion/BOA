@@ -20,7 +20,7 @@ package boa.plugins.plugins.measurements;
 
 import boa.gui.image_interaction.IJImageDisplayer;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.data_structure.Measurements;
 import boa.data_structure.Region;
 import boa.data_structure.Selection;
@@ -39,7 +39,7 @@ import boa.utils.Utils;
  * @author jollion
  */
 public class SimpleTrackMeasurements implements Measurement, ToolTip {
-    protected StructureParameter structure = new StructureParameter("Objects", -1, false, false);
+    protected ObjectClassParameter structure = new ObjectClassParameter("Objects", -1, false, false);
     protected Parameter[] parameters = new Parameter[]{structure};
     
     
@@ -50,7 +50,7 @@ public class SimpleTrackMeasurements implements Measurement, ToolTip {
     }
     
     @Override public int getCallStructure() {
-        return structure.getSelectedStructureIdx();
+        return structure.getSelectedClassIdx();
     }
 
     @Override public boolean callOnlyOnTrackHeads() {
@@ -58,7 +58,7 @@ public class SimpleTrackMeasurements implements Measurement, ToolTip {
     }
 
     @Override public List<MeasurementKey> getMeasurementKeys() {
-        int structureIdx = structure.getSelectedStructureIdx();
+        int structureIdx = structure.getSelectedClassIdx();
         ArrayList<MeasurementKey> res = new ArrayList<>();
         res.add(new MeasurementKeyObject("TrackHeadIndices", structureIdx));
         res.add(new MeasurementKeyObject("TrackLength", structureIdx));

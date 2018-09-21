@@ -19,7 +19,7 @@
 package boa.plugins.plugins.measurements;
 
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.StructureObject;
 import java.util.ArrayList;
@@ -36,8 +36,8 @@ import boa.utils.geom.Point;
  * @author jollion
  */
 public class ChromaticShiftBeads implements Measurement, DevPlugin{
-    protected StructureParameter structure = new StructureParameter("Structure 1", 0, false, false);
-    protected StructureParameter structure2 = new StructureParameter("Structure 2", 1, false, false);
+    protected ObjectClassParameter structure = new ObjectClassParameter("Structure 1", 0, false, false);
+    protected ObjectClassParameter structure2 = new ObjectClassParameter("Structure 2", 1, false, false);
     protected Parameter[] parameters = new Parameter[]{structure, structure2};
 
     public ChromaticShiftBeads() {}
@@ -48,7 +48,7 @@ public class ChromaticShiftBeads implements Measurement, DevPlugin{
     }
     
     public int getCallStructure() {
-        return structure.getFirstCommonParentStructureIdx(structure2.getSelectedIndex());
+        return structure.getFirstCommonParentObjectClassIdx(structure2.getSelectedIndex());
     }
 
     public boolean callOnlyOnTrackHeads() {

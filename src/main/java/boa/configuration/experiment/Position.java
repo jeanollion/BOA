@@ -24,7 +24,7 @@ import boa.configuration.parameters.ListElementErasable;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ContainerParameterImpl;
 import boa.configuration.parameters.SimpleListParameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.FrameParameter;
 import boa.configuration.parameters.ui.ParameterUI;
 import boa.core.Processor;

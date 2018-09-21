@@ -302,13 +302,13 @@ public class ParameterUtils {
         if (structureIdxHint==-1) return;
         ParameterConfiguration config = new ParameterConfiguration() {
             @Override public void configure(Parameter p) {
-                if (((StructureParameter)p).getSelectedStructureIdx()==-1) {
-                    ((StructureParameter)p).setSelectedStructureIdx(structureIdxHint);
+                if (((ObjectClassParameter)p).getSelectedClassIdx()==-1) {
+                    ((ObjectClassParameter)p).setSelectedClassIdx(structureIdxHint);
                     //logger.debug("Configuring: {}, with value: {}", p.getName(), structureIdxHint);
                 }
             }
             @Override public boolean isConfigurable(Parameter p) {
-                return p instanceof StructureParameter;
+                return p instanceof ObjectClassParameter;
             }
         };
         configureParameter(config, parameter);

@@ -236,7 +236,7 @@ public class StructureObjectUtils {
             for (StructureObject oo : objectsFromSameStructure) res.put(oo, oo.getParent(inclusionStructureIdx));
             return res;
         }
-        int closestParentStructureIdx = o.getExperiment().getFirstCommonParentStructureIdx(o.getStructureIdx(), inclusionStructureIdx);
+        int closestParentStructureIdx = o.getExperiment().getFirstCommonParentObjectClassIdx(o.getStructureIdx(), inclusionStructureIdx);
         for (StructureObject oo : objectsFromSameStructure) {
             StructureObject i = getContainer(oo.getRegion(), oo.getParent(closestParentStructureIdx).getChildren(inclusionStructureIdx), null);
             res.put(oo, i);

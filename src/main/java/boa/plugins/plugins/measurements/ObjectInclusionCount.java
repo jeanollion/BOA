@@ -22,7 +22,7 @@ import boa.configuration.parameters.BooleanParameter;
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.ChoiceParameter;
 import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
@@ -41,8 +41,8 @@ import boa.plugins.ToolTip;
  * @author jollion
  */
 public class ObjectInclusionCount implements Measurement, ToolTip {
-    protected StructureParameter structureContainer = new StructureParameter("Containing Objects", -1, false, false).setToolTipText("Objects to perform measurement on");
-    protected StructureParameter structureToCount = new StructureParameter("Objects to count", -1, false, false).setToolTipText("Objects to count when included in <em>Containing Objects</em>");
+    protected ObjectClassParameter structureContainer = new ObjectClassParameter("Containing Objects", -1, false, false).setToolTipText("Objects to perform measurement on");
+    protected ObjectClassParameter structureToCount = new ObjectClassParameter("Objects to count", -1, false, false).setToolTipText("Objects to count when included in <em>Containing Objects</em>");
     protected BooleanParameter onlyTrackHeads = new BooleanParameter("Count Only TrackHeads", false).setToolTipText("Whether only head of tracks or all objects should be counted");
     protected BoundedNumberParameter percentageInclusion = new BoundedNumberParameter("Minimum percentage of inclusion", 0, 100, 0, 100).setToolTipText("Inclusion criterion: minimal percentage of volume of objects to count that should be included in the container to consider it is included");
     protected TextParameter inclusionText = new TextParameter("Inclusion Key Name", "ObjectCount", false);
@@ -71,7 +71,7 @@ public class ObjectInclusionCount implements Measurement, ToolTip {
     }
     @Override
     public int getCallStructure() {
-        return structureContainer.getFirstCommonParentStructureIdx(structureToCount.getSelectedIndex());
+        return structureContainer.getFirstCommonParentObjectClassIdx(structureToCount.getSelectedIndex());
     }
     @Override
     public void performMeasurement(StructureObject object) {
@@ -117,7 +117,7 @@ public class ObjectInclusionCount implements Measurement, ToolTip {
 
     public static int count(StructureObject container, int structureToCount, double proportionInclusion, boolean onlyTrackHeads) {
         if (structureToCount==container.getStructureIdx()) return 1;
-        int common = container.getExperiment().getFirstCommonParentStructureIdx(container.getStructureIdx(), structureToCount);
+        int common = container.getExperiment().getFirstCommonParentObjectClassIdx(container.getStructureIdx(), structureToCount);
         StructureObject commonParent = container.getParent(common);
 
         List<StructureObject> toCount = commonParent.getChildren(structureToCount);

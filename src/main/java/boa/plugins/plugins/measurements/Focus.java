@@ -22,7 +22,7 @@ import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ScaleXYZParameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
 import boa.image.Image;
@@ -43,7 +43,7 @@ import java.util.Set;
  * @author jollion
  */
 public class Focus implements Measurement, DevPlugin {
-    StructureParameter structure = new StructureParameter("Structure");
+    ObjectClassParameter structure = new ObjectClassParameter("Structure");
     NumberParameter scale = new BoundedNumberParameter("Gradient Scale", 1, 2, 1, null);
     
     public Focus() {}
@@ -56,7 +56,7 @@ public class Focus implements Measurement, DevPlugin {
     }
     @Override
     public int getCallStructure() {
-        return structure.getParentStructureIdx();
+        return structure.getParentObjectClassIdx();
     }
 
     @Override
@@ -67,15 +67,15 @@ public class Focus implements Measurement, DevPlugin {
     @Override
     public List<MeasurementKey> getMeasurementKeys() {
         ArrayList<MeasurementKey> res = new ArrayList<>(2);
-        res.add(new MeasurementKeyObject("Focus", structure.getSelectedStructureIdx()));
-        res.add(new MeasurementKeyObject("Focus_"+structure.getSelectedStructureIdx(), structure.getParentStructureIdx()));
+        res.add(new MeasurementKeyObject("Focus", structure.getSelectedClassIdx()));
+        res.add(new MeasurementKeyObject("Focus_"+structure.getSelectedClassIdx(), structure.getParentObjectClassIdx()));
         return res;
     }
 
     @Override
     public void performMeasurement(StructureObject object) {
-        int structureIdx = structure.getSelectedStructureIdx();
-        Image input = object.getRawImage(structure.getParentStructureIdx());
+        int structureIdx = structure.getSelectedClassIdx();
+        Image input = object.getRawImage(structure.getParentObjectClassIdx());
         double mid = input.sizeZ()/2.0;
         if (input.sizeZ()>1) {
             throw new RuntimeException("Focus measurement cannot be run on 3D images");

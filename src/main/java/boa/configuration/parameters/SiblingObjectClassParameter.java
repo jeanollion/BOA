@@ -24,29 +24,29 @@ import boa.configuration.experiment.Structure;
  *
  * @author jollion
  */
-public class SiblingStructureParameter extends ObjectClassParameter<SiblingStructureParameter> {
+public class SiblingObjectClassParameter extends ObjectClassParameterAbstract<SiblingObjectClassParameter> {
     int parentStructureIdx=-2;
     int[] idxStructureMap;
     int selectedStructureIdx=-1;
     boolean includeParent=false;
     
-    public SiblingStructureParameter(String name, int selectedStructure, int parentStructureIdx, boolean includeParent, boolean allowNoSelection) {
+    public SiblingObjectClassParameter(String name, int selectedStructure, int parentStructureIdx, boolean includeParent, boolean allowNoSelection) {
         super(name, -1, allowNoSelection, false);
         this.parentStructureIdx=parentStructureIdx;
         this.selectedStructureIdx=selectedStructure;
         this.includeParent=includeParent;
     }
-    public SiblingStructureParameter(String name, int selectedStructure, boolean includeParent, boolean allowNoSelection) {
+    public SiblingObjectClassParameter(String name, int selectedStructure, boolean includeParent, boolean allowNoSelection) {
         this(name, selectedStructure, -2, includeParent, allowNoSelection);
     }
-    public SiblingStructureParameter(String name, boolean includeParent) {
+    public SiblingObjectClassParameter(String name, boolean includeParent) {
         this(name, -1, -2, includeParent, false);
     }
-    public SiblingStructureParameter(String name) {
+    public SiblingObjectClassParameter(String name) {
         this(name, -1, -2, false, false);
     }
     
-    @Override public int getSelectedStructureIdx() {
+    @Override public int getSelectedClassIdx() {
         return selectedStructureIdx;
     }
     
@@ -83,7 +83,7 @@ public class SiblingStructureParameter extends ObjectClassParameter<SiblingStruc
         if (sel.length==1) this.setSelectedItem(sel[0]);
     }
     
-    @Override public void setSelectedStructureIdx(int structureIdx) {
+    @Override public void setSelectedClassIdx(int structureIdx) {
         selectedStructureIdx = structureIdx;
     }
     
@@ -108,8 +108,8 @@ public class SiblingStructureParameter extends ObjectClassParameter<SiblingStruc
     }
     @Override public boolean sameContent(Parameter other) {
         if (!super.sameContent(other)) return false;
-        if (other instanceof SiblingStructureParameter) {
-            SiblingStructureParameter otherP = (SiblingStructureParameter) other;
+        if (other instanceof SiblingObjectClassParameter) {
+            SiblingObjectClassParameter otherP = (SiblingObjectClassParameter) other;
             if (selectedStructureIdx!=otherP.selectedStructureIdx) {
                 logger.debug("SiblingStructureParameter {}!={}, selected structure idx: {} vs {}", name, otherP.name, selectedStructureIdx, otherP.selectedStructureIdx);
                 return false;
@@ -120,8 +120,8 @@ public class SiblingStructureParameter extends ObjectClassParameter<SiblingStruc
     }
     @Override public void setContentFrom(Parameter other) {
         super.setContentFrom(other);
-        if (other instanceof SiblingStructureParameter) {
-            SiblingStructureParameter otherP = (SiblingStructureParameter) other;
+        if (other instanceof SiblingObjectClassParameter) {
+            SiblingObjectClassParameter otherP = (SiblingObjectClassParameter) other;
             parentStructureIdx=otherP.parentStructureIdx;
             selectedStructureIdx = otherP.selectedStructureIdx;
             //includeParent=otherP.includeParent;
@@ -132,8 +132,8 @@ public class SiblingStructureParameter extends ObjectClassParameter<SiblingStruc
         if (getXP()!=null) {
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
             if (s!=null) {
-                if (includeParent) this.setSelectedStructureIdx(s.getParentStructure());
-                else this.setSelectedStructureIdx(s.getIndex());
+                if (includeParent) this.setSelectedClassIdx(s.getParentStructure());
+                else this.setSelectedClassIdx(s.getIndex());
             }
         }
     }
@@ -151,5 +151,5 @@ public class SiblingStructureParameter extends ObjectClassParameter<SiblingStruc
             return new String[]{"error: no xp found in tree"};
         }
     }
-    
+
 }

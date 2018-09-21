@@ -25,7 +25,7 @@ import boa.configuration.parameters.ConditionalParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.PluginParameter;
-import boa.configuration.parameters.StructureParameter;
+import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
  * @author jollion
  */
 public class GrowthRate implements Measurement, MultiThreaded {
-    protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
+    protected ObjectClassParameter structure = new ObjectClassParameter("Bacteria Structure", 1, false, false);
     protected PluginParameter<GeometricalFeature> feature = new PluginParameter<>("Feature", GeometricalFeature.class, new Size(), false).setToolTipText("Geometrical Feature of object used to compute Growth Rate");
     protected TextParameter suffix = new TextParameter("Suffix", "", false).setToolTipText("Suffix added to measurement keys");
     protected BooleanParameter saveSizeAtDiv = new BooleanParameter("Save Size at Division", false).setToolTipText("Wether the estimated size at division should be saved or not");
@@ -104,7 +104,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
     
     @Override
     public int getCallStructure() {
-        return structure.getParentStructureIdx();
+        return structure.getParentObjectClassIdx();
     }
     
     @Override
