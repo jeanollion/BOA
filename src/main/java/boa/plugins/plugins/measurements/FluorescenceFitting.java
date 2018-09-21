@@ -93,10 +93,9 @@ public class FluorescenceFitting implements Measurement{
                     .mapToDouble(y -> fluoImage.getPixelWithOffset(x, y, z)).sum(); // sum of fluorescence for each column
         }).toArray();
         
-        double iMidStart = bacteria.getBounds().xMean() - yMin; // middle of peak starts at middle of bacteria object. -yMin because in the fitting function the index is 0-based
-        logger.debug("iMidStart: {}", iMidStart );
+        double iMidStart = bacteria.getBounds().xMean() - xMin; // middle of peak starts at middle of bacteria object. -yMin because in the fitting function the index is 0-based
         double wStart = 5.5; // as in Kaiser 2018. // in a more general case, should it be a value depending on bacteria width ? 
-        double[] fittedParams = fitFluo(observedFluo, iMidStart, wStart, 1);
+        double[] fittedParams = fitFluo(observedFluo, iMidStart, wStart, 5);
         if (verbose) plot(observedFluo, fittedParams);
         // store fitted parameters in measurements
         bacteria.getMeasurements().setValue("Signal"+suffix.getValue(), fittedParams[0]);
@@ -151,7 +150,7 @@ public class FluorescenceFitting implements Measurement{
     private static void iterate(double[] c_i, double[] ro_i, double[] parameters) {
         // update ro_i array
         IntStream.range(0, c_i.length).forEach(i -> ro_i[i] = 1/(1+Math.pow((i-parameters[2])/parameters[3], 2)));
-        Utils.plotProfile("ro i", ro_i);
+        //Utils.plotProfile("ro i", ro_i);
         // step 3
         double ro = Arrays.stream(ro_i).sum();
         // step 4
@@ -163,15 +162,14 @@ public class FluorescenceFitting implements Measurement{
         // find iMid using root of derivative function
         DoubleUnaryOperator d_i_mid = i_mid -> IntStream.range(0, c_i.length).mapToDouble(i-> (i-i_mid)*ro_i[i]*ro_i[i] * (-1 + c_i[i] / (B + A * ro_i[i]) ) ).sum();
         double iMid = getRootBisection(d_i_mid, 100, 1e-2, parameters[2] - parameters[3]/2, parameters[2] + parameters[3]/2);
-        
+       plot("fit i_mid", d_i_mid, IntStream.range(0, 100).mapToDouble(i -> parameters[2] - parameters[3]/2+ i * parameters[3]/100 ).toArray());
         DoubleBinaryOperator ro_i_f = (i, w) -> 1/(1+Math.pow((i-iMid)/w, 2));
         DoubleUnaryOperator d_w = w -> IntStream.range(0, c_i.length).mapToDouble(i-> {
             double ro_i_ = ro_i_f.applyAsDouble(i, w);
             return ro_i_ * (1 - ro_i_) * (-1 + c_i[i] / (B + A * ro_i[i]) );
         }).sum();
-        // TODO: function is not monotoneous : reduce range ? other root finding method ? 
-        double w = getRootSecant(d_w, 100, 1e-2, parameters[3], Math.max(parameters[3] - 10, 1), Math.min(parameters[3] + 10, c_i.length-1));
-        plot(d_w, IntStream.range(0, 100).mapToDouble(i -> Math.max(parameters[3] - 10, 1)+ i * 20/100 ).toArray());
+        double w = getRootBisection(d_w, 100, 1e-2, Math.max(parameters[3] - 10, 1), Math.min(parameters[3] + 10, c_i.length-1));
+        plot("fit w", d_w, IntStream.range(0, 100).mapToDouble(i -> Math.max(parameters[3] - 10, 1)+ i * 20/100 ).toArray());
         logger.debug("fit: Bck{} Fluo: {}, iMid: {}, width: {}, ro: {}", B, A, iMid, w, ro);
         // update parameters
         parameters[0] = A;
@@ -179,13 +177,13 @@ public class FluorescenceFitting implements Measurement{
         parameters[2] = iMid;
         parameters[3] = w;
     }
-    private static void plot(DoubleUnaryOperator function, double[] x) {
+    private static void plot(String title, DoubleUnaryOperator function, double[] x) {
         double[] values = Arrays.stream(x).map(function).toArray();
-        Utils.plotProfile("fit w", values, x, null, null);
+        Utils.plotProfile(title, values, x, null, null);
     }
     private static void plot(double[] observed, double[] parameters) {
         double[] estimated_c_i = IntStream.range(0, observed.length).mapToDouble(i -> parameters[1] + parameters[0] / (1 + Math.pow((i - parameters[2])/parameters[3], 2) )).toArray();
-        double[] x = IntStream.range(0, observed.length).mapToDouble(i -> i - parameters[2]).toArray(); // centered on iMid
+        double[] x = IntStream.range(0, observed.length).mapToDouble(i -> i).toArray(); // centered on iMid
         Utils.plotProfile("observed and estimated fluo", estimated_c_i, x, observed, x);
     }
     
@@ -201,11 +199,12 @@ public class FluorescenceFitting implements Measurement{
      * @return a root of {@param function}
      */
     public static double getRootBisection(DoubleUnaryOperator function, int maxIteration, double precision, double leftBound, double rightBound) {
-        double x = 0, xLeft = leftBound, xRight = rightBound;
+        double x=leftBound, xLeft = leftBound, xRight = rightBound;
         double error = xRight-xLeft;
         int iter = 0;
-        double fx = function.applyAsDouble(x);
+        
         double fLeft = function.applyAsDouble(xLeft);
+        double fx = fLeft;
         while (Math.abs(error) > precision && iter<maxIteration && fx!=0 ) {
             x = ((xLeft+xRight)/2);
             fx = function.applyAsDouble(x);
