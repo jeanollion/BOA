@@ -112,7 +112,7 @@ public class ObjectFeatures implements Measurement, ToolTip {
         for (PluginParameter<ObjectFeature> ofp : features.getActivatedChildren()) {
             ObjectFeature f = ofp.instanciatePlugin();
             if (f!=null) {
-                f.setUp(parent, structureIdx, parent.getObjectPopulation(structureIdx));
+                f.setUp(parent, structureIdx, parent.getChildRegionPopulation(structureIdx));
                 if (f instanceof ObjectFeatureWithCore) ((ObjectFeatureWithCore)f).setUpOrAddCore(cores, preFilters);
                 for (StructureObject o : parent.getChildren(structureIdx)) {
                     double m = f.performMeasurement(o.getRegion()); 

@@ -89,7 +89,7 @@ public class SNR extends IntensityMeasurement implements ToolTip {
         
         List<Region> backgroundObjects;
         if (backgroundStructure.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
-            backgroundObjects = parent.getObjectPopulation(backgroundStructure.getSelectedStructureIdx()).getRegions();
+            backgroundObjects = parent.getChildRegionPopulation(backgroundStructure.getSelectedStructureIdx()).getRegions();
         } else {
             backgroundObjects = new ArrayList<>(1);
             backgroundObjects.add(parent.getRegion());

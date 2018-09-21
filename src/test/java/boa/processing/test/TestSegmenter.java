@@ -91,7 +91,7 @@ public class TestSegmenter {
         ImageWindowManagerFactory.showImage(parentTrack.get(0).getRawImage(structureIdx).duplicate("Input"));
         if (ps instanceof SegmentOnly) {
             ((SegmentOnly)ps).segmentAndTrack(structureIdx, parentTrack, null);
-            RegionPopulation pop = parentTrack.get(0).getObjectPopulation(structureIdx);
+            RegionPopulation pop = parentTrack.get(0).getChildRegionPopulation(structureIdx);
             ImageWindowManagerFactory.showImage(pop.getLabelMap());
         } else {
             Segmenter s = ps.getSegmenter();

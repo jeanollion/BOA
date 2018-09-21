@@ -35,8 +35,8 @@ import boa.utils.Utils;
 public class GenerateXPConfig {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
-        //String path = "/home/jollion/Fiji.app/plugins/BACMMAN"; // portable
-        String path = "/data/Images/Fiji.app/plugins/BACMMAN"; // LJP
+        String path = "/home/jollion/Fiji.app/plugins/BACMMAN"; // portable
+        //String path = "/data/Images/Fiji.app/plugins/BACMMAN"; // LJP
         Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, false, 0, 0, Double.NaN, null);
         exportXP(path, xpFluo, false);
         

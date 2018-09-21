@@ -90,11 +90,28 @@ public class BacteriaSpineFactory {
     public static class SpineResult {
         public PointContainer2<Vector, Double>[] spine;
         public BoundingBox bounds;
-        public Set<Localizable> contour;
-        public CircularNode<Localizable> circContour;
+        public Set<? extends Localizable> contour;
+        public CircularNode<? extends Localizable> circContour;
         public List<Voxel> skeleton;
+        /**
+         * 
+         * @return deep duplicate
+         */
+        public SpineResult duplicate() {
+            SpineResult res = new SpineResult();
+            if (spine!=null) res.setSpine(Arrays.stream(spine).map(s -> new PointContainer2<>(s.content1.duplicate(), s.getContent2().doubleValue(), new float[s.numDimensions()]).setData(s.duplicate())).toArray(l->new PointContainer2[l]));
+            if (bounds!=null) res.setBounds(new SimpleBoundingBox(bounds));
+            if (skeleton!=null) res.setSkeleton(skeleton.stream().map(v->new Voxel(v.x, v.y, v.z)).collect(Collectors.toList()));
+            if (contour!=null) res.setContour(contour.stream().map(l -> Point.asPoint(l)).collect(Collectors.toSet()));
+            if (circContour!=null) res.setCircContour(CircularNode.map(circContour, l->Point.asPoint(l)));
+            return res;
+        }
         protected SpineResult setBounds(BoundingBox bounds) {
             this.bounds = bounds;
+            return this;
+        }
+        protected SpineResult setContour(Set<? extends Localizable> contour) {
+            this.contour = contour;
             return this;
         }
         protected SpineResult setSkeleton(List<Voxel> skeleton) {
@@ -105,7 +122,7 @@ public class BacteriaSpineFactory {
             this.spine = spine;
             return this;
         }
-        protected SpineResult setCircContour(CircularNode<Localizable> circContour) {
+        protected SpineResult setCircContour(CircularNode<? extends Localizable> circContour) {
             this.circContour = circContour;
             return this;
         }
@@ -135,7 +152,7 @@ public class BacteriaSpineFactory {
         cleanContour((Set)contour);
         long t2 = System.currentTimeMillis();
         res.contour = (Set)contour;
-        List<Voxel> skeleton = getSkeleton(getMaskFromContour((Set)contour));
+        List<Voxel> skeleton = getSkeleton(CircularContourFactory.getMaskFromContour((Set)contour));
         long t3 = System.currentTimeMillis();
         //Point center = fromSkeleton ? Point.asPoint((Offset)skeleton.getSum(skeleton.size()/2)) : bacteria.getGeomCenter(false) ; 
         CircularNode<Localizable> circContour;
@@ -172,11 +189,6 @@ public class BacteriaSpineFactory {
             if (max[0]==null || edtV>max[0].value) max[0] = new Voxel(x, y, z, edtV);
         });
         return max[0];
-    }
-    public static ImageByte getMaskFromContour(Set<Voxel> contour) {
-        ImageByte im = (ImageByte) new Region(contour, 1, true, 1, 1).getMaskAsImageInteger();
-        FillHoles2D.fillHoles(im, 2);
-        return im;
     }
     /**
      * Get largest shortest path from skeleton created as in {@link #Skeletonize3D_}
@@ -573,7 +585,7 @@ public class BacteriaSpineFactory {
                 for (int i = 0; i<neigh.getSize(); ++i) {
                     drawPixel(spineImage, Point.asPoint2D(c.element).translateRev(off).translate(new Vector(((float)neigh.dx[i])/zoomFactor, ((float)neigh.dy[i])/zoomFactor)), zoomFactor, lab[0], bucket);
                 }
-                //++lab[0];
+                ++lab[0];
             }, true);
         }
         if (spine!=null) { // draw spine

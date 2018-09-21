@@ -40,7 +40,10 @@ import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECT
 import boa.image.processing.bacteria_spine.CircularContourFactory;
 import boa.image.processing.bacteria_spine.CircularNode;
 import static boa.image.processing.bacteria_spine.CleanVoxelLine.cleanContour;
+import boa.image.processing.bacteria_spine.SausageContourFactory;
+import boa.image.processing.bacteria_spine.SpineOverlayDrawer;
 import boa.plugins.PluginFactory;
+import boa.plugins.plugins.post_filters.SausageTransform;
 import static boa.test_utils.TestUtils.logger;
 import boa.utils.HashMapGetCreate;
 import boa.utils.HashMapGetCreate.Syncronization;
@@ -49,6 +52,8 @@ import boa.utils.geom.Point;
 import boa.utils.geom.PointContainer2;
 import boa.utils.geom.Vector;
 import ij.ImageJ;
+import ij.gui.Overlay;
+import java.awt.Color;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,8 +76,8 @@ public class TestSpine {
         //String dbName = "fluo160501_uncorr_TestParam";
         //String dbName = "dataset2";
         //String dbName = "fluo171219_WT_750ms";
-        String dbName = "MF1R_180910";
-        int postition= 34, frame=9, mc=6, b=0, m = 0;
+        String dbName = "MutH_150324";
+        int postition= 0, frame=0, mc=0, b=0, m = 0;
         int frame2 = 10, b2=0;
         //int postition= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
@@ -86,19 +91,21 @@ public class TestSpine {
         Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(structureIdx).get(b);
-        
+        testSausage(bact);
         //testSpineCreation(bact);
         //testContourCleaning(bact);
         //testAllSteps(bact);
         //testLocalization(bact, true);
         //testLocalization(bact, false);
         //testSkeleton(bact);
-        StructureObject mut = bact.getParent().getChildren(2).get(m);
-        testCoordCreation(bact, mut.getRegion().getCenter());
+        //StructureObject mut = bact.getParent().getChildren(2).get(m);
+        //testCoordCreation(bact, mut.getRegion().getCenter());
         
+        /*
         StructureObject root2 = mDAO.getDao(f.getName()).getRoots().get(frame2);
         StructureObject bact2 = root2.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(structureIdx).get(b2);
         testProjection(mut.getRegion().getCenter(), bact, bact2);
+        /*
         /*
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(mDAO.getDao(f.getName()).getRoots(), parentStructure, false);
         allTracks.entrySet().stream().filter(e->e.getKey().getIdx()==mc).findAny().get().getValue().stream().filter(o->o.getFrame()>-1).map(mic -> mic.getChildren(structureIdx).get(0)).forEach(bacteria-> {
@@ -128,15 +135,16 @@ public class TestSpine {
             StructureObjectUtils.getAllChildrenAsStream(parentTrack, structureIdx).parallel().forEach(bo -> testAllSteps(bo, true, true));
         }
     }
+    
     public static void testContourCleaning(StructureObject b) {
         cleanContour(b.getRegion().getContour(), true);
     }
     public static void testSkeleton(StructureObject b) {
         Set<Voxel> contour =cleanContour(b.getRegion().getContour(), true);
         BacteriaSpineFactory.verbose = true;
-        Image mask  = BacteriaSpineFactory.getMaskFromContour(contour).setName("mask after clean contour");
+        Image mask  = CircularContourFactory.getMaskFromContour(contour).setName("mask after clean contour");
         
-        List<Voxel> skeleton = BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(contour));
+        List<Voxel> skeleton = BacteriaSpineFactory.getSkeleton(CircularContourFactory.getMaskFromContour(contour));
         for (Voxel v : skeleton) mask.setPixelWithOffset(v.x, v.y, v.z, 0);
         ImageWindowManagerFactory.showImage(mask);
     }
@@ -162,11 +170,11 @@ public class TestSpine {
         if (sk) {
             try {
                 logger.debug("get skeleton for: {}", b);
-                BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(contour));
+                BacteriaSpineFactory.getSkeleton(CircularContourFactory.getMaskFromContour(contour));
             } catch (Exception e) {
                 logger.debug("failed to create skeleton for bact: "+b, e);
                 BacteriaSpineFactory.verbose = true;
-                BacteriaSpineFactory.getSkeleton(BacteriaSpineFactory.getMaskFromContour(contour));
+                BacteriaSpineFactory.getSkeleton(CircularContourFactory.getMaskFromContour(contour));
             }
         }
         if (spine) {
@@ -254,5 +262,20 @@ public class TestSpine {
         //SpineResult spine = BacteriaSpineFactory.createSpine(bact.getRegion(), false);
         logger.debug("bounds: {}, spine sk: {}", bact.getBounds(), spineSk.spine[spineSk.spine.length-1].getContent2());
         //logger.debug("bounds: {}, spine: {}", bact.getBounds(), spine.spine[spine.spine.length-1].getContent2());
+    }
+    public static void testSausage(StructureObject b) {
+        SpineResult sr = BacteriaSpineFactory.createSpine(b.getRegion(), 1);
+        SpineResult srSaus = sr.duplicate();
+        SausageContourFactory.toSausage(srSaus, 1);
+        Overlay overlayS = SpineOverlayDrawer.getSpineOverlay(srSaus, b.getParent().getBounds(), Color.blue, Color.yellow, 0.5);
+        Overlay overlay = SpineOverlayDrawer.getSpineOverlay(sr , b.getParent().getBounds(), Color.blue, Color.yellow, 0.5);
+        //SpineOverlayDrawer.display("sausage", b.getParent().getRawImage(1), overlayS);
+        //SpineOverlayDrawer.display("sausage", b.getParent().getChildRegionPopulation(1).getLabelMap().duplicate(), overlayS);
+        //SpineOverlayDrawer.display("regular", b.getParent().getRawImage(1).duplicate(), overlay);
+        
+        //ImageWindowManagerFactory.showImage(srSaus.drawSpine(13, false));
+        SausageTransform st = new SausageTransform();
+        st.runPostFilter(b.getParent(), 1, b.getParent().getChildRegionPopulation(1));
+        ImageWindowManagerFactory.showImage(b.getParent().getChildRegionPopulation(1).getLabelMap().setName("sausageTransform"));
     }
 }

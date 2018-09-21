@@ -120,7 +120,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
         boolean feat = saveFeature.getSelected();
         final ArrayList<ObjectFeatureCore> cores = new ArrayList<>();
         HashMapGetCreate<StructureObject, ObjectFeature> ofMap = new HashMapGetCreate<>(p -> {
-            ObjectFeature of = feature.instanciatePlugin().setUp(p, bIdx, p.getObjectPopulation(bIdx));
+            ObjectFeature of = feature.instanciatePlugin().setUp(p, bIdx, p.getChildRegionPopulation(bIdx));
             if (of instanceof ObjectFeatureWithCore) ((ObjectFeatureWithCore)of).setUpOrAddCore(cores, null);
             return of;
         });

@@ -96,7 +96,7 @@ public class RemoveTrackByFeature implements TrackPostFilter, ToolTip {
         Map<Region, Double> valueMap = new ConcurrentHashMap<>();
         // compute feature for each object, by parent
         Consumer<StructureObject> exe = parent -> {
-            RegionPopulation pop = parent.getObjectPopulation(structureIdx);
+            RegionPopulation pop = parent.getChildRegionPopulation(structureIdx);
             ObjectFeature f = feature.instanciatePlugin();
             f.setUp(parent, structureIdx, pop);
             Map<Region, Double> locValueMap = pop.getRegions().stream().collect(Collectors.toMap(o->o, o-> f.performMeasurement(o)));

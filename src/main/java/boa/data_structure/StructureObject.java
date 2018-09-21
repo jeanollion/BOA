@@ -975,7 +975,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.offsetInTrackImage=null;
     }
     
-    public RegionPopulation getObjectPopulation(int structureIdx) {
+    public RegionPopulation getChildRegionPopulation(int structureIdx) {
         List<StructureObject> child = this.getChildren(structureIdx);
         if (child==null || child.isEmpty()) return new RegionPopulation(new ArrayList<>(0), this.getMaskProperties());
         else {

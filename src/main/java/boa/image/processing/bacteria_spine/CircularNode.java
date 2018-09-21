@@ -62,10 +62,22 @@ public class CircularNode<T> implements Comparable<CircularNode> {
         this.prev.next = this;
         return this.prev;
     }
+    public CircularNode<T> insertPrev(T element) {
+        CircularNode<T> old = prev;
+        CircularNode<T> newN = setPrev(element);
+        newN.setPrev(old);
+        return newN;
+    }
     public CircularNode<T> setNext(T element) {
         this.next = new CircularNode(element);
         this.next.prev = this;
         return this.next;
+    }
+    public CircularNode<T> insertNext(T element) {
+        CircularNode<T> old = next;
+        CircularNode<T> newN = setNext(element);
+        newN.setNext(old);
+        return newN;
     }
     public CircularNode<T> next() {
         return next;
@@ -165,6 +177,24 @@ public class CircularNode<T> implements Comparable<CircularNode> {
                 if (p==null) return;
             }
         }
+    }
+    public static <U, V> CircularNode<V> map(CircularNode<U> source, Function<U, V> mapper) {
+        CircularNode<V> firstDest = new CircularNode(mapper.apply(source.element));
+        CircularNode<U> currentSource = source.next();
+        CircularNode<V> currentDest=firstDest;
+        while(!currentSource.equals(source)) {
+            currentDest = currentDest.setNext(mapper.apply(currentSource.getElement()));
+            currentSource = currentSource.next();
+        }
+        currentDest.setNext(firstDest); // closes circular contour
+        return firstDest;
+    }
+    public static <T> CircularNode<T> toCircularContour(List<T> orderedList) {
+        CircularNode<T> first = new CircularNode(orderedList.get(0));
+        CircularNode<T> previous=first;
+        for (int i = 0; i<orderedList.size();++i) previous = previous.setNext(orderedList.get(i));
+        previous.setNext(first); // closes contour
+        return first;
     }
     // HELPER METHOD WITH LOCALIZABLE ELEMENTS
     /**

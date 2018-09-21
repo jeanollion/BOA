@@ -21,6 +21,8 @@ package boa.image.processing.bacteria_spine;
 import boa.data_structure.Region;
 import boa.data_structure.Voxel;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
+import boa.image.ImageByte;
+import boa.image.processing.FillHoles2D;
 import boa.image.processing.neighborhood.EllipsoidalNeighborhood;
 import boa.utils.geom.GeomUtils;
 import boa.utils.geom.Point;
@@ -220,36 +222,78 @@ public class CircularContourFactory {
         CircularNode.apply(circContour, c->res.add(c.element), true);
         return res;
     }
+    /**
+     * Enshures distance between nodes of {@param circContour} is inferior to {@param d}
+     * @param circContour
+     * @param d 
+     */
     public static void resampleContour(CircularNode<Point> circContour, double d) {
         CircularNode<Point> current = circContour;
         while (current!=circContour.prev) current = moveNextPoint(current, d);
-        // check last point
-        double dN = circContour.element.distXY(circContour.prev.element);
-        if (dN>d) { // simply add a point in between
-            CircularNode<Point> p = circContour.prev;
-            circContour.setPrev(Point.middle2D(circContour.element, p.element));
-            circContour.prev.setPrev(p);
-        }
+        while (current!=circContour) current = moveNextPoint(current, d);
     }
+    private static double DIST_PRECISION = 1e-3;
     private static CircularNode<Point> moveNextPoint(CircularNode<Point> circContour, double d) {
         double dN = circContour.element.distXY(circContour.next.element);
-        if (dN>=2d) { // creates a point between the two
-            CircularNode<Point> n = circContour.next;
-            circContour.setNext(Point.middle2D(circContour.element, n.element));
-            circContour.next.setNext(n);
-            return circContour.next;
+        if (Math.abs(dN-d)<=DIST_PRECISION) return circContour.next; // do nothing
+        if (dN>=2*d) { // creates a point between the two
+            double w = d/dN;
+            return circContour.insertNext(circContour.element.duplicate().weightedSum(circContour.next.element, 1-w, w));
         }
         if (dN>d) { // next point moves closer
             circContour.next.element.translate(Vector.vector(circContour.next.element, circContour.element).normalize().multiply(dN-d));
             return circContour.next;
         }
-        d-=dN;
-        double dNN = circContour.next.element.dist(circContour.next.next.element);
-        if (dNN<d) { // simply remove next element
+        // distance is inferior to ressampling factor. if distance to next's next is inferior , simply remove next
+        double dNN = circContour.element.dist(circContour.next.next.element);
+        if (dNN<=d) { // simply remove next element
             circContour.setNext(circContour.next.next);
-            return circContour;
+            return Math.abs(dNN-d)<=DIST_PRECISION ? circContour.next : circContour;
         }
-        circContour.next.element.translate(Vector.vector(circContour.next.element, circContour.next.next.element).normalize().multiply(d));
+        // move next point to a distance d in direction of next & next.next
+        double t = intersectSegmentWithShpere(circContour.element, d, circContour.next.element,  circContour.next.next.element);
+        circContour.next.element.translate(Vector.vector(circContour.next.element, circContour.next.next.element).normalize().multiply(t));
         return circContour.next;
     }  
+    
+    /**
+     * solves equation: intersection of circle center A with segment BC
+     * x = xb+tdx with dx = xc-xb, t in ]0;1[
+        y= yb + tdy with dy =yc-yb
+        (x-xa)^2 + (y-ya)^2 = d^2
+        At^2 + Bt + C
+     * @param center circle center
+     * @param radius A
+     * @param segStart B
+     * @param segEnd C
+     * @return fraction of segment BC. Intersection = B + t * BC. In case of 2 solution returns the further away from B
+     */
+    public static double intersectSegmentWithShpere(Point center, double radius, Point segStart, Point segEnd) {
+        
+        
+        double dx = segEnd.get(0) - segStart.get(0);
+        double dy = segEnd.get(1) - segStart.get(1);
+        double Ox =  segStart.get(0) - center.get(0);
+        double Oy =  segStart.get(1) - center.get(1);
+        double A  = dx*dx + dy*dy;
+        double B=  2 * (dx*Ox + dy*Oy);
+        double C = Ox*Ox + Oy*Oy -radius*radius;
+        double[] roots = BacteriaSpineLocalizer.solveQuadratic(A, B, C);
+        java.util.function.DoublePredicate isInBC = x->x>0 && x<1;
+        double t = 0;
+        if (roots.length==2) { // only take the solution that verify 0<t<1
+            if (isInBC.test(roots[0]) && isInBC.test(roots[1])) t = Math.max(roots[0], roots[1]);
+            else if (isInBC.test(roots[0])) t = roots[0];
+            else if (isInBC.test(roots[1])) t = roots[1];
+            else throw new RuntimeException("No solution found!");
+        } else if (roots.length==1 && isInBC.test(roots[0])) t = roots[0];
+        else throw new RuntimeException("No solution found!");
+        return t;
+    }
+
+    public static ImageByte getMaskFromContour(Set<Voxel> contour) {
+        ImageByte im = (ImageByte) new Region(contour, 1, true, 1, 1).getMaskAsImageInteger();
+        FillHoles2D.fillHoles(im, 2);
+        return im;
+    }
 }

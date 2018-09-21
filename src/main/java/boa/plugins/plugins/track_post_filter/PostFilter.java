@@ -90,7 +90,7 @@ public class PostFilter implements TrackPostFilter, ToolTip {
         boolean rootParent = parentTrack.stream().findAny().get().isRoot();
         Set<StructureObject> objectsToRemove = new HashSet<>();
         Consumer<StructureObject> exe = parent -> {
-            RegionPopulation pop = parent.getObjectPopulation(structureIdx);
+            RegionPopulation pop = parent.getChildRegionPopulation(structureIdx);
             //logger.debug("seg post-filter: {}", parent);
             if (!rootParent) pop.translate(new SimpleBoundingBox(parent.getBounds()).reverseOffset(), false); // go back to relative landmark for post-filter
             //if(parent.getFrame()==858) postFilters.set

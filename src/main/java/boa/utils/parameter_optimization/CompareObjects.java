@@ -288,7 +288,7 @@ public class CompareObjects {
         }
         pthMapParametrizer.entrySet().removeIf(e->e.getValue()==null);
         for (StructureObject parent : Utils.flattenMap(parentTrackRef)) {
-            RegionPopulation pop = parent.getObjectPopulation(structureIdx);
+            RegionPopulation pop = parent.getChildRegionPopulation(structureIdx);
             if (pop.getRegions().isEmpty()) continue;
             //logger.debug("quality was : {}", Utils.toStringList(pop.getObjects(), o->o.getQuality()));
             for (StructureObject parentB : parent.getChildObjects(1)) {

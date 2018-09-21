@@ -112,7 +112,7 @@ public class ManualObjectStrecher {
             for (Voxel v : contour) meanIntensityContour += intensityMap.getPixelWithOffset(v.x, v.y, v.z);
             meanIntensityContour/=contour.size();
             
-            ImageInteger outsideChildrenMask = p.key.getObjectPopulation(structureIdx).getLabelMap();
+            ImageInteger outsideChildrenMask = p.key.getChildRegionPopulation(structureIdx).getLabelMap();
             ImageOperations.not(outsideChildrenMask, outsideChildrenMask);
             double meanIntensityOutsideObject = ImageOperations.getMeanAndSigma(intensityMap, outsideChildrenMask, null, true)[0];
             double thld = meanIntensityContour * thresholdQuantile + meanIntensityOutsideObject *(1-thresholdQuantile);

@@ -97,7 +97,7 @@ public class TestProcessMutations {
         //if (outputLabel!=null) outputLabel.add(popPF.getLabelMap().setName("after PF"));
         if (intermediateImages_!=null) {
             intermediateImages.add(pop.getLabelMap().setName("before PF"));
-            intermediateImages.add(parent.getObjectPopulation(1).getLabelMap().setName("bacteria"));
+            intermediateImages.add(parent.getChildRegionPopulation(1).getLabelMap().setName("bacteria"));
             intermediateImages_.add(intermediateImages);
         }
     }

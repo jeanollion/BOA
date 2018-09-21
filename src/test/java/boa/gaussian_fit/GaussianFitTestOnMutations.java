@@ -54,7 +54,7 @@ public class GaussianFitTestOnMutations {
         StructureObject root = db.getDao(f.getName()).getRoot(tp);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);
-        RegionPopulation pop = mc.getObjectPopulation(2);
+        RegionPopulation pop = mc.getChildRegionPopulation(2);
         RegionPopulation.GaussianFit.disp=true;
         new IJImageDisplayer().showImage(mc.getRawImage(2).duplicate("source"));
         pop.filter(new RegionPopulation.GaussianFit(mc.getRawImage(2), 4, 2, 6, 0.5, 1, 5));
