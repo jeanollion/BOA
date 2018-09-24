@@ -34,7 +34,7 @@ import boa.plugins.Transformation;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FilterSequence extends PluginParameterList<Filter, FilterSequence> {
 

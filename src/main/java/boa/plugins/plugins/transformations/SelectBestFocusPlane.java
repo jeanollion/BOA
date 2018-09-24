@@ -40,7 +40,7 @@ import boa.plugins.ConfigurableTransformation;
 import java.util.stream.IntStream;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SelectBestFocusPlane implements ConfigurableTransformation, Autofocus {
     ArrayList<Integer> bestFocusPlaneIdxT = new ArrayList<Integer>();

@@ -33,7 +33,7 @@ import boa.utils.JSONUtils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public class MultipleImageContainerChannelSerie extends MultipleImageContainer { //one file per channel and serie

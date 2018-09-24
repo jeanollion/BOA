@@ -58,7 +58,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class OpThresholder  { //implements ThresholderHisto, SimpleThresholder 
     public final static Logger logger = LoggerFactory.getLogger(OpThresholder.class);

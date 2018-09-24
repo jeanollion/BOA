@@ -20,7 +20,7 @@ package boa.configuration.parameters;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ChoosableParameter<P extends Parameter<P>> extends Parameter<P>, Listenable<P> {
     /**

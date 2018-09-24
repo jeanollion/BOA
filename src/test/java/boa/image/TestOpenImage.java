@@ -26,7 +26,7 @@ import org.junit.Test;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestOpenImage {
     public static void main(String[] args) {

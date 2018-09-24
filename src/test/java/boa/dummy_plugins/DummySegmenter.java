@@ -34,7 +34,7 @@ import boa.plugins.Segmenter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DummySegmenter implements Segmenter {
     BooleanParameter segDir = new BooleanParameter("Segmentation direction", "X", "Y", true);

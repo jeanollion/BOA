@@ -73,7 +73,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class ImageStabilizerXY implements ConfigurableTransformation, MultichannelTransformation, ToolTip {
     public final static Logger logger = LoggerFactory.getLogger(ImageStabilizerXY.class);

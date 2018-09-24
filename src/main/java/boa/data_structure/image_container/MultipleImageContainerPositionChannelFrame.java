@@ -44,7 +44,7 @@ import boa.utils.Pair;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MultipleImageContainerPositionChannelFrame extends MultipleImageContainer { // one file per channel & per frame
     byte[][] bufferStore = new byte[1][];

@@ -39,7 +39,7 @@ import java.util.Arrays;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RelativePosition implements Measurement, ToolTip {
     public enum REF_POINT {

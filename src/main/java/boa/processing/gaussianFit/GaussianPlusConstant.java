@@ -45,7 +45,7 @@ import net.imglib2.algorithm.localization.FitFunction;
  * S = b × ∑ (xᵢ - x₀ᵢ)²
  * </pre>
  * 
- * @author jollion, from Jean-Yves Tinevez <jeanyves.tinevez@gmail.com> - 2013
+ * @author Jean Ollion, from Jean-Yves Tinevez <jeanyves.tinevez@gmail.com> - 2013
  */
 public class GaussianPlusConstant implements FitFunction {
 

@@ -106,7 +106,7 @@ import java.util.stream.IntStream;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, TrackRoi> {
     

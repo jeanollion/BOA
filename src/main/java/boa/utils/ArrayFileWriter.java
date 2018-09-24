@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ArrayFileWriter {
     final static String separator =";";

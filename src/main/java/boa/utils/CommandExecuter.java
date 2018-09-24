@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class CommandExecuter {
     public static final org.slf4j.Logger logger = LoggerFactory.getLogger(CommandExecuter.class);

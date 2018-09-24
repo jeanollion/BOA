@@ -36,7 +36,7 @@ import java.util.Map.Entry;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class NormalizeTrack  implements TrackPreFilter {
     NumberParameter saturation = new BoundedNumberParameter("Saturation", 3, 0.99, 0, 1);

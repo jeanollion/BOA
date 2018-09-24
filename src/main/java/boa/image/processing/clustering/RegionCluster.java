@@ -51,7 +51,7 @@ import java.util.function.Predicate;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RegionCluster<I extends InterfaceRegion<I>> extends ClusterCollection<Region, I> {
     RegionPopulation population;

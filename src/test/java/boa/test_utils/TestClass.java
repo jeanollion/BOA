@@ -67,7 +67,7 @@ import net.imglib2.Localizable;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestClass {
     public static void main(String[] args) {

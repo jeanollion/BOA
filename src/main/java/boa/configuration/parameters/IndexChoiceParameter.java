@@ -27,7 +27,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class IndexChoiceParameter<P extends IndexChoiceParameter<P>> extends ParameterImpl<P> implements ChoosableParameter<P>, ChoosableParameterMultiple<P> {
     protected int[] selectedIndices;

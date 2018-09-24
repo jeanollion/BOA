@@ -44,7 +44,7 @@ import javax.swing.JMenuItem;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class PropertyUtils {
     private static Properties props;

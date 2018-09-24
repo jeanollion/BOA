@@ -26,7 +26,7 @@ import boa.measurement.MeasurementKey;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Measurement extends Plugin {
     /**

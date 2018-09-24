@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImportImageUtils {
     public static List<Double> paseDVLogFile(String path, String key) {

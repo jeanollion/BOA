@@ -57,7 +57,7 @@ import java.util.function.Consumer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class PreProcessingChain extends ContainerParameterImpl<PreProcessingChain> {
     BooleanParameter useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true).setToolTipText("Voxel calibration (voxel size in x, y, z axis). If <em>Custom calibration</em> is set, the image calibration (if present) will be overriden");

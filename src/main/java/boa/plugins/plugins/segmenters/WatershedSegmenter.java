@@ -42,7 +42,7 @@ import boa.image.processing.watershed.WatershedTransform.WatershedConfiguration;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class WatershedSegmenter implements Segmenter {
     PreFilterSequence watershedMapFilters = new PreFilterSequence("Watershed Map").add(new ImageFeature().setFeature(ImageFeature.Feature.GRAD)).setToolTipText("Filter sequence to compute the map on wich the watershed will be performed");

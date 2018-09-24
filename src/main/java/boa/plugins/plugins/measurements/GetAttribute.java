@@ -33,7 +33,7 @@ import boa.plugins.Measurement;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GetAttribute implements Measurement, DevPlugin {
     ObjectClassParameter structure = new ObjectClassParameter("Structure", -1, false, false);

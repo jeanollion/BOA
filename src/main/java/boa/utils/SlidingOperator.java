@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <E> Element to slide
  * @param <A> Accumulator
  * @param <R> Result

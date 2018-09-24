@@ -27,7 +27,7 @@ import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.TrackLik
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DistancePenaltyScoreFunction implements ScoreFunction {
     DistributionFunction lengthFunction;

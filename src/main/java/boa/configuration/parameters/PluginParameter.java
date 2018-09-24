@@ -41,7 +41,7 @@ import javax.swing.JMenuItem;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T> type of plugin
  */
 public class PluginParameter<T extends Plugin> extends ContainerParameterImpl<PluginParameter<T>> implements Deactivatable, ChoosableParameter<PluginParameter<T>> {

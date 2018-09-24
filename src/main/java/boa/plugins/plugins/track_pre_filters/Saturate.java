@@ -39,7 +39,7 @@ import java.util.TreeMap;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Saturate implements TrackPreFilter, ToolTip, DevPlugin {
     NumberParameter maxSat = new BoundedNumberParameter("Max Saturation proportion", 3, 0.03, 0, 1);

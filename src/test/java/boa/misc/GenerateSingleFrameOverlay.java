@@ -33,7 +33,7 @@ import ij.ImagePlus;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GenerateSingleFrameOverlay {
     

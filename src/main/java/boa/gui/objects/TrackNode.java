@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class TrackNode implements TrackNodeInterface, UIContainer {
     StructureObject trackHead;

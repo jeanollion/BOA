@@ -56,7 +56,7 @@ import boa.utils.HashMapGetCreate;
 import boa.utils.Utils;
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class TrackTreeGenerator {
     MasterDAO db;

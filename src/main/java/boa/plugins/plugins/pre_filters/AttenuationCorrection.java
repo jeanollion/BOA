@@ -27,7 +27,7 @@ import ij.plugin.filter.RankFilters;
 import ij.process.ImageProcessor;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class AttenuationCorrection {
 

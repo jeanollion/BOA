@@ -22,7 +22,7 @@ import org.scijava.module.ModuleItem;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface OpParameter<P extends OpParameter<P>> extends ParameterWithValue<P> {
     public void setModuleItem(ModuleItem<?> param);

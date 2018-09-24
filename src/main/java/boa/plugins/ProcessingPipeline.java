@@ -29,7 +29,7 @@ import boa.utils.Pair;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T> type of ProcessingScheme
  */
 public interface ProcessingPipeline<T extends ProcessingPipeline> extends Plugin { //Multithreaded

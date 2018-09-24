@@ -61,7 +61,7 @@ import java.util.stream.Stream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FitRegionsToEdges implements TrackPostFilter, ToolTip {
     protected PreFilterSequence watershedMap = new PreFilterSequence("Watershed Map").add(new Sigma(3).setMedianRadius(2)).setToolTipText("Watershed map, separation between regions are at area of maximal intensity of this map"); //new ImageFeature().setFeature(ImageFeature.Feature.StructureMax).setScale(1.5).setSmoothScale(1.5)

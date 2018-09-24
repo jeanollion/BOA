@@ -36,7 +36,7 @@ import java.util.stream.DoubleStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BasicMeasurements {
     public static double getSum(Region object, Image image) {

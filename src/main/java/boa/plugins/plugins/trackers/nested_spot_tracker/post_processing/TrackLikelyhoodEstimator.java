@@ -28,7 +28,7 @@ import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithQuality;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TrackLikelyhoodEstimator {
     double minLength, maxLength; // minimal length for a track

@@ -40,7 +40,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Set2TrackHeadAtBacteriaDivision {
     public static void main(String[] args) {

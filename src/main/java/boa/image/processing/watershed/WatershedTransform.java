@@ -49,7 +49,7 @@ import boa.utils.HashMapGetCreate;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class WatershedTransform {
     public enum PropagationType {DIRECT, NORMAL};

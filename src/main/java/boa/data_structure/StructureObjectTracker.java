@@ -20,7 +20,7 @@ package boa.data_structure;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface StructureObjectTracker extends StructureObjectPreProcessing {
     public StructureObject resetTrackLinks(boolean prev, boolean next);

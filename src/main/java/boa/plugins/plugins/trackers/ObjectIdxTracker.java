@@ -42,7 +42,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ObjectIdxTracker implements Tracker, ToolTip {
 

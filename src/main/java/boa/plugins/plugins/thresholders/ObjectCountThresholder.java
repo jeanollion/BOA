@@ -45,7 +45,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ObjectCountThresholder implements Thresholder {
     NumberParameter maxObjectNumber = new BoundedNumberParameter("Max. object number", 0, 10, 1, null);

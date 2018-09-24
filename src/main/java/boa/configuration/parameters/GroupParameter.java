@@ -28,7 +28,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GroupParameter extends ContainerParameterImpl<GroupParameter> {
     protected List<Parameter> parameters;

@@ -22,7 +22,7 @@ import java.awt.image.IndexColorModel;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public enum LUT {
         RGB332(1),

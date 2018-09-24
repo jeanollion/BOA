@@ -24,7 +24,7 @@ import org.json.simple.JSONObject;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface JSONSerializable {
     public Object toJSONEntry();

@@ -52,7 +52,7 @@ import org.joda.time.DateTimeZone;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageReader {
     ImageFormat extension;

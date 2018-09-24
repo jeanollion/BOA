@@ -34,7 +34,7 @@ import boa.utils.JSONUtils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class CompareSerializationTime {
     public static void main(String[] args) {

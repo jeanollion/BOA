@@ -21,7 +21,7 @@ package boa.data_structure.dao;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MasterDAOFactory {
     public enum DAOType {Morphium, DBMap, Basic};

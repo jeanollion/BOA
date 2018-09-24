@@ -42,7 +42,7 @@ import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestTrackPreFilter {
     public static final Logger logger = LoggerFactory.getLogger(TestTrackPreFilter.class);

@@ -23,7 +23,7 @@ import boa.image.ImageMask;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface SimpleThresholder extends Thresholder {
     public double runSimpleThresholder(Image image, ImageMask mask);

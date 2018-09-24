@@ -36,7 +36,7 @@ import java.util.function.Predicate;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T>
  */
 public interface ImageDisplayer<T> {

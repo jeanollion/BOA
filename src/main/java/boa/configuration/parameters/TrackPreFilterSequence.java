@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TrackPreFilterSequence extends PluginParameterList<TrackPreFilter, TrackPreFilterSequence> {
     

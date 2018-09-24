@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class DisplacementNeighborhood implements Neighborhood {
     public int[] dx, dy, dz;

@@ -63,7 +63,7 @@ import java.util.stream.Stream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestSpine {
     public static void main(String[] args) {

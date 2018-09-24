@@ -43,7 +43,7 @@ import boa.plugins.DevPlugin;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleIntensityMeasurementStructureExclusion implements Measurement, DevPlugin {
     protected ObjectClassParameter structureObject = new ObjectClassParameter("Object", -1, false, false);

@@ -41,7 +41,7 @@ import boa.plugins.plugins.measurements.objectFeatures.object_feature.SimpleObje
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FitEllipse {
     static final double HALFPI = 1.5707963267949;

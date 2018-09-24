@@ -45,7 +45,7 @@ import java.util.Arrays;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageFeature implements PreFilter, ToolTip {
 

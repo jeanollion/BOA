@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MultipleScenario extends CorrectionScenario {
         final List<CorrectionScenario> scenarios;

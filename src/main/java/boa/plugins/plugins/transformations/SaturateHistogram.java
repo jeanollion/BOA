@@ -29,7 +29,7 @@ import boa.plugins.Transformation;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SaturateHistogram implements Filter {
     NumberParameter threshold = new NumberParameter("Saturation initiation value", 4, 400);

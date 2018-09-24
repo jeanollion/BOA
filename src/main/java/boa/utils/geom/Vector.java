@@ -27,7 +27,7 @@ import net.imglib2.RealLocalizable;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Vector extends Point<Vector>  {
     public Vector(float... coords) {

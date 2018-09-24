@@ -25,7 +25,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MeanAtBorder extends IntensityMeasurement implements ToolTip {
     @Override

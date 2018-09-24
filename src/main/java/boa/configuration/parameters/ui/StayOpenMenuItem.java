@@ -26,7 +26,7 @@ import javax.swing.event.ChangeListener;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class StayOpenMenuItem extends JMenuItem {
     private static MenuElement[] path;

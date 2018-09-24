@@ -26,7 +26,7 @@ import boa.image.ImageInteger;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface PostFilter extends ImageProcessingPlugin {
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation);

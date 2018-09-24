@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface TrackPreFilter  extends Plugin {
     public void filter(int structureIdx, TreeMap<StructureObject, Image> preFilteredImages, boolean canModifyImages);

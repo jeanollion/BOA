@@ -29,7 +29,7 @@ import javax.swing.ListCellRenderer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SelectionRenderer extends JLabel implements ListCellRenderer<Selection> {
  

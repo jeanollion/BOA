@@ -162,7 +162,7 @@ import javax.swing.JSeparator;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GUI extends javax.swing.JFrame implements ImageObjectListener, ProgressLogger {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);

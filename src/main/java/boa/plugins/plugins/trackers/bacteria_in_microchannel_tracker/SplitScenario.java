@@ -35,7 +35,7 @@ import boa.utils.Pair;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SplitScenario extends CorrectionScenario {
         Region o;

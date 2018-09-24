@@ -32,7 +32,7 @@ import org.junit.Test;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageManipulationTest {
     /**

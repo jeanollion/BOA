@@ -36,7 +36,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RemoveEndofChannelBacteria implements PostFilter, ToolTip {
     BoundedNumberParameter contactProportion = new BoundedNumberParameter("Contact Proportion", 3, 0.25, 0, 1).setToolTipText("contact = number of pixels in contact with open end of channel / width of cell. If contact > this value, cell will be erased. If value = 0 -> this condition won't be tested");

@@ -35,7 +35,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface MasterDAO {
     public static final Logger logger = LoggerFactory.getLogger(MasterDAO.class);

@@ -82,7 +82,7 @@ import java.util.stream.DoubleStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
     public static boolean verbose = false;

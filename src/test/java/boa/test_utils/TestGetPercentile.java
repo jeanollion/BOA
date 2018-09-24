@@ -30,7 +30,7 @@ import static boa.utils.Utils.toStringArray;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestGetPercentile {
     public static void main(String[] args) {

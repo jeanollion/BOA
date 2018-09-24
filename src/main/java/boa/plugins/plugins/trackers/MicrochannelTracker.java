@@ -80,7 +80,7 @@ import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MicrochannelTracker implements TrackerSegmenter, ToolTip {
     protected PluginParameter<MicrochannelSegmenter> segmenter = new PluginParameter<>("Segmentation algorithm", MicrochannelSegmenter.class, new MicrochannelPhase2D(), false);

@@ -31,7 +31,7 @@ import javax.swing.text.AbstractDocument;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TextParameter extends ParameterImpl<TextParameter> {
     TextEditorUI ui;

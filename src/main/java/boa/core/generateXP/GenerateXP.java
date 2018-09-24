@@ -110,7 +110,7 @@ import boa.plugins.plugins.transformations.TypeConverter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GenerateXP {
     public static final Logger logger = LoggerFactory.getLogger(GenerateXP.class);

@@ -60,7 +60,7 @@ import boa.plugins.ProcessingPipelineWithTracking;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestTracker {
     static boolean displayOnFilteredImages = true;

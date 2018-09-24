@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class TestUtils {
     public static final Logger logger = LoggerFactory.getLogger(ProcessingTest.class);

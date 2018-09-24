@@ -25,7 +25,7 @@ import boa.utils.ArrayUtil;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestArrayUtil {
     

@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class AutoRotationXY implements MultichannelTransformation, ConfigurableTransformation, ToolTip {
     NumberParameter minAngle = new BoundedNumberParameter("Minimal Angle for search", 2, -10, -90, 90);

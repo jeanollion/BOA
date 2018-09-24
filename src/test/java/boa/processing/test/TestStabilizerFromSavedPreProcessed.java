@@ -32,7 +32,7 @@ import boa.plugins.plugins.transformations.ImageStabilizerXY;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestStabilizerFromSavedPreProcessed {
     public static void main(String[] args) {

@@ -35,7 +35,7 @@ import java.util.function.Predicate;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <P>
  */
 

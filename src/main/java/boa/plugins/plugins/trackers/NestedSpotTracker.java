@@ -86,7 +86,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPlugin, ToolTip {
     private static final String CONF_HINT = "<br />Configuration hint: to display distance between two spots, select the two spots on test images and choose <em>Diplay Spine</em> from right-click menu. Distance will be logged in the console and projection of source spot to destination bacteria displayed";

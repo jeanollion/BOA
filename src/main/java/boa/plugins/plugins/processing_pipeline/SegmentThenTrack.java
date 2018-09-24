@@ -30,7 +30,7 @@ import boa.plugins.Tracker;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SegmentThenTrack extends SegmentationAndTrackingProcessingPipeline<SegmentThenTrack> implements ToolTip {
     protected PluginParameter<Tracker> tracker = new PluginParameter<>("Tracker", Tracker.class, true);

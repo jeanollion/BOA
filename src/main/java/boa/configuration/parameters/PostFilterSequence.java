@@ -27,7 +27,7 @@ import boa.plugins.PostFilter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class PostFilterSequence extends PluginParameterList<PostFilter, PostFilterSequence> {
     Boolean configured = false;

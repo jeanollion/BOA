@@ -38,7 +38,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ObjectInclusionCount implements Measurement, ToolTip {
     protected ObjectClassParameter structureContainer = new ObjectClassParameter("Containing Objects", -1, false, false).setToolTipText("Objects to perform measurement on");

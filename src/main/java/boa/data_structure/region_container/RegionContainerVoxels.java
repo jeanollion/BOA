@@ -36,7 +36,7 @@ import java.util.Set;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RegionContainerVoxels extends RegionContainer {
 

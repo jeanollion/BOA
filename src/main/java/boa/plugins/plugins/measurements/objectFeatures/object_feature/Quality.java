@@ -28,7 +28,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Quality implements ObjectFeature, ToolTip {
     @Override

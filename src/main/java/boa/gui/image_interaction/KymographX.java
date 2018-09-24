@@ -48,7 +48,7 @@ import java.util.stream.IntStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class KymographX extends Kymograph {
     int maxParentSizeY, maxParentSizeZ;

@@ -35,7 +35,7 @@ import boa.plugins.plugins.trackers.ObjectIdxTracker;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ConfigurationTest {
     Experiment xp;

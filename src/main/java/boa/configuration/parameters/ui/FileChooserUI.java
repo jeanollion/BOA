@@ -26,7 +26,7 @@ import javax.swing.JFileChooser;
 import static boa.configuration.parameters.Parameter.logger;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FileChooserUI implements ParameterUI {
     FileChooser fcParam;

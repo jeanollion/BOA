@@ -46,7 +46,7 @@ import java.util.stream.Stream;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class StructureObjectUtils {
     public static void enshureContinuousTrack(List<StructureObject> track) {

@@ -47,7 +47,7 @@ import boa.image.processing.watershed.WatershedTransform;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class WatershedObjectSplitter implements ObjectSplitter {
     //BoundedNumberParameter numberOfObjects = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 2);

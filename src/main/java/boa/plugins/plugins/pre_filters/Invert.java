@@ -26,7 +26,7 @@ import boa.plugins.PreFilter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Invert implements PreFilter {
 

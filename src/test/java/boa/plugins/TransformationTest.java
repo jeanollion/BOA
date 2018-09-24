@@ -26,7 +26,7 @@ import boa.image.processing.ImageTransformation;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class TransformationTest {
     @Test

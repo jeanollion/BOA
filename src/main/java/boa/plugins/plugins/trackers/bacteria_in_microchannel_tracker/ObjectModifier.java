@@ -30,7 +30,7 @@ import java.util.Set;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class ObjectModifier extends CorrectionScenario {
     protected final Map<Region, Split> splitMap = new HashMap<>();

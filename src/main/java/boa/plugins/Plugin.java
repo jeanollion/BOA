@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Plugin {
     public final static Logger logger = LoggerFactory.getLogger(Plugin.class);

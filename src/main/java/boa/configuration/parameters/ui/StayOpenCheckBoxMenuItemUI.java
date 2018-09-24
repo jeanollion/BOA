@@ -25,7 +25,7 @@ import javax.swing.plaf.basic.BasicCheckBoxMenuItemUI;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class StayOpenCheckBoxMenuItemUI  extends BasicCheckBoxMenuItemUI {
     @Override

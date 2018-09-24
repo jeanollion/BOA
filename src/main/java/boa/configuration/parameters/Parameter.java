@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public interface Parameter<P extends Parameter<P>> extends MutableTreeNode, JSONSerializable, ToolTip {

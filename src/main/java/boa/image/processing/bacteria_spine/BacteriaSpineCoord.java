@@ -23,7 +23,7 @@ import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BacteriaSpineCoord {
     public final double[] coords = new double[4];

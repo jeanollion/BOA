@@ -34,7 +34,7 @@ import boa.plugins.plugins.measurements.objectFeatures.object_feature.SimpleObje
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class IntensityMeasurement extends SimpleObjectFeature implements ObjectFeatureWithCore {
     protected IntensityMeasurementCore core;

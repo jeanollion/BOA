@@ -25,7 +25,7 @@ import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClo
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class CorrectionScenario {
         double cost=0;

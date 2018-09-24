@@ -24,7 +24,7 @@ import boa.image.MutableBoundingBox;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Std extends IntensityMeasurement {
 

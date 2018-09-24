@@ -43,7 +43,7 @@ import static boa.utils.Utils.removeIf;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GenerateTrackImageOverlay {
     public static void main(String[] args) {

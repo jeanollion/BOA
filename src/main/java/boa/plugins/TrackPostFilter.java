@@ -24,7 +24,7 @@ import boa.utils.Pair;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface TrackPostFilter extends Plugin {
     public void filter(int structureIdx, List<StructureObject> parentTrack);

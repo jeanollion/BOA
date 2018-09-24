@@ -33,7 +33,7 @@ import org.scijava.module.ModuleItem;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public abstract class ParameterImpl<P extends ParameterImpl<P>> implements Parameter<P> {

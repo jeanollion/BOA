@@ -24,7 +24,7 @@ import java.util.Comparator;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class InterfaceRegionImpl<T extends Interface<Region, T>> extends InterfaceImpl<Region, T> implements InterfaceRegion<T> {
 

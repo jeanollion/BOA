@@ -27,7 +27,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ManualSegmenter extends ImageProcessingPlugin {
     public void setManualSegmentationVerboseMode(boolean verbose);

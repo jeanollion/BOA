@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SplitAndMergeEdge extends SplitAndMerge<SplitAndMergeEdge.Interface> {
     final Image edge;

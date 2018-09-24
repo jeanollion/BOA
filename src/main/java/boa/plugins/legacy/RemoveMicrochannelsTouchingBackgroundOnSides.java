@@ -43,7 +43,7 @@ import boa.plugins.TrackPostFilter;
 /**
  * When a rotation occurs > 0 filled background can be added, if background on the image is not centered, this can lead to arfifacts. 
  * This transformation is intended to remove microchannel track if they contain 0-filled background.
- * @author jollion
+ * @author Jean Ollion
  */
 public class RemoveMicrochannelsTouchingBackgroundOnSides implements TrackPostFilter {
     ObjectClassParameter backgroundStructure = new ObjectClassParameter("Background");

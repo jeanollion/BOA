@@ -74,7 +74,7 @@ import java.util.Set;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SaveAndRetriveSegmentationData {
     public static void main(String[] args) {

@@ -39,7 +39,7 @@ import boa.plugins.object_feature.ObjectFeatureWithCore;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ObjectFeatures implements Measurement, ToolTip {
     ObjectClassParameter structure = new ObjectClassParameter("Object class", -1, false, false).setToolTipText("Class of objects to apply feature on");

@@ -47,7 +47,7 @@ import boa.plugins.plugins.track_post_filter.FitRegionsToEdges;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {

@@ -52,7 +52,7 @@ import java.util.TreeMap;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SubtractBackgroundMicrochannels implements TrackPreFilter, ToolTip{
     public static boolean debug = false;

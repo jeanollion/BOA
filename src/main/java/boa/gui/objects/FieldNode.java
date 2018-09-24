@@ -27,7 +27,7 @@ import javax.swing.tree.TreeNode;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class FieldNode implements TreeNode, UIContainer {
     ExperimentNode parent;

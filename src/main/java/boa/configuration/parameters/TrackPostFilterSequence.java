@@ -29,7 +29,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter, TrackPostFilterSequence> {
     

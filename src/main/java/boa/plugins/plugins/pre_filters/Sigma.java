@@ -36,7 +36,7 @@ import static boa.image.processing.Filters.applyFilter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Sigma implements PreFilter, Filter {
     ScaleXYZParameter radius = new ScaleXYZParameter("Radius", 3, 1, true).setToolTipText("Radius in pixel");

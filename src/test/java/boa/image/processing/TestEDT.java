@@ -28,7 +28,7 @@ import org.junit.Test;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestEDT {
     /*public static void main(String[] args) {

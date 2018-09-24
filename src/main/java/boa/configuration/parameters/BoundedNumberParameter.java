@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <P>
  */
 public class BoundedNumberParameter extends NumberParameter<BoundedNumberParameter> {

@@ -71,7 +71,7 @@ import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SplitAndMergeBacteriaShape extends SplitAndMerge<InterfaceLocalShape> {
     protected final HashMap<Region, KDTree<Double>> curvatureMap = new HashMap<>();

@@ -25,7 +25,7 @@ import boa.image.SimpleBoundingBox;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageIOCoordinates {
     int serie, channel, timePoint;

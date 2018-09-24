@@ -24,7 +24,7 @@ import boa.image.Image;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Segmenter extends ImageProcessingPlugin {
     /**

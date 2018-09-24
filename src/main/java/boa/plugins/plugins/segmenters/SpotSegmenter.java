@@ -84,7 +84,7 @@ import boa.plugins.TrackConfigurable;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SpotSegmenter implements Segmenter, TrackConfigurable<SpotSegmenter>, ManualSegmenter, ObjectSplitter, TestableProcessingPlugin, ToolTip {
     public static boolean debug = false;

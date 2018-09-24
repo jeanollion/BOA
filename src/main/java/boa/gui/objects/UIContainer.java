@@ -20,7 +20,7 @@ package boa.gui.objects;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public interface UIContainer {
     public Object[] getDisplayComponent(boolean multipleSelection);

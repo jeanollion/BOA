@@ -52,7 +52,7 @@ import net.imglib2.type.numeric.integer.UnsignedByteType;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GaussianFit {
     public static Map<Region, double[]> run(Image image, List<Region> peaks, double typicalSigma, double sigmaLow, double sigmaUp, double precision) {

@@ -21,7 +21,7 @@ package boa.image;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T>
  */
 public interface Offset<T> {

@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <I>
  */
 public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& RegionCluster.InterfaceVoxels<I>

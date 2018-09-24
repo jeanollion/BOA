@@ -28,7 +28,7 @@ import org.json.simple.JSONObject;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public class RegionContainerBlankMask extends RegionContainer {

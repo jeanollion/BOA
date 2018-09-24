@@ -43,7 +43,7 @@ import boa.plugins.plugins.segmenters.MicrochannelFluo2D;
 import boa.plugins.plugins.transformations.CropMicrochannelsFluo2D;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestProcessMicrochannels {
     public static void main(String[] args) {

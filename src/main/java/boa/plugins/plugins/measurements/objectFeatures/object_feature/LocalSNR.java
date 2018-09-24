@@ -46,7 +46,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class LocalSNR extends SNR {
     protected BoundedNumberParameter localBackgroundRadius = new BoundedNumberParameter("Local background radius", 1, 8, 0, null).setToolTipText("Defines the local background area, by dilating the foreground region with this radius and removing the foreground region from the dilated region");

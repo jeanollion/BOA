@@ -35,7 +35,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MicrochannelPhaseArtifacts implements PostFilter, ToolTip {
     BoundedNumberParameter XThickness = new BoundedNumberParameter("X-thickness", 1, 7, 0, null).setToolTipText("Thickness along X-axis should be under this threshold to erase object");

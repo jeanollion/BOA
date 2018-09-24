@@ -34,7 +34,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BinaryOpen implements PostFilter, MultiThreaded, ToolTip {
     ScaleXYZParameter scale = new ScaleXYZParameter("Opening Radius", 3, 1, true);

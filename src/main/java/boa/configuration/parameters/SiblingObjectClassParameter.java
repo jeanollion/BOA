@@ -22,7 +22,7 @@ import boa.configuration.experiment.Structure;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SiblingObjectClassParameter extends ObjectClassParameterAbstract<SiblingObjectClassParameter> {
     int parentStructureIdx=-2;

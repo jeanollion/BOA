@@ -20,7 +20,7 @@ package boa.configuration.parameters.ui;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ParameterUI {
     public Object[] getDisplayComponent();

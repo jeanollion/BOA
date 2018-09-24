@@ -26,7 +26,7 @@ import ij.ImagePlus;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImagescienceWrapper {
     public static imagescience.image.Image getImagescience(Image image) {

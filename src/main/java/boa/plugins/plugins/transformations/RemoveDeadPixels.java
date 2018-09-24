@@ -50,7 +50,7 @@ import java.util.stream.IntStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RemoveDeadPixels implements ConfigurableTransformation, ToolTip {
     NumberParameter threshold = new BoundedNumberParameter("Local Threshold", 5, 30, 0, null).setToolTipText("Difference between pixels and median of the direct neighbors is computed. If difference is higer than this threshold pixel is considered as dead and will be replaced by the median value");

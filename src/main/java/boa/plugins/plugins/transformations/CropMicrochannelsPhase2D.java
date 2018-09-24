@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class CropMicrochannelsPhase2D extends CropMicroChannels implements ToolTip {
     private final static Logger logger = LoggerFactory.getLogger(CropMicrochannelsPhase2D.class);

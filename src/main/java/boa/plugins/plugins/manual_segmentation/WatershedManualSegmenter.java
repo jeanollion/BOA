@@ -40,7 +40,7 @@ import boa.plugins.SimpleThresholder;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class WatershedManualSegmenter implements ManualSegmenter {
     BooleanParameter decreasingIntensities = new BooleanParameter("Decreasing intensities", true);

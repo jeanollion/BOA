@@ -34,7 +34,7 @@ import boa.plugins.plugins.segmenters.SimpleThresholder;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MeasureChromaticShift {
     public static void main(String[] args) {

@@ -38,7 +38,7 @@ import boa.ui.logger.ProgressLogger;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestThreadExecutorFrameWork {
     static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());

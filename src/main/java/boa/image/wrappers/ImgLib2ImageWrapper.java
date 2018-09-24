@@ -37,7 +37,7 @@ import net.imglib2.type.numeric.RealType;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImgLib2ImageWrapper {
     

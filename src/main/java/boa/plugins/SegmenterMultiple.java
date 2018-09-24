@@ -26,7 +26,7 @@ import java.util.TreeMap;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface SegmenterMultiple extends Segmenter {
     /**

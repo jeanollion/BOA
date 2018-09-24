@@ -22,7 +22,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ListParameter<T extends Parameter, L extends ListParameter<T, L>> extends ContainerParameter<L> { //<T extends Parameter>
     public abstract T createChildInstance();

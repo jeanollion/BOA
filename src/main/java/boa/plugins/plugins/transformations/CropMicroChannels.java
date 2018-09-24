@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class CropMicroChannels implements ConfigurableTransformation, MultichannelTransformation {
     public static boolean debug = false;

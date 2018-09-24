@@ -30,7 +30,7 @@ import boa.image.processing.neighborhood.Neighborhood;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestOpen {
     public static void main(String[] args) {

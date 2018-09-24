@@ -25,7 +25,7 @@ import boa.plugins.ObjectFeature;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class SimpleObjectFeature implements ObjectFeature {
     protected StructureObject parent;

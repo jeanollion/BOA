@@ -25,7 +25,7 @@ import javax.swing.tree.TreeNode;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class ExperimentNode implements TreeNode, UIContainer {
     protected final StructureObjectTreeGenerator generator;

@@ -36,7 +36,7 @@ import boa.plugins.ProcessingPipeline;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestParameterSensitivity {
     public static void main(String[] args) {

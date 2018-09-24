@@ -42,7 +42,7 @@ import boa.utils.DoubleStatistics;
  * This algorithm shouldn’t converge to a value, so the number of iterations must be provided. 
  * In general, two iterations are used.
  * Variation : added final sigma for final threshold computation
- * @author jollion
+ * @author Jean Ollion
  */
 public class BackgroundThresholder implements SimpleThresholder, ThresholderHisto, MultiThreaded {
     public static boolean debug = false;

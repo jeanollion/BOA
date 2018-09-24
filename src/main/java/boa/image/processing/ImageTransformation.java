@@ -34,7 +34,7 @@ import imagescience.transform.Embed;
 import imagescience.transform.Mirror;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageTransformation {
     public static enum MainAxis {X, Y, Z};

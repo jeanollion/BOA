@@ -24,7 +24,7 @@ import boa.plugins.ObjectSplitter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface StructureObjectTrackCorrection extends StructureObjectTracker {
     /**

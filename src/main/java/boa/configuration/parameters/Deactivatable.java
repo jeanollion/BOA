@@ -20,7 +20,7 @@ package boa.configuration.parameters;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Deactivatable {
     public boolean isActivated();

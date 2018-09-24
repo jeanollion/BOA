@@ -32,7 +32,7 @@ import net.imglib2.RealLocalizable;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T>
  */
 public class Point<T extends Point> implements Offset<T>, RealLocalizable, JSONSerializable, Localizable{

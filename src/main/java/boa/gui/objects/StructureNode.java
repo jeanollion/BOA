@@ -42,7 +42,7 @@ import javax.swing.tree.TreePath;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class StructureNode implements TreeNode, UIContainer {
     StructureNodeContainer parent; // can be either TimePointNode or ObjectNode

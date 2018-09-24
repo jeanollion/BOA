@@ -34,7 +34,7 @@ import javax.swing.tree.TreeNode;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class TrackTreeCellRenderer extends DefaultTreeCellRenderer {
     final TrackTreeGenerator generator;

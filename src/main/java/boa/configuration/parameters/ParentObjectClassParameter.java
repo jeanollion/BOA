@@ -27,7 +27,7 @@ import java.util.function.ToIntFunction;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ParentObjectClassParameter extends ObjectClassParameterAbstract<ParentObjectClassParameter> {
     int maxStructure;

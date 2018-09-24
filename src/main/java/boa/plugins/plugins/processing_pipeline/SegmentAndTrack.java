@@ -29,7 +29,7 @@ import boa.plugins.TrackerSegmenter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SegmentAndTrack extends SegmentationAndTrackingProcessingPipeline<SegmentAndTrack> implements ToolTip {
     int nThreads;

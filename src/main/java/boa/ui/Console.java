@@ -41,7 +41,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Console implements PlugIn {
     static final String WATCH_DIR_KEY = "watch_dir";

@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <P> segmenter type
  */
 public interface TrackConfigurable<P extends Plugin> {

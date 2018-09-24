@@ -57,7 +57,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GrowthRate implements Measurement, MultiThreaded {
     protected ObjectClassParameter structure = new ObjectClassParameter("Bacteria Structure", 1, false, false);

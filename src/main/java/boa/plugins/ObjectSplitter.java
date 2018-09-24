@@ -24,7 +24,7 @@ import boa.data_structure.StructureObject;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ObjectSplitter extends ImageProcessingPlugin {
     public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object);

@@ -32,7 +32,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class CylindricalNeighborhood extends DisplacementNeighborhood {
     double radius;

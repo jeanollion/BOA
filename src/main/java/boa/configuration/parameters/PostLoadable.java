@@ -20,7 +20,7 @@ package boa.configuration.parameters;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface PostLoadable {
     public void postLoad();

@@ -22,7 +22,7 @@ import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DistanceComputationParameters {
         public double qualityThreshold = 0;

@@ -20,7 +20,7 @@ package boa.data_structure;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Vector3D {
     int x, y, z;

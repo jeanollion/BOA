@@ -67,7 +67,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SelectionUtils {
     public static Map<String, Color> colorsImageDisplay = new HashMap<String, Color>() {{

@@ -29,7 +29,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FileProgressLogger implements ProgressLogger {
     File logFile;

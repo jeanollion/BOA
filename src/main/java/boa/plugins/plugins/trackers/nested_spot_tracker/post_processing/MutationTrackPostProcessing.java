@@ -46,7 +46,7 @@ import boa.plugins.plugins.trackers.nested_spot_tracker.SpotWithQuality;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MutationTrackPostProcessing {
     final TreeMap<StructureObject, List<StructureObject>> trackHeadTrackMap; // sorted by timePoint

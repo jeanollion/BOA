@@ -55,7 +55,7 @@ import java.util.function.Consumer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Position extends ContainerParameterImpl<Position> implements ListElementErasable {
     

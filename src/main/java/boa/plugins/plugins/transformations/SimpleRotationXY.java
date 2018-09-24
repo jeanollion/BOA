@@ -34,7 +34,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleRotationXY implements MultichannelTransformation {
     NumberParameter angle = new BoundedNumberParameter("Angle (degree)", 4, 0, -180, 180);

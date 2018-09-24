@@ -33,7 +33,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Flip implements MultichannelTransformation, ToolTip {
     

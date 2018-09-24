@@ -38,7 +38,7 @@ import javax.swing.JTree;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class TrackTreeController {
     MasterDAO db;

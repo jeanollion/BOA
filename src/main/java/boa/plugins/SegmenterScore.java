@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public interface SegmenterScore extends Segmenter {

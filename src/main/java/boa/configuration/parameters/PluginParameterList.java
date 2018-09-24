@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T>
  * @param <L>
  */

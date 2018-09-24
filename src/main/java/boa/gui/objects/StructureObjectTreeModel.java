@@ -23,7 +23,7 @@ import javax.swing.tree.TreeNode;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class StructureObjectTreeModel extends DefaultTreeModel {
 

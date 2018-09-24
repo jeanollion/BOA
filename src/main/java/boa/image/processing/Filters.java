@@ -46,7 +46,7 @@ import boa.utils.ThreadRunner;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Filters {
     public static DisplacementNeighborhood getNeighborhood(double radiusXY, ImageProperties image) {return image.sizeZ()>1 ?getNeighborhood(radiusXY, image.getScaleXY()/image.getScaleZ(), image) : getNeighborhood(radiusXY, 1, image);}

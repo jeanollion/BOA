@@ -22,7 +22,7 @@ package boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RearrangeObjectsFromNext  { //extends ObjectModifier
     /*final int idxMin, idxMax, idxNextMin, idxNextMax;

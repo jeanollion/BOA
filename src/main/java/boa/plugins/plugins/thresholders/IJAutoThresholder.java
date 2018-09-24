@@ -42,7 +42,7 @@ import net.imglib2.type.numeric.RealType;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class IJAutoThresholder implements SimpleThresholder, ThresholderHisto {
     ChoiceParameter method = new ChoiceParameter("Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);

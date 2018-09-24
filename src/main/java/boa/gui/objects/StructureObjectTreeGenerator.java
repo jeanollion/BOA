@@ -43,7 +43,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class StructureObjectTreeGenerator {
     MasterDAO db;

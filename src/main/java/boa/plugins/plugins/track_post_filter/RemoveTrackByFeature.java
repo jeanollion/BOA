@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RemoveTrackByFeature implements TrackPostFilter, ToolTip {
     PluginParameter<ObjectFeature> feature = new PluginParameter<>("Feature", ObjectFeature.class, false).setToolTipText("Feature computed on each object of the track");

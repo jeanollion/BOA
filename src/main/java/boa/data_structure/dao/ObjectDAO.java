@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ObjectDAO {
     public MasterDAO getMasterDAO();

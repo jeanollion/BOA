@@ -33,7 +33,7 @@ import javax.swing.text.AbstractDocument;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class NameEditorUI implements ParameterUI {
     Parameter p;

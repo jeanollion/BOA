@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class InputImagesImpl implements InputImages {
     InputImage[][] imageCT;

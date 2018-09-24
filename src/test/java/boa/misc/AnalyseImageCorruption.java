@@ -35,7 +35,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class AnalyseImageCorruption {
     public static void main(String[] args) {

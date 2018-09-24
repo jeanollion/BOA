@@ -30,7 +30,7 @@ import javax.swing.tree.TreePath;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ConfigurationTreeModel extends DefaultTreeModel {
     protected JTree tree;

@@ -30,7 +30,7 @@ import boa.processing.test.TestProcessMutations;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GaussianFitTestOnMutations {
     MasterDAO db;

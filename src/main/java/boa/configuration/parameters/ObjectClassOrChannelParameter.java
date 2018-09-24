@@ -25,7 +25,7 @@ import java.util.function.ToIntFunction;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T>
  */
 public abstract class ObjectClassOrChannelParameter<T extends ObjectClassOrChannelParameter<T>> extends IndexChoiceParameter<T> {

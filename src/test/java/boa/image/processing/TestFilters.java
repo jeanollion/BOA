@@ -44,7 +44,7 @@ import boa.image.processing.neighborhood.Neighborhood;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestFilters {
     public static void main(String[] args) {

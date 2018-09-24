@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public class InputImage {

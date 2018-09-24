@@ -23,7 +23,7 @@ import boa.image.ImageMask;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Autofocus extends Plugin {
     public int getBestFocusPlane(Image image, ImageMask mask);

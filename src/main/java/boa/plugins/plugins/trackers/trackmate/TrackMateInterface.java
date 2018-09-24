@@ -63,7 +63,7 @@ import boa.utils.Utils;
 import boa.utils.geom.Point;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TrackMateInterface<S extends Spot> {
     public static final org.slf4j.Logger logger = LoggerFactory.getLogger(TrackMateInterface.class);

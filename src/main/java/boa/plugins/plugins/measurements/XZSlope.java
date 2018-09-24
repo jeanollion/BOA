@@ -33,7 +33,7 @@ import boa.plugins.plugins.transformations.SelectBestFocusPlane;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class XZSlope implements Measurement, DevPlugin {
     protected ObjectClassParameter microchannel = new ObjectClassParameter("Microchannel Structure", 0, false, false);

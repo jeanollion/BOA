@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ReusableQueueWithSourceObject<T, S> {
     //public static final org.slf4j.Logger logger = LoggerFactory.getLogger(ReusableQueueWithSourceObject.class);

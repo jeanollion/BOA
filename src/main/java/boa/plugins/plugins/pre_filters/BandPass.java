@@ -36,7 +36,7 @@ import boa.image.processing.IJFFTBandPass;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BandPass implements PreFilter, Filter {
     NumberParameter min = new BoundedNumberParameter("Remove structures under size (pixels)", 1, 0, 0, null);

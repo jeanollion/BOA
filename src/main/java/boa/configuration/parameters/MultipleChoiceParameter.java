@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MultipleChoiceParameter extends ParameterImpl implements ChoosableParameterMultiple {
     int[] selectedItems;

@@ -61,7 +61,7 @@ import boa.plugins.TrackConfigurable;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MicrochannelFluo2D implements MicrochannelSegmenter, TrackConfigurable<MicrochannelFluo2D>, ToolTip, TestableProcessingPlugin {
     

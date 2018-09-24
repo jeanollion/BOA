@@ -56,7 +56,7 @@ import java.util.stream.IntStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class Kymograph extends InteractiveImage {
 

@@ -32,7 +32,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
     final protected double radius;

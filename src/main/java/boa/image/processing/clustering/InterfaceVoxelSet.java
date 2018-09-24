@@ -28,7 +28,7 @@ import boa.image.processing.clustering.RegionCluster.InterfaceVoxels;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T>
  */
 public abstract class InterfaceVoxelSet<T extends InterfaceVoxelSet<T>> extends InterfaceRegionImpl<T> implements InterfaceVoxels<T> {

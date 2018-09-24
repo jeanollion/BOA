@@ -24,7 +24,7 @@ import javax.swing.tree.TreePath;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface StructureNodeContainer extends TreeNode {
     public void loadAllChildObjects(int[] pathToChildStructureIdx, int currentIdxInPath);

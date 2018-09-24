@@ -76,7 +76,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class RegionPopulation {
 

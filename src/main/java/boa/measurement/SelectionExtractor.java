@@ -29,7 +29,7 @@ import static boa.measurement.MeasurementExtractor.separator;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SelectionExtractor {
     final static String separator =";";

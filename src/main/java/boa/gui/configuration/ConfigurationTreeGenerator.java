@@ -67,7 +67,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ConfigurationTreeGenerator {
     protected Experiment rootParameter;

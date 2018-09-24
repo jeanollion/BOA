@@ -42,7 +42,7 @@ import boa.plugins.TrackConfigurable;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestProcessBacteria {
     static int bacteriaStructureIdx = 3;

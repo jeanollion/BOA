@@ -45,7 +45,7 @@ import boa.ui.logger.ProgressLogger;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Daemon {
     ProgressLogger ui;

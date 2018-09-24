@@ -44,7 +44,7 @@ import java.util.stream.IntStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class IJSubtractBackground implements PreFilter, Filter {
     BooleanParameter method = new BooleanParameter("Method", "Rolling Ball", "Sliding Paraboloid", true);

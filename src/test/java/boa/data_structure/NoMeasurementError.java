@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class NoMeasurementError {
     public static void main(String[] args) {

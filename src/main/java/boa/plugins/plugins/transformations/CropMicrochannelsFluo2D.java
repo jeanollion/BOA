@@ -70,7 +70,7 @@ import java.util.stream.IntStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class CropMicrochannelsFluo2D extends CropMicroChannels implements ToolTip {
     protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 410, 0, null);

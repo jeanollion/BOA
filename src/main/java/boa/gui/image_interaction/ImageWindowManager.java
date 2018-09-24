@@ -85,7 +85,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <I> image class
  * @param <U> object ROI class
  * @param <V> track ROI class

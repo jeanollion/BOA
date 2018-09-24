@@ -20,7 +20,7 @@ package boa.image;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ThresholdMask extends SimpleImageProperties<ThresholdMask> implements ImageMask<ThresholdMask> {
     final InsideMaskFunction insideMask;

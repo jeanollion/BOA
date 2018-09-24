@@ -25,7 +25,7 @@ import boa.plugins.PluginFactory;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestManualSegmentation {
     public static void main(String[] args) {

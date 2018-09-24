@@ -46,7 +46,7 @@ import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.Bact
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RearrangeObjectsFromPrev extends ObjectModifier {
     protected List<RearrangeAssignment> assignements;

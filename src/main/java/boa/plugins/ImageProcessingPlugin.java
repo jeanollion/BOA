@@ -20,7 +20,7 @@ package boa.plugins;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public interface ImageProcessingPlugin extends Plugin {
     

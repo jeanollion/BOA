@@ -32,7 +32,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleTranslation implements MultichannelTransformation {
     NumberParameter X = new NumberParameter("dX", 3, 0);

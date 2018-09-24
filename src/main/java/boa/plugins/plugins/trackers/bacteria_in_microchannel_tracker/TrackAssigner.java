@@ -38,7 +38,7 @@ import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.Bact
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TrackAssigner {
     public final static Logger logger = LoggerFactory.getLogger(TrackAssigner.class);

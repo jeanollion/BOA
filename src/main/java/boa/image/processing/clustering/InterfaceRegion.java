@@ -24,7 +24,7 @@ import java.util.Collection;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface InterfaceRegion<T extends Interface<Region, T>> extends Interface<Region, T> {
     /**

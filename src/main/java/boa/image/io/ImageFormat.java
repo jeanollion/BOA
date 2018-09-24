@@ -20,7 +20,7 @@ package boa.image.io;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public enum ImageFormat {
         PNG(".png", true, false, false),

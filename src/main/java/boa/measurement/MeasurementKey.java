@@ -20,7 +20,7 @@ package boa.measurement;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class MeasurementKey {
     String key;

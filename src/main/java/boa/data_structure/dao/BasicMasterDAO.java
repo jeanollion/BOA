@@ -23,7 +23,7 @@ import java.util.HashMap;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BasicMasterDAO implements MasterDAO {
     final HashMap<String, BasicObjectDAO> DAOs;

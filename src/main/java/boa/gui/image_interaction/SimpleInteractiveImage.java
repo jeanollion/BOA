@@ -41,7 +41,7 @@ import java.util.stream.IntStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleInteractiveImage extends InteractiveImage {
 

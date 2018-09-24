@@ -33,7 +33,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ThicknessAxis implements GeometricalFeature, ToolTip {
     ChoiceParameter axis = new ChoiceParameter("Axis", Utils.toStringArray(MainAxis.values()), null, false);

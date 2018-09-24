@@ -27,7 +27,7 @@ import org.json.simple.JSONObject;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MemoryImageContainer extends MultipleImageContainer {
     Image[][] imageCT;

@@ -63,7 +63,7 @@ import javax.swing.SwingUtilities;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     protected HashMap<Image, ImagePlus> displayedImages=new HashMap<>();

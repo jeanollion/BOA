@@ -31,7 +31,7 @@ import org.mapdb.Serializer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DBMapUtils {
     public static DB createFileDB(String path, boolean readOnly) {

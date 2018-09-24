@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Cropper extends Plugin {
     public MutableBoundingBox getCropBoundginBox(int channelIdx, InputImages inputImages);

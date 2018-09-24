@@ -40,7 +40,7 @@ import javax.swing.tree.TreePath;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer {
     StructureObject data;

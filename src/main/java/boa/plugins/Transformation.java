@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Transformation extends ImageProcessingPlugin {
     public Image applyTransformation(int channelIdx, int timePoint, Image image);

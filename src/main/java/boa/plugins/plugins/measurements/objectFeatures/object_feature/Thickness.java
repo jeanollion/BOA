@@ -33,7 +33,7 @@ import static boa.plugins.plugins.measurements.objectFeatures.object_feature.Siz
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Thickness implements GeometricalFeature, ToolTip {
     protected BooleanParameter scaled = new BooleanParameter("Scaled", "Unit", "Pixel", true).setToolTipText(SCALED_TT);

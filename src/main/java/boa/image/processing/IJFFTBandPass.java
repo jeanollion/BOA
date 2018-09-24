@@ -28,7 +28,7 @@ import boa.image.processing.ImageOperations;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class IJFFTBandPass {
     public static Image bandPass(Image input, double min, double max, int stripes, double stripeTolerance) {

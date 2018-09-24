@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class PointContainer2<T, U> extends PointContainer<T> {
     protected U content2;

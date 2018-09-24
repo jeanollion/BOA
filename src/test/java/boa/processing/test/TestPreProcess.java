@@ -49,7 +49,7 @@ import boa.plugins.ConfigurableTransformation;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestPreProcess {
     public static void main(String[] args) throws Exception {

@@ -47,7 +47,7 @@ import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SegmentOnly extends SegmentationProcessingPipeline<SegmentOnly> implements ToolTip {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, false);

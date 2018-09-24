@@ -29,7 +29,7 @@ import java.util.function.Function;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class IJImageWrapper {
     

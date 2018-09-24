@@ -22,7 +22,7 @@ import boa.ui.logger.ProgressLogger;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ProgressCallback {
     public void incrementTaskNumber(int subtask);

@@ -32,7 +32,7 @@ import java.util.Set;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MergeScenario extends CorrectionScenario {
         final List<Region> listO;

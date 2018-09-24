@@ -30,7 +30,7 @@ import net.imglib2.RealLocalizable;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class CircularNode<T> implements Comparable<CircularNode> {
 

@@ -20,7 +20,7 @@ package boa.utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SymetricalPair<E> extends Pair<E, E> {
 

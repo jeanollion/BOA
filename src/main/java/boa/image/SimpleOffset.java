@@ -20,7 +20,7 @@ package boa.image;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleOffset implements Offset<SimpleOffset> {
     int xMin, yMin, zMin;

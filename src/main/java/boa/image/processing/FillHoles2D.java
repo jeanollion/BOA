@@ -43,7 +43,7 @@ import boa.image.processing.clustering.RegionCluster;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FillHoles2D {
     public static boolean debug=false;

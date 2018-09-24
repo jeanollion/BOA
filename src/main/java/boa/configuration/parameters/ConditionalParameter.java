@@ -31,7 +31,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public class ConditionalParameter extends ContainerParameterImpl<ConditionalParameter> {

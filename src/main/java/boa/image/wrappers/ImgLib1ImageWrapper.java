@@ -31,7 +31,7 @@ import static boa.image.IJImageWrapper.getImagePlus;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImgLib1ImageWrapper {
     /*

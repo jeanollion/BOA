@@ -53,7 +53,7 @@ import static boa.utils.JSONUtils.serialize;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImportExportJSON {
     public static final Logger logger = LoggerFactory.getLogger(ImportExportJSON.class);

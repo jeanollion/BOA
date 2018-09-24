@@ -34,7 +34,7 @@ import boa.plugins.plugins.measurements.objectFeatures.object_feature.LocalSNR;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestSplit {
     public static void main(String[] args) {

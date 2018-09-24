@@ -66,7 +66,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class EdgeDetector implements Segmenter, ToolTip {
     public static enum THLD_METHOD {

@@ -33,7 +33,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ConsoleProgressLogger implements ProgressLogger {
     

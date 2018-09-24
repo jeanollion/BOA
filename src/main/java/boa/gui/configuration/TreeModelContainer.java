@@ -22,7 +22,7 @@ import javax.swing.tree.DefaultTreeModel;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface TreeModelContainer {
     public ConfigurationTreeModel getModel();

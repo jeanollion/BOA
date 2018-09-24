@@ -28,7 +28,7 @@ import java.util.Set;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Triplet<A, B, C> {
     public A v1;

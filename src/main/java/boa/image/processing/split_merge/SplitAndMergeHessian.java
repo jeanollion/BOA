@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SplitAndMergeHessian extends SplitAndMerge<Interface> {
     Image hessian, seedCreationMap, watershedMap;

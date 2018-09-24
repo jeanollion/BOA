@@ -69,7 +69,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Processor {
     public static final Logger logger = LoggerFactory.getLogger(Processor.class);

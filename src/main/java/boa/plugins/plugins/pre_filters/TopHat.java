@@ -45,7 +45,7 @@ import boa.image.processing.neighborhood.Neighborhood;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TopHat implements PreFilter, Filter {
 

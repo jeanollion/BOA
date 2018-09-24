@@ -19,7 +19,7 @@
 package boa.image;
 
 /**
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageMask2D extends SimpleImageProperties<ImageMask2D> implements ImageMask<ImageMask2D> {
     final ImageMask mask;

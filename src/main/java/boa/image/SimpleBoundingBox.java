@@ -23,7 +23,7 @@ import org.json.simple.JSONArray;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleBoundingBox<T extends SimpleBoundingBox<T>> implements BoundingBox<T>,  JSONSerializable {
     int xMin, xMax, yMin, yMax, zMin, zMax;

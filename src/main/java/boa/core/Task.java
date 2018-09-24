@@ -89,7 +89,7 @@ import boa.ui.logger.ProgressLogger;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Task extends SwingWorker<Integer, String> implements ProgressCallback {
         String dbName, dir;

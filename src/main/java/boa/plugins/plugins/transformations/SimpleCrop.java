@@ -34,7 +34,7 @@ import boa.plugins.Transformation;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleCrop implements MultichannelTransformation, ToolTip {
     NumberParameter xMin = new NumberParameter("X-Min", 0, 0);

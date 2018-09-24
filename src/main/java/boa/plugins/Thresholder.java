@@ -23,7 +23,7 @@ import boa.image.Image;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Thresholder extends Plugin {
     public double runThresholder(Image input, StructureObjectProcessing structureObject);

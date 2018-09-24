@@ -50,7 +50,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SNR extends IntensityMeasurement implements ToolTip {
     protected ObjectClassParameter backgroundStructure = new ObjectClassParameter("Background Structure");//.setAutoConfiguration(true);

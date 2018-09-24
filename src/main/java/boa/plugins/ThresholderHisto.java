@@ -22,7 +22,7 @@ import boa.image.Histogram;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ThresholderHisto extends Plugin {
     public double runThresholderHisto(Histogram histogram);

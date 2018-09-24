@@ -20,7 +20,7 @@ package boa.data_structure;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Voxel2D extends Voxel {
     

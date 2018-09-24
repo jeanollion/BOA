@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FileIO {
     public static final Logger logger = LoggerFactory.getLogger(FileIO.class);

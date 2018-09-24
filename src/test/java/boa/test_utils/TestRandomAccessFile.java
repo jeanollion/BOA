@@ -27,7 +27,7 @@ import boa.utils.FileIO;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestRandomAccessFile {
     public static void main(String[] args)  throws Exception {

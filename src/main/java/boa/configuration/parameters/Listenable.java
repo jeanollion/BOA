@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 /**
  * Uses consumer (and not runnable) in order to be able to transfer a listener to a duplicated object
  * the listener should be relative to the source parameter
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Listenable<P extends Parameter> {
     public void addListener(Consumer<P> listener);

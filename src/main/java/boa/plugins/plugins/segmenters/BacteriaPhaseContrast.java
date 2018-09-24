@@ -86,7 +86,7 @@ import boa.plugins.TrackConfigurable;
 
 /**
  * Bacteria segmentation within microchannels, for phas images
- * @author jollion
+ * @author Jean Ollion
  */
 public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPhaseContrast> {
     

@@ -22,7 +22,7 @@ import net.imagej.ops.OpService;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface OpWrapper {
     public void setOpService(OpService os);

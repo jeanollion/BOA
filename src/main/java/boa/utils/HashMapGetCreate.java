@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class HashMapGetCreate<K, V> extends HashMap<K, V> {
     Factory<K, V> factory;

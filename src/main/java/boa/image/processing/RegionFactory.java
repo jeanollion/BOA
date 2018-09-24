@@ -39,7 +39,7 @@ import java.util.TreeMap;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RegionFactory {
     public static Region[] getRegions(ImageInteger labelImage, boolean ensureContinuousLabels) {

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class EllipsoidalNeighborhoodCompartment extends EllipsoidalNeighborhood {
     final ImageInteger compartimentMap;

@@ -36,7 +36,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleTrackMeasurements implements Measurement, ToolTip {
     protected ObjectClassParameter structure = new ObjectClassParameter("Objects", -1, false, false);

@@ -37,7 +37,7 @@ import boa.plugins.plugins.thresholders.ConstantValue;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleThresholder implements Segmenter {
     PluginParameter<Thresholder> threshold = new PluginParameter<>("Threshold", Thresholder.class, false);

@@ -75,7 +75,7 @@ import boa.plugins.plugins.trackers.NestedSpotTracker;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GenerateMutationDynamicsXP {
     static double scaleXY = Double.NaN;

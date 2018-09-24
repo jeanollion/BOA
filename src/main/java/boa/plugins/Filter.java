@@ -20,11 +20,11 @@ package boa.plugins;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 /**
  * Transformation applied on one single image at single frame (not need to configure)
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Filter extends Transformation {
     

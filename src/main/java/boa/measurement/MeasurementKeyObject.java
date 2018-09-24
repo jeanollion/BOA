@@ -20,7 +20,7 @@ package boa.measurement;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public class MeasurementKeyObject extends MeasurementKey {

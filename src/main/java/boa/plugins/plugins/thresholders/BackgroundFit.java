@@ -45,7 +45,7 @@ import org.apache.commons.math3.fitting.GaussianCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
 
 /**
- * @author jollion
+ * @author Jean Ollion
  */
 public class BackgroundFit implements ThresholderHisto, SimpleThresholder, MultiThreaded, Thresholder, ToolTip {
     public static boolean debug;

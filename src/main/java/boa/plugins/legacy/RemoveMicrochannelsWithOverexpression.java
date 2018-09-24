@@ -45,7 +45,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RemoveMicrochannelsWithOverexpression {/*implements TrackPostFilter {
     PluginParameter<ThresholderHisto> satThld = new PluginParameter<>("Method", ThresholderHisto.class, new BackgroundFit(40), false);

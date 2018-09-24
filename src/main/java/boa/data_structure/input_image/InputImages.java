@@ -38,7 +38,7 @@ import java.util.stream.IntStream;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public interface InputImages {
     public Image getImage(int channelIdx, int timePoint);

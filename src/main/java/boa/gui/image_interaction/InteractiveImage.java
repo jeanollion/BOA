@@ -32,7 +32,7 @@ import boa.utils.Pair;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class InteractiveImage {
     final protected List<StructureObject> parents;

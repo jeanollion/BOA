@@ -40,7 +40,7 @@ import java.util.Set;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Focus implements Measurement, DevPlugin {
     ObjectClassParameter structure = new ObjectClassParameter("Structure");

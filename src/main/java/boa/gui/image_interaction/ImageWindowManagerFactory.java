@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageWindowManagerFactory {
     private static ImageWindowManager currentImageManager;

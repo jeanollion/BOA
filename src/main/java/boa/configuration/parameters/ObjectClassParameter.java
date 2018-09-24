@@ -25,7 +25,7 @@ import java.util.function.ToIntFunction;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T>
  */
 public class ObjectClassParameter extends ObjectClassParameterAbstract<ObjectClassParameter> {

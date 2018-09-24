@@ -54,7 +54,7 @@ import static boa.utils.Utils.toStringArray;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestDataStructure {
     @Rule

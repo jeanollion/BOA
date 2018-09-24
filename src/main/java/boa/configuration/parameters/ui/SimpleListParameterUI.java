@@ -39,7 +39,7 @@ import javax.swing.tree.TreeNode;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleListParameterUI implements ListParameterUI{
     ListParameter list;

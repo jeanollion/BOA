@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FileChooser extends ParameterImpl<FileChooser> implements Listenable<FileChooser> {
     protected String[] selectedFiles=new String[0];

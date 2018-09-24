@@ -25,7 +25,7 @@ import net.imglib2.RealLocalizable;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class SpotWithQuality extends Spot {
 

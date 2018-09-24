@@ -22,7 +22,7 @@ import java.util.Comparator;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <E> type of elements
  * @param <T> type of interface
  */

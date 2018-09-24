@@ -26,7 +26,7 @@ import boa.image.MutableBoundingBox;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ObjectFeature extends Plugin {
     @Override public Parameter[] getParameters();

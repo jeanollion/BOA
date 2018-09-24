@@ -67,7 +67,7 @@ import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class CompareObjects {
     public static final org.slf4j.Logger logger = LoggerFactory.getLogger(CompareObjects.class);

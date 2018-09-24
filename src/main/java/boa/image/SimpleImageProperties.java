@@ -20,7 +20,7 @@ package boa.image;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleImageProperties<T extends SimpleImageProperties<T>> extends SimpleBoundingBox<T> implements ImageProperties<T> {
     protected double scaleXY, scaleZ;

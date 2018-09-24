@@ -35,7 +35,7 @@ import java.util.ArrayList;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class OpHelpers {
     // need further version of IJ2 to work

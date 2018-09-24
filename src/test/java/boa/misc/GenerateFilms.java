@@ -53,7 +53,7 @@ import ij.ImageStack;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GenerateFilms {
     public static void main(String[] args) {

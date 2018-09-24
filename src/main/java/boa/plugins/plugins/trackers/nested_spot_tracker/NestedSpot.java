@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class NestedSpot extends SpotWithQuality {
     private final static Logger logger = LoggerFactory.getLogger(NestedSpot.class);

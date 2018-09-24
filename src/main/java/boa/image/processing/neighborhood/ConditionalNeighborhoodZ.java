@@ -26,7 +26,7 @@ import java.util.HashMap;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ConditionalNeighborhoodZ implements Neighborhood {
     HashMap<Integer, Neighborhood>  neighborhoodZ;

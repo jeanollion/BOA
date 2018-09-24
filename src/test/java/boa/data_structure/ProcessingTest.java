@@ -51,7 +51,7 @@ import boa.image.processing.ImageTransformation;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ProcessingTest {
     @Rule

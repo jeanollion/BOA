@@ -33,7 +33,7 @@ import boa.image.processing.ImageFeatures;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GenerateFigure {
     public static void main(String[] args) {

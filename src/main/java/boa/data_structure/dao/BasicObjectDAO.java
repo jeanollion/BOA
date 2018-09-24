@@ -39,7 +39,7 @@ import java.util.function.Consumer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BasicObjectDAO implements ObjectDAO {
     public static final Logger logger = LoggerFactory.getLogger(BasicObjectDAO.class);

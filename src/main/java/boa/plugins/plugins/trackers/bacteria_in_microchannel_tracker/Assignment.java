@@ -42,7 +42,7 @@ import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.Bact
  * Class holding objects at a given frame linked to objects at the next frame
  * When there are no segmentation error, an assignment has one object at previous frame and either one object at the next frame, or two in case of a division
  * In the presence of errors (ie over- or under-segmentation) previous and next object number in an assignment will vary
- * @author jollion
+ * @author Jean Ollion
  */
 public class Assignment {
         final static boolean notSameLineIsError = false;

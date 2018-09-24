@@ -28,7 +28,7 @@ import javax.swing.tree.TreeNode;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class TrackExperimentNode implements TreeNode, UIContainer {
     protected final TrackTreeGenerator generator;

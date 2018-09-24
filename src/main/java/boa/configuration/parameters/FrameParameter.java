@@ -22,7 +22,7 @@ import boa.configuration.parameters.ui.ParameterUI;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FrameParameter extends BoundedNumberParameter {
     private int frameNumber=-1;

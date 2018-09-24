@@ -26,7 +26,7 @@ import boa.data_structure.StructureObject;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DirectBytBufferMemoryLeak {
     public static void main(String[] args) {

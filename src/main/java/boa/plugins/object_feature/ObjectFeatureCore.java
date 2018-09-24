@@ -20,7 +20,7 @@ package boa.plugins.object_feature;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ObjectFeatureCore {
     

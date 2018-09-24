@@ -41,7 +41,7 @@ import org.junit.Test;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ObjectManipulationTest {
     ImageByte im, imRelabel;

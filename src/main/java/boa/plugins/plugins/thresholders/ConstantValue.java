@@ -28,7 +28,7 @@ import boa.plugins.Thresholder;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ConstantValue implements SimpleThresholder, Thresholder {
     NumberParameter value = new NumberParameter("Value:", 8, 1);

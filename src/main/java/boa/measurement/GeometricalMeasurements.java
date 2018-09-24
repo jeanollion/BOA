@@ -41,7 +41,7 @@ import java.util.stream.DoubleStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class GeometricalMeasurements {
     

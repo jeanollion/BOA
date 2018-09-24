@@ -26,7 +26,7 @@ import boa.data_structure.dao.MasterDAO;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RepairTrackInconsitencies {
     static int structureIdx = 2;

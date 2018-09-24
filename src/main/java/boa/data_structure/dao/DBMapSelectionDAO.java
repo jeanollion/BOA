@@ -37,7 +37,7 @@ import boa.utils.JSONUtils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DBMapSelectionDAO implements SelectionDAO {
     

@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ObjectFeatureWithCore {
     public void setUpOrAddCore(List<ObjectFeatureCore> availableCores, PreFilterSequence preFilters);

@@ -49,7 +49,7 @@ import javax.swing.plaf.basic.BasicCheckBoxMenuItemUI;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MultipleChoiceParameterUI implements ParameterUI {
     ChoosableParameterMultiple choice;

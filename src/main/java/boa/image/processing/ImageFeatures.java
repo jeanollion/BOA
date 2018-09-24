@@ -34,7 +34,7 @@ import boa.utils.ThreadRunner;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageFeatures {
     public static void hysteresis(Image image, double lowval, double highval) {

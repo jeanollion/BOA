@@ -20,7 +20,7 @@ package boa.data_structure;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Track {
     public int getFrame();

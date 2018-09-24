@@ -102,7 +102,7 @@ import javax.swing.Timer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Utils {
     public static <T, K, U> Map<K, U> toMapWithNullValues(Stream<T> stream, Function<? super T, ? extends K> keyMapper, Function<? super T, ? extends U> valueMapper, boolean allowNullValues) {

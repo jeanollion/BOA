@@ -62,7 +62,7 @@ import java.util.Arrays;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class AutoFlipY implements ConfigurableTransformation, MultichannelTransformation, ToolTip {
     

@@ -20,7 +20,7 @@ package boa.ui.logger;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ProgressLogger {
     public void setProgress(int i);

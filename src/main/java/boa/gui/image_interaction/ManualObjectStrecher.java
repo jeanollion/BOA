@@ -46,7 +46,7 @@ import java.util.Set;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ManualObjectStrecher {
     public static final Logger logger = LoggerFactory.getLogger(ManualObjectStrecher.class);

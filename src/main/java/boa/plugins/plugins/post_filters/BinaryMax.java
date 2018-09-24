@@ -33,7 +33,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BinaryMax implements PostFilter, MultiThreaded, ToolTip {
     ScaleXYZParameter scale = new ScaleXYZParameter("Radius", 5, 1, true);

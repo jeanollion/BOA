@@ -64,7 +64,7 @@ import java.util.logging.Level;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DBMapObjectDAO implements ObjectDAO {
     public static final Logger logger = LoggerFactory.getLogger(DBMapObjectDAO.class);

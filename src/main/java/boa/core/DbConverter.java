@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DbConverter {
     public static final Logger logger = LoggerFactory.getLogger(DbConverter.class);

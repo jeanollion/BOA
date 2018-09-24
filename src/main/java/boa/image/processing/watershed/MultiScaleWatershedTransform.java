@@ -42,7 +42,7 @@ import boa.image.processing.neighborhood.Neighborhood;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MultiScaleWatershedTransform {
     final protected TreeSet<Voxel> heap;

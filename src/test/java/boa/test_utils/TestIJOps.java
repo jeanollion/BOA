@@ -43,7 +43,7 @@ import boa.plugins.ops.OpHelpers;
 import boa.utils.Utils;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestIJOps {
     public static void main(String[] args) {

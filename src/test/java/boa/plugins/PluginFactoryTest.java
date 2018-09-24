@@ -30,7 +30,7 @@ import boa.dummy_plugins.DummySegmenter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class PluginFactoryTest {
     

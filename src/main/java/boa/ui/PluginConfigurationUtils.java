@@ -78,7 +78,7 @@ import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class PluginConfigurationUtils {
     

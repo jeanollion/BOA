@@ -27,7 +27,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class FillHoles2D implements PostFilter, ToolTip {
     

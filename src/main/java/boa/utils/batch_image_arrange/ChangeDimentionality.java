@@ -33,7 +33,7 @@ import boa.utils.HashMapGetCreate;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ChangeDimentionality {
     public static final Logger logger = LoggerFactory.getLogger(ChangeDimentionality.class);

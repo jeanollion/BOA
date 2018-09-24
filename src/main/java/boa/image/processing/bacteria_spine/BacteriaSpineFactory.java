@@ -81,7 +81,7 @@ import sc.fiji.skeletonize3D.Skeletonize3D_;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BacteriaSpineFactory {
     public static final Logger logger = LoggerFactory.getLogger(BacteriaSpineFactory.class);

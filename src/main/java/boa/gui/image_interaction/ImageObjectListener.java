@@ -25,7 +25,7 @@ import boa.utils.Pair;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ImageObjectListener {
     public void fireObjectSelected(List<StructureObject> selectedObject, boolean addToSelection);

@@ -22,7 +22,7 @@ import java.util.HashMap;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageDAOFactory {
     

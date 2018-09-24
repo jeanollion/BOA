@@ -25,7 +25,7 @@ import net.imglib2.algorithm.localization.Observation;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MLGaussianPlusConstantSimpleEstimator extends MLGaussianEstimator {
     final protected double sigma;

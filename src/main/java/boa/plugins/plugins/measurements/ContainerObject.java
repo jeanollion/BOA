@@ -37,7 +37,7 @@ import boa.plugins.ToolTip;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ContainerObject implements Measurement, ToolTip {
     protected ObjectClassParameter objects = new ObjectClassParameter("Objects", -1, false, false).setToolTipText("Objects to perform measurement on");

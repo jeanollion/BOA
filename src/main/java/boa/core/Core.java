@@ -24,7 +24,7 @@ import net.imagej.ops.OpService;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Core {
     private static ImageJ ij;

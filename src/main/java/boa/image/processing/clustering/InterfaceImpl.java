@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public abstract class InterfaceImpl<E, T extends Interface<E, T>> implements Interface<E, T> {
         protected E e1, e2;

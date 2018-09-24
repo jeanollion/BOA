@@ -35,7 +35,7 @@ import javax.swing.event.DocumentListener;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class NumberParameterUI implements ParameterUI {
 

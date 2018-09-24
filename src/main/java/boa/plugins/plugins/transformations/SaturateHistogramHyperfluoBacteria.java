@@ -38,7 +38,7 @@ import java.util.Arrays;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SaturateHistogramHyperfluoBacteria implements ConfigurableTransformation, ToolTip {
     NumberParameter maxSignalProportion = new BoundedNumberParameter("Maximum Saturated Signal Amount Proportion", 5, 0.02, 0, 1).setToolTipText("Condition on amount of signal for detection of hyperfluo. bacteria: <br />Total amount of foreground signal / amount of Hyperfluo signal &lt; this threshold"); 

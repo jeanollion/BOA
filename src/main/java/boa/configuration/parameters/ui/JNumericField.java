@@ -28,7 +28,7 @@ import javax.swing.text.*;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class JNumericField extends JTextField {
     private static final long serialVersionUID = 1L;

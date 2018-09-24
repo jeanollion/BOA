@@ -22,7 +22,7 @@ import boa.configuration.parameters.Parameter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ToolTip{
     /**

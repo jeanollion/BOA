@@ -31,7 +31,7 @@ import boa.utils.HashMapGetCreate;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class PythonGateway {
     public static final Logger logger = LoggerFactory.getLogger(PythonGateway.class);

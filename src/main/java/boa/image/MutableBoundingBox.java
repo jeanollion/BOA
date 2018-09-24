@@ -22,7 +22,7 @@ import boa.data_structure.Voxel;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public class MutableBoundingBox extends SimpleBoundingBox<MutableBoundingBox>  {

@@ -24,7 +24,7 @@ import java.util.ArrayList;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface TrackCorrector extends Plugin {
     /**

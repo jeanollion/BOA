@@ -34,7 +34,7 @@ import boa.utils.ThreadRunner;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestOpenTiles {
     public static void main(String[] args) {

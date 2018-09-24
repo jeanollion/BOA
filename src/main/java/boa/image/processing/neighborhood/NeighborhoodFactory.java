@@ -20,7 +20,7 @@ package boa.image.processing.neighborhood;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class NeighborhoodFactory {
     

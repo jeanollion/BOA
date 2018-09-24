@@ -25,7 +25,7 @@ import java.util.function.Consumer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ArrayNumberParameter extends ListParameterImpl<BoundedNumberParameter, ArrayNumberParameter> {
     boolean sorted;

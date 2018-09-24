@@ -24,7 +24,7 @@ import javax.swing.tree.TreeNode;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface TrackNodeInterface extends MutableTreeNode {
     public List<TrackNode> getChildren();

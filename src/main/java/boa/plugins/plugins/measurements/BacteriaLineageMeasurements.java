@@ -45,7 +45,7 @@ import boa.utils.Pair;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BacteriaLineageMeasurements implements Measurement, ToolTip {
     protected ObjectClassParameter structure = new ObjectClassParameter("Bacteria Structure", 1, false, false);

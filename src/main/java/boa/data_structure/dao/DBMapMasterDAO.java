@@ -47,7 +47,7 @@ import java.util.Set;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DBMapMasterDAO implements MasterDAO {
     public static final Logger logger = LoggerFactory.getLogger(DBMapMasterDAO.class);

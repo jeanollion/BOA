@@ -26,7 +26,7 @@ import java.util.function.Function;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MultiProgressLogger  implements ProgressLogger {
     List<ProgressLogger> uis = new ArrayList<>();

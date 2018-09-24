@@ -37,7 +37,7 @@ import boa.utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TaskRunner {
     public static final Logger logger = LoggerFactory.getLogger(TaskRunner.class);

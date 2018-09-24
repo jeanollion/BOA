@@ -34,7 +34,7 @@ import boa.utils.ArrayUtil;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ConicalNeighborhood extends DisplacementNeighborhood {
     double radius;

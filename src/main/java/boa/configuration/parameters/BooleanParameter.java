@@ -21,7 +21,7 @@ package boa.configuration.parameters;
 
 /**
  * ChoiceParameter with two elements, 1st = true, 2nd = false
- * @author jollion
+ * @author Jean Ollion
  */
 public class BooleanParameter extends AbstractChoiceParameter<BooleanParameter> {
     

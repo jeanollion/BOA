@@ -30,7 +30,7 @@ import boa.dummy_plugins.DummySegmenter;
 
 /**
  *
- * @author nasique
+ * @author Jean Ollion
  */
 public class DummySegmenterTest {
     @Test

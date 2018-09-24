@@ -88,7 +88,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter, ToolTip {
     public final static Logger logger = LoggerFactory.getLogger(BacteriaClosedMicrochannelTrackerLocalCorrections.class);

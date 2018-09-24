@@ -43,7 +43,7 @@ import boa.plugins.plugins.transformations.CropMicrochannelsPhase2D;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestPreProcessPhase {
     public static void main(String[] args) throws Exception {

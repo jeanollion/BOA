@@ -26,7 +26,7 @@ import boa.plugins.Thresholder;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DummyThresholder implements Thresholder {
 

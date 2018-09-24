@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class MultipleException extends RuntimeException {
     final private List<Pair<String, Throwable>> exceptions; // localized execption: string = internal source of exception (position, structure object etc...)

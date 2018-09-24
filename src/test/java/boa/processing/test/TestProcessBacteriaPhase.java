@@ -55,7 +55,7 @@ import boa.plugins.TrackConfigurable.TrackConfigurer;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestProcessBacteriaPhase {
     static double thld = Double.NaN;

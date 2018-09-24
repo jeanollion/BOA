@@ -37,7 +37,7 @@ import java.util.stream.DoubleStream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class IntensityMeasurementCore implements ObjectFeatureCore {
     Image intensityMap, transformedMap;

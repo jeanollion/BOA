@@ -30,7 +30,7 @@ import boa.ui.logger.ProgressLogger;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class DefaultWorker extends SwingWorker<Integer, String>{
     protected final WorkerTask task;

@@ -39,7 +39,7 @@ import boa.plugins.plugins.thresholders.IJAutoThresholder;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RemoveSaturatedMicrochannels implements TrackPostFilter, ToolTip {
     @Override

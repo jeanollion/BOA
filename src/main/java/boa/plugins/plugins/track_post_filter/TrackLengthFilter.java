@@ -36,7 +36,7 @@ import java.util.function.BiPredicate;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TrackLengthFilter implements TrackPostFilter, ToolTip {
     

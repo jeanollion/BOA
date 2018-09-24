@@ -41,7 +41,7 @@ import java.util.function.Function;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class IJVirtualStack extends VirtualStack {
     BiFunction<Integer, Integer, Image> imageOpenerCT;

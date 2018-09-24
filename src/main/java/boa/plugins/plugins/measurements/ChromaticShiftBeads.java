@@ -33,7 +33,7 @@ import boa.utils.geom.Point;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ChromaticShiftBeads implements Measurement, DevPlugin{
     protected ObjectClassParameter structure = new ObjectClassParameter("Structure 1", 0, false, false);

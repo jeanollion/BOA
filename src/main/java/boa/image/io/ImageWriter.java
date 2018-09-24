@@ -50,7 +50,7 @@ import ome.units.quantity.Length;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class ImageWriter {
     public static ImageFormat defExtension = ImageFormat.OMETIF;

@@ -25,7 +25,7 @@ import boa.utils.JSONSerializable;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public abstract class MultipleImageContainer implements JSONSerializable{

@@ -33,7 +33,7 @@ import boa.plugins.PreFilter;
 import boa.image.processing.Filters;
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class Median implements PreFilter, Filter {
     ScaleXYZParameter radius = new ScaleXYZParameter("Radius", 2, 1, true).setToolTipText("Radius in pixel");

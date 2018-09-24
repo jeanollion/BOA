@@ -24,7 +24,7 @@ import java.util.Map;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class InteractiveImageKey {
     public final boolean timeImage;

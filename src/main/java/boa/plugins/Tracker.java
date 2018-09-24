@@ -25,7 +25,7 @@ import java.util.List;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface Tracker extends ImageProcessingPlugin {
     public void track(int structureIdx, List<StructureObject> parentTrack);

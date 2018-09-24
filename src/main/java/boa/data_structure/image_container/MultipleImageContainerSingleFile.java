@@ -32,7 +32,7 @@ import boa.utils.JSONUtils;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 
 public class MultipleImageContainerSingleFile extends MultipleImageContainer {

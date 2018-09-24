@@ -29,7 +29,7 @@ import java.io.FilenameFilter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class RearrangeFilms {
     public static void main(String[] args) {

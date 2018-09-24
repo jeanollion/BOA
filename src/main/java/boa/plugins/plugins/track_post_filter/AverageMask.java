@@ -42,7 +42,7 @@ import boa.plugins.TrackPostFilter;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class AverageMask implements TrackPostFilter, DevPlugin{
     public static boolean debug = false;

@@ -20,7 +20,7 @@ package boa.configuration.parameters.ui;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public interface ArmableUI extends ParameterUI {
     public void refreshArming();

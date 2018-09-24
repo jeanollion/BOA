@@ -46,7 +46,7 @@ import java.util.stream.Stream;
 
 /**
  * Split & Merge Class with interface value function based on value in whole region
- * @author jollion
+ * @author Jean Ollion
  */
 public class SplitAndMergeRegionCriterion extends SplitAndMerge<SplitAndMergeRegionCriterion.Interface> {
     final Image wsMap;

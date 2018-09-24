@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T>
  */
 public class PointContainer<T> extends Point<Point> {

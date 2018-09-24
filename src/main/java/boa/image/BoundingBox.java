@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  * @param <T>
  */
 public interface BoundingBox<T> extends Offset<T> {

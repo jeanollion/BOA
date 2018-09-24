@@ -40,7 +40,7 @@ import boa.plugins.ProcessingPipeline;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class TestSegmenter {
     

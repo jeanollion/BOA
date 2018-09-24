@@ -28,7 +28,7 @@ import boa.plugins.SimpleThresholder;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class CompareThresholds implements SimpleThresholder {
     public PluginParameter<SimpleThresholder> threshold1 = new PluginParameter("Threshold 1", SimpleThresholder.class, false);

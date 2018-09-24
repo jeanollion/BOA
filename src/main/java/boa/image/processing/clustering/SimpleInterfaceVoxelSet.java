@@ -23,7 +23,7 @@ import java.util.Comparator;
 
 /**
  *
- * @author jollion
+ * @author Jean Ollion
  */
 public class SimpleInterfaceVoxelSet extends InterfaceVoxelSet<SimpleInterfaceVoxelSet> {
 
