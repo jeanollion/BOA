@@ -29,15 +29,8 @@ import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TrackPreFilterSequence;
 import boa.data_structure.Region;
 import boa.data_structure.StructureObject;
-import boa.data_structure.StructureObjectTracker;
 import boa.data_structure.StructureObjectUtils;
-import boa.gui.image_interaction.ImageWindowManagerFactory;
-import fiji.plugin.trackmate.Spot;
-import boa.image.Image;
-import boa.image.ImageFloat;
 import boa.image.processing.bacteria_spine.BacteriaSpineCoord;
-import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
-import static boa.image.processing.bacteria_spine.BacteriaSpineFactory.verboseZoomFactor;
 import boa.image.processing.bacteria_spine.BacteriaSpineLocalizer;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.NEAREST_POLE;
 import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.PROJECTION.PROPORTIONAL;
@@ -45,20 +38,16 @@ import static boa.image.processing.bacteria_spine.BacteriaSpineLocalizer.project
 import boa.image.processing.bacteria_spine.SpineOverlayDrawer;
 import static boa.image.processing.bacteria_spine.SpineOverlayDrawer.trimSpine;
 import static boa.measurement.MeasurementExtractor.numberFormater;
-import java.util.ArrayList;
+
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import boa.plugins.Segmenter;
-import boa.plugins.SegmenterSplitAndMerge;
 import boa.plugins.TestableProcessingPlugin;
 import boa.plugins.ToolTip;
-import boa.plugins.Tracker;
 import boa.plugins.TrackerSegmenter;
 import boa.plugins.plugins.processing_pipeline.SegmentOnly;
 import boa.plugins.plugins.segmenters.SpotSegmenter;
@@ -67,21 +56,16 @@ import boa.plugins.plugins.trackers.nested_spot_tracker.NestedSpot;
 import boa.plugins.plugins.trackers.nested_spot_tracker.post_processing.MutationTrackPostProcessing;
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface;
 import boa.plugins.plugins.trackers.trackmate.TrackMateInterface.SpotFactory;
-import static boa.plugins.plugins.trackers.trackmate.TrackMateInterface.logger;
 import boa.ui.GUI;
-import boa.utils.ArrayFileWriter;
 import boa.utils.HashMapGetCreate;
 import boa.utils.MultipleException;
 import boa.utils.Pair;
-import boa.utils.SlidingOperator;
-import boa.utils.SymetricalPair;
 import boa.utils.Utils;
 import static boa.utils.Utils.parallele;
 import boa.utils.geom.Point;
 import ij.gui.Overlay;
 import java.awt.Color;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -91,7 +75,7 @@ import java.util.stream.Collectors;
 public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPlugin, ToolTip {
     private static final String CONF_HINT = "<br />Configuration hint: to display distance between two spots, select the two spots on test images and choose <em>Diplay Spine</em> from right-click menu. Distance will be logged in the console and projection of source spot to destination bacteria displayed";
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<>("Segmentation algorithm", Segmenter.class, new SpotSegmenter(), false);
-    ObjectClassParameter compartirmentStructure = new ObjectClassParameter("Compartiment Structure", -1, false, false).setToolTipText("Structure of bacteria objects.");
+    ObjectClassParameter compartmentStructure = new ObjectClassParameter("Compartment Structure", -1, false, false).setToolTipText("Structure of bacteria objects.");
     NumberParameter spotQualityThreshold = new NumberParameter<>("Spot Quality Threshold", 3, 3.5).setEmphasized(true).setToolTipText("Spot with quality parameter over this threshold are considered as high quality spots, others as low quality spots");
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 1, 0, null).setEmphasized(true).setToolTipText("Maximum frame gap for spot linking: if two spots are separated by more frame than this value they cannot be linked together directly");
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("Maximum Linking Distance (FTF)", 2, 0.4, 0, null).setToolTipText("Maximum linking distance for frame-to-frame step, in unit (microns). If two spots are separated by a distance (relative to the nereast pole) superior to this value, they cannot be linked together."+CONF_HINT);
@@ -99,8 +83,10 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.15, 0, null).setEmphasized(true).setToolTipText("When two spots are separated by a gap, an additional distance is added to their distance: this value x number of frame of the gap");
     NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance", 2, 0.77, 0, null).setToolTipText("The algorithm performs a global optimization minimizing the global cost. Cost are the distance between spots. Alternative distance represent the cost of being linked with no other spot. If this value is too low, the algorithm won't link any spot, it should be superior to the linking distance threshold");
     ChoiceParameter projectionType = new ChoiceParameter("Projection type", Utils.toStringArray(BacteriaSpineLocalizer.PROJECTION.values()), PROPORTIONAL.toString(), false ).setToolTipText("Spine projection for distance calculation: spine coordinate of source spots are first computed and then projected in destination bacteria. <ol><li>"+PROPORTIONAL+": spine coordinate is multiplied by the ratio of the spine length of the two bacteria</li><li>"+NEAREST_POLE+": distance (in terms of path along the spine) to nearest pole is conseverd</li></ol><br />"+CONF_HINT);
-    BooleanParameter projectOnSameSide = new BooleanParameter("Project on same side", true).setToolTipText("Wether point should be projected on same side of the spine as destination point. <br />This allows to remove the rotation of the bacteria along its spine axis");
-    Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, projectionType, projectOnSameSide, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
+    BooleanParameter projectOnSameSide = new BooleanParameter("Project on same side", true).setToolTipText("Whether point should be projected on same side of the spine as destination point. <br />This allows to remove the rotation of the bacteria along its spine axis");
+    BooleanParameter allowSplitting = new BooleanParameter("Allow splitting", false);
+    BooleanParameter allowMerging = new BooleanParameter("Allow merging", false);
+    Parameter[] parameters = new Parameter[]{segmenter, compartmentStructure, projectionType, projectOnSameSide, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold, allowSplitting, allowMerging};
     String toolTip = "<b>Tracker for spots moving within bacteria</b> using <em>TrackMate (https://imagej.net/TrackMate)</em> <br />"
             + "<ul><li>Distance between spots is computed using spine coordinates in order to take into acount bacteria growth and movements</li>"
             + "<li>Bacteria lineage is honoured: two spots can only be linked if they are contained in bacteria from the same track or connected tracks (after division events)</li>"
@@ -109,7 +95,7 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
     // multithreaded interface
         
     public NestedSpotTracker setCompartimentStructure(int compartimentStructureIdx) {
-        this.compartirmentStructure.setSelectedClassIdx(compartimentStructureIdx);
+        this.compartmentStructure.setSelectedClassIdx(compartimentStructureIdx);
         return this;
     }
     public NestedSpotTracker setLinkingMaxDistance(double maxDist, double alternativeLinking) {
@@ -137,14 +123,14 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
         SegmentOnly ps = new SegmentOnly(segmenter.instanciatePlugin()).setTrackPreFilters(trackPreFilters).setPostFilters(postFilters);
         ps.segmentAndTrack(structureIdx, parentTrack);
         long t1= System.currentTimeMillis();
-        track(structureIdx, parentTrack, true);
+        track(structureIdx, parentTrack, true, allowSplitting.getSelected(), allowMerging.getSelected());
     }
 
     @Override public Segmenter getSegmenter() {
         return segmenter.instanciatePlugin();
     }
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
-        track(structureIdx, parentTrack, false);
+        track(structureIdx, parentTrack, false, allowSplitting.getSelected(), allowMerging.getSelected());
     }
     /**
      * Mutation tracking within bacteria using <a href="https://imagej.net/TrackMate" target="_top">TrackMate</a>
@@ -155,9 +141,9 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
      * @param parentTrack parent track containing objects to link at structure {@param structureIdx}
      * @param LQSpots whether objects of structure: {@param structureIdx} contain high- and low-quality spots (unlinkable low quality spots will be removed)
      */
-    public void track(int structureIdx, List<StructureObject> parentTrack, boolean LQSpots) {
+    public void track(int structureIdx, List<StructureObject> parentTrack, boolean LQSpots, boolean allowSplit, boolean allowMerge) {
         //if (true) return;
-        int compartimentStructure=this.compartirmentStructure.getSelectedIndex();
+        int compartmentStructure=this.compartmentStructure.getSelectedIndex();
         int maxGap = this.maxGap.getValue().intValue()+1; // parameter = count only the frames where the spot is missing
         double spotQualityThreshold = LQSpots ? this.spotQualityThreshold.getValue().doubleValue() : Double.NEGATIVE_INFINITY;
         double maxLinkingDistance = this.maxLinkingDistance.getValue().doubleValue();
@@ -175,11 +161,11 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
         
         final Map<Region, StructureObject> mutationMapParentBacteria = StructureObjectUtils.getAllChildrenAsStream(parentTrack.stream(), structureIdx)
                 .collect(Collectors.toMap(m->m.getRegion(), m->{
-                    List<StructureObject> candidates = m.getParent().getChildren(compartimentStructure);
+                    List<StructureObject> candidates = m.getParent().getChildren(compartmentStructure);
                     return StructureObjectUtils.getContainer(m.getRegion(), candidates, null); 
                 }));
         final Map<StructureObject, List<Region>> bacteriaMapMutation = mutationMapParentBacteria.keySet().stream().collect(Collectors.groupingBy(m->mutationMapParentBacteria.get(m)));
-        // get all potential spine localizer: for each bacteria with mutation look if there are bacteria with mutations in previous bacteria whithin gap range
+        // get all potential spine localizer: for each bacteria with mutation look if there are bacteria with mutations in previous bacteria within gap range
         Set<StructureObject> parentWithSpine = new HashSet<>();
         parentWithSpine.addAll(bacteriaMapMutation.keySet());
         bacteriaMapMutation.keySet().forEach(b-> {
@@ -261,8 +247,8 @@ public class NestedSpotTracker implements TrackerSegmenter, TestableProcessingPl
         long t2 = System.currentTimeMillis();
         boolean ok = true; 
         ok = tmi.processFTF(maxLinkingDistance);
-        if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
-        if (ok) {
+        if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, allowSplit, allowMerge);
+        if (ok && LQSpots) {
             //switchCrossingLinksWithLQBranches(tmi, maxLinkingDistanceGC/Math.sqrt(2), maxLinkingDistanceGC, maxGap); // remove crossing links
             tmi.setTrackLinks(objectsF);
             MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getRegion(), o.getFrame())); // TODO : do directly in graph
