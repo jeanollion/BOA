@@ -73,7 +73,7 @@ public class ContainerObject implements Measurement, ToolTip {
     }
     
     @Override
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return objects.getSelectedClassIdx();
     }
 

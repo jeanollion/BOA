@@ -74,7 +74,7 @@ public class SimpleIntensityMeasurementStructureExclusion implements Measurement
         return this;
     } 
     
-    @Override public int getCallStructure() {
+    @Override public int getCallObjectClassIdx() {
         return structureObject.getSelectedClassIdx();
     }
 

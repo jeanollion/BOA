@@ -71,7 +71,7 @@ public class BacteriaLineageMeasurements implements Measurement, ToolTip {
     }
     
     @Override
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return structure.getParentObjectClassIdx();
     }
     

@@ -524,8 +524,8 @@ public class Experiment extends ContainerParameterImpl<Experiment> implements Tr
             for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
                 Measurement m = p.instanciatePlugin();
                 if (m!=null) {
-                    if (structureIdx.length==0 || contains(structureIdx, m.getCallStructure())) {
-                        res.getAndCreateIfNecessary(m.getCallStructure()).add(m);
+                    if (structureIdx.length==0 || contains(structureIdx, m.getCallObjectClassIdx())) {
+                        res.getAndCreateIfNecessary(m.getCallObjectClassIdx()).add(m);
                     }
                 }
             }
@@ -533,7 +533,7 @@ public class Experiment extends ContainerParameterImpl<Experiment> implements Tr
         }
     }
     public Stream<Measurement> getMeasurements(int structureIdx) {
-        return measurements.getChildren().stream().filter(pp->pp.isActivated() && pp.isOnePluginSet()).map(pp->pp.instanciatePlugin()).filter(m->m.getCallStructure()==structureIdx);
+        return measurements.getChildren().stream().filter(pp->pp.isActivated() && pp.isOnePluginSet()).map(pp->pp.instanciatePlugin()).filter(m->m.getCallObjectClassIdx()==structureIdx);
     }
     
     private static boolean contains(int[] structures, int structureIdx) {

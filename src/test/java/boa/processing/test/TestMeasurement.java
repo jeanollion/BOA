@@ -54,7 +54,7 @@ public class TestMeasurement {
     }
     public static void testMeasurementOnSingleObject(Measurement m, MasterDAO db, int fIdx, int frame, int cIdx, int cIdxMax, int parentdispStructure, int dispStructure) {
         db.getExperiment().addMeasurement(m); // in case experiment is needed
-        int s = m.getCallStructure();
+        int s = m.getCallObjectClassIdx();
         
         StructureObject root = db.getDao(db.getExperiment().getPosition(fIdx).getName()).getRoot(frame);
         List<StructureObject> ob = root.getChildren(s); 

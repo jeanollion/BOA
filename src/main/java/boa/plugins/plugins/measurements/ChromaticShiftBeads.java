@@ -47,7 +47,7 @@ public class ChromaticShiftBeads implements Measurement, DevPlugin{
        structure2.setSelectedIndex(structureIdx2);
     }
     
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return structure.getFirstCommonParentObjectClassIdx(structure2.getSelectedIndex());
     }
 

@@ -59,7 +59,7 @@ public class BacteriaTrackingAttributes implements Measurement, ToolTip {
     }
     
     @Override
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return bacteria.getSelectedClassIdx();
     }
     @Override

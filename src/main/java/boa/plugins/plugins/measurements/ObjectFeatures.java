@@ -91,7 +91,7 @@ public class ObjectFeatures implements Measurement, ToolTip {
         return this;
     }
     @Override
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return structure.getParentObjectClassIdx();
     }
     @Override

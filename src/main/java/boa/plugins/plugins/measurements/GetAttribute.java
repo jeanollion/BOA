@@ -57,7 +57,7 @@ public class GetAttribute implements Measurement, DevPlugin {
     }
     
     @Override
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return structure.getSelectedClassIdx();
     }
 

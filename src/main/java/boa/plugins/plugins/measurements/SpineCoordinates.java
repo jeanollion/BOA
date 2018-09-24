@@ -65,7 +65,7 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
         return this;
     }
     @Override
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return spot.getParentObjectClassIdx();
     }
 

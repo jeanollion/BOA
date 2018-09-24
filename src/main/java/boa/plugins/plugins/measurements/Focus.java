@@ -55,7 +55,7 @@ public class Focus implements Measurement, DevPlugin {
         return this;
     }
     @Override
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return structure.getParentObjectClassIdx();
     }
 

@@ -657,6 +657,9 @@ public class Utils {
         if (idx==values1.length) return; // cannot be ploted if one single value
         Plot p = new Plot(title, "coord", "value1", x1, values1);
         if (values2!=null) p.addPoints(x2, values2, 5);
+        Function<double[] , Double> min = a -> Arrays.stream(a).min().getAsDouble();
+        Function<double[] , Double> max = a -> Arrays.stream(a).max().getAsDouble();
+        p.setLimits(Math.min(min.apply(x1), min.apply(x1)), Math.max(max.apply(x1), max.apply(x1)), Math.min(min.apply(values1), min.apply(values2)), Math.max(max.apply(values1), max.apply(values2)));
         p.show();
     }
     

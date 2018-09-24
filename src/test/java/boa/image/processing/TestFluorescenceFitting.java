@@ -23,7 +23,7 @@ import boa.core.Task;
 import boa.data_structure.StructureObject;
 import boa.data_structure.dao.MasterDAO;
 import boa.plugins.PluginFactory;
-import boa.plugins.plugins.measurements.FluorescenceFitting;
+import boa.plugins.plugins.measurements.FluorescenceFit;
 import ij.ImageJ;
 
 /**
@@ -34,18 +34,19 @@ public class TestFluorescenceFitting {
     public static void main(String[] args) {
         PluginFactory.findPlugins("boa.plugins.plugins");
         new ImageJ();
-        String dbName = "170919_thomas";
-        int postition= 0, frame=0, mc=0, b=0, m = 0;
+        //String dbName = "170919_thomas";
+        String dbName = "preproc_example";
+        int postition= 0, frame=0, mc=1, b=0, m = 0;
         
         MasterDAO mDAO = new Task(dbName).getDB();
         
         //testAllObjects(mDAO, structureIdx, 26);
         
-        int parentStructure = mDAO.getExperiment().getStructure(0).getParentStructure();
+        int parentStructure = mDAO.getExperiment().getStructure(1).getParentStructure();
         Position f = mDAO.getExperiment().getPosition(postition);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(1).get(b);
-        FluorescenceFitting fluo = new FluorescenceFitting().setVerbose(true).setObjectClasses(1, 2);
+        FluorescenceFit fluo = new FluorescenceFit().setVerbose(true).setObjectClasses(1, 2);
         
         fluo.performMeasurement(bact);
         

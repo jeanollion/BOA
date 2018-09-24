@@ -103,7 +103,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
     }
     
     @Override
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return structure.getParentObjectClassIdx();
     }
     

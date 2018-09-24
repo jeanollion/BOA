@@ -49,7 +49,7 @@ public class SimpleTrackMeasurements implements Measurement, ToolTip {
         this.structure.setSelectedIndex(structure);
     }
     
-    @Override public int getCallStructure() {
+    @Override public int getCallObjectClassIdx() {
         return structure.getSelectedClassIdx();
     }
 

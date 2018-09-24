@@ -70,7 +70,7 @@ public class ObjectInclusionCount implements Measurement, ToolTip {
         return this;
     }
     @Override
-    public int getCallStructure() {
+    public int getCallObjectClassIdx() {
         return structureContainer.getFirstCommonParentObjectClassIdx(structureToCount.getSelectedIndex());
     }
     @Override
