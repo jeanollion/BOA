@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BACMMAN.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins.measurements;
+package boa.plugins.legacy;
 
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.Parameter;
@@ -158,7 +158,7 @@ public class FluorescenceFit implements Measurement, ToolTip {
         double diff = Double.POSITIVE_INFINITY;
         while (iteration++ < maxIterationNumber && diff > precision) diffList.add(diff = iterate(c_i, ro_i, params, muBounds, wBounds, precision));
         
-        Utils.plotProfile("Convergence", ArrayUtil.toPrimitive(diffList), "iteration number", "sum of parameter relative error");
+        //Utils.plotProfile("Convergence", ArrayUtil.toPrimitive(diffList), "iteration number", "sum of parameter relative error");
         return params;
     }
     /**
