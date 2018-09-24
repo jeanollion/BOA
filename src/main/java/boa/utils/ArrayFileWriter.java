@@ -47,12 +47,12 @@ public class ArrayFileWriter {
     public void writeToFile(String outputFile) {
         try {
             if (arrays.isEmpty()) throw new IllegalArgumentException("no data to write");
-            FileWriter fstream;
+            FileWriter fStream;
             BufferedWriter out;
             File output = new File(outputFile);
             output.delete();
-            fstream = new FileWriter(output);
-            out = new BufferedWriter(fstream);
+            fStream = new FileWriter(output);
+            out = new BufferedWriter(fStream);
             Set<String> keys = arrays.keySet();
             int maxLength = 0;
             for (String k : keys) {

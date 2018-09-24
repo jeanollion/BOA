@@ -121,7 +121,7 @@ public class SpineCoordinates implements Measurement, MultiThreaded, ToolTip {
     }
 
     @Override
-    public void setMultithread(boolean parallele) {
+    public void setMultiThread(boolean parallel) {
         
     }
 

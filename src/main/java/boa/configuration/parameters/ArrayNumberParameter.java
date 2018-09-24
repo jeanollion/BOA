@@ -29,11 +29,11 @@ import java.util.function.Consumer;
  */
 public class ArrayNumberParameter extends ListParameterImpl<BoundedNumberParameter, ArrayNumberParameter> {
     boolean sorted;
-    public ArrayNumberParameter(String name, int unmutableIndex, BoundedNumberParameter childInstance) {
-        super(name, unmutableIndex, childInstance);
+    public ArrayNumberParameter(String name, int unMutableIndex, BoundedNumberParameter childInstance) {
+        super(name, unMutableIndex, childInstance);
         newInstanceNameFunction = i->Integer.toString(i);
-        if (unmutableIndex>=0) {
-            for (int i = 0;i<=unmutableIndex; ++i) {
+        if (unMutableIndex>=0) {
+            for (int i = 0;i<=unMutableIndex; ++i) {
                 this.insert(createChildInstance());
             }
         }

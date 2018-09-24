@@ -58,14 +58,14 @@ import java.util.stream.Collectors;
 public class AutoRotationXY implements MultichannelTransformation, ConfigurableTransformation, ToolTip {
     NumberParameter minAngle = new BoundedNumberParameter("Minimal Angle for search", 2, -10, -90, 90);
     NumberParameter maxAngle = new BoundedNumberParameter("Maximal Angle for search", 2, 10, -90, 90);
-    NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);
+    NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first search", 2, 1, 0, null);
     NumberParameter precision2 = new BoundedNumberParameter("Angular Precision", 2, 0.1, 0, 1);
     ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false); 
-    ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false).setToolTipText("<ul><li><b>"+SearchMethod.MAXVAR.getName()+"</b>: Search for the angle that yields in maximal dispersion of projected values</li><li><b>"+SearchMethod.MAXARTEFACT.getName()+": Search for the angle that yields in the maximal value, reached when optical aberration in phase-contrast images is perpendicular to the axis</b></li></ul>");
+    ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false).setToolTipText("<ul><li><b>"+SearchMethod.MAXVAR.getName()+"</b>: Search for the angle that yields in maximal dispersion of projected values</li><li><b>"+SearchMethod.MAXARTEFACT.getName()+": Search for the angle that yields in the maximal value, reached when optical aberration in phase-contrast images (located at interface with main channel) is perpendicular to the axis</b></li></ul>");
     NumberParameter frameNumber = new BoundedNumberParameter("Number of frame", 0, 10, 0, null).setToolTipText("Number of frames on which the angle should be computed. Resulting angle is the median value of all the angles");
     BooleanParameter removeIncompleteRowsAndColumns = new BooleanParameter("Remove Incomplete rows and columns", true).setToolTipText("If this option is not selected the frame of the image will be enlarged to fit the whole rotated image and filled with zeros");
     FilterSequence prefilters = new FilterSequence("Pre-Filters");
-    BooleanParameter maintainMaximum = new BooleanParameter("Maintain Maximum Value", false).setToolTipText("When interpolation with polynomes of degree>1, higher values than maximal value can be created, which can be an issue in case of a saturated image if the saturated value should be preserved. <br />This option will saturate the rotated image to the old maximal value");
+    BooleanParameter maintainMaximum = new BooleanParameter("Maintain Maximum Value", false).setToolTipText("When interpolation with polynomial of degree>1, higher values than maximal value can be created, which can be an issue in case of a saturated image if the saturated value should be preserved. <br />This option will saturate the rotated image to the old maximal value");
     Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, removeIncompleteRowsAndColumns, maintainMaximum, prefilters}; //  
     double rotationAngle = Double.NaN;
     public boolean testMode = false;
@@ -167,14 +167,14 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         return res;
     }
     @Override
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+    public boolean isConfigured(int totalChannelNumber, int totalTimePointNumber) {
         return !Double.isNaN(rotationAngle);
     }
     
-    public double[] computeRotationAngleXY(Image image, int z, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {
+    public double[] computeRotationAngleXY(Image image, int z, double ang1, double ang2, double stepSize, float[] proj, boolean var, double filterScale) {
 
         // initial search
-        double[] angles = getAngleArray(ang1, ang2, stepsize);
+        double[] angles = getAngleArray(ang1, ang2, stepSize);
         double[] angleMax=new double[]{angles[0], angles[0]};
         double max=-1;
         ImageFloat sinogram = null;
@@ -222,9 +222,9 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         return "Align Microchannel sides along Y-axis";
     }
     
-    public static enum SearchMethod {
-        MAXVAR("Fluo Microchannel"), // cherche le maximum variance. necessite de supprimer le bruit de fond
-        MAXARTEFACT("Phase Microchannel Artifact"); // se base sur l'artecfact d'imagerie, cherche la valeur max qui est a +90. 
+    public enum SearchMethod {
+        MAXVAR("Fluo Microchannel"),
+        MAXARTEFACT("Phase Microchannel Artifact");
         private final String name;
         SearchMethod(String name){this.name=name;}
         public static String[] getValues() {

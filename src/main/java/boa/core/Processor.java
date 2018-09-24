@@ -18,9 +18,7 @@
  */
 package boa.core;
 
-import boa.ui.GUI;
 import boa.gui.image_interaction.InteractiveImage;
-import boa.gui.image_interaction.ImageWindowManagerFactory;
 import boa.configuration.parameters.TransformationPluginParameter;
 import boa.configuration.experiment.Experiment;
 import boa.configuration.experiment.Position;
@@ -30,23 +28,19 @@ import boa.data_structure.input_image.InputImagesImpl;
 import boa.data_structure.image_container.MultipleImageContainer;
 import boa.data_structure.dao.MasterDAO;
 import boa.data_structure.dao.ObjectDAO;
-import boa.data_structure.Selection;
 import boa.data_structure.StructureObject;
 import boa.data_structure.StructureObjectUtils;
 import boa.gui.image_interaction.Kymograph;
 import boa.image.Image;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
 import boa.measurement.MeasurementKey;
 import boa.plugins.ConfigurableTransformation;
 import org.slf4j.Logger;
@@ -59,11 +53,10 @@ import boa.utils.MultipleException;
 import boa.utils.Pair;
 import boa.utils.StreamConcatenation;
 import boa.utils.ThreadRunner;
-import boa.utils.ThreadRunner.ThreadAction;
 import boa.utils.Utils;
 import java.util.stream.Stream;
 import boa.plugins.ProcessingPipeline;
-import java.util.Collection;
+
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
@@ -340,7 +333,7 @@ public class Processor {
                             .filter(m->m.callOnlyOnTrackHeads() && (m instanceof MultiThreaded))
                             .filter(m->measurementMissing.test(pt, m)) // only test on trackhead object
                             .forEach(m-> {
-                                ((MultiThreaded)m).setMultithread(true);
+                                ((MultiThreaded)m).setMultiThread(true);
                                 m.performMeasurement(pt);
                             });
                 });

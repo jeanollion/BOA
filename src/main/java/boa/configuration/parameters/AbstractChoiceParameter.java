@@ -138,7 +138,7 @@ public abstract class AbstractChoiceParameter<P extends AbstractChoiceParameter<
     }
     /**
      * 
-     * @return the asociated conditional parameter, or null if no conditionalParameter is associated
+     * @return the associated conditional parameter, or null if no conditionalParameter is associated
      */
     public ConditionalParameter getConditionalParameter() {
         return cond;

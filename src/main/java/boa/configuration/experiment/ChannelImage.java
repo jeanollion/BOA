@@ -20,15 +20,11 @@ package boa.configuration.experiment;
 
 import boa.configuration.experiment.Experiment.IMPORT_METHOD;
 import static boa.configuration.experiment.Experiment.IMPORT_METHOD.ONE_FILE_PER_CHANNEL_POSITION;
-import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ParameterUtils;
 import boa.configuration.parameters.ContainerParameterImpl;
 import boa.configuration.parameters.TextParameter;
 import boa.configuration.parameters.ui.NameEditorUI;
 import boa.configuration.parameters.ui.ParameterUI;
-import java.util.List;
-import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import org.json.simple.JSONObject;
 

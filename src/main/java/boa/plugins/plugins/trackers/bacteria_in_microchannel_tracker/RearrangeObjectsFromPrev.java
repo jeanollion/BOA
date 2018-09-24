@@ -19,17 +19,11 @@
 package boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker;
 
 import boa.data_structure.Region;
-import boa.data_structure.Voxel;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -38,11 +32,11 @@ import boa.plugins.plugins.trackers.ObjectIdxTracker;
 import static boa.plugins.plugins.trackers.ObjectIdxTracker.getComparatorRegion;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
-import boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.ObjectModifier.Split;
+
 import boa.utils.HashMapGetCreate;
 import boa.utils.Pair;
-import boa.utils.Utils;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSRErrorThld;
+
+import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significantSRErrorThld;
 
 /**
  *
@@ -66,8 +60,8 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
                 sizeRange[0] = tracker.minGR * size;
                 sizeRange[1] = tracker.maxGR * size;
             } else {
-                sizeRange[0] = (si-significativeSRErrorThld/2) * size;
-                sizeRange[1] = (si+significativeSRErrorThld/2) * size;
+                sizeRange[0] = (si- significantSRErrorThld /2) * size;
+                sizeRange[1] = (si+ significantSRErrorThld /2) * size;
             }
             assignements.add(new RearrangeAssignment(o, sizeRange));
         }

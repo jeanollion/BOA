@@ -62,7 +62,7 @@ public class BinaryOpen implements PostFilter, MultiThreaded, ToolTip {
     }
     boolean parallele;
     @Override
-    public void setMultithread(boolean parallele) {
-        this.parallele=parallele;
+    public void setMultiThread(boolean parallel) {
+        this.parallele= parallel;
     }
 }

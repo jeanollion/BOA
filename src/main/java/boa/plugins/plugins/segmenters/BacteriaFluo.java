@@ -106,7 +106,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
     ChoiceParameter backgroundSel=  new ChoiceParameter("Background Removal", Utils.toStringArray(BACKGROUND_REMOVAL.values()), BACKGROUND_REMOVAL.BORDER_CONTACT.toString(), false);
     ConditionalParameter backgroundSelCond = new ConditionalParameter(backgroundSel).setActionParameters(BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING.toString(), foregroundEdgeFusionThld, bckThldCond).setActionParameters(BACKGROUND_REMOVAL.THRESHOLDING.toString(), foregroundEdgeFusionThld, bckThldCond).setToolTipText("Method to remove background partition after merging edges.<br/><ol><li>"+BACKGROUND_REMOVAL.BORDER_CONTACT.toString()+": Removes all partition directly in contact with upper, left and right borders. Length & with of microchannels should be adjusted so that bacteria going out of microchannels are no within the segmented regions of microchannel otherwise they may touch the left/right sides of microchannels are be erased</li><li>"+BACKGROUND_REMOVAL.THRESHOLDING.toString()+": Removes regions with median value under <em>Background Threshold</em></li><li>"+BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING.toString()+": Combination of the two previous methods</li></ol>");
     ChoiceParameter foregroundSelectionMethod=  new ChoiceParameter("Foreground Selection Method", Utils.toStringArray(FOREGROUND_SELECTION_METHOD.values()), FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), false); 
-    ConditionalParameter foregroundSelectionCond = new ConditionalParameter(foregroundSelectionMethod).setActionParameters(FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString(), bckThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString(), bckThldCond, foreThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), backgroundEdgeFusionThld,backgroundSelCond).setEmphasized(true).setToolTipText("Foreground selection after watershed partitioning on <em>Edge Map</em><br /><ol><li>"+FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString()+": All regions with median value inferior to threshold defined in <em>Background Threshold</em> are erased. No suitable when fluorescence signal is highly variable among bacteria</li><li>"+FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString()+": Regions with median value under <em>Background Threshold</em> are condidered as background, all regions over threshold defined in <em>Foreground Threshold</em> are considered as foreground. Other regions are fused to the adjacent region that has lower edge value at interface, until only Background and Foreground region remain. Then background regions are removed. This method is suitable if a foreground threshold can be defined verifying the following conditions : <ol><li>each bacteria has at least one partition with a value superior to this threshold</li><li>No foreground partition (especially close to highly fluorescent bacteria) has a value over this threshold</li></ol> </li> This method is suitable when fluorescence signal is highly variable, but requieres to be tuned according to fluorescence signal (that can vary between different strands/gorwth conditions)<li>"+FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString()+": </li>Foreground selection is performed in 3 steps:<ol><li>All adjacent regions that verify condition defined in <em>Background Edge Fusion Threshold</em> are merged. This mainly merges background regions </li><li>All adjacent regions that verify condition defined in <em>Foreground Edge Fusion Threshold</em> are merged. This mainly merges foreground regions </li><li>All regions with median value inferior to threshold defined in <em>Background Threshold</em> are erased</li></ol>This method is more suitable when foreground fluorescence levels are higly variable, but might lead in false negative when edges are not sharp enough</ol>");
+    ConditionalParameter foregroundSelectionCond = new ConditionalParameter(foregroundSelectionMethod).setActionParameters(FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString(), bckThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString(), bckThldCond, foreThldCond).setActionParameters(FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString(), backgroundEdgeFusionThld,backgroundSelCond).setEmphasized(true).setToolTipText("Foreground selection after watershed partitioning on <em>Edge Map</em><br /><ol><li>"+FOREGROUND_SELECTION_METHOD.SIMPLE_THRESHOLDING.toString()+": All regions with median value inferior to threshold defined in <em>Background Threshold</em> are erased. No suitable when fluorescence signal is highly variable among bacteria</li><li>"+FOREGROUND_SELECTION_METHOD.HYSTERESIS_THRESHOLDING.toString()+": Regions with median value under <em>Background Threshold</em> are considered as background, all regions over threshold defined in <em>Foreground Threshold</em> are considered as foreground. Other regions are fused to the adjacent region that has lower edge value at interface, until only Background and Foreground region remain. Then background regions are removed. This method is suitable if a foreground threshold can be defined verifying the following conditions : <ol><li>each bacteria has at least one partition with a value superior to this threshold</li><li>No foreground partition (especially close to highly fluorescent bacteria) has a value over this threshold</li></ol> </li> This method is suitable when fluorescence signal is highly variable, but requires to be tuned according to fluorescence signal (that can vary between different strands/growth conditions)<li>"+FOREGROUND_SELECTION_METHOD.EDGE_FUSION.toString()+": </li>Foreground selection is performed in 3 steps:<ol><li>All adjacent regions that verify condition defined in <em>Background Edge Fusion Threshold</em> are merged. This mainly merges background regions </li><li>All adjacent regions that verify condition defined in <em>Foreground Edge Fusion Threshold</em> are merged. This mainly merges foreground regions </li><li>All regions with median value inferior to threshold defined in <em>Background Threshold</em> are erased</li></ol>This method is more suitable when foreground fluorescence levels are highly variable, but might lead in false negative when edges are not sharp enough</ol>");
     
     // attributes parametrized during track parametrization
     protected double bckThld = Double.NaN, foreThld = Double.NaN;
@@ -122,8 +122,8 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
             +"Void microchannels are detected prior to segmentation step using information on the whole microchannel track. See <em>Variation coefficient threshold</em> parameter"
             +"Segmentation steps:"
             + "<ol><li>Foreground detection: image is partitioned using by watershed on the edge map. Foreground partition are the selected depending on the method chosen in <em>Foreground Selection Method</em></li>"
-            + "<li>Forground is split by applying a watershed transform on the maximal hessian eigen value, regions are then merged, using a criterion described in <em>Split Threshold</em> parameter</li>"
-            + "<li>A local threshold is applied to each region. Mostly because inter-forground regions may be segmented in step 1). Threshold is set as described in <em>Local Threshold Factor</em> parameter. <br /> "
+            + "<li>Foreground is split by applying a watershed transform on the maximal hessian Eigen value, regions are then merged, using a criterion described in <em>Split Threshold</em> parameter</li>"
+            + "<li>A local threshold is applied to each region. Mostly because inter-foreground regions may be segmented in step 1). Threshold is set as described in <em>Local Threshold Factor</em> parameter. <br /> "
             + "Propagating from contour voxels, all voxels with value on the smoothed image (<em>Smooth scale</em> parameter) under the local threshold is removed</li></ol>";
     }
     
@@ -180,11 +180,11 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
         }).setThresholdValue(this.backgroundEdgeFusionThld.getValue().doubleValue());
         if (stores!=null) imageDisp.accept(sm.drawInterfaceValues(pop).setName("Interface Values for Background Partition Fusion"));
         sm.merge(pop, null);
-        if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Background Parition Fusion"));
+        if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Background Partition Fusion"));
         //if (stores!=null) imageDisp.accept(sm.drawInterfaceValues(pop).setName("Interface Values after Bck Partition Fusion"));
-        BACKGROUND_REMOVAL remMeth = BACKGROUND_REMOVAL.valueOf(backgroundSel.getSelectedItem());
-        boolean remContact = remMeth == BACKGROUND_REMOVAL.BORDER_CONTACT || remMeth == BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING;
-        boolean remThld = remMeth == BACKGROUND_REMOVAL.THRESHOLDING || remMeth == BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING;
+        BACKGROUND_REMOVAL remMethod = BACKGROUND_REMOVAL.valueOf(backgroundSel.getSelectedItem());
+        boolean remContact = remMethod == BACKGROUND_REMOVAL.BORDER_CONTACT || remMethod == BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING;
+        boolean remThld = remMethod == BACKGROUND_REMOVAL.THRESHOLDING || remMethod == BACKGROUND_REMOVAL.BORDER_CONTACT_AND_THRESHOLDING;
         if (remThld) { // merge foreground regions: normalized values
             sm.setInterfaceValue(i-> {
                 if (i.getVoxels().isEmpty() || sm.isFusionForbidden(i)) {
@@ -196,7 +196,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
                     double mean1 = BasicMeasurements.getMeanValue(i.getE1(), sm.getIntensityMap());
                     double mean2 = BasicMeasurements.getMeanValue(i.getE2(), sm.getIntensityMap());
                     double mean = (mean1 + mean2) / 2d;
-                    //double mean= Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->sm.getIntensityMap().getPixel(v.x, v.y, v.z)).average().getAsDouble(); // not suitable for background regions directly adjecent to highly fluo cells
+                    //double mean= Stream.concat(i.getE1().getVoxels().stream(), i.getE2().getVoxels().stream()).mapToDouble(v->sm.getIntensityMap().getPixel(v.x, v.y, v.z)).average().getAsDouble(); // not suitable for background regions directly adjacent to highly fluo cells
                     //double mean= Stream.concat(i.getVoxels().stream(), i.getDuplicatedVoxels().stream()).mapToDouble(v->sm.getIntensityMap().getPixel(v.x, v.y, v.z)).average().getAsDouble(); // leak easily
                     val= val/(mean-globalBackgroundLevel);
                     return val;
@@ -204,7 +204,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
             }).setThresholdValue(this.foregroundEdgeFusionThld.getValue().doubleValue());
             if (stores!=null) imageDisp.accept(sm.drawInterfaceValues(pop).setName("Interface Values for Foreground Partition Fusion"));
             sm.merge(pop, null);
-            if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Foreground Parition Fusion"));
+            if (stores!=null) imageDisp.accept(EdgeDetector.generateRegionValueMap(pop, parent.getPreFilteredImage(structureIdx)).setName("Region Values After Foreground Partition Fusion"));
         }
         if (remThld) ensureThresholds(parent, structureIdx, true, false);
         RegionPopulation.ContactBorderMask contact = new RegionPopulation.ContactBorderMask(2, parent.getMask(), RegionPopulation.Border.XYup);
@@ -226,7 +226,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
     
     // hysteresis thresholding
     private RegionPopulation filterRegionsAfterEdgeDetectorHysteresis(StructureObjectProcessing parent, int structureIdx, RegionPopulation pop) {
-        // perform hysteresis thresholding : define foreground & backgroun + merge indeterminded regions to the closest neighbor in therms of intensity
+        // perform hysteresis thresholding : define foreground & background + merge indeterminate regions to the closest neighbor in therms of intensity
         Consumer<Image> imageDisp = TestableProcessingPlugin.getAddTestImageConsumer(stores, (StructureObject)parent);
         ensureThresholds(parent, structureIdx, true, true);
         Map<Region, Double> values = pop.getRegions().stream().collect(Collectors.toMap(o->o, valueFunction(parent.getPreFilteredImage(structureIdx))));
@@ -239,10 +239,10 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
         }
         Set<Region> foregroundL = pop.getRegions().stream().filter(r->!backgroundL.contains(r) && values.get(r)>=foreThld).collect(Collectors.toSet());
         if (stores!=null) logger.debug("min thld: {} max thld: {}, background: {}, foreground: {}, unknown: {}", bckThld, foreThld, backgroundL.size(), foregroundL.size(), pop.getRegions().size()-backgroundL.size()-foregroundL.size());
-        if (pop.getRegions().size()>foregroundL.size()+backgroundL.size()) { // merge indetermined regions with either background or foreground
+        if (pop.getRegions().size()>foregroundL.size()+backgroundL.size()) { // merge indeterminate regions with either background or foreground
             pop.getRegions().removeAll(backgroundL);
             pop.getRegions().removeAll(foregroundL);
-            pop.getRegions().addAll(0, backgroundL); // so that background region keep same instance when merged with indetermined region
+            pop.getRegions().addAll(0, backgroundL); // so that background region keep same instance when merged with indeterminate region
             pop.getRegions().addAll(backgroundL.size(), foregroundL);
             pop.relabel(false);
             SplitAndMergeEdge sm = new SplitAndMergeEdge(edgeDetector.getWsMap(parent.getPreFilteredImage(structureIdx), parent.getMask()), parent.getPreFilteredImage(structureIdx), 1, false); // TODO : parameter
@@ -294,7 +294,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
      * @param parent
      * @param structureIdx
      * @param object
-     * @return split objects in absolute landmark if {@param object} is in absolutelandmark or in relative landmark to {@param parent}
+     * @return split objects in absolute landmark if {@param object} is in absolute landmark or in relative landmark to {@param parent}
      */
     @Override public RegionPopulation splitObject(StructureObject parent, int structureIdx, Region object) {
         Image input = parent.getPreFilteredImage(structureIdx);
@@ -381,7 +381,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
                 } else foreThld = getRootThreshold(parentTrack, structureIdx, histoRoot, false);
             } else foreThld = thlder.runThresholderHisto(getHistoParent.get());  // parent threshold
         } 
-        logger.debug("parent: {} global threshold on images with forground: [{};{}]", parentTrack.get(0), bckThld, foreThld);
+        logger.debug("parent: {} global threshold on images with foreground: [{};{}]", parentTrack.get(0), bckThld, foreThld);
         return new double[]{bckThld, foreThld}; 
     }
     
@@ -390,7 +390,7 @@ public class BacteriaFluo extends BacteriaIntensitySegmenter<BacteriaFluo> {
         return globalBackgroundLevel + 5 * globalBackgroundSigma;
     }
     private double getRootThreshold(List<StructureObject> parents, int structureIdx, Histogram[] histoStore, boolean min) {
-        // cas particulier si BackgroundFit -> call 
+        // particular case si BackgroundFit -> call
         String key = (min ? bckThresholder.toJSONEntry().toJSONString() : foreThresholder.toJSONEntry().toJSONString())+"_"+structureIdx;
         if (parents.get(0).getRoot().getAttributes().containsKey(key)) {
             return parents.get(0).getRoot().getAttribute(key, Double.NaN);

@@ -107,8 +107,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     String toolTip = "<b>Bacteria Tracker in closed-end channel</b> "
             + "<ul><li>Tracking is done only using rank and growth rate information (no localization within microchannel), and is thus adapted to moving cells, but detects poorly cell death</li>"
             + "<li>Assignment is done rank-wise between two successive frames starting from the cells located towards the closed-end of microchannel</li>"
-            + "<li>First assignement is the minimal that verify the growth inequality: given Sf = sum(size)@Frame=F Sf-1 = sum(size)@Frame=F-1 : Sf-1 * minGrowthRate <= Sf <= Sf-1 * maxGrowthRate </li>"
-            + "<li>In order to take into acount a wide range of growth rate, when possible the size ratio between Frames F & F-1 is compared to the median size ratio of the 20 last observations of the same line, and the difference is mimimized</li>"
+            + "<li>First assignment is the minimal that verify the growth inequality: given Sf = sum(size)@Frame=F Sf-1 = sum(size)@Frame=F-1 : Sf-1 * minGrowthRate <= Sf <= Sf-1 * maxGrowthRate </li>"
+            + "<li>In order to take into account a wide range of growth rate, when possible the size ratio between Frames F & F-1 is compared to the median size ratio of the 20 last observations of the same line, and the difference is minimized</li>"
             + "<li>In order to take into account cells exiting microchannels no errors are counted to assignment of cells close to the microchannel open-end</li>"
             + "<li>When tracking errors are detected (e.g two bacteria merging at next frame), a local correction is intended, comparing the scenario(s) of merging cells at previous frames and splitting cells at next frames. The scenario that minimizes firstly tracking error number and secondly correction cost (defined by the segmenter) will be chosen if its cost is under the thresholds defined by parameters <em>Correction: operation cost limit</em> and <em>Correction: cumulative cost limit</em></li></ul>";
 
@@ -150,15 +150,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     // parameters of the algorithm
     final static int sizeRatioFrameNumber = 20; // number of frames for size ratio computation
-    final static double significativeSRErrorThld = 0.25; // size ratio difference > to this value lead to an error
+    final static double significantSRErrorThld = 0.25; // size ratio difference > to this value lead to an error
     final static double SRErrorValue=1; //equivalence between a size-ratio difference error and regular error 
     final static double SRIncreaseThld = 0.1; // a cell is added to the assignment only is the error number is same or inferior and if the size ratio difference is less than this value
     final static double SRQuiescentThld = 1.05; // under this value we consider cells are not growing -> if break in lineage no error count (cell dies)
     final static boolean setSRErrorsAsErrors = false; // SI errors are set as tracking errors in object attributes
     
-    // limits to correction to avoir out-of-memory errors due to big correction scenarios
+    // limits to correction to avoid out-of-memory errors due to big correction scenarios
     final static double maxErrorRate = 4; // above this number of error per frame (mean on 7 consecutive frame) no correction is intended
-    final static int maxCorrectionLength = 100; // limit lenth of correction scenario
+    final static int maxCorrectionLength = 100; // limit length of correction scenario
     final static int correctionIndexLimit = 20; // max bacteria idx for correction
     
     // functions for assigners
@@ -233,7 +233,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         // 1) Segment and keep track of segmenter parametrizer for corrections
         SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters).setTrackPreFilters(trackPreFilters);
         so.segmentAndTrack(structureIdx, parentTrack);
-        if (correction) inputImages=parentTrack.stream().collect(Collectors.toMap(p->p.getFrame(), p->p.getPreFilteredImage(structureIdx))); // record prefiter images
+        if (correction) inputImages=parentTrack.stream().collect(Collectors.toMap(p->p.getFrame(), p->p.getPreFilteredImage(structureIdx))); // record prefiltered images
         // trim empty frames @ start & end. Limit to first continuous segment ? 
         while (minF<maxFExcluded && getObjects(minF).isEmpty()) ++minF;
         while (maxFExcluded>minF && getObjects(maxFExcluded-1).isEmpty()) --maxFExcluded;
@@ -256,7 +256,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<Double> errorCountMean = performSlide(errorCount, 3, slidingMean());
             if (debugCorr) Utils.plotProfile("Error Rate per Frame (sliding mean on 7 frames)", errorCountMean.stream().mapToDouble(d->d.doubleValue()).toArray());
             int[] lowErrorFrames = IntStream.range(minF+1, maxFExcluded).filter(i -> errorCountMean.get(i)<=maxErrorRate).toArray();
-            List<FrameRange> lowErrorRanges = FrameRange.getContinuousRangesFromFrameIndices(lowErrorFrames); // correction is limited to thoses ranges
+            List<FrameRange> lowErrorRanges = FrameRange.getContinuousRangesFromFrameIndices(lowErrorFrames); // correction is limited to those ranges
             
             // also split ranges where no error are found (for multithreading) in order to have independent correction ranges
             int[] lowAndNonNullErrorFrames = IntStream.range(minF+1, maxFExcluded).filter(i -> errorCountMean.get(i)>0 && errorCountMean.get(i)<=maxErrorRate).toArray();
@@ -306,7 +306,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                                     FrameRange.mergeOverlappingRanges(corrRanges);
                                     if (debugCorr) logger.debug("correction performed frame ranges {} (all corrRanges: {})", subCorrRanges, corrRanges);
                                     if (correctionStep && snapshotIdx>correctionStepLimit) return;
-                                    subIdx = -1; // restart from begining 
+                                    subIdx = -1; // restart from beginning
                                     break;
                                 } else if (subIdx == idxLim) { // when a idxLim is reach in a range -> range is removed
                                     idxLim = Math.min(correctionIndexLimit, populations.values().stream().mapToInt(p->p.size()).max().getAsInt());
@@ -323,7 +323,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             });
             if (correctionStep) snapshot("End of Correction", false);
         }
-        // 3) final assignement without correction, noticing all errors
+        // 3) final assignment without correction, noticing all errors
         for (int t = minF+1; t<maxFExcluded; ++t)  setAssignmentToTrackAttributes(t, true);
         List<StructureObject> parents = new ArrayList<>(parentsByF.values());
         Collections.sort(parents);
@@ -334,7 +334,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
      * Performs correction at a specified assignment index (see {@link boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.Assignment}) within the range of frame [{@param frameMin};{@param frameMaxIncluded}]
      * @param range frame range in which perform correction
      * @param idx assignment index at which perform correction
-     * @param outRanges list that will recieve frame range where correction have been performed
+     * @param outRanges list that will receive frame range where correction have been performed
      * @return true if a correction was performed
      */
     private void performCorrectionsByIdx(FrameRange range, FrameRange correctionLimit, final int idx, List<FrameRange> outRanges) {
@@ -365,7 +365,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         int errors = 0;
         for (StructureObject parent : parents) {
             int f = parent.getFrame();
-            if (!segment) { // modifiy existing structureObjects
+            if (!segment) { // modify existing structureObjects
                 children = parent.getChildren(structureIdx);
                 if (children ==null || populations.get(f)==null) {}
                 else if (children.size()!=populations.get(f).size()) logger.error("BCMTLC: error @ parent: {}, children and tracker objects differ in number", parent);
@@ -522,7 +522,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             StructureObject parent = this.parentsByF.get(frame);
             List<StructureObject> list = parent!=null ? parent.getChildren(structureIdx) : null;
             if (list!=null) populations.put(parent.getFrame(), Utils.transform(list, o-> {
-                if (segment || correction) o.getRegion().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that semgneted objects are in parent referential (for split & merge calls to segmenter)
+                if (segment || correction) o.getRegion().translate(new SimpleOffset(parent.getBounds()).reverseOffset()).setIsAbsoluteLandmark(false); // so that segmented objects are in parent referential (for split & merge calls to segmenter)
                 return o.getRegion();
             }));
             else populations.put(frame, Collections.EMPTY_LIST); 
@@ -716,7 +716,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             Set<TrackAttribute> nextTa = new HashSet<>();
             Set<TrackAttribute> bucket = new HashSet<>(3);
             Set<TrackAttribute> switchTa;
-            FrameRangeLock.Unlocker unlocker = lock==null?()->{} : lock.lock(new FrameRange(frame+1,  frame+1+sizeRatioFrameNumber)); // this function that can go outside processing range
+            FrameRangeLock.Unlocker unLocker = lock==null?()->{} : lock.lock(new FrameRange(frame+1,  frame+1+sizeRatioFrameNumber)); // this function that can go outside processing range
             WL: while(res.size()<sizeRatioFrameNumber && !curTa.isEmpty()) {
                 for (TrackAttribute ta : curTa) {
                     if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
@@ -724,7 +724,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                             double nextSize = 0;
                             bucket.clear();
                             ta.addNext(bucket);
-                            if (Utils.getFirst(bucket, t->t.touchEndOfChannel)==null && (ta.division && bucket.size()>1) || (!ta.division && bucket.size()<2)) { // do not take into acount if touches end of channel // nor take into acount weird divisions
+                            if (Utils.getFirst(bucket, t->t.touchEndOfChannel)==null && (ta.division && bucket.size()>1) || (!ta.division && bucket.size()<2)) { // do not take into account if touches end of channel // nor take into acount weird divisions
                                 for (TrackAttribute t : bucket) nextSize+=t.getSize();
                                 res.add(nextSize/ta.getSize()); 
                                 nextTa.addAll(bucket);
@@ -740,7 +740,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 nextTa = switchTa;
                 nextTa.clear();
             }
-            unlocker.unlock();
+            unLocker.unlock();
             return res;
         }
         private List<TrackAttribute> getPreviousTrack(int sizeLimit, boolean reverseOrder) {
@@ -948,7 +948,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             double score1 = Math.abs(taCur1.getSize()/taPrev1.getSize()-sizeRatio1);
             double scoreDiv = Math.abs((taCur1.getSize()+taCur2.getSize())/taPrev1.getSize()-sizeRatio1);
 
-            boolean endOfChannel = a.idxPrevEnd()==a.ta.prev.size(); // idxEnd==idxLim ||  // if end of channel : assignement only from start 
+            boolean endOfChannel = a.idxPrevEnd()==a.ta.prev.size(); // idxEnd==idxLim ||  // if end of channel : assignment only from start
             TrackAttribute taCurEnd1, taCurEnd2, taPrevEnd;
             double scoreEnd1=Double.POSITIVE_INFINITY, scoreEndDiv=Double.POSITIVE_INFINITY;
             if (!endOfChannel) {
@@ -988,9 +988,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (dup.idxNextEnd() == dup.idxNext) nextIdxError = dup.idxNextEnd()+1;
             }
             if (debug && a.ta.verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{} / ass1={}, ass2={}", a.objectCountPrev(), a.objectCountNext(), (score==score1||score==scoreDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv), currentAssigner.toString(false), dup.toString(false));
-            setAssignmentToTrackAttributes(currentAssigner, frame, !lastAssignment, lastAssignment); // perform current assignement
+            setAssignmentToTrackAttributes(currentAssigner, frame, !lastAssignment, lastAssignment); // perform current assignment
             setAssignmentToTrackAttributes(dup, frame, !lastAssignment, lastAssignment); // recursive call
-            if (nextIdxError>=0) { // case of assignemnet 1 with O in dup : set nextTa & signal error
+            if (nextIdxError>=0) { // case of assignmnet 1 with O in dup : set nextTa & signal error
                 getAttribute(frame-1, dup.idxPrev).next = getAttribute(frame, nextIdxError);
                 getAttribute(frame-1, dup.idxPrev).errorCur=true;
             }
@@ -1060,7 +1060,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return getBestScenario(allScenarios, a.ta.verboseLevel);
     }
     /**
-     * Testing stage. Mutltiple Split/Merge in one scenario
+     * Testing stage. Multiple Split/Merge in one scenario
      * @param a
      * @param frame
      * @return 
@@ -1068,19 +1068,19 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     private FrameRange performCorrectionMultipleObjects(Assignment a, int frame, FrameRange limit) {
         if (debugCorr) logger.debug("performing correction multiple objects: {}", this);
 
-        // Todo : rearrange objects from nextTa au lieu de toutes les combinaisons de merge..
+        // Todo : rearrange objects from nextTa instead of all combinations
         List<CorrectionScenario> scenarios = new ArrayList<>();
         for (int iMerge = 0; iMerge+1<a.objectCountPrev(); ++iMerge) scenarios.add(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, a.prevObjects.subList(iMerge, iMerge+2), frame-1)); // merge one @ previous
         if (a.objectCountPrev()>2 && a.objectCountNext()<=2) scenarios.add(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, a.prevObjects, frame-1)); // merge all previous objects
 
-        scenarios.add(new RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections.this, frame, a)); // TODO: TEST INSTEAD OF SPLIT / SPLITANDMERGE
+        scenarios.add(new RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections.this, frame, a)); // TODO: TEST INSTEAD OF SPLIT / SPLIT AND MERGE
         return getBestScenario(scenarios, a.ta.verboseLevel);
     }
     /**
      * 
      * @param scenarios
      * @param verboseLevel
-     * @return Best scenario among {@param scenarios}: first minimizes error number, minimal error number should be inferior to current error number, second minimize corection socre among scenario that yield in the same error number
+     * @return Best scenario among {@param scenarios}: first minimizes error number, minimal error number should be inferior to current error number, second minimize correction score among scenarios that yield in the same error number
      */
     private FrameRange getBestScenario(Collection<CorrectionScenario> scenarios, int verboseLevel) {
         scenarios.removeIf(c ->((c instanceof MultipleScenario) && ((MultipleScenario)c).scenarios.isEmpty()) || c.cost > ((c instanceof MultipleScenario)? cumCostLim : costLim));
@@ -1121,10 +1121,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             //saveMap.get(best).restore(best.frameMin-1, best.frameMax+1, true);
             double err1 = getErrorNumber(fMin, fMax+1);
             if (err1!=errorMap.get(best)) {
-                logger.error("inconsistancy in error count: when apply scenario: {}: {} vs {}", best, errorMap.get(best), err1);
+                logger.error("inconsistency in error count: when apply scenario: {}: {} vs {}", best, errorMap.get(best), err1);
                 ul.unlock();
                 return null;
-                //throw new RuntimeException("inconsistancy in error count: when apply scenario: E="+errorMap.get(best)+" after restore: E="+err1+" after re-apply"+err2+ " after restore:"+err3+" after apply all:"+err4+" after restore again:"+err5+" and again:"+err6+" save best frames:"+saveMap.get(best));
+                //throw new RuntimeException("inconsistency in error count: when apply scenario: E="+errorMap.get(best)+" after restore: E="+err1+" after re-apply"+err2+ " after restore:"+err3+" after apply all:"+err4+" after restore again:"+err5+" and again:"+err6+" save best frames:"+saveMap.get(best));
             }
             ul.unlock();
             if (correctionStep) snapshot("step:"+snapshotIdx+"/"+best+"errors:"+currentErrors+"->"+errorMap.get(best)+"@F"+new FrameRange(fMin, fMax+1)+"E1="+err1+":"+getErrorByFrame.get(), true);
@@ -1166,7 +1166,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (fMin<this.fMin) fMin = this.fMin;
             if (fMaxIncluded>fMin+objects.length-1)  fMaxIncluded = fMin+objects.length-1;
             // no locking here because already locked when called
-            for (int f = fMin; f<=fMaxIncluded; ++f) restoreRegionsAndAttributes(f, copy); // first retore objects and attributes without links
+            for (int f = fMin; f<=fMaxIncluded; ++f) restoreRegionsAndAttributes(f, copy); // first restore objects and attributes without links
             for (int f = fMin; f<=fMaxIncluded; ++f) restoreLinks(f, true, true);  // set links also before and after limits of restore
             restoreLinks(fMin-1, false, true);
             restoreLinks(fMaxIncluded+1, true, false);

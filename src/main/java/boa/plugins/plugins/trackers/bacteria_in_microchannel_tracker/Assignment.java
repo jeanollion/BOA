@@ -26,16 +26,14 @@ import java.util.ListIterator;
 import static boa.plugins.Plugin.logger;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit;
-import boa.utils.Utils;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSRErrorThld;
+
+import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significantSRErrorThld;
 import static boa.plugins.plugins.trackers.bacteria_in_microchannel_tracker.BacteriaClosedMicrochannelTrackerLocalCorrections.SRErrorValue;
 
 /**
@@ -248,7 +246,7 @@ public class Assignment {
                         double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                         if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                     }
-                    if (Math.abs(currentDelta/sizePrev) > significativeSRErrorThld/2.0) { // add to next. This limit is used to avoid the cases where 
+                    if (Math.abs(currentDelta/sizePrev) > significantSRErrorThld /2.0) { // add to next. This limit is used to avoid the cases where
                         Assignment other = this.duplicate(ta);
                         if (other.incrementNext()) {
                             double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
@@ -282,7 +280,7 @@ public class Assignment {
                         double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
                         if (Math.abs(otherDelta)<Math.abs(currentDelta)) deltaSizeMapAssignmentCandidate.put(otherDelta, other);
                     }
-                    if (Math.abs(currentDelta/sizePrev) > significativeSRErrorThld/2.0 ) { // add to prev
+                    if (Math.abs(currentDelta/sizePrev) > significantSRErrorThld /2.0 ) { // add to prev
                         Assignment other = this.duplicate(ta);
                         if (other.incrementPrev()) {
                             double otherDelta = other.getPreviousSizeRatio() * other.sizePrev - other.sizeNext;
@@ -335,7 +333,7 @@ public class Assignment {
         }
         public boolean truncatedEndOfChannel() {
             return (ta.truncatedChannel && idxNextEnd()==ta.next.size()   && 
-                    (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE && !Double.isNaN(getPreviousSizeRatio()) ? getPreviousSizeRatio()-sizeNext/sizePrev>significativeSRErrorThld : sizePrev * ta.baseSizeRatio[0] > sizeNext) ); //&& idxEnd-idx==1 // && idxPrevEnd-idxPrev==1
+                    (ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE && !Double.isNaN(getPreviousSizeRatio()) ? getPreviousSizeRatio()-sizeNext/sizePrev> significantSRErrorThld : sizePrev * ta.baseSizeRatio[0] > sizeNext) ); //&& idxEnd-idx==1 // && idxPrevEnd-idxPrev==1
         }
         public boolean needCorrection() {
             return prevObjects.size()>1 || nextObjects.size()>2; 
@@ -351,13 +349,13 @@ public class Assignment {
             if (this.nextObjects.isEmpty() && idxNextEnd()<ta.next.size()) return new double[]{getErrorCount(), 0}; // cell death scenario
             double prevSizeRatio = ta.mode==TrackAssigner.AssignerMode.ADAPTATIVE ? getPreviousSizeRatio() : Double.NaN;
             if (Double.isNaN(prevSizeRatio)) return new double[]{getErrorCount(), Double.NaN};
-            if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignement score: prevSI: {}, SI: {}", ta.verboseLevel, prevSizeRatio, sizeNext/sizePrev);
+            if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignment score: prevSI: {}, SI: {}", ta.verboseLevel, prevSizeRatio, sizeNext/sizePrev);
             return new double[]{getErrorCount(), Math.abs(prevSizeRatio - sizeNext/sizePrev)};
         }
         
         public int getTrackingErrorCount() {
             return Math.max(0, nextObjects.size()-2) + prevObjects.size()-1; // division in more than 2 + merging
-            //return Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1); // max erro @ prev OU @ next
+            //return Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1); // max error @ prev OU @ next
         }
         /**
          * Error number is the sum of (1) the number of sur-numerous objects in assignment: more than 2 objects at next frame or more than one object at previous frame, and the number of errors due to size increment (See {@link #getSizeRatioErrors() }
@@ -388,7 +386,7 @@ public class Assignment {
             } else {
                 double sizeRatio = sizeNext/sizePrev;
                 if (debug && ta.verboseLevel<verboseLevelLimit) logger.debug("L:{}: {}, sizeRatioError check: SI:{} lineage SI: {}, error: {}", ta.verboseLevel, this, sizeRatio, prevSizeRatio, Math.abs(prevSizeRatio-sizeRatio));
-                double err =  (Math.abs(prevSizeRatio-sizeRatio)/significativeSRErrorThld);
+                double err =  (Math.abs(prevSizeRatio-sizeRatio)/ significantSRErrorThld);
                 return err>1 ? err:0;
             }
             } else return verifyInequality() ? 0:1;

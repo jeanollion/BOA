@@ -210,21 +210,21 @@ public class ArrayUtil {
         if (stopExclusive>array.length) stopExclusive=array.length;
         int i = start;
         if (array[start]<value) { // increasing values
-            if (start<=stopExclusive) { // increasing indicies
+            if (start<=stopExclusive) { // increasing indices
                 while(i<stopExclusive-1 && array[i]<value) i++;
                 if (inferior && (strict?array[i]>=value:array[i]>value) && i>start) return i-1;
                 else return i;
-            } else { // decreasing indicies
+            } else { // decreasing indices
                 while(i>stopExclusive && array[i]<value) i--;
                 if (inferior && (strict?array[i]>=value:array[i]>value) && i<start) return i+1;
                 else return i;
             }
         } else { // decreasing values
-            if (start<=stopExclusive) { // increasing indicies
+            if (start<=stopExclusive) { // increasing indices
                 while(i<stopExclusive-1 && array[i]>value) i++;
                 if (!inferior && (strict?array[i]<=value:array[i]<value) && i>start) return i-1;
                 else return i;
-            } else { // decreasing indicies
+            } else { // decreasing indices
                 while(i>stopExclusive && array[i]>value) i--;
                 if (!inferior && (strict?array[i]<=value:array[i]<value) && i<start) return i+1;
                 else return i;
@@ -236,21 +236,21 @@ public class ArrayUtil {
         if (stop>array.length) stop=array.length;
         int i = start;
         if (array[start]<value) { // increasing values
-            if (start<=stop) { // increasing indicies
+            if (start<=stop) { // increasing indices
                 while(i<stop-1 && array[i]<value) i++;
                 if (inferior && (strict?array[i]>=value:array[i]>value) && i>start) return i-1;
                 else return i;
-            } else { // decreasing indicies
+            } else { // decreasing indices
                 while(i>stop && array[i]<value) i--;
                 if (inferior && (strict?array[i]>=value:array[i]>value) && i<start) return i+1;
                 else return i;
             }
         } else { // decreasing values
-            if (start<=stop) { // increasing indicies
+            if (start<=stop) { // increasing indices
                 while(i<stop-1 && array[i]>value) i++;
                 if (!inferior && (strict?array[i]<=value:array[i]<value) && i>start) return i-1;
                 else return i;
-            } else { // decreasing indicies
+            } else { // decreasing indices
                 while(i>stop && array[i]>value) i--;
                 if (!inferior && (strict?array[i]<=value:array[i]<value) && i<start) return i+1;
                 else return i;
@@ -624,7 +624,7 @@ public class ArrayUtil {
      * @param <T> type 
      * @param array
      * @param func
-     * @return {@param array} for convinience
+     * @return {@param array} for convenience
      */
     public static <T> T[] apply(T[] array, Function<T, T> func) {
         for (int i = 0; i<array.length; ++i) array[i] = func.apply(array[i]);

@@ -200,7 +200,7 @@ public class GrowthRate implements Measurement, MultiThreaded {
     }
 
     @Override
-    public void setMultithread(boolean parallele) {
+    public void setMultiThread(boolean parallel) {
         // always true
     }
     

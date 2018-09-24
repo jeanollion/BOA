@@ -22,24 +22,18 @@ import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.NumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.data_structure.StructureObjectProcessing;
-import boa.image.BlankMask;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;
 import boa.image.Image;
-import boa.image.ImageByte;
 import boa.image.ImageFloat;
-import boa.image.ImageInteger;
 import boa.image.ImageMask;
-import boa.image.ImageMask2D;
 import boa.plugins.SimpleThresholder;
 import boa.plugins.Thresholder;
 import boa.image.processing.ImageFeatures;
-import boa.image.processing.ImageOperations;
 import boa.plugins.MultiThreaded;
 import boa.plugins.ThresholderHisto;
 import boa.plugins.ToolTip;
 import boa.utils.ArrayUtil;
-import boa.utils.Pair;
 import boa.utils.Utils;
 import org.apache.commons.math3.fitting.GaussianCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
@@ -66,10 +60,10 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
     }
     
     
-    boolean multithread;
+    boolean parallel;
     @Override
-    public void setMultithread(boolean multithread) {
-        this.multithread=multithread;
+    public void setMultiThread(boolean parallel) {
+        this.parallel = parallel;
     }
     
     @Override
@@ -79,7 +73,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
     
     @Override
     public double runSimpleThresholder(Image input, ImageMask mask) {
-        return runThresholderHisto(HistogramFactory.getHistogram(()->Utils.parallele(input.stream(mask, true), multithread), HistogramFactory.BIN_SIZE_METHOD.BACKGROUND) );
+        return runThresholderHisto(HistogramFactory.getHistogram(()->Utils.parallele(input.stream(mask, true), parallel), HistogramFactory.BIN_SIZE_METHOD.BACKGROUND) );
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
@@ -124,7 +118,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
         
         double halfWidthIdx = getHalfWidthIdx(histo, modeIdx, true);
         //logger.debug("background fit  : mode idx: {} (value: {}), half width estimation: {}", modeIdx, histo.getValueFromIdx(modeIdx), halfWidthIdx);
-        if (Double.isNaN(halfWidthIdx) || modeIdx-halfWidthIdx<2) { // no halfwidth found or halfwidth is too close from mode
+        if (Double.isNaN(halfWidthIdx) || modeIdx-halfWidthIdx<2) { // no half width found or half width is too close from mode
             double halfWidthIdx2 = getHalfWidthIdx(histo, modeIdx, false);
             if (Double.isNaN(halfWidthIdx) || (halfWidthIdx2 - modeIdx> modeIdx-halfWidthIdx)) {
                 halfWidthIdx = halfWidthIdx2;
@@ -141,7 +135,7 @@ public class BackgroundFit implements ThresholderHisto, SimpleThresholder, Multi
             WeightedObservedPoints obsT = new WeightedObservedPoints();
             for (int i = startT; i<=2 * modeIdx - halfHalf; ++i) obsT.add( i, histo.data[i]-histo.data[startT]);
             double sigma = Math.abs(modeIdx - halfWidthIdx) / Math.sqrt(2*Math.log(2));
-            //logger.debug("estimed sigma from halfwidth {}", sigma * histo.binSize);
+            //logger.debug("estimated sigma from half width {}", sigma * histo.binSize);
             try { 
                 double[] coeffsT = GaussianCurveFitter.create().withMaxIterations(1000).withStartPoint(new double[]{histo.data[modeIdx]-histo.data[startT], modeIdx, sigma/2.0}).fit(obsT.toList());
                 modeFitIdx = coeffsT[1];

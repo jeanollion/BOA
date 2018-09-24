@@ -27,7 +27,6 @@ import boa.image.BlankMask;
 import boa.image.Histogram;
 import boa.image.HistogramFactory;
 import boa.image.Image;
-import boa.image.ImageByte;
 import boa.image.ImageMask;
 import boa.plugins.MultiThreaded;
 import boa.plugins.SimpleThresholder;
@@ -93,7 +92,7 @@ public class BackgroundThresholder implements SimpleThresholder, ThresholderHist
         return runThresholder(input,mask, sigmaFactor, lastSigmaFactor, iterations, firstValue, null);
     }
     public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double firstValue, double[] meanSigma) {
-        if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
+        if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to receive mean and sigma values");
         if (mask==null) mask = new BlankMask(input);
         if (firstValue==Double.NaN) firstValue = Double.MAX_VALUE;
         double lastThreshold = firstValue;
@@ -125,7 +124,7 @@ public class BackgroundThresholder implements SimpleThresholder, ThresholderHist
     }
     
     public static double runThresholder(Histogram histo, double sigmaFactor, double lastSigmaFactor, int iterations, double firstValue, double[] meanSigma) {
-        if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
+        if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to receive mean and sigma values");
         int firstIdx =  Double.isInfinite(firstValue)||firstValue==Double.MAX_VALUE ? histo.data.length-1 : (int)histo.getIdxFromValue(firstValue);
         if (firstIdx>histo.data.length-1) firstIdx=histo.data.length-1;
         double binInc = 0.245; // empirical correction !
@@ -175,10 +174,10 @@ public class BackgroundThresholder implements SimpleThresholder, ThresholderHist
     }
 
     
-    boolean multithread;
+    boolean parallel;
     @Override
-    public void setMultithread(boolean multithread) {
-        this.multithread=multithread;
+    public void setMultiThread(boolean parallel) {
+        this.parallel = parallel;
     }
     
 }

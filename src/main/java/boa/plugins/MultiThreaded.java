@@ -23,5 +23,5 @@ package boa.plugins;
  * @author Jean Ollion
  */
 public interface MultiThreaded {
-    public void setMultithread(boolean parallele);
+    public void setMultiThread(boolean parallel);
 }

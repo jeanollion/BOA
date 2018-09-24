@@ -66,7 +66,7 @@ import java.util.Arrays;
  */
 public class AutoFlipY implements ConfigurableTransformation, MultichannelTransformation, ToolTip {
     
-    public static enum AutoFlipMethod {
+    public enum AutoFlipMethod {
         FLUO("Bacteria Fluo", "Detects side where bacteria are more aligned -> should be the upper side"),
         FLUO_HALF_IMAGE("Bacteria Fluo: Upper Half of Image", "Bacteria should be present in upper half of the image"),
         PHASE("Phase Contrast Optical Aberration", "Optical Aberration is detected and side where variance along X axis is maximal is selected OR if the optical aberration is closer to one side on the image than microchannel height the other side is selected");
@@ -92,7 +92,7 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
         cond.addListener(p->{ 
             AutoFlipMethod m = AutoFlipMethod.getMethod(method.getSelectedItem());
             if (m!=null) cond.setToolTipText(m.toolTip);
-            else cond.setToolTipText("Choose autoflip algorithm");
+            else cond.setToolTipText("Choose autoFlip algorithm");
         });
     }
     @Override
@@ -161,7 +161,7 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
                 float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null, v->v>0); // if rotation before -> top & bottom of image can contain zeros -> mean proj then return NaN
                 int startY = getFirstNonNanIdx(yProj, true);
                 int stopY = getFirstNonNanIdx(yProj, false);
-                if (startY>=stopY)  throw new RuntimeException("Autoflip error: no values>0");
+                if (startY>=stopY)  throw new RuntimeException("AutoFlip error: no values>0");
                 int peakIdx = ArrayUtil.max(yProj, startY, stopY+1);           
                 double median = ArrayUtil.median(Arrays.copyOfRange(yProj, startY, stopY+1-startY));
                 double peakHeight = yProj[peakIdx] - median;
@@ -288,7 +288,7 @@ public class AutoFlipY implements ConfigurableTransformation, MultichannelTransf
     }
     
     @Override
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+    public boolean isConfigured(int totalChannelNumber, int totalTimePointNumber) {
         return flip!=null;
     }
     

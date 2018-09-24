@@ -19,6 +19,7 @@
 package boa.plugins;
 
 import boa.data_structure.input_image.InputImages;
+import boa.image.Image;
 
 /**
  *
@@ -26,10 +27,10 @@ import boa.data_structure.input_image.InputImages;
  */
 public interface ConfigurableTransformation extends Transformation {
     /**
-     * This method compute configuration data necessary for {@link Transformation#applyTransformation(image.Image)} method; data is retrieved by the {@link Transformation#getConfigurationData() } method; in this metohd the objects should not be modified but created de novo.
+     * This method compute configuration data necessary for {@link Transformation#applyTransformation(int, int, Image)} method; in this method the objects should not be modified but created de novo.
      * @param channelIdx
      * @param inputImages 
      */
     public void computeConfigurationData(int channelIdx, InputImages inputImages);
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber);
+    public boolean isConfigured(int totalChannelNumber, int totalTimePointNumber);
 }
