@@ -18,20 +18,16 @@
  */
 package boa.plugins.plugins.transformations;
 
+import boa.configuration.parameters.*;
 import boa.gui.image_interaction.IJImageDisplayer;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
-import boa.configuration.parameters.BooleanParameter;
-import boa.configuration.parameters.BoundedNumberParameter;
-import boa.configuration.parameters.ChoiceParameter;
-import boa.configuration.parameters.FilterSequence;
-import boa.configuration.parameters.NumberParameter;
-import boa.configuration.parameters.Parameter;
-import boa.configuration.parameters.PreFilterSequence;
+
 import static boa.core.Processor.logger;
 import boa.data_structure.input_image.InputImage;
 import boa.data_structure.input_image.InputImages;
 import static boa.data_structure.input_image.InputImages.getAverageFrame;
 import boa.data_structure.StructureObjectPreProcessing;
+import boa.image.BoundingBox;
 import boa.image.Image;
 import boa.image.ImageFloat;
 import boa.image.TypeConverter;
@@ -60,7 +56,7 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
     NumberParameter maxAngle = new BoundedNumberParameter("Maximal Angle for search", 2, 10, -90, 90);
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first search", 2, 1, 0, null);
     NumberParameter precision2 = new BoundedNumberParameter("Angular Precision", 2, 0.1, 0, 1);
-    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false); 
+    EnumChoiceParameter<InterpolationScheme> interpolation = new EnumChoiceParameter<>("Interpolation", ImageTransformation.InterpolationScheme.values(), ImageTransformation.InterpolationScheme.BSPLINE5, false);
     ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false).setToolTipText("<ul><li><b>"+SearchMethod.MAXVAR.getName()+"</b>: Search for the angle that yields in maximal dispersion of projected values</li><li><b>"+SearchMethod.MAXARTEFACT.getName()+": Search for the angle that yields in the maximal value, reached when optical aberration in phase-contrast images (located at interface with main channel) is perpendicular to the axis</b></li></ul>");
     NumberParameter frameNumber = new BoundedNumberParameter("Number of frame", 0, 10, 0, null).setToolTipText("Number of frames on which the angle should be computed. Resulting angle is the median value of all the angles");
     BooleanParameter removeIncompleteRowsAndColumns = new BooleanParameter("Remove Incomplete rows and columns", true).setToolTipText("If this option is not selected the frame of the image will be enlarged to fit the whole rotated image and filled with zeros");
@@ -74,7 +70,7 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         this.maxAngle.setValue(maxAngle);
         this.precision1.setValue(precision1);
         this.precision2.setValue(precision2);
-        if (interpolation!=null) this.interpolation.setSelectedItem(interpolation.toString());
+        if (interpolation!=null) this.interpolation.setSelectedEnum(interpolation);
         this.searchMethod.setSelectedItem(method.getName());
         //this.backgroundSubtractionRadius.setValue(backgroundSubtractionRadius);
     }
@@ -112,6 +108,7 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
     public OUTPUT_SELECTION_MODE getOutputChannelSelectionMode() {
         return OUTPUT_SELECTION_MODE.ALL;
     }
+
     public double getAngle(Image image) {
         double angle=0;
         if (this.searchMethod.getSelectedItem().equals(SearchMethod.MAXVAR.getName())) { 
@@ -122,7 +119,7 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         return angle;
     }
     public Image rotate(Image image) {
-        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), getAngle(image), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
+        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), getAngle(image), interpolation.getSelectedEnum(), removeIncompleteRowsAndColumns.getSelected());
     }
     List<Image> sinogram1Test, sinogram2Test;
     
@@ -137,7 +134,7 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
         if (fn<=1) frames = new ArrayList<Integer>(1){{add(inputImages.getDefaultTimePoint());}};
         else frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, fn); // TODO not necessary for phase contrast
         
-        List<Double> angles = frames.stream().parallel().map(f -> {
+        List<Double> angles = frames.stream().map(f -> {
             Image<? extends Image> image = inputImages.getImage(channelIdx, f);
             image = prefilters.filter(image);
             if (image.sizeZ()>1) {
@@ -159,7 +156,7 @@ public class AutoRotationXY implements MultichannelTransformation, ConfigurableT
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (Double.isNaN(rotationAngle)) throw new RuntimeException("Autorotation not configured");
-        Image res = ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), rotationAngle, ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncompleteRowsAndColumns.getSelected());
+        Image res = ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), rotationAngle, interpolation.getSelectedEnum(), removeIncompleteRowsAndColumns.getSelected());
         if (maintainMaximum.getSelected() && interpolation.getSelectedIndex()>1) {
             double oldMax = image.getMinAndMax(null)[1];
             SaturateHistogram.saturate(oldMax, oldMax, res);

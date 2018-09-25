@@ -30,7 +30,7 @@ import java.util.stream.IntStream;
  */
 public class RadonProjection {
 
-    public static void radonProject(Image image, int z, double angle, float[] proj, boolean parallele) {
+    public static void radonProject(Image image, int z, double angle, float[] proj, boolean parallel) {
         double sintab = Math.sin((double) angle * Math.PI / 180 - Math.PI / 2);
         double costab = Math.cos((double) angle * Math.PI / 180 - Math.PI / 2);
 
@@ -45,8 +45,8 @@ public class RadonProjection {
         double a = -costab / sintab;
         double aa = 1 / a;
         if (Math.abs(sintab) > sang) {
-            parallele(IntStream.range(0, proj.length), parallele).forEach(projIdx -> {
-                int N = projIdx - proj.length / 2; //System.out.print("N="+N+" ");
+            parallele(IntStream.range(0, proj.length), parallel).forEach(projIdx -> {
+                int N = projIdx - proj.length / 2;
                 double b = (N - costab - sintab) / sintab;
                 b *= scale;
                 boolean noValue=true;
@@ -70,7 +70,7 @@ public class RadonProjection {
             });
         }
         if (Math.abs(sintab) <= sang) {
-            parallele(IntStream.range(0, proj.length), parallele).forEach(projIdx -> {
+            parallele(IntStream.range(0, proj.length), parallel).forEach(projIdx -> {
                 int N = projIdx - proj.length / 2;
                 double bb = (N - costab - sintab) / costab;
                 bb = bb * scale;

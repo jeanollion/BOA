@@ -47,4 +47,9 @@ public class EnumChoiceParameter<E extends Enum<E>> extends AbstractChoiceParame
         if (idx>=0) return enumChoiceList[idx];
         else return null;
     }
+    public EnumChoiceParameter<E> setSelectedEnum(E selectedEnum) {
+        if (selectedEnum==null) this.setSelectedItem(null);
+        else setSelectedItem(selectedEnum.toString());
+        return this;
+    }
 }
