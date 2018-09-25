@@ -18,14 +18,10 @@
  */
 package boa.plugins.plugins.segmenters;
 
+import boa.configuration.parameters.*;
 import boa.plugins.MicrochannelSegmenter;
 import boa.gui.image_interaction.IJImageDisplayer;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
-import boa.configuration.parameters.BoundedNumberParameter;
-import boa.configuration.parameters.ChoiceParameter;
-import boa.configuration.parameters.ConditionalParameter;
-import boa.configuration.parameters.NumberParameter;
-import boa.configuration.parameters.Parameter;
 import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
@@ -77,15 +73,21 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
 
     
     public enum X_DER_METHOD {CONSTANT, RELATIVE_TO_INTENSITY_RANGE}
+    public enum END_DETECTION_METHOD {OPEN_END, CLOSED_END_WITH_ADJUST}
     NumberParameter channelWidth = new BoundedNumberParameter("Typical Width", 0, 20, 5, null).setToolTipText("Typical width of microchannels, in pixels");
     NumberParameter channelWidthMin = new BoundedNumberParameter("Min Width", 0, 15, 5, null).setToolTipText("Minimal width of microchannels, in pixels");
     NumberParameter channelWidthMax = new BoundedNumberParameter("Max Width", 0, 28, 5, null).setToolTipText("Maximal width of microchannels, in pixels");
-    NumberParameter closedEndYAdjustWindow = new BoundedNumberParameter("Closed-end Y Adjust Window", 0, 5, 0, null).setToolTipText("Window (in pixels) within which y-coordinate of the closed-end of microchannel will be refined, by searching for the first local maximum of the Y-derivate within the window: [y-this value; y+this value]");
-    ChoiceParameter xDerPeakThldMethod = new ChoiceParameter("X-Derivative Threshold Method", Utils.toStringArray(X_DER_METHOD.values()), X_DER_METHOD.RELATIVE_TO_INTENSITY_RANGE.toString(), false);
+
+    EnumChoiceParameter<X_DER_METHOD> xDerPeakThldMethod = new EnumChoiceParameter("X-Derivative Threshold Method", X_DER_METHOD.values(), X_DER_METHOD.RELATIVE_TO_INTENSITY_RANGE, false);
     NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold", 3, 10, 0, null).setToolTipText("Threshold for Microchannel side detection (peaks of 1st derivative in X-axis). <br />This parameter will depend on the intensity of the image and should be adjusted if microchannels are poorly detected. <br />Configuration Hint: Refer to side detection plot (displayed through right-click menu) to display peak heights.<br />A higher value if too many channels are detected and a lower value in the contrary.");
     NumberParameter relativeDerThld = new BoundedNumberParameter("X-Derivative Ratio", 3, 40, 1, null).setToolTipText("To compute x-derivative threshold for peaks, the signal range is computed range = the median signal value - mean backgroud value. X-derivative threshold = signal range / this ratio.<br />Configuration Hint: Refer to side detection plot (displayed through right-click menu) to display peak heights. <br />Decrease this value if too many microchannels are detected.");
     ConditionalParameter xDerPeakThldCond = new ConditionalParameter(xDerPeakThldMethod).setActionParameters(X_DER_METHOD.CONSTANT.toString(), localDerExtremaThld).setActionParameters(X_DER_METHOD.RELATIVE_TO_INTENSITY_RANGE.toString(), relativeDerThld).setEmphasized(true).setToolTipText("Side detection: peak selection method. <ol><li>"+X_DER_METHOD.CONSTANT.toString()+": Constant threshold</li><li>"+X_DER_METHOD.RELATIVE_TO_INTENSITY_RANGE.toString()+": Relative to signal Range. This method is more adapted when signal range can vary from one dataset to another</li></ol> <br/ >");
-    Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, xDerPeakThldCond}; //sigmaThreshold
+
+    EnumChoiceParameter<END_DETECTION_METHOD> endDetectionMethod = new EnumChoiceParameter<>("End Detection Method", END_DETECTION_METHOD.values(), END_DETECTION_METHOD.CLOSED_END_WITH_ADJUST, false);
+    NumberParameter closedEndYAdjustWindow = new BoundedNumberParameter("Closed-end Y Adjust Window", 0, 5, 0, null).setToolTipText("Window (in pixels) within which y-coordinate of the closed-end of microchannel will be refined, by searching for the first local maximum of the Y-derivate within the window: [y-this value; y+this value]");
+    ConditionalParameter endDetectionMethodCond = new ConditionalParameter(endDetectionMethod).setActionParameters(END_DETECTION_METHOD.CLOSED_END_WITH_ADJUST.toString(), closedEndYAdjustWindow);
+
+    Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, xDerPeakThldCond, endDetectionMethodCond};
     public final static double PEAK_RELATIVE_THLD = 0.6;
     public static boolean debug = false;
     public static int debugIdx = -1;
@@ -137,8 +139,10 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
         int channelWidth = this.channelWidth.getValue().intValue();
         int channelWidthMin = this.channelWidthMin.getValue().intValue();
         int channelWidthMax = this.channelWidthMax.getValue().intValue();
+        END_DETECTION_METHOD endDetMethod = endDetectionMethod.getSelectedEnum();
+        boolean openEnd = END_DETECTION_METHOD.OPEN_END.equals(endDetMethod);
         double localDerExtremaThld;
-        switch(X_DER_METHOD.valueOf(xDerPeakThldMethod.getSelectedItem())) {
+        switch(xDerPeakThldMethod.getSelectedEnum()) {
             case CONSTANT:
                 localDerExtremaThld = this.localDerExtremaThld.getValue().doubleValue();
                 break;
@@ -155,11 +159,11 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
         
         // get global closed-end Y coordinate
         Image imDerY = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
-        float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
-        int closedEndY = ArrayUtil.max(yProj, 0, yProj.length) + yStartStop[0]; 
+        float[] yProj = openEnd?null:ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
+        int closedEndY = openEnd?yStartStop[0] : ArrayUtil.max(yProj, 0, yProj.length) + yStartStop[0];
 
         // get X coordinates of each microchannel
-        imCrop = image.crop(new MutableBoundingBox(0, image.sizeX()-1, closedEndY, image.sizeY()-1, 0, image.sizeZ()-1));
+        imCrop = closedEndY==0?image:image.crop(new MutableBoundingBox(0, image.sizeX()-1, closedEndY, image.sizeY()-1, 0, image.sizeZ()-1));
         float[] xProj = ImageOperations.meanProjection(imCrop, ImageOperations.Axis.X, null);
         // check for null values @ start & end that could be introduces by rotation and replace by first non-null value
         int start = 0;
@@ -170,16 +174,16 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
         if (end<xProj.length-1) Arrays.fill(xProj, end+1, xProj.length, xProj[end]);
         //derivate
         ArrayUtil.gaussianSmooth(xProj, 1); // derScale
-        Image imDerX = ImageFeatures.getDerivative(imCrop, derScale, 1, 0, 0, true);
+        Image imDerX = ImageFeatures.getDerivative(imCrop, derScale, 1, 0, 0, closedEndY>0);
         float[] xProjDer = ImageOperations.meanProjection(imDerX, ImageOperations.Axis.X, null);
         
         if (stores!=null) {
             stores.get(parent).addMisc("Show test data", l->{
                 ImageWindowManagerFactory.showImage(imDerY.setName("Closed-end detection image (dI/dy)"));
                 ImageWindowManagerFactory.showImage(imDerX.setName("Side detection image (dI/dx)"));
-                plotProfile("Closed-end detection (mean projection)", yProj, "y", "dI/dy");
+                if (yProj!=null) plotProfile("Closed-end detection (mean projection)", yProj, "y", "dI/dy");
                 plotProfile("Side detection (mean projection of dI/dx) Threshold: "+localDerExtremaThld+(this.xDerPeakThldMethod.getSelectedIndex()==1? " Signal Range: "+(relativeDerThld.getValue().doubleValue()*localDerExtremaThld) : ""), xProjDer, "x", "dI/dx");
-                //plotProfile("Side dectection (mean projection of I)", xProj);
+                //plotProfile("Side detection (mean projection of I)", xProj);
             });
         }
         
@@ -241,25 +245,25 @@ public class MicrochannelPhase2D implements MicrochannelSegmenter, TestableProce
                 maxIdx = nextMaxIdx; // first max after min
             } else ++maxIdx;
         }
-        
-        // refine Y-coordinate of closed-end for each microchannel. As MC shape is generally ellipsoidal @ close-end, only get the profile in the 1/3-X center part
-        if (closedEndYAdjustWindow>0) {
-            for (int idx = 0; idx<peaks.size();++idx) {
+        if (END_DETECTION_METHOD.CLOSED_END_WITH_ADJUST.equals(endDetMethod) && closedEndYAdjustWindow > 0) {
+            // refine Y-coordinate of closed-end for each microchannel. As MC shape is generally ellipsoidal @ close-end, only get the profile in the 1/3-X center part
+            for (int idx = 0; idx < peaks.size(); ++idx) {
                 int[] peak = peaks.get(idx);
-                double sizeX = peak[1]-peak[0]+1;
-                MutableBoundingBox win = new MutableBoundingBox((int)(peak[0]+sizeX/3+0.5), (int)(peak[1]-sizeX/3+0.5), Math.max(0, closedEndY-closedEndYAdjustWindow), Math.min(imDerY.sizeY()-1, closedEndY+closedEndYAdjustWindow), 0, 0);
+                double sizeX = peak[1] - peak[0] + 1;
+                MutableBoundingBox win = new MutableBoundingBox((int) (peak[0] + sizeX / 3 + 0.5), (int) (peak[1] - sizeX / 3 + 0.5), Math.max(0, closedEndY - closedEndYAdjustWindow), Math.min(imDerY.sizeY() - 1, closedEndY + closedEndYAdjustWindow), 0, 0);
                 float[] proj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, win);
                 List<Integer> localMaxY = ArrayUtil.getRegionalExtrema(proj, 2, true);
                 //peak[2] = ArrayUtil.max(proj)-yStartAdjustWindow;
                 if (localMaxY.isEmpty()) continue;
-                peak[2] = localMaxY.get(0)- (closedEndY>=closedEndYAdjustWindow ? closedEndYAdjustWindow : 0);
-                if (stores!=null) {
+                peak[2] = localMaxY.get(0) - (closedEndY >= closedEndYAdjustWindow ? closedEndYAdjustWindow : 0);
+                if (stores != null) {
                     int ii = idx;
                     stores.get(parent).addMisc("Display closed-end adjument", l -> {
                         Set<Integer> idxes = l.stream().map(o -> o.getIdx()).collect(Collectors.toSet());
-                        if (idxes.contains(ii)) Utils.plotProfile("Closed-end y-adjustment: first local max @ y=:"+(localMaxY.get(0)+win.yMin()), proj, win.yMin(), "y", "dI/dy");
+                        if (idxes.contains(ii))
+                            Utils.plotProfile("Closed-end y-adjustment: first local max @ y=:" + (localMaxY.get(0) + win.yMin()), proj, win.yMin(), "y", "dI/dy");
                     });
-                    
+
                 }
             }
         }

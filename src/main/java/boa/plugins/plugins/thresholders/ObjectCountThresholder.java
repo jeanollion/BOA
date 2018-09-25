@@ -111,7 +111,7 @@ public class ObjectCountThresholder implements Thresholder {
         if (debug) {
             objectCountHisto.plotIJ1("objects", debug);
         }
-        int i = ArrayUtil.getFirstOccurence(objectCountHisto.data, objectCountHisto.data.length-1, 0, max, false, false);
+        int i = ArrayUtil.getFirstOccurence(objectCountHisto.data, objectCountHisto.data.length-1, 0, v->v>=max);
         if (objectCountHisto.data[i]==max && i<objectCountHisto.data.length) ++i;
         double value = objectCountHisto.getValueFromIdx(i);
         if (debug) logger.debug("thld: {} (idx:{})", value, i);
