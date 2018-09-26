@@ -23,7 +23,7 @@ import boa.core.Task;
 import boa.data_structure.StructureObject;
 import boa.data_structure.dao.MasterDAO;
 import boa.plugins.PluginFactory;
-import boa.plugins.legacy.FluorescenceFit;
+import boa.plugins.plugins.FluorescenceFit;
 import ij.ImageJ;
 
 /**

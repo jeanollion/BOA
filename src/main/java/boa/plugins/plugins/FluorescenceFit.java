@@ -16,20 +16,18 @@
  * You should have received a copy of the GNU General Public License
  * along with BACMMAN.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.legacy;
+package boa.plugins.plugins;
 
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.Parameter;
 import boa.configuration.parameters.ObjectClassParameter;
 import boa.configuration.parameters.TextParameter;
 import boa.data_structure.StructureObject;
-import boa.data_structure.StructureObjectUtils;
 import boa.image.Image;
 import boa.measurement.MeasurementKey;
 import boa.measurement.MeasurementKeyObject;
 import boa.plugins.Measurement;
 import boa.plugins.ToolTip;
-import boa.utils.ArrayUtil;
 import boa.utils.Utils;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,14 +43,14 @@ import java.util.stream.IntStream;
  * @author Jean Ollion
  */
 public class FluorescenceFit implements Measurement, ToolTip {
-    ObjectClassParameter bacteriaClass = new ObjectClassParameter("Bacteria");
-    BoundedNumberParameter fitXRange = new BoundedNumberParameter("Fit X-range", 0, 100, 0, null).setToolTipText("Length of segment (in pixels) on which fit will be performed");
-    ObjectClassParameter fluo = new ObjectClassParameter("Fluorescence Channel").setToolTipText("Fluorescence channel to measure");
-    TextParameter suffix = new TextParameter("Suffix", "", false).setToolTipText("Suffix to add to the measurement column name");
-    Parameter[] parameters = new Parameter[]{bacteriaClass, fluo, fitXRange, suffix};
+    private ObjectClassParameter bacteriaClass = new ObjectClassParameter("Bacteria");
+    private BoundedNumberParameter fitXRange = new BoundedNumberParameter("Fit X-range", 0, 100, 0, null).setToolTipText("Length of segment (in pixels) on which fit will be performed");
+    private ObjectClassParameter fluo = new ObjectClassParameter("Fluorescence Channel").setToolTipText("Fluorescence channel to measure");
+    private TextParameter suffix = new TextParameter("Suffix", "", false).setToolTipText("Suffix to add to the measurement column name");
+    private Parameter[] parameters = new Parameter[]{bacteriaClass, fluo, fitXRange, suffix};
     boolean verbose;
     
-    // implementation of the ToolTip interface (help displeyed on hover)
+    // implementation of the ToolTip interface (help displayed on hover)
     @Override
     public String getToolTipText() {
         return "Estimation of total fluorescence and background of a cell as described in: Kaiser, Matthias, Florian Jug, Thomas Julou, Siddharth Deshpande, Thomas Pfohl, Olin K. Silander, Gene Myers, and Erik van Nimwegen. 2018. “Monitoring Single-Cell Gene Regulation Under Dynamically Controllable Conditions with Integrated Microfluidics and Software.” Nature Communications 9 (1):212. https://doi.org/10.1038/s41467-017-02505-0.";
