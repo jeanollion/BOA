@@ -77,7 +77,7 @@ public class TestSpine {
         //String dbName = "fluo171219_WT_750ms";
         //String dbName = "preproc_example";
         String dbName = "WT_150609_OPEN";
-        int position= 0, frame=1, mc=0, b=0, m = 0;
+        int position= 0, frame=78, mc=0, b=2, m = 0;
         int frame2 = 10, b2=0;
         //int position= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
@@ -266,18 +266,23 @@ public class TestSpine {
     public static void testSausage(StructureObject b) {
         SpineResult sr = BacteriaSpineFactory.createSpine(b.getRegion(), 1);
         SpineResult srSaus = sr.duplicate();
-        SausageContourFactory.toSausage(srSaus, 1);
+        SausageContourFactory.toSausage(srSaus, 0.5);
         Overlay overlayS = SpineOverlayDrawer.getSpineOverlay(srSaus, b.getParent().getBounds(), Color.blue, Color.yellow, 0.5);
         Overlay overlay = SpineOverlayDrawer.getSpineOverlay(sr , b.getParent().getBounds(), Color.blue, Color.yellow, 0.5);
-        //SpineOverlayDrawer.display("sausage", b.getParent().getRawImage(1), overlayS);
-        //SpineOverlayDrawer.display("sausage", b.getParent().getChildRegionPopulation(1).getLabelMap().duplicate(), overlayS);
-        //SpineOverlayDrawer.display("regular", b.getParent().getRawImage(1).duplicate(), overlay);
-        
+        SpineOverlayDrawer.display("sausage", b.getParent().getRawImage(1), overlayS);
+        SpineOverlayDrawer.display("sausage", b.getParent().getChildRegionPopulation(1).getLabelMap().duplicate(), overlayS);
+        SpineOverlayDrawer.display("regular", b.getParent().getRawImage(1).duplicate(), overlay);
+        ImageWindowManagerFactory.showImage(BacteriaSpineFactory.drawSpine(sr.bounds, sr.spine, sr.circContour, 13, false));
+
+        ImageWindowManagerFactory.showImage(b.getRegion().getMaskAsImageInteger().duplicate("before"));
+        SausageTransform.transform(b.getRegion(), b.getParent().getBounds());
+        ImageWindowManagerFactory.showImage(b.getRegion().getMaskAsImageInteger().duplicate("after"));
+
         //ImageWindowManagerFactory.showImage(srSaus.drawSpine(13, false));
-        SausageTransform st = new SausageTransform();
+        /*SausageTransform st = new SausageTransform();
         RegionPopulation pop = b.getParent().getChildRegionPopulation(1);
         pop.translate(new SimpleBoundingBox(b.getParent().getBounds()).reverseOffset(), false);
         st.runPostFilter(b.getParent(), 1, pop);
-        ImageWindowManagerFactory.showImage(b.getParent().getChildRegionPopulation(1).getLabelMap().setName("sausageTransform"));
+        ImageWindowManagerFactory.showImage(b.getParent().getChildRegionPopulation(1).getLabelMap().setName("sausageTransform"));*/
     }
 }

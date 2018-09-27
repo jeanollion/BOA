@@ -42,13 +42,13 @@ public class SausageContourFactory {
      * Modifies the spine so that it has a sausage shape: width is median width, ends are circles of radius width/2
      * @param spine that will be modified
      */
-    public static void toSausage(SpineResult spine, double ressampleContour) {
+    public static void toSausage(SpineResult spine, double resampleContour) {
         if (spine.spine.length<=3) return;
         // get median width
         double width = ArrayUtil.median(Arrays.stream(spine.spine, 1, spine.spine.length-1).mapToDouble(s->s.getContent1().norm()).toArray());
         double length = spine.spine[spine.spine.length-1].getContent2();
         // adjust all length
-        DoubleUnaryOperator getSausageWidthEnd = curvDistToEnd -> 2 * Math.sqrt(width*curvDistToEnd - curvDistToEnd*curvDistToEnd); // ends are circular + application of pythaore theoreme
+        DoubleUnaryOperator getSausageWidthEnd = curvDistToEnd -> 2 * Math.sqrt(width*curvDistToEnd - curvDistToEnd*curvDistToEnd); // ends are circular + application of pythagorean theorem
         DoubleUnaryOperator getSausageWidth = curvCoord -> {
             if (curvCoord<width/2) return getSausageWidthEnd.applyAsDouble(curvCoord);
             else if (length - curvCoord < width/2) return getSausageWidthEnd.applyAsDouble(length - curvCoord);
@@ -63,8 +63,8 @@ public class SausageContourFactory {
         Stream<Point> right = IntStream.range(1, spine.spine.length-1).map(i->spine.spine.length-1-i).mapToObj(i->getSausageContourPoint.apply(spine.spine[i], false)); // ends are not taken into acount because they are of length 0. 
         List<Point> all = Stream.concat(left, right).collect(Collectors.toList());
         CircularNode<Point> circContour = CircularNode.toCircularContour(all);
-        if (ressampleContour>0) {
-            CircularContourFactory.resampleContour(circContour, ressampleContour);
+        if (resampleContour>0) {
+            CircularContourFactory.resampleContour(circContour, resampleContour);
             spine.setContour(CircularContourFactory.getSet(circContour));
         } else spine.setContour(new HashSet<>(all));
         spine.setCircContour(circContour);

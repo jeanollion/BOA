@@ -19,10 +19,13 @@
 package boa.plugins.plugins.post_filters;
 
 import boa.configuration.parameters.Parameter;
+import boa.data_structure.Region;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
+import boa.image.BoundingBox;
 import boa.image.ImageByte;
+import boa.image.SimpleBoundingBox;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory.SpineResult;
 import boa.image.processing.bacteria_spine.CircularContourFactory;
@@ -38,18 +41,23 @@ import net.imglib2.Localizable;
  *
  * @author Jean Ollion
  */
-public class SausageTransform implements PostFilter, ToolTip{
+public class SausageTransform implements PostFilter, ToolTip {
 
     @Override
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
-        childPopulation.getRegions().forEach(r -> {
-            SpineResult sr = BacteriaSpineFactory.createSpine(r, 1);
-            SausageContourFactory.toSausage(sr, 0.5); // resample to be able to fill
-            Set<Voxel> sausageContourVox = sr.contour.stream().map(l -> ((Point)l).asVoxel()).collect(Collectors.toSet());
-            ImageByte mask = CircularContourFactory.getMaskFromContour(sausageContourVox);
-            r.setMask(mask.cropWithOffset(r.getBounds()));
-        });
+        childPopulation.getRegions().forEach(r -> transform(r, parent.getBounds()));
         return childPopulation;
+    }
+
+    public static void transform(Region r, BoundingBox parentBounds) {
+        SpineResult sr = BacteriaSpineFactory.createSpine(r, 1);
+        SausageContourFactory.toSausage(sr, 0.5); // resample to be able to fill
+        Set<Voxel> sausageContourVox = sr.contour.stream().map(l -> ((Point)l).asVoxel()).collect(Collectors.toSet());
+        ImageByte mask = CircularContourFactory.getMaskFromContour(sausageContourVox);
+        // mask should not extend outside parent bounds
+        if (!r.isAbsoluteLandMark()) parentBounds = new SimpleBoundingBox(parentBounds).resetOffset(); // post-filter -> relative to parent bounds
+        if (!BoundingBox.isIncluded(mask, parentBounds)) mask = mask.cropWithOffset(BoundingBox.getIntersection(parentBounds, mask));
+        r.setMask(mask);
     }
 
     @Override

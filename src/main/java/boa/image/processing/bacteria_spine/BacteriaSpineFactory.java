@@ -226,7 +226,7 @@ public class BacteriaSpineFactory {
         
         // 3) start getting the spList in one direction and the other
         int persistanceRadius = Math.min(1+skeleton.size()/2, Math.max(4,(int)ArrayUtil.median(spListSk.stream().mapToDouble(v->v.getContent1().norm()).toArray())/2+1)); // persistence of skeleton direction
-        if (verbose) logger.debug("persistance radius: {}", persistanceRadius);
+        if (verbose) logger.debug("persistence radius: {}", persistanceRadius);
         List<PointContainer2<Vector, Double>> spList = getSpineInSkeletonDirection(mask, contourPairs.get(0).key, contourPairs.get(0).value, spListSk, persistanceRadius, true, logOff);
         spList = Utils.reverseOrder(spList);
         spList.addAll(spListSk);
@@ -473,8 +473,8 @@ public class BacteriaSpineFactory {
             // stop condition
             Point nextPoint2 = next.duplicate().translate(spineDir);
             Voxel nextVox2 = nextPoint2.asVoxel();
-            if (!mask.containsWithOffset(nextVox2.x, nextVox2.y, mask.zMin()) || !mask.insideMaskWithOffset(nextVox2.x, nextVox2.y, mask.zMin())) { 
-                adjustPointToContour(next, spineDir, s2, bucketFirst); // adjust to contour
+            if (!mask.containsWithOffset(nextVox2.x, nextVox2.y, mask.zMin()) || !mask.insideMaskWithOffset(nextVox2.x, nextVox2.y, mask.zMin())) {
+                adjustPointToContour(next, spineDir, CircularNode.getMiddlePoint(s1, s2, firstNext), bucketFirst); // adjust to contour. First search is middle point between the 2 sides points
                 if (sp.size()>2) { // check that adjusted point is after previous point AND not too close to previous point (if too close may cause projection issues)
                     Point ref = sp.get(sp.size()-3);
                     if (sp.get(sp.size()-2).distSqXY(ref)>next.distSqXY(ref)) sp.remove(sp.size()-2); // adjusted before previous

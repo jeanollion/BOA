@@ -201,7 +201,7 @@ public class CircularNode<T> implements Comparable<CircularNode> {
      * Local min distance search from {@param ref} starting from {@param firstSearchPoint}
      * @param ref
      * @param firstSearchPoint
-     * @param bucket recieve 2 closest point or only one if the 2 other neighbors have same distance
+     * @param bucket receive 2 closest point or only one if the 2 other neighbors have same distance
      */
     static <T extends RealLocalizable> void addTwoLocalNearestPoints(Point ref, CircularNode<T> firstSearchPoint, List<CircularNode<T>> bucket) {
         bucket.clear();
@@ -281,5 +281,14 @@ public class CircularNode<T> implements Comparable<CircularNode> {
             }
         }
         return null; // not found
+    }
+    public static <T> CircularNode<T> getMiddlePoint(CircularNode<T> p1, CircularNode<T> p2, boolean firstNext) {
+        if (!firstNext) return getMiddlePoint(p2, p1, true);
+        while(!p1.equals(p2)) {
+            p1 = p1.next();
+            if (p1.equals(p2)) return p1;
+            p2 = p2.prev();
+        }
+        return p1;
     }
 }
