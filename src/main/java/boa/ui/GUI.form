@@ -177,160 +177,69 @@
             </Menu>
           </SubComponents>
         </Menu>
-        <Menu class="javax.swing.JMenu" name="importExportMenu">
+        <Menu class="javax.swing.JMenu" name="importMenu">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Import/Export"/>
+            <Property name="text" type="java.lang.String" value="Import"/>
           </Properties>
           <SubComponents>
-            <Menu class="javax.swing.JMenu" name="exportSubMenu">
+            <MenuItem class="javax.swing.JMenuItem" name="importDataMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Export"/>
+                <Property name="text" type="java.lang.String" value="Data From Selected File to Current Dataset (see import options)"/>
               </Properties>
-              <SubComponents>
-                <MenuItem class="javax.swing.JMenuItem" name="exportDataMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Data From Selected Dataset(s) (see export options)"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportDataMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="exportSelectedFieldsMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Selected Fields"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportSelectedFieldsMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="exportXPConfigMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Configuration Only"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportXPConfigMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="exportWholeXPMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Whole Dataset(s)"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportWholeXPMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="exportXPObjectsMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Objects of Selected Dataset(s)"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportXPObjectsMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-              </SubComponents>
-            </Menu>
-            <Menu class="javax.swing.JMenu" name="importSubMenu">
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importDataMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="importPositionsToCurrentExperimentMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Import"/>
+                <Property name="text" type="java.lang.String" value="Objects to Current Dataset"/>
               </Properties>
-              <SubComponents>
-                <MenuItem class="javax.swing.JMenuItem" name="importDataMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Data From Selected File to Current Dataset (see import options)"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importDataMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="importPositionsToCurrentExperimentMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Objects to Current Dataset"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importPositionsToCurrentExperimentMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="importConfigurationMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Configuration to Current Dataset"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importConfigurationMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="importConfigurationForSelectedPositionsMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Configuration for Selected Positions"/>
-                    <Property name="enabled" type="boolean" value="false"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importConfigurationForSelectedPositionsMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="importConfigurationForSelectedStructuresMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Configuration for Selected Object type(s)"/>
-                    <Property name="enabled" type="boolean" value="false"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importConfigurationForSelectedStructuresMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="importNewExperimentMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="New Dataset(s)"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importNewExperimentMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="unDumpObjectsMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Dumped Dataset(s)"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="unDumpObjectsMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-              </SubComponents>
-            </Menu>
-            <Menu class="javax.swing.JMenu" name="exportOptionsSubMenu">
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importPositionsToCurrentExperimentMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="importConfigurationMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Export Options"/>
+                <Property name="text" type="java.lang.String" value="Configuration to Current Dataset"/>
               </Properties>
-              <SubComponents>
-                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportObjectsMenuItem">
-                  <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="Objects"/>
-                  </Properties>
-                </MenuItem>
-                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportPPImagesMenuItem">
-                  <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="Pre Processed Images"/>
-                  </Properties>
-                </MenuItem>
-                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportTrackImagesMenuItem">
-                  <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="Track Images"/>
-                  </Properties>
-                </MenuItem>
-                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportConfigMenuItem">
-                  <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="Configuration"/>
-                  </Properties>
-                </MenuItem>
-                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportSelectionsMenuItem">
-                  <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="Selections"/>
-                  </Properties>
-                </MenuItem>
-              </SubComponents>
-            </Menu>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importConfigurationMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="importConfigurationForSelectedPositionsMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Configuration for Selected Positions"/>
+                <Property name="enabled" type="boolean" value="false"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importConfigurationForSelectedPositionsMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="importConfigurationForSelectedStructuresMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Configuration for Selected Object type(s)"/>
+                <Property name="enabled" type="boolean" value="false"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importConfigurationForSelectedStructuresMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="importNewExperimentMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="New Dataset(s)"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="importNewExperimentMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="unDumpObjectsMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Dumped Dataset(s)"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="unDumpObjectsMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
             <Menu class="javax.swing.JMenu" name="importOptionsSubMenu">
               <Properties>
                 <Property name="text" type="java.lang.String" value="Import Options"/>
@@ -375,40 +284,124 @@
             </MenuItem>
           </SubComponents>
         </Menu>
+        <Menu class="javax.swing.JMenu" name="exportMenu">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Export"/>
+          </Properties>
+          <SubComponents>
+            <MenuItem class="javax.swing.JMenuItem" name="exportDataMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Data From Selected Dataset(s) (see export options)"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportDataMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="exportSelectedFieldsMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Selected Fields"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportSelectedFieldsMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="exportXPConfigMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Configuration Only"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportXPConfigMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="exportWholeXPMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Whole Dataset(s)"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportWholeXPMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="exportXPObjectsMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Objects of Selected Dataset(s)"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="exportXPObjectsMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <Menu class="javax.swing.JMenu" name="exportOptionsSubMenu">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Export Options"/>
+              </Properties>
+              <SubComponents>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportObjectsMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Objects"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportPPImagesMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Pre Processed Images"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportTrackImagesMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Track Images"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportConfigMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Configuration"/>
+                  </Properties>
+                </MenuItem>
+                <MenuItem class="javax.swing.JCheckBoxMenuItem" name="exportSelectionsMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="Selections"/>
+                  </Properties>
+                </MenuItem>
+              </SubComponents>
+            </Menu>
+          </SubComponents>
+        </Menu>
         <Menu class="javax.swing.JMenu" name="miscMenu">
           <Properties>
             <Property name="text" type="java.lang.String" value="Misc"/>
           </Properties>
           <SubComponents>
+            <MenuItem class="javax.swing.JMenuItem" name="clearMemoryMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Clear Memory"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearMemoryMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="CloseNonInteractiveWindowsMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Close Non Interactive Windows"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="CloseNonInteractiveWindowsMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="closeAllWindowsMenuItem">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Close all windows"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="closeAllWindowsMenuItemActionPerformed"/>
+              </Events>
+            </MenuItem>
             <Menu class="javax.swing.JMenu" name="jMenu1">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Close Image / Clear Memory"/>
+                <Property name="text" type="java.lang.String" value="Erase Images from Disk"/>
               </Properties>
               <SubComponents>
-                <MenuItem class="javax.swing.JMenuItem" name="clearMemoryMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Clear Memory"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearMemoryMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="CloseNonInteractiveWindowsMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Close Non Interactive Windows"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="CloseNonInteractiveWindowsMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JMenuItem" name="closeAllWindowsMenuItem">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Close all windows"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="closeAllWindowsMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
                 <MenuItem class="javax.swing.JMenuItem" name="clearTrackImagesMenuItem">
                   <Properties>
                     <Property name="text" type="java.lang.String" value="Clear Track Images"/>
@@ -594,7 +587,7 @@
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="actionPoolJSP" max="32767" attributes="0"/>
+                              <Component id="actionPoolJSP" pref="254" max="32767" attributes="0"/>
                               <Component id="actionJSP" max="32767" attributes="0"/>
                           </Group>
                       </Group>
@@ -913,7 +906,7 @@
                   <Layout>
                     <DimensionLayout dim="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="TimeJSP" alignment="0" pref="375" max="32767" attributes="0"/>
+                          <Component id="TimeJSP" alignment="0" pref="361" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                     <DimensionLayout dim="1">
@@ -1303,9 +1296,9 @@
           <Layout>
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="consoleJSP" alignment="1" pref="840" max="32767" attributes="0"/>
+                  <Component id="consoleJSP" alignment="1" pref="826" max="32767" attributes="0"/>
                   <Group type="103" rootIndex="1" groupAlignment="0" attributes="0">
-                      <Component id="progressBar" alignment="0" pref="840" max="32767" attributes="0"/>
+                      <Component id="progressBar" alignment="0" pref="826" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>

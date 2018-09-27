@@ -283,7 +283,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         actionPoolList.setModel(actionPoolListModel);
         datasetList.setModel(experimentModel);
         relatedToXPSet = new ArrayList<Component>() {{add(saveConfigMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
-        relatedToReadOnly = new ArrayList<Component>() {{add(saveConfigMenuItem); add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importSubMenu);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
+        relatedToReadOnly = new ArrayList<Component>() {{add(saveConfigMenuItem); add(manualSegmentButton);add(splitObjectsButton);add(mergeObjectsButton);add(deleteObjectsButton);add(pruneTrackButton);add(linkObjectsButton);add(unlinkObjectsButton);add(resetLinksButton);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(importMenu);add(importPositionsToCurrentExperimentMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importConfigurationForSelectedStructuresMenuItem);}};
         
         // persistent properties
         setLogFile(PropertyUtils.get(PropertyUtils.LOG_FILE));
@@ -597,7 +597,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         this.experimentMenu.setEnabled(!running);
         this.runMenu.setEnabled(!running);
         this.optionMenu.setEnabled(!running);
-        this.importExportMenu.setEnabled(!running);
+        this.importMenu.setEnabled(!running);
         this.miscMenu.setEnabled(!running);
         
         // action tab
@@ -1177,14 +1177,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         localFileSystemDatabaseRadioButton = new javax.swing.JRadioButtonMenuItem();
         localDBMenu = new javax.swing.JMenu();
         compactLocalDBMenuItem = new javax.swing.JMenuItem();
-        importExportMenu = new javax.swing.JMenu();
-        exportSubMenu = new javax.swing.JMenu();
-        exportDataMenuItem = new javax.swing.JMenuItem();
-        exportSelectedFieldsMenuItem = new javax.swing.JMenuItem();
-        exportXPConfigMenuItem = new javax.swing.JMenuItem();
-        exportWholeXPMenuItem = new javax.swing.JMenuItem();
-        exportXPObjectsMenuItem = new javax.swing.JMenuItem();
-        importSubMenu = new javax.swing.JMenu();
+        importMenu = new javax.swing.JMenu();
         importDataMenuItem = new javax.swing.JMenuItem();
         importPositionsToCurrentExperimentMenuItem = new javax.swing.JMenuItem();
         importConfigurationMenuItem = new javax.swing.JMenuItem();
@@ -1192,12 +1185,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         importConfigurationForSelectedStructuresMenuItem = new javax.swing.JMenuItem();
         importNewExperimentMenuItem = new javax.swing.JMenuItem();
         unDumpObjectsMenuItem = new javax.swing.JMenuItem();
-        exportOptionsSubMenu = new javax.swing.JMenu();
-        exportObjectsMenuItem = new javax.swing.JCheckBoxMenuItem();
-        exportPPImagesMenuItem = new javax.swing.JCheckBoxMenuItem();
-        exportTrackImagesMenuItem = new javax.swing.JCheckBoxMenuItem();
-        exportConfigMenuItem = new javax.swing.JCheckBoxMenuItem();
-        exportSelectionsMenuItem = new javax.swing.JCheckBoxMenuItem();
         importOptionsSubMenu = new javax.swing.JMenu();
         importObjectsMenuItem = new javax.swing.JCheckBoxMenuItem();
         importPPImagesMenuItem = new javax.swing.JCheckBoxMenuItem();
@@ -1205,11 +1192,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         importConfigMenuItem = new javax.swing.JCheckBoxMenuItem();
         importSelectionsMenuItem = new javax.swing.JCheckBoxMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        exportMenu = new javax.swing.JMenu();
+        exportDataMenuItem = new javax.swing.JMenuItem();
+        exportSelectedFieldsMenuItem = new javax.swing.JMenuItem();
+        exportXPConfigMenuItem = new javax.swing.JMenuItem();
+        exportWholeXPMenuItem = new javax.swing.JMenuItem();
+        exportXPObjectsMenuItem = new javax.swing.JMenuItem();
+        exportOptionsSubMenu = new javax.swing.JMenu();
+        exportObjectsMenuItem = new javax.swing.JCheckBoxMenuItem();
+        exportPPImagesMenuItem = new javax.swing.JCheckBoxMenuItem();
+        exportTrackImagesMenuItem = new javax.swing.JCheckBoxMenuItem();
+        exportConfigMenuItem = new javax.swing.JCheckBoxMenuItem();
+        exportSelectionsMenuItem = new javax.swing.JCheckBoxMenuItem();
         miscMenu = new javax.swing.JMenu();
-        jMenu1 = new javax.swing.JMenu();
         clearMemoryMenuItem = new javax.swing.JMenuItem();
         CloseNonInteractiveWindowsMenuItem = new javax.swing.JMenuItem();
         closeAllWindowsMenuItem = new javax.swing.JMenuItem();
+        jMenu1 = new javax.swing.JMenu();
         clearTrackImagesMenuItem = new javax.swing.JMenuItem();
         clearPPImageMenuItem = new javax.swing.JMenuItem();
         openedImageNumberLimitMenu = new javax.swing.JMenu();
@@ -1324,7 +1323,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     .addComponent(actionStructureJSP))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(actionPoolJSP)
+                    .addComponent(actionPoolJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 254, Short.MAX_VALUE)
                     .addComponent(actionJSP)))
         );
         actionPanelLayout.setVerticalGroup(
@@ -1372,7 +1371,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         trackPanel.setLayout(trackPanelLayout);
         trackPanelLayout.setHorizontalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 361, Short.MAX_VALUE)
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1707,9 +1706,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         progressAndConsolPanel.setLayout(progressAndConsolPanelLayout);
         progressAndConsolPanelLayout.setHorizontalGroup(
             progressAndConsolPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(consoleJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 840, Short.MAX_VALUE)
+            .addComponent(consoleJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 826, Short.MAX_VALUE)
             .addGroup(progressAndConsolPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, 840, Short.MAX_VALUE))
+                .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, 826, Short.MAX_VALUE))
         );
         progressAndConsolPanelLayout.setVerticalGroup(
             progressAndConsolPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1873,53 +1872,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         mainMenu.add(optionMenu);
 
-        importExportMenu.setText("Import/Export");
-
-        exportSubMenu.setText("Export");
-
-        exportDataMenuItem.setText("Data From Selected Dataset(s) (see export options)");
-        exportDataMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                exportDataMenuItemActionPerformed(evt);
-            }
-        });
-        exportSubMenu.add(exportDataMenuItem);
-
-        exportSelectedFieldsMenuItem.setText("Selected Fields");
-        exportSelectedFieldsMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                exportSelectedFieldsMenuItemActionPerformed(evt);
-            }
-        });
-        exportSubMenu.add(exportSelectedFieldsMenuItem);
-
-        exportXPConfigMenuItem.setText("Configuration Only");
-        exportXPConfigMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                exportXPConfigMenuItemActionPerformed(evt);
-            }
-        });
-        exportSubMenu.add(exportXPConfigMenuItem);
-
-        exportWholeXPMenuItem.setText("Whole Dataset(s)");
-        exportWholeXPMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                exportWholeXPMenuItemActionPerformed(evt);
-            }
-        });
-        exportSubMenu.add(exportWholeXPMenuItem);
-
-        exportXPObjectsMenuItem.setText("Objects of Selected Dataset(s)");
-        exportXPObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                exportXPObjectsMenuItemActionPerformed(evt);
-            }
-        });
-        exportSubMenu.add(exportXPObjectsMenuItem);
-
-        importExportMenu.add(exportSubMenu);
-
-        importSubMenu.setText("Import");
+        importMenu.setText("Import");
 
         importDataMenuItem.setText("Data From Selected File to Current Dataset (see import options)");
         importDataMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1927,7 +1880,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 importDataMenuItemActionPerformed(evt);
             }
         });
-        importSubMenu.add(importDataMenuItem);
+        importMenu.add(importDataMenuItem);
 
         importPositionsToCurrentExperimentMenuItem.setText("Objects to Current Dataset");
         importPositionsToCurrentExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1935,7 +1888,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 importPositionsToCurrentExperimentMenuItemActionPerformed(evt);
             }
         });
-        importSubMenu.add(importPositionsToCurrentExperimentMenuItem);
+        importMenu.add(importPositionsToCurrentExperimentMenuItem);
 
         importConfigurationMenuItem.setText("Configuration to Current Dataset");
         importConfigurationMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1943,7 +1896,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 importConfigurationMenuItemActionPerformed(evt);
             }
         });
-        importSubMenu.add(importConfigurationMenuItem);
+        importMenu.add(importConfigurationMenuItem);
 
         importConfigurationForSelectedPositionsMenuItem.setText("Configuration for Selected Positions");
         importConfigurationForSelectedPositionsMenuItem.setEnabled(false);
@@ -1952,7 +1905,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 importConfigurationForSelectedPositionsMenuItemActionPerformed(evt);
             }
         });
-        importSubMenu.add(importConfigurationForSelectedPositionsMenuItem);
+        importMenu.add(importConfigurationForSelectedPositionsMenuItem);
 
         importConfigurationForSelectedStructuresMenuItem.setText("Configuration for Selected Object type(s)");
         importConfigurationForSelectedStructuresMenuItem.setEnabled(false);
@@ -1961,7 +1914,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 importConfigurationForSelectedStructuresMenuItemActionPerformed(evt);
             }
         });
-        importSubMenu.add(importConfigurationForSelectedStructuresMenuItem);
+        importMenu.add(importConfigurationForSelectedStructuresMenuItem);
 
         importNewExperimentMenuItem.setText("New Dataset(s)");
         importNewExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1969,7 +1922,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 importNewExperimentMenuItemActionPerformed(evt);
             }
         });
-        importSubMenu.add(importNewExperimentMenuItem);
+        importMenu.add(importNewExperimentMenuItem);
 
         unDumpObjectsMenuItem.setText("Dumped Dataset(s)");
         unDumpObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1977,33 +1930,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 unDumpObjectsMenuItemActionPerformed(evt);
             }
         });
-        importSubMenu.add(unDumpObjectsMenuItem);
-
-        importExportMenu.add(importSubMenu);
-
-        exportOptionsSubMenu.setText("Export Options");
-
-        exportObjectsMenuItem.setSelected(true);
-        exportObjectsMenuItem.setText("Objects");
-        exportOptionsSubMenu.add(exportObjectsMenuItem);
-
-        exportPPImagesMenuItem.setSelected(true);
-        exportPPImagesMenuItem.setText("Pre Processed Images");
-        exportOptionsSubMenu.add(exportPPImagesMenuItem);
-
-        exportTrackImagesMenuItem.setSelected(true);
-        exportTrackImagesMenuItem.setText("Track Images");
-        exportOptionsSubMenu.add(exportTrackImagesMenuItem);
-
-        exportConfigMenuItem.setSelected(true);
-        exportConfigMenuItem.setText("Configuration");
-        exportOptionsSubMenu.add(exportConfigMenuItem);
-
-        exportSelectionsMenuItem.setSelected(true);
-        exportSelectionsMenuItem.setText("Selections");
-        exportOptionsSubMenu.add(exportSelectionsMenuItem);
-
-        importExportMenu.add(exportOptionsSubMenu);
+        importMenu.add(unDumpObjectsMenuItem);
 
         importOptionsSubMenu.setText("Import Options");
 
@@ -2032,14 +1959,80 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         importSelectionsMenuItem.setText("Selections");
         importOptionsSubMenu.add(importSelectionsMenuItem);
 
-        importExportMenu.add(importOptionsSubMenu);
-        importExportMenu.add(jSeparator1);
+        importMenu.add(importOptionsSubMenu);
+        importMenu.add(jSeparator1);
 
-        mainMenu.add(importExportMenu);
+        mainMenu.add(importMenu);
+
+        exportMenu.setText("Export");
+
+        exportDataMenuItem.setText("Data From Selected Dataset(s) (see export options)");
+        exportDataMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exportDataMenuItemActionPerformed(evt);
+            }
+        });
+        exportMenu.add(exportDataMenuItem);
+
+        exportSelectedFieldsMenuItem.setText("Selected Fields");
+        exportSelectedFieldsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exportSelectedFieldsMenuItemActionPerformed(evt);
+            }
+        });
+        exportMenu.add(exportSelectedFieldsMenuItem);
+
+        exportXPConfigMenuItem.setText("Configuration Only");
+        exportXPConfigMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exportXPConfigMenuItemActionPerformed(evt);
+            }
+        });
+        exportMenu.add(exportXPConfigMenuItem);
+
+        exportWholeXPMenuItem.setText("Whole Dataset(s)");
+        exportWholeXPMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exportWholeXPMenuItemActionPerformed(evt);
+            }
+        });
+        exportMenu.add(exportWholeXPMenuItem);
+
+        exportXPObjectsMenuItem.setText("Objects of Selected Dataset(s)");
+        exportXPObjectsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                exportXPObjectsMenuItemActionPerformed(evt);
+            }
+        });
+        exportMenu.add(exportXPObjectsMenuItem);
+
+        exportOptionsSubMenu.setText("Export Options");
+
+        exportObjectsMenuItem.setSelected(true);
+        exportObjectsMenuItem.setText("Objects");
+        exportOptionsSubMenu.add(exportObjectsMenuItem);
+
+        exportPPImagesMenuItem.setSelected(true);
+        exportPPImagesMenuItem.setText("Pre Processed Images");
+        exportOptionsSubMenu.add(exportPPImagesMenuItem);
+
+        exportTrackImagesMenuItem.setSelected(true);
+        exportTrackImagesMenuItem.setText("Track Images");
+        exportOptionsSubMenu.add(exportTrackImagesMenuItem);
+
+        exportConfigMenuItem.setSelected(true);
+        exportConfigMenuItem.setText("Configuration");
+        exportOptionsSubMenu.add(exportConfigMenuItem);
+
+        exportSelectionsMenuItem.setSelected(true);
+        exportSelectionsMenuItem.setText("Selections");
+        exportOptionsSubMenu.add(exportSelectionsMenuItem);
+
+        exportMenu.add(exportOptionsSubMenu);
+
+        mainMenu.add(exportMenu);
 
         miscMenu.setText("Misc");
-
-        jMenu1.setText("Close Image / Clear Memory");
 
         clearMemoryMenuItem.setText("Clear Memory");
         clearMemoryMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -2047,7 +2040,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 clearMemoryMenuItemActionPerformed(evt);
             }
         });
-        jMenu1.add(clearMemoryMenuItem);
+        miscMenu.add(clearMemoryMenuItem);
 
         CloseNonInteractiveWindowsMenuItem.setText("Close Non Interactive Windows");
         CloseNonInteractiveWindowsMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -2055,7 +2048,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 CloseNonInteractiveWindowsMenuItemActionPerformed(evt);
             }
         });
-        jMenu1.add(CloseNonInteractiveWindowsMenuItem);
+        miscMenu.add(CloseNonInteractiveWindowsMenuItem);
 
         closeAllWindowsMenuItem.setText("Close all windows");
         closeAllWindowsMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -2063,7 +2056,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                 closeAllWindowsMenuItemActionPerformed(evt);
             }
         });
-        jMenu1.add(closeAllWindowsMenuItem);
+        miscMenu.add(closeAllWindowsMenuItem);
+
+        jMenu1.setText("Erase Images from Disk");
 
         clearTrackImagesMenuItem.setText("Clear Track Images");
         clearTrackImagesMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -3748,12 +3743,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JMenu experimentMenu;
     private javax.swing.JCheckBoxMenuItem exportConfigMenuItem;
     private javax.swing.JMenuItem exportDataMenuItem;
+    private javax.swing.JMenu exportMenu;
     private javax.swing.JCheckBoxMenuItem exportObjectsMenuItem;
     private javax.swing.JMenu exportOptionsSubMenu;
     private javax.swing.JCheckBoxMenuItem exportPPImagesMenuItem;
     private javax.swing.JMenuItem exportSelectedFieldsMenuItem;
     private javax.swing.JCheckBoxMenuItem exportSelectionsMenuItem;
-    private javax.swing.JMenu exportSubMenu;
     private javax.swing.JCheckBoxMenuItem exportTrackImagesMenuItem;
     private javax.swing.JMenuItem exportWholeXPMenuItem;
     private javax.swing.JMenuItem exportXPConfigMenuItem;
@@ -3767,15 +3762,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JMenuItem importConfigurationForSelectedStructuresMenuItem;
     private javax.swing.JMenuItem importConfigurationMenuItem;
     private javax.swing.JMenuItem importDataMenuItem;
-    private javax.swing.JMenu importExportMenu;
     private javax.swing.JMenuItem importImagesMenuItem;
+    private javax.swing.JMenu importMenu;
     private javax.swing.JMenuItem importNewExperimentMenuItem;
     private javax.swing.JCheckBoxMenuItem importObjectsMenuItem;
     private javax.swing.JMenu importOptionsSubMenu;
     private javax.swing.JCheckBoxMenuItem importPPImagesMenuItem;
     private javax.swing.JMenuItem importPositionsToCurrentExperimentMenuItem;
     private javax.swing.JCheckBoxMenuItem importSelectionsMenuItem;
-    private javax.swing.JMenu importSubMenu;
     private javax.swing.JCheckBoxMenuItem importTrackImagesMenuItem;
     private javax.swing.JPanel interactiveObjectPanel;
     private javax.swing.JComboBox interactiveStructure;
