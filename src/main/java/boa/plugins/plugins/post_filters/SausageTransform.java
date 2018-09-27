@@ -22,6 +22,7 @@ import boa.configuration.parameters.Parameter;
 import boa.data_structure.RegionPopulation;
 import boa.data_structure.StructureObject;
 import boa.data_structure.Voxel;
+import boa.image.ImageByte;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory.SpineResult;
 import boa.image.processing.bacteria_spine.CircularContourFactory;
@@ -43,9 +44,10 @@ public class SausageTransform implements PostFilter, ToolTip{
     public RegionPopulation runPostFilter(StructureObject parent, int childStructureIdx, RegionPopulation childPopulation) {
         childPopulation.getRegions().forEach(r -> {
             SpineResult sr = BacteriaSpineFactory.createSpine(r, 1);
-            SausageContourFactory.toSausage(sr, 0.5); // ressample to be able to fill
+            SausageContourFactory.toSausage(sr, 0.5); // resample to be able to fill
             Set<Voxel> sausageContourVox = sr.contour.stream().map(l -> ((Point)l).asVoxel()).collect(Collectors.toSet());
-            r.setMask(CircularContourFactory.getMaskFromContour(sausageContourVox));
+            ImageByte mask = CircularContourFactory.getMaskFromContour(sausageContourVox);
+            r.setMask(mask.cropWithOffset(r.getBounds()));
         });
         return childPopulation;
     }

@@ -18,6 +18,7 @@
  */
 package boa.image.processing;
 
+import boa.data_structure.RegionPopulation;
 import boa.gui.image_interaction.IJImageDisplayer;
 import boa.core.Task;
 import boa.configuration.experiment.Position;
@@ -27,10 +28,7 @@ import boa.data_structure.StructureObjectUtils;
 import boa.data_structure.Voxel;
 import boa.data_structure.dao.ObjectDAO;
 import boa.gui.image_interaction.ImageWindowManagerFactory;
-import boa.image.Image;
-import boa.image.ImageByte;
-import boa.image.Offset;
-import boa.image.SimpleOffset;
+import boa.image.*;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory;
 import boa.image.processing.bacteria_spine.BacteriaSpineCoord;
 import boa.image.processing.bacteria_spine.BacteriaSpineFactory.SpineResult;
@@ -77,19 +75,20 @@ public class TestSpine {
         //String dbName = "fluo160501_uncorr_TestParam";
         //String dbName = "dataset2";
         //String dbName = "fluo171219_WT_750ms";
-        String dbName = "MutH_150324";
-        int postition= 0, frame=0, mc=0, b=0, m = 0;
+        //String dbName = "preproc_example";
+        String dbName = "WT_150609_OPEN";
+        int position= 0, frame=1, mc=0, b=0, m = 0;
         int frame2 = 10, b2=0;
-        //int postition= 3, frame=204, mc=4, b=0;
+        //int position= 3, frame=204, mc=4, b=0;
         //String dbName = "MutH_140115";
-        //int postition= 24, frame=310, mc=0, b=1; // F=2 B=1
+        //int position= 24, frame=310, mc=0, b=1; // F=2 B=1
         
         MasterDAO mDAO = new Task(dbName).getDB();
         
         //testAllObjects(mDAO, structureIdx, 26);
         
         int parentStructure = mDAO.getExperiment().getStructure(structureIdx).getParentStructure();
-        Position f = mDAO.getExperiment().getPosition(postition);
+        Position f = mDAO.getExperiment().getPosition(position);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(frame);
         StructureObject bact = root.getChildren(parentStructure).stream().filter(o->o.getTrackHead().getIdx()==mc).findAny().get().getChildren(structureIdx).get(b);
         testSausage(bact);
@@ -276,7 +275,9 @@ public class TestSpine {
         
         //ImageWindowManagerFactory.showImage(srSaus.drawSpine(13, false));
         SausageTransform st = new SausageTransform();
-        st.runPostFilter(b.getParent(), 1, b.getParent().getChildRegionPopulation(1));
+        RegionPopulation pop = b.getParent().getChildRegionPopulation(1);
+        pop.translate(new SimpleBoundingBox(b.getParent().getBounds()).reverseOffset(), false);
+        st.runPostFilter(b.getParent(), 1, pop);
         ImageWindowManagerFactory.showImage(b.getParent().getChildRegionPopulation(1).getLabelMap().setName("sausageTransform"));
     }
 }

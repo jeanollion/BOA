@@ -47,6 +47,7 @@ import boa.image.TypeConverter;
 import boa.image.processing.Filters;
 import boa.image.processing.ImageFeatures;
 import boa.image.processing.ImageOperations;
+import boa.image.processing.bacteria_spine.CleanVoxelLine;
 import boa.image.processing.clustering.RegionCluster;
 import boa.image.processing.split_merge.SplitAndMergeEdge;
 import boa.image.processing.split_merge.SplitAndMergeHessian;
@@ -183,6 +184,15 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
         sm.addForbidFusion(i -> i.getE1().size()>minSize && i.getE2().size()>minSize);
         setInterfaceValue(parent.getPreFilteredImage(structureIdx), sm);
         sm.merge(pop, null);
+
+        // merge objects that are cut along Y-axis
+        // if contact length is above 50% of min Y length -> merge objects
+        sm.setInterfaceValue(i -> {
+            double l  = i.getVoxels().stream().mapToDouble(v->v.y).max().getAsDouble()- i.getVoxels().stream().mapToDouble(v->v.y).min().getAsDouble();
+             //CleanVoxelLine.cleanSkeleton(e1Vox); could be used to get more accurate result
+            return 1 -l/Math.min(i.getE1().getBounds().sizeY(), i.getE2().getBounds().sizeY()); // 1 - contact% because S&M used inverted criterion: small are merged
+        }).setThreshold(0.5).setForbidFusion(null);
+        //sm.merge(pop, null);
         return pop;
     }
     public static boolean verbosePlus=false;

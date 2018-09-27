@@ -104,6 +104,9 @@ public abstract class SplitAndMerge<I extends InterfaceRegionImpl<I> > { //& Reg
         if (this.forbidFusion!=null) this.forbidFusion=this.forbidFusion.or(forbidFusion);
         else this.forbidFusion = forbidFusion;
     }
+    public void setForbidFusion(Predicate<I> forbidFusion) {
+        this.forbidFusion=forbidFusion;
+    }
     public void addForbidFusionForegroundBackground(Predicate<Region> isBackground, Predicate<Region> isForeground) {
         this.addForbidFusion(i->{
             if ((i.getE1().getLabel()==0 || isBackground.test(i.getE1())) && isForeground.test(i.getE2())) return true;

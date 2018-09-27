@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with BACMMAN.  If not, see <http://www.gnu.org/licenses/>.
  */
-package boa.plugins.plugins;
+package boa.plugins.legacy;
 
 import boa.configuration.parameters.BoundedNumberParameter;
 import boa.configuration.parameters.Parameter;
@@ -226,8 +226,7 @@ public class FluorescenceFit implements Measurement, ToolTip {
      * @param function
      * @param maxIteration maximum number of iteration
      * @param precision precision of the search 
-     * @param bounds range of the search [left bound, right bound] 
-     * @param rightBound 
+     * @param bounds range of the search [left bound, right bound]
      * @return a root of {@param function}
      */
     public static double getRootBisection(DoubleUnaryOperator function, int maxIteration, double precision, double[] bounds) {

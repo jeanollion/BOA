@@ -214,7 +214,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         logger.info("Creating GUI instance...");
         this.INSTANCE=this;
         initComponents();
-        //updateMongoDBBinActions();
         tabs.setTabComponentAt(1, new JLabel("Configuration")); // so that it can be colorized in red when configuration is not valid
         setConfigurationTabValid = v -> { // action when experiment is not valid
             tabs.getTabComponentAt(1).setForeground(v ? Color.black : Color.red);

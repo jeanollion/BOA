@@ -171,6 +171,7 @@ public class CircularContourFactory {
             if (BacteriaSpineFactory.verbose) {
                 ImageWindowManagerFactory.showImage(BacteriaSpineFactory.drawSpine(new Region(contour, 1, true, 1, 1).getMask(), null, circContour, 1, false));
             }
+            //ImageWindowManagerFactory.showImage(new Region(contour, 1, true, 1, 1).getMaskAsImageInteger());
             BacteriaSpineFactory.logger.error("unable to close contour: {}/{}, first: {} first'sprev: {}, current: {}", count, contourSize, circContour.element, circContour.prev.element, current.element);
             throw new RuntimeException("unable to close circular contour");
         }

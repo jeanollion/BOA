@@ -495,9 +495,7 @@ public class Region {
             next.x=v.x+neigh.dx[i];
             next.y=v.y+neigh.dy[i];
             next.z=v.z+neigh.dz[i];
-            if (absoluteLandmark) {
-                if (!getBounds().containsWithOffset(next.x, next.y, next.z)) return true;
-            } else if (!getBounds().contains(next.x, next.y, next.z)) return true;
+            if (!getBounds().containsWithOffset(next.x, next.y, next.z)) return true;
             if (!voxels.contains(next)) return true;
         }
         return false;

@@ -117,7 +117,7 @@ public class PostFilter implements TrackPostFilter, ToolTip {
                     objectsToRemove.addAll(toRemove);
                 }
             }
-             // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSETION INSTEAD OF OBJECT EQUALITY
+             // TODO ABLE TO INCLUDE POST-FILTERS THAT CREATE NEW OBJECTS -> CHECK INTERSECTION INSTEAD OF OBJECT EQUALITY
             
         };
         ThreadRunner.executeAndThrowErrors(parallele(parentTrack.stream(), true), exe);

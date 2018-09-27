@@ -62,14 +62,15 @@ public class TestImageProcessingPlugin {
         //String dbName = "Aya_170324";
         //String dbName = "Aya_180315";
         //String dbName = "170919_glyc_lac";
-        String dbName = "preproc_example";
+        //String dbName = "preproc_example";
+        String dbName = "WT_150609_OPEN";
         boolean segmentation = true;
         boolean track = false;
         int structureIdx =1;
         
         int pIdx =0;
-        int mcIdx =17;
-        int[] frames = new int[]{0,1000}; 
+        int mcIdx =0;
+        int[] frames = new int[]{1,1};
         
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         if (new Task(dbName).getDir()==null) {
