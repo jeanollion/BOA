@@ -70,7 +70,7 @@ public class TestImageProcessingPlugin {
         
         int pIdx =0;
         int mcIdx =0;
-        int[] frames = new int[]{1,1};
+        int[] frames = new int[]{1,100};
         
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         if (new Task(dbName).getDir()==null) {

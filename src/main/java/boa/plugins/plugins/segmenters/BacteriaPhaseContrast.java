@@ -192,7 +192,7 @@ public class BacteriaPhaseContrast extends BacteriaIntensitySegmenter<BacteriaPh
              //CleanVoxelLine.cleanSkeleton(e1Vox); could be used to get more accurate result
             return 1 -l/Math.min(i.getE1().getBounds().sizeY(), i.getE2().getBounds().sizeY()); // 1 - contact% because S&M used inverted criterion: small are merged
         }).setThreshold(0.5).setForbidFusion(null);
-        //sm.merge(pop, null);
+        sm.merge(pop, null);
         return pop;
     }
     public static boolean verbosePlus=false;
