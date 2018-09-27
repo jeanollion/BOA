@@ -107,7 +107,6 @@ import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
-import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
@@ -195,10 +194,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     // shortcuts
     private Shortcuts shortcuts;
     
-    //JProgressBar progressBar;
-    //private static int progressBarTabIndex = 3;
     // enable/disable components
-    private ProgressIcon progressBar;
     private NumberParameter openedImageLimit = new BoundedNumberParameter("Limit", 0, 5, 0, null);
     private NumberParameter kymographInterval = new NumberParameter<>("Kymograph Interval", 0, 0).setToolTipText("Interval between images, in pixels");
     private NumberParameter localZoomFactor = new BoundedNumberParameter("Local Zoom Factor", 1, 4, 2, null);
@@ -219,17 +215,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             tabs.getTabComponentAt(1).setForeground(v ? Color.black : Color.red);
             tabs.getTabComponentAt(1).repaint();
         };
-        progressBar = new ProgressIcon(Color.darkGray, tabs);
-        Component progressComponent =  new ColorPanel(progressBar);
-        tabs.addTab("Progress: ", progressBar, progressComponent);
         tabs.addChangeListener(new ChangeListener() {
             int lastSelTab=0;
             @Override public void stateChanged(ChangeEvent e) {
                 if (lastSelTab==1 && tabs.getSelectedIndex()!=lastSelTab) setConfigurationTabValid.accept(db==null? true : db.getExperiment().isValid());
-                if (tabs.getSelectedComponent()==progressComponent) {
-                    logger.debug("pb");
-                    tabs.setSelectedIndex(lastSelTab);
-                } else lastSelTab=tabs.getSelectedIndex();
+                lastSelTab=tabs.getSelectedIndex();
                 if (tabs.getSelectedComponent()==dataPanel) {
                     if (reloadObjectTrees) {
                         reloadObjectTrees=false;
@@ -629,9 +619,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     // gui interface method
     @Override
     public void setProgress(int i) {
-        //this.progressBar.setM
         this.progressBar.setValue(i);
         //logger.info("Progress: {}/{}", i, 100);
+        setMessage("Progress: "+i+"%");
     }
     
     @Override
@@ -1114,7 +1104,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jSplitPane3 = new javax.swing.JSplitPane();
+        homeSplitPane = new javax.swing.JSplitPane();
         tabs = new javax.swing.JTabbedPane();
         actionPanel = new javax.swing.JPanel();
         experimentFolder = new javax.swing.JTextField();
@@ -1159,8 +1149,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         trackTreeStructureJSP = new javax.swing.JScrollPane();
         interactiveObjectPanel = new javax.swing.JPanel();
         interactiveStructure = new javax.swing.JComboBox();
+        progressAndConsolPanel = new javax.swing.JPanel();
         consoleJSP = new javax.swing.JScrollPane();
         console = new javax.swing.JTextPane();
+        progressBar = new javax.swing.JProgressBar(0, 100);
         mainMenu = new javax.swing.JMenuBar();
         experimentMenu = new javax.swing.JMenu();
         refreshExperimentListMenuItem = new javax.swing.JMenuItem();
@@ -1234,7 +1226,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
-        jSplitPane3.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        homeSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
 
         tabs.setPreferredSize(new java.awt.Dimension(840, 450));
 
@@ -1332,7 +1324,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                     .addComponent(actionStructureJSP))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(actionPoolJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 230, Short.MAX_VALUE)
+                    .addComponent(actionPoolJSP)
                     .addComponent(actionJSP)))
         );
         actionPanelLayout.setVerticalGroup(
@@ -1345,7 +1337,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionPoolJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 194, Short.MAX_VALUE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(actionPositionJSP)
+                        .addComponent(actionPositionJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 195, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 194, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
@@ -1380,7 +1372,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         trackPanel.setLayout(trackPanelLayout);
         trackPanelLayout.setHorizontalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 337, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE)
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1673,7 +1665,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
 
         tabs.addTab("Data Browsing", dataPanel);
 
-        jSplitPane3.setLeftComponent(tabs);
+        homeSplitPane.setLeftComponent(tabs);
 
         consoleJSP.setBackground(new Color(getBackground().getRGB()));
         consoleJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Console:"));
@@ -1708,7 +1700,29 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         console.setComponentPopupMenu( consoleMenu );
         consoleJSP.setViewportView(console);
 
-        jSplitPane3.setBottomComponent(consoleJSP);
+        progressBar.setStringPainted(true);
+        progressBar.setBorder(javax.swing.BorderFactory.createEmptyBorder(1, 1, 1, 1));
+
+        javax.swing.GroupLayout progressAndConsolPanelLayout = new javax.swing.GroupLayout(progressAndConsolPanel);
+        progressAndConsolPanel.setLayout(progressAndConsolPanelLayout);
+        progressAndConsolPanelLayout.setHorizontalGroup(
+            progressAndConsolPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(consoleJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 840, Short.MAX_VALUE)
+            .addGroup(progressAndConsolPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addComponent(progressBar, javax.swing.GroupLayout.DEFAULT_SIZE, 840, Short.MAX_VALUE))
+        );
+        progressAndConsolPanelLayout.setVerticalGroup(
+            progressAndConsolPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, progressAndConsolPanelLayout.createSequentialGroup()
+                .addGap(24, 24, 24)
+                .addComponent(consoleJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 184, Short.MAX_VALUE))
+            .addGroup(progressAndConsolPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(progressAndConsolPanelLayout.createSequentialGroup()
+                    .addComponent(progressBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGap(0, 186, Short.MAX_VALUE)))
+        );
+
+        homeSplitPane.setBottomComponent(progressAndConsolPanel);
 
         experimentMenu.setText("Dataset");
 
@@ -2139,13 +2153,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jSplitPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 802, Short.MAX_VALUE)
+            .addComponent(homeSplitPane, javax.swing.GroupLayout.DEFAULT_SIZE, 826, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jSplitPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 664, Short.MAX_VALUE))
+                .addComponent(homeSplitPane))
         );
 
         pack();
@@ -3697,57 +3711,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
             new GUI().setVisible(true);
         });
     }
-    
-    class ColorPanel extends javax.swing.JPanel {
-        javax.swing.JLabel label = new javax.swing.JLabel("OK!");
-        ProgressIcon icon;
-        int mask;
-        int count;
 
-        public ColorPanel(ProgressIcon icon) {
-            super(true);
-            this.icon = icon;
-            this.mask = icon.color.getRGB();
-            this.setBackground(icon.color);
-            label.setForeground(icon.color);
-            this.add(label);
-        }
-    }
-
-    class ProgressIcon implements Icon {
-        int H = 12;
-        int W = 100;
-        Color color;
-        int w;
-        Component parent;
-        
-        public ProgressIcon(Color color, javax.swing.JTabbedPane parent) {
-            this.color = color;
-            this.parent=parent;
-        }
-
-        public void setValue(int i) {
-            w = i % W;
-            parent.repaint();
-        }
-        
-        public int getMinimum() {
-            return 0;
-        }
-
-        public void paintIcon(Component c, Graphics g, int x, int y) {
-            g.setColor(color);
-            g.fillRect(x, y, w, H);
-        }
-
-        public int getIconWidth() {
-            return W;
-        }
-
-        public int getIconHeight() {
-            return H;
-        }
-    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem CloseNonInteractiveWindowsMenuItem;
@@ -3797,6 +3761,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JMenuItem extractMeasurementMenuItem;
     private javax.swing.JMenuItem extractSelectionMenuItem;
     private javax.swing.JMenu helpMenu;
+    private javax.swing.JSplitPane homeSplitPane;
     private javax.swing.JCheckBoxMenuItem importConfigMenuItem;
     private javax.swing.JMenuItem importConfigurationForSelectedPositionsMenuItem;
     private javax.swing.JMenuItem importConfigurationForSelectedStructuresMenuItem;
@@ -3817,7 +3782,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
-    private javax.swing.JSplitPane jSplitPane3;
     private javax.swing.JMenu kymographMenu;
     private javax.swing.JButton linkObjectsButton;
     private javax.swing.JMenu localDBMenu;
@@ -3839,6 +3803,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, Prog
     private javax.swing.JMenu optionMenu;
     private javax.swing.JButton previousTrackErrorButton;
     private javax.swing.JMenuItem printShortcutMenuItem;
+    private javax.swing.JPanel progressAndConsolPanel;
+    private javax.swing.JProgressBar progressBar;
     private javax.swing.JButton pruneTrackButton;
     private javax.swing.JMenuItem refreshExperimentListMenuItem;
     private javax.swing.JButton reloadSelectionsButton;
